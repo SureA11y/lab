@@ -10,6 +10,10 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    ignore:
+      # jsdom 30 and later need Node 22.22.2; the lab supports 22.13.
+      - dependency-name: jsdom
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
