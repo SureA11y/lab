@@ -21,6 +21,7 @@
     "build:extension": "node src/js/build-extension.cjs.js",
     "build:guide": "node src/js/build-guide.cjs.js",
     "build:action-docs": "node src/js/generate-action-docs.cjs.js",
+    "build:showcase": "node src/scripts/showcase.js",
     "dev:server": "nodemon server.js",
     "start:server": "node server.js",
     "dev": "node src/scripts/launch.js dev",

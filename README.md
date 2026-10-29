@@ -23,6 +23,16 @@ see what a release fixed and what it broke.
 
 ![The lab's compare tab: release 2 of the demo shop against release 1, accessibility improved, 9 failures down to 2](docs/assets/screens/app-compare.png)
 
+<details>
+<summary>Watch a run, its report and a comparison (a 22-second animation)</summary>
+
+![The lab app loads the demo shop's shopping flow and runs it: the log fills, a live preview shows each scan as it finishes, and the run ends with 8 failures in 8 elements across 4 scans. Then a report of the shop's tour, each page's failures and questions with a screenshot, and the comparison of release 2 with release 1: accessibility improved, 9 failures down to 2.](docs/assets/screens/demo.gif)
+
+</details>
+
+[Example reports](docs/gallery/README.md): two reports and a comparison of
+the demo shop, each one file that opens in any browser.
+
 Scans check against WCAG 2.2 (A, AA, AAA) and EN 301 549 (V4.1.1 and
 V3.2.1), with surea11y applying each standard in full.
 

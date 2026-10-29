@@ -4678,13 +4678,24 @@ function storeActiveMode(mode) {
         return null;
     }
 
-    /** A report (JSON, or a package's zip) at `url`, as a file the loaders take. */
+    /**
+     * A report (JSON, or a package's zip) at `url`, as a file the loaders take.
+     * A JSON report's pictures in images/ beside it (a runner's run folder,
+     * a package unpacked) are linked where they are.
+     */
     async function fileFromUrl(url) {
         const address = new URL(url, window.location.href);
         const res = await fetch(address);
         if (!res.ok) throw new Error(`${address.href}: ${res.status} ${res.statusText}`);
         const blob = await res.blob();
         const name = decodeURIComponent(address.pathname.split('/').pop() || '') || 'report.json';
+        if (/\.json$/i.test(name)) {
+            // On the lab's own server, by path, as the queue's batches are,
+            // so a download packs them.
+            const where = address.origin === window.location.origin ? address.pathname : address.href;
+            const text = rebaseImageRefs(await blob.text(), folderOf(where));
+            return new File([text], name, {type: 'application/json'});
+        }
         return new File([blob], name, {type: blob.type});
     }
 

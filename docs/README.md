@@ -9,6 +9,8 @@
   combine in ways no guide covers.
 - [Examples](../examples/README.md): workflows, a demo shop to run them
   against, integration scripts, CI and container files, all runnable.
+- [Example reports](gallery/README.md): two reports and a comparison of the
+  demo shop, as files that open in any browser.
 
 ## Use the app
 

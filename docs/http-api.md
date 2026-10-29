@@ -75,7 +75,7 @@ tool can show one in it, or embed it in a frame:
 
 | Address | Opens |
 | --- | --- |
-| `/?report=<url>` | The report at `<url>` in the open report tab: a report's JSON (`payload.json`, `*.a11y-report.json`) or a report package's zip. |
+| `/?report=<url>` | The report at `<url>` in the open report tab: a report's JSON (`payload.json`, `*.a11y-report.json`), with its pictures from the `images/` folder beside it, or a report package's zip. |
 | `/?compare=<url>&compare=<url>` | Those reports in the Compare tab, in that order; a downloaded comparison's zip, or a queue's, given once. |
 
 `<url>` is fetched by the browser, so it must be one the page may read: on the
