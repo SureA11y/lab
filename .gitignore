@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Run output: results, batches, screenshots, evidence
+/reports/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+
+# Debug dumps (A11Y_DUMP_RESULT_JSON)
+/a11y-dumps/
+
+# Headless runner output
+/a11y-runs/
+
+# Built from docs/unattended-scans.html by build:guide
+/docs/unattended-scans.artifact.html
+
+/src/report/report.min.css
+/src/report/report.min.js
+/src/report/comparison.min.css
+
+# Built from the mockup source by docs/design/mockups/multi-report/build-mockup.js
+/docs/mockups/multi-report-comparison.artifact.html
+
+# Built by npm run build:extension
+/dist/

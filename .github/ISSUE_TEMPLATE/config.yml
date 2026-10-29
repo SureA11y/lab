@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: A security problem
+    url: https://github.com/SureA11y/lab/security/advisories/new
+    about: Report it privately, not in a public issue.
+  - name: A finding that is wrong, or a problem missed
+    url: https://github.com/SureA11y/core/issues
+    about: What a scan finds comes from surea11y, the engine; report it there, with the page or a snippet of HTML.

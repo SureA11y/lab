@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Unattended Scans</title>
+</head>
+<body>
+<style>
+@font-face { font-family: "Space Grotesk"; font-style: normal; font-weight: 700; font-display: swap; src: url('../src/fonts/space-grotesk/SpaceGrotesk-Bold.woff2') format('woff2'); }
+@font-face { font-family: "Public Sans"; font-style: normal; font-weight: 400; font-display: swap; src: url('../src/fonts/public-sans/PublicSans-Regular.woff2') format('woff2'); }
+@font-face { font-family: "Public Sans"; font-style: normal; font-weight: 600; font-display: swap; src: url('../src/fonts/public-sans/PublicSans-SemiBold.woff2') format('woff2'); }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url('../src/fonts/ibm-plex-mono/IBMPlexMono-Regular.woff2') format('woff2'); }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url('../src/fonts/ibm-plex-mono/IBMPlexMono-Medium.woff2') format('woff2'); }
+
+:root {
+    color-scheme: light;
+
+    --brand-rgb: 91, 57, 196;
+
+    --bg: #f7f8f6;
+    --bg-elevated: #ffffff;
+    --bg-subtle: #f1f3f0;
+    --bg-console: #1a1f1c;
+    --console-text: #c7d2cb;
+
+    --text-main: #31352f;
+    --text-muted: #4e5651;
+    --text-soft: #78807a;
+
+    --border-subtle: rgba(var(--brand-rgb), .18);
+    --border-strong: rgba(var(--brand-rgb), .30);
+    --border-soft: rgba(var(--brand-rgb), .10);
+
+    --accent: #5b39c4;
+    --accent-soft: #ede6fa;
+    --accent-ink: #4a2ea6;
+
+    --good: #2f6f43;
+    --good-soft: #e4f0e6;
+    --warn: #8a5a12;
+    --warn-soft: #f6ecd9;
+    --bad: #9d2f3c;
+    --bad-soft: #f7e4e6;
+
+    --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-body: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+    --step-0: 0.78rem;
+    --step-1: 0.92rem;
+    --step-2: 1.0625rem;
+    --step-3: 1.35rem;
+    --step-4: 1.85rem;
+    --step-5: 2.6rem;
+
+    --rail: 15rem;
+    --measure: 40rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+
+        --brand-rgb: 196, 166, 255;
+
+        --bg: #101413;
+        --bg-elevated: #171b19;
+        --bg-subtle: #141917;
+        --bg-console: #0a0d0c;
+        --console-text: #c7d2cb;
+
+        --text-main: #c7d2cb;
+        --text-muted: #9ba69f;
+        --text-soft: #7f8a84;
+
+        --border-subtle: rgba(var(--brand-rgb), .16);
+        --border-strong: rgba(var(--brand-rgb), .26);
+        --border-soft: rgba(var(--brand-rgb), .08);
+
+        --accent: #c4a6ff;
+        --accent-soft: rgba(196, 166, 255, .12);
+        --accent-ink: #d9c6ff;
+
+        --good: #7bbd8b;
+        --good-soft: rgba(123, 189, 139, .14);
+        --warn: #d8a952;
+        --warn-soft: rgba(216, 169, 82, .14);
+        --bad: #e58c92;
+        --bad-soft: rgba(229, 140, 146, .14);
+    }
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --brand-rgb: 196, 166, 255;
+
+    --bg: #101413;
+    --bg-elevated: #171b19;
+    --bg-subtle: #141917;
+    --bg-console: #0a0d0c;
+    --console-text: #c7d2cb;
+
+    --text-main: #c7d2cb;
+    --text-muted: #9ba69f;
+    --text-soft: #7f8a84;
+
+    --border-subtle: rgba(var(--brand-rgb), .16);
+    --border-strong: rgba(var(--brand-rgb), .26);
+    --border-soft: rgba(var(--brand-rgb), .08);
+
+    --accent: #c4a6ff;
+    --accent-soft: rgba(196, 166, 255, .12);
+    --accent-ink: #d9c6ff;
+
+    --good: #7bbd8b;
+    --good-soft: rgba(123, 189, 139, .14);
+    --warn: #d8a952;
+    --warn-soft: rgba(216, 169, 82, .14);
+    --bad: #e58c92;
+    --bad-soft: rgba(229, 140, 146, .14);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: var(--step-2);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+.page {
+    display: grid;
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    gap: 3.5rem;
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+}
+
+/* ---------- rail ---------- */
+
+.rail {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    padding: 3.5rem 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+}
+
+.mark {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: var(--text-main);
+}
+
+.mark span { color: var(--accent); }
+
+.rail nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    border-left: 1px solid var(--border-soft);
+}
+
+.rail a {
+    font-family: var(--font-mono);
+    font-size: var(--step-0);
+    text-decoration: none;
+    color: var(--text-muted);
+    padding: 0.3rem 0 0.3rem 0.9rem;
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+}
+
+.rail a:hover { color: var(--accent); border-left-color: var(--border-strong); }
+.rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.rail .rail-note {
+    font-size: var(--step-0);
+    color: var(--text-soft);
+    line-height: 1.5;
+    max-width: 13rem;
+    margin-top: auto;
+}
+
+/* ---------- content ---------- */
+
+main { min-width: 0; padding-top: 3.5rem; }
+
+.masthead { margin-bottom: 3.5rem; }
+
+.eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--step-0);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 1rem;
+}
+
+h1 {
+    font-family: var(--font-display);
+    font-size: var(--step-5);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    margin: 0 0 1rem;
+    max-width: 18ch;
+}
+
+.standfirst {
+    font-size: var(--step-3);
+    line-height: 1.45;
+    color: var(--text-muted);
+    max-width: 34ch;
+    margin: 0;
+    text-wrap: pretty;
+}
+
+section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
+
+h2 {
+    font-family: var(--font-display);
+    font-size: var(--step-4);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+    margin: 0 0 1.25rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+h3 {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: var(--step-3);
+    letter-spacing: -0.01em;
+    margin: 2.5rem 0 0.75rem;
+    text-wrap: balance;
+}
+
+h4 {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: var(--step-0);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    margin: 2rem 0 0.6rem;
+}
+
+p, li { max-width: var(--measure); text-wrap: pretty; }
+p { margin: 0 0 1.1rem; }
+
+ul, ol { padding-left: 1.15rem; margin: 0 0 1.2rem; }
+li { margin-bottom: 0.4rem; }
+
+strong { font-weight: 600; }
+
+a { color: var(--accent-ink); text-underline-offset: 0.15em; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-soft);
+    border-radius: 3px;
+    padding: 0.08em 0.34em;
+}
+
+/* ---------- console ---------- */
+
+.console {
+    background: var(--bg-console);
+    border-radius: 6px;
+    margin: 0 0 1.5rem;
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+}
+
+.console-bar {
+    font-family: var(--font-mono);
+    font-size: var(--step-0);
+    color: #8d9a93;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+    letter-spacing: 0.04em;
+}
+
+.console pre {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--step-1);
+    line-height: 1.6;
+    color: var(--console-text);
+}
+
+.console pre code {
+    background: none;
+    border: 0;
+    padding: 0;
+    font-size: inherit;
+}
+
+.console .cmd { color: #b9a6f0; }
+.console .ok { color: #8fd3a1; }
+.console .flag { color: #e0c48a; }
+.console .dim { color: #7c8a83; }
+.console .hot { color: #f0a3a8; }
+
+pre.plain {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--step-1);
+    line-height: 1.55;
+    margin: 0 0 1.5rem;
+}
+
+pre.plain code { background: none; border: 0; padding: 0; font-size: inherit; }
+
+.console pre:focus-visible,
+pre.plain:focus-visible,
+.table-wrap:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- tables ---------- */
+
+.table-wrap { overflow-x: auto; margin: 0 0 1.5rem; }
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--step-1);
+}
+
+th, td {
+    text-align: left;
+    padding: 0.65rem 1rem 0.65rem 0;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: top;
+}
+
+th {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: var(--step-0);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    border-bottom: 1px solid var(--border-subtle);
+    white-space: nowrap;
+}
+
+td code { white-space: nowrap; }
+
+.num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+/* ---------- chips ---------- */
+
+.chip {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: var(--step-0);
+    letter-spacing: 0.04em;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.chip-good { background: var(--good-soft); color: var(--good); }
+.chip-warn { background: var(--warn-soft); color: var(--warn); }
+.chip-bad { background: var(--bad-soft); color: var(--bad); }
+
+/* ---------- claim panel ---------- */
+
+.claims {
+    display: grid;
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 2rem 0;
+}
+
+@media (min-width: 46rem) {
+    .claims { grid-template-columns: 1fr 1fr; }
+}
+
+.claim { background: var(--bg-elevated); padding: 1.5rem; }
+.claim p { margin: 0; max-width: none; }
+.claim p + p { margin-top: 0.8rem; }
+
+.claim-head {
+    font-family: var(--font-mono);
+    font-size: var(--step-0);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0 0 0.75rem;
+}
+
+.claim-can .claim-head { color: var(--good); }
+.claim-cannot .claim-head { color: var(--bad); }
+
+.callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 6px 6px 0;
+    margin: 2rem 0;
+}
+
+.callout p { margin: 0; }
+.callout p + p { margin-top: 0.8rem; }
+
+/* ---------- steps ---------- */
+
+.step { margin-bottom: 2.75rem; }
+
+.step-label {
+    font-family: var(--font-mono);
+    font-size: var(--step-0);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.35rem;
+}
+
+.step h3 { margin-top: 0; }
+
+/* ---------- glossary ---------- */
+
+dl.terms { margin: 0; }
+
+dl.terms div {
+    display: grid;
+    gap: 0.15rem 1.5rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+@media (min-width: 46rem) {
+    dl.terms div { grid-template-columns: 12rem minmax(0, 1fr); }
+}
+
+dl.terms dt {
+    font-weight: 600;
+    font-size: var(--step-1);
+}
+
+dl.terms dd {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--step-1);
+    max-width: var(--measure);
+}
+
+.trouble dt { font-family: var(--font-mono); font-size: var(--step-0); font-weight: 500; }
+
+footer {
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 1.5rem;
+    color: var(--text-soft);
+    font-size: var(--step-1);
+}
+
+footer p { max-width: var(--measure); }
+
+@media (max-width: 60rem) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 1.25rem 4rem; }
+    .rail { position: static; height: auto; padding: 2.5rem 0 0; }
+    .rail nav { flex-flow: row wrap; border-left: 0; gap: 0.25rem 1rem; }
+    .rail a { padding: 0.2rem 0; border-left: 0; }
+    .rail .rail-note { display: none; }
+    main { padding-top: 2rem; }
+    :root { --step-5: 2.1rem; --step-4: 1.55rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { scroll-behavior: auto !important; }
+}
+
+html { scroll-behavior: smooth; }
+</style>
+
+<div class="page">
+    <aside class="rail">
+        <p class="mark">surea11y <span>/ unattended scans</span></p>
+        <nav aria-label="Sections">
+            <a href="#what">What it is</a>
+            <a href="#claims">What it can claim</a>
+            <a href="#steps">Five steps</a>
+            <a href="#reference">Reference</a>
+            <a href="#spec">The spec file</a>
+            <a href="#trouble">When it goes wrong</a>
+            <a href="#words">Words used here</a>
+            <a href="#maintainers">For maintainers</a>
+        </nav>
+        <p class="rail-note">Part one is written for anyone. From “Five steps” onward it assumes a terminal.</p>
+    </aside>
+
+    <main>
+        <header class="masthead">
+            <p class="eyebrow">Scheduled accessibility runs</p>
+            <h1>Same checks, nobody watching</h1>
+            <p class="standfirst">The scanner runs on a timer, compares each run with the last, and speaks up only when something broke.</p>
+        </header>
+
+        <section id="what">
+            <h2>What this is</h2>
+
+            <p>The app in your browser lets you build a <strong>workflow</strong>: go to this page, log in, open that menu, check for accessibility problems. You press Run, and it tells you what it found.</p>
+
+            <p>This does the same thing without anyone pressing Run. A computer can start it at three in the morning, every night, and tell you <strong>what changed since last time</strong>.</p>
+
+            <h3>Why the comparison is the point</h3>
+
+            <p>A single scan answers “how is this page today?”. That is useful once. What teams actually need is the other question: <strong>did we just make it worse?</strong> Nobody answers that from one report, because it means remembering what last week looked like — and reports pile up unread.</p>
+
+            <div class="callout">
+                <p>Yesterday this page had 11 problems. Today it has 11 problems.</p>
+                <p>But four of yesterday’s were fixed, and four new ones appeared.</p>
+            </div>
+
+            <p>The total never moved. Something still broke. Only a comparison sees that.</p>
+
+            <h3>What lands on disk, every run</h3>
+
+            <div class="table-wrap" tabindex="0">
+                <table>
+                    <thead>
+                        <tr><th scope="col">File</th><th scope="col">What it is</th><th scope="col">Who reads it</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>summary.md</code></td><td>The run written out in prose</td><td>People</td></tr>
+                        <tr><td><code>diff.json</code></td><td>Exactly what changed since the compared run</td><td>Other software</td></tr>
+                        <tr><td><code>comparison.html</code></td><td>The same comparison as a page, as the app’s Compare tab downloads it</td><td>People</td></tr>
+                        <tr><td><code>payload.json</code></td><td>The complete result, same as the app produces</td><td>The app, later comparisons</td></tr>
+                        <tr><td><code>run.log.jsonl</code></td><td>Line by line, what the workflow did</td><td>Whoever is debugging</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><code>diff.json</code> and <code>payload.json</code> are described by <code>schemas/diff.v1.schema.json</code> and <code>schemas/report.v2.schema.json</code>, for whatever reads them. Every failing element has an <code>occurrenceId</code> that stays the same from run to run, so a ticket filed for one can be found again in the next run’s files.</p>
+
+            <p><code>summary.md</code> is the one to read:</p>
+
+            <pre class="plain" tabindex="0"><code># Regression demo
+
+**New failing instances since the baseline**
+
+- Url: https://example.com/checkout
+- Run: run_744e9f59 at 2026-08-17T17:03:51.613Z
+
+## This run
+
+- Scans: 1
+- Failing: 4 rules, 4 instances
+- Can't tell: 1 rules, 1 instance
+
+## Compared to release-1.0
+
+- Rules: 3 new, 1 resolved, 1 persistent
+- Instances: 4 new, 9 fixed, 0 still failing
+
+### New
+
+- **button-name** (critical) — 1 instance
+- **color-contrast** (serious) — 1 instance
+- **link-name** (serious) — 1 instance</code></pre>
+
+            <h4>Three words that appear everywhere</h4>
+
+            <dl class="terms">
+                <div><dt>Rule</dt><dd>One kind of problem. “Buttons must have a name” is a rule.</dd></div>
+                <div><dt>Instance</dt><dd>One place that problem actually occurs. One rule can break in eight places.</dd></div>
+                <div><dt>Baseline</dt><dd>The earlier run being compared against — the last one, or one you deliberately kept.</dd></div>
+            </dl>
+        </section>
+
+        <section id="claims">
+            <h2>What it can honestly claim</h2>
+
+            <p>Worth reading even if you skip everything else.</p>
+
+            <div class="claims">
+                <div class="claim claim-can">
+                    <p class="claim-head">It can tell you</p>
+                    <p>That a specific, machine-checkable problem appeared where there wasn’t one before. That is a real signal, and it is worth acting on.</p>
+                </div>
+                <div class="claim claim-cannot">
+                    <p class="claim-head">It cannot tell you</p>
+                    <p>That a page is accessible. Automated checking finds a fraction of real problems, and none at all of the kind needing human judgement: is this alt text actually describing the picture? Does the page make sense read aloud, in order? Can someone finish the task?</p>
+                </div>
+            </div>
+
+            <p>That is why the score is labelled an <strong>automated result</strong> rather than a grade, and why the runner refuses to pass or fail your build on a score. It fails on one thing: <strong>a problem that wasn’t there before</strong>. That is a claim it can stand behind.</p>
+
+            <h3>It also says when it didn’t do its job</h3>
+
+            <p>If the workflow was meant to click through to page seven and the button was missing, the scan never happened. A scan that never happened reports zero problems — which looks like excellent news.</p>
+
+            <p>The runner catches that and calls the run <strong>degraded</strong>, because “fewer problems than yesterday” means nothing when half the run didn’t happen. For unattended runs this is the single most valuable thing it does.</p>
+
+            <div class="callout">
+                <p>A real example from testing: a scan was skipped because the page was too large. The run found <strong>zero</strong> failures, and the comparison read <strong>9 fixed, 0 new</strong> — everything apparently repaired overnight.</p>
+                <p>It exited <span class="chip chip-warn">4 degraded</span> instead of <span class="chip chip-good">0 clean</span>.</p>
+            </div>
+        </section>
+
+        <section id="steps">
+            <h2>Five steps to a nightly run</h2>
+
+            <div class="step">
+                <p class="step-label">Step 1</p>
+                <h3>Build the workflow in the app, then export it</h3>
+                <p>You don’t write workflows by hand. Build it where you can watch it work, then press <strong>Export config</strong> and save the file. That file has everything the runner needs, and it loads back into the app later.</p>
+                <p>A password is never saved in that file. For a run nobody watches, have the <strong>Set password value</strong> step read it from the environment instead: <code>"value": { "$env": "SHOP_PASSWORD" }</code>. The runner reads the variable as the run starts, gives it to the browser only, and stops before opening one, with exit <span class="num">2</span>, when it is not set.</p>
+            </div>
+
+            <div class="step">
+                <p class="step-label">Step 2</p>
+                <h3>Run it</h3>
+                <div class="console">
+                    <div class="console-bar">terminal</div>
+<pre tabindex="0"><code><span class="cmd">node src/cli/run-workflow.js checkout.json</span>
+
+Status      <span class="ok">done</span>
+Scenario    Checkout
+Url         https://example.com/checkout
+Run id      run_ddeea58f7a86868c
+Scans       1
+Failing     2 rules, 9 instances
+Can't tell  1 rules, 1 instances
+Diagnostics 1 console, 0 request failures, 1 bad responses
+Payload     a11y-runs/Checkout/runs/2026-08-17T10-00-00-000Z/payload.json (1833 KB)</code></pre>
+                </div>
+                <p>Add <code>--quiet</code> for the summary without the running commentary.</p>
+            </div>
+
+            <div class="step">
+                <p class="step-label">Step 3</p>
+                <h3>Run it again tomorrow, and compare</h3>
+                <div class="console">
+                    <div class="console-bar">terminal</div>
+<pre tabindex="0"><code><span class="cmd">node src/cli/run-workflow.js checkout.json <span class="flag">--baseline auto</span></span>
+
+Compared to 2026-08-17T10-00-00-000Z
+Rules       <span class="hot">3 new</span>, 1 resolved, 1 persistent
+Instances   <span class="hot">4 new</span>, 9 fixed, 0 still failing
+  new       button-name (critical) 1 instance
+  new       color-contrast (serious) 1 instance
+  new       link-name (serious) 1 instance</code></pre>
+                </div>
+                <p><code>auto</code> means “the previous run of this scenario”. The first time, there is nothing to compare with — it says so plainly and does not treat that as a failure, unless <code>--fail-on-failures</code> asks it to fail a first run that has failures. When something does break, the command finishes with exit code <span class="chip chip-bad">3</span>, which is how a build system learns without reading anything.</p>
+            </div>
+
+            <div class="step">
+                <p class="step-label">Step 4</p>
+                <h3>Keep a baseline that doesn’t move</h3>
+                <p>“Since last night” is one question. “Since we released” is another, and <code>auto</code> can’t answer it, because last night’s run already contains the problem you shipped a week ago.</p>
+                <div class="console">
+                    <div class="console-bar">terminal</div>
+<pre><code><span class="dim"># on release day</span>
+<span class="cmd">node src/cli/run-workflow.js checkout.json <span class="flag">--promote release-1.0</span></span>
+
+<span class="dim"># from then on</span>
+<span class="cmd">node src/cli/run-workflow.js checkout.json <span class="flag">--baseline @release-1.0</span></span></code></pre>
+                </div>
+                <p>A run that failed, was cancelled, or came back degraded <strong>cannot</strong> become a baseline. If a broken run became the reference, every run after it would look like an improvement — forever.</p>
+            </div>
+
+            <div class="step">
+                <p class="step-label">Step 5</p>
+                <h3>Put it on a schedule</h3>
+                <p>Nothing left to build. A nightly run keeping a fortnight of history:</p>
+                <div class="console">
+                    <div class="console-bar">crontab</div>
+<pre tabindex="0"><code>0 3 * * * cd /path/to/a11y-testing &amp;&amp; \
+  node src/cli/run-workflow.js specs/checkout.json <span class="flag">--baseline auto --keep 14 --quiet</span></code></pre>
+                </div>
+                <p>In a pipeline, the exit code does the work: <span class="chip chip-good">0</span> carry on, <span class="chip chip-bad">3</span> something broke, <span class="chip chip-warn">4</span> the run didn’t cover everything so its result can’t be trusted.</p>
+                <p>To tell a person, mail or post the <code>summary.md</code> the run just wrote. The runner writes the file and stops there — every team’s mail, chat and ticketing is different.</p>
+            </div>
+        </section>
+
+        <section id="reference">
+            <h2>Reference</h2>
+
+            <h3>Options</h3>
+            <pre class="plain" tabindex="0"><code>node src/cli/run-workflow.js &lt;spec.json&gt; [options]
+
+  --spec &lt;file&gt;      Spec file, when not given as the first argument
+  --out &lt;dir&gt;        Output directory
+                     (default: &lt;store&gt;/&lt;scenario&gt;/runs/&lt;stamp&gt;)
+  --store &lt;dir&gt;      Where runs and baselines are kept (default: a11y-runs)
+  --baseline &lt;what&gt;  auto for the previous run of this scenario, @name for a
+                     promoted baseline, or a path to a payload.json
+  --promote &lt;name&gt;   Keep this run as the named baseline, if it ran whole
+  --keep &lt;n&gt;         Delete all but the newest n runs beside this one - every
+                     directory holding a payload.json in --out's parent
+                     folder, not just this scenario's, so a custom --out
+                     shared with other scenarios will prune those too
+  --url &lt;url&gt;        Override the url in the spec
+  --scenario &lt;name&gt;  Override the scenario name in the spec
+  --debug-native     Keep raw engine output in the payload
+  --format &lt;list&gt;    Also write surea11y's results as sarif, junit and/or
+                     earl (comma-separated), into &lt;out&gt;/exports. Can be
+                     repeated. Scans run without surea11y are left out.
+  --no-batch         Run a config's workflow once, with its batch left off
+  --dry-run          Take every step in a browser but the scans, screenshots
+                     and evidence, and say how each went: which failed and
+                     where, which were never reached, and which scans would
+                     have had nothing to check. Writes nothing. Exit 0 when
+                     the workflow fits the site, 4 when it does not.
+  --check            Only check the spec, without opening a browser: its
+                     fields, and every step against the run spec schema
+                     (schemas/run-spec.v1.schema.json). Exit 0 when it can
+                     run, 2 when it cannot.
+  --fail-on-lean     Also fail on surea11y's questions whose evidence leans
+                     fail (likely failures), new since the baseline: exit 5,
+                     and with --format, an error in SARIF and a failure in
+                     JUnit. Only those of rules in the scan's target.
+  --fail-on-failures Fail a run that has no baseline to compare with when it
+                     has failing instances: exit 3, as new failures against a
+                     baseline do. Without it, a first run passes. With a
+                     baseline it changes nothing.
+  -q, --quiet        Only print the summary
+  -h, --help         Show this message</code></pre>
+
+            <p><code>--url</code> is how one workflow serves several environments — the same steps against staging or production.</p>
+
+            <h3>Exit codes</h3>
+            <div class="table-wrap" tabindex="0">
+                <table>
+                    <thead>
+                        <tr><th scope="col">Code</th><th scope="col">Meaning</th><th scope="col">What to do</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><span class="chip chip-good">0</span></td><td>Ran, nothing new</td><td>Nothing</td></tr>
+                        <tr><td><span class="chip chip-bad">1</span></td><td>The run failed</td><td>Read <code>summary.md</code> and <code>run.log.jsonl</code></td></tr>
+                        <tr><td><span class="chip chip-warn">2</span></td><td>Bad options, or an unusable spec (with <code>--check</code>: it has errors)</td><td>Fix the command or the file</td></tr>
+                        <tr><td><span class="chip chip-bad">3</span></td><td>New failing instances against the baseline; with <code>--fail-on-failures</code> and no baseline, any failing instance</td><td>Look at what appeared</td></tr>
+                        <tr><td><span class="chip chip-warn">4</span></td><td>Covered less than the spec asked for</td><td>Fix the workflow, then re-run</td></tr>
+                        <tr><td><span class="chip chip-warn">5</span></td><td>With <code>--fail-on-lean</code>: new likely failures, no new failure</td><td>Confirm them by hand</td></tr>
+                        <tr><td><span class="chip chip-warn">130</span></td><td>Cancelled with Ctrl+C</td><td>Nothing; the partial result was still written</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p>Codes <span class="num">1</span>, <span class="num">130</span> and <span class="num">4</span> outrank <span class="num">3</span>, in that order, and <span class="num">3</span> outranks <span class="num">5</span>. A run that didn’t finish, or didn’t cover what it should, makes the comparison unsound rather than merely worse — so it is reported as its own problem rather than as a regression.</p>
+
+            <h3>Where files go</h3>
+            <pre class="plain" tabindex="0"><code>a11y-runs/                        <span class="dim">&lt;- --store, default is a11y-runs</span>
+  Checkout/                       <span class="dim">&lt;- one folder per scenario</span>
+    runs/
+      2026-08-17T10-00-00-000Z/
+        payload.json              <span class="dim">&lt;- the full result</span>
+        summary.md                <span class="dim">&lt;- the run in prose</span>
+        run.log.jsonl             <span class="dim">&lt;- one JSON object per log line</span>
+        diff.json                 <span class="dim">&lt;- only when compared</span>
+        comparison.html           <span class="dim">&lt;- only when compared: the comparison to read</span>
+    baselines/
+      release-1.0.json            <span class="dim">&lt;- from --promote</span></code></pre>
+
+            <p><code>--keep</code> only ever deletes folders inside <code>runs/</code> that contain a <code>payload.json</code>. Promoted baselines live outside <code>runs/</code> and are never pruned.</p>
+
+            <p><code>payload.json</code> is around 1.8 MB because it carries screenshots. That is what lets you load it back into the app’s <strong>compare</strong> tab and see the same comparison on screen.</p>
+        </section>
+
+        <section id="spec">
+            <h2>The spec file</h2>
+
+            <p>A config exported from the app already contains everything below. This is the whole format, if you would rather write one by hand. The app opens a spec too, with Load config, to review it or change it in the builder before it runs: its <code>vars</code> go into a Batch row, and what the app has no setting for (a viewport size that is not a preset) is reported when it opens.</p>
+
+            <pre class="plain" tabindex="0"><code>{
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+
+  "url": "https://example.com/checkout",
+  "scenarioName": "Checkout",
+
+  "actions": [
+    { "type": "a11yScan", "label": "Cart", "profile": "en301549-v4.1.1" },
+    { "type": "click", "selector": "#to-payment" },
+    { "type": "a11yScan", "label": "Payment", "engine": "surea11y" }
+  ],
+
+  "viewport": "desktop-lg",
+  "context": "main",
+  "exclude": ".ads, .cookie-banner",
+  "customSteps": []
+}</code></pre>
+
+            <div class="table-wrap" tabindex="0">
+                <table>
+                    <thead>
+                        <tr><th scope="col">Field</th><th scope="col">Required</th><th scope="col">Notes</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>url</code></td><td>yes</td><td>Where the workflow starts. <code>http</code> or <code>https</code> only</td></tr>
+                        <tr><td><code>actions</code></td><td>yes</td><td>At least one. The same actions the app’s builder produces. Each scan names its engine (<code>"engine": "axe"</code>); one without runs with <code>surea11y</code>. The engines: <code>surea11y</code>, <code>axe</code>, <code>alfa</code>, <code>pa11y</code>, <code>pa11y-htmlcs</code>, <code>qualweb</code> and its variants</td></tr>
+                        <tr><td><code>scenarioName</code></td><td>no</td><td>Names the folder and the reports</td></tr>
+                        <tr><td><code>viewport</code></td><td>no</td><td>A preset name, or <code>{"width": 1280, "height": 720}</code></td></tr>
+                        <tr><td><code>context</code></td><td>no</td><td>Only scan the elements these selectors match (<code>main, footer</code>). In the app it is the configuration’s Include selectors. A scan’s own <code>context</code> replaces it</td></tr>
+                        <tr><td><code>exclude</code></td><td>no</td><td>Selectors to leave out, as a string or a list. In the app it is the configuration’s Exclude selectors. A scan’s own <code>exclude</code> adds to it</td></tr>
+                        <tr><td><code>customSteps</code></td><td>no</td><td>Reusable step definitions the actions refer to</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Viewport presets</h4>
+            <div class="table-wrap" tabindex="0">
+                <table>
+                    <thead>
+                        <tr><th scope="col">Name</th><th scope="col">Size</th><th scope="col">Name</th><th scope="col">Size</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>default</code></td><td class="num">1280 × 720</td><td><code>desktop-md</code></td><td class="num">1280 × 720</td></tr>
+                        <tr><td><code>desktop-xlg</code></td><td class="num">1972 × 1100</td><td><code>tablet</code></td><td class="num">768 × 1024</td></tr>
+                        <tr><td><code>desktop-lg</code></td><td class="num">1440 × 900</td><td><code>mobile</code></td><td class="num">375 × 812</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p>The runner tells you everything wrong with a spec at once, rather than one problem per attempt.</p>
+
+            <h3>Checking a spec before it runs</h3>
+
+            <p><code>--check</code> reads the file and stops there, without opening a browser:</p>
+
+            <pre class="plain" tabindex="0"><code>node src/cli/run-workflow.js specs/checkout.json --check</code></pre>
+
+            <p>It checks the fields above, and every step, nested ones and custom steps included, against <code>schemas/run-spec.v1.schema.json</code>. That schema is generated from the same action definitions the app’s builder uses, so it knows every step and every field. It sorts what it finds into two kinds:</p>
+
+            <ul>
+                <li><strong>Errors</strong> stop the check with exit <span class="num">2</span>: a missing required field, a step type the engine does not have, a value of the wrong kind, such as the text <code>"true"</code> where a field takes <code>true</code> or <code>false</code> (the engine would read it as if it were absent), a <code>runCustomStep</code> naming a custom step the spec does not have, a scan whose engine cannot check its profile.</li>
+                <li><strong>Warnings</strong> leave it at exit <span class="num">0</span>: a field the step does not declare, or a value outside the ones the app offers. The run goes on, but they are usually typos.</li>
+            </ul>
+
+            <p>Every run makes the same checks before it starts, whether it starts from the app, the queue or the command line: a workflow with errors does not start, each error in its log (from the command line, exit <span class="num">2</span>), and the warnings go to its log as it runs.</p>
+
+            <p>Add <code>"$schema": "./schemas/run-spec.v1.schema.json"</code> (the path from your spec to the repository’s <code>schemas/</code> folder) at the top of a spec, and an editor that reads JSON Schema completes step types and fields as you type and marks mistakes as you make them.</p>
+
+            <h3>Trying a workflow without scanning</h3>
+
+            <p>A site changes, and a workflow written against it last month may no longer fit: a button renamed, a menu moved. <code>--dry-run</code> finds out in seconds, without the scans:</p>
+
+            <pre class="plain" tabindex="0"><code>node src/cli/run-workflow.js specs/checkout.json --dry-run</code></pre>
+
+            <p>It takes every step in a browser, as a run would, except the scans, screenshots and evidence, then says how each step went:</p>
+
+            <pre class="plain" tabindex="0"><code>Dry run    https://example.com/checkout
+  done     1    Click "Accept cookies"
+  done     2    A11y scan "Cart"
+                would check nothing: its context "#basket" matches nothing on the page
+  FAILED   3    Checkout (at step 3.1): click failed: "#checkout" not found
+  not run  4    A11y scan "Payment"
+Scans      2 scans not run, 1 of them would check nothing (said under its step)
+Result     the workflow does not fit the site as it stands: 2 problems above</code></pre>
+
+            <p>A step that failed inside another says where (<code>3.1</code> is the first step in step 3). A scan is not run, but its context selector is looked for, since a scan whose context matches nothing would report a page with no problems. Nothing is written, so a dry run never becomes the run <code>--baseline auto</code> compares with. Exit <span class="num">0</span> when every step ran, <span class="num">4</span> when one did not.</p>
+
+            <p>The app has the same check: Dry run, next to Run, shows the same list under the buttons and leaves the last report as it was. With the batch on, it uses the batch’s first workflow.</p>
+
+            <h3>Running a batch</h3>
+
+            <p>The app’s Batch section runs one workflow once per row: each row its own name, its own starting page and its own variables. The runner does the same, from a batch spec:</p>
+
+            <pre class="plain" tabindex="0"><code>{
+  "type": "a11y-batch-spec",
+  "specVersion": 1,
+  "name": "Product pages",
+  "spec": { "type": "a11y-run-spec", "specVersion": 1, "url": "https://example.com/",
+            "actions": [{ "type": "a11yScan", "label": "{var:product}" }] },
+  "rows": [
+    { "name": "Shoes", "url": "https://example.com/shoes", "vars": { "product": "Shoes" } },
+    { "name": "Bags",  "url": "https://example.com/bags",  "vars": { "product": "Bags" } }
+  ]
+}</code></pre>
+
+            <p>or from a configuration saved in the app with its batch on, which runs as a batch there too (<code>--no-batch</code> runs its workflow once instead). The rows are read by the same code as the app’s, so a row the app would refuse is refused here with the same words, and <code>--check</code> checks the workflow and every row. <code>schemas/batch-spec.v1.schema.json</code> describes the file.</p>
+
+            <pre class="plain" tabindex="0"><code>node src/cli/run-workflow.js specs/products.batch.json --baseline auto --keep 14</code></pre>
+
+            <p>Each row runs in turn, in its own folder (<code>a11y-runs/Product-pages/batches/&lt;stamp&gt;/01-Shoes/</code>), with its own <code>payload.json</code>, <code>summary.md</code> and, when compared, <code>diff.json</code>; <code>batch.json</code> beside them lists every run with its status, counts and exit code, in the queue’s own format. <code>--baseline auto</code> compares each row with its run in the previous batch; <code>@name</code> with the baseline promoted for that row, which <code>--promote name</code> keeps for every row that ran whole. <code>--keep</code> counts batches. <code>--dry-run</code> tries the first row’s workflow, as the app’s Dry run does. The batch exits as its worst run: cancelled, then failed, degraded, new failures, new likely failures.</p>
+        </section>
+
+        <section id="trouble">
+            <h2>When something goes wrong</h2>
+
+            <dl class="terms trouble">
+                <div>
+                    <dt>Spec must have a url</dt>
+                    <dd>Exit 2 — the file isn’t a usable workflow. Export it again from the app.</dd>
+                </div>
+                <div>
+                    <dt>“tags” is not read any more, programmatic must be true or false, “AA” is not a profile</dt>
+                    <dd>Exit 2 — the file was saved in an older format. <code>node src/cli/convert-config.js &lt;file or folder&gt;</code> says what it would change, and with <code>--write</code> brings the files up to date; opening and saving each one in the app does the same.</dd>
+                </div>
+                <div>
+                    <dt>Unsupported protocol: file:</dt>
+                    <dd>Only <code>http</code> and <code>https</code> are allowed. Serve the page over HTTP, even locally.</dd>
+                </div>
+                <div>
+                    <dt>no previous run to compare with yet</dt>
+                    <dd>Not an error. <code>--baseline auto</code> on a scenario that has never run has nothing to compare with. The next run will. To fail such a run when it has failures, add <code>--fail-on-failures</code>.</dd>
+                </div>
+                <div>
+                    <dt>the baseline is newer than this run</dt>
+                    <dd>You compared against a run that happened later. It still works, but “new” and “fixed” are the other way round from what you probably meant.</dd>
+                </div>
+                <div>
+                    <dt>1 scan skipped</dt>
+                    <dd>Exit 4 — a page was too large for the scan’s node threshold, so it was never scanned. It reports zero problems for that page, which is why this is a failure and not a pass.</dd>
+                </div>
+                <div>
+                    <dt>12 iterations failed</dt>
+                    <dd>Exit 4 — a loop over elements broke partway. Usually the page changed shape mid-run, or a selector matches something that disappears. Fix the workflow before trusting the numbers.</dd>
+                </div>
+                <div>
+                    <dt>not promoting a degraded run to a baseline</dt>
+                    <dd>Working as intended. Fix the run, then promote it.</dd>
+                </div>
+                <div>
+                    <dt>The numbers differ from the app</dt>
+                    <dd>Check the engine. <code>surea11y</code> and <code>axe</code> report different rule sets. Check the <code>engine</code> of each scan in the spec.</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section id="words">
+            <h2>Words used here</h2>
+
+            <dl class="terms">
+                <div><dt>Accessibility scan</dt><dd>An automated check of a page against a set of rules.</dd></div>
+                <div><dt>Rule</dt><dd>One kind of problem, such as “images need alternative text”.</dd></div>
+                <div><dt>Instance</dt><dd>One place a rule is broken. Eight images without alt text is one rule, eight instances.</dd></div>
+                <div><dt>WCAG</dt><dd>The international accessibility standard. Levels A, AA and AAA run from basic to most demanding; AA is the common legal target. Versions 2.0, 2.1 and 2.2 build on each other.</dd></div>
+                <div><dt>Can’t tell</dt><dd>The checker found something it can’t decide alone. Not a pass, not a failure — a place a person needs to look.</dd></div>
+                <div><dt>Workflow</dt><dd>The sequence of steps: go here, click that, scan now.</dd></div>
+                <div><dt>Spec</dt><dd>The file describing a workflow so it can run without the app.</dd></div>
+                <div><dt>Scenario</dt><dd>A name for one workflow, used to group its runs.</dd></div>
+                <div><dt>Baseline</dt><dd>The earlier run a new one is compared against.</dd></div>
+                <div><dt>Regression</dt><dd>A problem present now that was not in the baseline.</dd></div>
+                <div><dt>Degraded run</dt><dd>A run that finished but did less than asked: a scan skipped, a loop that lost iterations, an action that failed. Its numbers aren’t comparable with a whole run’s.</dd></div>
+                <div><dt>Payload</dt><dd>The complete machine-readable result of one run.</dd></div>
+                <div><dt>Exit code</dt><dd>The number a command leaves behind so other software knows how it went. Zero means fine.</dd></div>
+            </dl>
+        </section>
+
+        <section id="maintainers">
+            <h2>For maintainers</h2>
+
+            <p>The runner is a thin layer over the same code the app uses. Nothing about scanning is duplicated for it.</p>
+
+            <div class="table-wrap" tabindex="0">
+                <table>
+                    <thead>
+                        <tr><th scope="col">Piece</th><th scope="col">Where</th><th scope="col">What it does</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Entry point</td><td><code>src/cli/run-workflow.js</code></td><td>Arguments, output files, exit code</td></tr>
+                        <tr><td>Spec handling</td><td><code>src/shared/run-spec.js</code></td><td>Reads and validates a spec or exported config</td></tr>
+                        <tr><td>Run store</td><td><code>src/cli/run-store.js</code></td><td>Folders, <code>auto</code> and named baselines, pruning</td></tr>
+                        <tr><td>Comparison</td><td><code>src/shared/report-diff.js</code></td><td>The same diff engine as the app’s compare tab</td></tr>
+                        <tr><td>Coverage check</td><td><code>src/shared/run-health.js</code></td><td>Decides whether a run was whole</td></tr>
+                        <tr><td>Prose</td><td><code>src/cli/summary-report.js</code></td><td>Writes <code>summary.md</code></td></tr>
+                        <tr><td>The run itself</td><td><code>src/server-side/workflow-run.js</code></td><td>Shared with the server’s <code>/workflow-start</code> route</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p>Two rules hold this together, and both are tested rather than trusted:</p>
+
+            <ul>
+                <li>The app and the runner build their run request with the same function, so a saved workflow and a scheduled one cannot mean different things.</li>
+                <li><code>src/shared/tier-boundaries.test.js</code> fails if browser code and Node code start importing each other, or if the viewport presets stop agreeing across the page, the action definition and the engine.</li>
+            </ul>
+        </section>
+
+        <footer>
+            <p>The reasoning behind the design, including what was deliberately left unbuilt, is in <code>docs/design/headless-runner-design.md</code>. The same guide in plain text lives at <code>docs/scheduled-scans-guide.md</code>.</p>
+        </footer>
+    </main>
+</div>
+</body>
+</html>

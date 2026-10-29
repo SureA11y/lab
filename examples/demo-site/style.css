@@ -1,0 +1,15 @@
+/* The demo shop's look. Some of its colours are too faint on purpose:
+   examples/README.md lists what the demo gets wrong, and why. */
+body { font-family: system-ui, sans-serif; margin: 0; color: #1d1d1f; background: #fff; }
+header, footer { background: #f3f1ec; padding: 1rem 2rem; }
+header nav a { margin-right: 1rem; color: #1d4ed8; }
+main { padding: 1rem 2rem 3rem; max-width: 60rem; }
+.promo { color: #b9b9b9; }               /* low contrast, on purpose */
+.price { font-weight: 600; }
+.products { display: flex; gap: 1.5rem; flex-wrap: wrap; padding: 0; list-style: none; }
+.products li { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; width: 14rem; }
+.icon-button { border: 1px solid #999; background: #fff; border-radius: 6px; padding: .4rem .6rem; cursor: pointer; }
+.cookie-banner { position: fixed; inset: auto 0 0 0; background: #1d1d1f; color: #fff; padding: 1rem 2rem; }
+.cookie-banner button { margin-left: 1rem; }
+.cookie-banner[hidden] { display: none; }
+form p { margin: .8rem 0; }

@@ -1,0 +1,22 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "http://localhost:8780/",
+  "scenarioName": "Demo shop shopping flow",
+  "actions": [
+    { "type": "click", "selector": "#accept-cookies", "label": "Accept cookies" },
+    { "type": "a11yScan", "label": "Home" },
+    { "type": "clickByText", "labelText": "Products", "selector": "header nav", "label": "Open the products" },
+    { "type": "waitForSelector", "selector": ".products" },
+    { "type": "a11yScan", "label": "Product list", "context": "main" },
+    { "type": "clickByText", "labelText": "Canvas shoes", "selector": "main", "label": "Open a product" },
+    { "type": "waitForSelector", "selector": "#add-to-cart" },
+    { "type": "click", "selector": "#add-to-cart", "label": "Add it to the cart" },
+    { "type": "waitForSelector", "selector": "#added:not(:empty)" },
+    { "type": "a11yScan", "label": "Product, added to the cart", "context": "main" },
+    { "type": "screenshot", "label": "Added to the cart" },
+    { "type": "navigate", "url": "http://localhost:8780/cart.html", "label": "Go to the cart" },
+    { "type": "a11yScan", "label": "Cart" }
+  ]
+}

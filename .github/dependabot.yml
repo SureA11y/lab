@@ -1,0 +1,19 @@
+# Weekly updates, grouped so they arrive as one pull request per ecosystem
+# rather than one per package. The add-on's engines are left to whoever
+# installs it.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

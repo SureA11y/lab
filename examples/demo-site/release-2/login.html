@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Log in - Demo Shop</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><p><strong>Demo Shop</strong> <small>release 2</small></p><nav aria-label="Main"><a href="index.html">Home</a><a href="products.html">Products</a><a href="login.html">Log in</a><a href="cart.html">Cart</a></nav></header>
+<main>
+  <h1>Log in</h1>
+  <form id="login" action="account.html">
+    <p><label for="email">Email</label><br><input id="email" name="email" type="email" autocomplete="email"></p>
+    <p><label for="password">Password</label><br><input id="password" name="password" type="password"></p>
+    <p><button type="submit">Log in</button></p>
+    <p id="login-error" role="alert"></p>
+  </form>
+</main>
+<script>
+// A demo, not a login: any email and password open the account page.
+document.getElementById('login').addEventListener('submit', function (event) {
+    if (!document.getElementById('password').value) {
+        event.preventDefault();
+        document.getElementById('login-error').textContent = 'Enter your password.';
+    }
+});
+</script>
+<footer><p>Demo Shop is a made-up shop for surea11y-lab's examples.</p></footer>
+<div class="cookie-banner" id="cookie-banner" role="region" aria-label="Cookies"><p>We use cookies to keep your cart. <button type="button" id="accept-cookies">Accept cookies</button></p></div>
+<script src="cookies.js"></script>
+</body>
+</html>

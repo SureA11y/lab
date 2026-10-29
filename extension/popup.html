@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>surea11y — manual runner</title>
+  <link rel="stylesheet" href="ui.css" />
+  <!-- Loaded in <head> so the saved colour-theme is applied before first paint
+       (no inline script — the Chrome MV3 CSP would block one). -->
+  <script src="theme-toggle.js"></script>
+</head>
+<body class="popup">
+  <header class="ext-brand">
+    <img src="icons/surea11y-mark-primary.svg" width="20" height="20" alt="" />
+    <span class="ext-brand-word"><span>sure</span><span class="ext-brand-accent">a11y</span><span class="ext-brand-product">manual runner</span></span>
+    <button type="button" class="theme-switch" data-theme-toggle aria-label="Colour theme: Auto">
+      <svg class="theme-switch__icon theme-switch__icon--auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <rect x="3" y="4" width="18" height="12" rx="2"></rect>
+        <path d="M8 20h8M12 16v4"></path>
+      </svg>
+      <svg class="theme-switch__icon theme-switch__icon--light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"></path>
+      </svg>
+      <svg class="theme-switch__icon theme-switch__icon--dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"></path>
+      </svg>
+    </button>
+  </header>
+  <div id="root"></div>
+
+  <script src="canonical-shared.js"></script>
+  <script src="ui-loader.js"></script>
+  <script src="main-metrics.js"></script>
+  <script src="main-init.js"></script>
+  <script src="report-scan.js"></script>
+  <script src="report-format.js"></script>
+  <script src="main-issues-table.js"></script>
+  <script src="a11y-metric-defs.js"></script>
+  <script src="workflow-payload-deps.js"></script>
+  <script src="workflow-payload-builder.js"></script>
+  <script src="scan-notes.js"></script>
+  <script src="conformance-targets.js"></script>
+  <script src="engines/vendor/surea11y-how-to-check.min.js"></script>
+  <script src="engines/a11y-extension-surea11y-engine.js"></script>
+  <script src="a11y-extension-ui-engine.js"></script>
+  <script src="screenshot-dialog.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

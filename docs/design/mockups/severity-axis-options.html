@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Severity Axis Options</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+    --font-display: "Space Grotesk", system-ui, sans-serif;
+    --font-sans: "Public Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    --bg: #f3f4f1; --surface: #fcfcfb; --line: #dcdcec; --text-main: #31352f; --text-soft: #646b66;
+    --heat-1: #f4d9d3; --heat-2: #e6ab9d; --heat-3: #cd7260; --heat-4: #a3231a;
+    --bad: #b3261e; --good: #1d6b4f;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg: #151816; --surface: #1d211f; --line: #343a45; --text-main: #c7d2cb; --text-soft: #8b958f;
+        --heat-1: #3a2622; --heat-2: #5e392e; --heat-3: #97503c; --heat-4: #e8735c;
+        --bad: #f08a80; --good: #6fcf9f;
+    }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text-main); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+main { max-width: 1240px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-family: var(--font-display); font-size: 1.6rem; margin: 0 0 6px; }
+.intro { max-width: 760px; color: var(--text-soft); margin: 0 0 28px; }
+h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 40px 0 4px; }
+.set-note { color: var(--text-soft); margin: 0 0 16px; max-width: 760px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; display: flex; flex-direction: column; }
+.tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-soft); margin: 0; }
+.tag.bad { color: var(--bad); } .tag.good { color: var(--good); }
+.card h3 { font-family: var(--font-display); font-size: 1rem; margin: 2px 0 2px; }
+.card .what { color: var(--text-soft); font-size: 13px; margin: 0 0 12px; }
+.card .verdict { font-size: 13px; margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); }
+svg { width: 100%; height: auto; display: block; overflow: visible; }
+.axis { font-family: var(--font-mono); font-size: 10px; fill: var(--text-soft); }
+.axis-cap { font-family: var(--font-mono); font-size: 9px; fill: var(--text-soft); letter-spacing: .06em; }
+.total { font-family: var(--font-display); font-size: 11.5px; font-weight: 600; fill: var(--text-main); }
+.sev-critical { fill: var(--heat-4); } .sev-serious { fill: var(--heat-3); } .sev-moderate { fill: var(--heat-2); } .sev-minor { fill: var(--heat-1); }
+.num-badge { fill: none; stroke: var(--text-soft); }
+.key { list-style: none; padding: 0; margin: 10px 0 0; font-size: 12px; columns: 2; column-gap: 16px; }
+.key li { break-inside: avoid; }
+.key b { font-family: var(--font-mono); font-weight: 500; display: inline-block; min-width: 1.6em; color: var(--text-soft); }
+.hint { font-size: 12px; color: var(--text-soft); margin: 6px 0 0; font-style: italic; }
+</style>
+</head>
+<body>
+<main>
+    <h1>“By severity”: axis label options</h1>
+    <p class="intro"><strong>Decided:</strong> option D, numbered columns, on every chart in the comparison, with the
+        numbers matching the “Reports compared” list at the top. Kept here as the record of what was weighed.</p>
+    <p class="intro">Each card draws the same chart at the size it has in the report. The first set is your UI-SDK comparison.
+        The second set uses names with nothing in common, because some fixes only help when names share a prefix.
+        Hover over a bar or a label to see the full name.</p>
+
+    <h2>Your report: 7 UI-SDK versions</h2>
+    <p class="set-note">Every name starts with “UI-SDK ”, so only the version number differs.</p>
+    <div class="grid" id="set1"></div>
+
+    <h2>Harder case: 9 variants with unrelated names</h2>
+    <p class="set-note">Option A has no shared prefix to remove here, so it falls back to today’s behaviour.
+        This is where B, C or D have to do the work.</p>
+    <div class="grid" id="set2"></div>
+</main>
+
+<script>
+const SEV = ['critical', 'serious', 'moderate', 'minor'];
+const W = 320, H = 290, PAD_T = 26, PAD_B = 34, PAD_L = 10, CH = 6.2;
+
+const set1 = ['UI-SDK v22.0.0', 'UI-SDK v22.1.0', 'UI-SDK v22.2.0', 'UI-SDK v22.3.0', 'UI-SDK v22.4.0', 'UI-SDK v22.5.0', 'UI-SDK v22.6.0']
+    .map((name, i) => ({ name, sev: [[4, 338, 18, 0], [4, 338, 18, 0], [2, 131, 18, 0], [2, 128, 18, 0], [2, 123, 18, 0], [2, 147, 18, 0], [2, 151, 19, 0]][i] }));
+const set2 = ['Home page – desktop', 'Home page – mobile', 'Checkout – desktop', 'Checkout – mobile', 'Account settings', 'Search results', 'Product detail', 'Help centre', 'Sign-in flow']
+    .map((name, i) => ({ name, sev: [[3, 88, 20, 4], [5, 120, 26, 6], [0, 41, 12, 2], [1, 64, 15, 3], [0, 30, 9, 1], [2, 72, 18, 5], [4, 95, 21, 3], [0, 22, 6, 0], [1, 38, 10, 2]][i] }));
+
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const cut = (t, max) => (t.length <= max ? t : `${t.slice(0, Math.max(1, max - 1)).trimEnd()}…`);
+const total = (c) => c.sev.reduce((a, b) => a + b, 0);
+
+// Shared leading words, cut back to a word boundary. Empty when nothing is shared.
+function commonPrefix(names) {
+    let p = names[0];
+    for (const n of names) while (!n.startsWith(p)) p = p.slice(0, -1);
+    const at = p.lastIndexOf(' ');
+    p = at < 0 ? '' : p.slice(0, at + 1);
+    return p.trim().length >= 2 && names.every((n) => n.length > p.length) ? p : '';
+}
+
+function bars(cols, bandW, barW, max) {
+    return cols.map((c, i) => {
+        const cx = PAD_L + bandW * i + bandW / 2;
+        let acc = 0;
+        const segs = SEV.map((s, k) => {
+            const v = c.sev[k]; if (!v) return '';
+            const hgt = (v / max) * (H - PAD_T - PAD_B);
+            const top = H - PAD_B - ((acc + v) / max) * (H - PAD_T - PAD_B);
+            acc += v;
+            return `<rect class="sev-${s}" x="${(cx - barW / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${barW.toFixed(1)}"`
+                + ` height="${Math.max(2, hgt - 2).toFixed(1)}" rx="2"><title>${esc(c.name)} · ${s}: ${v}</title></rect>`;
+        }).join('');
+        const t = total(c);
+        const top = H - PAD_B - (t / max) * (H - PAD_T - PAD_B);
+        const lbl = bandW >= 26 ? `<text class="total" x="${cx.toFixed(1)}" y="${(top - 6).toFixed(1)}" text-anchor="middle">${t}</text>` : '';
+        return segs + lbl;
+    }).join('');
+}
+
+function frame(cols, h = H) {
+    const bandW = (W - PAD_L * 2) / cols.length;
+    const barW = Math.min(30, bandW * 0.56);
+    const max = Math.ceil(Math.max(...cols.map(total), 1) / 10) * 10;
+    return { bandW, barW, max, cx: (i) => PAD_L + bandW * i + bandW / 2 };
+}
+
+function tick(i, n, at) {
+    if (i === 0) return { x: PAD_L, anchor: 'start' };
+    if (i === n - 1) return { x: W - PAD_L, anchor: 'end' };
+    return { x: at, anchor: 'middle' };
+}
+
+function label(x, anchor, text, full, y = H - 12) {
+    return `<text class="axis" x="${x.toFixed(1)}" y="${y}" text-anchor="${anchor}"><title>${esc(full)}</title>${esc(text)}</text>`;
+}
+
+// Today: every ceil(n/6)th column, cut to what the band "should" hold.
+function current(cols) {
+    const f = frame(cols);
+    const every = Math.max(1, Math.ceil(cols.length / 6));
+    const max = Math.min(18, Math.max(4, Math.floor((f.bandW * every) / CH)));
+    const ticks = cols.map((c, i) => {
+        if (!(i % every === 0 || i === cols.length - 1)) return '';
+        const t = tick(i, cols.length, f.cx(i));
+        return label(t.x, t.anchor, cut(c.name, max), c.name);
+    }).join('');
+    return svg(bars(cols, f.bandW, f.barW, f.max) + ticks);
+}
+
+// Which columns get a label: spaced by the real width of the text, always
+// first and last, and nothing that would touch its neighbour.
+function fitted(cols, texts, f) {
+    const widest = Math.max(...texts.map((t) => t.length)) * CH + 10;
+    const every = Math.max(1, Math.ceil(widest / f.bandW));
+    const n = cols.length;
+    const keep = [];
+    for (let i = 0; i < n; i += every) keep.push(i);
+    if (keep[keep.length - 1] !== n - 1) {
+        // The last column always gets a label; it replaces the one before it
+        // when the two would collide.
+        if ((n - 1 - keep[keep.length - 1]) < every && keep.length > 1) keep.pop();
+        keep.push(n - 1);
+    }
+    return keep;
+}
+
+function optionA(cols) {
+    const f = frame(cols);
+    const prefix = commonPrefix(cols.map((c) => c.name));
+    if (!prefix) return current(cols);
+    const texts = cols.map((c) => c.name.slice(prefix.length));
+    const every = Math.max(1, Math.ceil(cols.length / 6));
+    const max = Math.min(18, Math.max(4, Math.floor((f.bandW * every) / CH)));
+    const ticks = cols.map((c, i) => {
+        if (!(i % every === 0 || i === cols.length - 1)) return '';
+        const t = tick(i, cols.length, f.cx(i));
+        return label(t.x, t.anchor, cut(texts[i], max), c.name);
+    }).join('');
+    const cap = `<text class="axis-cap" x="${W / 2}" y="${H + 6}" text-anchor="middle">${esc(prefix.trim().toUpperCase())} ·  versions</text>`;
+    return svg(bars(cols, f.bandW, f.barW, f.max) + ticks + cap, H + 10);
+}
+
+function optionB(cols, { strip = false } = {}) {
+    const f = frame(cols);
+    const prefix = strip ? commonPrefix(cols.map((c) => c.name)) : '';
+    // Never wider than a third of the chart: past that, cut with an ellipsis.
+    const limit = Math.floor((W - PAD_L * 2) / 3 / CH);
+    const texts = cols.map((c) => cut(c.name.slice(prefix.length), limit));
+    const keep = fitted(cols, texts, f);
+    const ticks = keep.map((i) => {
+        const t = tick(i, cols.length, f.cx(i));
+        return label(t.x, t.anchor, texts[i], cols[i].name);
+    }).join('');
+    const cap = prefix
+        ? `<text class="axis-cap" x="${W / 2}" y="${H + 6}" text-anchor="middle">${esc(prefix.trim().toUpperCase())} ·  versions</text>` : '';
+    return svg(bars(cols, f.bandW, f.barW, f.max) + ticks + cap, prefix ? H + 10 : H);
+}
+
+// Horizontal: one row per column, the name on the left in full or nearly so.
+function optionC(cols) {
+    const row = 26, top = 6, nameW = 128, right = 34;
+    const h = top + cols.length * row + 4;
+    const max = Math.max(...cols.map(total), 1);
+    const span = W - nameW - right;
+    const rows = cols.map((c, i) => {
+        const y = top + i * row;
+        let acc = 0;
+        const segs = SEV.map((s, k) => {
+            const v = c.sev[k]; if (!v) return '';
+            const x = nameW + (acc / max) * span;
+            const w = (v / max) * span;
+            acc += v;
+            return `<rect class="sev-${s}" x="${x.toFixed(1)}" y="${y + 4}" width="${Math.max(2, w - 2).toFixed(1)}" height="${row - 10}" rx="2"><title>${esc(c.name)} · ${s}: ${v}</title></rect>`;
+        }).join('');
+        const end = nameW + (total(c) / max) * span;
+        return label(nameW - 8, 'end', cut(c.name, Math.floor((nameW - 10) / CH)), c.name, y + row / 2 + 3)
+            + segs
+            + `<text class="total" x="${(end + 4).toFixed(1)}" y="${y + row / 2 + 4}">${total(c)}</text>`;
+    }).join('');
+    return svg(rows, h);
+}
+
+// Numbers on the axis, names in the key (in the report, the key is the
+// "Reports compared" strip at the top).
+function optionD(cols) {
+    const f = frame(cols);
+    const ticks = cols.map((c, i) => `<circle class="num-badge" cx="${f.cx(i).toFixed(1)}" cy="${H - 15}" r="8"/>`
+        + `<text class="axis" x="${f.cx(i).toFixed(1)}" y="${H - 11.5}" text-anchor="middle"><title>${esc(c.name)}</title>${i + 1}</text>`).join('');
+    return svg(bars(cols, f.bandW, f.barW, f.max) + ticks)
+        + `<ol class="key">${cols.map((c, i) => `<li><b>${i + 1}</b>${esc(c.name)}</li>`).join('')}</ol>`;
+}
+
+function svg(body, h = H) {
+    return `<svg viewBox="0 0 ${W} ${h}" role="img" aria-label="Failing instances by severity">${body}</svg>`;
+}
+
+function cards(cols, prefixShared) {
+    return [
+        { tag: 'Today', cls: 'bad', title: 'Current chart', what: 'Every second column gets a label, cut to about 13 characters, and the first and last are pushed to the edges.', chart: current(cols),
+          verdict: prefixShared ? 'Labels run into each other, and the part that tells them apart (the version) is the part that gets cut off.'
+              : 'Labels run into each other and are cut off mid-word.' },
+        { tag: 'Option A', title: 'Leave out the shared prefix', what: 'Shared leading words (“UI-SDK ”) are removed from every label and shown once under the axis.', chart: optionA(cols),
+          verdict: prefixShared ? 'Short labels that never touch, and the version numbers are fully visible. It only helps when the names share a beginning.'
+              : 'Nothing is shared, so this looks the same as today and the overlap stays.' },
+        { tag: 'Option B', title: 'Space labels by their length', what: 'The chart measures the longest label and leaves out labels until there is room for the rest. It never cuts the shared part.', chart: optionB(cols),
+          verdict: 'Never overlaps, whatever the names are. The trade-off is fewer labels: you see the first, the last and some in between.' },
+        { tag: 'Option A + B', cls: 'good', title: 'Both together (recommended)', what: 'Remove the shared prefix, then space what remains by its real width.', chart: optionB(cols, { strip: true }),
+          verdict: prefixShared ? 'As readable as A, and B guarantees no overlap if the names get long.'
+              : 'With nothing to remove, this works like B: no overlap.' },
+        { tag: 'Option C', title: 'Horizontal bars', what: 'One row per report with the name on the left. Used once there are more than about 5 reports.', chart: optionC(cols),
+          verdict: 'Every name is visible. The chart is taller, and it no longer looks like the vertical “Problems by version” chart beside it.' },
+        { tag: 'Option D', title: 'Numbered columns', what: 'Columns are numbered 1–N. The key would be the new “Reports compared” list at the top of the page.', chart: optionD(cols),
+          verdict: 'Compact and never overlaps, but you have to look up each number in the key.' },
+    ].map((c) => `<article class="card">
+        <p class="tag ${c.cls || ''}">${c.tag}</p><h3>${c.title}</h3><p class="what">${c.what}</p>
+        ${c.chart}
+        <p class="verdict">${c.verdict}</p>
+    </article>`).join('');
+}
+
+document.getElementById('set1').innerHTML = cards(set1, true);
+document.getElementById('set2').innerHTML = cards(set2, false);
+</script>
+</body>
+</html>

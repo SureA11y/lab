@@ -1,0 +1,20 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "http://localhost:8780/",
+  "scenarioName": "Demo shop tour",
+  "actions": [
+    { "type": "click", "selector": "#accept-cookies", "label": "Accept cookies" },
+    { "type": "a11yScan", "label": "Home" },
+    { "type": "clickByText", "labelText": "Products", "selector": "header nav", "label": "Open the products" },
+    { "type": "waitForSelector", "selector": ".products" },
+    { "type": "a11yScan", "label": "Products" },
+    { "type": "clickByText", "labelText": "Log in", "selector": "header nav", "label": "Open log in" },
+    { "type": "waitForSelector", "selector": "#login" },
+    { "type": "a11yScan", "label": "Log in" },
+    { "type": "clickByText", "labelText": "Cart", "selector": "header nav", "label": "Open the cart" },
+    { "type": "waitForSelector", "selector": "#promo-code" },
+    { "type": "a11yScan", "label": "Cart" }
+  ]
+}

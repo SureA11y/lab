@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How to Read the A11y Summary UI</title>
+  <link rel="stylesheet" href="./assets/design-tokens.css" />
+  <style>
+    :root{
+      --good: var(--pass);
+      --bad: var(--fail);
+    }
+    body{
+      margin:0;
+      font-family: var(--font-body);
+      line-height:1.55;
+      color: var(--text-body);
+      background: var(--surface);
+    }
+    header{
+      padding: 26px 16px 14px;
+      border-bottom:1px solid var(--border);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 8%, transparent), transparent);
+    }
+    main{ max-width: 1120px; margin: 0 auto; padding: 18px 16px 34px; }
+    h1, h2, h3 { font-family: var(--font-display); color: var(--text-strong); }
+    h1{ margin: 0 0 8px; font-size: 1.85rem; letter-spacing: .1px; }
+    .sub{ margin: 0; color: var(--text-muted); max-width: 75ch; }
+    nav{ margin-top: 14px; display:flex; flex-wrap:wrap; gap:10px; }
+    nav a{ color: var(--accent-2); text-decoration:none; border-bottom: 1px dotted color-mix(in srgb, var(--accent-2) 45%, transparent); }
+    nav a:hover{ border-bottom-style: solid; }
+    section{ margin: 26px 0; }
+    h2{ margin: 0 0 10px; font-size: 1.35rem; }
+    h3{ margin: 16px 0 8px; font-size: 1.1rem; }
+    .card{
+      border: 1px solid var(--border);
+      background: var(--surface-raised);
+      border-radius: var(--radius-lg);
+      padding: 14px 14px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 12px;
+      margin: 12px 0;
+    }
+    .pill{
+      display:inline-block;
+      padding: 2px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+      background: var(--surface-sunken);
+      font-size: .92rem;
+      color: var(--text-muted);
+    }
+    .callout{
+      border-left: 4px solid var(--border-strong);
+      background: var(--surface-sunken);
+      border-radius: var(--radius-md);
+      padding: 12px 12px;
+      margin: 12px 0;
+    }
+    .ok{ border-left-color: color-mix(in srgb, var(--pass) 75%, transparent); }
+    .warn{ border-left-color: color-mix(in srgb, var(--unknown) 75%, transparent); }
+    .bad{ border-left-color: color-mix(in srgb, var(--fail) 75%, transparent); }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow:hidden;
+      background: var(--surface-raised);
+    }
+    th, td{
+      text-align:left;
+      vertical-align: top;
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    th{
+      background: var(--surface-sunken);
+      color: var(--text-strong);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .k{ white-space: nowrap; font-family: var(--font-mono); font-size: .95rem; }
+    .small{ color: var(--text-muted); font-size: .96rem; }
+    .tight > li{ margin: 4px 0; }
+    .legend{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:10px;
+      color: var(--text-muted);
+      font-size:.95rem;
+    }
+    .dot{
+      width: .65rem; height: .65rem; border-radius: var(--radius-pill);
+      display:inline-block; vertical-align: middle; margin-right: 6px;
+      background: var(--text-muted);
+    }
+    .dot.good{ background: var(--good); }
+    .dot.warn{ background: var(--unknown); }
+    .dot.bad{ background: var(--bad); }
+
+    code{ font-family: var(--font-mono); font-size: .95em; color: var(--text-strong); }
+    footer{
+      margin-top: 28px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: .95rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>How to Read the A11y Summary UI</h1>
+    <p class="sub">
+      This document explains what each UI block, label, and number means, in plain language.
+      It is written for non-technical readers who want to understand what the report is saying, what data it is based on,
+      and how to interpret the ranges and status labels consistently across pages.
+    </p>
+    <nav aria-label="Table of contents">
+      <a href="#what">What this UI is</a>
+      <a href="#layout">UI layout</a>
+      <a href="#banner">Banner</a>
+      <a href="#cards">Headline score cards</a>
+      <a href="#automated">Automated rule results</a>
+      <a href="#narrative">The narrative paragraph</a>
+      <a href="#struct">Page structure signals</a>
+      <a href="#controls">Interactive controls</a>
+      <a href="#ranges">Ranges and intervals</a>
+      <a href="#examples">Interpretation examples</a>
+      <a href="#do">What to do next</a>
+      <a href="#limits">Limits and common misunderstandings</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="what">
+      <h2>What this UI is</h2>
+      <div class="callout">
+        <p><strong>Think of this report as a triage dashboard.</strong></p>
+        <p class="small">
+          It helps you decide which pages deserve manual accessibility testing first, and it gives you clues about why.
+          It combines automated testing signals and structural signals. It does not claim WCAG conformance.
+        </p>
+      </div>
+
+      <h3>What it is designed to answer</h3>
+      <ul class="tight">
+        <li>Does this page look risky, based on what tools can detect?</li>
+        <li>How much can we trust the automated signals on this page?</li>
+        <li>Is the page structurally simple or complex from an accessibility point of view?</li>
+        <li>Which areas deserve manual checks, for example custom controls or hidden content?</li>
+      </ul>
+
+      <h3>What it is not</h3>
+      <ul class="tight">
+        <li>It is not a WCAG pass or fail result.</li>
+        <li>It is not a user experience evaluation with assistive technologies.</li>
+        <li>It is not a substitute for keyboard, screen reader, and design review.</li>
+      </ul>
+    </section>
+
+    <section id="layout">
+      <h2>UI layout</h2>
+      <p class="small">
+        Reading top to bottom, a scanned page's report is organized into five parts, in this order.
+      </p>
+
+      <div class="grid">
+        <div class="card">
+          <p class="pill">1) Scan counts</p>
+          <h3 style="margin-top:8px;">Tool outcomes, at a glance</h3>
+          <p class="small">
+            A compact count line (fail / can't tell / pass) appears first, before anything else.
+          </p>
+        </div>
+        <div class="card">
+          <p class="pill">2) Banner + narrative</p>
+          <h3 style="margin-top:8px;">Decision hint, and why</h3>
+          <p class="small">
+            A short status banner (five possible tones, not only "review needed"), followed by an
+            auto-generated paragraph explaining the reasoning and what to validate.
+          </p>
+        </div>
+        <div class="card">
+          <p class="pill">3) Screenshots + issues table</p>
+          <h3 style="margin-top:8px;">The findings themselves</h3>
+          <p class="small">
+            Captured screenshots (if any), then the detailed table of individual findings with their
+            fail/review/pass status.
+          </p>
+        </div>
+        <div class="card">
+          <p class="pill">4) Headline score cards</p>
+          <h3 style="margin-top:8px;">Summary scores</h3>
+          <p class="small">
+            The score cards (three on a single page, four on a portfolio) - last on the page, not first.
+          </p>
+        </div>
+        <div class="card">
+          <p class="pill">5) Supporting metrics</p>
+          <h3 style="margin-top:8px;">Why the scores look that way</h3>
+          <p class="small">
+            Detailed signals about structure and controls, shown as numbers and sometimes mapped to intervals.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="banner">
+      <h2>Banner</h2>
+      <div class="callout warn">
+        <p><strong>The banner has five tones - it's not always a warning.</strong></p>
+        <p class="small">
+          Two of its five possible titles are genuinely positive. Reading the banner as inherently cautionary is a
+          common misunderstanding - a page can render a "No automated findings" banner even while carrying a minor
+          complexity signal like an iframe, if the score and confidence are otherwise high.
+        </p>
+      </div>
+
+      <h3>The five titles</h3>
+      <table aria-label="Banner severities and titles">
+        <thead>
+          <tr><th>Severity</th><th>Title shown</th><th>General meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="dot bad"></span><strong>bad</strong></td><td><strong>“Issues detected”</strong></td><td class="small">At least one automated violation was found. Always the highest-attention tone.</td></tr>
+          <tr><td><span class="dot warn"></span><strong>warn</strong></td><td><strong>“Review recommended”</strong></td><td class="small">The scan was capped, has incomplete checks, low confidence, or another flag requiring manual review - and there are no outright violations.</td></tr>
+          <tr><td><span class="dot"></span><strong>ok</strong></td><td><strong>“Quick review advised”</strong></td><td class="small">No strong attention cue, but the overall score band isn't clearly good.</td></tr>
+          <tr><td><span class="dot good"></span><strong>good</strong></td><td><strong>“No automated findings”</strong></td><td class="small">No violations, no manual-review flags, and the score band is good.</td></tr>
+          <tr><td><span class="dot"></span><strong>unknown</strong></td><td><strong>“More review needed”</strong></td><td class="small">Fallback when the score band itself can't be determined.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Where it comes from</h3>
+      <p class="small">
+        Severity follows a priority order: any violation forces <strong>bad</strong>, regardless of everything
+        else. Otherwise, a capped scan, incomplete checks, low confidence, or the "manual review needed" flag
+        forces <strong>warn</strong>. Otherwise, the tone falls back to whichever band the overall adjusted score
+        lands in (good/ok/warn/bad) - except a lone "warn" band with no other attention cue present is treated as
+        <strong>ok</strong> rather than warn, so the banner doesn't cry wolf on a borderline score alone.
+      </p>
+      <p class="small">
+        The specific reasons that can contribute to a <strong>warn</strong>/<strong>bad</strong> tone: incomplete
+        automated checks, a capped scan, Shadow DOM present, iframes present, low automation confidence, high
+        hidden/conditional content, many stateful components, and links or buttons that appear to lack an
+        accessible name (either directly, or an icon-heavy heuristic when that metric has no defined threshold).
+      </p>
+
+      <div class="callout">
+        <p><strong>A sixth state: no banner at all.</strong></p>
+        <p class="small">
+          When a page has zero violations, the "manual review needed" flag is false, and none of the attention
+          cues above fired either, no banner is rendered - not even the <strong>good</strong> tone. The narrative
+          paragraph is shown on its own. This is different from a <strong>good</strong> banner: <strong>good</strong>
+          still renders when one of those cues fired (say, an iframe was present) but the score band and everything
+          else stayed clean; the absent case is when there was nothing at all worth naming.
+        </p>
+      </div>
+
+      <h3>The narrative below the banner</h3>
+      <p class="small">
+        The banner is immediately followed by an auto-generated paragraph with up to four headed sub-sections:
+        <strong>Why this looks that way</strong>, <strong>Validate first</strong>, <strong>What to validate</strong>,
+        and <strong>What to do next</strong>. Its exact wording rotates across a small set of variants per page (so
+        re-scanning the same page doesn't always show byte-identical phrasing), but the underlying reasoning is
+        driven by the same signals as the banner itself.
+      </p>
+
+      <h3>How to read it</h3>
+      <ul class="tight">
+        <li>A <strong>bad</strong> or <strong>warn</strong> banner: plan a short manual verification, at least for key user journeys.</li>
+        <li>A <strong>good</strong> banner does not mean the page is accessible - it means fewer automated and structural risk signals were detected. Manual validation still matters.</li>
+      </ul>
+    </section>
+
+    <section id="cards">
+      <h2>Headline score cards</h2>
+      <p class="small">
+        These cards are the fastest way to understand the report. A single-page report shows three: Automated
+        check result, Assessment Confidence, and Automated evidence. A portfolio/global report adds a fourth,
+        Accessibility Risk Ind., alongside the same three - Assessment Confidence is not exclusive to single-page
+        reports, it shows on both.
+      </p>
+      <div class="callout">
+        <p><strong>There is no separate "Structural signals" card.</strong></p>
+        <p class="small">
+          DOM structure and complexity (semantic markup, hidden content, stateful components, and the rest) show
+          up as individual rows in a collapsed "Page structure signals" section instead of a composite score - see
+          <a href="#struct">Page structure signals</a> below. They no longer feed the live confidence value either;
+          that role is now filled by what the engines themselves report (see Assessment Confidence below).
+        </p>
+      </div>
+      <div class="callout">
+        <p><strong>Sometimes: no cards at all.</strong></p>
+        <p class="small">
+          When too little of the page could actually be evaluated (too few testable elements to compute a
+          density), the cards are replaced by a short statement explaining why, plus whatever violations/incomplete
+          checks were still found - which are real findings even without a score to attach them to.
+        </p>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Automated check result</h3>
+          <p class="small">
+            The one card that's always present, when any cards are shown. On a single page it's identical to the
+            page's own adjusted score. On a portfolio summary, it's the mean of every scanned page's score.
+          </p>
+          <h4 style="margin:10px 0 6px;">What a low or high value usually suggests</h4>
+          <ul class="tight small">
+            <li><strong>Low</strong>: on average, pages found issues, or automation was less reliable, or both.</li>
+            <li><strong>High</strong>: on average, pages looked structurally straightforward with few detected issues.</li>
+          </ul>
+          <div class="callout">
+            <p><strong>Plain reading</strong></p>
+            <p class="small">“If we have to pick one number for a dashboard, use this one, and still validate manually.”</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Accessibility Risk Ind. <span class="pill" style="margin-left:6px;">Portfolio reports only</span></h3>
+          <p class="small">
+            Shown alongside the other three cards when the report covers multiple pages. The conservative,
+            combined dashboard signal: evidence discounted by the <em>weakest</em> per-page confidence across the
+            whole portfolio - one badly-understood page pulls this number down for everyone.
+          </p>
+          <h4 style="margin:10px 0 6px;">What a low or high value usually suggests</h4>
+          <ul class="tight small">
+            <li><strong>Low</strong>: automation found issues somewhere, or at least one page is less reliable to assess, or both.</li>
+            <li><strong>High</strong>: automation found few issues and every page looks structurally straightforward.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Automated evidence</h3>
+          <p class="small">
+            A score derived from automated rule outcomes and how dense they are relative to how much of the page
+            was testable. It reflects what the tool could detect, not everything that matters for users.
+          </p>
+
+          <h4 style="margin:10px 0 6px;">Typical interpretations</h4>
+          <ul class="tight small">
+            <li><strong>High</strong>: few detected issues, fewer severe findings, and fewer widespread matches.</li>
+            <li><strong>Medium</strong>: some issues or uncertainty, or a mix of mild and moderate signals.</li>
+            <li><strong>Low</strong>: more failures, higher severity, or widespread impact.</li>
+          </ul>
+
+          <div class="callout">
+            <p><strong>Do not overread this</strong></p>
+            <p class="small">A high automated score can still hide keyboard or screen reader problems that automation cannot detect reliably.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Assessment Confidence</h3>
+          <p class="small">
+            A reliability indicator for the automated evidence, on both report types. It comes from the engines
+            themselves - the mean of the confidence each engine reported on its own findings - not from page
+            structure, so it can be absent ("not measured") rather than guessed when an engine reports none. It is
+            not a quality score, it is about trust in what automation could evaluate.
+          </p>
+
+          <h4 style="margin:10px 0 6px;">Typical interpretations</h4>
+          <ul class="tight small">
+            <li><strong>High</strong>: the engines were confident in what they reported.</li>
+            <li><strong>Medium</strong>: some uncertainty in what was reported, treat automation as a hint.</li>
+            <li><strong>Low, or absent</strong>: the engines were unsure, or none of them reported a confidence at all - treat automation as a rough hint only, manual review is likely required.</li>
+          </ul>
+
+          <div class="callout">
+            <p><strong>Quick mental model</strong></p>
+            <p class="small">Confidence answers “Should I trust the automated score here?”</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="automated">
+      <h2>Automated rule results</h2>
+      <p class="small">
+        A compact count line appears at the very top of each scan's results, before the banner:
+        e.g. <code>3 fail, 1 can't tell, 42 pass</code> (each with its own glyph). Further down, the detailed
+        issues table repeats the same three outcomes per individual finding, in its Status column.
+      </p>
+
+      <table aria-label="Automated check result meanings">
+        <thead>
+          <tr>
+            <th>Label</th>
+            <th>What it means</th>
+            <th>Practical implication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>fail</strong> <span class="small">(table: “Fail”)</span></td>
+            <td class="small">The tool detected a likely accessibility failure.</td>
+            <td class="small">Treat as an item to investigate and fix, then retest.</td>
+          </tr>
+          <tr>
+            <td><strong>can't tell</strong> <span class="small">(table: “Review”)</span></td>
+            <td class="small">The tool could not decide pass or fail reliably.</td>
+            <td class="small">Schedule manual verification, this is a frequent trigger for the banner.</td>
+          </tr>
+          <tr>
+            <td><strong>pass</strong> <span class="small">(table: “Pass”)</span></td>
+            <td class="small">The rule passed for the scanned content.</td>
+            <td class="small">Useful, but not a guarantee, since automation covers only a subset of requirements.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="small">The count line and the table use different label casing for the same three outcomes
+        (lowercase "fail"/"can't tell"/"pass" in the count line, capitalized "Fail"/"Review"/"Pass" in the table) -
+        they refer to the same underlying result, not two different classification systems.</p>
+
+      <h3>Findings that need review: which way they lean, and how to check them</h3>
+      <p class="small">
+        A "can't tell" finding is a question for a person. surea11y often says more about it. Where the
+        page's evidence points one way, the question <strong>leans</strong>: a heading that skips a level
+        <em>likely fails</em>, an <code>aria-checked</code> on a native checkbox <em>likely passes</em>.
+        A lean never changes the outcome: the finding stays "can't tell" until a person confirms it.
+      </p>
+      <ul class="small">
+        <li>
+          In the table, a "Review" row that likely fails or likely passes carries a badge beside its status,
+          and its count says how many of its questions lean each way (<code>2 likely fail, 1 needs a person</code>).
+          Rows that likely fail come first, then those that likely pass, then those that need a person; by
+          severity within each.
+        </li>
+        <li>
+          The count line says how many questions likely fail beside "can't tell"
+          (<code>4 can't tell (2 likely fail)</code>), and the narrative's reason for review names them as
+          the place to start.
+        </li>
+        <li>
+          In a row's details, each question shows its lean: <strong>why</strong> the evidence points that
+          way, a <strong>caution</strong> when something could make it wrong, and, once surea11y has counted
+          it against the W3C ACT test cases, how often a lean of its kind was right
+          (<code>right in 9 of 10 known cases</code>).
+        </li>
+        <li>
+          Every question also says <strong>how to check</strong> it: a few steps, starting from the element
+          it names, then what you see if it passes and if it fails, in the scan's language.
+        </li>
+      </ul>
+
+      <div class="callout">
+        <p><strong>Tip for non-technical readers</strong></p>
+        <p class="small">
+          A small number of failures can still be important if they block basic tasks.
+          A large number of passes does not prove accessibility, it only proves that many automated checks did not detect a problem.
+        </p>
+      </div>
+    </section>
+
+    <section id="narrative">
+      <h2>The narrative paragraph</h2>
+      <p class="small">
+        Immediately below the banner, an auto-generated paragraph explains the reasoning behind it, in up to
+        four headed parts (only the parts relevant to this page appear):
+      </p>
+      <ul class="tight small">
+        <li><strong>Why this looks that way</strong> - the specific signals driving the banner's tone.</li>
+        <li><strong>Validate first</strong> - the single highest-priority thing to check manually.</li>
+        <li><strong>What to validate</strong> - a broader list of things worth checking.</li>
+        <li><strong>What to do next</strong> - concrete next actions.</li>
+      </ul>
+      <p class="small">Wording rotates across a small set of variants per page, so re-scanning the same page
+        doesn't always produce byte-identical phrasing - the underlying reasoning stays tied to the same signals
+        as the banner.</p>
+    </section>
+
+    <section id="struct">
+      <h2>Page structure signals</h2>
+      <p class="small">
+        These metrics describe the page structure. They aren't rolled into a composite score - they show up as
+        individual rows under "Page structure signals" in the report, collapsed by default - but they help explain
+        why some pages are harder to assess, even when automation looks clean, and they're what
+        <code>scores.evidenceByDom</code>/<code>confidenceByDom</code> (the superseded model, kept for comparison
+        only) are built from.
+      </p>
+
+      <table aria-label="Page structure metric explanations">
+        <thead>
+          <tr>
+            <th>Metric label</th>
+            <th>What it reflects</th>
+            <th>Examples of what different values can mean</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Semantic markup</strong></td>
+            <td class="small">
+              How much the page uses meaningful HTML structures (landmarks, headings, lists, form elements, tables),
+              rather than only generic containers.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Higher</strong>: content is likely easier to navigate and reason about.</li>
+                <li><strong>Lower</strong>: heavy use of generic containers, often requires more ARIA and more careful testing.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Content coverage</strong></td>
+            <td class="small">
+              A proxy for how much of the DOM contains elements that are worth evaluating from an accessibility point of view.
+              This can drop when a page has many decorative or repeated layout nodes.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>High</strong>: the DOM is mostly meaningful content and controls.</li>
+                <li><strong>Low</strong>: large layout scaffolding, heavy frameworks, or complex rendering patterns.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Hidden content</strong></td>
+            <td class="small">
+              The share of elements that appear hidden (for example via hidden attributes, aria-hidden, or computed styles).
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Low</strong>: little conditional content, fewer risks around visibility and announcements.</li>
+                <li><strong>High</strong>: accordions, tabs, modals, virtualized lists, and conditional panels are more likely.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Max DOM depth</strong></td>
+            <td class="small">
+              How deeply nested the page structure is. Deep structures tend to be harder to navigate and harder to audit.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Shallow</strong>: simpler layout, usually easier reading order and focus order.</li>
+                <li><strong>Deep</strong>: complex layout, more chances of odd focus sequences and reading order problems.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Stateful components</strong></td>
+            <td class="small">
+              A count of patterns that imply UI state changes, for example dialogs, details elements, tablists, and expanded states.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Low</strong>: mostly static content pages.</li>
+                <li><strong>High</strong>: application like UI, more keyboard and screen reader behavior to validate.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Focusable density (per 1k)</strong></td>
+            <td class="small">
+              Number of focusable elements per 1,000 DOM nodes - how interaction-dense the page is overall.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Low</strong>: mostly reading content, fewer focus stops.</li>
+                <li><strong>High</strong>: many interactive elements, more focus order and keyboard-navigation surface to validate.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Iframes</strong></td>
+            <td class="small">
+              Whether the page embeds content in iframes. Some embedded content may not be analyzable by the same scan, depending on context.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>0</strong>: everything is in the main document, simpler assessment scope.</li>
+                <li><strong>1 or more</strong>: check whether iframe content is in scope and scanned, manual checks may be needed.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Shadow hosts</strong></td>
+            <td class="small">
+              Whether Web Components with Shadow DOM are present. Depending on tooling and configuration, Shadow DOM can reduce automation reach.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>0</strong>: typical DOM, automation reach is more predictable.</li>
+                <li><strong>1 or more</strong>: treat confidence as lower, test custom components manually.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Capped metrics</strong></td>
+            <td class="small">
+              Whether the scan stopped early because the page was too large or too complex to traverse fully within limits.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>No</strong>: metrics reflect the full sampled DOM.</li>
+                <li><strong>Yes</strong>: metrics are partial, interpret results with caution, manual validation is recommended.</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="controls">
+      <h2>Interactive controls</h2>
+      <p class="small">
+        This section focuses on links and buttons because they represent the primary interaction layer.
+        It highlights density and labeling signals that often correlate with usability problems.
+      </p>
+
+      <table aria-label="Interactive control metric explanations">
+        <thead>
+          <tr>
+            <th>Metric label</th>
+            <th>What it reflects</th>
+            <th>Examples of what different values can mean</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Links per 1k</strong></td>
+            <td class="small">
+              How link heavy the UI is, normalized by page size. This is a complexity signal, not a defect signal.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Low</strong>: content pages, fewer navigation targets.</li>
+                <li><strong>High</strong>: menus, tables, dense navigation, more focus targets to validate.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Link text share</strong></td>
+            <td class="small">
+              How much of the visible text belongs to links. Extreme values can indicate either link heavy navigation or link sparse content.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Very low</strong>: many links may be icons or controls without visible text, check labeling.</li>
+                <li><strong>Very high</strong>: content is mostly links, check clarity and focus order.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Links with no visible text</strong></td>
+            <td class="small">
+              The fraction of visible links that do not show text. These may be icon links and require accessible names.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Near 0</strong>: most links are self describing visually.</li>
+                <li><strong>Higher</strong>: many icon links, verify accessible names and touch targets.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Links no text and no name</strong></td>
+            <td class="small">
+              A stronger risk signal: links without visible text and without a basic naming hint (for example aria-label, aria-labelledby, title).
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>0</strong>: good sign, icon links are likely labeled.</li>
+                <li><strong>Above 0</strong>: investigate quickly, these are often unusable for screen reader users.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Buttons per 1k</strong></td>
+            <td class="small">
+              How button heavy the UI is, normalized by page size. High density suggests application like complexity.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Low</strong>: content pages, fewer actions.</li>
+                <li><strong>High</strong>: complex interaction flows, validate keyboard behavior and names.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Button text share</strong></td>
+            <td class="small">
+              Share of the page's total visible text that comes from buttons. The button equivalent of "Link text share" above.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Very low</strong>: many buttons may be icon-only, check labeling.</li>
+                <li><strong>Very high</strong>: an action-heavy page, check clarity and focus order.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Buttons with no visible text</strong></td>
+            <td class="small">
+              The fraction of buttons that do not show text. These are often icon buttons and require accessible names and states.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Near 0</strong>: most buttons are explicit actions with text.</li>
+                <li><strong>Higher</strong>: icon heavy UI, verify names, pressed states, expanded states, and focus.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Buttons no text and no name</strong></td>
+            <td class="small">
+              A strong risk signal: buttons without visible text and without a basic naming hint.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>0</strong>: good sign.</li>
+                <li><strong>Above 0</strong>: investigate quickly, often blocks assistive technology users.</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <p><strong>Important note</strong></p>
+        <p class="small">
+          “No name” here is based on cheap signals only. A control might still have a correct accessible name via other mechanisms.
+          Treat these as prioritization hints, then confirm using browser accessibility inspection and assistive technology testing.
+        </p>
+      </div>
+    </section>
+
+    <section id="ranges">
+      <h2>Ranges and intervals</h2>
+      <p class="small">
+        Many values are shown on a 0 to 100 scale, or mapped into bands such as Low, Moderate, Good, High.
+        These are called <strong>intervals</strong>. Intervals exist to make the UI readable and consistent across pages.
+      </p>
+
+      <h3>Why intervals exist</h3>
+      <ul class="tight small">
+        <li><strong>Consistency:</strong> a number becomes a stable label, so readers can compare pages quickly.</li>
+        <li><strong>Triage:</strong> teams need a signal that suggests “investigate” versus “monitor”.</li>
+        <li><strong>Noise reduction:</strong> small DOM changes should not change the interpretation drastically.</li>
+        <li><strong>Communication:</strong> non-technical stakeholders can understand labels faster than raw metrics.</li>
+      </ul>
+
+      <h3>Why the interval boundaries are chosen the way they are</h3>
+      <div class="callout">
+        <p><strong>Intervals are pragmatic thresholds, not universal truths.</strong></p>
+        <p class="small">
+          The boundaries are chosen to align with typical web page patterns and practical audit risk.
+          They aim to separate “common and usually fine” from “less common and often risky”.
+          They also consider what automation can and cannot see reliably.
+        </p>
+      </div>
+
+      <h3>Examples of how to interpret banding</h3>
+      <table aria-label="Interval interpretation examples">
+        <thead>
+          <tr>
+            <th>Kind of metric</th>
+            <th>How banding is typically used</th>
+            <th>Example meanings</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Score (0 to 100)</strong></td>
+            <td class="small">
+              A label such as Moderate or High is applied to reduce over-precision and guide action.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Moderate</strong>: results are mixed, plan some manual checks.</li>
+                <li><strong>High</strong>: fewer risk signals, still validate key journeys.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Rates and shares (0 to 1)</strong></td>
+            <td class="small">
+              Bands identify when a proportion is high enough to be suspicious, for example many controls without visible text.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Near 0</strong>: likely low risk for that specific pattern.</li>
+                <li><strong>Higher</strong>: prioritize manual checks on naming and discoverability.</li>
+              </ul>
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>Per 1k density metrics</strong></td>
+            <td class="small">
+              Bands are often used as a complexity indicator. Higher density means more focus targets and more states to validate.
+            </td>
+            <td class="small">
+              <ul class="tight">
+                <li><strong>Low density</strong>: often simpler content pages.</li>
+                <li><strong>High density</strong>: application like UI, more risk of focus and name problems.</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>How to use intervals responsibly</h3>
+      <ul class="tight small">
+        <li>Use them to decide where to look first, not to declare conformance.</li>
+        <li>When a value is near a boundary, treat it as “around that band”, not as a hard action.</li>
+        <li>If your product type is unusual, consider adjusting thresholds based on real data from your pages.</li>
+      </ul>
+    </section>
+
+    <section id="examples">
+      <h2>Interpretation examples</h2>
+      <p class="small">
+        These examples explain how the same metric can mean different things, depending on context.
+        They are illustrative and do not represent any specific scan.
+      </p>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Example: High automated score, low confidence</h3>
+          <p class="small">
+            The tool finds few problems, but the page is complex (many custom controls, Shadow DOM, lots of hidden panels).
+          </p>
+          <ul class="tight small">
+            <li>Interpretation: automation likely missed interaction issues.</li>
+            <li>Action: prioritize manual keyboard and screen reader checks on key workflows.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Example: Medium automated score, clean page structure</h3>
+          <p class="small">
+            The page uses semantic HTML and native controls (clean "Page structure signals"), but automation still detects a few rule failures.
+          </p>
+          <ul class="tight small">
+            <li>Interpretation: issues may be straightforward to fix and verify.</li>
+            <li>Action: fix violations, rerun scans, then validate one key journey manually.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Example: Many icon controls, naming risk metrics rise</h3>
+          <p class="small">
+            Buttons and links without visible text increase, and some also show no basic naming hints.
+          </p>
+          <ul class="tight small">
+            <li>Interpretation: high probability of missing accessible names.</li>
+            <li>Action: audit accessible names using accessibility tree inspection, then screen reader verification.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Example: Capped scan</h3>
+          <p class="small">
+            The scan stops early due to size limits, so metrics reflect only part of the page.
+          </p>
+          <ul class="tight small">
+            <li>Interpretation: treat all scores as partial.</li>
+            <li>Action: run targeted scans on key regions, and plan manual validation.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="do">
+      <h2>What to do next</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>For product owners</h3>
+          <ul class="tight small">
+            <li>Use the indicator to prioritize which pages need manual validation first.</li>
+            <li>If the banner appears, schedule verification before release or reporting.</li>
+            <li>Track trends over time, focus on improving the indicator and reducing repeated risk patterns.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>For developers</h3>
+          <ul class="tight small">
+            <li>Fix automated violations first, rerun, then confirm manually.</li>
+            <li>Investigate controls without visible text, verify accessible names and states.</li>
+            <li>If Page structure signals show heavy complexity, or confidence is reduced, budget time for interaction testing.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>For testers</h3>
+          <ul class="tight small">
+            <li>Use the report to select representative pages and journeys.</li>
+            <li>When incomplete checks exist, validate the specific patterns they refer to.</li>
+            <li>Validate focus order, visible focus, state announcements, and labeling.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="limits">
+      <h2>Limits and common misunderstandings</h2>
+      <div class="callout bad">
+        <p><strong>Do not use this report as a compliance statement.</strong></p>
+        <p class="small">
+          These metrics are decision aids. They support prioritization and consistency,
+          but they cannot confirm conformance with standards on their own.
+        </p>
+      </div>
+
+      <h3>Common misunderstandings</h3>
+      <ul class="tight small">
+        <li><strong>“Many passes means the page is accessible”</strong>: passes mean the automated rules did not detect issues, not that issues do not exist.</li>
+        <li><strong>“High confidence means high accessibility”</strong>: confidence means the tool results are more representative, not that the page is good.</li>
+        <li><strong>“Complex Page structure signals mean the page is inaccessible”</strong>: those signals are about complexity and audit friendliness, not user outcomes.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>
+        This is the plain-language UI guide. For the complete technical reference including formulas and reproducibility rules,
+        see the separate “A11y Summary Metrics Reference” document used by the pipeline.
+      </p>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,97 @@
+# The lab's HTTP API
+
+The app talks to its server over a small HTTP API, and anything else can use
+the same calls: a script, a CI job, another internal tool. Start a run, follow
+it, take its report; or queue a batch and download its results. There is no
+logic here the app does not use: every run goes through the same
+`executeWorkflowRun` as the Run button and the command line.
+
+`schemas/http-api.openapi.json` describes the same calls as OpenAPI 3.1, with
+the run spec and report schemas as their request and response types.
+
+> **No login.** The server assumes whoever can reach it may use it: it opens
+> any http or https URL it is given. It listens on 127.0.0.1 unless `HOST`
+> says otherwise. Publish it only on the machine you work on, or behind
+> something that authenticates (a reverse proxy, a VPN). The container image
+> (`docs/container.md`) listens on all of its own interfaces, so publish its
+> port as `-p 127.0.0.1:3000:3000`.
+>
+> **Browsers.** A call from a script or a tool works as below. A call from a
+> web page other than the lab's own is refused unless its origin is in
+> `A11Y_ALLOWED_ORIGINS`, and a call to a host name other than `localhost`
+> or an IP address unless that name is in `A11Y_ALLOWED_HOSTS`
+> ([SECURITY.md](../SECURITY.md)).
+
+## One run
+
+```bash
+# 1. Start it. The body is a run spec (schemas/run-spec.v1.schema.json);
+#    type and specVersion may be left out.
+curl -s -X POST localhost:3000/workflow-start -H 'content-type: application/json' \
+  -d '{"url":"https://example.com/","actions":[{"type":"a11yScan","label":"Home","profile":"wcag22-aa"}]}'
+# {"ok":true,"runId":"run_k27mle37"}
+
+# 2. Follow it (optional): the log from index `since` on.
+curl -s 'localhost:3000/workflow-progress?runId=run_k27mle37&since=0'
+# {"status":"running","nextIndex":12,"logs":[{ "time", "type", "message", "depth", ... }]}
+
+# 3. Take the result: 202 while it runs, 200 once it has finished.
+curl -s 'localhost:3000/workflow-result?runId=run_k27mle37'
+# {"status":"done","payload":{ ...a report, schemas/report.v3.schema.json... }}
+```
+
+| Call | What it does |
+| --- | --- |
+| `POST /workflow-start` | Starts a run. Body: a run spec's fields (`url`, `actions`, and optionally `customSteps`, `scenarioName`, `viewport`, `colorScheme`, `highContrast`, `language`, `vars`; each scan step sets its own `profile`, `context` and `exclude`), plus `dryRun: true` for a dry run. Answers `{ ok, runId }`, or 400 with `{ error, details }` when the url is not one it can open, there are no actions, or it gives the run `context` or `exclude`, which are each scan step's. At most `A11Y_MAX_RUNS` runs (4) go at once: one started past them waits its turn, `running` all the while, and its log says it is waiting. |
+| `GET /workflow-progress?runId=&since=` | The run's log from index `since`: `{ status, nextIndex, logs }`. Pass `nextIndex` back as `since`. |
+| `GET /workflow-result?runId=` | 202 `{ status }` while it runs. Then `{ status, payload }`: `status` is `done`, `cancelled` or `error`, and `payload` the report, which names its page pictures by the links the server serves them at (`/reports/runs/<runId>/images/…`). A run that could not start has `{ status: "error", error: { error, details } }` and no payload; `details` says why (a step that cannot run, a secret not set in the server's environment). A dry run's result also has `dryRun`, the summary `run-workflow.js --dry-run` prints. |
+| `POST /workflow-cancel` | Body `{ runId }`. The run stops at its next step and its result holds what it got so far. A run that has ended is left as it is; the answer gives its status. |
+
+Runs are kept in memory, not on disk: take the result before the server
+restarts. A step that reads a secret from the environment (`{"$env": "NAME"}`)
+reads the server's.
+
+## A batch
+
+The queue runs one batch at a time, each run through the same path, and keeps
+every result on disk under `reports/batches/<start time>/`, with `batch.json`.
+
+| Call | What it does |
+| --- | --- |
+| `POST /queue/items` | Queues a batch: `{ name, items: [{ run, row?, config? }] }`, each `run` a run spec's fields as for `/workflow-start`. 409 while another batch runs. |
+| `GET /queue` | The queue: `{ concurrency, maxConcurrency, hold, resources, sessions }`; each session (a batch) has its `items`, their `status`, counts and links: `manifestUrl` (its `batch.json`), `zipUrl` (every result as a report package), and per item `fileUrl` and `zipUrl`. |
+| `GET /queue/items/{itemId}/progress?since=` | A running item's log, as `/workflow-progress`. |
+| `POST /queue/items/{itemId}/cancel`, `POST /queue/cancel` | Cancels one run, or the whole batch. |
+| `POST /queue/settings` | `{ concurrency }`: how many runs at once. |
+| `GET /queue/sessions/{sessionId}/masked-fields` | The secrets a batch's runs need typed (saved without them), and `POST /queue/sessions/{sessionId}/resume` with `{ values }` to supply them. A reference to the environment needs neither. |
+| `GET /queue/sessions/{sessionId}/download.zip` | The batch as a report package: each result, its pictures once, `batch.json` and its configuration. |
+| `GET /queue/sessions/{sessionId}/items/{itemId}/download.zip` | One run's report package. |
+| `POST /queue/sessions/{sessionId}/delete` | Deletes a finished batch and its files. |
+
+## Opening reports in the app by address
+
+The app opens reports given in its address, so a link, a dashboard or another
+tool can show one in it, or embed it in a frame:
+
+| Address | Opens |
+| --- | --- |
+| `/?report=<url>` | The report at `<url>` in the open report tab: a report's JSON (`payload.json`, `*.a11y-report.json`) or a report package's zip. |
+| `/?compare=<url>&compare=<url>` | Those reports in the Compare tab, in that order; a downloaded comparison's zip, or a queue's, given once. |
+
+`<url>` is fetched by the browser, so it must be one the page may read: on the
+lab itself (`/reports/...`, where the queue keeps its batches), or a server
+that allows it (CORS). A report that cannot be fetched or read says why in the
+tab; the app is otherwise as it always opens.
+
+## What the server knows
+
+| Call | What it answers |
+| --- | --- |
+| `GET /health` | `{ status: "ok" }`. |
+| `GET /workflows/actions` | The step definitions, with the engines installed filled in: what `schemas/run-spec.v1.schema.json` is generated from. |
+| `GET /api/engines` | The engines installed, and the default. |
+| `GET /api/engine/capabilities?engineId=` | What an engine can check: its options and the profiles it supports. |
+| `GET /api/engine/rules?engineId=` | An engine's rules catalog. |
+
+Everything else the server answers is the app's own (its page, the report
+assets, the manual-scan flow) and may change with it.

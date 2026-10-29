@@ -1,0 +1,4249 @@
+{
+  "contractVersion": "1.0.0",
+  "title": "a11y-ui-src configuration contract",
+  "audience": [
+    "humans",
+    "AI agents"
+  ],
+  "purpose": "Generate valid run specs (the workflow files the headless runner takes and other tools exchange) and app configuration files, including custom steps.",
+  "generatedAt": "2026-10-29T16:45:11.221Z",
+  "sourceOfTruth": {
+    "actionDefinitionsFile": "src/workflow/action-definitions.js",
+    "workflowEngineFile": "src/workflow/workflow-engine.js",
+    "runSpecFile": "src/shared/run-spec.js",
+    "runSpecSchemaFile": "schemas/run-spec.v1.schema.json",
+    "configIOFile": "src/js/config-io.js",
+    "serverEndpoint": "POST /workflow-start",
+    "checkCommand": "node src/cli/run-workflow.js <file> --check",
+    "appConfigSchemaFile": "schemas/app-config.v1.schema.json",
+    "batchSpecSchemaFile": "schemas/batch-spec.v1.schema.json"
+  },
+  "outputFormats": {
+    "runSpec": {
+      "description": "A workflow run as a file: what the headless runner takes (node src/cli/run-workflow.js <spec.json>), what the app opens with Load config, and what the app saves inside every configuration as its \"runSpec\". The format to generate.",
+      "schemaFile": "schemas/run-spec.v1.schema.json",
+      "requiredTopLevel": {
+        "type": "a11y-run-spec",
+        "specVersion": 1,
+        "url": "string",
+        "actions": "array"
+      },
+      "optionalKeys": [
+        "$schema",
+        "scenarioName",
+        "customSteps",
+        "viewport",
+        "context",
+        "exclude",
+        "vars",
+        "metadata"
+      ],
+      "notes": [
+        "customSteps is an array of custom-step definitions, not a JSON string.",
+        "A run has no profile: each a11yScan step's profile sets what it checks against, WCAG 2.2 at a level (wcag22-a, wcag22-aa, wcag22-aaa) or a standard (en301549-v4.1.1, en301549-v3.2.1); without one, wcag22-aa. There is no profile, wcag, tags or globalEvidenceFormat field on a run any more: node src/cli/convert-config.js puts an older run's profile on its scans.",
+        "context (Include selectors in the app) limits every scan to the elements its CSS selectors match; exclude (Exclude selectors) leaves those its selectors match out. A scan's own context replaces the run's; its own exclude adds to it.",
+        "viewport is a preset name (default, desktop-xlg, desktop-lg, desktop-md, tablet, mobile) or {width, height}.",
+        "vars sets starting variables, read by the steps as {var:name}.",
+        "The schema is strict: only the fields each step declares, and only the listed values where a field lists them. --check reports a field a step does not declare, or an unlisted value, as a warning, since the runner still runs it.",
+        "Check a spec with node src/cli/run-workflow.js <spec.json> --check before running it: exit 0 means it can run, 2 lists every error.",
+        "A secret field (setPassword's value) has no way to be supplied to an unattended run yet.",
+        "The app opens a run spec with Load config: its vars go into a Batch row, and a viewport size that is not a preset, which the app has no setting for, is reported when it opens.",
+        "A secret field (secret: true in the action catalog, the value of setPassword) takes {\"$env\": \"NAME\"} in place of the value: whatever runs the workflow reads that environment variable as the run starts, and the run stops before a browser opens when it is not set. Write a reference rather than a password, which a spec must never hold."
+      ]
+    },
+    "batchSpec": {
+      "description": "One workflow run once per row, as the app's Batch section runs it: what to generate for the same workflow over several pages or variants. node src/cli/run-workflow.js <batch.json> runs it.",
+      "schemaFile": "schemas/batch-spec.v1.schema.json",
+      "requiredTopLevel": {
+        "type": "a11y-batch-spec",
+        "specVersion": 1,
+        "spec": "run spec",
+        "rows": "array"
+      },
+      "optionalKeys": [
+        "$schema",
+        "name",
+        "namePattern"
+      ],
+      "notes": [
+        "Each row is { name, url, vars } and nothing else; values the workflow reads go in vars, read as {var:name}.",
+        "A row without a url starts on the spec's url; a spec whose every row has a url needs none of its own.",
+        "Without a namePattern every row needs a name, and no two runs may share one.",
+        "The spec's own vars are every row's; a row's vars win."
+      ]
+    },
+    "configFile": {
+      "description": "What the app's Save configuration writes and Load configuration reads (*.a11y-config.json): the form as the user left it, the run spec it comes to, and the batch rows when there are any.",
+      "schemaFile": "schemas/app-config.v1.schema.json",
+      "requiredTopLevel": {
+        "version": 1,
+        "type": "a11y-ui-src-config",
+        "state": "object"
+      },
+      "requiredStateKeys": [
+        "actions-workflow"
+      ],
+      "notes": [
+        "state[actions-workflow] must be a JSON array of action objects.",
+        "custom steps are stored in state[custom-steps-json] as a JSON string that serializes an array of custom-step definitions.",
+        "Keep keys stable and human-authored: do not include random UI-generated field IDs.",
+        "Secret fields (secret: true in the action catalog, the value of setPassword) are never written to a config: the step carries \"<field>Masked\": true and no value. Supply the value again in the app before such a config can run; unattended runs cannot recover it. A setValue step with \"valueMasked\": true, saved before setPassword existed, is loaded as setPassword. A reference ({\"$env\": \"NAME\"}) is saved as it is: it holds no secret.",
+        "The schema checks state[actions-workflow] against the same step definitions as the run spec, and runSpec as a run spec.",
+        "batch holds the Batch section: rows (each { name, url, vars }, no other fields), namePattern and enabled.",
+        "--check reports a configuration's own fields too: an unknown field or unlisted value is a warning, except in a batch row, where it is an error because the app will not queue that batch."
+      ]
+    },
+    "workflowStartPayload": {
+      "description": "HTTP request body for POST /workflow-start.",
+      "requiredKeys": [
+        "url",
+        "actions"
+      ],
+      "optionalKeys": [
+        "customSteps",
+        "scenarioName",
+        "viewport",
+        "context",
+        "exclude"
+      ],
+      "notes": [
+        "actions must be a non-empty array.",
+        "customSteps is optional; include it when actions use runCustomStep."
+      ]
+    }
+  },
+  "hardRules": [
+    "A run spec has type=a11y-run-spec, specVersion=1, a url and actions. An app configuration has version=1, type=a11y-ui-src-config and state.",
+    "The steps are a run spec's actions, or an app configuration's state.actions-workflow: an array of actions.",
+    "Each action object must include a valid type from actionTypeEnum.",
+    "If an action type is runCustomStep, customStepId must reference an existing custom step id.",
+    "custom step ids must be unique and non-empty.",
+    "runCustomStep.argsJson, when provided, must be a JSON object string.",
+    "runCustomStep blocks indirect cycles by default and enforces max nesting depth; direct self-recursion is allowed only when allowRecursion=true.",
+    "Missing required custom step inputs cause runtime errors.",
+    "runCustomStep on a custom step with an empty actions array is a no-op (it does not throw).",
+    "Fields of type \"number\" accept a literal number or a single variable token such as \"{var:count}\". The variable is turned into a number when the step runs; fields marked integer need a whole number. A value that is not a number is ignored (the field falls back to its default) and a warning is logged."
+  ],
+  "compatibility": {
+    "whenLoadedInOldAppWithoutCustomSteps": "custom-steps fields are ignored and runCustomStep actions are unknown/omitted or fail; custom-step behavior is lost.",
+    "guidance": "For backward compatibility, avoid runCustomStep and inline actions directly in actions-workflow."
+  },
+  "generationChecklist": [
+    "Emit valid JSON with no comments or trailing commas.",
+    "Write a run spec (outputFormats.runSpec): the runner takes it and the app opens it. A configuration file (outputFormats.configFile) is what the app saves; there is no need to write one.",
+    "Run spec: include type, specVersion, url and actions; custom steps go in customSteps as an array.",
+    "Configuration file: include version, type, url (optional), state, metadata.createdAt (recommended); always include state.actions-workflow as an array, and custom steps in state.custom-steps-json.",
+    "Use only action types listed in actionTypeEnum.",
+    "When using custom steps, keep runCustomStep's customStepId and the custom step ids in sync.",
+    "Do not invent undocumented fields unless explicitly allowed by the action definition.",
+    "Prefer stable, minimal state keys; avoid random UI control IDs.",
+    "Check the result with node src/cli/run-workflow.js <file> --check and fix every error it reports."
+  ],
+  "actionTypeEnum": [
+    "a11yScan",
+    "click",
+    "type",
+    "setValue",
+    "setPassword",
+    "clickByText",
+    "focus",
+    "hover",
+    "focusByText",
+    "hoverByText",
+    "hoverOut",
+    "waitForSelector",
+    "wait",
+    "scrollIntoView",
+    "scroll",
+    "setViewport",
+    "navigate",
+    "refresh",
+    "emulateVisionDeficiency",
+    "setColorScheme",
+    "setLanguage",
+    "keyboard",
+    "select",
+    "group",
+    "mergedScan",
+    "runCustomStep",
+    "if",
+    "ifUrl",
+    "switch",
+    "repeat",
+    "forEachElement",
+    "crawlQueue",
+    "skipIteration",
+    "goBack",
+    "screenshot",
+    "getText",
+    "getCount",
+    "setVar",
+    "clearVar",
+    "collectOutput",
+    "evidenceCapture",
+    "injectCss"
+  ],
+  "actionCatalog": {
+    "a11yScan": {
+      "label": "A11y scan",
+      "category": "a11y",
+      "description": "Run an accessibility scan on the current page or within a selector. You can narrow the scan to a region using 'context' and exclude noisy areas using 'exclude'.",
+      "requiredFields": [],
+      "fields": {
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Scan label",
+          "description": "Label shown in reports and live stream. Supports {var:name}, {index}, {oneBased}, {total}."
+        },
+        "scanTags": {
+          "type": "string[]",
+          "required": false,
+          "label": "Tags",
+          "description": "Free-form tags for this scan. Used to filter the report by tag once the run finishes. Supports {var:name}, {index}, {oneBased}, {total}, so a single tag like {var:viewport} fills in per iteration. Pick tags already used elsewhere in this workflow or add new ones."
+        },
+        "engine": {
+          "type": "string",
+          "required": false,
+          "label": "Engine",
+          "description": "The engine that runs this scan. Without one, the scan runs with surea11y, built in. Other engines (axe-core, Alfa, Pa11y, QualWeb) come with the more-engines add-on, and this field shows once one is installed. Each engine offers its own options, and the profiles it cannot check are not available. To check a page with several engines, add a scan for each; put them in a Merged scan to have them reported as one scan."
+        },
+        "profile": {
+          "type": "string",
+          "required": false,
+          "label": "Profile",
+          "description": "The profile this scan checks against, WCAG 2.2 AA unless it says otherwise: WCAG 2.2 at Level A, AA or AAA, or a standard, which sets the WCAG version and the level, all of them Level A and AA: EN 301 549 V4.1.1, the EU standard, which is WCAG 2.2, and EN 301 549 V3.2.1, its earlier version, which is WCAG 2.1 and still checks 4.1.1 Parsing. Which ones a scan can choose depends on its engine: surea11y checks every profile, and is the only one to apply a standard in full (the version details such as 4.1.1); the other engines check the WCAG 2.2 profiles and EN 301 549 V4.1.1. Including rule IDs or tags explicitly takes precedence over a standard. Passing the rules does not mean the page meets the standard: many criteria still need a manual check.",
+          "default": "wcag22-aa",
+          "options": [
+            {
+              "value": "wcag22-a",
+              "label": "WCAG 2.2 A"
+            },
+            {
+              "value": "wcag22-aa",
+              "label": "WCAG 2.2 AA"
+            },
+            {
+              "value": "wcag22-aaa",
+              "label": "WCAG 2.2 AAA"
+            },
+            {
+              "value": "en301549-v4.1.1",
+              "label": "EN 301 549 V4.1.1"
+            },
+            {
+              "value": "en301549-v3.2.1",
+              "label": "EN 301 549 V3.2.1"
+            }
+          ]
+        },
+        "context": {
+          "type": "string",
+          "required": false,
+          "label": "Include selectors",
+          "description": "The parts of the page this scan checks: every element these CSS selectors match, comma separated. Empty, the scan checks the whole page. A selector that matches nothing scans nothing, and the report says so."
+        },
+        "exclude": {
+          "type": "string|string[]",
+          "required": false,
+          "label": "Exclude selectors",
+          "description": "The parts of the page this scan leaves out: every element these CSS selectors match, comma separated."
+        },
+        "includeBestPractice": {
+          "type": "boolean",
+          "required": false,
+          "label": "Include best-practice rules",
+          "description": "Also run the best-practice rules in this scan: good practice beyond the profile, such as landmarks and heading order. The profile alone never runs them. Their findings are listed in a Best practices section of their own and count toward no criterion, score, compliance rate or comparison.",
+          "default": false
+        },
+        "locale": {
+          "type": "string",
+          "required": false,
+          "label": "Results language",
+          "description": "Language surea11y writes its findings in: rule titles, what failed, how to fix it, and the WCAG criteria names. Rules that judge wording, such as vague link text or generic headings, go by the language of the page, not this setting.",
+          "default": "en",
+          "options": [
+            {
+              "value": "en",
+              "label": "English"
+            },
+            {
+              "value": "de",
+              "label": "Deutsch"
+            },
+            {
+              "value": "es",
+              "label": "Español"
+            },
+            {
+              "value": "fr",
+              "label": "Français"
+            },
+            {
+              "value": "ja",
+              "label": "日本語"
+            }
+          ]
+        },
+        "applyDefaultStyle": {
+          "type": "boolean",
+          "required": false,
+          "label": "Blur exclusions",
+          "description": "Blur and fade the parts of the page the scan leaves out (Exclude selectors, and what is outside Context) in the scan's screenshots, so they show what was checked.",
+          "default": true
+        },
+        "preserveHover": {
+          "type": "boolean",
+          "required": false,
+          "label": "Preserve hover state",
+          "description": "Keep current :hover styling for this scan/evidence capture. Disable to clear transient hover before capture.",
+          "default": false
+        },
+        "waitTimeout": {
+          "type": "number",
+          "required": false,
+          "label": "Wait timeout (ms)",
+          "description": "How long Wait for waits for its selector before the step fails.",
+          "default": 10000
+        },
+        "stageTimeout": {
+          "type": "number",
+          "required": false,
+          "label": "Time limit per stage (ms)",
+          "description": "The most each stage of the scan may take before it is given up on: loading the engine into the page, letting the page settle, the page ready wait, the check itself and the screenshot. Pictures of flagged elements get their own time on top.",
+          "default": 60000
+        },
+        "pageReadyTimeout": {
+          "type": "number",
+          "required": false,
+          "label": "Page ready timeout (ms)",
+          "description": "Before scanning, wait up to this long for the page to finish loading: the load event, web fonts and images (not lazy ones). If it has not finished by then, the scan runs anyway and its report says what was still loading. 0 checks without waiting.",
+          "default": 3000
+        },
+        "heavyNodeThreshold": {
+          "type": "number",
+          "required": false,
+          "label": "Skip pages with more elements than",
+          "description": "Skip this scan when the page has more elements than this, rather than wait on a very slow scan. The report says the scan was skipped, and why.",
+          "default": 25000
+        },
+        "waitForSelector": {
+          "type": "string",
+          "required": false,
+          "label": "Wait for",
+          "description": "Start the scan only once this selector is on the page, for content that loads late. If it does not appear within the wait timeout, the step fails rather than scanning the page without it."
+        },
+        "waitVisible": {
+          "type": "boolean",
+          "required": false,
+          "label": "Require visibility",
+          "description": "With Wait for, wait until the element is visible, not only on the page.",
+          "default": true
+        },
+        "includeRuleIds": {
+          "type": "string|string[]",
+          "required": false,
+          "label": "Include rules",
+          "description": "The only rules this scan runs: the rest of its level's rules do not. Name a WCAG criterion (wcag-1.4.3-contrast-minimum) to check it in full, or single checks (contrast-minimum); a criterion only some of whose checks run is reported as partly checked unless one of them fails. Use a comma separated string."
+        },
+        "excludeRuleIds": {
+          "type": "string|string[]",
+          "required": false,
+          "label": "Exclude rules",
+          "description": "Rule IDs to exclude for this scan only. Use a comma separated string."
+        },
+        "includeTags": {
+          "type": "string|string[]",
+          "required": false,
+          "label": "Include tags",
+          "description": "Run only the rules with these tags, within the scan's WCAG version and level (rules that test no WCAG criterion, such as best practices, as tagged). Their criteria are reported as with Include rules: partly checked when some of a criterion's checks do not run. Use a comma separated string."
+        },
+        "excludeTags": {
+          "type": "string|string[]",
+          "required": false,
+          "label": "Exclude tags",
+          "description": "Rule tags to exclude for this scan only. Use a comma separated string."
+        },
+        "includeMode": {
+          "type": "string",
+          "required": false,
+          "label": "Combine Include rules and tags",
+          "description": "With both Include rules and Include tags: run only the rules that are in both, or every rule that is in either.",
+          "default": "and",
+          "options": [
+            {
+              "value": "and",
+              "label": "Rules in both"
+            },
+            {
+              "value": "or",
+              "label": "Rules in either"
+            }
+          ]
+        },
+        "engineMode": {
+          "type": "string",
+          "required": false,
+          "label": "Checking mode",
+          "description": "Auditor support makes the assumptions an auditor would where the page leaves something unset, such as a white background behind the page; Strict conformance assumes nothing the page does not state.",
+          "default": "auditorAssist",
+          "options": [
+            {
+              "value": "auditorAssist",
+              "label": "Auditor support"
+            },
+            {
+              "value": "strictConformance",
+              "label": "Strict conformance"
+            }
+          ]
+        },
+        "findingsSource": {
+          "type": "string",
+          "required": false,
+          "label": "Report findings by",
+          "description": "Whether findings are reported per WCAG success criterion, gathering the checks behind each one, or per single check, or both.",
+          "default": "composite",
+          "options": [
+            {
+              "value": "composite",
+              "label": "Criterion"
+            },
+            {
+              "value": "atomic",
+              "label": "Single check"
+            },
+            {
+              "value": "Both",
+              "label": "Both"
+            }
+          ]
+        },
+        "screenshotView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Screenshot view",
+          "description": "Take a screenshot of the page once the scan is done, shown with its results. Set to false for a scan that needs no picture of the page: it runs faster and its report is smaller. Pictures of the flagged elements (Element screenshots) are set apart.",
+          "default": true
+        },
+        "elementScreenshots": {
+          "type": "string",
+          "required": false,
+          "label": "Element screenshots",
+          "description": "Take a picture of each element surea11y flags, with a box around it, shown beside its finding. Other engines take none.",
+          "default": "fail",
+          "options": [
+            {
+              "value": "off",
+              "label": "None"
+            },
+            {
+              "value": "fail",
+              "label": "Failures"
+            },
+            {
+              "value": "failCantTell",
+              "label": "Failures and can't tell"
+            }
+          ]
+        },
+        "elementScreenshotsMax": {
+          "type": "number",
+          "required": false,
+          "label": "Most element screenshots",
+          "description": "The most pictures one scan takes when Element screenshots is on; 0 for no limit, though a scan still has 30 seconds for its pictures. Elements past it say so beside their finding.",
+          "default": 50,
+          "integer": true,
+          "min": 0
+        },
+        "elementScreenshotsPerRule": {
+          "type": "number",
+          "required": false,
+          "label": "Most element screenshots per rule",
+          "description": "The most elements pictured for each rule, so the rules checked first don't take every picture; 0 for no limit. An element pictured for one rule shows that picture under every rule that flags it.",
+          "default": 0,
+          "integer": true,
+          "min": 0
+        }
+      },
+      "examples": [
+        {
+          "title": "Scan whole page",
+          "snippet": {
+            "type": "a11yScan",
+            "label": "Full page"
+          }
+        },
+        {
+          "title": "Scan only main content",
+          "snippet": {
+            "type": "a11yScan",
+            "label": "Main area",
+            "context": "#main"
+          }
+        },
+        {
+          "title": "Scan only one rule",
+          "snippet": {
+            "type": "a11yScan",
+            "label": "Contrast check",
+            "includeRuleIds": [
+              "wcag-1.4.3-contrast-minimum"
+            ]
+          }
+        },
+        {
+          "title": "Scan product details and ignore banners",
+          "snippet": {
+            "type": "a11yScan",
+            "label": "Product {oneBased}",
+            "context": "#product",
+            "exclude": [
+              ".ads",
+              ".cookie"
+            ]
+          }
+        }
+      ]
+    },
+    "click": {
+      "label": "Click",
+      "category": "interaction",
+      "description": "Click by selector, or click by visible text (labelText). When labelText is set, selector becomes an optional scope.",
+      "requiredFields": [],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": false,
+          "label": "Element selector / scope selector",
+          "description": "If labelText is NOT set, this is the CSS selector for the element to click. If labelText IS set, this is an optional scope container selector. Use :ctx inside forEachElement."
+        },
+        "labelText": {
+          "type": "string",
+          "required": false,
+          "label": "Text to click",
+          "description": "Visible text (or accessible name sources) to find. If set, this is the target, and selector is treated as an optional scope."
+        },
+        "programmatic": {
+          "type": "boolean",
+          "required": false,
+          "label": "Programmatic click",
+          "description": "Click by calling the element's click() in the page, instead of with the mouse: for an element the mouse cannot reach, such as one something else covers.",
+          "default": false
+        },
+        "mouseButton": {
+          "type": "string",
+          "required": false,
+          "label": "Mouse button",
+          "description": "If the click is done with the left or right button.",
+          "default": "left",
+          "options": [
+            {
+              "value": "left",
+              "label": "left"
+            },
+            {
+              "value": "right",
+              "label": "right"
+            }
+          ]
+        },
+        "clickKind": {
+          "type": "string",
+          "required": false,
+          "label": "Single or double click",
+          "description": "If it is single or double click.",
+          "default": "click",
+          "options": [
+            {
+              "value": "click",
+              "label": "single"
+            },
+            {
+              "value": "doubleClick",
+              "label": "double"
+            }
+          ]
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before clicking. A pointer click may still scroll if the element is outside the viewport.",
+          "default": true
+        },
+        "caseSensitive": {
+          "type": "boolean",
+          "required": false,
+          "label": "Case sensitive (labelText)",
+          "description": "Use case-sensitive comparison when clicking by labelText.",
+          "default": false
+        },
+        "exact": {
+          "type": "boolean",
+          "required": false,
+          "label": "Exact match (labelText)",
+          "description": "Match full text when true. Default is substring match.",
+          "default": false
+        },
+        "allowPointerFallback": {
+          "type": "boolean",
+          "required": false,
+          "label": "Allow pointer fallback",
+          "description": "When clicking by labelText, allow clicking non-interactive targets near the matched text.",
+          "default": false
+        },
+        "pointerFallbackMaxMatches": {
+          "type": "number",
+          "required": false,
+          "label": "Pick nth match",
+          "description": "When labelText appears multiple times, pick the nth visible match (1 = first).",
+          "default": 1,
+          "integer": true
+        },
+        "timeout": {
+          "type": "number",
+          "required": false,
+          "label": "Timeout (ms)",
+          "description": "When clicking by labelText, how long to wait for the target to appear.",
+          "default": 10000
+        },
+        "waitUntil": {
+          "type": "string",
+          "required": false,
+          "label": "Wait until",
+          "description": "If set, waits for a possible navigation after the click.",
+          "options": [
+            {
+              "value": "load",
+              "label": "load"
+            },
+            {
+              "value": "domcontentloaded",
+              "label": "domcontentloaded"
+            },
+            {
+              "value": "networkidle0",
+              "label": "networkidle0"
+            }
+          ]
+        },
+        "retries": {
+          "type": "number",
+          "required": false,
+          "label": "Retry attempts",
+          "description": "Extra attempts if the click fails.",
+          "default": 0,
+          "integer": true
+        },
+        "retryDelay": {
+          "type": "number",
+          "required": false,
+          "label": "Retry delay (ms)",
+          "description": "Time in ms between retries.",
+          "default": 500
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this click fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Click by selector",
+          "snippet": {
+            "type": "click",
+            "selector": "#open-modal"
+          }
+        },
+        {
+          "title": "Click details inside the current card",
+          "snippet": {
+            "type": "click",
+            "selector": ":ctx a.details"
+          }
+        },
+        {
+          "title": "Click by text (global)",
+          "snippet": {
+            "type": "click",
+            "labelText": "Log in"
+          }
+        },
+        {
+          "title": "Click by text within scope",
+          "snippet": {
+            "type": "click",
+            "labelText": "Details",
+            "selector": ":ctx"
+          }
+        }
+      ]
+    },
+    "type": {
+      "label": "Type into field",
+      "category": "interaction",
+      "description": "Type text into an input or textarea. You can clear first, add delay between keys, and press Enter at the end.",
+      "requiredFields": [
+        "selector",
+        "text"
+      ],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": true,
+          "label": "Field selector",
+          "description": "CSS selector of the input or textarea."
+        },
+        "text": {
+          "type": "string",
+          "required": true,
+          "label": "Text to type",
+          "description": "Text to type."
+        },
+        "delay": {
+          "type": "number",
+          "required": false,
+          "label": "Key delay (ms)",
+          "description": "Delay in ms between keystrokes.",
+          "default": 0
+        },
+        "clear": {
+          "type": "boolean",
+          "required": false,
+          "label": "Clear before typing",
+          "description": "Clear the field before typing.",
+          "default": false
+        },
+        "pressEnter": {
+          "type": "boolean",
+          "required": false,
+          "label": "Press Enter after typing",
+          "description": "Press Enter after typing.",
+          "default": false
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before typing. Focusing the field may still make the browser scroll it into view.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "title": "Search and submit",
+          "snippet": {
+            "type": "type",
+            "selector": "#search",
+            "text": "WCAG 2.2",
+            "pressEnter": true
+          }
+        }
+      ]
+    },
+    "setValue": {
+      "label": "Set field value",
+      "category": "interaction",
+      "description": "Set the value of an input or textarea directly in the DOM without typing.",
+      "requiredFields": [
+        "value"
+      ],
+      "fields": {
+        "labelText": {
+          "type": "string",
+          "required": false,
+          "label": "Label to find the field",
+          "description": "Label that the field to edit has."
+        },
+        "selector": {
+          "type": "string",
+          "required": false,
+          "label": "Field selector",
+          "description": "CSS selector of the input or textarea."
+        },
+        "value": {
+          "type": "string",
+          "required": true,
+          "label": "Value",
+          "description": "Value to set. It is saved with the configuration; use \"Set password value\" for a value that must not be."
+        },
+        "caseSensitive": {
+          "type": "boolean",
+          "required": false,
+          "label": "Case sensitive when select by label",
+          "description": "Use case-sensitive comparison.",
+          "default": false
+        },
+        "exact": {
+          "type": "boolean",
+          "required": false,
+          "label": "Exact match when select by label",
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before setting its value.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "title": "Fill email quickly",
+          "snippet": {
+            "type": "setValue",
+            "selector": "#email",
+            "value": "user@example.com"
+          }
+        }
+      ]
+    },
+    "setPassword": {
+      "label": "Set password value",
+      "category": "interaction",
+      "description": "Set the value of a password or other secret field, like \"Set field value\", but the value is never saved: configurations carry \"valueMasked\": true and no value. Type it again after loading a configuration; a run with the value empty fails. In a spec file, the value can instead be read from an environment variable when the run starts, as {\"$env\": \"SHOP_PASSWORD\"}: the file then holds no password and can run unattended.",
+      "requiredFields": [
+        "value"
+      ],
+      "fields": {
+        "labelText": {
+          "type": "string",
+          "required": false,
+          "label": "Label to find the field",
+          "description": "Label that the field to edit has."
+        },
+        "selector": {
+          "type": "string",
+          "required": false,
+          "label": "Field selector",
+          "description": "CSS selector of the input."
+        },
+        "value": {
+          "type": "string",
+          "required": true,
+          "label": "Password",
+          "description": "Value to set. Hidden on screen unless revealed with the field's button, and never saved with the configuration, revealed or not. Or {\"$env\": \"NAME\"}: read from that environment variable where the workflow runs, and saved as the reference, so unattended runs can use it."
+        },
+        "caseSensitive": {
+          "type": "boolean",
+          "required": false,
+          "label": "Case sensitive when select by label",
+          "description": "Use case-sensitive comparison.",
+          "default": false
+        },
+        "exact": {
+          "type": "boolean",
+          "required": false,
+          "label": "Exact match when select by label",
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before setting its value.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "title": "Fill a password",
+          "snippet": {
+            "type": "setPassword",
+            "labelText": "Password",
+            "valueMasked": true
+          }
+        },
+        {
+          "title": "Fill a password from the environment",
+          "snippet": {
+            "type": "setPassword",
+            "labelText": "Password",
+            "value": {
+              "$env": "SHOP_PASSWORD"
+            }
+          }
+        }
+      ]
+    },
+    "clickByText": {
+      "label": "Click by text",
+      "category": "interaction",
+      "description": "Find a clickable element by its text. Works with buttons, links, and elements inside an optional selector scope.",
+      "requiredFields": [
+        "labelText"
+      ],
+      "fields": {
+        "labelText": {
+          "type": "string",
+          "required": true,
+          "label": "Text to find",
+          "description": "Text to look for. Spaces are trimmed."
+        },
+        "selector": {
+          "type": "string",
+          "required": false,
+          "label": "Scope selector",
+          "description": "Scope for the search. If omitted, searches common interactive elements. Use :ctx inside forEachElement."
+        },
+        "programmatic": {
+          "type": "boolean",
+          "required": false,
+          "label": "Programmatic click",
+          "description": "Click by calling the element's click() in the page, instead of with the mouse: for an element the mouse cannot reach, such as one something else covers.",
+          "default": false
+        },
+        "caseSensitive": {
+          "type": "boolean",
+          "required": false,
+          "label": "Case sensitive",
+          "description": "Use case-sensitive comparison.",
+          "default": false
+        },
+        "mouseButton": {
+          "type": "string",
+          "required": false,
+          "label": "Mouse button",
+          "description": "If the click is done with the left or right button.",
+          "default": "left",
+          "options": [
+            {
+              "value": "left",
+              "label": "left"
+            },
+            {
+              "value": "right",
+              "label": "right"
+            }
+          ]
+        },
+        "clickKind": {
+          "type": "string",
+          "required": false,
+          "label": "Single or double click",
+          "description": "If it is single or double click.",
+          "default": "click",
+          "options": [
+            {
+              "value": "click",
+              "label": "single"
+            },
+            {
+              "value": "doubleClick",
+              "label": "double"
+            }
+          ]
+        },
+        "exact": {
+          "type": "boolean",
+          "required": false,
+          "label": "Exact match",
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false
+        },
+        "allowPointerFallback": {
+          "type": "boolean",
+          "required": false,
+          "label": "Allow pointer fallback",
+          "description": "It tries to click not only on interactive elements.",
+          "default": false
+        },
+        "pointerFallbackMaxMatches": {
+          "type": "number",
+          "required": false,
+          "label": "Timeout (ms)",
+          "description": "If text appears multiple times, either pick first match (fast) or allow picking nth.",
+          "default": 1,
+          "integer": true
+        },
+        "timeout": {
+          "type": "number",
+          "required": false,
+          "label": "Timeout (ms)",
+          "description": "How long to wait for the target to appear.",
+          "default": 10000
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before clicking. A pointer click may still scroll if the element is outside the viewport.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "title": "Click a Login button",
+          "snippet": {
+            "type": "clickByText",
+            "labelText": "Log in"
+          }
+        },
+        {
+          "title": "Click a scoped button within the current card",
+          "snippet": {
+            "type": "clickByText",
+            "labelText": "Details",
+            "selector": ":ctx"
+          }
+        }
+      ]
+    },
+    "focus": {
+      "label": "Focus",
+      "category": "interaction",
+      "description": "Move keyboard focus to the first element that matches the selector.",
+      "requiredFields": [
+        "selector"
+      ],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": true,
+          "label": "Element selector",
+          "description": "CSS selector of the element to focus."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before focusing. Focusing may still make the browser scroll the element into view.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "title": "Focus main heading",
+          "snippet": {
+            "type": "focus",
+            "selector": "h1"
+          }
+        }
+      ]
+    },
+    "hover": {
+      "label": "Hover element",
+      "category": "interaction",
+      "description": "Trigger hover on the first match of the selector.",
+      "requiredFields": [
+        "selector"
+      ],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": true,
+          "label": "Element selector",
+          "description": "CSS selector to hover."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before hovering. Hovering may still scroll if the element is outside the viewport.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "title": "Open a hover menu",
+          "snippet": {
+            "type": "hover",
+            "selector": "#menu > li:nth-child(2) > a"
+          }
+        }
+      ]
+    },
+    "focusByText": {
+      "label": "Focus by text",
+      "category": "interaction",
+      "description": "Find the element by its text. Works with buttons, links, and elements inside an optional selector scope.",
+      "requiredFields": [
+        "labelText"
+      ],
+      "fields": {
+        "labelText": {
+          "type": "string",
+          "required": true,
+          "label": "Text to find",
+          "description": "Text to look for. Spaces are trimmed."
+        },
+        "selector": {
+          "type": "string",
+          "required": false,
+          "label": "Scope selector",
+          "description": "Scope for the search. If omitted, searches common interactive elements. Use :ctx inside forEachElement."
+        },
+        "caseSensitive": {
+          "type": "boolean",
+          "required": false,
+          "label": "Case sensitive",
+          "description": "Use case-sensitive comparison.",
+          "default": false
+        },
+        "exact": {
+          "type": "boolean",
+          "required": false,
+          "label": "Exact match",
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false
+        },
+        "timeout": {
+          "type": "number",
+          "required": false,
+          "label": "Timeout (ms)",
+          "description": "How long to wait for the target to appear.",
+          "default": 10000
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "postWaitForSelector": {
+          "type": "string",
+          "required": false,
+          "label": "Wait after hover",
+          "description": "Selector that must appear after hovering (e.g., a menu panel)."
+        },
+        "postWaitVisible": {
+          "type": "boolean",
+          "required": false,
+          "label": "Require visibility",
+          "description": "Require the post-hover selector to be visible.",
+          "default": true
+        },
+        "postWaitTimeout": {
+          "type": "number",
+          "required": false,
+          "label": "Post-wait timeout (ms)",
+          "description": "Timeout for the post-hover wait.",
+          "default": 10000
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before focusing. Focusing may still make the browser scroll the element into view.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "title": "Open a hover Menu button",
+          "snippet": {
+            "type": "focusByText",
+            "labelText": "Log in"
+          }
+        }
+      ]
+    },
+    "hoverByText": {
+      "label": "Hover by text",
+      "category": "interaction",
+      "description": "Find a clickable element by its text. Works with buttons, links, and elements inside an optional selector scope.",
+      "requiredFields": [
+        "labelText"
+      ],
+      "fields": {
+        "labelText": {
+          "type": "string",
+          "required": true,
+          "label": "Text to find",
+          "description": "Text to look for. Spaces are trimmed."
+        },
+        "selector": {
+          "type": "string",
+          "required": false,
+          "label": "Scope selector",
+          "description": "Scope for the search. If omitted, searches common interactive elements. Use :ctx inside forEachElement."
+        },
+        "caseSensitive": {
+          "type": "boolean",
+          "required": false,
+          "label": "Case sensitive",
+          "description": "Use case-sensitive comparison.",
+          "default": false
+        },
+        "exact": {
+          "type": "boolean",
+          "required": false,
+          "label": "Exact match",
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false
+        },
+        "timeout": {
+          "type": "number",
+          "required": false,
+          "label": "Timeout (ms)",
+          "description": "How long to wait for the target to appear.",
+          "default": 10000
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action action.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "postWaitForSelector": {
+          "type": "string",
+          "required": false,
+          "label": "Wait after hover",
+          "description": "Selector that must appear after hovering (e.g., a menu panel)."
+        },
+        "postWaitVisible": {
+          "type": "boolean",
+          "required": false,
+          "label": "Require visibility",
+          "description": "Require the post-hover selector to be visible.",
+          "default": true
+        },
+        "postWaitTimeout": {
+          "type": "number",
+          "required": false,
+          "label": "Post-wait timeout (ms)",
+          "description": "Timeout for the post-hover wait.",
+          "default": 10000
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before hovering. Hovering may still scroll if the element is outside the viewport.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "title": "Open a hover Menu button",
+          "snippet": {
+            "type": "hoverByText",
+            "labelText": "Log in"
+          }
+        }
+      ]
+    },
+    "hoverOut": {
+      "label": "Hover out",
+      "category": "interaction",
+      "description": "End a hover state by moving the pointer away, causing hover-based panels or menus to close.",
+      "requiredFields": [],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": false,
+          "label": "Target selector",
+          "description": "Optional selector to move the pointer to. If omitted, the pointer is moved to a neutral viewport location."
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before moving the pointer onto it.",
+          "default": true
+        }
+      }
+    },
+    "waitForSelector": {
+      "label": "Wait for selector",
+      "category": "wait",
+      "description": "Wait until a selector is present, optionally visible. Useful for dynamic pages.",
+      "requiredFields": [
+        "selector"
+      ],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": true,
+          "label": "Selector to wait for",
+          "description": "CSS selector to wait for."
+        },
+        "visible": {
+          "type": "boolean",
+          "required": false,
+          "label": "Require visibility",
+          "description": "Require visibility when true. Existence is enough when false.",
+          "default": true
+        },
+        "timeout": {
+          "type": "number",
+          "required": false,
+          "label": "Timeout (ms)",
+          "description": "Timeout in ms.",
+          "default": 10000
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Wait for dialog to open",
+          "snippet": {
+            "type": "waitForSelector",
+            "selector": ".dialog[open]",
+            "visible": true,
+            "timeout": 8000
+          }
+        }
+      ]
+    },
+    "wait": {
+      "label": "Wait",
+      "category": "wait",
+      "description": "Pause for a fixed number of milliseconds. Prefer waitForSelector when possible.",
+      "requiredFields": [],
+      "fields": {
+        "ms": {
+          "type": "number",
+          "required": false,
+          "label": "Milliseconds",
+          "description": "Time to wait in ms, at most an hour (3600000).",
+          "default": 2000,
+          "min": 0,
+          "max": 3600000
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Give time to a spinner",
+          "snippet": {
+            "type": "wait",
+            "ms": 1200
+          }
+        }
+      ]
+    },
+    "scrollIntoView": {
+      "label": "Scroll element into view",
+      "category": "scroll",
+      "description": "Scroll until the element is centered in the viewport.",
+      "requiredFields": [
+        "selector"
+      ],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": true,
+          "label": "Element selector",
+          "description": "CSS selector to bring into view."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Reveal footer",
+          "snippet": {
+            "type": "scrollIntoView",
+            "selector": "#footer"
+          }
+        }
+      ]
+    },
+    "scroll": {
+      "label": "Scroll page",
+      "category": "scroll",
+      "description": "Scroll the page to top, bottom, or by a custom offset.",
+      "requiredFields": [],
+      "fields": {
+        "to": {
+          "type": "string",
+          "required": false,
+          "label": "Destination",
+          "description": "Use “top” or “bottom” to jump."
+        },
+        "y": {
+          "type": "number",
+          "required": false,
+          "label": "Offset Y (px)",
+          "description": "Vertical offset in pixels when “to” is not set."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Scroll to bottom",
+          "snippet": {
+            "type": "scroll",
+            "to": "bottom"
+          }
+        },
+        {
+          "title": "Scroll down 600 px",
+          "snippet": {
+            "type": "scroll",
+            "y": 600
+          }
+        }
+      ]
+    },
+    "setViewport": {
+      "label": "Set viewport",
+      "category": "viewport",
+      "description": "Change viewport size for the rest of the workflow or until you change it again.",
+      "requiredFields": [],
+      "fields": {
+        "preset": {
+          "type": "string",
+          "required": false,
+          "label": "Viewport preset",
+          "description": "Viewport presets. Choose \"Custom size\" to set an exact width/height below, or use a variable token such as {var:preset}.",
+          "default": "default",
+          "options": [
+            {
+              "value": "default",
+              "label": "Default (1280 × 720)"
+            },
+            {
+              "value": "desktop-xlg",
+              "label": "Desktop extra-large (1972 × 1100)"
+            },
+            {
+              "value": "desktop-lg",
+              "label": "Desktop large (1440 × 900)"
+            },
+            {
+              "value": "desktop-md",
+              "label": "Desktop medium (1280 × 720)"
+            },
+            {
+              "value": "tablet",
+              "label": "Tablet portrait (768 × 1024)"
+            },
+            {
+              "value": "mobile",
+              "label": "Mobile (375 × 812)"
+            },
+            {
+              "value": "custom",
+              "label": "Custom size…"
+            }
+          ]
+        },
+        "width": {
+          "type": "number",
+          "required": false,
+          "label": "Width (px)",
+          "description": "Viewport width in CSS pixels. Only used when the preset above is \"Custom size\"."
+        },
+        "height": {
+          "type": "number",
+          "required": false,
+          "label": "Height (px)",
+          "description": "Viewport height in CSS pixels. Only used when the preset above is \"Custom size\"."
+        },
+        "zoom": {
+          "type": "string",
+          "required": false,
+          "label": "Zoom",
+          "description": "Browser zoom level, emulated the way Chrome does it: the CSS viewport shrinks by this factor while the rendered size stays the same, so the page reflows and text scales (WCAG 1.4.4 / 1.4.10). Applies on top of the size above. Leaving this unset means 100%.",
+          "default": "1",
+          "options": [
+            {
+              "value": "1",
+              "label": "100%"
+            },
+            {
+              "value": "2",
+              "label": "200%"
+            },
+            {
+              "value": "3",
+              "label": "300%"
+            },
+            {
+              "value": "4",
+              "label": "400%"
+            }
+          ]
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Simulate mobile viewport",
+          "snippet": {
+            "type": "setViewport",
+            "preset": "custom",
+            "width": 375,
+            "height": 812
+          }
+        }
+      ]
+    },
+    "navigate": {
+      "label": "Navigate to URL",
+      "category": "navigation",
+      "description": "Go to a new URL and wait for the page to be ready.",
+      "requiredFields": [
+        "url"
+      ],
+      "fields": {
+        "url": {
+          "type": "string",
+          "required": true,
+          "label": "URL",
+          "description": "Absolute URL."
+        },
+        "waitUntil": {
+          "type": "string",
+          "required": false,
+          "label": "Wait until",
+          "description": "When to consider navigation complete.",
+          "default": "load",
+          "options": [
+            {
+              "value": "load",
+              "label": "load"
+            },
+            {
+              "value": "domcontentloaded",
+              "label": "domcontentloaded"
+            },
+            {
+              "value": "networkidle0",
+              "label": "networkidle0"
+            }
+          ]
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Open help page",
+          "snippet": {
+            "type": "navigate",
+            "url": "https://www.iana.org/help/example-domains",
+            "waitUntil": "domcontentloaded"
+          }
+        }
+      ]
+    },
+    "refresh": {
+      "label": "Refresh",
+      "category": "navigation",
+      "description": "Reload the current page and wait for it to be ready. Useful to reset SPA state or re-trigger network requests.",
+      "requiredFields": [],
+      "fields": {
+        "waitUntil": {
+          "type": "string",
+          "required": false,
+          "label": "Wait until",
+          "description": "When to consider the reload complete.",
+          "default": "domcontentloaded",
+          "options": [
+            {
+              "value": "load",
+              "label": "load"
+            },
+            {
+              "value": "domcontentloaded",
+              "label": "domcontentloaded"
+            },
+            {
+              "value": "networkidle0",
+              "label": "networkidle0"
+            }
+          ]
+        },
+        "timeout": {
+          "type": "number",
+          "required": false,
+          "label": "Timeout (ms)",
+          "description": "Navigation timeout in ms for the reload.",
+          "default": 30000
+        },
+        "bypassCache": {
+          "type": "boolean",
+          "required": false,
+          "label": "Bypass cache",
+          "description": "Temporarily disable the browser cache during the reload.",
+          "default": false
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this refresh fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Reload current page",
+          "snippet": {
+            "type": "refresh"
+          }
+        },
+        {
+          "title": "Reload and wait for DOM",
+          "snippet": {
+            "type": "refresh",
+            "waitUntil": "domcontentloaded"
+          }
+        },
+        {
+          "title": "Hard refresh (bypass cache)",
+          "snippet": {
+            "type": "refresh",
+            "bypassCache": true
+          }
+        }
+      ]
+    },
+    "emulateVisionDeficiency": {
+      "label": "Emulate vision deficiency",
+      "category": "viewport",
+      "description": "Visually simulate a vision deficiency in the browser renderer. Stays active on the same page across navigation until reset to 'none'.",
+      "requiredFields": [],
+      "fields": {
+        "deficiency": {
+          "type": "string",
+          "required": false,
+          "label": "Deficiency type",
+          "description": "Vision deficiency simulation mode.",
+          "default": "none",
+          "options": [
+            {
+              "value": "none",
+              "label": "None (reset)"
+            },
+            {
+              "value": "blurredVision",
+              "label": "Blurred vision"
+            },
+            {
+              "value": "reducedContrast",
+              "label": "Reduced contrast"
+            },
+            {
+              "value": "achromatopsia",
+              "label": "Achromatopsia (no color)"
+            },
+            {
+              "value": "deuteranopia",
+              "label": "Deuteranopia"
+            },
+            {
+              "value": "protanopia",
+              "label": "Protanopia"
+            },
+            {
+              "value": "tritanopia",
+              "label": "Tritanopia"
+            }
+          ]
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        }
+      },
+      "examples": [
+        {
+          "title": "Simulate deuteranopia",
+          "snippet": {
+            "type": "emulateVisionDeficiency",
+            "deficiency": "deuteranopia"
+          }
+        },
+        {
+          "title": "Reset to normal vision",
+          "snippet": {
+            "type": "emulateVisionDeficiency",
+            "deficiency": "none"
+          }
+        }
+      ]
+    },
+    "setColorScheme": {
+      "label": "Set color scheme and contrast",
+      "category": "viewport",
+      "description": "Show the page in the light or dark color scheme, in high contrast, or both, as a browser or system set to them would. The color scheme sets prefers-color-scheme, which the page's media queries follow; until a step sets it, the page is shown as the run's configuration says (the browser's default, light, unless it says otherwise), and Run default goes back to that. High contrast shows the page in forced colors, as Windows' contrast themes do: the browser replaces the page's colors with the user's, and its forced-colors media queries and system colors such as Canvas and GrayText follow, so a scan or a screenshot shows what stays visible then (focus indicators, icons, borders of controls). Leave either one empty to keep it as it is. Both stay until another step changes them, across navigation. A site with its own theme switch that does not follow prefers-color-scheme needs a click on that switch instead. surea11y still measures contrast in the page's own colors in high contrast, as WCAG asks, and each scan says it was taken in it. High contrast needs Chrome.",
+      "requiredFields": [],
+      "fields": {
+        "colorScheme": {
+          "type": "string",
+          "required": false,
+          "label": "Color scheme",
+          "description": "The color scheme to switch to, or Run default for the one the run started with (its configuration's, the browser's own unless it sets one). Empty keeps the current one.",
+          "options": [
+            {
+              "value": "default",
+              "label": "Run default"
+            },
+            {
+              "value": "light",
+              "label": "Light"
+            },
+            {
+              "value": "dark",
+              "label": "Dark"
+            }
+          ]
+        },
+        "highContrast": {
+          "type": "string",
+          "required": false,
+          "label": "High contrast",
+          "description": "Show the page in forced colors (high contrast), or stop, or Run default for what the run started with (its configuration's, Off unless it says otherwise). Empty keeps it as it is.",
+          "options": [
+            {
+              "value": "default",
+              "label": "Run default"
+            },
+            {
+              "value": "on",
+              "label": "On"
+            },
+            {
+              "value": "off",
+              "label": "Off"
+            }
+          ]
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        }
+      },
+      "examples": [
+        {
+          "title": "Scan the dark theme",
+          "snippet": {
+            "type": "setColorScheme",
+            "colorScheme": "dark"
+          }
+        },
+        {
+          "title": "Back to the light theme",
+          "snippet": {
+            "type": "setColorScheme",
+            "colorScheme": "light"
+          }
+        },
+        {
+          "title": "Scan in high contrast, keeping the color scheme",
+          "snippet": {
+            "type": "setColorScheme",
+            "highContrast": "on"
+          }
+        },
+        {
+          "title": "Dark high contrast",
+          "snippet": {
+            "type": "setColorScheme",
+            "colorScheme": "dark",
+            "highContrast": "on"
+          }
+        },
+        {
+          "title": "Back to the page's own colors",
+          "snippet": {
+            "type": "setColorScheme",
+            "highContrast": "off"
+          }
+        },
+        {
+          "title": "Back to what the run started with",
+          "snippet": {
+            "type": "setColorScheme",
+            "colorScheme": "default",
+            "highContrast": "default"
+          }
+        }
+      ]
+    },
+    "setLanguage": {
+      "label": "Set language",
+      "category": "viewport",
+      "description": "Show the page in a language, as a browser set to it would: the Accept-Language header a server picks a language by, navigator.language and navigator.languages for a site that picks it in its scripts, and the format of dates and numbers. It stays set until another Set language step changes it, across navigation, refreshes and pages the workflow opens. The open page loads again so it shows the new language now; a page that has not loaded yet picks it up when it does. Run default goes back to the language the run started with: its configuration's, or the browser's own when it sets none. Each scan says the language it was taken in, and warns when the page declares another (its html lang): a site that keeps its language in a cookie, an account setting or its address (such as /en/), or picks it by location, may not follow this step. Dates and numbers need Chrome.",
+      "requiredFields": [],
+      "fields": {
+        "language": {
+          "type": "string",
+          "required": false,
+          "label": "Language",
+          "description": "The language to show the page in, or Run default for the one the run started with (its configuration's, the browser's own unless it sets one). Other language, when filled, is used instead.",
+          "options": [
+            {
+              "value": "default",
+              "label": "Run default"
+            },
+            {
+              "value": "ar",
+              "label": "Arabic (ar)"
+            },
+            {
+              "value": "eu",
+              "label": "Basque (eu)"
+            },
+            {
+              "value": "bn",
+              "label": "Bengali (bn)"
+            },
+            {
+              "value": "bg",
+              "label": "Bulgarian (bg)"
+            },
+            {
+              "value": "ca",
+              "label": "Catalan (ca)"
+            },
+            {
+              "value": "zh-CN",
+              "label": "Chinese (Simplified) (zh-CN)"
+            },
+            {
+              "value": "zh-TW",
+              "label": "Chinese (Traditional) (zh-TW)"
+            },
+            {
+              "value": "hr",
+              "label": "Croatian (hr)"
+            },
+            {
+              "value": "cs",
+              "label": "Czech (cs)"
+            },
+            {
+              "value": "da",
+              "label": "Danish (da)"
+            },
+            {
+              "value": "nl",
+              "label": "Dutch (nl)"
+            },
+            {
+              "value": "en-GB",
+              "label": "English (United Kingdom) (en-GB)"
+            },
+            {
+              "value": "en-US",
+              "label": "English (United States) (en-US)"
+            },
+            {
+              "value": "et",
+              "label": "Estonian (et)"
+            },
+            {
+              "value": "fi",
+              "label": "Finnish (fi)"
+            },
+            {
+              "value": "fr-FR",
+              "label": "French (France) (fr-FR)"
+            },
+            {
+              "value": "gl",
+              "label": "Galician (gl)"
+            },
+            {
+              "value": "de-DE",
+              "label": "German (Germany) (de-DE)"
+            },
+            {
+              "value": "el",
+              "label": "Greek (el)"
+            },
+            {
+              "value": "he",
+              "label": "Hebrew (he)"
+            },
+            {
+              "value": "hi",
+              "label": "Hindi (hi)"
+            },
+            {
+              "value": "hu",
+              "label": "Hungarian (hu)"
+            },
+            {
+              "value": "id",
+              "label": "Indonesian (id)"
+            },
+            {
+              "value": "it",
+              "label": "Italian (it)"
+            },
+            {
+              "value": "ja",
+              "label": "Japanese (ja)"
+            },
+            {
+              "value": "ko",
+              "label": "Korean (ko)"
+            },
+            {
+              "value": "lv",
+              "label": "Latvian (lv)"
+            },
+            {
+              "value": "lt",
+              "label": "Lithuanian (lt)"
+            },
+            {
+              "value": "ms",
+              "label": "Malay (ms)"
+            },
+            {
+              "value": "nb",
+              "label": "Norwegian (Bokmål) (nb)"
+            },
+            {
+              "value": "fa",
+              "label": "Persian (fa)"
+            },
+            {
+              "value": "pl",
+              "label": "Polish (pl)"
+            },
+            {
+              "value": "pt-BR",
+              "label": "Portuguese (Brazil) (pt-BR)"
+            },
+            {
+              "value": "pt-PT",
+              "label": "Portuguese (Portugal) (pt-PT)"
+            },
+            {
+              "value": "ro",
+              "label": "Romanian (ro)"
+            },
+            {
+              "value": "ru",
+              "label": "Russian (ru)"
+            },
+            {
+              "value": "sr",
+              "label": "Serbian (sr)"
+            },
+            {
+              "value": "sk",
+              "label": "Slovak (sk)"
+            },
+            {
+              "value": "sl",
+              "label": "Slovenian (sl)"
+            },
+            {
+              "value": "es-ES",
+              "label": "Spanish (Spain) (es-ES)"
+            },
+            {
+              "value": "es-419",
+              "label": "Spanish (Latin America) (es-419)"
+            },
+            {
+              "value": "sv",
+              "label": "Swedish (sv)"
+            },
+            {
+              "value": "th",
+              "label": "Thai (th)"
+            },
+            {
+              "value": "tr",
+              "label": "Turkish (tr)"
+            },
+            {
+              "value": "uk",
+              "label": "Ukrainian (uk)"
+            },
+            {
+              "value": "vi",
+              "label": "Vietnamese (vi)"
+            }
+          ]
+        },
+        "customLanguage": {
+          "type": "string",
+          "required": false,
+          "label": "Other language",
+          "description": "A language not in the list, as a BCP 47 tag (es-MX, fr-CA, zh-Hant-HK, a variable such as {var:lang}). Used instead of Language when filled."
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "reload": {
+          "type": "boolean",
+          "required": false,
+          "label": "Reload the page",
+          "description": "Load the open page again, so it shows the new language now. Off, it shows it from the next page loaded.",
+          "default": true
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        }
+      },
+      "examples": [
+        {
+          "title": "Scan the German version",
+          "snippet": {
+            "type": "setLanguage",
+            "language": "de-DE"
+          }
+        },
+        {
+          "title": "A variant not in the list",
+          "snippet": {
+            "type": "setLanguage",
+            "customLanguage": "es-MX"
+          }
+        },
+        {
+          "title": "The language from a variable",
+          "snippet": {
+            "type": "setLanguage",
+            "customLanguage": "{var:lang}"
+          }
+        },
+        {
+          "title": "Back to the language the run started with",
+          "snippet": {
+            "type": "setLanguage",
+            "language": "default"
+          }
+        }
+      ]
+    },
+    "keyboard": {
+      "label": "Keyboard input",
+      "category": "interaction",
+      "description": "Press keys and/or type text as a user would. Useful to navigate forms with Tab and Enter.",
+      "requiredFields": [],
+      "fields": {
+        "keys": {
+          "type": "string[]",
+          "required": false,
+          "label": "Keys to press",
+          "description": "List of keys to press in order. Each item can be a single key (\"Tab\", \"Enter\") or a key combination using \"+\" to press multiple keys together (\"Shift+F10\", \"Control+S\"). Multiple entries are executed sequentially."
+        },
+        "text": {
+          "type": "string",
+          "required": false,
+          "label": "Text to type",
+          "description": "Text to type using the keyboard."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Tab and activate",
+          "snippet": {
+            "type": "keyboard",
+            "keys": [
+              "Tab",
+              "Enter"
+            ]
+          }
+        },
+        {
+          "title": "Open context menu",
+          "snippet": {
+            "type": "keyboard",
+            "keys": [
+              "Shift+F10"
+            ]
+          }
+        }
+      ]
+    },
+    "select": {
+      "label": "Select dropdown option",
+      "category": "interaction",
+      "description": "Change the value of a select element by option value.",
+      "requiredFields": [
+        "selector",
+        "value"
+      ],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": true,
+          "label": "Select selector",
+          "description": "CSS selector of the select element."
+        },
+        "value": {
+          "type": "string|number",
+          "required": true,
+          "label": "Option value",
+          "description": "Option value to select."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "scrollIntoView": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scroll into view",
+          "description": "Scroll the element to the center of the viewport before selecting the option.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "title": "Choose Switzerland",
+          "snippet": {
+            "type": "select",
+            "selector": "#country",
+            "value": "CH"
+          }
+        }
+      ]
+    },
+    "group": {
+      "label": "Group",
+      "category": "composition",
+      "description": "Run several actions as a single unit. If a child action fails, the group fails. Variables set inside the group (getText, getCount, setVar) are only available to later steps inside it; to use a value after the group, set it before the group or outside it.",
+      "requiredFields": [
+        "actions"
+      ],
+      "fields": {
+        "actions": {
+          "type": "Action[]",
+          "required": true,
+          "label": "Actions",
+          "description": "Nested actions to run in order."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional group",
+          "description": "If true and the group fails, mark as failed-optional and continue.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Group label",
+          "description": "Name of the group for reporting."
+        }
+      },
+      "examples": [
+        {
+          "title": "Open a menu and capture screenshot",
+          "snippet": {
+            "type": "group",
+            "label": "Open and capture",
+            "actions": [
+              {
+                "type": "click",
+                "selector": "#menu-button"
+              },
+              {
+                "type": "waitForSelector",
+                "selector": "#menu[open]"
+              },
+              {
+                "type": "screenshot",
+                "label": "menu-open"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "mergedScan": {
+      "label": "Merged scan",
+      "category": "composition",
+      "description": "Report the A11y scans inside it as one scan: the same view scanned in several contexts (light and dark theme, desktop and mobile width) counts once. Each scan inside is a context, named by its label; a failure lists the contexts it occurs in, and one whose result differs between contexts (a different contrast ratio, a different size) is listed once per result. The merged scan holds every context's screenshot. Variables set inside stay available after it. A Merged scan cannot contain another.",
+      "requiredFields": [
+        "actions"
+      ],
+      "fields": {
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Scan name",
+          "description": "The merged scan's name in the report. {var:...} tokens work, so a Repeat over pages can name each one. Without it, the first context's name is used."
+        },
+        "scanTags": {
+          "type": "string[]",
+          "required": false,
+          "label": "Tags",
+          "description": "The merged scan's tags, used to filter the report by tag and to break the live totals down. The tags of the scans inside describe their contexts and are shown with them; when this is empty, the merged scan takes all of theirs. Supports {var:name}, {index}, {oneBased}, {total}."
+        },
+        "actions": {
+          "type": "Action[]",
+          "required": true,
+          "label": "Actions",
+          "description": "The steps to run, with an A11y scan for each context. A scan with no label is named by its place, as \"Scan 2 of 4\"."
+        }
+      },
+      "examples": [
+        {
+          "title": "One scan of a page in light and dark",
+          "snippet": {
+            "type": "mergedScan",
+            "label": "Product page",
+            "scanTags": [
+              "product"
+            ],
+            "actions": [
+              {
+                "type": "setColorScheme",
+                "colorScheme": "light"
+              },
+              {
+                "type": "a11yScan",
+                "label": "Light"
+              },
+              {
+                "type": "setColorScheme",
+                "colorScheme": "dark"
+              },
+              {
+                "type": "a11yScan",
+                "label": "Dark"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "runCustomStep": {
+      "label": "Custom step",
+      "category": "composition",
+      "description": "Run a reusable custom step by id. Inputs are provided as a JSON object and become scoped variables for nested actions. For repeated calls that only differ by input values, prefer one runCustomStep inside a repeat dataset.",
+      "requiredFields": [
+        "customStepId"
+      ],
+      "fields": {
+        "customStepId": {
+          "type": "string",
+          "required": true,
+          "label": "Custom step name",
+          "description": "Name of the custom step definition to run."
+        },
+        "argsJson": {
+          "type": "string|object",
+          "required": false,
+          "label": "Inputs (JSON object)",
+          "description": "Optional inputs passed to this custom step: an object, or the same object as JSON text. Example: {\"label\":\"Settings\"}"
+        },
+        "exportVars": {
+          "type": "string[]",
+          "required": false,
+          "label": "Export vars",
+          "description": "Optional variable names to copy back to parent scope after execution."
+        },
+        "maxDepth": {
+          "type": "number",
+          "required": false,
+          "label": "Max nesting depth",
+          "description": "Safety limit for nested custom step calls.",
+          "default": 15,
+          "integer": true
+        },
+        "allowRecursion": {
+          "type": "boolean",
+          "required": false,
+          "label": "Allow direct self-recursion",
+          "description": "Allow only direct self-recursion for this call (A -> A). Indirect cycles (A -> B -> A) are still blocked.",
+          "default": false
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional step",
+          "description": "If true and this call fails, mark as failed-optional and continue.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Call label",
+          "description": "Name for reporting/logging."
+        }
+      },
+      "examples": [
+        {
+          "title": "Run reusable scan bundle",
+          "snippet": {
+            "type": "runCustomStep",
+            "customStepId": "scan-desktop-mobile",
+            "argsJson": "{\"viewLabel\":\"Products\"}"
+          }
+        }
+      ]
+    },
+    "if": {
+      "label": "Condition",
+      "category": "composition",
+      "description": "Run one branch when the condition is true, otherwise run elseActions. Variables set inside a branch (getText, getCount, setVar) are only available to later steps in that branch; to use a value after the condition, set it before or outside it.",
+      "requiredFields": [],
+      "fields": {
+        "selectorExists": {
+          "type": "string",
+          "required": false,
+          "label": "Selector exists",
+          "description": "Condition is true if this selector exists. Use :ctx inside forEachElement."
+        },
+        "urlIncludes": {
+          "type": "string",
+          "required": false,
+          "label": "URL includes",
+          "description": "Condition is true if the URL includes this substring."
+        },
+        "actions": {
+          "type": "Action[]",
+          "required": false,
+          "label": "If actions",
+          "description": "Actions to run when the condition is true."
+        },
+        "elseActions": {
+          "type": "Action[]",
+          "required": false,
+          "label": "Else actions",
+          "description": "Actions to run when the condition is false."
+        },
+        "onlyVisible": {
+          "type": "boolean",
+          "required": false,
+          "label": "Only visible items",
+          "description": "When true, only iterate elements that are visible (non-zero size, not display:none, not visibility:hidden).",
+          "default": true
+        },
+        "var": {
+          "type": "string",
+          "required": false,
+          "label": "Variable name",
+          "description": "Variable name to compare using “equals”."
+        },
+        "equals": {
+          "type": "any",
+          "required": false,
+          "label": "Equals value",
+          "description": "Value to compare against the variable, as text: 2310 matches a variable holding the number 2310, and true matches true."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional block",
+          "description": "If true and the block fails, mark as failed-optional and continue.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Block label",
+          "description": "Name for reporting."
+        }
+      },
+      "examples": [
+        {
+          "title": "Apply promo code if field exists",
+          "snippet": {
+            "type": "if",
+            "selectorExists": "#promo-code",
+            "actions": [
+              {
+                "type": "type",
+                "selector": "#promo-code",
+                "text": "WELCOME"
+              }
+            ],
+            "elseActions": [
+              {
+                "type": "screenshot",
+                "label": "no-promo"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "ifUrl": {
+      "label": "URL condition",
+      "category": "composition",
+      "description": "Compare one part of the current page URL (domain name, port, path, query string, one query parameter or fragment) with a value, and run one branch when the comparison is true, otherwise run elseActions. Variables set inside a branch are only available to later steps in that branch.",
+      "requiredFields": [
+        "urlPart",
+        "comparison"
+      ],
+      "fields": {
+        "urlPart": {
+          "type": "string",
+          "required": true,
+          "label": "URL part",
+          "description": "Which part of the URL to compare. For https://shop.example.com:8443/cart/checkout?step=2&lang=en#payment: domain name is shop.example.com, port is 8443 (a URL with no port uses the protocol's default, 443 for https and 80 for http), path is /cart/checkout, query string is step=2&lang=en, the query parameter \"step\" is 2, and fragment is payment.",
+          "options": [
+            {
+              "value": "host",
+              "label": "Domain name"
+            },
+            {
+              "value": "port",
+              "label": "Port"
+            },
+            {
+              "value": "path",
+              "label": "Path"
+            },
+            {
+              "value": "query",
+              "label": "Query string (all parameters)"
+            },
+            {
+              "value": "param",
+              "label": "One query parameter"
+            },
+            {
+              "value": "hash",
+              "label": "Fragment (#…)"
+            }
+          ]
+        },
+        "paramName": {
+          "type": "string",
+          "required": false,
+          "label": "Parameter name",
+          "description": "Name of the query parameter to compare, when URL part is \"One query parameter\". A parameter missing from the URL equals nothing and contains nothing, so \"is different from\" and \"does not contain\" are true for it."
+        },
+        "comparison": {
+          "type": "string",
+          "required": true,
+          "label": "Comparison",
+          "description": "How to compare the URL part with the value.",
+          "default": "equals",
+          "options": [
+            {
+              "value": "equals",
+              "label": "is equal to"
+            },
+            {
+              "value": "notEquals",
+              "label": "is different from"
+            },
+            {
+              "value": "contains",
+              "label": "contains"
+            },
+            {
+              "value": "notContains",
+              "label": "does not contain"
+            }
+          ]
+        },
+        "value": {
+          "type": "string",
+          "required": false,
+          "label": "Value",
+          "description": "Text to compare with, without the leading ? or # (either is ignored if typed). Empty means the part is empty: a fragment equal to nothing means the URL has no fragment. The domain name is compared ignoring case; every other part is case-sensitive. Supports {var:name}."
+        },
+        "actions": {
+          "type": "Action[]",
+          "required": false,
+          "label": "If actions",
+          "description": "Actions to run when the comparison is true."
+        },
+        "elseActions": {
+          "type": "Action[]",
+          "required": false,
+          "label": "Else actions",
+          "description": "Actions to run when the comparison is false."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional block",
+          "description": "If true and the block fails, mark as failed-optional and continue.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Block label",
+          "description": "Name for reporting."
+        }
+      },
+      "examples": [
+        {
+          "title": "Scan the payment step only",
+          "snippet": {
+            "type": "ifUrl",
+            "urlPart": "param",
+            "paramName": "step",
+            "comparison": "equals",
+            "value": "payment",
+            "actions": [
+              {
+                "type": "a11yScan",
+                "label": "Payment step"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Go back to the site if a link left the domain",
+          "snippet": {
+            "type": "ifUrl",
+            "urlPart": "host",
+            "comparison": "notEquals",
+            "value": "www.example.com",
+            "actions": [
+              {
+                "type": "goBack"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "switch": {
+      "label": "Switch",
+      "category": "composition",
+      "description": "Compare one value, a part of the current page URL or a variable, with each case in order, and run the first case that matches; when none matches, run the default actions. Variables set inside a case are only available to later steps in that case.",
+      "requiredFields": [
+        "subject"
+      ],
+      "fields": {
+        "subject": {
+          "type": "string",
+          "required": true,
+          "label": "Compare",
+          "description": "What the cases are compared with: a part of the current page URL, or a workflow variable.",
+          "default": "url",
+          "options": [
+            {
+              "value": "url",
+              "label": "A part of the page URL"
+            },
+            {
+              "value": "var",
+              "label": "A variable"
+            }
+          ]
+        },
+        "urlPart": {
+          "type": "string",
+          "required": false,
+          "label": "URL part",
+          "description": "When comparing a part of the URL: which part. Read like the URL condition step: no leading ? or #, and a URL with no port is on its protocol's default one.",
+          "options": [
+            {
+              "value": "host",
+              "label": "Domain name"
+            },
+            {
+              "value": "port",
+              "label": "Port"
+            },
+            {
+              "value": "path",
+              "label": "Path"
+            },
+            {
+              "value": "query",
+              "label": "Query string (all parameters)"
+            },
+            {
+              "value": "param",
+              "label": "One query parameter"
+            },
+            {
+              "value": "hash",
+              "label": "Fragment (#…)"
+            }
+          ]
+        },
+        "paramName": {
+          "type": "string",
+          "required": false,
+          "label": "Parameter name",
+          "description": "When the URL part is \"One query parameter\": the parameter's name."
+        },
+        "var": {
+          "type": "string",
+          "required": false,
+          "label": "Variable name",
+          "description": "When comparing a variable: its name. Found the way {var:name} finds it; an unset variable equals nothing and contains nothing."
+        },
+        "cases": {
+          "type": "Action[]",
+          "required": false,
+          "label": "Cases",
+          "description": "The cases, checked in order. The first one that matches runs, and the rest are not checked."
+        },
+        "defaultActions": {
+          "type": "Action[]",
+          "required": false,
+          "label": "Default actions",
+          "description": "Actions to run when no case matches."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional block",
+          "description": "If true and the block fails, mark as failed-optional and continue.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Block label",
+          "description": "Name for reporting."
+        }
+      },
+      "examples": [
+        {
+          "title": "Different actions per component examples page",
+          "snippet": {
+            "type": "switch",
+            "subject": "url",
+            "urlPart": "hash",
+            "cases": [
+              {
+                "type": "case",
+                "comparison": "contains",
+                "value": "/avq-popover/examples",
+                "actions": [
+                  {
+                    "type": "click",
+                    "selector": "button[aria-label=\"More information\"]"
+                  }
+                ]
+              },
+              {
+                "type": "case",
+                "comparison": "contains",
+                "value": "/avq-snackbar/examples",
+                "actions": [
+                  {
+                    "type": "clickByText",
+                    "labelText": "Open snackbar"
+                  }
+                ]
+              }
+            ],
+            "defaultActions": []
+          }
+        }
+      ]
+    },
+    "case": {
+      "label": "Case",
+      "category": "composition",
+      "description": "One case of a switch: when the switch's value matches, its actions run. Only used inside a switch's cases.",
+      "requiredFields": [
+        "comparison"
+      ],
+      "fields": {
+        "comparison": {
+          "type": "string",
+          "required": true,
+          "label": "Comparison",
+          "description": "How to compare the switch's value with this case's value.",
+          "default": "equals",
+          "options": [
+            {
+              "value": "equals",
+              "label": "is equal to"
+            },
+            {
+              "value": "notEquals",
+              "label": "is different from"
+            },
+            {
+              "value": "contains",
+              "label": "contains"
+            },
+            {
+              "value": "notContains",
+              "label": "does not contain"
+            }
+          ]
+        },
+        "value": {
+          "type": "string",
+          "required": false,
+          "label": "Value",
+          "description": "Text to compare with. For a URL part, compared the way the URL condition step compares it. Supports {var:name}."
+        },
+        "actions": {
+          "type": "Action[]",
+          "required": false,
+          "label": "Case actions",
+          "description": "Actions to run when this case matches."
+        }
+      },
+      "examples": [
+        {
+          "title": "Case for the changelog page",
+          "snippet": {
+            "type": "case",
+            "comparison": "equals",
+            "value": "/changelog",
+            "actions": [
+              {
+                "type": "a11yScan"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "repeat": {
+      "label": "Repeat",
+      "category": "composition",
+      "description": "Run the same list of actions multiple times, either by a fixed repetition count or by iterating over a dataset (one item per line). Useful for replacing duplicated actions that only differ by one value.",
+      "requiredFields": [
+        "actions"
+      ],
+      "fields": {
+        "repetitions": {
+          "type": "number",
+          "required": false,
+          "label": "Repetitions",
+          "description": "How many times to repeat. Accepts a whole number or a variable token such as {var:count} (for example, a count stored by \"Count elements into variable\"). The variable is turned into a number when the step runs; if it is not a whole number the repeat runs 0 times and a warning is logged.",
+          "default": 1,
+          "integer": true,
+          "min": 1
+        },
+        "itemsText": {
+          "type": "string",
+          "required": false,
+          "label": "Dataset (one item per line)",
+          "description": "Optional dataset to drive iterations. Each non-empty line is one item. Lines may be plain text (mapped to item.value and available as {var:value}) or JSON objects (mapped to item.key and available as {var:item.key}). All values are normalized to strings. When provided, this overrides repetitions. Use this with runCustomStep argsJson to avoid repeating the same custom-step call for each static value."
+        },
+        "continueOnIterationError": {
+          "type": "boolean",
+          "required": false,
+          "label": "Continue on error",
+          "description": "If an iteration fails, the process continues to the next iteration.",
+          "default": true
+        },
+        "actions": {
+          "type": "Action[]",
+          "required": true,
+          "label": "Actions",
+          "description": "Actions to run each time."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional block",
+          "description": "If one iteration fails, mark as failed-optional and continue.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Block label",
+          "description": "Name for reporting."
+        },
+        "closeWorkerPages": {
+          "type": "boolean",
+          "required": false,
+          "label": "Close worker pages",
+          "description": "Whether to close worker pages after all repeat iterations complete.",
+          "default": true
+        },
+        "maxSeconds": {
+          "type": "number",
+          "required": false,
+          "label": "Max time (s)",
+          "description": "Maximum allowed execution time (in seconds) for the entire repeat action.",
+          "default": null
+        },
+        "perPageDelayMs": {
+          "type": "number",
+          "required": false,
+          "label": "Delay per page (ms)",
+          "description": "Optional delay (in milliseconds) applied between iteration executions.",
+          "default": 0
+        }
+      },
+      "examples": [
+        {
+          "title": "Cycle carousel three times",
+          "snippet": {
+            "type": "repeat",
+            "repetitions": 3,
+            "actions": [
+              {
+                "type": "click",
+                "selector": ".carousel-next"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Iterate viewport presets for one custom-step call",
+          "snippet": {
+            "type": "repeat",
+            "itemsText": "desktop\ntablet\nmobile",
+            "actions": [
+              {
+                "type": "runCustomStep",
+                "customStepId": "a11y-scan-in-viewport",
+                "argsJson": "{\"label\":\"{var:label}\",\"preset\":\"{var:value}\",\"viewportName\":\"{var:value}\"}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "forEachElement": {
+      "label": "Iterate",
+      "category": "composition",
+      "description": "Repeat actions for each element that matches a selector. Inside, use :ctx to target the current element. Use {index}, {oneBased}, and {total} in strings. This is for DOM elements; use repeat for static value lists.",
+      "requiredFields": [
+        "targetSelector",
+        "actions"
+      ],
+      "fields": {
+        "targetSelector": {
+          "type": "string",
+          "required": true,
+          "label": "Items selector",
+          "description": "Selector that returns one or many elements."
+        },
+        "onlyVisible": {
+          "type": "boolean",
+          "required": false,
+          "label": "Only visible items",
+          "description": "When true, only iterate elements that are visible (non-zero size, not display:none, not visibility:hidden).",
+          "default": true
+        },
+        "concurrency": {
+          "type": "number",
+          "required": false,
+          "label": "Concurrency",
+          "description": "Number of concurrent workers used to process iterations, from 1 to 8. When greater than 1, each iteration runs in its own isolated worker page.",
+          "default": 1,
+          "integer": true,
+          "min": 1,
+          "max": 8
+        },
+        "continueOnIterationError": {
+          "type": "boolean",
+          "required": false,
+          "label": "Continue on error",
+          "description": "If an iteration fails, the process continues to the next iteration.",
+          "default": true
+        },
+        "maxIterationErrors": {
+          "type": "number",
+          "required": false,
+          "label": "Max iteration errors",
+          "description": "If set, stop after this many iteration errors (only applies when 'Continue on error' is enabled).",
+          "default": null,
+          "integer": true
+        },
+        "iterSetupActions": {
+          "type": "Action[]",
+          "required": false,
+          "label": "Iteration setup",
+          "description": "Actions that run before collecting items, and again before each iteration. Use this to reveal menus or panels that contain the target elements. Do not use :ctx here."
+        },
+        "preActions": {
+          "type": "Action[]",
+          "required": false,
+          "label": "Pre-actions",
+          "description": "Actions that run after an item is selected and scoped, before the main actions. Use :ctx here."
+        },
+        "actions": {
+          "type": "Action[]",
+          "required": true,
+          "label": "Actions",
+          "description": "Actions to run on each item. Use :ctx to target the current item."
+        },
+        "limit": {
+          "type": "number",
+          "required": false,
+          "label": "Max items",
+          "description": "Max number of elements to process. 0 means unlimited.",
+          "default": 0,
+          "integer": true
+        },
+        "reverse": {
+          "type": "boolean",
+          "required": false,
+          "label": "Reverse order",
+          "description": "Iterate from last to first when true.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Block label",
+          "description": "Label for logging only."
+        },
+        "isolation": {
+          "type": "string",
+          "required": false,
+          "label": "Isolation",
+          "description": "With a concurrency above 1, whether the extra pages share cookies and session with the main page (page), or each runs in a browser context of its own (context).",
+          "default": "page",
+          "options": [
+            {
+              "value": "page",
+              "label": "Shared session (page)"
+            },
+            {
+              "value": "context",
+              "label": "Separate sessions (context)"
+            }
+          ]
+        },
+        "closeWorkerPages": {
+          "type": "boolean",
+          "required": false,
+          "label": "Close worker pages",
+          "description": "Close the extra pages a concurrency above 1 opened once every item is done.",
+          "default": true
+        },
+        "maxSeconds": {
+          "type": "number",
+          "required": false,
+          "label": "Max time (s)",
+          "description": "Maximum allowed execution time (in seconds) for the entire repeat action.",
+          "default": null
+        },
+        "perPageDelayMs": {
+          "type": "number",
+          "required": false,
+          "label": "Delay per iteration (ms)",
+          "description": "Optional delay (in milliseconds) applied between iteration executions.",
+          "default": 0
+        },
+        "dynamic": {
+          "type": "boolean",
+          "required": false,
+          "label": "Dynamic selection",
+          "description": "Re-evaluate the selector on each iteration. Use this when the DOM list changes between iterations.",
+          "default": false
+        }
+      },
+      "examples": [
+        {
+          "title": "Scan each top navigation link",
+          "snippet": {
+            "type": "forEachElement",
+            "targetSelector": "header .navigation a",
+            "preActions": [
+              {
+                "type": "getText",
+                "selector": ":ctx",
+                "var": "scanTitle",
+                "trim": true
+              }
+            ],
+            "actions": [
+              {
+                "type": "click",
+                "selector": ":ctx"
+              },
+              {
+                "type": "waitForSelector",
+                "selector": "main"
+              },
+              {
+                "type": "a11yScan",
+                "label": "{var:scanTitle}"
+              },
+              {
+                "type": "goBack"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Iterate products without returning (dynamic list)",
+          "snippet": {
+            "type": "forEachElement",
+            "targetSelector": ".product-card a",
+            "dynamic": true,
+            "actions": [
+              {
+                "type": "click",
+                "selector": ":ctx"
+              },
+              {
+                "type": "waitForSelector",
+                "selector": "main"
+              },
+              {
+                "type": "a11yScan",
+                "label": "Product {oneBased}"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Hover to reveal a panel, then iterate links",
+          "snippet": {
+            "type": "forEachElement",
+            "iterSetupActions": [
+              {
+                "type": "hoverByText",
+                "selector": "header nav",
+                "labelText": "Products",
+                "exact": true
+              },
+              {
+                "type": "waitForSelector",
+                "selector": ".products-panel",
+                "visible": true,
+                "timeout": 5000
+              }
+            ],
+            "targetSelector": ".products-panel a",
+            "preActions": [
+              {
+                "type": "getText",
+                "selector": ":ctx",
+                "var": "scanTitle",
+                "trim": true
+              }
+            ],
+            "actions": [
+              {
+                "type": "click",
+                "selector": ":ctx"
+              },
+              {
+                "type": "waitForSelector",
+                "selector": "main"
+              },
+              {
+                "type": "a11yScan",
+                "label": "{var:scanTitle}"
+              },
+              {
+                "type": "goBack"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "crawlQueue": {
+      "label": "Crawl queue",
+      "category": "crawl",
+      "description": "Depth-limited crawl with strict budgets. For each visited page, run nested actions, then discover and enqueue new links.",
+      "requiredFields": [
+        "actions"
+      ],
+      "fields": {
+        "maxDepth": {
+          "type": "number",
+          "required": false,
+          "label": "Max depth",
+          "description": "Maximum link depth to follow from seeds. 0 means only the seed pages.",
+          "default": 2,
+          "integer": true
+        },
+        "strategy": {
+          "type": "string",
+          "required": false,
+          "label": "Strategy",
+          "description": "Queue strategy: 'By level first' or 'Deep as possible first'.",
+          "default": "bfs",
+          "options": [
+            {
+              "value": "bfs",
+              "label": "By level first"
+            },
+            {
+              "value": "dfs",
+              "label": "Deep as possible first"
+            }
+          ]
+        },
+        "isolation": {
+          "type": "string",
+          "required": false,
+          "label": "Isolation",
+          "description": "Whether worker pages share cookies and session with the main page (page), or run in isolated browser contexts (context).",
+          "default": "page",
+          "options": [
+            {
+              "value": "page",
+              "label": "Shared session (page)"
+            },
+            {
+              "value": "context",
+              "label": "Separate sessions (context)"
+            }
+          ]
+        },
+        "maxPages": {
+          "type": "number",
+          "required": false,
+          "label": "Max pages",
+          "description": "Maximum number of pages to visit.",
+          "default": 30,
+          "integer": true
+        },
+        "continueOnIterationError": {
+          "type": "boolean",
+          "required": false,
+          "label": "Continue on error",
+          "description": "If an iteration fails, the process continues to the next iteration.",
+          "default": true
+        },
+        "actions": {
+          "type": "Action[]",
+          "required": true,
+          "label": "Actions for each visited page",
+          "description": "Actions to run on every visited page, typically navigate + a11yScan."
+        },
+        "maxSeconds": {
+          "type": "number",
+          "required": false,
+          "label": "Max time (s)",
+          "description": "Maximum crawl time in seconds.",
+          "default": 600
+        },
+        "sameOriginOnly": {
+          "type": "boolean",
+          "required": false,
+          "label": "Same origin only",
+          "description": "Only crawl URLs on the same origin as the seed/current page.",
+          "default": true
+        },
+        "perPageDelayMs": {
+          "type": "number",
+          "required": false,
+          "label": "Delay per page (ms)",
+          "description": "Delay between pages in milliseconds.",
+          "default": 200
+        },
+        "maxLinksPerPage": {
+          "type": "number",
+          "required": false,
+          "label": "Max links per page",
+          "description": "Maximum number of discovered links to enqueue per visited page.",
+          "default": 200,
+          "integer": true
+        },
+        "include": {
+          "type": "string",
+          "required": false,
+          "label": "Include patterns",
+          "description": "One pattern per line. Supports /regex/flags or wildcards (* and ?). If set, only matching URLs are enqueued."
+        },
+        "exclude": {
+          "type": "string",
+          "required": false,
+          "label": "Exclude patterns",
+          "description": "One pattern per line. Supports /regex/flags or wildcards (* and ?). Matching URLs are skipped."
+        },
+        "queueVar": {
+          "type": "string",
+          "required": false,
+          "label": "Queue variable",
+          "description": "Variable path storing the URL queue (array).",
+          "default": "crawl.queue"
+        },
+        "visitedVar": {
+          "type": "string",
+          "required": false,
+          "label": "Visited variable",
+          "description": "Variable path storing visited URLs (array).",
+          "default": "crawl.visited"
+        },
+        "varNs": {
+          "type": "string",
+          "required": false,
+          "label": "Variable namespace",
+          "description": "Namespace used for per-page variables: crawl_url, crawl_depth, crawl_index, crawl_total.",
+          "default": "crawl"
+        }
+      }
+    },
+    "skipIteration": {
+      "label": "Skip iteration",
+      "category": "flow",
+      "description": "Inside a loop (For each element, Repeat or Crawl), skip the rest of the current item when its conditions match, and go on with the next one. Each field you fill in is one condition: Selector exists; each check on the element of Element selector (Text equals, Text contains, Attribute equals, Attribute contains, or Attribute name alone for having it); URL includes; Variable equals. The item is skipped when all of them match, or, with Use OR, when any of them does. A step with no condition never skips. Text checks are case-sensitive and read the text with its spaces collapsed. In a Crawl, a skipped page's links are not followed.",
+      "requiredFields": [],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": false,
+          "label": "Element selector",
+          "description": "The element the text and attribute checks read: the first one this selector matches. Use :ctx for the current item (:ctx alone for the item itself). If nothing matches, each of those checks fails. On its own, with no check, the element being there is the condition."
+        },
+        "selectorExists": {
+          "type": "string",
+          "required": false,
+          "label": "Selector exists",
+          "description": "A condition: an element matches this selector. Use :ctx for inside the current item. Independent of Element selector."
+        },
+        "selectorAttr": {
+          "type": "string",
+          "required": false,
+          "label": "Attribute name",
+          "description": "The element's attribute that Attribute equals and Attribute contains read. With neither, the condition is that the element has it."
+        },
+        "attrEquals": {
+          "type": "string",
+          "required": false,
+          "label": "Attribute equals",
+          "description": "A condition: the attribute's value is exactly this."
+        },
+        "attrContains": {
+          "type": "string",
+          "required": false,
+          "label": "Attribute contains",
+          "description": "A condition: the attribute's value contains this."
+        },
+        "selectorTextEquals": {
+          "type": "string",
+          "required": false,
+          "label": "Text equals",
+          "description": "A condition: the element's text is exactly this."
+        },
+        "selectorTextContains": {
+          "type": "string",
+          "required": false,
+          "label": "Text contains",
+          "description": "A condition: the element's text contains this."
+        },
+        "var": {
+          "type": "string",
+          "required": false,
+          "label": "Variable name",
+          "description": "The variable Variable equals compares."
+        },
+        "varEquals": {
+          "type": "string",
+          "required": false,
+          "label": "Variable equals",
+          "description": "A condition: the variable equals this, compared as text (2310 equals the number 2310). An unset variable equals nothing."
+        },
+        "urlIncludes": {
+          "type": "string",
+          "required": false,
+          "label": "URL includes",
+          "description": "A condition: the page's address contains this."
+        },
+        "or": {
+          "type": "boolean",
+          "required": false,
+          "label": "Use OR across conditions",
+          "description": "Skip when any condition matches, instead of only when all of them do.",
+          "default": false
+        }
+      },
+      "examples": [
+        {
+          "title": "Skip newsletter items",
+          "snippet": {
+            "type": "skipIteration",
+            "selector": ":ctx",
+            "selectorTextContains": "Subscribe",
+            "or": false
+          }
+        },
+        {
+          "title": "Skip links to other sites that offer a download (both must match)",
+          "snippet": {
+            "type": "skipIteration",
+            "selector": ":ctx",
+            "selectorAttr": "href",
+            "attrContains": "://",
+            "selectorTextContains": "Download"
+          }
+        },
+        {
+          "title": "Skip sold-out items, or anything on an archive page (either is enough)",
+          "snippet": {
+            "type": "skipIteration",
+            "selectorExists": ":ctx .sold-out",
+            "urlIncludes": "/archive/",
+            "or": true
+          }
+        }
+      ]
+    },
+    "goBack": {
+      "label": "Go back",
+      "category": "navigation",
+      "description": "Navigate back in history and wait until the page is ready.",
+      "requiredFields": [],
+      "fields": {
+        "waitUntil": {
+          "type": "string",
+          "required": false,
+          "label": "Wait until",
+          "description": "Navigation completion signal.",
+          "default": "load",
+          "options": [
+            {
+              "value": "load",
+              "label": "load"
+            },
+            {
+              "value": "domcontentloaded",
+              "label": "domcontentloaded"
+            },
+            {
+              "value": "networkidle0",
+              "label": "networkidle0"
+            }
+          ]
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Return to listing",
+          "snippet": {
+            "type": "goBack",
+            "waitUntil": "domcontentloaded"
+          }
+        }
+      ]
+    },
+    "screenshot": {
+      "label": "Screenshot",
+      "category": "reporting",
+      "description": "Capture a screenshot at the current state and attach it to the results.",
+      "requiredFields": [],
+      "fields": {
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Display label",
+          "description": "Display label for logs and reports."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        },
+        "preserveHover": {
+          "type": "boolean",
+          "required": false,
+          "label": "Preserve hover state",
+          "description": "Keep current :hover styling in this screenshot. Disable to clear transient hover before capture.",
+          "default": false
+        }
+      },
+      "examples": [
+        {
+          "title": "Capture after login",
+          "snippet": {
+            "type": "screenshot",
+            "label": "after-login"
+          }
+        }
+      ]
+    },
+    "getText": {
+      "label": "Get text into variable",
+      "category": "variables",
+      "description": "Read textContent from the first matching element and store it into a variable.",
+      "requiredFields": [
+        "selector",
+        "var"
+      ],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": true,
+          "label": "Element selector",
+          "description": "CSS selector to read."
+        },
+        "var": {
+          "type": "string",
+          "required": true,
+          "label": "Variable name",
+          "description": "Variable name to store the value."
+        },
+        "attr": {
+          "type": "string",
+          "required": false,
+          "label": "Attribute name",
+          "description": "If set, reads the given attribute instead of textContent (e.g. href, aria-label, data-id)."
+        },
+        "rawAttr": {
+          "type": "boolean",
+          "required": false,
+          "label": "Read raw attribute value",
+          "description": "When attr is href, read the raw HTML attribute (e.g. ../page.html) instead of the resolved absolute URL.",
+          "default": false
+        },
+        "useInnerText": {
+          "type": "boolean",
+          "required": false,
+          "label": "Use rendered text (innerText)",
+          "description": "Use innerText instead of textContent. Slower but respects visibility and CSS.",
+          "default": false
+        },
+        "trim": {
+          "type": "boolean",
+          "required": false,
+          "label": "Trim whitespace",
+          "description": "Trim and collapse whitespace when true.",
+          "default": true
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Save card title during iteration",
+          "snippet": {
+            "type": "getText",
+            "selector": ":ctx .title",
+            "var": "scanTitle",
+            "trim": true
+          }
+        },
+        {
+          "title": "Read link URL",
+          "snippet": {
+            "type": "getText",
+            "selector": ":ctx a",
+            "attr": "href",
+            "var": "targetUrl"
+          }
+        },
+        {
+          "title": "Read aria-label for accessibility checks",
+          "snippet": {
+            "type": "getText",
+            "selector": "button",
+            "attr": "aria-label",
+            "var": "buttonLabel"
+          }
+        }
+      ]
+    },
+    "getCount": {
+      "label": "Count elements into variable",
+      "category": "variables",
+      "description": "Count the elements that match a selector (including inside open shadow roots) and store the number into a variable. Stores 0 when nothing matches. The variable can be used in number fields, e.g. repeat's repetitions: {var:count}.",
+      "requiredFields": [
+        "selector",
+        "var"
+      ],
+      "fields": {
+        "selector": {
+          "type": "string",
+          "required": true,
+          "label": "Element selector",
+          "description": "CSS selector to count."
+        },
+        "var": {
+          "type": "string",
+          "required": true,
+          "label": "Variable name",
+          "description": "Variable name to store the count."
+        },
+        "logValue": {
+          "type": "boolean",
+          "required": false,
+          "label": "Log the value",
+          "description": "Write the stored count to the run log.",
+          "default": false
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Count result rows",
+          "snippet": {
+            "type": "getCount",
+            "selector": "ul.results > li",
+            "var": "resultCount",
+            "logValue": true
+          }
+        },
+        {
+          "title": "Repeat once per tab",
+          "snippet": {
+            "type": "group",
+            "actions": [
+              {
+                "type": "getCount",
+                "selector": "[role=tab]",
+                "var": "tabCount"
+              },
+              {
+                "type": "repeat",
+                "repetitions": "{var:tabCount}",
+                "actions": [
+                  {
+                    "type": "keyboard",
+                    "keys": [
+                      "ArrowRight"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "setVar": {
+      "label": "Set variable",
+      "category": "variables",
+      "description": "Set a workflow variable to a literal value. Strings support {var:name} expansion.",
+      "requiredFields": [
+        "key",
+        "value"
+      ],
+      "fields": {
+        "key": {
+          "type": "string",
+          "required": true,
+          "label": "Variable name",
+          "description": "Variable name."
+        },
+        "value": {
+          "type": "string|number|boolean",
+          "required": true,
+          "label": "Value",
+          "description": "Value to assign. For strings, you can use {var:name}."
+        },
+        "from": {
+          "type": "string",
+          "required": false,
+          "label": "Source",
+          "description": "Set from a runtime source instead of a literal value. Supported: url.",
+          "options": [
+            {
+              "value": "url",
+              "label": "Current page URL"
+            }
+          ]
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Set section name",
+          "snippet": {
+            "type": "setVar",
+            "key": "section",
+            "value": "Checkout"
+          }
+        }
+      ]
+    },
+    "clearVar": {
+      "label": "Clear variable",
+      "category": "variables",
+      "description": "Remove a variable from the workflow variable map.",
+      "requiredFields": [
+        "key"
+      ],
+      "fields": {
+        "key": {
+          "type": "string",
+          "required": true,
+          "label": "Variable name",
+          "description": "Variable name to remove."
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        }
+      },
+      "examples": [
+        {
+          "title": "Clear a temporary variable",
+          "snippet": {
+            "type": "clearVar",
+            "key": "scanTitle"
+          }
+        }
+      ]
+    },
+    "collectOutput": {
+      "label": "Collect metadata",
+      "category": "reporting",
+      "description": "Record a value into the run's collected-metadata report, grouped by key. Useful inside loops (forEachElement/repeat/crawlQueue) to build a list of values across pages, optionally only when a condition holds.",
+      "requiredFields": [
+        "key"
+      ],
+      "fields": {
+        "key": {
+          "type": "string",
+          "required": true,
+          "label": "Key",
+          "description": "Grouping key for the report panel. Supports {var:name}."
+        },
+        "value": {
+          "type": "string",
+          "required": false,
+          "label": "Literal value",
+          "description": "Literal/template value to record. Supports {var:name}, {index}, {oneBased}, {total}. Exactly one of value/fromVar/from must be set."
+        },
+        "fromVar": {
+          "type": "string",
+          "required": false,
+          "label": "From variable",
+          "description": "Record the current value of this workflow variable."
+        },
+        "from": {
+          "type": "string",
+          "required": false,
+          "label": "From page",
+          "description": "Record a page-derived value instead of a literal/variable.",
+          "options": [
+            {
+              "value": "url",
+              "label": "Current page URL"
+            },
+            {
+              "value": "selectorText",
+              "label": "Text content of a selector"
+            },
+            {
+              "value": "selectorAttr",
+              "label": "Attribute of a selector"
+            }
+          ]
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Display label",
+          "description": "Display label; defaults to the key."
+        },
+        "selector": {
+          "type": "string",
+          "required": false,
+          "label": "Element selector",
+          "description": "Used when from is selectorText or selectorAttr. Use selector: \"title\" for the page title, \"h1\" for the main heading."
+        },
+        "attr": {
+          "type": "string",
+          "required": false,
+          "label": "Attribute name",
+          "description": "Used when from is selectorAttr (e.g. href, aria-label)."
+        },
+        "trim": {
+          "type": "boolean",
+          "required": false,
+          "label": "Trim whitespace",
+          "description": "Trim and collapse whitespace when reading from the page.",
+          "default": true
+        },
+        "tags": {
+          "type": "array",
+          "required": false,
+          "label": "Tags",
+          "description": "Freeform tags rolled up into the report's summary counts (e.g. [\"emptyView\"])."
+        },
+        "when": {
+          "type": "string",
+          "required": false,
+          "label": "Condition (JSON object)",
+          "description": "Only record when this predicate matches. JSON object with the same shape as skipIteration's condition fields (selectorExists, selector+selectorTextEquals/selectorTextContains, selector+selectorAttr+attrEquals/attrContains, urlIncludes, var+varEquals, or). Omit to always record. Example: {\"selectorExists\":\".empty-state\"}"
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        }
+      },
+      "examples": [
+        {
+          "title": "Collect every breadcrumb across all iterations",
+          "snippet": {
+            "type": "collectOutput",
+            "key": "breadcrumb",
+            "from": "selectorText",
+            "selector": "nav.breadcrumb"
+          }
+        },
+        {
+          "title": "Save URL only when a view has no data",
+          "snippet": {
+            "type": "collectOutput",
+            "key": "emptyView",
+            "from": "url",
+            "tags": [
+              "emptyView"
+            ],
+            "when": "{\"selectorExists\": \".empty-state\"}"
+          }
+        },
+        {
+          "title": "Record a variable captured earlier",
+          "snippet": {
+            "type": "collectOutput",
+            "key": "title",
+            "fromVar": "pageTitle"
+          }
+        },
+        {
+          "title": "Log a fixed marker with iteration context",
+          "snippet": {
+            "type": "collectOutput",
+            "key": "note",
+            "value": "Reached checkout on iteration {oneBased}/{total}"
+          }
+        }
+      ]
+    },
+    "evidenceCapture": {
+      "label": "Save evidence",
+      "category": "reporting",
+      "description": "Capture a stable page state and attach it as an ordered artifact in the timeline. By default it saves a PNG preview and an MHTML snapshot (includes CSS and assets).",
+      "requiredFields": [],
+      "fields": {
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Display label",
+          "description": "Optional label for the artifact shown in reports and live stream. Supports {var:name}, {index}, {oneBased}, {total}. If empty, the system will generate “Evidence N”."
+        },
+        "evidenceVariant": {
+          "type": "string",
+          "required": false,
+          "label": "Variants to save",
+          "description": "Which variants to generate for this evidence capture.",
+          "default": "both",
+          "options": [
+            {
+              "value": "png",
+              "label": "PNG preview (screenshot)"
+            },
+            {
+              "value": "mhtml",
+              "label": "MHTML snapshot (offline replay, includes CSS)"
+            },
+            {
+              "value": "both",
+              "label": "PNG and MHTML snapshot"
+            }
+          ]
+        },
+        "onError": {
+          "type": "string",
+          "required": false,
+          "label": "On error",
+          "description": "What to do if saving evidence fails. Default is to continue the workflow and record the artifact error.",
+          "default": "continue",
+          "options": [
+            {
+              "value": "continue",
+              "label": "Continue (record error)"
+            },
+            {
+              "value": "fail",
+              "label": "Fail workflow"
+            }
+          ]
+        },
+        "preserveHover": {
+          "type": "boolean",
+          "required": false,
+          "label": "Preserve hover state",
+          "description": "Keep current :hover styling for evidence capture. Disable to clear transient hover before capture.",
+          "default": false
+        }
+      },
+      "examples": [
+        {
+          "title": "Default evidence capture (PNG + MHTML)",
+          "snippet": {
+            "type": "evidenceCapture"
+          }
+        },
+        {
+          "title": "Labelled evidence capture",
+          "snippet": {
+            "type": "evidenceCapture",
+            "label": "After login"
+          }
+        },
+        {
+          "title": "Only PNG preview",
+          "snippet": {
+            "type": "evidenceCapture",
+            "label": "Evidence (lightweight)",
+            "evidenceVariant": "png"
+          }
+        },
+        {
+          "title": "Strict evidence capture (fail if missing)",
+          "snippet": {
+            "type": "evidenceCapture",
+            "label": "Critical checkpoint",
+            "onError": "fail"
+          }
+        }
+      ]
+    },
+    "injectCss": {
+      "label": "Inject CSS",
+      "category": "debug",
+      "description": "Inject a CSS <style> tag into the current page. Useful to tweak visuals or stabilize UI behavior (for example, disable animations).",
+      "requiredFields": [
+        "css"
+      ],
+      "fields": {
+        "css": {
+          "type": "string",
+          "required": true,
+          "label": "CSS rules",
+          "description": "CSS text to inject. Supports {var:name}, {index}, {oneBased}, {total}."
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Log label",
+          "description": "Label for logging only."
+        },
+        "optional": {
+          "type": "boolean",
+          "required": false,
+          "label": "Optional action",
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false
+        }
+      },
+      "examples": [
+        {
+          "title": "Disable animations",
+          "snippet": {
+            "type": "injectCss",
+            "css": "*,*::before,*::after{animation:none!important;transition:none!important}"
+          }
+        },
+        {
+          "title": "Highlight focus for screenshots",
+          "snippet": {
+            "type": "injectCss",
+            "css": ":focus{outline:3px solid #f00!important;outline-offset:2px!important}"
+          }
+        }
+      ]
+    }
+  },
+  "examples": {
+    "minimalRunSpec": {
+      "$schema": "../schemas/run-spec.v1.schema.json",
+      "type": "a11y-run-spec",
+      "specVersion": 1,
+      "url": "https://example.com",
+      "scenarioName": "Minimal scan",
+      "viewport": "desktop-lg",
+      "actions": [
+        {
+          "type": "a11yScan",
+          "label": "Default page scan"
+        }
+      ]
+    },
+    "customStepsRunSpec": {
+      "$schema": "../schemas/run-spec.v1.schema.json",
+      "type": "a11y-run-spec",
+      "specVersion": 1,
+      "url": "https://example.com",
+      "scenarioName": "Custom steps demo",
+      "viewport": "desktop-lg",
+      "customSteps": [
+        {
+          "id": "scan-desktop-mobile",
+          "name": "Desktop + Mobile scans",
+          "inputs": [
+            {
+              "name": "viewLabel",
+              "required": true
+            }
+          ],
+          "actions": [
+            {
+              "type": "setViewport",
+              "preset": "desktop-lg",
+              "zoom": "1",
+              "optional": false
+            },
+            {
+              "type": "a11yScan",
+              "label": "{var:viewLabel} - desktop"
+            },
+            {
+              "type": "setViewport",
+              "preset": "mobile",
+              "zoom": "1",
+              "optional": false
+            },
+            {
+              "type": "a11yScan",
+              "label": "{var:viewLabel} - mobile"
+            },
+            {
+              "type": "setViewport",
+              "preset": "desktop-lg",
+              "zoom": "1",
+              "optional": false
+            }
+          ]
+        },
+        {
+          "id": "scan-desktop-evidence",
+          "name": "Desktop scan + screenshot",
+          "inputs": [
+            {
+              "name": "viewLabel",
+              "required": true
+            }
+          ],
+          "actions": [
+            {
+              "type": "setViewport",
+              "preset": "desktop-lg",
+              "optional": false
+            },
+            {
+              "type": "a11yScan",
+              "label": "{var:viewLabel} - desktop"
+            },
+            {
+              "type": "screenshot",
+              "label": "{var:viewLabel} - desktop"
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "type": "runCustomStep",
+          "customStepId": "scan-desktop-mobile",
+          "argsJson": "{\"viewLabel\":\"Home\"}",
+          "maxDepth": 15,
+          "optional": false
+        },
+        {
+          "type": "runCustomStep",
+          "customStepId": "scan-desktop-evidence",
+          "argsJson": "{\"viewLabel\":\"Pricing\"}",
+          "maxDepth": 15,
+          "optional": false
+        }
+      ]
+    },
+    "minimalConfig": {
+      "version": 1,
+      "type": "a11y-ui-src-config",
+      "url": "https://example.com",
+      "state": {
+        "url-input": "https://example.com",
+        "scenario-name": "Minimal scan",
+        "viewport-preset": "desktop-lg",
+        "actions-workflow": [
+          {
+            "type": "a11yScan",
+            "label": "Default page scan"
+          }
+        ]
+      },
+      "metadata": {
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    },
+    "customStepsConfig": {
+      "version": 1,
+      "type": "a11y-ui-src-config",
+      "url": "https://example.com",
+      "state": {
+        "url-input": "https://example.com",
+        "scenario-name": "Custom steps demo",
+        "viewport-preset": "desktop-lg",
+        "custom-steps-json": "[{\"id\":\"scan-desktop-mobile\",\"name\":\"Desktop + Mobile scans\",\"inputs\":[{\"name\":\"viewLabel\",\"required\":true}],\"actions\":[{\"type\":\"setViewport\",\"preset\":\"desktop-lg\",\"zoom\":\"1\",\"optional\":false},{\"type\":\"a11yScan\",\"label\":\"{var:viewLabel} - desktop\"},{\"type\":\"setViewport\",\"preset\":\"mobile\",\"zoom\":\"1\",\"optional\":false},{\"type\":\"a11yScan\",\"label\":\"{var:viewLabel} - mobile\"},{\"type\":\"setViewport\",\"preset\":\"desktop-lg\",\"zoom\":\"1\",\"optional\":false}]},{\"id\":\"scan-desktop-evidence\",\"name\":\"Desktop scan + screenshot\",\"inputs\":[{\"name\":\"viewLabel\",\"required\":true}],\"actions\":[{\"type\":\"setViewport\",\"preset\":\"desktop-lg\",\"optional\":false},{\"type\":\"a11yScan\",\"label\":\"{var:viewLabel} - desktop\"},{\"type\":\"screenshot\",\"label\":\"{var:viewLabel} - desktop\"}]}]",
+        "actions-workflow": [
+          {
+            "type": "runCustomStep",
+            "customStepId": "scan-desktop-mobile",
+            "argsJson": "{\"viewLabel\":\"Home\"}",
+            "maxDepth": 15,
+            "optional": false
+          },
+          {
+            "type": "runCustomStep",
+            "customStepId": "scan-desktop-evidence",
+            "argsJson": "{\"viewLabel\":\"Pricing\"}",
+            "maxDepth": 15,
+            "optional": false
+          }
+        ]
+      },
+      "metadata": {
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    }
+  },
+  "promptTemplate": {
+    "system": "You are generating a surea11y-lab run spec that must satisfy this contract and schemas/run-spec.v1.schema.json.",
+    "requiredBehavior": [
+      "Return JSON only.",
+      "Do not include markdown fences.",
+      "Use only known action types and fields from actionCatalog.",
+      "If using runCustomStep, ensure the referenced ids exist in customSteps."
+    ]
+  }
+}

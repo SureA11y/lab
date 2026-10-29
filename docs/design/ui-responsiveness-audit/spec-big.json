@@ -1,0 +1,143 @@
+{
+ "url": "http://127.0.0.1:8099/fixture.html",
+ "scenarioName": "Perf big",
+ "actions": [
+  {
+   "type": "navigate",
+   "url": "http://127.0.0.1:8099/fixture.html",
+   "waitUntil": "load"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 0",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 0",
+   "wcagLevel": "AA",
+   "context": "#sec0"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 1",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 1",
+   "wcagLevel": "AA",
+   "context": "#sec1"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 2",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 2",
+   "wcagLevel": "AA",
+   "context": "#sec2"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 3",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 3",
+   "wcagLevel": "AA",
+   "context": "#sec3"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 4",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 4",
+   "wcagLevel": "AA",
+   "context": "#sec4"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 5",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 5",
+   "wcagLevel": "AA",
+   "context": "#sec5"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 6",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 6",
+   "wcagLevel": "AA",
+   "context": "#sec6"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 7",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 7",
+   "wcagLevel": "AA",
+   "context": "#sec7"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 8",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 8",
+   "wcagLevel": "AA",
+   "context": "#sec8"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 9",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 9",
+   "wcagLevel": "AA",
+   "context": "#sec9"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 10",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 10",
+   "wcagLevel": "AA",
+   "context": "#sec10"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Full page 11",
+   "wcagLevel": "AA"
+  },
+  {
+   "type": "a11yScan",
+   "label": "Section 11",
+   "wcagLevel": "AA",
+   "context": "#sec11"
+  }
+ ]
+}

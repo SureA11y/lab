@@ -1,0 +1,14 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "http://localhost:8780/products.html",
+  "scenarioName": "Demo shop against several standards",
+  "actions": [
+    { "type": "click", "selector": "#accept-cookies", "label": "Accept cookies" },
+    { "type": "a11yScan", "label": "WCAG 2.2 AA, the default" },
+    { "type": "a11yScan", "label": "EN 301 549 V4.1.1", "profile": "en301549-v4.1.1" },
+    { "type": "a11yScan", "label": "EN 301 549 V3.2.1", "profile": "en301549-v3.2.1" },
+    { "type": "a11yScan", "label": "WCAG 2.2 AAA", "profile": "wcag22-aaa" }
+  ]
+}

@@ -1,0 +1,51 @@
+name: Something does not work
+description: The lab, the runner, the action or the extension does something wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting it. A security problem goes to private reporting instead (Security tab, Report a vulnerability), not here.
+        A finding you think is wrong (a false alarm, or a problem missed) is usually surea11y's: report it to [SureA11y/core](https://github.com/SureA11y/core/issues), with the page or a snippet of HTML.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to make it happen again
+      description: The steps, the workflow or spec (with no passwords), and a page it happens on, if you can share one.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - The app
+        - The command-line runner
+        - The GitHub Action
+        - The container image
+        - The HTTP API
+        - The browser extension
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: The lab's version or commit, Node.js, the operating system, and the browser if it is the app or the extension.
+      placeholder: lab 1.0.0, Node 22.13, macOS 15, Chrome 141
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log or output
+      description: The run's log (run.log.jsonl, or the app's log), the runner's output, or the server's console. Check it for anything private first.
+      render: text

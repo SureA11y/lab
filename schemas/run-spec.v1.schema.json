@@ -1,0 +1,4297 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:surea11y-lab:run-spec:v1",
+  "title": "surea11y-lab run spec",
+  "description": "A workflow run: the page to open, the steps to take there and how to scan. The app saves one inside every configuration (its \"runSpec\"), and `node src/cli/run-workflow.js <spec.json>` runs one; add --check to validate it without running. Generated from src/workflow/action-definitions.js by `npm run build:action-docs`; do not edit schemas/run-spec.v1.schema.json by hand.",
+  "type": "object",
+  "required": [
+    "type",
+    "specVersion",
+    "url",
+    "actions"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Where an editor finds this schema, e.g. \"./schemas/run-spec.v1.schema.json\"."
+    },
+    "type": {
+      "const": "a11y-run-spec"
+    },
+    "specVersion": {
+      "const": 1
+    },
+    "version": {
+      "const": 1,
+      "deprecated": true,
+      "description": "Older name for specVersion."
+    },
+    "url": {
+      "type": "string",
+      "minLength": 1,
+      "format": "uri",
+      "description": "The page the workflow starts on, http or https."
+    },
+    "scenarioName": {
+      "type": "string",
+      "description": "Names the run, and the folder the CLI keeps its runs in."
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/action"
+      }
+    },
+    "customSteps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/customStep"
+      }
+    },
+    "viewport": {
+      "description": "A preset name, or a size in CSS pixels.",
+      "anyOf": [
+        {
+          "enum": [
+            "default",
+            "desktop-xlg",
+            "desktop-lg",
+            "desktop-md",
+            "tablet",
+            "mobile"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "width",
+            "height"
+          ],
+          "properties": {
+            "width": {
+              "type": "number",
+              "minimum": 1
+            },
+            "height": {
+              "type": "number",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "colorScheme": {
+      "enum": [
+        "light",
+        "dark"
+      ],
+      "description": "The color scheme the page is shown in as the run starts (prefers-color-scheme). Left out, the browser's own (light). Set color scheme and contrast changes it; its Run default comes back to this."
+    },
+    "highContrast": {
+      "enum": [
+        "on",
+        "off",
+        true,
+        false
+      ],
+      "description": "Show the page in forced colors (high contrast) as the run starts. Left out, off. Its Run default comes back to this."
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The language the page is shown in as the run starts, as a BCP 47 tag (es-ES, de, pt-BR), or a variable such as {var:lang}, so each batch row can set its own. Left out, the browser's own. Set language changes it; its Run default comes back to this."
+    },
+    "metadata": {
+      "type": "object"
+    },
+    "groupScans": {
+      "type": "boolean"
+    },
+    "vars": {
+      "description": "Starting variables, read by the steps as {var:name}.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z_][\\w-]*$",
+        "description": "a name of letters, digits, _ and -, not starting with a digit"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "null"
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "action": {
+      "description": "One workflow step. \"type\" picks the step; each type takes its own fields.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "a11yScan",
+            "click",
+            "type",
+            "setValue",
+            "setPassword",
+            "clickByText",
+            "focus",
+            "hover",
+            "focusByText",
+            "hoverByText",
+            "hoverOut",
+            "waitForSelector",
+            "wait",
+            "scrollIntoView",
+            "scroll",
+            "setViewport",
+            "navigate",
+            "refresh",
+            "emulateVisionDeficiency",
+            "setColorScheme",
+            "setLanguage",
+            "keyboard",
+            "select",
+            "group",
+            "mergedScan",
+            "runCustomStep",
+            "if",
+            "ifUrl",
+            "switch",
+            "repeat",
+            "forEachElement",
+            "crawlQueue",
+            "skipIteration",
+            "goBack",
+            "screenshot",
+            "getText",
+            "getCount",
+            "setVar",
+            "clearVar",
+            "collectOutput",
+            "evidenceCapture",
+            "injectCss"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "a11yScan"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.a11yScan"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "click"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.click"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "type"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.type"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "setValue"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.setValue"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "setPassword"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.setPassword"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "clickByText"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.clickByText"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "focus"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.focus"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "hover"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.hover"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "focusByText"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.focusByText"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "hoverByText"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.hoverByText"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "hoverOut"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.hoverOut"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "waitForSelector"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.waitForSelector"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "wait"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.wait"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "scrollIntoView"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.scrollIntoView"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "scroll"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.scroll"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "setViewport"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.setViewport"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "navigate"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.navigate"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "refresh"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.refresh"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "emulateVisionDeficiency"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.emulateVisionDeficiency"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "setColorScheme"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.setColorScheme"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "setLanguage"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.setLanguage"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "keyboard"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.keyboard"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "select"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.select"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "group"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.group"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "mergedScan"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.mergedScan"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "runCustomStep"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.runCustomStep"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "if"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.if"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ifUrl"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.ifUrl"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "switch"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.switch"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "repeat"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.repeat"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "forEachElement"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.forEachElement"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "crawlQueue"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.crawlQueue"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "skipIteration"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.skipIteration"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "goBack"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.goBack"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "screenshot"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.screenshot"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "getText"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.getText"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "getCount"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.getCount"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "setVar"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.setVar"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "clearVar"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.clearVar"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "collectOutput"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.collectOutput"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "evidenceCapture"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.evidenceCapture"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "injectCss"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.injectCss"
+          }
+        }
+      ]
+    },
+    "secretRef": {
+      "description": "A secret read from an environment variable when the run starts, so the file never holds it. The run fails before it opens a browser when the variable is not set.",
+      "type": "object",
+      "required": [
+        "$env"
+      ],
+      "properties": {
+        "$env": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+          "description": "The environment variable's name, e.g. \"SHOP_PASSWORD\"."
+        }
+      },
+      "additionalProperties": false
+    },
+    "customStep": {
+      "description": "A named list of steps that runCustomStep calls, with the inputs it takes as variables.",
+      "type": "object",
+      "required": [
+        "id",
+        "actions"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What runCustomStep's customStepId names. Unique in the spec."
+        },
+        "name": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "default": {}
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.a11yScan": {
+      "title": "A11y scan",
+      "description": "Run an accessibility scan on the current page or within a selector. You can narrow the scan to a region using 'context' and exclude noisy areas using 'exclude'.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "a11yScan"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "label": {
+          "description": "Label shown in reports and live stream. Supports {var:name}, {index}, {oneBased}, {total}.",
+          "type": "string"
+        },
+        "scanTags": {
+          "description": "Free-form tags for this scan. Used to filter the report by tag once the run finishes. Supports {var:name}, {index}, {oneBased}, {total}, so a single tag like {var:viewport} fills in per iteration. Pick tags already used elsewhere in this workflow or add new ones.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "context": {
+          "description": "The parts of the page this scan checks: every element these CSS selectors match, comma separated. Empty, the scan checks the whole page. A selector that matches nothing scans nothing, and the report says so.",
+          "type": "string"
+        },
+        "exclude": {
+          "description": "The parts of the page this scan leaves out: every element these CSS selectors match, comma separated.",
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "includeBestPractice": {
+          "description": "Also run the best-practice rules in this scan: good practice beyond the profile, such as landmarks and heading order. The profile alone never runs them. Their findings are listed in a Best practices section of their own and count toward no criterion, score, compliance rate or comparison.",
+          "default": false,
+          "type": "boolean"
+        },
+        "engine": {
+          "description": "The engine that runs this scan. Without one, the scan runs with surea11y, built in. Other engines (axe-core, Alfa, Pa11y, QualWeb) come with the more-engines add-on, and this field shows once one is installed. Each engine offers its own options, and the profiles it cannot check are not available. To check a page with several engines, add a scan for each; put them in a Merged scan to have them reported as one scan.",
+          "type": "string"
+        },
+        "profile": {
+          "description": "The profile this scan checks against, WCAG 2.2 AA unless it says otherwise: WCAG 2.2 at Level A, AA or AAA, or a standard, which sets the WCAG version and the level, all of them Level A and AA: EN 301 549 V4.1.1, the EU standard, which is WCAG 2.2, and EN 301 549 V3.2.1, its earlier version, which is WCAG 2.1 and still checks 4.1.1 Parsing. Which ones a scan can choose depends on its engine: surea11y checks every profile, and is the only one to apply a standard in full (the version details such as 4.1.1); the other engines check the WCAG 2.2 profiles and EN 301 549 V4.1.1. Including rule IDs or tags explicitly takes precedence over a standard. Passing the rules does not mean the page meets the standard: many criteria still need a manual check.",
+          "default": "wcag22-aa",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "wcag22-a",
+                "wcag22-aa",
+                "wcag22-aaa",
+                "en301549-v4.1.1",
+                "en301549-v3.2.1"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "locale": {
+          "description": "Language surea11y writes its findings in: rule titles, what failed, how to fix it, and the WCAG criteria names. Rules that judge wording, such as vague link text or generic headings, go by the language of the page, not this setting.",
+          "default": "en",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "en",
+                "de",
+                "es",
+                "fr",
+                "ja"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "applyDefaultStyle": {
+          "description": "Blur and fade the parts of the page the scan leaves out (Exclude selectors, and what is outside Context) in the scan's screenshots, so they show what was checked.",
+          "default": true,
+          "type": "boolean"
+        },
+        "preserveHover": {
+          "description": "Keep current :hover styling for this scan/evidence capture. Disable to clear transient hover before capture.",
+          "default": false,
+          "type": "boolean"
+        },
+        "waitTimeout": {
+          "description": "How long Wait for waits for its selector before the step fails.",
+          "default": 10000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "stageTimeout": {
+          "description": "The most each stage of the scan may take before it is given up on: loading the engine into the page, letting the page settle, the page ready wait, the check itself and the screenshot. Pictures of flagged elements get their own time on top.",
+          "default": 60000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "pageReadyTimeout": {
+          "description": "Before scanning, wait up to this long for the page to finish loading: the load event, web fonts and images (not lazy ones). If it has not finished by then, the scan runs anyway and its report says what was still loading. 0 checks without waiting.",
+          "default": 3000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "heavyNodeThreshold": {
+          "description": "Skip this scan when the page has more elements than this, rather than wait on a very slow scan. The report says the scan was skipped, and why.",
+          "default": 25000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "waitForSelector": {
+          "description": "Start the scan only once this selector is on the page, for content that loads late. If it does not appear within the wait timeout, the step fails rather than scanning the page without it.",
+          "type": "string"
+        },
+        "waitVisible": {
+          "description": "With Wait for, wait until the element is visible, not only on the page.",
+          "default": true,
+          "type": "boolean"
+        },
+        "includeRuleIds": {
+          "description": "The only rules this scan runs: the rest of its level's rules do not. Name a WCAG criterion (wcag-1.4.3-contrast-minimum) to check it in full, or single checks (contrast-minimum); a criterion only some of whose checks run is reported as partly checked unless one of them fails. Use a comma separated string.",
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "excludeRuleIds": {
+          "description": "Rule IDs to exclude for this scan only. Use a comma separated string.",
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "includeTags": {
+          "description": "Run only the rules with these tags, within the scan's WCAG version and level (rules that test no WCAG criterion, such as best practices, as tagged). Their criteria are reported as with Include rules: partly checked when some of a criterion's checks do not run. Use a comma separated string.",
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "excludeTags": {
+          "description": "Rule tags to exclude for this scan only. Use a comma separated string.",
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "includeMode": {
+          "description": "With both Include rules and Include tags: run only the rules that are in both, or every rule that is in either.",
+          "default": "and",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "and",
+                "or"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "engineMode": {
+          "description": "Auditor support makes the assumptions an auditor would where the page leaves something unset, such as a white background behind the page; Strict conformance assumes nothing the page does not state.",
+          "default": "auditorAssist",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "auditorAssist",
+                "strictConformance"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "findingsSource": {
+          "description": "Whether findings are reported per WCAG success criterion, gathering the checks behind each one, or per single check, or both.",
+          "default": "composite",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "composite",
+                "atomic",
+                "Both"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "screenshotView": {
+          "description": "Take a screenshot of the page once the scan is done, shown with its results. Set to false for a scan that needs no picture of the page: it runs faster and its report is smaller. Pictures of the flagged elements (Element screenshots) are set apart.",
+          "default": true,
+          "type": "boolean"
+        },
+        "elementScreenshots": {
+          "description": "Take a picture of each element surea11y flags, with a box around it, shown beside its finding. Other engines take none.",
+          "default": "fail",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "off",
+                "fail",
+                "failCantTell"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "elementScreenshotsMax": {
+          "description": "The most pictures one scan takes when Element screenshots is on; 0 for no limit, though a scan still has 30 seconds for its pictures. Elements past it say so beside their finding.",
+          "default": 50,
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "elementScreenshotsPerRule": {
+          "description": "The most elements pictured for each rule, so the rules checked first don't take every picture; 0 for no limit. An element pictured for one rule shows that picture under every rule that flags it.",
+          "default": 0,
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.click": {
+      "title": "Click",
+      "description": "Click by selector, or click by visible text (labelText). When labelText is set, selector becomes an optional scope.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "click"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "labelText": {
+          "description": "Visible text (or accessible name sources) to find. If set, this is the target, and selector is treated as an optional scope.",
+          "type": "string"
+        },
+        "selector": {
+          "description": "If labelText is NOT set, this is the CSS selector for the element to click. If labelText IS set, this is an optional scope container selector. Use :ctx inside forEachElement.",
+          "type": "string"
+        },
+        "programmatic": {
+          "description": "Click by calling the element's click() in the page, instead of with the mouse: for an element the mouse cannot reach, such as one something else covers.",
+          "default": false,
+          "type": "boolean"
+        },
+        "mouseButton": {
+          "description": "If the click is done with the left or right button.",
+          "default": "left",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "left",
+                "right"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "clickKind": {
+          "description": "If it is single or double click.",
+          "default": "click",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "click",
+                "doubleClick"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before clicking. A pointer click may still scroll if the element is outside the viewport.",
+          "default": true,
+          "type": "boolean"
+        },
+        "caseSensitive": {
+          "description": "Use case-sensitive comparison when clicking by labelText.",
+          "default": false,
+          "type": "boolean"
+        },
+        "exact": {
+          "description": "Match full text when true. Default is substring match.",
+          "default": false,
+          "type": "boolean"
+        },
+        "allowPointerFallback": {
+          "description": "When clicking by labelText, allow clicking non-interactive targets near the matched text.",
+          "default": false,
+          "type": "boolean"
+        },
+        "pointerFallbackMaxMatches": {
+          "description": "When labelText appears multiple times, pick the nth visible match (1 = first).",
+          "default": 1,
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "timeout": {
+          "description": "When clicking by labelText, how long to wait for the target to appear.",
+          "default": 10000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "waitUntil": {
+          "description": "If set, waits for a possible navigation after the click.",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "load",
+                "domcontentloaded",
+                "networkidle0"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "retries": {
+          "description": "Extra attempts if the click fails.",
+          "default": 0,
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "retryDelay": {
+          "description": "Time in ms between retries.",
+          "default": 500,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this click fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.type": {
+      "title": "Type into field",
+      "description": "Type text into an input or textarea. You can clear first, add delay between keys, and press Enter at the end.",
+      "type": "object",
+      "required": [
+        "type",
+        "selector",
+        "text"
+      ],
+      "properties": {
+        "type": {
+          "const": "type"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector of the input or textarea.",
+          "type": "string"
+        },
+        "text": {
+          "description": "Text to type.",
+          "type": "string"
+        },
+        "delay": {
+          "description": "Delay in ms between keystrokes.",
+          "default": 0,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "clear": {
+          "description": "Clear the field before typing.",
+          "default": false,
+          "type": "boolean"
+        },
+        "pressEnter": {
+          "description": "Press Enter after typing.",
+          "default": false,
+          "type": "boolean"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before typing. Focusing the field may still make the browser scroll it into view.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.setValue": {
+      "title": "Set field value",
+      "description": "Set the value of an input or textarea directly in the DOM without typing.",
+      "type": "object",
+      "required": [
+        "type",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "const": "setValue"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector of the input or textarea.",
+          "type": "string"
+        },
+        "labelText": {
+          "description": "Label that the field to edit has.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value to set. It is saved with the configuration; use \"Set password value\" for a value that must not be.",
+          "type": "string"
+        },
+        "caseSensitive": {
+          "description": "Use case-sensitive comparison.",
+          "default": false,
+          "type": "boolean"
+        },
+        "exact": {
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false,
+          "type": "boolean"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before setting its value.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.setPassword": {
+      "title": "Set password value",
+      "description": "Set the value of a password or other secret field, like \"Set field value\", but the value is never saved: configurations carry \"valueMasked\": true and no value. Type it again after loading a configuration; a run with the value empty fails. In a spec file, the value can instead be read from an environment variable when the run starts, as {\"$env\": \"SHOP_PASSWORD\"}: the file then holds no password and can run unattended.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "setPassword"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector of the input.",
+          "type": "string"
+        },
+        "labelText": {
+          "description": "Label that the field to edit has.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value to set. Hidden on screen unless revealed with the field's button, and never saved with the configuration, revealed or not. Or {\"$env\": \"NAME\"}: read from that environment variable where the workflow runs, and saved as the reference, so unattended runs can use it.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/secretRef"
+            }
+          ]
+        },
+        "valueMasked": {
+          "type": "boolean",
+          "description": "Set by the app in place of \"value\", which is never saved. The value has to be supplied again before the step can run."
+        },
+        "caseSensitive": {
+          "description": "Use case-sensitive comparison.",
+          "default": false,
+          "type": "boolean"
+        },
+        "exact": {
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false,
+          "type": "boolean"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before setting its value.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "value"
+          ]
+        },
+        {
+          "required": [
+            "valueMasked"
+          ]
+        }
+      ]
+    },
+    "action.clickByText": {
+      "title": "Click by text",
+      "description": "Find a clickable element by its text. Works with buttons, links, and elements inside an optional selector scope.",
+      "type": "object",
+      "required": [
+        "type",
+        "labelText"
+      ],
+      "properties": {
+        "type": {
+          "const": "clickByText"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "labelText": {
+          "description": "Text to look for. Spaces are trimmed.",
+          "type": "string"
+        },
+        "selector": {
+          "description": "Scope for the search. If omitted, searches common interactive elements. Use :ctx inside forEachElement.",
+          "type": "string"
+        },
+        "caseSensitive": {
+          "description": "Use case-sensitive comparison.",
+          "default": false,
+          "type": "boolean"
+        },
+        "mouseButton": {
+          "description": "If the click is done with the left or right button.",
+          "default": "left",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "left",
+                "right"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "programmatic": {
+          "description": "Click by calling the element's click() in the page, instead of with the mouse: for an element the mouse cannot reach, such as one something else covers.",
+          "default": false,
+          "type": "boolean"
+        },
+        "clickKind": {
+          "description": "If it is single or double click.",
+          "default": "click",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "click",
+                "doubleClick"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "exact": {
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false,
+          "type": "boolean"
+        },
+        "allowPointerFallback": {
+          "description": "It tries to click not only on interactive elements.",
+          "default": false,
+          "type": "boolean"
+        },
+        "pointerFallbackMaxMatches": {
+          "description": "If text appears multiple times, either pick first match (fast) or allow picking nth.",
+          "default": 1,
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "timeout": {
+          "description": "How long to wait for the target to appear.",
+          "default": 10000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before clicking. A pointer click may still scroll if the element is outside the viewport.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.focus": {
+      "title": "Focus",
+      "description": "Move keyboard focus to the first element that matches the selector.",
+      "type": "object",
+      "required": [
+        "type",
+        "selector"
+      ],
+      "properties": {
+        "type": {
+          "const": "focus"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector of the element to focus.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before focusing. Focusing may still make the browser scroll the element into view.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.hover": {
+      "title": "Hover element",
+      "description": "Trigger hover on the first match of the selector.",
+      "type": "object",
+      "required": [
+        "type",
+        "selector"
+      ],
+      "properties": {
+        "type": {
+          "const": "hover"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector to hover.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before hovering. Hovering may still scroll if the element is outside the viewport.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.focusByText": {
+      "title": "Focus by text",
+      "description": "Find the element by its text. Works with buttons, links, and elements inside an optional selector scope.",
+      "type": "object",
+      "required": [
+        "type",
+        "labelText"
+      ],
+      "properties": {
+        "type": {
+          "const": "focusByText"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "labelText": {
+          "description": "Text to look for. Spaces are trimmed.",
+          "type": "string"
+        },
+        "selector": {
+          "description": "Scope for the search. If omitted, searches common interactive elements. Use :ctx inside forEachElement.",
+          "type": "string"
+        },
+        "caseSensitive": {
+          "description": "Use case-sensitive comparison.",
+          "default": false,
+          "type": "boolean"
+        },
+        "exact": {
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false,
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "How long to wait for the target to appear.",
+          "default": 10000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "postWaitForSelector": {
+          "description": "Selector that must appear after hovering (e.g., a menu panel).",
+          "type": "string"
+        },
+        "postWaitVisible": {
+          "description": "Require the post-hover selector to be visible.",
+          "default": true,
+          "type": "boolean"
+        },
+        "postWaitTimeout": {
+          "description": "Timeout for the post-hover wait.",
+          "default": 10000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before focusing. Focusing may still make the browser scroll the element into view.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.hoverByText": {
+      "title": "Hover by text",
+      "description": "Find a clickable element by its text. Works with buttons, links, and elements inside an optional selector scope.",
+      "type": "object",
+      "required": [
+        "type",
+        "labelText"
+      ],
+      "properties": {
+        "type": {
+          "const": "hoverByText"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "labelText": {
+          "description": "Text to look for. Spaces are trimmed.",
+          "type": "string"
+        },
+        "selector": {
+          "description": "Scope for the search. If omitted, searches common interactive elements. Use :ctx inside forEachElement.",
+          "type": "string"
+        },
+        "caseSensitive": {
+          "description": "Use case-sensitive comparison.",
+          "default": false,
+          "type": "boolean"
+        },
+        "exact": {
+          "description": "Match the full text when true. Default is substring match.",
+          "default": false,
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "How long to wait for the target to appear.",
+          "default": 10000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action action.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "postWaitForSelector": {
+          "description": "Selector that must appear after hovering (e.g., a menu panel).",
+          "type": "string"
+        },
+        "postWaitVisible": {
+          "description": "Require the post-hover selector to be visible.",
+          "default": true,
+          "type": "boolean"
+        },
+        "postWaitTimeout": {
+          "description": "Timeout for the post-hover wait.",
+          "default": 10000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before hovering. Hovering may still scroll if the element is outside the viewport.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.hoverOut": {
+      "title": "Hover out",
+      "description": "End a hover state by moving the pointer away, causing hover-based panels or menus to close.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "hoverOut"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "Optional selector to move the pointer to. If omitted, the pointer is moved to a neutral viewport location.",
+          "type": "string"
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before moving the pointer onto it.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.waitForSelector": {
+      "title": "Wait for selector",
+      "description": "Wait until a selector is present, optionally visible. Useful for dynamic pages.",
+      "type": "object",
+      "required": [
+        "type",
+        "selector"
+      ],
+      "properties": {
+        "type": {
+          "const": "waitForSelector"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector to wait for.",
+          "type": "string"
+        },
+        "visible": {
+          "description": "Require visibility when true. Existence is enough when false.",
+          "default": true,
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout in ms.",
+          "default": 10000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.wait": {
+      "title": "Wait",
+      "description": "Pause for a fixed number of milliseconds. Prefer waitForSelector when possible.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "wait"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "ms": {
+          "description": "Time to wait in ms, at most an hour (3600000).",
+          "default": 2000,
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 3600000
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.scrollIntoView": {
+      "title": "Scroll element into view",
+      "description": "Scroll until the element is centered in the viewport.",
+      "type": "object",
+      "required": [
+        "type",
+        "selector"
+      ],
+      "properties": {
+        "type": {
+          "const": "scrollIntoView"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector to bring into view.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.scroll": {
+      "title": "Scroll page",
+      "description": "Scroll the page to top, bottom, or by a custom offset.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "scroll"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "to": {
+          "description": "Use “top” or “bottom” to jump.",
+          "type": "string"
+        },
+        "y": {
+          "description": "Vertical offset in pixels when “to” is not set.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.setViewport": {
+      "title": "Set viewport",
+      "description": "Change viewport size for the rest of the workflow or until you change it again.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "setViewport"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "preset": {
+          "description": "Viewport presets. Choose \"Custom size\" to set an exact width/height below, or use a variable token such as {var:preset}.",
+          "default": "default",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "default",
+                "desktop-xlg",
+                "desktop-lg",
+                "desktop-md",
+                "tablet",
+                "mobile",
+                "custom"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "zoom": {
+          "description": "Browser zoom level, emulated the way Chrome does it: the CSS viewport shrinks by this factor while the rendered size stays the same, so the page reflows and text scales (WCAG 1.4.4 / 1.4.10). Applies on top of the size above. Leaving this unset means 100%.",
+          "default": "1",
+          "type": "string",
+          "examples": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ]
+        },
+        "width": {
+          "description": "Viewport width in CSS pixels. Only used when the preset above is \"Custom size\".",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "height": {
+          "description": "Viewport height in CSS pixels. Only used when the preset above is \"Custom size\".",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.navigate": {
+      "title": "Navigate to URL",
+      "description": "Go to a new URL and wait for the page to be ready.",
+      "type": "object",
+      "required": [
+        "type",
+        "url"
+      ],
+      "properties": {
+        "type": {
+          "const": "navigate"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "url": {
+          "description": "Absolute URL.",
+          "type": "string"
+        },
+        "waitUntil": {
+          "description": "When to consider navigation complete.",
+          "default": "load",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "load",
+                "domcontentloaded",
+                "networkidle0"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.refresh": {
+      "title": "Refresh",
+      "description": "Reload the current page and wait for it to be ready. Useful to reset SPA state or re-trigger network requests.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "refresh"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "waitUntil": {
+          "description": "When to consider the reload complete.",
+          "default": "domcontentloaded",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "load",
+                "domcontentloaded",
+                "networkidle0"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "timeout": {
+          "description": "Navigation timeout in ms for the reload.",
+          "default": 30000,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "bypassCache": {
+          "description": "Temporarily disable the browser cache during the reload.",
+          "default": false,
+          "type": "boolean"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this refresh fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.emulateVisionDeficiency": {
+      "title": "Emulate vision deficiency",
+      "description": "Visually simulate a vision deficiency in the browser renderer. Stays active on the same page across navigation until reset to 'none'.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "emulateVisionDeficiency"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "deficiency": {
+          "description": "Vision deficiency simulation mode.",
+          "default": "none",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "none",
+                "blurredVision",
+                "reducedContrast",
+                "achromatopsia",
+                "deuteranopia",
+                "protanopia",
+                "tritanopia"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.setColorScheme": {
+      "title": "Set color scheme and contrast",
+      "description": "Show the page in the light or dark color scheme, in high contrast, or both, as a browser or system set to them would. The color scheme sets prefers-color-scheme, which the page's media queries follow; until a step sets it, the page is shown as the run's configuration says (the browser's default, light, unless it says otherwise), and Run default goes back to that. High contrast shows the page in forced colors, as Windows' contrast themes do: the browser replaces the page's colors with the user's, and its forced-colors media queries and system colors such as Canvas and GrayText follow, so a scan or a screenshot shows what stays visible then (focus indicators, icons, borders of controls). Leave either one empty to keep it as it is. Both stay until another step changes them, across navigation. A site with its own theme switch that does not follow prefers-color-scheme needs a click on that switch instead. surea11y still measures contrast in the page's own colors in high contrast, as WCAG asks, and each scan says it was taken in it. High contrast needs Chrome.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "setColorScheme"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "colorScheme": {
+          "description": "The color scheme to switch to, or Run default for the one the run started with (its configuration's, the browser's own unless it sets one). Empty keeps the current one.",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "default",
+                "light",
+                "dark"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "highContrast": {
+          "description": "Show the page in forced colors (high contrast), or stop, or Run default for what the run started with (its configuration's, Off unless it says otherwise). Empty keeps it as it is.",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "default",
+                "on",
+                "off"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.setLanguage": {
+      "title": "Set language",
+      "description": "Show the page in a language, as a browser set to it would: the Accept-Language header a server picks a language by, navigator.language and navigator.languages for a site that picks it in its scripts, and the format of dates and numbers. It stays set until another Set language step changes it, across navigation, refreshes and pages the workflow opens. The open page loads again so it shows the new language now; a page that has not loaded yet picks it up when it does. Run default goes back to the language the run started with: its configuration's, or the browser's own when it sets none. Each scan says the language it was taken in, and warns when the page declares another (its html lang): a site that keeps its language in a cookie, an account setting or its address (such as /en/), or picks it by location, may not follow this step. Dates and numbers need Chrome.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "setLanguage"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "language": {
+          "description": "The language to show the page in, or Run default for the one the run started with (its configuration's, the browser's own unless it sets one). Other language, when filled, is used instead.",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "default",
+                "ar",
+                "eu",
+                "bn",
+                "bg",
+                "ca",
+                "zh-CN",
+                "zh-TW",
+                "hr",
+                "cs",
+                "da",
+                "nl",
+                "en-GB",
+                "en-US",
+                "et",
+                "fi",
+                "fr-FR",
+                "gl",
+                "de-DE",
+                "el",
+                "he",
+                "hi",
+                "hu",
+                "id",
+                "it",
+                "ja",
+                "ko",
+                "lv",
+                "lt",
+                "ms",
+                "nb",
+                "fa",
+                "pl",
+                "pt-BR",
+                "pt-PT",
+                "ro",
+                "ru",
+                "sr",
+                "sk",
+                "sl",
+                "es-ES",
+                "es-419",
+                "sv",
+                "th",
+                "tr",
+                "uk",
+                "vi"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "customLanguage": {
+          "description": "A language not in the list, as a BCP 47 tag (es-MX, fr-CA, zh-Hant-HK, a variable such as {var:lang}). Used instead of Language when filled.",
+          "type": "string"
+        },
+        "reload": {
+          "description": "Load the open page again, so it shows the new language now. Off, it shows it from the next page loaded.",
+          "default": true,
+          "type": "boolean"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.keyboard": {
+      "title": "Keyboard input",
+      "description": "Press keys and/or type text as a user would. Useful to navigate forms with Tab and Enter.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "keyboard"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "keys": {
+          "description": "List of keys to press in order. Each item can be a single key (\"Tab\", \"Enter\") or a key combination using \"+\" to press multiple keys together (\"Shift+F10\", \"Control+S\"). Multiple entries are executed sequentially.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "text": {
+          "description": "Text to type using the keyboard.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.select": {
+      "title": "Select dropdown option",
+      "description": "Change the value of a select element by option value.",
+      "type": "object",
+      "required": [
+        "type",
+        "selector",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "const": "select"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector of the select element.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Option value to select.",
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "scrollIntoView": {
+          "description": "Scroll the element to the center of the viewport before selecting the option.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.group": {
+      "title": "Group",
+      "description": "Run several actions as a single unit. If a child action fails, the group fails. Variables set inside the group (getText, getCount, setVar) are only available to later steps inside it; to use a value after the group, set it before the group or outside it.",
+      "type": "object",
+      "required": [
+        "type",
+        "actions"
+      ],
+      "properties": {
+        "type": {
+          "const": "group"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "optional": {
+          "description": "If true and the group fails, mark as failed-optional and continue.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Name of the group for reporting.",
+          "type": "string"
+        },
+        "actions": {
+          "description": "Nested actions to run in order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.mergedScan": {
+      "title": "Merged scan",
+      "description": "Report the A11y scans inside it as one scan: the same view scanned in several contexts (light and dark theme, desktop and mobile width) counts once. Each scan inside is a context, named by its label; a failure lists the contexts it occurs in, and one whose result differs between contexts (a different contrast ratio, a different size) is listed once per result. The merged scan holds every context's screenshot. Variables set inside stay available after it. A Merged scan cannot contain another.",
+      "type": "object",
+      "required": [
+        "type",
+        "actions"
+      ],
+      "properties": {
+        "type": {
+          "const": "mergedScan"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "label": {
+          "description": "The merged scan's name in the report. {var:...} tokens work, so a Repeat over pages can name each one. Without it, the first context's name is used.",
+          "type": "string"
+        },
+        "scanTags": {
+          "description": "The merged scan's tags, used to filter the report by tag and to break the live totals down. The tags of the scans inside describe their contexts and are shown with them; when this is empty, the merged scan takes all of theirs. Supports {var:name}, {index}, {oneBased}, {total}.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "actions": {
+          "description": "The steps to run, with an A11y scan for each context. A scan with no label is named by its place, as \"Scan 2 of 4\".",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.runCustomStep": {
+      "title": "Custom step",
+      "description": "Run a reusable custom step by id. Inputs are provided as a JSON object and become scoped variables for nested actions. For repeated calls that only differ by input values, prefer one runCustomStep inside a repeat dataset.",
+      "type": "object",
+      "required": [
+        "type",
+        "customStepId"
+      ],
+      "properties": {
+        "type": {
+          "const": "runCustomStep"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "customStepId": {
+          "description": "Name of the custom step definition to run.",
+          "type": "string"
+        },
+        "argsJson": {
+          "description": "Optional inputs passed to this custom step: an object, or the same object as JSON text. Example: {\"label\":\"Settings\"}",
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "exportVars": {
+          "description": "Optional variable names to copy back to parent scope after execution.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "maxDepth": {
+          "description": "Safety limit for nested custom step calls.",
+          "default": 15,
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "allowRecursion": {
+          "description": "Allow only direct self-recursion for this call (A -> A). Indirect cycles (A -> B -> A) are still blocked.",
+          "default": false,
+          "type": "boolean"
+        },
+        "optional": {
+          "description": "If true and this call fails, mark as failed-optional and continue.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Name for reporting/logging.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.if": {
+      "title": "Condition",
+      "description": "Run one branch when the condition is true, otherwise run elseActions. Variables set inside a branch (getText, getCount, setVar) are only available to later steps in that branch; to use a value after the condition, set it before or outside it.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "if"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selectorExists": {
+          "description": "Condition is true if this selector exists. Use :ctx inside forEachElement.",
+          "type": "string"
+        },
+        "onlyVisible": {
+          "description": "When true, only iterate elements that are visible (non-zero size, not display:none, not visibility:hidden).",
+          "default": true,
+          "type": "boolean"
+        },
+        "urlIncludes": {
+          "description": "Condition is true if the URL includes this substring.",
+          "type": "string"
+        },
+        "var": {
+          "description": "Variable name to compare using “equals”.",
+          "type": "string"
+        },
+        "equals": {
+          "description": "Value to compare against the variable, as text: 2310 matches a variable holding the number 2310, and true matches true."
+        },
+        "optional": {
+          "description": "If true and the block fails, mark as failed-optional and continue.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Name for reporting.",
+          "type": "string"
+        },
+        "actions": {
+          "description": "Actions to run when the condition is true.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "elseActions": {
+          "description": "Actions to run when the condition is false.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.ifUrl": {
+      "title": "URL condition",
+      "description": "Compare one part of the current page URL (domain name, port, path, query string, one query parameter or fragment) with a value, and run one branch when the comparison is true, otherwise run elseActions. Variables set inside a branch are only available to later steps in that branch.",
+      "type": "object",
+      "required": [
+        "type",
+        "urlPart",
+        "comparison"
+      ],
+      "properties": {
+        "type": {
+          "const": "ifUrl"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "urlPart": {
+          "description": "Which part of the URL to compare. For https://shop.example.com:8443/cart/checkout?step=2&lang=en#payment: domain name is shop.example.com, port is 8443 (a URL with no port uses the protocol's default, 443 for https and 80 for http), path is /cart/checkout, query string is step=2&lang=en, the query parameter \"step\" is 2, and fragment is payment.",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "host",
+                "port",
+                "path",
+                "query",
+                "param",
+                "hash"
+              ]
+            }
+          ]
+        },
+        "paramName": {
+          "description": "Name of the query parameter to compare, when URL part is \"One query parameter\". A parameter missing from the URL equals nothing and contains nothing, so \"is different from\" and \"does not contain\" are true for it.",
+          "type": "string"
+        },
+        "comparison": {
+          "description": "How to compare the URL part with the value.",
+          "default": "equals",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "equals",
+                "notEquals",
+                "contains",
+                "notContains"
+              ]
+            }
+          ]
+        },
+        "value": {
+          "description": "Text to compare with, without the leading ? or # (either is ignored if typed). Empty means the part is empty: a fragment equal to nothing means the URL has no fragment. The domain name is compared ignoring case; every other part is case-sensitive. Supports {var:name}.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "If true and the block fails, mark as failed-optional and continue.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Name for reporting.",
+          "type": "string"
+        },
+        "actions": {
+          "description": "Actions to run when the comparison is true.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "elseActions": {
+          "description": "Actions to run when the comparison is false.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.switch": {
+      "title": "Switch",
+      "description": "Compare one value, a part of the current page URL or a variable, with each case in order, and run the first case that matches; when none matches, run the default actions. Variables set inside a case are only available to later steps in that case.",
+      "type": "object",
+      "required": [
+        "type",
+        "subject"
+      ],
+      "properties": {
+        "type": {
+          "const": "switch"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "subject": {
+          "description": "What the cases are compared with: a part of the current page URL, or a workflow variable.",
+          "default": "url",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "url",
+                "var"
+              ]
+            }
+          ]
+        },
+        "urlPart": {
+          "description": "When comparing a part of the URL: which part. Read like the URL condition step: no leading ? or #, and a URL with no port is on its protocol's default one.",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "host",
+                "port",
+                "path",
+                "query",
+                "param",
+                "hash"
+              ]
+            }
+          ]
+        },
+        "paramName": {
+          "description": "When the URL part is \"One query parameter\": the parameter's name.",
+          "type": "string"
+        },
+        "var": {
+          "description": "When comparing a variable: its name. Found the way {var:name} finds it; an unset variable equals nothing and contains nothing.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "If true and the block fails, mark as failed-optional and continue.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Name for reporting.",
+          "type": "string"
+        },
+        "cases": {
+          "description": "The cases, checked in order. The first one that matches runs, and the rest are not checked.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action.case"
+          }
+        },
+        "defaultActions": {
+          "description": "Actions to run when no case matches.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.case": {
+      "title": "Case",
+      "description": "One case of a switch: when the switch's value matches, its actions run. Only used inside a switch's cases.",
+      "type": "object",
+      "required": [
+        "type",
+        "comparison"
+      ],
+      "properties": {
+        "type": {
+          "const": "case"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "comparison": {
+          "description": "How to compare the switch's value with this case's value.",
+          "default": "equals",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "equals",
+                "notEquals",
+                "contains",
+                "notContains"
+              ]
+            }
+          ]
+        },
+        "value": {
+          "description": "Text to compare with. For a URL part, compared the way the URL condition step compares it. Supports {var:name}.",
+          "type": "string"
+        },
+        "actions": {
+          "description": "Actions to run when this case matches.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.repeat": {
+      "title": "Repeat",
+      "description": "Run the same list of actions multiple times, either by a fixed repetition count or by iterating over a dataset (one item per line). Useful for replacing duplicated actions that only differ by one value.",
+      "type": "object",
+      "required": [
+        "type",
+        "actions"
+      ],
+      "properties": {
+        "type": {
+          "const": "repeat"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "repetitions": {
+          "description": "How many times to repeat. Accepts a whole number or a variable token such as {var:count} (for example, a count stored by \"Count elements into variable\"). The variable is turned into a number when the step runs; if it is not a whole number the repeat runs 0 times and a warning is logged.",
+          "default": 1,
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "itemsText": {
+          "description": "Optional dataset to drive iterations. Each non-empty line is one item. Lines may be plain text (mapped to item.value and available as {var:value}) or JSON objects (mapped to item.key and available as {var:item.key}). All values are normalized to strings. When provided, this overrides repetitions. Use this with runCustomStep argsJson to avoid repeating the same custom-step call for each static value.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "If one iteration fails, mark as failed-optional and continue.",
+          "default": false,
+          "type": "boolean"
+        },
+        "continueOnIterationError": {
+          "description": "If an iteration fails, the process continues to the next iteration.",
+          "default": true,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Name for reporting.",
+          "type": "string"
+        },
+        "actions": {
+          "description": "Actions to run each time.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "closeWorkerPages": {
+          "description": "Whether to close worker pages after all repeat iterations complete.",
+          "default": true,
+          "type": "boolean"
+        },
+        "maxSeconds": {
+          "description": "Maximum allowed execution time (in seconds) for the entire repeat action.",
+          "default": null,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "perPageDelayMs": {
+          "description": "Optional delay (in milliseconds) applied between iteration executions.",
+          "default": 0,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.forEachElement": {
+      "title": "Iterate",
+      "description": "Repeat actions for each element that matches a selector. Inside, use :ctx to target the current element. Use {index}, {oneBased}, and {total} in strings. This is for DOM elements; use repeat for static value lists.",
+      "type": "object",
+      "required": [
+        "type",
+        "targetSelector",
+        "actions"
+      ],
+      "properties": {
+        "type": {
+          "const": "forEachElement"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "targetSelector": {
+          "description": "Selector that returns one or many elements.",
+          "type": "string"
+        },
+        "limit": {
+          "description": "Max number of elements to process. 0 means unlimited.",
+          "default": 0,
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "reverse": {
+          "description": "Iterate from last to first when true.",
+          "default": false,
+          "type": "boolean"
+        },
+        "onlyVisible": {
+          "description": "When true, only iterate elements that are visible (non-zero size, not display:none, not visibility:hidden).",
+          "default": true,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "concurrency": {
+          "description": "Number of concurrent workers used to process iterations, from 1 to 8. When greater than 1, each iteration runs in its own isolated worker page.",
+          "default": 1,
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "isolation": {
+          "description": "With a concurrency above 1, whether the extra pages share cookies and session with the main page (page), or each runs in a browser context of its own (context).",
+          "default": "page",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "page",
+                "context"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "closeWorkerPages": {
+          "description": "Close the extra pages a concurrency above 1 opened once every item is done.",
+          "default": true,
+          "type": "boolean"
+        },
+        "maxSeconds": {
+          "description": "Maximum allowed execution time (in seconds) for the entire repeat action.",
+          "default": null,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "perPageDelayMs": {
+          "description": "Optional delay (in milliseconds) applied between iteration executions.",
+          "default": 0,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "dynamic": {
+          "description": "Re-evaluate the selector on each iteration. Use this when the DOM list changes between iterations.",
+          "default": false,
+          "type": "boolean"
+        },
+        "continueOnIterationError": {
+          "description": "If an iteration fails, the process continues to the next iteration.",
+          "default": true,
+          "type": "boolean"
+        },
+        "maxIterationErrors": {
+          "description": "If set, stop after this many iteration errors (only applies when 'Continue on error' is enabled).",
+          "default": null,
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "iterSetupActions": {
+          "description": "Actions that run before collecting items, and again before each iteration. Use this to reveal menus or panels that contain the target elements. Do not use :ctx here.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "preActions": {
+          "description": "Actions that run after an item is selected and scoped, before the main actions. Use :ctx here.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "actions": {
+          "description": "Actions to run on each item. Use :ctx to target the current item.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.crawlQueue": {
+      "title": "Crawl queue",
+      "description": "Depth-limited crawl with strict budgets. For each visited page, run nested actions, then discover and enqueue new links.",
+      "type": "object",
+      "required": [
+        "type",
+        "actions"
+      ],
+      "properties": {
+        "type": {
+          "const": "crawlQueue"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "maxDepth": {
+          "description": "Maximum link depth to follow from seeds. 0 means only the seed pages.",
+          "default": 2,
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "strategy": {
+          "description": "Queue strategy: 'By level first' or 'Deep as possible first'.",
+          "default": "bfs",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "bfs",
+                "dfs"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "isolation": {
+          "description": "Whether worker pages share cookies and session with the main page (page), or run in isolated browser contexts (context).",
+          "default": "page",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "page",
+                "context"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "maxPages": {
+          "description": "Maximum number of pages to visit.",
+          "default": 30,
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "continueOnIterationError": {
+          "description": "If an iteration fails, the process continues to the next iteration.",
+          "default": true,
+          "type": "boolean"
+        },
+        "maxSeconds": {
+          "description": "Maximum crawl time in seconds.",
+          "default": 600,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "sameOriginOnly": {
+          "description": "Only crawl URLs on the same origin as the seed/current page.",
+          "default": true,
+          "type": "boolean"
+        },
+        "perPageDelayMs": {
+          "description": "Delay between pages in milliseconds.",
+          "default": 200,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "maxLinksPerPage": {
+          "description": "Maximum number of discovered links to enqueue per visited page.",
+          "default": 200,
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)\\s*$|\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "a number as text, or text with a {var:…} token"
+            }
+          ]
+        },
+        "include": {
+          "description": "One pattern per line. Supports /regex/flags or wildcards (* and ?). If set, only matching URLs are enqueued.",
+          "type": "string"
+        },
+        "exclude": {
+          "description": "One pattern per line. Supports /regex/flags or wildcards (* and ?). Matching URLs are skipped.",
+          "type": "string"
+        },
+        "queueVar": {
+          "description": "Variable path storing the URL queue (array).",
+          "default": "crawl.queue",
+          "type": "string"
+        },
+        "visitedVar": {
+          "description": "Variable path storing visited URLs (array).",
+          "default": "crawl.visited",
+          "type": "string"
+        },
+        "varNs": {
+          "description": "Namespace used for per-page variables: crawl_url, crawl_depth, crawl_index, crawl_total.",
+          "default": "crawl",
+          "type": "string"
+        },
+        "actions": {
+          "description": "Actions to run on every visited page, typically navigate + a11yScan.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.skipIteration": {
+      "title": "Skip iteration",
+      "description": "Inside a loop (For each element, Repeat or Crawl), skip the rest of the current item when its conditions match, and go on with the next one. Each field you fill in is one condition: Selector exists; each check on the element of Element selector (Text equals, Text contains, Attribute equals, Attribute contains, or Attribute name alone for having it); URL includes; Variable equals. The item is skipped when all of them match, or, with Use OR, when any of them does. A step with no condition never skips. Text checks are case-sensitive and read the text with its spaces collapsed. In a Crawl, a skipped page's links are not followed.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "skipIteration"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "The element the text and attribute checks read: the first one this selector matches. Use :ctx for the current item (:ctx alone for the item itself). If nothing matches, each of those checks fails. On its own, with no check, the element being there is the condition.",
+          "type": "string"
+        },
+        "selectorTextEquals": {
+          "description": "A condition: the element's text is exactly this.",
+          "type": "string"
+        },
+        "selectorTextContains": {
+          "description": "A condition: the element's text contains this.",
+          "type": "string"
+        },
+        "selectorAttr": {
+          "description": "The element's attribute that Attribute equals and Attribute contains read. With neither, the condition is that the element has it.",
+          "type": "string"
+        },
+        "attrEquals": {
+          "description": "A condition: the attribute's value is exactly this.",
+          "type": "string"
+        },
+        "attrContains": {
+          "description": "A condition: the attribute's value contains this.",
+          "type": "string"
+        },
+        "selectorExists": {
+          "description": "A condition: an element matches this selector. Use :ctx for inside the current item. Independent of Element selector.",
+          "type": "string"
+        },
+        "var": {
+          "description": "The variable Variable equals compares.",
+          "type": "string"
+        },
+        "varEquals": {
+          "description": "A condition: the variable equals this, compared as text (2310 equals the number 2310). An unset variable equals nothing.",
+          "type": "string"
+        },
+        "urlIncludes": {
+          "description": "A condition: the page's address contains this.",
+          "type": "string"
+        },
+        "or": {
+          "description": "Skip when any condition matches, instead of only when all of them do.",
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.goBack": {
+      "title": "Go back",
+      "description": "Navigate back in history and wait until the page is ready.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "goBack"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "waitUntil": {
+          "description": "Navigation completion signal.",
+          "default": "load",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "load",
+                "domcontentloaded",
+                "networkidle0"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.screenshot": {
+      "title": "Screenshot",
+      "description": "Capture a screenshot at the current state and attach it to the results.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "screenshot"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "label": {
+          "description": "Display label for logs and reports.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        },
+        "preserveHover": {
+          "description": "Keep current :hover styling in this screenshot. Disable to clear transient hover before capture.",
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.getText": {
+      "title": "Get text into variable",
+      "description": "Read textContent from the first matching element and store it into a variable.",
+      "type": "object",
+      "required": [
+        "type",
+        "selector",
+        "var"
+      ],
+      "properties": {
+        "type": {
+          "const": "getText"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector to read.",
+          "type": "string"
+        },
+        "var": {
+          "description": "Variable name to store the value.",
+          "type": "string"
+        },
+        "attr": {
+          "description": "If set, reads the given attribute instead of textContent (e.g. href, aria-label, data-id).",
+          "type": "string"
+        },
+        "rawAttr": {
+          "description": "When attr is href, read the raw HTML attribute (e.g. ../page.html) instead of the resolved absolute URL.",
+          "default": false,
+          "type": "boolean"
+        },
+        "useInnerText": {
+          "description": "Use innerText instead of textContent. Slower but respects visibility and CSS.",
+          "default": false,
+          "type": "boolean"
+        },
+        "trim": {
+          "description": "Trim and collapse whitespace when true.",
+          "default": true,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.getCount": {
+      "title": "Count elements into variable",
+      "description": "Count the elements that match a selector (including inside open shadow roots) and store the number into a variable. Stores 0 when nothing matches. The variable can be used in number fields, e.g. repeat's repetitions: {var:count}.",
+      "type": "object",
+      "required": [
+        "type",
+        "selector",
+        "var"
+      ],
+      "properties": {
+        "type": {
+          "const": "getCount"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "selector": {
+          "description": "CSS selector to count.",
+          "type": "string"
+        },
+        "var": {
+          "description": "Variable name to store the count.",
+          "type": "string"
+        },
+        "logValue": {
+          "description": "Write the stored count to the run log.",
+          "default": false,
+          "type": "boolean"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.setVar": {
+      "title": "Set variable",
+      "description": "Set a workflow variable to a literal value. Strings support {var:name} expansion.",
+      "type": "object",
+      "required": [
+        "type",
+        "key",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "const": "setVar"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "key": {
+          "description": "Variable name.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value to assign. For strings, you can use {var:name}.",
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "from": {
+          "description": "Set from a runtime source instead of a literal value. Supported: url.",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "url"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.clearVar": {
+      "title": "Clear variable",
+      "description": "Remove a variable from the workflow variable map.",
+      "type": "object",
+      "required": [
+        "type",
+        "key"
+      ],
+      "properties": {
+        "type": {
+          "const": "clearVar"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "key": {
+          "description": "Variable name to remove.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.collectOutput": {
+      "title": "Collect metadata",
+      "description": "Record a value into the run's collected-metadata report, grouped by key. Useful inside loops (forEachElement/repeat/crawlQueue) to build a list of values across pages, optionally only when a condition holds.",
+      "type": "object",
+      "required": [
+        "type",
+        "key"
+      ],
+      "properties": {
+        "type": {
+          "const": "collectOutput"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "key": {
+          "description": "Grouping key for the report panel. Supports {var:name}.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Display label; defaults to the key.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Literal/template value to record. Supports {var:name}, {index}, {oneBased}, {total}. Exactly one of value/fromVar/from must be set.",
+          "type": "string"
+        },
+        "fromVar": {
+          "description": "Record the current value of this workflow variable.",
+          "type": "string"
+        },
+        "from": {
+          "description": "Record a page-derived value instead of a literal/variable.",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "url",
+                "selectorText",
+                "selectorAttr"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "selector": {
+          "description": "Used when from is selectorText or selectorAttr. Use selector: \"title\" for the page title, \"h1\" for the main heading.",
+          "type": "string"
+        },
+        "attr": {
+          "description": "Used when from is selectorAttr (e.g. href, aria-label).",
+          "type": "string"
+        },
+        "trim": {
+          "description": "Trim and collapse whitespace when reading from the page.",
+          "default": true,
+          "type": "boolean"
+        },
+        "tags": {
+          "description": "Freeform tags rolled up into the report's summary counts (e.g. [\"emptyView\"]).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "when": {
+          "description": "Only record when this predicate matches. JSON object with the same shape as skipIteration's condition fields (selectorExists, selector+selectorTextEquals/selectorTextContains, selector+selectorAttr+attrEquals/attrContains, urlIncludes, var+varEquals, or). Omit to always record. Example: {\"selectorExists\":\".empty-state\"}",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.evidenceCapture": {
+      "title": "Save evidence",
+      "description": "Capture a stable page state and attach it as an ordered artifact in the timeline. By default it saves a PNG preview and an MHTML snapshot (includes CSS and assets).",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "evidenceCapture"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "label": {
+          "description": "Optional label for the artifact shown in reports and live stream. Supports {var:name}, {index}, {oneBased}, {total}. If empty, the system will generate “Evidence N”.",
+          "type": "string"
+        },
+        "evidenceVariant": {
+          "description": "Which variants to generate for this evidence capture.",
+          "default": "both",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "png",
+                "mhtml",
+                "both"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "onError": {
+          "description": "What to do if saving evidence fails. Default is to continue the workflow and record the artifact error.",
+          "default": "continue",
+          "type": "string",
+          "anyOf": [
+            {
+              "enum": [
+                "continue",
+                "fail"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
+              "description": "text with a {var:…} token"
+            }
+          ]
+        },
+        "preserveHover": {
+          "description": "Keep current :hover styling for evidence capture. Disable to clear transient hover before capture.",
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.injectCss": {
+      "title": "Inject CSS",
+      "description": "Inject a CSS <style> tag into the current page. Useful to tweak visuals or stabilize UI behavior (for example, disable animations).",
+      "type": "object",
+      "required": [
+        "type",
+        "css"
+      ],
+      "properties": {
+        "type": {
+          "const": "injectCss"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "css": {
+          "description": "CSS text to inject. Supports {var:name}, {index}, {oneBased}, {total}.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Label for logging only.",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Do not stop the workflow if this action fails.",
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

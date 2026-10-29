@@ -1,0 +1,12 @@
+.git
+**/node_modules
+reports
+a11y-runs
+a11y-dumps
+*.log
+.idea
+.DS_Store
+docs/mockups
+
+# The browser extension is built and shipped on its own (npm run build:extension)
+extension

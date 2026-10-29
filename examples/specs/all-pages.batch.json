@@ -1,0 +1,22 @@
+{
+  "$schema": "../../schemas/batch-spec.v1.schema.json",
+  "type": "a11y-batch-spec",
+  "specVersion": 1,
+  "name": "Demo shop pages",
+  "spec": {
+    "type": "a11y-run-spec",
+    "specVersion": 1,
+    "actions": [
+      { "type": "click", "selector": "#accept-cookies", "label": "Accept cookies" },
+      { "type": "a11yScan", "label": "{var:page}" }
+    ]
+  },
+  "rows": [
+    { "name": "Home", "url": "http://localhost:8780/", "vars": { "page": "Home" } },
+    { "name": "Products", "url": "http://localhost:8780/products.html", "vars": { "page": "Products" } },
+    { "name": "Canvas shoes", "url": "http://localhost:8780/product-shoes.html", "vars": { "page": "Canvas shoes" } },
+    { "name": "Weekend bag", "url": "http://localhost:8780/product-bag.html", "vars": { "page": "Weekend bag" } },
+    { "name": "Log in", "url": "http://localhost:8780/login.html", "vars": { "page": "Log in" } },
+    { "name": "Cart", "url": "http://localhost:8780/cart.html", "vars": { "page": "Cart" } }
+  ]
+}

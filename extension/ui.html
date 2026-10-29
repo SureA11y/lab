@@ -1,0 +1,110 @@
+<div class="a11y-ui">
+    <div class="topbar">
+        <button id="start" class="btn">Start session</button>
+        <button id="run" class="btn">A11yScan</button>
+        <button id="finish" class="btn" disabled>Finish</button>
+        <button id="result" class="btn" disabled>Get result</button>
+        <button id="sendToUi" class="btn btn-primary" disabled>Send to UI</button>
+        <button id="clear" class="btn btn-danger">Clear session</button>
+    </div>
+
+    <div class="card">
+        <div class="meta">
+            runId: <span id="runId" class="mono">(none)</span>
+        </div>
+
+        <div class="grid2">
+            <div class="field">
+                <label class="label" for="label">Scan label (optional)</label>
+                <input id="label" type="text" placeholder="Example: Homepage, Login, Checkout action 2" />
+            </div>
+
+            <button data-selector="label" data-selector-type="getText" class="pickerBtn btn" type="button">picker</button>
+
+            <div class="field field-compact">
+                <label class="label" for="profile">Profile</label>
+                <select id="profile" class="select-compact">
+                    <optgroup label="WCAG 2.2">
+                        <option value="wcag22-a">WCAG 2.2 A</option>
+                        <option value="wcag22-aa" selected>WCAG 2.2 AA</option>
+                        <option value="wcag22-aaa">WCAG 2.2 AAA</option>
+                    </optgroup>
+                    <optgroup label="Standard">
+                        <option value="en301549-v4.1.1">EN 301 549 V4.1.1</option>
+                        <option value="en301549-v3.2.1">EN 301 549 V3.2.1</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+
+        <div class="advanced">
+            <button type="button"
+                    id="advancedToggle"
+                    class="legend-toggle"
+                    aria-expanded="false"
+                    aria-controls="advancedContent"
+                    aria-label="Expand advanced options">
+                <span class="legend-toggle-label">Advanced options</span>
+            </button>
+
+            <div id="advancedContent" class="advanced-content" role="region" aria-label="Advanced options" hidden>
+            <div class="field">
+                <label class="label" for="exclude">Exclude selectors (optional, comma-separated)</label>
+                <div class="row-input-button">
+                    <input id="exclude" type="text"
+                           placeholder="Example: header, .cookie-banner, [data-testid=&quot;ads&quot;]"/>
+                    <div class="row-input-button">
+                        <button data-selector="exclude" class="pickerBtn btn" type="button">picker</button>
+                        <button data-selector="exclude" class="clearBtn btn" type="button">reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label" for="context">Context selectors (optional, comma-separated)</label>
+                <div class="row-input-button">
+                    <input id="context" type="text" placeholder="Example: main, #app, .checkout"/>
+                    <div class="row-input-button">
+                        <button data-selector="contentSelector" class="pickerBtn btn" type="button">picker</button>
+                        <button data-selector="contentSelector" class="clearBtn btn" type="button">reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field field-checkbox">
+                <input id="includeBestPractice" type="checkbox" />
+                <label class="label" for="includeBestPractice">Include best-practice rules</label>
+            </div>
+
+            <div class="field">
+                <label class="label" for="custom-css">Custom CSS (applied automatically when scanning)</label>
+                <div class="row-input-button">
+                    <textarea id="custom-css" placeholder="Example: .btn-primary { color: #000 !important; }"></textarea>
+                    <div>
+                        <button id="customCssAdd" type="button" class="btn" disabled>Preview on page</button>
+                        <button id="customCssRemove" type="button" class="btn" disabled>Remove preview</button>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span id="status" class="status" aria-live="polite"></span>
+        </div>
+    </div>
+
+    <div class="resultsRow">
+        <figure id="shotWrap" class="shotWrap" hidden>
+            <div id="shotBox" class="shotBox">
+                <img id="shotImg" class="shotImg" alt="Screenshot captured after the scan" />
+            </div>
+            <figcaption id="shotMeta" class="shotMeta"></figcaption>
+        </figure>
+
+        <pre id="out" class="out"></pre>
+    </div>
+    <div class="download">
+        <button id="download" class="btn" disabled>Download</button>
+    </div>
+</div>

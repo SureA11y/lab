@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Canvas shoes - Demo Shop</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><p><strong>Demo Shop</strong></p><nav aria-label="Main"><a href="index.html">Home</a><a href="products.html">Products</a><a href="login.html">Log in</a><a href="cart.html">Cart</a></nav></header>
+<main>
+  <h1>Canvas shoes</h1>
+  <img src="images/shoes.svg" width="400" height="240">
+  <p class="price">39 €</p>
+  <p><label for="size">Size</label> <select id="size"><option>S</option><option>M</option><option>L</option></select></p>
+  <button type="button" class="icon-button" id="add-to-cart"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h2l2 9h8l2-7H6" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+  <p id="added" role="status"></p>
+</main>
+<script>document.getElementById('add-to-cart').addEventListener('click', function () { document.getElementById('added').textContent = 'Canvas shoes added to your cart.'; });</script>
+<footer><p>Demo Shop is a made-up shop for surea11y-lab's examples.</p></footer>
+<div class="cookie-banner" id="cookie-banner" role="region" aria-label="Cookies"><p>We use cookies to keep your cart. <button type="button" id="accept-cookies">Accept cookies</button></p></div>
+<script src="cookies.js"></script>
+</body>
+</html>

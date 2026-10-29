@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:surea11y-lab:diff:v1",
+  "title": "surea11y-lab diff",
+  "description": "diff.json, which `node src/cli/run-workflow.js` writes beside payload.json when a run is compared with a baseline: what changed since that run. Generated from src/shared/report-schemas.js by `npm run build:action-docs`; do not edit the file in schemas/ by hand.",
+  "type": "object",
+  "required": [
+    "type",
+    "version",
+    "summary",
+    "diff"
+  ],
+  "properties": {
+    "type": {
+      "const": "a11y-diff"
+    },
+    "version": {
+      "const": 1
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "rules",
+        "occurrences",
+        "newRules",
+        "net"
+      ],
+      "properties": {
+        "rules": {
+          "type": "object",
+          "required": [
+            "new",
+            "resolved",
+            "persistent"
+          ],
+          "properties": {
+            "new": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "resolved": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "persistent": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "occurrences": {
+          "type": "object",
+          "required": [
+            "new",
+            "fixed",
+            "still"
+          ],
+          "properties": {
+            "new": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fixed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "still": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "newRules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "net": {
+          "type": "integer"
+        },
+        "headline": {
+          "type": "string"
+        }
+      },
+      "description": "The counts a pipeline reads."
+    },
+    "diff": {
+      "type": "object",
+      "required": [
+        "mode",
+        "rows"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "evolution",
+            "ab"
+          ]
+        },
+        "identityA": {
+          "type": "object",
+          "description": "The baseline run."
+        },
+        "identityB": {
+          "type": "object",
+          "description": "This run."
+        },
+        "stats": {
+          "type": "object"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ruleId",
+              "category",
+              "occ"
+            ],
+            "properties": {
+              "ruleId": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "severity": {
+                "enum": [
+                  "critical",
+                  "serious",
+                  "moderate",
+                  "minor",
+                  "info",
+                  "unknown"
+                ]
+              },
+              "category": {
+                "enum": [
+                  "new",
+                  "resolved",
+                  "persistent",
+                  "aonly",
+                  "bonly",
+                  "both"
+                ]
+              },
+              "aCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "occ": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "occurrenceId",
+                    "tag"
+                  ],
+                  "properties": {
+                    "occurrenceId": {
+                      "type": "string",
+                      "pattern": "^occ_[0-9a-f]{14}$"
+                    },
+                    "tag": {
+                      "enum": [
+                        "still",
+                        "fixed",
+                        "new",
+                        "both",
+                        "aonly",
+                        "bonly"
+                      ]
+                    },
+                    "pageUrl": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "description": "One row per failing rule in either run, with its occurrences."
+        }
+      },
+      "description": "The comparison in full, as the app shows it."
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "http://localhost:8780/",
+  "scenarioName": "Demo shop home",
+  "actions": [
+    { "type": "click", "selector": "#accept-cookies", "label": "Accept cookies" },
+    { "type": "a11yScan", "label": "Home" }
+  ]
+}

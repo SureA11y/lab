@@ -1,0 +1,29 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "http://localhost:8780/products.html",
+  "scenarioName": "Demo shop, every product",
+  "customSteps": [
+    {
+      "id": "accept-cookies",
+      "name": "Accept the cookie banner when it shows",
+      "actions": [
+        { "type": "if", "selectorExists": "#cookie-banner:not([hidden])", "actions": [
+          { "type": "click", "selector": "#accept-cookies", "label": "Accept cookies" }
+        ] }
+      ]
+    }
+  ],
+  "actions": [
+    { "type": "runCustomStep", "customStepId": "accept-cookies" },
+    { "type": "forEachElement", "targetSelector": "h2 a", "label": "Each product",
+      "preActions": [{ "type": "getText", "selector": ":ctx", "var": "product", "trim": true }],
+      "actions": [
+        { "type": "click", "selector": ":ctx", "label": "Open it" },
+        { "type": "waitForSelector", "selector": "#add-to-cart" },
+        { "type": "a11yScan", "label": "{var:product}", "context": "main" },
+        { "type": "goBack" }
+      ] }
+  ]
+}

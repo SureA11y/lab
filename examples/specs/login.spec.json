@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "http://localhost:8780/login.html",
+  "scenarioName": "Demo shop account",
+  "actions": [
+    { "type": "click", "selector": "#accept-cookies", "label": "Accept cookies" },
+    { "type": "a11yScan", "label": "Log in page" },
+    { "type": "type", "selector": "#email", "text": "reader@example.com", "label": "Email" },
+    { "type": "setPassword", "selector": "#password", "value": { "$env": "DEMO_SHOP_PASSWORD" }, "label": "Password, from the environment" },
+    { "type": "clickByText", "labelText": "Log in", "selector": "button", "label": "Log in" },
+    { "type": "waitForSelector", "selector": "table" },
+    { "type": "a11yScan", "label": "Your account" }
+  ]
+}

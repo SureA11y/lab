@@ -1,0 +1,76 @@
+name: surea11y-lab accessibility run
+# The Marketplace shows up to 125 characters; docs/ci-action.md has the rest.
+description: Check a site's accessibility with surea11y on every pull request, and fail on new failures, not old ones.
+branding:
+  icon: check-circle
+  color: green
+inputs:
+  spec:
+    description: The spec, batch spec or configuration to run, relative to the workspace.
+    required: true
+  out:
+    description: >
+      Where the run's files go (payload.json, summary.md, diff.json; a batch's folders).
+      {stamp} becomes the time: "a11y-store/checkout/runs/{stamp}" keeps each run beside
+      the last, for --baseline auto.
+    required: false
+    default: a11y-out
+  store:
+    description: The run store, for --baseline auto or @name. Keep it between runs with actions/cache.
+    required: false
+    default: ''
+  baseline:
+    description: auto, @name, or a path to a payload.json to compare with.
+    required: false
+    default: ''
+  args:
+    description: More options for run-workflow.js, e.g. "--format sarif --fail-on-lean".
+    required: false
+    default: ''
+  fail-on:
+    description: Exit codes that fail the step, space-separated. 3 is new failures, 4 a degraded run, 5 new likely failures.
+    required: false
+    default: '1 2 3 4 130'
+  addons:
+    description: Add-ons to install, space-separated, e.g. "more-engines" for engines besides surea11y.
+    required: false
+    default: ''
+  node-version:
+    description: The Node.js version to run the lab on.
+    required: false
+    default: '24'
+outputs:
+  exit-code:
+    description: The runner's exit code (docs/scheduled-scans-guide.md, "Exit codes").
+    value: ${{ steps.run.outputs.exit-code }}
+  out-dir:
+    description: Where the run's files are.
+    value: ${{ steps.run.outputs.out-dir }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+    - name: Install the lab
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      # With the dev dependencies, to build the report's styles and script:
+      # a compared run writes comparison.html with them.
+      env:
+        LAB_ADDONS: ${{ inputs.addons }}
+      run: |
+        npm ci --no-audit --no-fund
+        node src/js/build-report-assets.cjs.js
+        for addon in $LAB_ADDONS; do npm run addon:install -- "$addon"; done
+    - name: Run
+      id: run
+      shell: bash
+      env:
+        LAB_SPEC: ${{ inputs.spec }}
+        LAB_OUT: ${{ inputs.out }}
+        LAB_STORE: ${{ inputs.store }}
+        LAB_BASELINE: ${{ inputs.baseline }}
+        LAB_ARGS: ${{ inputs.args }}
+        LAB_FAIL_ON: ${{ inputs.fail-on }}
+      run: bash "${{ github.action_path }}/ci/github-action.sh"

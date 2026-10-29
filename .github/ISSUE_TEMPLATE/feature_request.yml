@@ -1,0 +1,22 @@
+name: An idea or a need
+description: Something the lab could do, or do better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What you are trying to do
+      description: The task or the situation, rather than the feature you have in mind; there may be a way already, or a better one.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What gets in the way today
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+      description: Optional. How you picture it working.

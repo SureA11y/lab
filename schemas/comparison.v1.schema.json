@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:surea11y-lab:comparison:v1",
+  "title": "surea11y-lab comparison",
+  "description": "comparison.json in a downloaded comparison zip: how the reports beside it, in reports/, are arranged. Generated from src/shared/report-schemas.js by `npm run build:action-docs`; do not edit the file in schemas/ by hand.",
+  "type": "object",
+  "required": [
+    "type",
+    "version",
+    "reports"
+  ],
+  "properties": {
+    "type": {
+      "const": "a11y-comparison"
+    },
+    "version": {
+      "const": 1
+    },
+    "context": {
+      "enum": [
+        "time",
+        "versions",
+        "variants"
+      ],
+      "description": "What the reports are: runs over time, versions of a site, or variants of a page."
+    },
+    "order": {
+      "anyOf": [
+        {
+          "enum": [
+            "time",
+            "given"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Whether the columns follow the runs' time, or the order given here."
+    },
+    "document": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "generatedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "reports": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "description": "The reports in column order, each a file in the zip."
+    }
+  }
+}

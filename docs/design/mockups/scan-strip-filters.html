@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Scan Strip Filters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mockup only: fake data, no product code. Tokens and chart colours are the
+   ones in docs/design/mockups/issue-dispersion.html. Shows two controls on the scan
+   strips: a rule filter, and the column height as rules or failing elements. */
+:root {
+    color-scheme: light;
+    --font-display: "Space Grotesk", system-ui, sans-serif;
+    --font-sans: "Public Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+    --brand-rgb: 91, 57, 196;
+    --bg: #f7f8f6;
+    --bg-elevated: #ffffff;
+    --border-subtle: rgba(var(--brand-rgb), .18);
+    --border-strong: rgba(var(--brand-rgb), .28);
+    --text-main: #31352f;
+    --text-muted: #4e5651;
+    --text-soft: #646b66;
+    --accent: #5b39c4;
+    --accent-soft: #ede6fa;
+    --warn: #7a5a08;
+    --warn-soft: #fbf3dc;
+    --na-soft: #eef0ed;
+    --viz-wide: #5b39c4;
+    --viz-other: #c25a0c;
+    --viz-clean: #b9bfba;
+    --viz-axis: rgba(49, 53, 47, .35);
+    --viz-cursor: #31352f;
+}
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --brand-rgb: 196, 166, 255;
+    --bg: #101413;
+    --bg-elevated: #171b19;
+    --border-subtle: rgba(var(--brand-rgb), .10);
+    --border-strong: rgba(var(--brand-rgb), .18);
+    --text-main: #c7d2cb;
+    --text-muted: #9ba69f;
+    --text-soft: #8b958f;
+    --accent: #c4a6ff;
+    --accent-soft: #2a2140;
+    --warn: #e8c15c;
+    --warn-soft: #3a2f12;
+    --na-soft: #262b29;
+    --viz-wide: #8f6ee6;
+    --viz-other: #cc7430;
+    --viz-clean: #3f4743;
+    --viz-axis: rgba(199, 210, 203, .30);
+    --viz-cursor: #f7f8f6;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) {
+        color-scheme: dark;
+        --brand-rgb: 196, 166, 255;
+        --bg: #101413;
+        --bg-elevated: #171b19;
+        --border-subtle: rgba(var(--brand-rgb), .10);
+        --border-strong: rgba(var(--brand-rgb), .18);
+        --text-main: #c7d2cb;
+        --text-muted: #9ba69f;
+        --text-soft: #8b958f;
+        --accent: #c4a6ff;
+        --accent-soft: #2a2140;
+        --warn: #e8c15c;
+        --warn-soft: #3a2f12;
+        --na-soft: #262b29;
+        --viz-wide: #8f6ee6;
+        --viz-other: #cc7430;
+        --viz-clean: #3f4743;
+        --viz-axis: rgba(199, 210, 203, .30);
+        --viz-cursor: #f7f8f6;
+    }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text-main); font-family: var(--font-sans); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 80px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.2; }
+h1 { font-size: 1.9rem; margin: 0 0 6px; }
+h2 { font-size: 1.35rem; margin: 0 0 4px; }
+h3 { font-size: 1.05rem; margin: 0 0 6px; }
+p { margin: 0 0 10px; }
+code { font-family: var(--font-mono); font-size: .86em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font-family: var(--font-mono); font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-soft); }
+.lede { color: var(--text-muted); max-width: 72ch; }
+.topbar { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.seg-theme { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 4px; overflow: hidden; }
+.seg-theme button { font: inherit; font-size: .85rem; padding: 6px 12px; border: 0; background: var(--bg-elevated); color: var(--text-main); cursor: pointer; }
+.seg-theme button[aria-pressed="true"] { background: var(--accent); color: var(--bg-elevated); font-weight: 600; }
+.states { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 4px; align-items: center; font-size: .85rem; color: var(--text-muted); }
+.states button { font: inherit; font-size: .85rem; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--text-main); cursor: pointer; }
+.decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin: 18px 0; }
+.decision { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 12px; font-size: .88rem; color: var(--text-muted); }
+.decision strong { display: block; color: var(--text-main); font-family: var(--font-display); font-size: .95rem; }
+section.panel { margin-top: 32px; }
+.card { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 18px; }
+
+/* ---- proposed component ---- */
+.help { font-size: .85rem; color: var(--text-muted); margin: 0 0 8px; }
+.tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 10px 0 8px; }
+.seg { display: inline-flex; align-items: center; gap: 0; border: 0; padding: 0; margin: 0; }
+.seg legend { float: left; font-size: .8rem; color: var(--text-muted); margin-right: 8px; padding: 0; }
+.seg label { position: relative; font-family: var(--font-mono); font-size: .78rem; line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; }
+.seg label + label { border-left-width: 0; }
+.seg label:has(input:checked) + label { border-left-color: var(--accent); }
+.seg label:first-of-type { border-radius: 4px 0 0 4px; }
+.seg label:last-of-type { border-radius: 0 4px 4px 0; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg label:has(input:checked) { background: var(--accent-soft); color: var(--text-main); border-color: var(--accent); font-weight: 700; }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 1; }
+.filter { position: relative; }
+.filter-btn { font-family: var(--font-mono); font-size: .78rem; line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-main); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.filter-btn .n { font-family: var(--font-mono); font-size: .78rem; background: var(--accent); color: var(--bg-elevated); border-radius: 999px; padding: 0 7px; }
+.filter-btn[aria-expanded="true"] { border-color: var(--accent); }
+.filter-panel { position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; width: min(420px, calc(100vw - 32px)); background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 8px 28px rgba(0, 0, 0, .14); padding: 10px 12px 12px; }
+.filter-panel input[type="search"] { width: 100%; font: inherit; font-size: .88rem; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg); color: var(--text-main); }
+.filter-list { max-height: 300px; overflow-y: auto; margin-top: 8px; }
+.filter-list fieldset { border: 0; margin: 0 0 6px; padding: 0; }
+.filter-list legend { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-soft); padding: 4px 0; }
+.opt { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: baseline; padding: 3px 4px; border-radius: 4px; cursor: pointer; font-size: .86rem; }
+.opt:hover { background: var(--na-soft); }
+.opt code { font-size: .84rem; color: var(--text-main); }
+.opt .meta { font-size: .76rem; color: var(--text-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.filter-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: .8rem; color: var(--text-soft); }
+.link-btn { font: inherit; font-size: .82rem; background: none; border: 0; padding: 2px 4px; color: var(--accent); cursor: pointer; text-decoration: underline; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
+.chip { font: inherit; font-family: var(--font-mono); font-size: .78rem; display: inline-flex; gap: 6px; align-items: center; padding: 2px 6px 2px 9px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--accent-soft); color: var(--text-main); cursor: pointer; }
+.chip span { font-family: var(--font-sans); font-size: .9rem; line-height: 1; color: var(--text-muted); }
+.status { font-size: .82rem; color: var(--text-muted); margin: 0 0 4px; min-height: 1.3em; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .8rem; color: var(--text-muted); margin: 4px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.sw.wide { background: var(--viz-wide); }
+.sw.other { background: var(--viz-other); }
+.sw.clean { background: var(--viz-clean); height: 3px; }
+.strip-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 12px; align-items: end; margin-bottom: 6px; }
+.who { display: flex; flex-direction: column; gap: 2px; padding-bottom: 20px; font-size: .82rem; color: var(--text-muted); }
+.who b { color: var(--text-main); }
+.strip { position: relative; border-bottom: 1px solid var(--viz-axis); cursor: crosshair; }
+.strip svg { display: block; width: 100%; }
+.s-wide { fill: var(--viz-wide); }
+.s-other { fill: var(--viz-other); }
+.s-clean { fill: var(--viz-clean); }
+.axis { position: relative; height: 18px; font-size: .72rem; color: var(--text-soft); }
+.axis span { position: absolute; top: 2px; padding-left: 3px; border-left: 1px solid var(--viz-axis); }
+.axis .end { right: 0; border-left: 0; border-right: 1px solid var(--viz-axis); padding: 0 3px 0 0; }
+.tip { position: fixed; z-index: 10; pointer-events: none; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 10px; font-size: .82rem; max-width: 320px; box-shadow: 0 6px 20px rgba(0,0,0,.14); }
+.tip .meta { display: block; color: var(--text-soft); font-size: .76rem; margin-top: 3px; font-family: var(--font-mono); }
+table { border-collapse: collapse; font-size: .84rem; width: 100%; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border-subtle); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+details summary { cursor: pointer; font-size: .85rem; color: var(--accent); margin-top: 8px; }
+@media (max-width: 640px) { .strip-row { grid-template-columns: 1fr; } .who { padding-bottom: 0; flex-direction: row; gap: 8px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="topbar">
+        <div>
+            <div class="eyebrow">Mockup · Where the failures are</div>
+            <h1>Scan strips: filter by rule, and switch what the height counts</h1>
+            <p class="lede">Two controls above the strips, the same in Compare and in the report view. The filter picks
+                which rules the columns count. The toggle sets whether a column's height is the number of failing rules or the number of
+                failing elements, on a square-root scale. They only change the strips; the rest of the section stays as it is.
+                The data is made up.</p>
+        </div>
+        <div class="seg-theme" role="group" aria-label="Theme">
+            <button type="button" data-theme-btn="light" aria-pressed="true">Light</button>
+            <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+        </div>
+    </div>
+
+    <div class="states">States:
+        <button type="button" data-state="default">Default (as today)</button>
+        <button type="button" data-state="panel">Filter list open</button>
+        <button type="button" data-state="one">One rule · failing elements</button>
+        <button type="button" data-state="two">Two rules · failing rules</button>
+        <button type="button" data-state="elements">All rules · failing elements</button>
+    </div>
+
+    <div class="decisions">
+        <div class="decision"><strong>One set of controls per chart</strong>In Compare, the filter and the toggle drive every strip at once,
+            so you can read down to follow a rule across versions.</div>
+        <div class="decision"><strong>Same height scale, recomputed</strong>All strips share one scale, taken from the tallest column
+            after filtering. The status line names it (“Tallest column: 214 failing elements”).</div>
+        <div class="decision"><strong>Square root for elements</strong>One scan with 200 elements would flatten the rest on a linear scale.
+            The square root keeps the order and leaves the small ones visible. The tooltip gives the exact count.</div>
+        <div class="decision"><strong>Colours keep their meaning</strong>Purple is still the report's widespread rules and orange the rest,
+            whatever is selected. The thin baseline then means “none of the selected rules fail here”.</div>
+    </div>
+
+    <section class="panel" aria-labelledby="cmp-h">
+        <h2 id="cmp-h">Compare · three or more reports</h2>
+        <p class="help">The panel from the screenshot, with the controls added above the legend.</p>
+        <div class="card" data-group="cmp"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="rep-h">
+        <h2 id="rep-h">Report view · one strip</h2>
+        <p class="help">The same controls on the report's own strip. “Show as table” follows the filter.</p>
+        <div class="card" data-group="rep"></div>
+    </section>
+</div>
+<div class="tip" hidden></div>
+
+<script>
+(function () {
+    // ---- fake data: 8 versions of a UI kit, ~190 scans each ----
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    const RULES = ['color-contrast', 'link-name', 'button-name', 'image-alt', 'label', 'aria-allowed-attr', 'heading-order',
+        'list', 'duplicate-id-aria', 'nested-interactive', 'aria-required-children', 'frame-title', 'scrollable-region-focusable',
+        'target-size', 'autocomplete-valid', 'aria-hidden-focus'];
+    const WIDE = ['region', 'landmark-one-main'];
+    const N0 = 190;
+    // Fixed "places" where local rules fail, shared by every version (a page keeps its bugs).
+    const places = [];
+    for (let i = 0; i < 70; i++) {
+        const at = Math.floor(rnd() * N0);
+        const k = 1 + Math.floor(rnd() * rnd() * 4);
+        const rules = [];
+        for (let j = 0; j < k; j++) rules.push(RULES[Math.floor(rnd() * rnd() * RULES.length)]);
+        places.push({ at, rules: [...new Set(rules)], heavy: rnd() < 0.12, life: 2 + Math.floor(rnd() * 7) });
+    }
+    function report(v) {
+        const N = N0 + [0, 1, 2, 1, 1, 3, 1, 3][v];
+        const scans = Array.from({ length: N }, (_, i) => ({ label: `Step ${i + 1}`, hits: new Map() }));
+        if (v < 2) scans.forEach((s) => WIDE.forEach((id) => s.hits.set(id, 1 + Math.floor(rnd() * 2))));
+        places.forEach((p) => {
+            if (v >= p.life && v > 2) return;
+            const s = scans[Math.min(N - 1, p.at)];
+            p.rules.forEach((id) => {
+                const base = id === 'color-contrast' ? (p.heavy ? 60 + Math.floor(rnd() * 160) : 2 + Math.floor(rnd() * 12)) : 1 + Math.floor(rnd() * 4);
+                s.hits.set(id, Math.max(1, Math.round(base * (v > 3 ? 0.7 : 1))));
+            });
+        });
+        const reach = new Map();
+        scans.forEach((s) => s.hits.forEach((_, id) => reach.set(id, (reach.get(id) || 0) + 1)));
+        const wide = new Set([...reach].filter(([, n]) => n / N >= 0.6).map(([id]) => id));
+        return { label: `UI-SDK v22.${v}.0`, N, reach, rows: scans.map((s) => ({ label: s.label, rules: [...s.hits].map(([id, el]) => [id, el, wide.has(id) ? 1 : 0]) })) };
+    }
+    const reports = Array.from({ length: 8 }, (_, v) => report(v));
+    const pct = (x) => Math.round(x * 100) + '%';
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    // ---- component ----
+    const groups = {
+        cmp: { reports, H: 44, state: { mode: 'rules', sel: new Set(), open: false, q: '' } },
+        rep: { reports: [reports[3]], H: 96, state: { mode: 'rules', sel: new Set(), open: false, q: '' }, table: true },
+    };
+
+    function ruleOptions(g) {
+        const all = new Map();
+        g.reports.forEach((r) => r.reach.forEach((n, id) => {
+            const o = all.get(id) || { id, inReports: 0, maxReach: 0 };
+            o.inReports++; o.maxReach = Math.max(o.maxReach, n / r.N);
+            all.set(id, o);
+        }));
+        return [...all.values()].sort((a, b) => b.maxReach - a.maxReach || a.id.localeCompare(b.id));
+    }
+    function derive(row, sel) {
+        const rules = sel.size ? row.rules.filter(([id]) => sel.has(id)) : row.rules;
+        const d = { wide: 0, other: 0, wideEl: 0, otherEl: 0, rules };
+        rules.forEach(([, el, w]) => { if (w) { d.wide++; d.wideEl += el; } else { d.other++; d.otherEl += el; } });
+        return d;
+    }
+    function bars(rows, H, max, st) {
+        const unit = (H - 4) / Math.max(1, max);
+        const f = st.mode === 'elements' ? Math.sqrt : (x) => x;
+        return rows.map((row, i) => {
+            const d = derive(row, st.sel), x = i * 4;
+            const a = st.mode === 'elements' ? d.wideEl : d.wide, b = st.mode === 'elements' ? d.otherEl : d.other;
+            if (!a && !b) return `<rect class="s-clean" x="${x}" y="${H - 2}" width="3" height="2"/>`;
+            const total = f(a + b) * unit, hw = (a / (a + b)) * total, ho = total - hw;
+            let s = '';
+            if (hw) s += `<rect class="s-wide" x="${x}" y="${(H - hw).toFixed(2)}" width="3" height="${hw.toFixed(2)}"/>`;
+            if (ho) s += `<rect class="s-other" x="${x}" y="${(H - hw - ho).toFixed(2)}" width="3" height="${Math.max(1, ho - (hw ? 1.5 : 0)).toFixed(2)}"/>`;
+            return s;
+        }).join('');
+    }
+    function measure(row, st) {
+        const d = derive(row, st.sel);
+        return st.mode === 'elements' ? d.wideEl + d.otherEl : d.wide + d.other;
+    }
+    function render(name) {
+        const g = groups[name], st = g.state, el = document.querySelector(`[data-group="${name}"]`);
+        const opts = ruleOptions(g);
+        let max = 0, maxAt = '';
+        g.reports.forEach((r) => r.rows.forEach((row, i) => { const m = measure(row, st); if (m > max) { max = m; maxAt = `scan ${i + 1} of ${r.label}`; } }));
+        const scaleMax = st.mode === 'elements' ? Math.sqrt(max) : max;
+        const unitWord = st.mode === 'elements' ? (max === 1 ? 'failing element' : 'failing elements') : (max === 1 ? 'rule' : 'rules');
+        const status = (st.sel.size ? `Counting ${st.sel.size} of ${opts.length} rules. ` : `Counting all ${opts.length} failing rules. `)
+            + (max ? `Tallest column: ${max} ${unitWord} (${maxAt})${st.mode === 'elements' ? ', square-root scale' : ''}.` : 'None of the selected rules fail in these scans.');
+        const q = st.q.trim().toLowerCase();
+        const shown = opts.filter((o) => !q || o.id.includes(q));
+        const optHTML = (o) => `<label class="opt"><input type="checkbox" value="${esc(o.id)}"${st.sel.has(o.id) ? ' checked' : ''}>`
+            + `<code>${esc(o.id)}</code><span class="meta">${g.reports.length > 1 ? `${o.inReports} of ${g.reports.length} reports · ` : ''}up to ${pct(o.maxReach)} of scans</span></label>`;
+        const wideOpts = shown.filter((o) => o.maxReach >= 0.6), otherOpts = shown.filter((o) => o.maxReach < 0.6);
+        const panel = st.open ? `<div class="filter-panel" role="group" aria-label="Rules to count">`
+            + `<input type="search" placeholder="Find a rule" aria-label="Find a rule" value="${esc(st.q)}" data-q>`
+            + `<div class="filter-list">`
+            + (wideOpts.length ? `<fieldset><legend>Widespread${g.reports.length > 1 ? ' in a report' : ''}</legend>${wideOpts.map(optHTML).join('')}</fieldset>` : '')
+            + (otherOpts.length ? `<fieldset><legend>Other rules</legend>${otherOpts.map(optHTML).join('')}</fieldset>` : '')
+            + (shown.length ? '' : `<p class="help">No rule matches “${esc(st.q)}”.</p>`)
+            + `</div><div class="filter-foot"><span>${st.sel.size ? `${st.sel.size} selected` : 'None selected: all rules count'}</span>`
+            + `<span><button type="button" class="link-btn" data-clear>Clear</button><button type="button" class="link-btn" data-close>Done</button></span></div></div>` : '';
+        const chips = st.sel.size ? `<div class="chips" aria-label="Rules counted">${[...st.sel].map((id) =>
+            `<button type="button" class="chip" data-unsel="${esc(id)}" aria-label="Stop filtering by ${esc(id)}">${esc(id)}<span aria-hidden="true">×</span></button>`).join('')}`
+            + `<button type="button" class="link-btn" data-clear>Clear all</button></div>` : '';
+        const strips = g.reports.map((r, ri) => {
+            const ticks = [0, .25, .5, .75].map((t) => { const i = Math.floor(t * r.N); return `<span style="left:${(i / r.N * 100).toFixed(2)}%">${i + 1}</span>`; }).join('') + `<span class="end">${r.N}</span>`;
+            const svg = `<div class="strip" data-r="${ri}" tabindex="0" role="slider" aria-label="Scan strip for ${esc(r.label)}" aria-valuemin="1" aria-valuemax="${r.N}" aria-valuenow="1">`
+                + `<svg viewBox="0 0 ${r.N * 4} ${g.H}" preserveAspectRatio="none" style="height:${g.H}px" aria-hidden="true">${bars(r.rows, g.H, scaleMax, st)}</svg></div><div class="axis">${ticks}</div>`;
+            return g.reports.length > 1
+                ? `<div class="strip-row"><div class="who"><b>${ri + 1} · ${esc(r.label)}</b><span>${ri < 2 ? 'Mixed' : 'Concentrated'}</span></div><div>${svg}</div></div>`
+                : svg;
+        }).join('');
+        const legend = `<div class="legend"><span><i class="sw wide"></i>Widespread rules (fail in ≥60% of scans)</span><span><i class="sw other"></i>Other rules</span>`
+            + `<span><i class="sw clean"></i>${st.sel.size ? 'None of the selected rules fail here' : 'Scan with no automatic failures'}</span></div>`;
+        let table = '';
+        if (g.table) {
+            const r = g.reports[0];
+            const rows = r.rows.map((row, i) => ({ i, d: derive(row, st.sel) })).filter((x) => x.d.rules.length);
+            table = `<details${g.tableOpen ? ' open' : ''} data-table><summary>Show as table</summary><table><caption class="help" style="text-align:left">${rows.length} scans with ${st.sel.size ? 'the selected rules failing' : 'automatic failures'}, in report order.</caption>`
+                + `<thead><tr><th>Scan</th><th class="num">Widespread rules</th><th class="num">Other rules</th><th class="num">Failing elements</th><th>Rules</th></tr></thead><tbody>`
+                + rows.slice(0, 12).map(({ i, d }) => `<tr><td>${i + 1}</td><td class="num">${d.wide}</td><td class="num">${d.other}</td><td class="num">${d.wideEl + d.otherEl}</td><td><code>${d.rules.map(([id]) => esc(id)).join(', ')}</code></td></tr>`).join('')
+                + `</tbody></table></details>`;
+        }
+        el.innerHTML = `<h3>${g.reports.length > 1 ? 'Scan strips' : 'Scan strip'}</h3>`
+            + `<div class="tools">`
+            + `<fieldset class="seg"><legend>Column height</legend>`
+            + `<label><input type="radio" name="${name}-m" value="rules"${st.mode === 'rules' ? ' checked' : ''}>Failing rules</label>`
+            + `<label><input type="radio" name="${name}-m" value="elements"${st.mode === 'elements' ? ' checked' : ''}>Failing elements</label></fieldset>`
+            + `<div class="filter"><button type="button" class="filter-btn" aria-expanded="${st.open}" data-toggle>Filter rules${st.sel.size ? `<span class="n">${st.sel.size}</span>` : ''}<span aria-hidden="true">▾</span></button>${panel}</div>`
+            + `</div>${chips}<p class="status" role="status">${esc(status)}</p>${legend}${strips}`
+            + (g.reports.length > 1 ? `<p class="help">One strip per report, on the same height scale. Read down to see a band disappear, a hotspot shrink or a problem spread.</p>` : '')
+            + table;
+        el.__rows = g;
+    }
+
+    // ---- events ----
+    const focusAfter = (name, sel) => { const n = document.querySelector(`[data-group="${name}"] ${sel}`); if (n) n.focus(); };
+    document.addEventListener('change', (e) => {
+        const card = e.target.closest('[data-group]'); if (!card) return;
+        const name = card.dataset.group, st = groups[name].state;
+        if (e.target.type === 'radio') { st.mode = e.target.value; render(name); focusAfter(name, `input[value="${st.mode}"]`); }
+        if (e.target.type === 'checkbox') {
+            e.target.checked ? st.sel.add(e.target.value) : st.sel.delete(e.target.value);
+            render(name); focusAfter(name, `input[type=checkbox][value="${CSS.escape(e.target.value)}"]`);
+        }
+    });
+    document.addEventListener('input', (e) => {
+        if (!e.target.matches('[data-q]')) return;
+        const name = e.target.closest('[data-group]').dataset.group;
+        groups[name].state.q = e.target.value; render(name);
+        const q = document.querySelector(`[data-group="${name}"] [data-q]`); q.focus(); q.setSelectionRange(q.value.length, q.value.length);
+    });
+    document.addEventListener('toggle', (e) => {
+        if (e.target.matches && e.target.matches('[data-table]')) groups[e.target.closest('[data-group]').dataset.group].tableOpen = e.target.open;
+    }, true);
+    document.addEventListener('click', (e) => {
+        const tb = e.target.closest('[data-theme-btn]');
+        if (tb) {
+            document.documentElement.setAttribute('data-theme', tb.dataset.themeBtn);
+            document.querySelectorAll('[data-theme-btn]').forEach((b) => b.setAttribute('aria-pressed', String(b === tb)));
+            return;
+        }
+        const sb = e.target.closest('[data-state]');
+        if (sb) { applyState(sb.dataset.state); return; }
+        const card = e.target.closest('[data-group]');
+        Object.keys(groups).forEach((n) => { if ((!card || card.dataset.group !== n) && groups[n].state.open) { groups[n].state.open = false; render(n); } });
+        if (!card) return;
+        const name = card.dataset.group, st = groups[name].state;
+        if (e.target.closest('[data-toggle]')) { st.open = !st.open; render(name); focusAfter(name, st.open ? '[data-q]' : '[data-toggle]'); }
+        else if (e.target.closest('[data-close]')) { st.open = false; render(name); focusAfter(name, '[data-toggle]'); }
+        else if (e.target.closest('[data-clear]')) { st.sel.clear(); render(name); focusAfter(name, '[data-toggle]'); }
+        else if (e.target.closest('[data-unsel]')) { st.sel.delete(e.target.closest('[data-unsel]').dataset.unsel); render(name); focusAfter(name, st.sel.size ? '.chip' : '[data-toggle]'); }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        Object.keys(groups).forEach((n) => { if (groups[n].state.open) { groups[n].state.open = false; render(n); focusAfter(n, '[data-toggle]'); } });
+    });
+    const tip = document.querySelector('.tip');
+    document.addEventListener('mousemove', (e) => {
+        const strip = e.target.closest('.strip');
+        if (!strip) { tip.hidden = true; return; }
+        const g = groups[strip.closest('[data-group]').dataset.group], r = g.reports[+strip.dataset.r];
+        const b = strip.getBoundingClientRect(), i = Math.max(0, Math.min(r.N - 1, Math.floor((e.clientX - b.left) / b.width * r.N)));
+        const d = derive(r.rows[i], g.state.sel);
+        const head = `<b>Scan ${i + 1}</b> · ${esc(r.label)}`;
+        tip.innerHTML = !d.rules.length
+            ? `${head}<br>${g.state.sel.size ? 'None of the selected rules fail here' : 'No automatic failures'}`
+            : `${head}<br>${d.wide + d.other} ${g.state.sel.size ? 'selected ' : ''}failing rule${d.wide + d.other === 1 ? '' : 's'}: ${d.wide} widespread, ${d.other} other<br>${d.wideEl + d.otherEl} failing elements`
+                + `<span class="meta">${d.rules.map(([id, el]) => `${esc(id)} (${el})`).join(', ')}</span>`;
+        tip.hidden = false;
+        tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + 'px';
+        tip.style.top = (e.clientY + 14) + 'px';
+    });
+
+    function applyState(s) {
+        Object.values(groups).forEach((g) => { g.state.sel.clear(); g.state.mode = 'rules'; g.state.open = false; g.state.q = ''; });
+        if (s === 'panel') { groups.cmp.state.open = true; groups.cmp.state.sel.add('color-contrast'); }
+        if (s === 'one') Object.values(groups).forEach((g) => { g.state.sel.add('color-contrast'); g.state.mode = 'elements'; });
+        if (s === 'two') Object.values(groups).forEach((g) => { g.state.sel.add('link-name'); g.state.sel.add('button-name'); });
+        if (s === 'elements') Object.values(groups).forEach((g) => { g.state.mode = 'elements'; });
+        Object.keys(groups).forEach(render);
+    }
+    Object.keys(groups).forEach(render);
+}());
+</script>
+</body>
+</html>

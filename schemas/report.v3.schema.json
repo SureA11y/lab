@@ -1,0 +1,336 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:surea11y-lab:report:v3",
+  "title": "surea11y-lab report",
+  "description": "A run's results: what was scanned, against what, and what was found. The CLI writes one as payload.json, and the app saves one as *.a11y-report.json. Each finding is in its scan only: the findings by outcome across scans are built from the scans. Reports with no reportVersion are version 1, and version 2 also kept those findings by outcome (findings): the app still opens both, reading them as this version. Generated from src/shared/report-schemas.js by `npm run build:action-docs`; do not edit the file in schemas/ by hand.",
+  "type": "object",
+  "required": [
+    "reportVersion",
+    "url",
+    "runId",
+    "timestamp",
+    "scans"
+  ],
+  "properties": {
+    "reportVersion": {
+      "const": 3,
+      "description": "The format version."
+    },
+    "url": {
+      "type": "string",
+      "description": "The page the run started on."
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The run's id: the same in every copy of this report."
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "When the run started (ISO 8601)."
+    },
+    "scenarioName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cancelled": {
+      "type": "boolean"
+    },
+    "failed": {
+      "type": "boolean"
+    },
+    "actionResults": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/actionResult"
+      }
+    },
+    "scans": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scan"
+      }
+    },
+    "screenshots": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Scores and page metrics. Open: it grows with the lab."
+    },
+    "runDiagnostics": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "actionResult": {
+      "type": "object",
+      "required": [
+        "type",
+        "status"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "type": {
+          "type": "string"
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "durationMs": {
+          "type": "number"
+        }
+      }
+    },
+    "scan": {
+      "type": "object",
+      "required": [
+        "id",
+        "url",
+        "profile",
+        "wcag"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": "string"
+        },
+        "skipped": {
+          "type": "boolean"
+        },
+        "context": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "exclude": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "id",
+                "label"
+              ],
+              "properties": {
+                "id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "label": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What the scan checked against: a standard when one was applied (\"en301549-v4.1.1\"), else its WCAG 2.2 level as a profile (\"wcag22-aa\"). The id is null for a WCAG version no profile names. Null when the report does not say."
+        },
+        "wcag": {
+          "type": "object",
+          "required": [
+            "version",
+            "level"
+          ],
+          "properties": {
+            "version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "level": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "A",
+                    "AA",
+                    "AAA"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "description": "The WCAG version and level the profile came to."
+        },
+        "canonical": {
+          "$ref": "#/$defs/canonical"
+        },
+        "summary": {
+          "type": "object"
+        },
+        "metrics": {
+          "type": "object"
+        }
+      },
+      "description": "One scan: a page, or a part of it, as it stood at one step of the run. A skipped scan has no canonical results."
+    },
+    "canonical": {
+      "type": "object",
+      "required": [
+        "findings"
+      ],
+      "properties": {
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          }
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "outcome"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        },
+        "ruleId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "fail",
+            "cantTell",
+            "pass",
+            "notApplicable"
+          ]
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "enum": [
+                "critical",
+                "serious",
+                "moderate",
+                "minor",
+                "info",
+                "unknown"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "engineId": {
+          "type": "string"
+        },
+        "helpUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wcag": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "standards": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "occurrences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/occurrence"
+          }
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "uid"
+          ]
+        },
+        {
+          "required": [
+            "id"
+          ]
+        }
+      ],
+      "description": "What one check concluded on a scan, and the elements it concluded it on."
+    },
+    "occurrence": {
+      "type": "object",
+      "required": [
+        "occurrenceId"
+      ],
+      "properties": {
+        "occurrenceId": {
+          "type": "string",
+          "pattern": "^occ_[0-9a-f]{14}$",
+          "description": "The occurrence's id: the same issue on the same element of the same page has the same id in every report, whatever the site's origin. It is a hash of the rule, the page's path and query, and the element's selector, so an element whose selector changes gets a new id."
+        },
+        "pageUrl": {
+          "type": "string"
+        },
+        "target": {
+          "type": "array"
+        },
+        "html": {
+          "type": "string"
+        }
+      },
+      "description": "One element a finding concluded on."
+    }
+  }
+}

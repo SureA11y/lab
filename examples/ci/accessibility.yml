@@ -1,0 +1,60 @@
+# A GitHub Actions workflow that checks a site's accessibility on every pull
+# request, and fails it when the change brings new failures.
+#
+# Copy it to .github/workflows/accessibility.yml in the repository of the site
+# to check, and change the three marked lines: how the site starts, the spec,
+# and the version of surea11y-lab to use. docs/ci-action.md explains every
+# input.
+
+name: Accessibility
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  accessibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. Start the site under test. Here, the examples' demo shop; for your
+      #    site, its own build and start (or point the spec at a preview URL).
+      - name: Start the site
+        run: |
+          npx --yes http-server ./site -p 8780 --silent &
+          npx --yes wait-on http://localhost:8780/
+
+      # The run store, kept between workflow runs: each run on main becomes
+      # the baseline the next pull request is compared with.
+      - uses: actions/cache@v4
+        with:
+          path: a11y-store
+          key: a11y-store-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            a11y-store-${{ github.ref_name }}-
+            a11y-store-main-
+
+      # 2. The spec to run, kept in the repository like any other test.
+      # 3. The version: a release tag, or a commit.
+      - uses: SureA11y/lab@v1
+        id: a11y
+        env:
+          DEMO_SHOP_PASSWORD: ${{ secrets.DEMO_SHOP_PASSWORD }}
+        with:
+          spec: accessibility/site-tour.spec.json
+          out: a11y-store/site-tour/runs/{stamp}
+          baseline: auto
+          # New failures (3) and runs that covered less than asked (4) fail
+          # the check; a first run, with nothing to compare, passes, unless
+          # args: --fail-on-failures fails it when it has failures.
+          fail-on: '1 2 3 4'
+
+      # The run's files: comparison.html to read, diff.json and payload.json
+      # for anything else.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accessibility
+          path: ${{ steps.a11y.outputs.out-dir }}

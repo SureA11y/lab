@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>A11y Summary Metrics Reference</title>
+  <link rel="stylesheet" href="./assets/design-tokens.css" />
+  <style>
+    body {
+      font-family: var(--font-body);
+      line-height: 1.45;
+      margin: 0;
+      padding: 0;
+      background: var(--surface);
+      color: var(--text-body);
+    }
+    h1, h2, h3 { font-family: var(--font-display); color: var(--text-strong); }
+    header { padding: 24px 16px; border-bottom: 1px solid var(--border); }
+    main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 1.6rem; }
+    .sub { color: var(--text-muted); margin: 0; }
+    nav { margin-top: 14px; }
+    nav a { display: inline-block; margin: 4px 10px 4px 0; color: var(--accent-2); text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    section { margin: 28px 0; }
+    h2 { margin: 0 0 10px; font-size: 1.3rem; }
+    h3 { margin: 18px 0 8px; font-size: 1.1rem; }
+    code, pre { font-family: var(--font-mono); }
+    code { color: var(--text-strong); }
+    pre { padding: 12px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-sunken); color: var(--text-body); }
+    .callout { padding: 12px; border-left: 4px solid var(--accent-2); background: color-mix(in srgb, var(--accent-2) 10%, transparent); border-radius: var(--radius-md); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { position: sticky; top: 0; background: var(--surface-raised); color: var(--text-strong); }
+    .k { white-space: nowrap; font-family: var(--font-mono); }
+    .small { font-size: .92rem; color: var(--text-muted); }
+  </style>
+
+</head>
+<body>
+  <header>
+    <h1>A11y Summary Metrics Reference</h1>
+    <p class="sub">This document explains every index, value, and estimation produced by your metrics pipeline
+      (DOM heuristics, text heuristics, axe-derived signals, and the final accessibility risk indicator), including the exact formulas and rounding rules needed to reproduce the same outputs.</p>
+    <nav aria-label="Table of contents">
+      <a href="#examples">Examples</a>
+      <a href="#glossary">Glossary</a>
+      <a href="#inputs">Inputs and data model</a>
+      <a href="#common">Common helper functions</a>
+      <a href="#dom">DOM metrics</a>
+      <a href="#text">Text metrics</a>
+      <a href="#axe">Axe derived metrics</a>
+      <a href="#scores">Scores</a>
+      <a href="#flags">Flags</a>
+      <a href="#portfolio">Portfolio / multi-page summaries</a>
+      <a href="#defs">Metric definitions and intervals</a>
+      <a href="#repro">Reproducibility checklist</a>
+    </nav>
+  </header>
+
+  <main>
+
+    
+    <section id="plain">
+      <h2>Plain-language overview</h2>
+
+      <div class="callout">
+        <p><strong>What this report is</strong></p>
+        <p>
+          This output is a compact “health snapshot” of a page, based on three families of signals:
+          (1) what axe can automatically detect, (2) how complex the page looks structurally, and (3) basic patterns about text and controls.
+          It is designed for dashboards and triage, not for legal or formal conformance claims.
+        </p>
+        <p>
+          The goal is practical: if you only have the raw scan data, you can compute the same numbers and interpret them consistently across many pages.
+        </p>
+      </div>
+
+      <h3>What it is not</h3>
+      <ul>
+        <li>It is not a WCAG pass or fail verdict.</li>
+        <li>It is not “how accessible the page is” as experienced by users.</li>
+        <li>It does not replace manual validation, keyboard testing, screen reader testing, and design review.</li>
+      </ul>
+
+      <h3>The headline numbers, explained like a human</h3>
+      <table>
+        <thead><tr><th class="k">Number</th><th>Meaning</th><th>How to use it</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="k"><code>scores.avgPageAccessibility</code></td>
+            <td>
+              “Automated check result.” For a single page, this is identical to <code>scores.adjusted</code> below.
+              For a portfolio/global summary across multiple pages, it's the mean of the scanned pages' own scores.
+            </td>
+            <td>
+              This is the one headline number that's always present, on both single-page and portfolio reports.
+            </td>
+          </tr>
+          <tr>
+            <td class="k"><code>scores.evidence</code></td>
+            <td>
+              “How clean the page looks to automated checks.”
+              Built from the findings' breadth and depth, normalized against how much of the page there was to check
+              (evaluable elements, or a fallback unit when there were none) rather than raw DOM size.
+            </td>
+            <td>
+              Use it as a quick signal. Low evidence usually means findings are widespread, or many different rules
+              failed. High evidence means little was found, but it can still miss issues.
+            </td>
+          </tr>
+          <tr>
+            <td class="k"><code>scores.confidence</code></td>
+            <td>
+              “How much you should trust the automated evidence.”
+              The mean of the confidence each engine reported on its own fail/cantTell findings - not every engine
+              reports one, so this can be <code>null</code> (“not measured”) rather than a guess.
+            </td>
+            <td>
+              Read it as “automation reliability”, when it is present. A confidence of 85 means “use the evidence
+              score, but keep some caution”. When it is <code>null</code>, treat evidence as unverified rather than
+              assuming it is trustworthy.
+            </td>
+          </tr>
+          <tr>
+            <td class="k"><code>scores.adjusted</code></td>
+            <td>
+              “Evidence, discounted when automation is less reliable.”
+              This is your conservative dashboard score.
+            </td>
+            <td>
+              Prefer this for a single KPI. It prevents pages that look clean but are hard to evaluate from being
+              over-rated.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>How to read “per 1k” values</h3>
+      <p>
+        Many metrics are normalized “per 1000 elements” so you can compare pages of different sizes.
+        Without normalization, bigger pages always look worse, even if they are proportionally similar.
+      </p>
+      <div class="callout">
+        <p><strong>Example</strong></p>
+        <p class="small">
+          Page A has 1000 elements and 100 links, that is 100 links per 1k.
+          Page B has 10,000 elements and 100 links, that is 10 links per 1k.
+          The raw count is the same, but the page structure is very different.
+        </p>
+      </div>
+
+      <h3>Why there are many metrics</h3>
+      <p>
+        A single score is easy to communicate but can be misleading. The supporting metrics exist so you can answer,
+        “why is the score what it is” and “what should we do next”.
+      </p>
+      <ul>
+        <li><strong>Breadth</strong> tells you whether problems are diverse (many rule types) or narrow (few rule types).</li>
+        <li><strong>Depth</strong> tells you whether problems are widespread across many elements.</li>
+        <li><strong>Structure signals</strong> tell you whether automation is likely to miss state, visibility, and component behavior.</li>
+      </ul>
+    </section>
+
+
+    
+    <section id="glossary">
+      <h2>Glossary</h2>
+      <p class="small">
+        This glossary defines every term used in this document, including basic math and web-platform concepts.
+        If you see a term elsewhere that is not here, it should be added.
+      </p>
+      <table>
+        <thead><tr><th class="k">Term</th><th>Meaning in this project</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Axe</td><td>The axe-core automated accessibility testing engine. It reports rule results such as violations, incomplete, and passes.</td></tr>
+          <tr><td class="k">Violation</td><td>An axe rule that failed, meaning axe detected a likely accessibility problem.</td></tr>
+          <tr><td class="k">Incomplete</td><td>An axe rule that needs manual confirmation. Axe could not determine pass or fail reliably for that situation.</td></tr>
+          <tr><td class="k">Pass</td><td>An axe rule that passed for the scanned content.</td></tr>
+
+          <tr><td class="k">Breadth</td><td>How many distinct rule results contribute to risk, weighted by severity. Each rule counts once even if it matches many nodes.</td></tr>
+          <tr><td class="k">Depth</td><td>How widespread findings are across the page, based on how many nodes each rule matched, weighted by severity, with a square-root transform.</td></tr>
+          <tr><td class="k">Node</td><td>In axe results, a “node” is a matched element location for a rule, including HTML snippet and target selectors. Not the same as a DOM Node API type.</td></tr>
+          <tr><td class="k">Impact</td><td>Engine severity label, normalized to one of critical, serious, moderate, minor, info (aliases like “severe”/“medium”/“low” are mapped to these). This pipeline converts it to a numeric weight.</td></tr>
+          <tr><td class="k">Impact weight</td><td>Numeric mapping for impact: critical 10, serious 6, moderate 3, minor 1, info 0.5. An impact that doesn't match any of these (including missing/unknown) defaults to 2.</td></tr>
+
+          <tr><td class="k">Saturating score</td><td>A curve that rises quickly and then flattens, so extremely large values do not dominate. Implemented with an exponential function.</td></tr>
+          <tr><td class="k">exp(x)</td><td>The exponential function e to the power x. Used to build the saturating curve.</td></tr>
+          <tr><td class="k">sqrt(x)</td><td>Square root. Used so that a rule matching 100 nodes counts more than 1 node, but not 100 times more.</td></tr>
+
+          <tr><td class="k">BFS traversal</td><td>Breadth-first search traversal, visits DOM elements level by level. Used to estimate DOM size and depth without expensive recursion.</td></tr>
+          <tr><td class="k">DOM cap</td><td>A hard limit on visited nodes (default 20,000). Prevents very large pages from causing slow scans. When reached, <code>capped=true</code>.</td></tr>
+
+          <tr><td class="k">Semantic HTML</td><td>HTML elements that carry meaning (main, nav, header, footer, button, input, table, headings). Higher semantic use often improves accessibility and testability.</td></tr>
+          <tr><td class="k">Semantic ratio</td><td>A proxy for how much semantic HTML is used versus generic layout elements (div and span), with smoothing to avoid division by zero.</td></tr>
+          <tr><td class="k">Coverage ratio</td><td>A proxy for “how much of the DOM is worth evaluating”, based on a set of evaluable tags.</td></tr>
+
+          <tr><td class="k">Custom control</td><td>An element that behaves like a control without being a native control, inferred from roles, tabindex, handlers, or contenteditable.</td></tr>
+          <tr><td class="k">Native control</td><td>A built-in interactive element like button, a, input, select, textarea, details, summary.</td></tr>
+          <tr><td class="k">Focusable</td><td>An element that can receive keyboard focus, for example via native behavior or tabindex.</td></tr>
+          <tr><td class="k">tabindex</td><td>HTML attribute that controls focusability and focus order. Positive values can indicate fragile focus ordering.</td></tr>
+
+          <tr><td class="k">Shadow DOM</td><td>A web component encapsulation mechanism. It can reduce the reach of simple selectors and can make automation less reliable depending on tooling.</td></tr>
+          <tr><td class="k">Shadow host</td><td>An element that owns a shadow root. Counted to signal potential complexity.</td></tr>
+
+          <tr><td class="k">Visible text</td><td>Text collected from text nodes after whitespace normalization, skipping hidden parts of the DOM using cheap visibility checks.</td></tr>
+          <tr><td class="k">Percentile</td><td>A statistic describing distribution. p50 is the median, p90 is a “large value” threshold. Used for paragraph length distribution.</td></tr>
+
+          <tr><td class="k">Confidence</td><td>A discount factor applied to automation-based evidence when structure signals suggest automation is less reliable.</td></tr>
+          <tr><td class="k">Adjusted score</td><td>The dashboard score: evidence multiplied by confidence and clamped to 0–100.</td></tr>
+
+          <tr><td class="k">Clamp</td><td>Limit a number to a min and max range. Example: clamp(120, 0, 100) becomes 100.</td></tr>
+          <tr><td class="k">Share, rate</td><td>A number in 0–1 representing a fraction. Example: 0.25 means 25%.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+
+    <section id="examples">
+      <h2>Examples that make the math understandable</h2>
+
+      <h3>Breadth versus depth</h3>
+      <div class="callout">
+        <p><strong>Idea</strong></p>
+        <p>
+          Breadth is “how many different kinds of problems”.
+          Depth is “how widespread the problems are”.
+        </p>
+      </div>
+
+      <p><strong>Example A, many kinds, not widespread</strong></p>
+      <p class="small">
+        Imagine axe finds 5 different rules failing, each on 1 element. That is high breadth (many rule types),
+        but low depth (not many affected elements).
+      </p>
+
+      <p><strong>Example B, one kind, very widespread</strong></p>
+      <p class="small">
+        Imagine axe finds 1 rule failing, but it matches 400 elements. That is low breadth (one rule type),
+        but high depth (widespread impact). This is often a systemic issue.
+      </p>
+
+      <h3>Why depth uses square root</h3>
+      <p class="small">
+        If depth were linear, 400 matches would count 400 times worse than 1 match, which can drown out everything else.
+        Using <code>sqrt(n)</code> still increases with n, but more gently:
+      </p>
+      <pre><code>n = 1     => sqrt(n) = 1
+n = 25    => sqrt(n) = 5
+n = 100   => sqrt(n) = 10
+n = 400   => sqrt(n) = 20</code></pre>
+      <p class="small">
+        So 400 matches is treated as “much worse” than 1 match, but not 400 times worse.
+      </p>
+
+      <h3>Saturating score, what it does</h3>
+      <p class="small">
+        A saturating score converts “bigger is worse” raw values into a 0–100 scale where the first problems hurt the most,
+        and additional problems still hurt but with diminishing impact. This keeps the score stable and comparable.
+      </p>
+      <div class="callout">
+        <p><strong>Intuition</strong></p>
+        <p class="small">
+          Going from 0 to some findings is a big signal.
+          Going from 500 to 600 findings is not 20% more concerning in a useful way, it is already clearly problematic.
+        </p>
+      </div>
+
+      <h3>Interval bands, how the UI labels work</h3>
+      <p class="small">
+        Many metrics include intervals like “good, warn, bad”. These are not absolute truths, they are thresholds chosen to
+        classify values consistently. The logic checks whether a metric falls inside a band range.
+      </p>
+      <pre><code>// Example: hiddenRatio band check
+hiddenRatio = 0.32
+interval warn: from 0.25 to 0.50
+0.32 is inside, so hiddenRatio is “warn”</code></pre>
+
+      <h3>Confidence example, action by action</h3>
+      <p class="small">
+        Suppose a page has 4 fail/cantTell findings. Only some of them carried a per-finding confidence - say a run
+        mixing an engine that reports one with an engine that doesn't.
+      </p>
+      <pre><code>// 4 verdicts (fail/cantTell), 3 of them carried a confidence
+withConfidence = [0.90, 0.80, 0.70]
+
+confidence         = mean(0.90, 0.80, 0.70) = 0.80  =>  scores.confidence = 80
+confidenceCoverage  = 3 / 4 = 0.75                   =>  scores.confidenceCoverage = 75
+confidenceSource    = 'partial'  (some, not all, verdicts carried one)
+
+// Uncertainty is only spent over the 75% of evidence it was measured on:
+effectiveConfidence = 1 - (1 - 0.80) * 0.75 = 1 - 0.15 = 0.85
+
+// If evidence was 90 (riskContent = 10), adjusted spends headroom rather than multiplying:
+uncertainty = 1 - 0.85 = 0.15
+inflated    = 10 + 0.15 * 10 * ((100 - 10) / 100) = 10 + 1.35 = 11.35
+adjusted    = 100 - 11.35 = 88.65  =>  rounds to 89</code></pre>
+
+      <h3>Rounding example</h3>
+      <p class="small">
+        The output intentionally rounds many values to reduce noise between runs and between small DOM changes.
+      </p>
+      <pre><code>riskContent = 13.766 => scores.evidence = round(100 - 13.766) = 86
+confidence  = 0.80   => scores.confidence = round(0.80 * 100) = 80
+adjusted    = 88.65  => scores.adjusted = 89</code></pre>
+    </section>
+
+
+    <section id="inputs">
+      <h2>Inputs and data model</h2>
+      <p><code>buildA11ySummary({ canonical, domMetrics, textMetrics })</code> takes three named inputs. This is an
+        engine-agnostic model: it works the same whether findings came from axe-core, pa11y, or any other engine,
+        because everything is normalized to the shared "canonical findings" shape below before scoring happens.</p>
+
+      <h3>1) <code>canonical</code></h3>
+      <p class="small">Source: this engine's raw output, already normalized into the canonical findings format used throughout the pipeline (not raw axe-core violations/incomplete/passes).</p>
+      <ul>
+        <li><code>canonical.findings</code>, a flat array of finding objects, one per rule result. Each finding has:
+          <ul>
+            <li><code>outcome</code>: one of <code>"fail"</code>, <code>"cantTell"</code>, <code>"pass"</code>.</li>
+            <li><code>severity</code>: the engine's own severity string (e.g. axe's <code>impact</code>, or an alias
+              like "severe"/"medium"/"low"), normalized via <code>impactFromSeverity()</code> into
+              critical/serious/moderate/minor/info/unknown before scoring.</li>
+            <li><code>occurrences</code>: array of instance matches for this rule (axe calls these "nodes").</li>
+          </ul>
+        </li>
+      </ul>
+      <p class="small">The code derives its internal <code>violations</code>/<code>incomplete</code>/<code>passes</code>
+        arrays by filtering <code>canonical.findings</code> on <code>outcome</code>, then mapping each finding to
+        <code>{ impact: impactFromSeverity(f.severity), nodes: f.occurrences }</code> - so downstream formulas that
+        reference <code>item.impact</code>/<code>item.nodes</code> are reading these derived, not raw, fields.
+        If <code>canonical.findings</code> is missing, all three arrays fall back to empty (defensive; this
+        shouldn't happen on a normal run).</p>
+
+      <h3>2) <code>domMetrics</code></h3>
+      <p class="small">Source: <code>collectDomMetrics(page)</code>.</p>
+      <ul>
+        <li>DOM structural counts and ratios, used for the content-unit density in <code>scores.evidence</code> and for the superseded <code>scores.confidenceByDom</code>/<code>evidenceByDom</code> proxies.</li>
+      </ul>
+
+      <h3>3) <code>textMetrics</code></h3>
+      <p class="small">Source: <code>collectTextMetrics(page)</code>. Accepted either nested under
+        <code>domMetrics.textMetrics</code> (the code checks there first) or as this separate top-level parameter
+        (used if <code>domMetrics.textMetrics</code> isn't present).</p>
+      <ul>
+        <li>Text and control heuristics (links, buttons, text density), used as mild confidence signals and as raw outputs for dashboards.</li>
+      </ul>
+
+      <div class="callout">
+        <p><strong>Important:</strong> in the code, <code>domTotal</code> is defined as <code>max(1, domMetrics.totalElements)</code> and is used as a normalization base for per-1k computations. This makes the calculations stable even on empty or error pages.</p>
+      </div>
+    </section>
+
+    <section id="common">
+      <h2>Common helper functions</h2>
+
+      <h3>Clamp</h3>
+      <pre><code>clamp(n, min, max) = max(min, min(n, max))</code></pre>
+
+      <h3>Saturating score (<code>satScore</code>)</h3>
+      <p>This maps a non-negative value into a 0..100 score with diminishing returns.</p>
+      <pre><code>satScore(x, s) = 100 * (1 - exp(-max(0, x) / s))</code></pre>
+      <ul>
+        <li><code>x</code> is the input signal, any unit.</li>
+        <li><code>s</code> is the saturation scale. Smaller <code>s</code> saturates faster.</li>
+      </ul>
+
+      <h3>Impact weights for findings</h3>
+      <p>Each finding has an <code>impact</code> string (normalized from the engine's own severity - see the Glossary).
+        The code assigns weights:</p>
+      <pre><code>critical = 10
+serious  =  6
+moderate =  3
+minor    =  1
+info     =  0.5</code></pre>
+      <p>If impact doesn't match any of the above (including missing or unknown), the default is <code>2</code> -
+        deliberately higher than <code>minor</code>, so an unrecognized severity string never gets weighted as if it
+        were known to be low-impact.</p>
+
+      <h3>Weighted breadth (<code>sumWeightedRuleBreadth</code>)</h3>
+      <p>“Breadth” counts how many distinct rules fire, weighted by impact. Each rule contributes once, regardless of how many nodes it matches.</p>
+      <pre><code>sumWeightedRuleBreadth(items) = Σ weightForImpact(item.impact)</code></pre>
+
+      <h3>Weighted instance depth (<code>sumWeightedInstanceDepth</code>)</h3>
+      <p>“Depth” measures how many nodes rules fire on, weighted by impact, but with a sublinear transform so one rule matching many nodes does not dominate.</p>
+      <pre><code>n = item.nodes.length (or 0)
+sumWeightedInstanceDepth(items) = Σ weightForImpact(item.impact) * sqrt(max(0, n))</code></pre>
+    </section>
+
+    <section id="dom">
+      <h2>DOM metrics</h2>
+      <p>Collected inside the page via a breadth-first traversal, capped by <code>maxNodes</code> (default 20000). If the cap is reached, <code>capped = true</code>.</p>
+
+      <h3>Primary outputs</h3>
+      <table>
+        <thead><tr><th class="k">Key</th><th>Meaning</th><th>Exact computation</th></tr></thead>
+        <tbody>
+          <tr><td class="k"><code>totalElements</code></td><td>Total visited element nodes.</td><td>Incremented per element node during traversal, stops early if above <code>MAX</code>.</td></tr>
+          <tr><td class="k"><code>depthMax</code></td><td>Maximum observed DOM tree depth (BFS depth counter).</td><td><code>depthMax = max(depthMax, depth)</code> for each visited node.</td></tr>
+          <tr><td class="k"><code>coverageRatio</code></td><td>Share of “evaluable” elements, a proxy for semantic structure density.</td>
+            <td><code>(evaluableCount + 1) / (totalElements + 1)</code></td></tr>
+          <tr><td class="k"><code>semanticRatio</code></td><td>Share of semantic tags relative to “layout tags” (div + span), with smoothing.</td>
+            <td><code>(semanticCount + 1) / (semanticCount + divCount + spanCount + 1)</code></td></tr>
+          <tr><td class="k"><code>customControlsRatio</code></td><td>How many custom controls exist relative to native interactive elements.</td>
+            <td><code>(customControlCount + 0.5) / (interactiveNativeCount + 0.5)</code></td></tr>
+          <tr><td class="k"><code>hiddenRatio</code></td><td>Hidden elements share (cheap hidden checks + optional computed visibility).</td>
+            <td><code>(hiddenCount + 1) / (totalElements + 1)</code></td></tr>
+          <tr><td class="k"><code>focusableDensityPer1k</code></td><td>How many focusable elements per 1000 elements (proxy for control-heavy UIs).</td>
+            <td><code>(focusableCount / max(1, totalElements)) * 1000</code></td></tr>
+          <tr><td class="k"><code>statefulComponentsCount</code></td><td>Count of elements suggesting stateful UI patterns.</td>
+            <td><code>dialogCount + detailsCount + tablistCount + ariaExpandedCount</code></td></tr>
+          <tr><td class="k"><code>positiveTabindexCount</code></td><td>How many elements have a positive tabindex (potential focus order risk).</td>
+            <td>Increment when <code>tabindexNum &gt; 0</code>.</td></tr>
+          <tr><td class="k"><code>iframeCount</code></td><td>Number of iframes encountered.</td><td>Increment when <code>tag === 'iframe'</code>.</td></tr>
+          <tr><td class="k"><code>shadowHostCount</code></td><td>Number of elements with a shadow root.</td><td>Increment when <code>node.shadowRoot</code> exists.</td></tr>
+          <tr><td class="k"><code>capped</code></td><td>Traversal stopped early due to max node cap.</td><td><code>true</code> when <code>totalElements &gt; MAX</code>.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>How “evaluable” and “semantic” are counted</h3>
+      <ul>
+        <li><strong>Semantic tags:</strong> element tag is in the <code>SEMANTIC_TAGS</code> set (main, nav, headings, lists, form elements, table elements, details, dialog, and more).</li>
+        <li><strong>Evaluable tags:</strong> element tag is in <code>EVALUABLE_TAGS</code> (interactive and key semantic tags). This is a broader “worth checking” proxy.</li>
+      </ul>
+
+      <h3>Custom control heuristic</h3>
+      <p>An element is counted as a custom control if it is not a native interactive tag and any of these apply:</p>
+      <ul>
+        <li>An interactive ARIA role (button, link, checkbox, etc.)</li>
+        <li>A stateful role (dialog, tablist, menu, etc.)</li>
+        <li>An onclick handler <em>paired with</em> a focusability signal - a focusable tabindex, an interactive
+          role, or <code>contenteditable="true"</code></li>
+        <li>A focusable tabindex, on its own</li>
+      </ul>
+      <p class="small"><code>contenteditable="true"</code> alone does <strong>not</strong> count - it only
+        contributes as one of the focusability signals that must be paired with an onclick handler. An element
+        with <code>contenteditable="true"</code> and nothing else (no onclick, no tabindex, no interactive role)
+        is not counted as a custom control.</p>
+
+      <h3>Hidden heuristic</h3>
+      <p>An element counts as hidden if any of the following apply:</p>
+      <ul>
+        <li><code>hidden</code> attribute present</li>
+        <li><code>aria-hidden="true"</code></li>
+        <li>Otherwise, only when <code>includeComputedVisibility</code> is true: inline style contains
+          <code>display:none</code> or <code>visibility:hidden</code> (a cheap pre-check), or failing that, the
+          computed style is <code>display:none</code> or <code>visibility:hidden</code></li>
+      </ul>
+      <p class="small">The inline-style pre-check and the computed-style check are both gated behind
+        <code>includeComputedVisibility</code> - when that option is <code>false</code>, only the <code>hidden</code>
+        attribute and <code>aria-hidden="true"</code> are checked; inline styles are not inspected either.</p>
+    </section>
+
+    <section id="text">
+      <h2>Text metrics</h2>
+      <p>Collected inside the page, using a traversal that skips hidden containers early. It aims to be language-agnostic and mostly formatting-stable (whitespace collapsed). Output is intended as signals, not pass or fail.</p>
+
+      <h3>Core counting rules</h3>
+      <ul>
+        <li>Text length is measured by collapsing whitespace: <code>s.replace(/\s+/g, ' ').trim().length</code></li>
+        <li>Only direct text node children of visited elements are added to <code>totalVisibleTextChars</code>.</li>
+        <li>To avoid runaway pages, there is a max text cap (<code>maxTextChars</code>, default 2,000,000).</li>
+      </ul>
+
+      <h3>Text density</h3>
+      <table>
+        <thead><tr><th class="k">Key</th><th>Meaning</th><th>Exact computation</th></tr></thead>
+        <tbody>
+          <tr><td class="k"><code>totals.visibleTextChars</code></td><td>Total visible text chars (normalized whitespace) counted during traversal.</td><td>Sum of normalized lengths of direct text nodes under visited elements.</td></tr>
+          <tr><td class="k"><code>density.visibleTextCharsPer1k</code></td><td>Text chars per 1000 visited elements.</td><td><code>(totals.visibleTextChars / max(1, totals.elementsVisited)) * 1000</code></td></tr>
+          <tr><td class="k"><code>density.textCharsPerHeading</code></td><td>How much text exists per visible heading, a proxy for structure and scannability.</td><td><code>totals.visibleTextChars / max(1, totals.headingCount)</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Paragraph length distribution</h3>
+      <p>Paragraph-like elements are selected via <code>paragraphSelectors</code> (default <code>p, li, dd, td</code>). For each visible match, its normalized text length is collected, then percentiles are computed.</p>
+      <table>
+        <thead><tr><th class="k">Key</th><th>Meaning</th><th>Exact computation</th></tr></thead>
+        <tbody>
+          <tr><td class="k"><code>paragraphs.count</code></td><td>Number of visible paragraph-like elements sampled.</td><td>Length of <code>paraLens</code>.</td></tr>
+          <tr><td class="k"><code>paragraphs.p50Chars</code></td><td>Median paragraph text length.</td><td><code>percentile(paraLens, 50)</code></td></tr>
+          <tr><td class="k"><code>paragraphs.p90Chars</code></td><td>90th percentile paragraph length.</td><td><code>percentile(paraLens, 90)</code></td></tr>
+          <tr><td class="k"><code>paragraphs.maxChars</code></td><td>Maximum paragraph length seen.</td><td>Largest value in <code>paraLens</code> after sort.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Links and buttons signals</h3>
+      <p>For links (<code>a[href]</code>) and buttons (<code>button</code>, certain <code>input</code> types, and <code>[role="button"]</code>), the collector reports both density and text availability. “Name signal” means a cheap accessible-name hint: <code>aria-label</code>, <code>aria-labelledby</code>, <code>title</code>, or for button inputs, a non-empty <code>value</code>.</p>
+
+      <table>
+        <thead><tr><th class="k">Group</th><th class="k">Key</th><th>Meaning</th><th>Exact computation</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="k">links</td>
+            <td class="k"><code>links.linksPer1k</code></td>
+            <td>Visible links per 1000 visited elements.</td>
+            <td><code>(linksCount / max(1, totalElementsVisited)) * 1000</code></td>
+          </tr>
+          <tr>
+            <td class="k">links</td>
+            <td class="k"><code>links.linkTextShare</code></td>
+            <td>Share of all visible text that is inside links.</td>
+            <td><code>totalVisibleTextChars &gt; 0 ? (visibleLinkTextChars / totalVisibleTextChars) : 0</code></td>
+          </tr>
+          <tr>
+            <td class="k">links</td>
+            <td class="k"><code>links.linksNoVisibleTextRate</code></td>
+            <td>Fraction of visible links with no visible text.</td>
+            <td><code>linksCount ? clamp(linksNoVisibleTextCount / linksCount, 0, 1) : 0</code></td>
+          </tr>
+          <tr>
+            <td class="k">links</td>
+            <td class="k"><code>links.linksNoTextNoNameSignalRate</code></td>
+            <td>Fraction of visible links that have no visible text and no cheap name signal.</td>
+            <td><code>linksCount ? clamp(linksNoTextNoNameSignalCount / linksCount, 0, 1) : 0</code></td>
+          </tr>
+
+          <tr>
+            <td class="k">buttons</td>
+            <td class="k"><code>buttons.buttonsPer1k</code></td>
+            <td>Visible buttons per 1000 visited elements.</td>
+            <td><code>(buttonsCount / max(1, totalElementsVisited)) * 1000</code></td>
+          </tr>
+          <tr>
+            <td class="k">buttons</td>
+            <td class="k"><code>buttons.buttonTextShare</code></td>
+            <td>Share of all visible text that is inside buttons.</td>
+            <td><code>totalVisibleTextChars &gt; 0 ? (visibleButtonTextChars / totalVisibleTextChars) : 0</code></td>
+          </tr>
+          <tr>
+            <td class="k">buttons</td>
+            <td class="k"><code>buttons.buttonsNoVisibleTextRate</code></td>
+            <td>Fraction of visible buttons with no visible text.</td>
+            <td><code>buttonsCount ? clamp(buttonsNoVisibleTextCount / buttonsCount, 0, 1) : 0</code></td>
+          </tr>
+          <tr>
+            <td class="k">buttons</td>
+            <td class="k"><code>buttons.buttonsNoTextNoNameSignalRate</code></td>
+            <td>Fraction of visible buttons that have no visible text and no cheap name signal.</td>
+            <td><code>buttonsCount ? (buttonsNoTextNoNameSignalCount / buttonsCount) : 0</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="axe">
+      <div class="callout"><p><strong>In plain English</strong></p><p>This section turns canonical findings into a single “risk” number by combining two ideas: how many different rule types fail (breadth) and how widespread the failures are (depth). Both are weighted by severity, and depth is normalized against how much of the page there was to evaluate. The result is then flipped into an “evidence” score so that higher is better.</p></div>
+
+      <h2>Risk and evidence</h2>
+      <p>The summary computes “risk” from canonical findings by combining breadth and depth, then converts it into an “evidence” score. This is what drives <code>scores.evidence</code> and, through it, <code>scores.adjusted</code>.</p>
+
+      <h3>1) Breadth</h3>
+      <pre><code>violationBreadth  = Σ weightForImpact(v.impact)  for v in violations
+incompleteBreadth = Σ weightForImpact(i.impact)  for i in incomplete</code></pre>
+
+      <h3>2) Content units</h3>
+      <p>Depth is normalized against how much of the page there was to evaluate, not raw DOM size - wrapping a page
+        in a thousand extra <code>&lt;div&gt;</code>s should not make its density look better without a single
+        defect being fixed. The unit falls back through progressively coarser signals so a page still yields a
+        finite density instead of dividing by zero:</p>
+      <pre><code>unit = evaluable elements, if any
+     : else interactive elements (native + custom), if any
+     : else visible word count / 100, if any
+     : else 1 (no content signal at all)</code></pre>
+
+      <h3>3) Depth per content unit</h3>
+      <pre><code>violationDepthPerUnit  = ( Σ weightForImpact(v.impact) * sqrt(v.nodes.length) / unitSize ) * 100
+incompleteDepthPerUnit = ( Σ weightForImpact(i.impact) * sqrt(i.nodes.length) / unitSize ) * 100</code></pre>
+
+      <h3>4) Risk</h3>
+      <p>Risk is built from four saturating components and then normalized back to 0..100.</p>
+      <pre><code>riskContentRaw =
+  satScore(violationBreadth, 8)
+  + 0.25 * satScore(incompleteBreadth, 10)
+  + satScore(violationDepthPerUnit, 35)
+  + 0.2 * satScore(incompleteDepthPerUnit, 45)
+
+riskWeightsSum = 1 + 0.25 + 1 + 0.2 = 2.45
+
+riskContent = clamp(riskContentRaw / riskWeightsSum, 0, 100)</code></pre>
+
+      <h3>5) Evidence</h3>
+      <p>Evidence is simply the inverse of risk.</p>
+      <pre><code>evidence = clamp(100 - riskContent, 0, 100)</code></pre>
+
+      <div class="callout">
+        <p><strong>Interpretation:</strong> “Evidence” is not a compliance score. It is a signal derived from automated checks, which are incomplete by nature.</p>
+      </div>
+
+      <h3>Superseded: the DOM-normalized model</h3>
+      <p class="small">An earlier version of this pipeline normalized depth per 1000 raw DOM nodes instead of per
+        content unit. That model is still computed and returned - as <code>inputs.risk.axeRaw</code>/<code>axeClamped</code>
+        and <code>scores.evidenceByDom</code> - purely so a run can be compared against how it used to score. It no
+        longer feeds the headline <code>scores.evidence</code> or <code>scores.adjusted</code>.</p>
+      <pre><code>violationDepthPer1k  = ( Σ weightForImpact(v.impact) * sqrt(v.nodes.length) / domTotal ) * 1000
+incompleteDepthPer1k = ( Σ weightForImpact(i.impact) * sqrt(i.nodes.length) / domTotal ) * 1000
+
+riskAxeRaw = satScore(violationBreadth, 8) + 0.25 * satScore(incompleteBreadth, 10)
+           + satScore(violationDepthPer1k, 35) + 0.2 * satScore(incompleteDepthPer1k, 45)
+riskAxe = clamp(riskAxeRaw / 2.45, 0, 100)
+evidenceByDom = clamp(100 - riskAxe, 0, 100)</code></pre>
+    </section>
+
+    <section id="scores">
+      <h2>Scores</h2>
+
+      <h3>Confidence</h3>
+      <div class="callout"><p><strong>In plain English</strong></p><p>Confidence is not about how accessible the page is, it is about how much you should trust the automated evidence on that page. It comes from the engines themselves: each finding an engine reports can carry its own confidence, and <code>scores.confidence</code> is the mean of that, over the findings a verdict actually rests on (fail/cantTell). Not every engine reports one, so this can end up unmeasured rather than guessed.</p></div>
+
+      <pre><code>// Only fail/cantTell findings are considered - those are what a verdict rests on.
+verdicts = findings where outcome is 'fail' or 'cantTell'
+withConfidence = verdicts where a numeric confidence (0..1) was reported
+
+confidence      = mean(withConfidence.confidence)   // null if withConfidence is empty
+confidenceCoverage = withConfidence.length / verdicts.length</code></pre>
+      <p class="small">Not every engine reports a per-check confidence: axe-core stamps a flat <code>1.0</code>,
+        surea11y maps its own high/medium/low, and pa11y and QualWeb report none at all. Dropping the ones that
+        report none - rather than defaulting them to some value - keeps the mean from silently describing only a
+        subset of a multi-engine run while reading as though it covered everything. <code>confidenceCoverage</code>
+        is what says how much of the evidence <code>confidence</code> actually speaks for.</p>
+
+      <h4>Reported confidenceSource</h4>
+      <pre><code>confidenceSource =
+  'notMeasured' if no verdict carried a confidence
+  'engine'      if every verdict did (confidenceCoverage == 1)
+  'partial'     otherwise</code></pre>
+
+      <h4>Effective confidence, used by the headline</h4>
+      <p class="small">Uncertainty is applied only over the evidence it was actually measured on, so one engine's
+        reported confidence can't speak for another engine's findings in either direction:</p>
+      <pre><code>effectiveConfidence =
+  1                                                  if confidence is null (nothing measured)
+  1 - (1 - confidence) * clamp(confidenceCoverage, 0, 1)   otherwise</code></pre>
+
+      <h3>Adjusted accessibility risk ind.</h3>
+      <div class="callout"><p><strong>In plain English</strong></p><p>The adjusted score is evidence, discounted when automation is less reliable - but the discount is spent out of the headroom above the risk, not multiplied straight onto it. Multiplying overshoots: a risk of 92 at confidence 0.82 used to come to 108, clip at 100, and report a score of exactly 0 - the same 0 a page with double the findings would get. Spending the headroom keeps the same shape (no inflation at zero risk or full confidence, strictly worse with more risk or more uncertainty) without ever needing to clip.</p></div>
+
+      <p>This is the headline index exposed as <code>scores.adjusted</code>, built with <code>riskContent</code> (100
+        - evidence, see the risk and evidence section above) and <code>effectiveConfidence</code> above:</p>
+      <pre><code>composeAdjusted(risk, confidenceRatio):
+  uncertainty = 1 - confidenceRatio
+  inflated = risk + uncertainty * risk * ((100 - risk) / 100)
+  return clamp(100 - inflated, 0, 100)
+
+adjusted = composeAdjusted(riskContent, effectiveConfidence)</code></pre>
+
+      <h3>Superseded: the multiplicative model</h3>
+      <p class="small">An earlier version of this pipeline computed confidence as a penalty chain over DOM
+        complexity signals (starting at 1.0, floored at 0.6) and multiplied it straight onto evidence. Both pieces
+        are still computed and returned - as <code>scores.confidenceByDom</code> and <code>scores.adjustedByDom</code>
+        - purely so a run can be compared against how it used to score. Neither feeds the headline
+        <code>scores.confidence</code>/<code>scores.adjusted</code>, or the flags below, any more.</p>
+      <pre><code>confidenceByDom = 1.0
+if dom.coverageRatio is in interval key 'warn' then confidenceByDom -= 0.06
+if dom.hiddenRatio is in interval key 'warn' then confidenceByDom -= 0.05
+if dom.statefulComponentsCount is in interval key 'warn' then confidenceByDom -= 0.05
+if dom.customControlsRatio is in interval key 'warn' then confidenceByDom -= 0.05
+if shadowHostCount &gt; 0 then confidenceByDom -= 0.02
+if domMetrics.capped === true then confidenceByDom -= 0.04
+if linksPer1k &gt; 180 then confidenceByDom -= 0.02
+if buttonsPer1k &gt; 80 then confidenceByDom -= 0.02
+if linksPer1k &gt; 60 AND controls.linksNoTextNoNameRate is in interval key 'warn' then confidenceByDom -= 0.03
+if buttonsPer1k &gt; 20 AND controls.buttonsNoTextNoNameRate is in interval key 'warn' then confidenceByDom -= 0.04
+if buttonsPer1k &gt; 20 AND buttonsNoTextRate &gt; 0.50 then confidenceByDom -= 0.02
+confidenceByDom = clamp(confidenceByDom, 0.60, 1.00)
+
+adjustedByDom = clamp(evidenceByDom * confidenceByDom, 0, 100)</code></pre>
+
+      <h3>Evaluation state</h3>
+      <p class="small"><code>evidence</code> and <code>adjusted</code> are <code>null</code> rather than a
+        misleadingly clean number when there was nothing to score against - an empty denominator should not read as
+        a clean page. <code>scores.evaluationState</code> says why:
+        <code>'evaluated'</code>, <code>'notEvaluated'</code>, <code>'notMeasurable'</code> (too little of the page
+        carried a content unit to compute a density) or <code>'unknown'</code> (no coverage summary supplied) -
+        with <code>criteriaEvaluated</code>/<code>criteriaInScope</code> as the denominator to read the state
+        against.</p>
+
+      <h3>Rounding rules in the output object</h3>
+      <p>The summary returns a mix of raw values (rounded) and scores (rounded). Reproduce the same rounding for identical outputs.</p>
+      <ul>
+        <li><code>scores</code> fields are rounded to integers, or left <code>null</code> when not evaluated/measured:
+          <ul>
+            <li><code>evidence</code>, <code>adjusted</code>, <code>avgPageAccessibility</code> are <code>Math.round(...)</code>, or <code>null</code> when <code>evaluationState</code> is not <code>'evaluated'</code>.</li>
+            <li><code>confidence</code> is <code>Math.round(confidence * 100)</code> (so 0.85 becomes 85), or <code>null</code> when nothing was measured.</li>
+            <li><code>confidenceCoverage</code> is <code>Math.round(confidenceCoverage * 100)</code>, or <code>null</code> alongside an unmeasured <code>confidence</code>.</li>
+            <li><code>evidenceByDom</code>, <code>confidenceByDom</code> (as a percentage), <code>adjustedByDom</code> - the superseded model above, always numeric.</li>
+          </ul>
+        </li>
+        <li>Many inputs are rounded for display stability:
+          <ul>
+            <li><code>breadth.*</code>, <code>depthPer1k.*</code>, <code>depthPerContentUnit.*</code>, and <code>risk.*</code> are rounded to one decimal.</li>
+            <li>Rates and shares are rounded to three decimals.</li>
+            <li>Per-1k counts are rounded to one decimal.</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section id="flags">
+      <div class="callout"><p><strong>In plain English</strong></p><p>Flags are decision helpers. They answer practical questions like: “Should I schedule manual review for this page?” The boolean itself is narrowed to conditions that genuinely mean a human has to look; DOM and control complexity signals (Shadow DOM, many stateful components, icon-only controls, DOM sampling caps) are reported as <em>reasons</em> alongside it, but no longer decide it on their own - they fire on most real pages, which made the flag permanently true and therefore useless for triage.</p></div>
+
+      <h2>Flags</h2>
+      <h3><code>flags.manualReviewNeeded</code></h3>
+      <pre><code>manualReviewNeeded =
+  evaluationState === 'notEvaluated'
+  OR hasIncomplete                                  // any cantTell finding
+  OR (confidence is not null AND confidence &lt; 75)   // scores.confidence's 'bad' band
+  OR domMetrics.capped === true</code></pre>
+
+      <h3><code>flags.manualReviewReasons</code></h3>
+      <p class="small">A human-readable list, built independently of the boolean above - a reason can appear here
+        even when <code>manualReviewNeeded</code> is false, since most of them are complexity signals rather than
+        blockers:</p>
+      <pre><code>'no criteria were evaluated on this page'                          if evaluationState === 'notEvaluated'
+'checks reported results that need human confirmation'             if hasIncomplete
+'the engine was not confident about what it found'                 if confidence is not null AND confidence &lt; 75
+'only N% of what was found carried a reliability signal, ...'      if confidence was measured but confidenceCoverage &lt; 100%
+'too little of the page was testable to measure how dense...'      if evaluationState === 'notMeasurable'
+'the scan hit a size cap, so results are partial'                  if domMetrics.capped === true
+'many stateful components, whose states automation does not exercise'  if dom.statefulComponentsCount is in 'warn'
+'a lot of hidden or conditional content that was not in scope'     if dom.hiddenRatio is in 'warn'
+'shadow DOM present, which can hide content from checks'           if shadowHostCount &gt; 0
+'icon-only links whose accessible names need checking'             if linksPer1k &gt; 60 AND controls.linksNoTextNoNameRate is in 'warn'
+'icon-only buttons whose accessible names need checking'           if buttonsPer1k &gt; 20 AND controls.buttonsNoTextNoNameRate is in 'warn'</code></pre>
+    </section>
+
+    <section id="portfolio">
+      <h2>Portfolio / multi-page summaries</h2>
+      <div class="callout"><p><strong>In plain English</strong></p><p>Everything above this section describes a
+        <em>single page</em>. When a run scans several pages, a separate file (<code>global-summary.js</code>)
+        aggregates their individual summaries into one portfolio-level report. It reuses the same score names
+        (<code>scores.evidence</code>, <code>scores.adjusted</code>, etc.) but computes them differently -
+        this section is a scoped overview, not a full formula reference for that file.</p></div>
+
+      <h3>How aggregation differs from a single page</h3>
+      <ul>
+        <li><strong>Peak-like complexity metrics use P90 across pages</strong> (<code>depthMax</code>,
+          <code>statefulComponentsCount</code>): the 90th percentile, not the max or the mean. This gives a
+          "robust peak" that isn't inflated just because you scanned more pages, and isn't hidden by averaging.</li>
+        <li><strong>Confidence uses the minimum across pages</strong> ("weakest-link reliability"), not a
+          recomputation - if any single page has low confidence, the whole portfolio's confidence reflects that.
+          <code>scores.adjusted</code> is then the same headroom-based <code>composeAdjusted(risk, confidenceRatio)</code>
+          from the single-page section above, fed the portfolio's own evidence and (minimum) confidence:
+          <code>composeAdjusted(100 - evidence, confidence / 100)</code>.</li>
+        <li><strong>Other DOM/text totals and ratios are summed across pages</strong> and ratios are recomputed
+          from those sums (not averaged per-page), and breadth/depth use the same weighted formulas as a single
+          page, but with rule occurrences grouped per-URL first
+          (<code>Σ_rules weight(impact) * Σ_urls sqrt(occurrencesOnThatUrl)</code>), so a rule firing on many
+          pages doesn't get double-counted the way summing raw occurrences would.</li>
+        <li><strong><code>scores.avgPageAccessibility</code> is the mean</strong> of the scanned pages' own
+          <code>scores.adjusted</code> values (see the headline numbers table above).</li>
+        <li><strong><code>stats.pageAccessibility</code></strong> is a full distribution object over the
+          per-page scores: <code>n</code>, <code>min</code>, <code>max</code>, <code>mean</code>, <code>median</code>,
+          <code>p10</code>, <code>p25</code>, <code>p75</code>, <code>p90</code>, <code>iqr</code>, <code>stddev</code>
+          - useful for seeing whether a portfolio's score is driven by a few bad pages or is uniform.</li>
+      </ul>
+    </section>
+
+    <section id="defs">
+      <h2>Metric definitions and intervals</h2>
+      <p><code>a11y-metric-defs.cjs</code> provides names, help text, min and max, and interval bands used by your UI and by interval-based logic (<code>isAtOrAboveInterval</code>).</p>
+
+      <h3>How interval checks work</h3>
+      <p>Given a metric key, a numeric value, and an interval key (for example <code>'warn'</code>), the check returns true if the value lies inside the interval range (inclusive bounds). Intervals may use <code>to: Infinity</code>.</p>
+      <pre><code>isAtOrAboveInterval(metricKey, value, intervalKey):
+  for each interval in METRIC_DEFS[metricKey].intervals:
+    if interval.key !== intervalKey: continue
+    if interval.to is Infinity:
+      return value &gt;= interval.from
+    else:
+      return value &gt;= interval.from AND value &lt;= interval.to</code></pre>
+
+      <div class="callout">
+        <p><strong>Note:</strong> This function is used as a generic “band membership” check, not strictly “at or above”. For finite intervals it is a normal inclusive range check.</p>
+      </div>
+    </section>
+
+    <section id="repro">
+      <h2>Reproducibility checklist</h2>
+      <ol>
+        <li>Use the same caps and options:
+          <ul>
+            <li><code>collectDomMetrics</code> defaults: <code>maxNodes = 20000</code>, <code>includeComputedVisibility = true</code>.</li>
+            <li><code>collectTextMetrics</code> defaults: <code>maxNodes = 20000</code>, <code>includeComputedVisibility = true</code>, <code>maxTextChars = 2000000</code>.</li>
+          </ul>
+        </li>
+        <li>Ensure <code>domMetrics.totalElements</code> is available and apply <code>domTotal = max(1, totalElements)</code>.</li>
+        <li>Compute breadth and depth using the exact impact weights and the <code>sqrt(nodes.length)</code> transform.</li>
+        <li>Pick the content unit in the same fallback order (evaluable, then interactive, then visible words / 100, then 1), and use the exact saturation scales (<code>8</code>, <code>10</code>, <code>35</code>, <code>45</code>) and the same component weights (1, 0.25, 1, 0.2) to get <code>riskContent</code> and <code>evidence</code>.</li>
+        <li>Compute <code>confidence</code> as the mean of the per-finding confidence the engine(s) reported over fail/cantTell findings, with <code>confidenceCoverage</code> as the share of those that carried one - <code>null</code>/<code>0</code> when none did.</li>
+        <li>Derive <code>effectiveConfidence</code> from <code>confidence</code>/<code>confidenceCoverage</code>, then compute <code>adjusted = composeAdjusted(riskContent, effectiveConfidence)</code> (the headroom-based composition, not a multiplication).</li>
+        <li>Apply the same rounding rules when producing the final JSON used by your UI.</li>
+      </ol>
+      <p class="small">To also reproduce the superseded per-1k-DOM-nodes model (<code>evidenceByDom</code>,
+        <code>confidenceByDom</code>, <code>adjustedByDom</code>): use <code>domTotal</code> instead of a content
+        unit for the depth terms, apply the DOM-complexity confidence penalties in the same order and clamp to
+        <code>[0.60, 1.00]</code>, then compute <code>adjustedByDom = clamp(evidenceByDom * confidenceByDom, 0, 100)</code>.</p>
+
+      <h3>Worked example, from raw inputs to scores</h3>
+      <p class="small">
+        This example shows the minimum actions needed to replicate the scores. Use it to validate another implementation.
+        Values below are illustrative, the important part is the order of operations and rounding.
+      </p>
+      <pre><code>// 1) Pick the content unit (evaluable, else interactive, else words/100, else 1)
+unitSize = max(1, primaryContentUnit(domMetrics, textMetrics).size)
+
+// 2) Compute breadth and depth per content unit
+violationBreadth = sumImpactWeights(violations)
+incompleteBreadth = sumImpactWeights(incomplete)
+
+violationDepthPerUnit =
+  (sum(impactWeight(v) * sqrt(v.nodes.length)) / unitSize) * 100
+
+incompleteDepthPerUnit =
+  (sum(impactWeight(i) * sqrt(i.nodes.length)) / unitSize) * 100
+
+// 3) Convert into risk, then evidence
+riskContentRaw =
+  satScore(violationBreadth, 8)
+  + 0.25 * satScore(incompleteBreadth, 10)
+  + satScore(violationDepthPerUnit, 35)
+  + 0.2  * satScore(incompleteDepthPerUnit, 45)
+
+riskContent = clamp(riskContentRaw / 2.45, 0, 100)
+evidence = clamp(100 - riskContent, 0, 100)
+
+// 4) Compute confidence: mean of the per-finding confidence engines reported
+//    on fail/cantTell findings, plus how much of the evidence it covers
+confidence = mean(findings.confidence where measured)          // null if none did
+confidenceCoverage = countMeasured / countVerdicts              // 0 if none did
+
+// 5) Spend uncertainty only over the evidence it was measured on
+effectiveConfidence =
+  confidence === null ? 1 : 1 - (1 - confidence) * clamp(confidenceCoverage, 0, 1)
+
+// 6) Compute adjusted - headroom-based, not a multiplication
+adjusted = composeAdjusted(riskContent, effectiveConfidence)
+
+// 7) Apply output rounding (evidence/adjusted are null instead if evaluationState
+//    isn't 'evaluated'; confidence/confidenceCoverage are null if nothing was measured)
+scores.evidence = round(evidence)
+scores.confidence = confidence === null ? null : round(confidence * 100)
+scores.confidenceCoverage = confidence === null ? null : round(confidenceCoverage * 100)
+scores.adjusted = round(adjusted)</code></pre>
+
+    </section>
+
+    <footer class="small" style="padding: 16px; border-top: 1px solid rgba(127,127,127,.35);">
+      Generated from project logic in: <code>dom-metrics.js</code>, <code>text-metrics.js</code>, <code>a11y-summary.js</code>, <code>a11y-metric-defs.cjs</code>, and (for the portfolio/multi-page section) <code>global-summary.js</code>.
+    </footer>
+  </main>
+</body>
+</html>

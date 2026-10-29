@@ -1,0 +1,47 @@
+# The lab's app and HTTP API in a container, with its results kept in a
+# volume, and the runner on demand. From the repository's root:
+#
+#   docker compose -f examples/container/compose.yml up -d lab
+#   open http://127.0.0.1:3000
+#
+#   docker compose -f examples/container/compose.yml run --rm runner \
+#     examples/specs/home.spec.json --url http://host.docker.internal:8780/
+#
+# docs/container.md explains the image. The demo shop the examples scan runs
+# on the host (node examples/serve-demo-site.js): the containers reach it as
+# host.docker.internal, which the specs' --url override points at.
+
+services:
+  lab:
+    image: surea11y-lab
+    build:
+      context: ../..
+      # args:
+      #   ADDONS: more-engines   # engines besides surea11y
+    command: server
+    ports:
+      # This machine only: the server has no login.
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - lab-reports:/lab/reports
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # Secrets the specs read from the environment, from your shell.
+      DEMO_SHOP_PASSWORD: ${DEMO_SHOP_PASSWORD:-}
+
+  runner:
+    image: surea11y-lab
+    build:
+      context: ../..
+    profiles: [cli]
+    working_dir: /work
+    volumes:
+      - ../..:/work
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DEMO_SHOP_PASSWORD: ${DEMO_SHOP_PASSWORD:-}
+
+volumes:
+  lab-reports:

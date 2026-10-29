@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Issue Dispersion Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mockup only: fake data, no product code. Tokens mirror the app's light and
+   dark themes (see docs/design/mockups/multi-report-comparison.html). The two chart
+   colours (widespread / other rules) were checked with a palette validator
+   against both surfaces: lightness, chroma, colour-blind separation, 3:1. */
+:root {
+    color-scheme: light;
+    --font-display: "Space Grotesk", system-ui, sans-serif;
+    --font-sans: "Public Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+    --brand-rgb: 91, 57, 196;
+    --bg: #f7f8f6;
+    --bg-elevated: #ffffff;
+    --bg-subtle: #f1f3f0;
+    --border-subtle: rgba(var(--brand-rgb), .18);
+    --border-strong: rgba(var(--brand-rgb), .28);
+    --text-main: #31352f;
+    --text-muted: #4e5651;
+    --text-soft: #646b66;
+    --accent: #5b39c4;
+    --accent-soft: #ede6fa;
+    --danger: #b3271a;
+    --danger-soft: #fbe4e1;
+    --ok: #0b6e4c;
+    --ok-soft: #e1f3ea;
+    --warn: #7a5a08;
+    --warn-soft: #fbf3dc;
+    --na-soft: #eef0ed;
+    /* chart roles */
+    --viz-wide: #5b39c4;
+    --viz-other: #c25a0c;
+    --viz-clean: #b9bfba;
+    --viz-grid: rgba(49, 53, 47, .10);
+    --viz-axis: rgba(49, 53, 47, .35);
+    --viz-cursor: #31352f;
+}
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --brand-rgb: 196, 166, 255;
+    --bg: #101413;
+    --bg-elevated: #171b19;
+    --bg-subtle: #141917;
+    --border-subtle: rgba(var(--brand-rgb), .10);
+    --border-strong: rgba(var(--brand-rgb), .18);
+    --text-main: #c7d2cb;
+    --text-muted: #9ba69f;
+    --text-soft: #8b958f;
+    --accent: #c4a6ff;
+    --accent-soft: #2a2140;
+    --danger: #ff8a7a;
+    --danger-soft: #3a211d;
+    --ok: #3bc98f;
+    --ok-soft: #163c2e;
+    --warn: #e8c15c;
+    --warn-soft: #3a2f12;
+    --na-soft: #262b29;
+    --viz-wide: #8f6ee6;
+    --viz-other: #cc7430;
+    --viz-clean: #3f4743;
+    --viz-grid: rgba(199, 210, 203, .09);
+    --viz-axis: rgba(199, 210, 203, .30);
+    --viz-cursor: #f7f8f6;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) {
+        color-scheme: dark;
+        --brand-rgb: 196, 166, 255;
+        --bg: #101413;
+        --bg-elevated: #171b19;
+        --bg-subtle: #141917;
+        --border-subtle: rgba(var(--brand-rgb), .10);
+        --border-strong: rgba(var(--brand-rgb), .18);
+        --text-main: #c7d2cb;
+        --text-muted: #9ba69f;
+        --text-soft: #8b958f;
+        --accent: #c4a6ff;
+        --accent-soft: #2a2140;
+        --danger: #ff8a7a;
+        --danger-soft: #3a211d;
+        --ok: #3bc98f;
+        --ok-soft: #163c2e;
+        --warn: #e8c15c;
+        --warn-soft: #3a2f12;
+        --na-soft: #262b29;
+        --viz-wide: #8f6ee6;
+        --viz-other: #cc7430;
+        --viz-clean: #3f4743;
+        --viz-grid: rgba(199, 210, 203, .09);
+        --viz-axis: rgba(199, 210, 203, .30);
+        --viz-cursor: #f7f8f6;
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 80px; }
+h1, h2, h3 { font-family: var(--font-display); color: var(--text-main); line-height: 1.2; }
+h1 { font-size: 1.9rem; margin: 0 0 6px; }
+h2 { font-size: 1.35rem; margin: 0 0 4px; }
+h3 { font-size: 1.05rem; margin: 0 0 6px; }
+p { margin: 0 0 10px; }
+code, .mono { font-family: var(--font-mono); font-size: .86em; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.eyebrow { font-family: var(--font-mono); font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-soft); margin-bottom: 4px; }
+.lede { color: var(--text-muted); max-width: 70ch; }
+
+.seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 4px; overflow: hidden; flex-wrap: wrap; }
+.seg button {
+    font: inherit; font-size: .85rem; padding: 6px 12px; border: 0; background: var(--bg-elevated);
+    color: var(--text-main); cursor: pointer; border-right: 1px solid var(--border-subtle);
+}
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--bg-elevated); font-weight: 600; }
+
+.decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 18px 0 8px; }
+.decision { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 12px; font-size: .88rem; color: var(--text-muted); }
+.decision strong { display: block; color: var(--text-main); font-family: var(--font-display); font-size: .95rem; }
+
+section.panel { margin-top: 36px; }
+.panel-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.panel-head p { color: var(--text-muted); margin: 0; }
+.card { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 18px; margin-bottom: 14px; }
+.why { font-size: .82rem; color: var(--text-soft); border-left: 2px solid var(--border-strong); padding-left: 10px; margin-top: 12px; }
+.why b { color: var(--text-muted); }
+
+/* verdict */
+.verdict { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
+@media (max-width: 640px) { .verdict { grid-template-columns: 1fr; } }
+.badge {
+    display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 600;
+    padding: 6px 12px; border-radius: 999px; font-size: .95rem; white-space: nowrap; border: 1px solid transparent;
+}
+.badge .ico { font-family: var(--font-mono); font-size: .9em; }
+.badge.widespread { background: var(--accent-soft); color: var(--accent); border-color: var(--border-strong); }
+.badge.concentrated { background: var(--warn-soft); color: var(--warn); }
+.badge.scattered { background: var(--danger-soft); color: var(--danger); }
+.badge.mixed { background: var(--na-soft); color: var(--text-main); border-color: var(--border-strong); }
+.badge.clean { background: var(--ok-soft); color: var(--ok); }
+.badge.few { background: var(--na-soft); color: var(--text-muted); }
+.narrative p { margin-bottom: 8px; }
+.narrative .note { color: var(--text-soft); font-size: .88rem; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.kpi { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px 14px; }
+.kpi .v { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; color: var(--text-main); line-height: 1.1; }
+.kpi .l { font-size: .82rem; color: var(--text-muted); }
+.kpi .s { font-size: .78rem; color: var(--text-soft); font-family: var(--font-mono); }
+
+/* concentration */
+.conc-row { display: grid; grid-template-columns: 130px 1fr 52px; gap: 10px; align-items: center; margin-bottom: 6px; font-size: .85rem; color: var(--text-muted); }
+.conc-bar { height: 12px; background: var(--na-soft); border-radius: 3px; overflow: hidden; }
+.conc-bar i { display: block; height: 100%; background: var(--viz-other); border-radius: 3px 0 0 3px; }
+.conc-bar.el i { background: var(--viz-wide); }
+.conc-row .pv { font-family: var(--font-mono); text-align: right; color: var(--text-main); }
+.conc-head { font-family: var(--font-display); font-size: 1.05rem; margin-bottom: 10px; }
+
+/* strip */
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .8rem; color: var(--text-muted); margin: 6px 0 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.sw.wide { background: var(--viz-wide); }
+.sw.other { background: var(--viz-other); }
+.sw.clean { background: var(--viz-clean); height: 3px; }
+.strip-fig { margin: 0; }
+.strip-marks { position: relative; height: 26px; }
+.hot {
+    position: absolute; bottom: 2px; min-width: 6px; border: 1.5px solid var(--text-muted); border-bottom: 0;
+    height: 8px; border-radius: 2px 2px 0 0;
+}
+.hot span {
+    position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+    font-size: .72rem; font-family: var(--font-mono); color: var(--text-main);
+}
+.hot.edge-l span { left: 0; transform: none; }
+.hot.edge-r span { left: auto; right: 0; transform: none; }
+.strip { position: relative; border-bottom: 1px solid var(--viz-axis); cursor: crosshair; }
+.strip svg { display: block; width: 100%; }
+.strip .s-wide { fill: var(--viz-wide); }
+.strip .s-other { fill: var(--viz-other); }
+.strip .s-clean { fill: var(--viz-clean); }
+.strip .s-cursor { fill: none; stroke: var(--viz-cursor); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.strip-steps { position: relative; height: 22px; font-size: .72rem; color: var(--text-soft); }
+.strip-steps span {
+    position: absolute; top: 0; padding: 3px 4px 0; border-left: 1px solid var(--viz-axis);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 100%;
+}
+.strip-readout { font-size: .82rem; color: var(--text-muted); min-height: 1.4em; margin: 4px 0 0; font-family: var(--font-mono); }
+.strip-row { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: end; margin-bottom: 4px; }
+.strip-row .who { font-size: .82rem; color: var(--text-muted); padding-bottom: 26px; }
+.strip-row .who b { display: block; color: var(--text-main); font-family: var(--font-display); }
+@media (max-width: 640px) { .strip-row { grid-template-columns: 1fr; } .strip-row .who { padding-bottom: 0; } }
+
+/* rule map */
+.map svg { display: block; width: 100%; height: auto; }
+.map .grid { stroke: var(--viz-grid); stroke-width: 1; }
+.map .axis { stroke: var(--viz-axis); stroke-width: 1; }
+.map .thr { stroke: var(--viz-axis); stroke-dasharray: 4 4; stroke-width: 1; }
+.map text { fill: var(--text-soft); font-family: var(--font-sans); font-size: 11px; }
+.map text.q { fill: var(--text-muted); font-family: var(--font-display); font-size: 12px; font-weight: 600; }
+.map text.qs { font-size: 10.5px; }
+.map text.lbl { fill: var(--text-main); font-family: var(--font-mono); font-size: 11px; }
+.map text.ttl { fill: var(--text-muted); font-size: 11.5px; }
+.map .dot { stroke: var(--bg-elevated); stroke-width: 2; cursor: pointer; }
+.map .dot.wide { fill: var(--viz-wide); }
+.map .dot.other { fill: var(--viz-other); }
+.map .dot.new { stroke: var(--text-main); stroke-dasharray: 2 2; stroke-width: 1.5; }
+.map .ghost { fill: none; stroke: var(--text-soft); stroke-width: 1.5; }
+.map .gone { stroke: var(--text-soft); stroke-width: 2; }
+.map .arr { fill: none; stroke-width: 2; }
+.map .arr.contained { stroke: var(--ok); }
+.map .arr.spread { stroke: var(--danger); }
+.map .arr.steady { stroke: var(--text-soft); }
+.map .hit { fill: transparent; cursor: pointer; }
+
+/* tables */
+details.tbl { margin-top: 12px; }
+details.tbl summary { cursor: pointer; font-size: .85rem; color: var(--accent); }
+.tbl-scroll { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+th { font-family: var(--font-display); font-weight: 600; color: var(--text-muted); }
+td.num, th.num { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+caption { text-align: left; font-size: .8rem; color: var(--text-soft); padding-bottom: 6px; }
+.chg { font-family: var(--font-mono); font-size: .8rem; white-space: nowrap; }
+.chg.contained { color: var(--ok); }
+.chg.spread, .chg.new { color: var(--danger); }
+.chg.resolved { color: var(--ok); }
+.chg.steady { color: var(--text-soft); }
+
+.cmp-controls { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: .85rem; }
+.cmp-controls label { display: inline-flex; gap: 6px; align-items: center; color: var(--text-muted); }
+select { font: inherit; font-size: .85rem; padding: 4px 6px; background: var(--bg-elevated); color: var(--text-main); border: 1px solid var(--border-strong); border-radius: 4px; }
+.shift { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.shift .arrow { color: var(--text-soft); font-family: var(--font-mono); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+.line svg { display: block; width: 100%; height: auto; }
+.line .ln { fill: none; stroke: var(--viz-wide); stroke-width: 2; }
+.line .pt { fill: var(--viz-wide); stroke: var(--bg-elevated); stroke-width: 2; }
+.line .grid { stroke: var(--viz-grid); }
+.line text { fill: var(--text-soft); font-size: 11px; font-family: var(--font-sans); }
+.line text.val { fill: var(--text-main); font-family: var(--font-mono); }
+.spark { vertical-align: middle; }
+.spark polyline { fill: none; stroke: var(--viz-wide); stroke-width: 1.5; }
+.spark circle { fill: var(--viz-wide); }
+
+#tip {
+    position: fixed; z-index: 10; pointer-events: none; max-width: 300px; padding: 8px 10px;
+    background: var(--bg-elevated); color: var(--text-main); border: 1px solid var(--border-strong);
+    border-radius: 4px; box-shadow: 0 4px 14px rgba(4, 21, 14, .26); font-size: .8rem; line-height: 1.4;
+}
+#tip[hidden] { display: none; }
+#tip b { font-family: var(--font-display); }
+#tip .m { color: var(--text-soft); font-family: var(--font-mono); font-size: .75rem; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (forced-colors: active) {
+    .strip .s-wide, .map .dot.wide, .sw.wide { fill: CanvasText; background: CanvasText; }
+    .strip .s-other, .map .dot.other, .sw.other { fill: Highlight; background: Highlight; }
+}
+</style>
+</head>
+<body>
+<div id="tip" hidden></div>
+<div class="wrap">
+
+<header class="topbar">
+    <div>
+        <div class="eyebrow">Mockup · fake data · not product code</div>
+        <h1>Where are the failures?</h1>
+        <p class="lede">A proposal for showing how automatic failures are spread across the scans of a run: in the report view, and when comparing two or more reports. Every number below is computed in this page from generated data, the way the real feature would compute it when a report is shown.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Theme">
+        <button type="button" data-theme-btn="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+    </div>
+</header>
+
+<div class="decisions">
+    <div class="decision"><strong>Counted against scans</strong>Analyzed, included scans. Not pages or URLs, so SPAs and repeated states work.</div>
+    <div class="decision"><strong>An issue is a failing rule</strong>Reach = share of scans where the rule fails. Element counts only add weight.</div>
+    <div class="decision"><strong>Automatic failures only</strong>Can't-tell results are mentioned in one line but never counted.</div>
+    <div class="decision"><strong>Computed, not stored</strong>Worked out when the report is shown, from the included scans. The JSON format stays as it is.</div>
+</div>
+
+<!-- ================================================================== -->
+<section class="panel" aria-labelledby="h-report">
+    <div class="panel-head">
+        <div>
+            <h2 id="h-report">1 · Report view</h2>
+            <p>New section in the Summary report, and in the exported HTML. Pick a run to see each pattern.</p>
+        </div>
+        <div class="seg" role="group" aria-label="Example run" id="scenario-btns"></div>
+    </div>
+    <div id="report"></div>
+</section>
+
+<!-- ================================================================== -->
+<section class="panel" aria-labelledby="h-pair">
+    <div class="panel-head">
+        <div>
+            <h2 id="h-pair">2 · Comparing two reports</h2>
+            <p>Same rules can fail in both reports and still tell a very different story.</p>
+        </div>
+        <div class="cmp-controls">
+            <label>A <select id="selA"></select></label>
+            <label>B <select id="selB"></select></label>
+        </div>
+    </div>
+    <div id="pair"></div>
+</section>
+
+<!-- ================================================================== -->
+<section class="panel" aria-labelledby="h-series">
+    <div class="panel-head">
+        <div>
+            <h2 id="h-series">3 · Comparing a series of reports</h2>
+            <p>Four runs of the same workflow over a month.</p>
+        </div>
+    </div>
+    <div id="series"></div>
+</section>
+
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ------------------------------------------------------------------ *
+ * Fake data
+ * ------------------------------------------------------------------ */
+const RULE_INFO = {
+    'region': ['moderate', 'All page content should be contained by landmarks'],
+    'link-name': ['serious', 'Links must have discernible text'],
+    'color-contrast': ['serious', 'Elements must meet minimum colour contrast'],
+    'label': ['critical', 'Form elements must have labels'],
+    'button-name': ['critical', 'Buttons must have discernible text'],
+    'aria-required-attr': ['critical', 'Required ARIA attributes must be provided'],
+    'image-alt': ['critical', 'Images must have alternative text'],
+    'heading-order': ['moderate', 'Heading levels should only increase by one'],
+    'list': ['serious', 'Lists must only directly contain li elements'],
+    'landmark-unique': ['moderate', 'Landmarks should have a unique role or label'],
+    'aria-allowed-role': ['minor', 'ARIA role should be appropriate for the element'],
+    'duplicate-id-aria': ['critical', 'IDs used in ARIA must be unique'],
+    'frame-title': ['serious', 'Frames must have an accessible name'],
+    'autocomplete-valid': ['serious', 'autocomplete must be used correctly'],
+    'nested-interactive': ['serious', 'Interactive controls must not be nested'],
+    'scrollable-region-focusable': ['serious', 'Scrollable regions must be keyboard accessible'],
+    'aria-hidden-focus': ['serious', 'aria-hidden elements must not be focusable'],
+    'empty-heading': ['minor', 'Headings should not be empty'],
+    'link-in-text-block': ['serious', 'Links must be distinguishable without colour'],
+    'select-name': ['critical', 'Select element must have an accessible name'],
+    'svg-img-alt': ['serious', 'SVG images must have a text alternative'],
+    'td-headers-attr': ['serious', 'Table cells must refer to cells in the same table'],
+    'meta-viewport': ['critical', 'Zooming and scaling must not be disabled'],
+    'tabindex': ['serious', 'Elements should not have tabindex greater than zero'],
+    'aria-valid-attr-value': ['critical', 'ARIA attributes must have valid values'],
+};
+const STEPS_300 = [['Home', 0, 40], ['Search results', 40, 95], ['Product detail', 95, 118],
+    ['Payment', 118, 125], ['Account', 125, 210], ['Help centre', 210, 300]];
+
+function rngFor(seed) {
+    let a = 0;
+    for (const ch of seed) a = (a * 31 + ch.charCodeAt(0)) | 0;
+    return () => {
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+const range = (a, b) => Array.from({ length: b - a }, (_, k) => a + k);
+
+const SCENARIOS = {
+    widespread: { name: 'Widespread', run: 'Run 1 · 1 Sep' },
+    mixed: { name: 'Mixed', run: 'Run 2 · 8 Sep' },
+    concentrated: { name: 'Concentrated', run: 'Run 3 · 15 Sep' },
+    nearlyClean: { name: 'Nearly clean', run: 'Run 4 · 24 Sep' },
+    scattered: { name: 'Scattered', run: 'Other site · 20 Sep' },
+    few: { name: 'Too few scans', run: 'Smoke test · 22 Sep' },
+};
+
+function buildReport(key) {
+    const r = rngFor(key);
+    const ri = (a, b) => a + Math.floor(r() * (b - a + 1));
+    const pick = (list, p) => list.filter(() => r() < p);
+    let n = 300, steps = STEPS_300, cantTell = { rules: 4, scans: 120 };
+    const rules = [];
+    const add = (id, idxs, elems) => {
+        const hits = new Map();
+        idxs.forEach((i) => hits.set(i, elems(i)));
+        if (hits.size) rules.push({ id, sev: RULE_INFO[id][0], title: RULE_INFO[id][1], hits });
+    };
+    const all = () => range(0, n);
+    switch (key) {
+    case 'widespread':
+        add('region', all(), () => 1);
+        add('link-name', pick(all(), 0.97), () => ri(1, 2));
+        add('color-contrast', pick(all(), 0.94), () => ri(1, 2));
+        cantTell = { rules: 4, scans: 180 };
+        break;
+    case 'concentrated':
+        add('region', range(118, 123), () => ri(1, 2));
+        add('link-name', range(118, 123), () => ri(2, 4));
+        add('color-contrast', range(119, 123), () => ri(3, 6));
+        cantTell = { rules: 2, scans: 6 };
+        break;
+    case 'mixed':
+        add('region', all(), () => 1);
+        add('link-name', pick(all(), 0.96), () => ri(1, 2));
+        add('color-contrast', pick(all(), 0.72), () => ri(3, 8));
+        add('label', range(118, 125), () => ri(3, 9));
+        add('button-name', range(119, 125), () => ri(2, 6));
+        add('aria-required-attr', range(120, 124), () => ri(4, 10));
+        add('heading-order', pick(range(210, 300), 0.9), () => ri(1, 2));
+        add('image-alt', [14, 162, 251], () => 1);
+        break;
+    case 'nearlyClean':
+        add('button-name', [120, 121], () => 1);
+        cantTell = { rules: 1, scans: 3 };
+        break;
+    case 'scattered': {
+        const pool = Object.keys(RULE_INFO).slice(3);
+        pool.slice(0, 20).forEach((id) => add(id, pick(all(), 0.02 + r() * 0.1), () => ri(1, 3)));
+        cantTell = { rules: 6, scans: 140 };
+        break;
+    }
+    case 'few':
+        n = 6;
+        steps = [['Login', 0, 2], ['Dashboard', 2, 6]];
+        add('region', range(0, 6), () => 1);
+        add('label', [0, 1], () => 2);
+        cantTell = { rules: 1, scans: 2 };
+        break;
+    }
+    const scans = range(0, n).map((i) => {
+        const s = steps.find(([, a, b]) => i >= a && i < b);
+        return { idx: i, step: s ? s[0] : 'Scan' };
+    });
+    return { key, name: SCENARIOS[key].name, run: SCENARIOS[key].run, scans, rules, cantTell };
+}
+
+/* ------------------------------------------------------------------ *
+ * Analysis: what src/shared/issue-dispersion.js would compute
+ * ------------------------------------------------------------------ */
+const WIDE = 0.6, PARTIAL = 0.25, HEAVY = 3;
+
+function analyse(rep) {
+    const N = rep.scans.length;
+    const per = rep.scans.map(() => ({ rules: [], wide: 0, other: 0, elems: 0, otherElems: 0 }));
+    const rules = rep.rules.map((rl) => {
+        let elems = 0;
+        rl.hits.forEach((e) => { elems += e; });
+        const presences = rl.hits.size;
+        const reach = N ? presences / N : 0;
+        const band = reach >= WIDE ? 'widespread' : reach >= PARTIAL ? 'partial' : 'local';
+        const intensity = presences ? elems / presences : 0;
+        const quadrant = reach >= WIDE
+            ? (intensity >= HEAVY ? 'Broken template' : 'Shared component')
+            : (intensity >= HEAVY ? 'Broken page or state' : 'One-off');
+        return { ...rl, presences, reach, elems, intensity, band, quadrant };
+    });
+    rules.forEach((rl) => rl.hits.forEach((e, i) => {
+        const p = per[i];
+        p.rules.push(rl.id);
+        p.elems += e;
+        if (rl.band === 'widespread') p.wide++;
+        else { p.other++; p.otherElems += e; }
+    }));
+    const R = rules.length;
+    const affected = per.filter((p) => p.rules.length).length;
+    const presences = rules.reduce((s, x) => s + x.presences, 0);
+    const footprint = R && N ? presences / (R * N) : 0;
+    const totalElems = per.reduce((s, p) => s + p.elems, 0);
+    const sorted = per.map((p) => p.elems).sort((a, b) => b - a);
+    const k = Math.max(1, Math.ceil(N * 0.1));
+    const top10 = totalElems ? sorted.slice(0, k).reduce((s, v) => s + v, 0) / totalElems : 0;
+    let acc = 0, n80 = 0;
+    for (const v of sorted) { if (acc >= 0.8 * totalElems) break; acc += v; n80++; }
+    const wide = rules.filter((x) => x.band === 'widespread');
+    const cleanAfterWide = per.filter((p) => p.other === 0).length;
+
+    // Hotspots: runs of consecutive scans heavy in non-widespread rules.
+    const otherTotal = per.reduce((s, p) => s + p.otherElems, 0);
+    const few = affected <= 0.2 * N;
+    const flagged = per.map((p) => p.other >= 2 || (few && p.other >= 1));
+    const groups = [];
+    flagged.forEach((f, i) => {
+        if (!f) return;
+        const g = groups[groups.length - 1];
+        if (g && i - g.to <= 2) g.to = i; else groups.push({ from: i, to: i });
+    });
+    const hotspots = groups.map((g) => {
+        let elems = 0;
+        for (let i = g.from; i <= g.to; i++) elems += per[i].otherElems;
+        const steps = [...new Set(rep.scans.slice(g.from, g.to + 1).map((s) => s.step))];
+        return { ...g, elems, share: otherTotal ? elems / otherTotal : 0, steps };
+    }).filter((h) => h.share >= 0.15).sort((a, b) => b.elems - a.elems).slice(0, 2);
+
+    const affectedRules = per.filter((p) => p.rules.length).map((p) => p.rules.length).sort((a, b) => a - b);
+    const medianRules = affectedRules.length ? affectedRules[Math.floor(affectedRules.length / 2)] : 0;
+
+    let pattern;
+    if (N < 10) pattern = 'few';
+    else if (!R) pattern = 'clean';
+    else if (affected / N <= 0.2) pattern = 'concentrated';
+    else if (wide.length === R) pattern = 'widespread';
+    else if (wide.length) pattern = 'mixed';
+    else if (top10 >= 0.6) pattern = 'concentrated';
+    else pattern = 'scattered';
+
+    return {
+        N, R, per, rules: rules.sort((a, b) => b.reach - a.reach || b.intensity - a.intensity),
+        affected, affectedRate: N ? affected / N : 0, footprint, totalElems, top10, n80,
+        wide, cleanAfterWide, hotspots, medianRules, pattern,
+        bands: {
+            widespread: wide.length,
+            partial: rules.filter((x) => x.band === 'partial').length,
+            local: rules.filter((x) => x.band === 'local').length,
+        },
+    };
+}
+
+/* ------------------------------------------------------------------ *
+ * Wording
+ * ------------------------------------------------------------------ */
+const PATTERN = {
+    widespread: { label: 'Widespread', ico: '≡' },
+    concentrated: { label: 'Concentrated', ico: '◎' },
+    scattered: { label: 'Scattered', ico: '∴' },
+    mixed: { label: 'Mixed', ico: '≡◎' },
+    clean: { label: 'No automatic failures', ico: '✓' },
+    few: { label: 'Too few scans', ico: '…' },
+};
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function pct(v) {
+    const p = v * 100;
+    if (p > 0 && p < 10 && Math.round(p) !== p) return p.toFixed(1).replace(/\.0$/, '') + '%';
+    return Math.round(p) + '%';
+}
+const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + 's')}`;
+function list(items) {
+    const c = items.map((x) => `<code>${esc(x)}</code>`);
+    if (c.length <= 1) return c.join('');
+    return c.slice(0, -1).join(', ') + ' and ' + c[c.length - 1];
+}
+function scanRange(h) { return h.from === h.to ? `scan ${h.from + 1}` : `scans ${h.from + 1}–${h.to + 1}`; }
+function badge(pattern) {
+    const p = PATTERN[pattern];
+    return `<span class="badge ${pattern}"><span class="ico" aria-hidden="true">${p.ico}</span>${p.label}</span>`;
+}
+function reachRange(rules) {
+    const a = Math.min(...rules.map((x) => x.reach)), b = Math.max(...rules.map((x) => x.reach));
+    return a === b ? pct(a) : `${pct(a)}–${pct(b)}`;
+}
+
+function narrative(rep, a) {
+    const out = [];
+    const h = a.hotspots[0];
+    const hotText = h ? `${scanRange(h)} (${h.steps.join(', ')})` : '';
+    switch (a.pattern) {
+    case 'few':
+        out.push(`<p>Only ${plural(a.N, 'scan')} in this run, so spread percentages would not mean much. The chart still shows which scans fail; the pattern and the numbers need at least 10 scans.</p>`);
+        break;
+    case 'clean':
+        out.push(`<p>None of the ${a.N} scans has automatic failures.</p>`);
+        break;
+    case 'widespread':
+        out.push(`<p><strong>The same ${plural(a.R, 'rule')} fail almost everywhere</strong>: ${list(a.wide.map((x) => x.id))} fail in ${reachRange(a.wide)} of the ${a.N} scans, with about ${avg(a.wide.map((x) => x.intensity))} elements each time.</p>`);
+        out.push(`<p>When a rule repeats across a whole run it usually comes from something every page shares, such as the header, navigation or footer. One fix per rule would clear failures from ${a.affected} scans.</p>`);
+        break;
+    case 'concentrated':
+        out.push(`<p><strong>All ${plural(a.R, 'failing rule')} sit in just ${a.affected} of ${a.N} scans (${pct(a.affectedRate)})</strong>${hotText ? `, in ${hotText}` : ''}. The other ${a.N - a.affected} scans have no automatic failures.</p>`);
+        out.push(`<p>This points to a problem in a specific flow or page state rather than a site-wide component. Start by opening those scans.</p>`);
+        break;
+    case 'scattered': {
+        const maxReach = Math.max(...a.rules.map((x) => x.reach));
+        out.push(`<p><strong>${a.affected} of ${a.N} scans fail (${pct(a.affectedRate)}), but no rule reaches more than ${pct(maxReach)} of them.</strong> Each failing scan has its own small set of problems (typically ${plural(a.medianRules, 'rule')}), spread over ${plural(a.R, 'different rule')}.</p>`);
+        out.push(`<p>There is no single fix here. This usually comes from content and authoring rather than shared code, and is better handled with guidance and checks for authors than with one patch.</p>`);
+        break;
+    }
+    case 'mixed': {
+        const rest = a.R - a.wide.length;
+        out.push(`<p><strong>A widespread core plus local problems.</strong> ${list(a.wide.map((x) => x.id))} fail in ${reachRange(a.wide)} of the ${a.N} scans, which suggests a shared component. Fixing ${a.wide.length === 1 ? 'it' : 'those ' + a.wide.length} alone would leave ${a.cleanAfterWide} of ${a.N} scans clean.</p>`);
+        if (h) out.push(`<p>The other ${plural(rest, 'rule')} are more local: ${pct(h.share)} of their failing elements are in ${hotText}.</p>`);
+        break;
+    }
+    }
+    const heavy = a.rules.filter((x) => x.quadrant === 'Broken template');
+    if (a.pattern !== 'few' && heavy.length) {
+        out.push(`<p>${list(heavy.map((x) => x.id))} ${heavy.length === 1 ? 'is' : 'are'} both widespread and heavy (${avg(heavy.map((x) => x.intensity))} elements per scan), more like a template-wide style or markup pattern than a single element.</p>`);
+    }
+    if (rep.cantTell.rules) {
+        out.push(`<p class="note">Also, ${plural(rep.cantTell.rules, 'rule')} ${rep.cantTell.rules === 1 ? 'needs' : 'need'} manual review in ${plural(rep.cantTell.scans, 'scan')}. They are not counted here.</p>`);
+    }
+    return out.join('');
+}
+function avg(vals) { const v = vals.reduce((s, x) => s + x, 0) / (vals.length || 1); return v < 10 ? v.toFixed(1).replace(/\.0$/, '') : Math.round(v); }
+
+/* ------------------------------------------------------------------ *
+ * Tooltip (hover + keyboard focus)
+ * ------------------------------------------------------------------ */
+const tip = document.getElementById('tip');
+function showTip(html, x, y) {
+    tip.innerHTML = html;
+    tip.hidden = false;
+    const w = tip.offsetWidth, hgt = tip.offsetHeight;
+    let left = x + 14, top = y + 14;
+    if (left + w > window.innerWidth - 8) left = x - w - 14;
+    if (top + hgt > window.innerHeight - 8) top = y - hgt - 14;
+    tip.style.left = Math.max(8, left) + 'px';
+    tip.style.top = Math.max(8, top) + 'px';
+}
+function hideTip() { tip.hidden = true; }
+document.addEventListener('mouseover', (e) => {
+    const t = e.target.closest('[data-tip]');
+    if (t) showTip(t.getAttribute('data-tip'), e.clientX, e.clientY);
+});
+document.addEventListener('mousemove', (e) => {
+    const t = e.target.closest('[data-tip]');
+    if (t) showTip(t.getAttribute('data-tip'), e.clientX, e.clientY);
+});
+document.addEventListener('mouseout', (e) => { if (e.target.closest('[data-tip]')) hideTip(); });
+document.addEventListener('focusin', (e) => {
+    const t = e.target.closest('[data-tip]');
+    if (!t) return;
+    const b = t.getBoundingClientRect();
+    showTip(t.getAttribute('data-tip'), b.right, b.top);
+});
+document.addEventListener('focusout', (e) => { if (e.target.closest('[data-tip]')) hideTip(); });
+
+/* ------------------------------------------------------------------ *
+ * Charts
+ * ------------------------------------------------------------------ */
+function scanInfo(rep, a, i) {
+    const p = a.per[i], s = rep.scans[i];
+    if (!p.rules.length) return { text: `Scan ${i + 1} · ${s.step} · no automatic failures`, html: `<b>Scan ${i + 1}</b> · ${esc(s.step)}<br>No automatic failures` };
+    return {
+        text: `Scan ${i + 1} · ${s.step} · ${plural(p.rules.length, 'failing rule')} (${p.wide} widespread, ${p.other} other) · ${plural(p.elems, 'element')}`,
+        html: `<b>Scan ${i + 1}</b> · ${esc(s.step)}<br>${plural(p.rules.length, 'failing rule')}: ${p.wide} widespread, ${p.other} other<br>${plural(p.elems, 'failing element')}<div class="m">${p.rules.map(esc).join(', ')}</div>`,
+    };
+}
+
+function stripHtml(rep, a, id, opts = {}) {
+    const N = a.N, H = opts.h || 110, cw = 4;
+    const max = opts.max || Math.max(1, ...a.per.map((p) => p.rules.length));
+    let rects = '';
+    a.per.forEach((p, i) => {
+        const x = i * cw;
+        if (!p.rules.length) { rects += `<rect x="${x}" y="${H - 2}" width="${cw - 1}" height="2" class="s-clean"/>`; return; }
+        const unit = (H - 4) / max;
+        const hw = p.wide * unit, ho = p.other * unit;
+        if (hw) rects += `<rect x="${x}" y="${H - hw}" width="${cw - 1}" height="${hw}" class="s-wide"/>`;
+        if (ho) rects += `<rect x="${x}" y="${H - hw - ho}" width="${cw - 1}" height="${Math.max(1, ho - (hw ? 1.5 : 0))}" class="s-other"/>`;
+    });
+    // step labels
+    const segs = [];
+    rep.scans.forEach((s, i) => {
+        const last = segs[segs.length - 1];
+        if (last && last.step === s.step) last.to = i; else segs.push({ step: s.step, from: i, to: i });
+    });
+    const steps = segs.map((g) => {
+        const l = g.from / N * 100, w = (g.to - g.from + 1) / N * 100;
+        return `<span style="left:${l}%;width:${w}%" title="${esc(g.step)}">${w >= 7 ? esc(g.step) : ''}</span>`;
+    }).join('');
+    const hots = a.pattern === 'few' ? '' : a.hotspots.map((h) => {
+        const l = h.from / N * 100, w = (h.to - h.from + 1) / N * 100;
+        const edge = l < 15 ? ' edge-l' : l > 80 ? ' edge-r' : '';
+        return `<div class="hot${edge}" style="left:${l}%;width:${w}%"><span>Hotspot · ${scanRange(h)} · ${esc(h.steps.join(', '))}</span></div>`;
+    }).join('');
+    const label = `Scan strip: ${N} scans in run order, ${a.affected} with automatic failures. Use left and right arrow keys to read each scan.`;
+    return `<figure class="strip-fig" data-strip="${id}">
+        <div class="strip-marks">${hots}</div>
+        <div class="strip" tabindex="0" aria-label="${esc(label)}" aria-describedby="${id}-out">
+            <svg viewBox="0 0 ${N * cw} ${H}" preserveAspectRatio="none" style="height:${H}px" aria-hidden="true">${rects}<rect class="s-cursor" x="-10" y="0" width="${cw}" height="${H}"/></svg>
+        </div>
+        <div class="strip-steps" aria-hidden="true">${steps}</div>
+        <p class="strip-readout" id="${id}-out" aria-live="polite"></p>
+    </figure>`;
+}
+
+function wireStrip(root, rep, a, id) {
+    const fig = root.querySelector(`[data-strip="${id}"]`);
+    if (!fig) return;
+    const box = fig.querySelector('.strip'), cur = fig.querySelector('.s-cursor'), out = fig.querySelector('.strip-readout');
+    let idx = -1;
+    const set = (i, announce) => {
+        idx = Math.max(0, Math.min(a.N - 1, i));
+        cur.setAttribute('x', idx * 4);
+        if (announce) out.textContent = scanInfo(rep, a, idx).text;
+    };
+    box.addEventListener('mousemove', (e) => {
+        const b = box.getBoundingClientRect();
+        set(Math.floor((e.clientX - b.left) / b.width * a.N), false);
+        showTip(scanInfo(rep, a, idx).html, e.clientX, e.clientY);
+    });
+    box.addEventListener('mouseleave', () => { hideTip(); if (document.activeElement !== box) cur.setAttribute('x', -10); });
+    box.addEventListener('focus', () => set(idx < 0 ? firstAffected(a) : idx, true));
+    box.addEventListener('blur', () => { cur.setAttribute('x', -10); out.textContent = ''; });
+    box.addEventListener('keydown', (e) => {
+        const step = e.shiftKey ? 10 : 1;
+        const map = { ArrowRight: idx + step, ArrowLeft: idx - step, Home: 0, End: a.N - 1 };
+        if (e.key in map) { e.preventDefault(); set(map[e.key], true); }
+    });
+}
+const firstAffected = (a) => Math.max(0, a.per.findIndex((p) => p.rules.length));
+
+const SEV_R = { critical: 8, serious: 6.5, moderate: 5, minor: 4 };
+function mapFrame(ymax) {
+    const W = 640, H = 380, m = { l: 48, r: 18, t: 16, b: 46 };
+    const sx = (v) => m.l + v * (W - m.l - m.r);
+    const sy = (v) => H - m.b - (v / ymax) * (H - m.t - m.b);
+    let g = '';
+    [0, 0.25, 0.5, 0.75, 1].forEach((v) => {
+        g += `<line class="grid" x1="${sx(v)}" x2="${sx(v)}" y1="${m.t}" y2="${H - m.b}"/>`;
+        g += `<text x="${sx(v)}" y="${H - m.b + 16}" text-anchor="middle">${v * 100}%</text>`;
+    });
+    const yStep = ymax > 12 ? 4 : 2;
+    for (let v = 0; v <= ymax; v += yStep) {
+        g += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${sy(v)}" y2="${sy(v)}"/>`;
+        g += `<text x="${m.l - 8}" y="${sy(v) + 4}" text-anchor="end">${v}</text>`;
+    }
+    g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}"/>`;
+    g += `<line class="thr" x1="${sx(WIDE)}" x2="${sx(WIDE)}" y1="${m.t}" y2="${H - m.b}"/>`;
+    g += `<line class="thr" x1="${m.l}" x2="${W - m.r}" y1="${sy(HEAVY)}" y2="${sy(HEAVY)}"/>`;
+    const qboxes = [];
+    const q = (x, y, anchor, t1, t2) => {
+        const w = Math.max(t1.length * 7.4, t2.length * 5.8);
+        qboxes.push({ x: anchor === 'start' ? x : x - w, y: y - 12, w, h: 30 });
+        return `<text class="q" x="${x}" y="${y}" text-anchor="${anchor}">${t1}</text><text class="qs" x="${x}" y="${y + 13}" text-anchor="${anchor}">${t2}</text>`;
+    };
+    g += q(m.l + 8, m.t + 14, 'start', 'Broken page or state', 'few scans, many elements');
+    g += q(W - m.r - 8, m.t + 14, 'end', 'Broken template', 'most scans, many elements');
+    g += q(m.l + 8, sy(HEAVY) + 18, 'start', 'One-off', 'few scans, few elements');
+    g += q(W - m.r - 8, sy(HEAVY) + 18, 'end', 'Shared component', 'most scans, few elements');
+    g += `<text class="ttl" x="${(m.l + W - m.r) / 2}" y="${H - 8}" text-anchor="middle">Reach: share of scans where the rule fails →</text>`;
+    g += `<text class="ttl" transform="translate(13 ${(m.t + H - m.b) / 2}) rotate(-90)" text-anchor="middle">Elements per failing scan →</text>`;
+    return { W, H, m, sx, sy, g, qboxes };
+}
+function placeLabels(items, f, obstacles) {
+    // Try right, left, above, below the dot; then nudge vertically with a
+    // leader line. Obstacles are other dots, arrows and the quadrant titles.
+    const boxes = [...f.qboxes, ...obstacles];
+    const over = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    const inside = (b) => b.x >= f.m.l + 2 && b.x + b.w <= f.W - 4 && b.y >= 2 && b.y + b.h <= f.H - f.m.b - 2;
+    const free = (b) => inside(b) && !boxes.some((o) => over(o, b));
+    let out = '';
+    items.forEach((it) => {
+        const w = it.text.length * 6.7 + 2, h = 12;
+        const cands = [
+            { x: it.x + it.r + 4, y: it.y - h / 2 },
+            { x: it.x - it.r - 4 - w, y: it.y - h / 2 },
+            { x: it.x - w / 2, y: it.y - it.r - 3 - h },
+            { x: it.x - w / 2, y: it.y + it.r + 3 },
+        ].map((c) => ({ ...c, w, h }));
+        let box = cands.find(free), leader = false;
+        for (let n = 1; !box && n <= 8; n++) {
+            for (const dy of [-16 * n, 16 * n]) {
+                box = [cands[0], cands[1]].map((c) => ({ ...c, y: c.y + dy })).find(free);
+                if (box) { leader = true; break; }
+            }
+        }
+        if (!box) box = cands[0];
+        boxes.push(box);
+        if (leader) {
+            const lx = box.x > it.x ? box.x - 2 : box.x + box.w + 2;
+            out += `<line x1="${it.x}" y1="${it.y}" x2="${lx}" y2="${box.y + h / 2}" style="stroke:var(--viz-axis)"/>`;
+        }
+        out += `<text class="lbl" x="${box.x}" y="${box.y + h - 2}">${esc(it.text)}</text>`;
+    });
+    return out;
+}
+const dotBoxes = (pts) => pts.map((d) => ({ x: d.x - d.r - 2, y: d.y - d.r - 2, w: 2 * d.r + 4, h: 2 * d.r + 4 }));
+function lineBoxes(x1, y1, x2, y2) {
+    const n = Math.max(1, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 6)), out = [];
+    for (let i = 0; i <= n; i++) out.push({ x: x1 + (x2 - x1) * i / n - 3, y: y1 + (y2 - y1) * i / n - 3, w: 6, h: 6 });
+    return out;
+}
+function ruleTip(x, extra = '') {
+    return `<b>${esc(x.id)}</b> · ${x.sev}<br>${esc(x.title)}<div class="m">Fails in ${x.presences} of ${x.N} scans (${pct(x.reach)}) · ${avg([x.intensity])} elements per failing scan · ${x.quadrant}</div>${extra}`;
+}
+function ruleMapHtml(a) {
+    const ymax = Math.max(8, Math.ceil(Math.max(0, ...a.rules.map((x) => x.intensity)) + 1));
+    const f = mapFrame(ymax);
+    let dots = '';
+    const labelled = [...a.rules].sort((p, q) => (q.reach * q.intensity) - (p.reach * p.intensity))
+        .slice(0, a.rules.length > 10 ? 3 : 8);
+    a.rules.forEach((x) => {
+        const cx = f.sx(x.reach), cy = f.sy(x.intensity), r = SEV_R[x.sev];
+        x.N = a.N;
+        dots += `<circle class="dot ${x.band === 'widespread' ? 'wide' : 'other'}" cx="${cx}" cy="${cy}" r="${r}" tabindex="0" role="img" aria-label="${esc(x.id)}: ${pct(x.reach)} of scans, ${avg([x.intensity])} elements per failing scan, ${x.quadrant}" data-tip="${esc(ruleTip(x))}"/>`;
+    });
+    const pts = a.rules.map((x) => ({ x: f.sx(x.reach), y: f.sy(x.intensity), r: SEV_R[x.sev] }));
+    const labels = placeLabels(labelled.map((x) => ({ x: f.sx(x.reach), y: f.sy(x.intensity), r: SEV_R[x.sev], text: x.id })), f, dotBoxes(pts));
+    return `<div class="map"><svg viewBox="0 0 ${f.W} ${f.H}" aria-label="Rule map: each failing rule placed by reach and elements per failing scan">${f.g}${dots}${labels}</svg></div>`;
+}
+
+function table(caption, head, rows, numCols = []) {
+    const th = head.map((h, i) => `<th scope="col" class="${numCols.includes(i) ? 'num' : ''}">${h}</th>`).join('');
+    const body = rows.map((r) => `<tr>${r.map((c, i) => `<td class="${numCols.includes(i) ? 'num' : ''}">${c}</td>`).join('')}</tr>`).join('');
+    return `<details class="tbl"><summary>Show as table</summary><div class="tbl-scroll"><table><caption>${caption}</caption><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div></details>`;
+}
+
+/* ------------------------------------------------------------------ *
+ * 1 · Report view
+ * ------------------------------------------------------------------ */
+function kpis(a) {
+    if (a.pattern === 'few') {
+        return `<div class="kpis"><div class="kpi"><div class="v">${a.affected} / ${a.N}</div><div class="l">scans with automatic failures</div></div><div class="kpi"><div class="v">${a.R}</div><div class="l">failing rules</div></div></div>`;
+    }
+    return `<div class="kpis">
+        <div class="kpi"><div class="v">${pct(a.affectedRate)}</div><div class="l">of scans have automatic failures</div><div class="s">${a.affected} of ${a.N}</div></div>
+        <div class="kpi"><div class="v">${pct(a.footprint)}</div><div class="l">footprint: how much of the run each rule covers, on average</div><div class="s">100% = every rule in every scan</div></div>
+        <div class="kpi"><div class="v">${pct(a.top10)}</div><div class="l">of failing elements are in the worst 10% of scans</div><div class="s">~10% if spread evenly</div></div>
+        <div class="kpi"><div class="v">${a.bands.widespread} · ${a.bands.partial} · ${a.bands.local}</div><div class="l">rules that are widespread · partial · local</div><div class="s">≥60% · 25–60% · &lt;25% of scans</div></div>
+    </div>`;
+}
+function concentration(a) {
+    if (a.pattern === 'few' || !a.totalElems) return '';
+    const s = a.n80 / a.N;
+    const head = s >= 0.5
+        ? `Evenly spread: it takes ${pct(s)} of the scans to hold 80% of the failing elements.`
+        : s < 0.2
+            ? `Just ${pct(s)} of the scans hold 80% of the failing elements.`
+            : `${pct(s)} of the scans hold 80% of the failing elements.`;
+    return `<div class="card">
+        <div class="conc-head">${head}</div>
+        <div class="conc-row"><span>Scans</span><div class="conc-bar"><i style="width:${s * 100}%"></i></div><span class="pv">${pct(s)}</span></div>
+        <div class="conc-row"><span>Failing elements</span><div class="conc-bar el"><i style="width:80%"></i></div><span class="pv">80%</span></div>
+        <p class="why"><b>Why this:</b> a Lorenz curve says the same thing but needs explaining. Two bars read as one sentence. The more the top bar shrinks, the more concentrated the failures are.</p>
+    </div>`;
+}
+function renderReport(key) {
+    const rep = buildReport(key), a = analyse(rep);
+    const el = document.getElementById('report');
+    const affectedRows = a.per.map((p, i) => ({ p, i })).filter(({ p }) => p.rules.length).slice(0, 60)
+        .map(({ p, i }) => [`${i + 1}`, esc(rep.scans[i].step), p.wide, p.other, p.elems, p.rules.map(esc).join(', ')]);
+    const more = a.affected > 60 ? ` Showing the first 60 of ${a.affected}.` : '';
+    el.innerHTML = `
+    <div class="card verdict">
+        <div>${badge(a.pattern)}<div class="eyebrow" style="margin-top:8px">${esc(rep.run)} · ${a.N} scans</div></div>
+        <div class="narrative">${narrative(rep, a)}</div>
+    </div>
+    ${kpis(a)}
+    ${concentration(a)}
+    <div class="card">
+        <h3>Scan strip</h3>
+        <p style="color:var(--text-muted);font-size:.88rem">One column per scan, in run order. Height is the number of failing rules in that scan.</p>
+        <div class="legend">
+            <span><i class="sw wide"></i>Widespread rules (fail in ≥60% of scans)</span>
+            <span><i class="sw other"></i>Other rules</span>
+            <span><i class="sw clean"></i>Scan with no automatic failures</span>
+        </div>
+        ${stripHtml(rep, a, 'rs')}
+        ${table(`Scans with automatic failures.${more} The other ${a.N - a.affected} scans have none.`, ['Scan', 'Step', 'Widespread', 'Other', 'Elements', 'Rules'], affectedRows, [0, 2, 3, 4])}
+        <p class="why"><b>Why this:</b> it answers "where" at a glance. Run order, not URLs, so it works for SPAs and multi-state flows. A flat band means a shared problem; a spike means a hotspot; isolated specks mean one-offs. Each column links to its scan in the real UI.</p>
+    </div>
+    <div class="card">
+        <h3>Rule map</h3>
+        <p style="color:var(--text-muted);font-size:.88rem">Each failing rule, placed by how many scans it reaches and how many elements it hits per failing scan. Bigger dot = more severe.</p>
+        <div class="legend">
+            <span><i class="sw wide"></i>Widespread (≥60% of scans)</span>
+            <span><i class="sw other"></i>Partial or local</span>
+            <span>Dot size: minor → critical</span>
+        </div>
+        ${ruleMapHtml(a)}
+        ${a.rules.length > 10 ? `<p class="why">Only the 3 most prominent rules are labelled; ${a.rules.length} rules would not fit. Hover or use the table for the rest.</p>` : ''}
+        ${table('Failing rules by reach', ['Rule', 'Severity', 'Scans', 'Reach', 'Elements / scan', 'Kind'],
+            a.rules.map((x) => [`<code>${esc(x.id)}</code>`, x.sev, x.presences, pct(x.reach), avg([x.intensity]), x.quadrant]), [2, 3, 4])}
+        <p class="why"><b>Why this:</b> it answers "what kind of problem". Each corner suggests a different fix: a shared component (fix once), a broken template, one broken page or state, or one-offs to handle during content work.</p>
+    </div>`;
+    wireStrip(el, rep, a, 'rs');
+}
+
+/* ------------------------------------------------------------------ *
+ * 2 · Pairwise comparison
+ * ------------------------------------------------------------------ */
+function classify(ra, rb) {
+    if (ra && !rb) return 'resolved';
+    if (!ra && rb) return 'new';
+    const d = rb.reach - ra.reach;
+    return d <= -0.2 ? 'contained' : d >= 0.2 ? 'spread' : 'steady';
+}
+const CHG = {
+    contained: '↓ Contained', spread: '↑ Spread', steady: '→ Steady', new: '+ New', resolved: '✓ Resolved',
+};
+function pairNarrative(A, B, a, b, changes) {
+    const out = [];
+    const ruleSent = a.R === b.R ? `The number of failing rules is unchanged (${a.R})` : `Failing rules went from ${a.R} to ${b.R}`;
+    const rateSent = `scans with automatic failures went from ${pct(a.affectedRate)} to ${pct(b.affectedRate)}`;
+    const joiner = (a.R === b.R) !== (Math.abs(a.affectedRate - b.affectedRate) < 0.05) ? 'but' : 'and';
+    out.push(`<p><strong>${ruleSent}, ${joiner} ${rateSent}.</strong></p>`);
+    const byK = (k) => changes.filter((c) => c.kind === k);
+    const cont = byK('contained'), spread = byK('spread');
+    if (cont.length) {
+        const leftover = cont.filter((c) => c.b.reach > 0);
+        out.push(`<p>${list(cont.map((c) => c.id))} ${cont.length === 1 ? 'was' : 'were'} contained: ${cont.length === 1 ? 'it' : 'they'} used to fail in ${reachRange(cont.map((c) => c.a))} of scans and now in ${reachRange(cont.map((c) => c.b))}. That usually means a shared component was fixed${leftover.length ? ', with some pages or states left behind' : ''}.</p>`);
+    }
+    if (spread.length) {
+        out.push(`<p>${list(spread.map((c) => c.id))} spread: from ${reachRange(spread.map((c) => c.a))} to ${reachRange(spread.map((c) => c.b))} of scans. Check recent changes to shared components.</p>`);
+    }
+    const nw = byK('new'), res = byK('resolved');
+    if (nw.length || res.length) {
+        const parts = [];
+        if (res.length) parts.push(`${plural(res.length, 'rule')} no longer fail${res.length === 1 ? 's' : ''}`);
+        if (nw.length) parts.push(`${plural(nw.length, 'rule')} ${nw.length === 1 ? 'is' : 'are'} new${nw.length <= 3 ? ` (${list(nw.map((c) => c.id))})` : ''}`);
+        out.push(`<p>${parts.join('; ')}.</p>`);
+    }
+    if (b.hotspots[0] && b.pattern !== 'few' && (b.pattern === 'concentrated' || b.pattern === 'mixed')) {
+        out.push(`<p>In B, most of what is left sits in ${scanRange(b.hotspots[0])} (${esc(b.hotspots[0].steps.join(', '))}).</p>`);
+    }
+    if (a.N !== b.N) out.push(`<p class="note">The runs have different numbers of scans (${a.N} and ${b.N}), so everything is compared as a share of scans.</p>`);
+    if (a.pattern === 'few' || b.pattern === 'few') out.push(`<p class="note">One of the runs has fewer than 10 scans, so treat the percentages with care.</p>`);
+    return out.join('');
+}
+function compareMapHtml(a, b, changes) {
+    const ymax = Math.max(8, Math.ceil(Math.max(0, ...a.rules.map((x) => x.intensity), ...b.rules.map((x) => x.intensity)) + 1));
+    const f = mapFrame(ymax);
+    let marks = '', defs = '';
+    ['contained', 'spread', 'steady'].forEach((k) => {
+        defs += `<marker id="m-${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(${k === 'contained' ? '--ok' : k === 'spread' ? '--danger' : '--text-soft'})"/></marker>`;
+    });
+    const lbl = [], obst = [];
+    changes.forEach((c) => {
+        const src = c.b || c.a;
+        src.N = c.b ? b.N : a.N;
+        const extra = `<div class="m">${CHG[c.kind]}${c.a && c.b ? ` · reach ${pct(c.a.reach)} → ${pct(c.b.reach)}` : ''}</div>`;
+        if (c.kind === 'resolved') {
+            const x = f.sx(c.a.reach), y = f.sy(c.a.intensity), s = 5;
+            marks += `<g tabindex="0" role="img" aria-label="${esc(c.id)}: resolved" data-tip="${esc(ruleTip(src, extra))}"><path class="gone" d="M${x - s} ${y - s} L${x + s} ${y + s} M${x + s} ${y - s} L${x - s} ${y + s}"/><circle class="hit" cx="${x}" cy="${y}" r="9"/></g>`;
+            lbl.push({ x, y, r: 6, text: c.id });
+            return;
+        }
+        const bx = f.sx(c.b.reach), by = f.sy(c.b.intensity), r = SEV_R[c.b.sev];
+        if (c.a) {
+            const ax = f.sx(c.a.reach), ay = f.sy(c.a.intensity);
+            const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
+            if (len > r + 6) {
+                const ex = bx - dx / len * (r + 3), ey = by - dy / len * (r + 3);
+                obst.push(...lineBoxes(ax, ay, ex, ey));
+                marks += `<circle class="ghost" cx="${ax}" cy="${ay}" r="3.5"/><path class="arr ${c.kind}" d="M${ax} ${ay} L${ex} ${ey}" marker-end="url(#m-${c.kind})"/>`;
+            }
+        }
+        marks += `<circle class="dot ${c.b.band === 'widespread' ? 'wide' : 'other'}${c.kind === 'new' ? ' new' : ''}" cx="${bx}" cy="${by}" r="${r}" tabindex="0" role="img" aria-label="${esc(c.id)}: ${CHG[c.kind]}" data-tip="${esc(ruleTip(c.b, extra))}"/>`;
+        lbl.push({ x: bx, y: by, r, text: c.id });
+    });
+    obst.push(...dotBoxes(lbl));
+    const labels = placeLabels(lbl.slice(0, 10), f, obst);
+    return `<div class="map"><svg viewBox="0 0 ${f.W} ${f.H}" aria-label="Rule map, A to B: arrows show how each rule moved"><defs>${defs}</defs>${f.g}${marks}${labels}</svg></div>`;
+}
+function renderPair(ka, kb) {
+    const A = buildReport(ka), B = buildReport(kb), a = analyse(A), b = analyse(B);
+    const ids = [...new Set([...a.rules.map((x) => x.id), ...b.rules.map((x) => x.id)])];
+    const changes = ids.map((id) => {
+        const ra = a.rules.find((x) => x.id === id), rb = b.rules.find((x) => x.id === id);
+        return { id, a: ra, b: rb, kind: classify(ra, rb) };
+    }).sort((p, q) => Math.abs((q.b?.reach || 0) - (q.a?.reach || 0)) - Math.abs((p.b?.reach || 0) - (p.a?.reach || 0)));
+    const max = Math.max(1, ...a.per.map((p) => p.rules.length), ...b.per.map((p) => p.rules.length));
+    const row = (label, x, y, fmt) => `<tr><th scope="row">${label}</th><td class="num">${fmt(x)}</td><td class="num">${fmt(y)}</td></tr>`;
+    const el = document.getElementById('pair');
+    el.innerHTML = `
+    <div class="card">
+        <div class="shift"><span class="eyebrow" style="margin:0">Pattern</span>${badge(a.pattern)}<span class="arrow" aria-label="changed to">→</span>${badge(b.pattern)}</div>
+        <div class="narrative">${pairNarrative(A, B, a, b, changes)}</div>
+    </div>
+    <div class="two">
+        <div class="card">
+            <h3>Key numbers</h3>
+            <div class="tbl-scroll"><table>
+                <thead><tr><th></th><th scope="col" class="num">A</th><th scope="col" class="num">B</th></tr></thead>
+                <tbody>
+                ${row('Scans', a.N, b.N, String)}
+                ${row('Failing rules', a.R, b.R, String)}
+                ${row('Scans with failures', a.affectedRate, b.affectedRate, pct)}
+                ${row('Footprint', a.footprint, b.footprint, pct)}
+                ${row('Worst 10% of scans hold', a.top10, b.top10, pct)}
+                ${row('Widespread rules', a.bands.widespread, b.bands.widespread, String)}
+                </tbody>
+            </table></div>
+            <p class="why"><b>Why this:</b> all shares, never raw counts, so runs with different numbers of scans compare fairly.</p>
+        </div>
+        <div class="card">
+            <h3>How each rule changed</h3>
+            <div class="tbl-scroll"><table>
+                <thead><tr><th scope="col">Rule</th><th scope="col" class="num">Reach A</th><th scope="col" class="num">Reach B</th><th scope="col">Change</th></tr></thead>
+                <tbody>${changes.slice(0, 12).map((c) => `<tr><td><code>${esc(c.id)}</code></td><td class="num">${c.a ? pct(c.a.reach) : '–'}</td><td class="num">${c.b ? pct(c.b.reach) : '–'}</td><td><span class="chg ${c.kind}">${CHG[c.kind]}</span></td></tr>`).join('')}</tbody>
+            </table></div>
+            ${changes.length > 12 ? `<p class="why">${changes.length - 12} more rules in the full view.</p>` : ''}
+        </div>
+    </div>
+    <div class="card">
+        <h3>Scan strips, A above B</h3>
+        <div class="legend">
+            <span><i class="sw wide"></i>Widespread rules</span>
+            <span><i class="sw other"></i>Other rules</span>
+            <span><i class="sw clean"></i>No automatic failures</span>
+        </div>
+        <div class="strip-row"><div class="who"><b>A</b>${esc(A.run)}</div>${stripHtml(A, a, 'pa', { h: 70, max })}</div>
+        <div class="strip-row"><div class="who"><b>B</b>${esc(B.run)}</div>${stripHtml(B, b, 'pb', { h: 70, max })}</div>
+        <p class="why"><b>Why this:</b> both strips use the full width and the same height scale, so a 300-scan and a 50-scan run line up. When the two runs are the same workflow, the steps line up too.</p>
+    </div>
+    <div class="card">
+        <h3>Rule map, A → B</h3>
+        <div class="legend">
+            <span><span class="chg contained">↓ Contained</span> reach went down ≥20 points</span>
+            <span><span class="chg spread">↑ Spread</span> reach went up ≥20 points</span>
+            <span><span class="chg steady">→ Steady</span></span>
+            <span>○ where A was · ✕ resolved · dashed ring = new</span>
+        </div>
+        ${compareMapHtml(a, b, changes)}
+        <p class="why"><b>Why this:</b> totals hide movement. The same 3 rules can go from "everywhere" to "one flow": the arrows make that visible, and the direction tells you what probably happened.</p>
+    </div>`;
+    wireStrip(el, A, a, 'pa');
+    wireStrip(el, B, b, 'pb');
+}
+
+/* ------------------------------------------------------------------ *
+ * 3 · Series
+ * ------------------------------------------------------------------ */
+function lineChart(title, runs, vals) {
+    const W = 320, H = 170, m = { l: 36, r: 16, t: 14, b: 28 };
+    const sx = (i) => m.l + i * (W - m.l - m.r) / (vals.length - 1);
+    const sy = (v) => H - m.b - v * (H - m.t - m.b);
+    let g = '';
+    [0, 0.5, 1].forEach((v) => { g += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${sy(v)}" y2="${sy(v)}"/><text x="${m.l - 6}" y="${sy(v) + 4}" text-anchor="end">${v * 100}%</text>`; });
+    runs.forEach((r, i) => { g += `<text x="${sx(i)}" y="${H - 8}" text-anchor="middle">Run ${i + 1}</text>`; });
+    const pts = vals.map((v, i) => `${sx(i)},${sy(v)}`).join(' ');
+    const dots = vals.map((v, i) => `<circle class="pt" cx="${sx(i)}" cy="${sy(v)}" r="4.5" tabindex="0" role="img" aria-label="${esc(runs[i])}: ${pct(v)}" data-tip="<b>${esc(runs[i])}</b><br>${esc(title)}: ${pct(v)}"/>`).join('');
+    const last = vals.length - 1;
+    const endLbl = `<text class="val" x="${sx(0) + 8}" y="${sy(vals[0]) + (vals[0] > 0.85 ? 16 : -8)}">${pct(vals[0])}</text><text class="val" x="${sx(last)}" y="${sy(vals[last]) - 10}" text-anchor="end">${pct(vals[last])}</text>`;
+    return `<div class="line"><h3>${esc(title)}</h3><svg viewBox="0 0 ${W} ${H}" aria-label="${esc(title)} per run">${g}<polyline class="ln" points="${pts}"/>${dots}${endLbl}</svg></div>`;
+}
+function spark(vals) {
+    const W = 90, H = 22;
+    const sx = (i) => 3 + i * (W - 6) / (vals.length - 1), sy = (v) => H - 3 - v * (H - 6);
+    return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline points="${vals.map((v, i) => `${sx(i)},${sy(v)}`).join(' ')}"/><circle cx="${sx(vals.length - 1)}" cy="${sy(vals[vals.length - 1])}" r="2.5"/></svg>`;
+}
+function renderSeries() {
+    const keys = ['widespread', 'mixed', 'concentrated', 'nearlyClean'];
+    const reps = keys.map(buildReport), an = reps.map(analyse);
+    const max = Math.max(1, ...an.flatMap((a) => a.per.map((p) => p.rules.length)));
+    const ids = [...new Set(an.flatMap((a) => a.rules.map((x) => x.id)))];
+    const reachOf = (a, id) => a.rules.find((x) => x.id === id)?.reach || 0;
+    const rows = ids.map((id) => {
+        const v = an.map((a) => reachOf(a, id));
+        const first = v[0], lastV = v[v.length - 1], peak = Math.max(...v);
+        const kind = lastV === 0 ? 'resolved' : peak - lastV >= 0.2 ? 'contained' : lastV - v.find((x) => x > 0) >= 0.2 ? 'spread' : 'steady';
+        return { id, v, kind, first, lastV };
+    });
+    const patterns = an.map((a) => PATTERN[a.pattern].label).filter((p, i, arr) => i === 0 || arr[i - 1] !== p);
+    const contained = rows.filter((r) => r.kind === 'contained' || (r.kind === 'resolved' && Math.max(...r.v) >= WIDE));
+    const el = document.getElementById('series');
+    el.innerHTML = `
+    <div class="card">
+        <div class="shift"><span class="eyebrow" style="margin:0">Pattern over time</span>${an.map((a, i) => badge(a.pattern) + (i < an.length - 1 ? '<span class="arrow" aria-hidden="true">→</span>' : '')).join('')}</div>
+        <div class="narrative">
+            <p><strong>Over ${reps.length} runs, failing rules went ${an.map((a) => a.R).join(' → ')} and scans with failures dropped from ${pct(an[0].affectedRate)} to ${pct(an[an.length - 1].affectedRate)}.</strong></p>
+            <p>The pattern moved ${patterns.join(' → ')}. ${contained.length ? `The shared problems (${list(contained.map((r) => r.id))}) were contained first; ` : ''}the hotspot in the Payment steps that appeared in run 2 shrank to ${plural(an[3].R, 'rule')} in ${plural(an[3].affected, 'scan')} by run 4.</p>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Scan strips, one per run</h3>
+        <div class="legend">
+            <span><i class="sw wide"></i>Widespread rules</span>
+            <span><i class="sw other"></i>Other rules</span>
+            <span><i class="sw clean"></i>No automatic failures</span>
+        </div>
+        ${reps.map((r, i) => `<div class="strip-row"><div class="who"><b>Run ${i + 1}</b>${esc(r.run.split('·')[1] || '')} · ${PATTERN[an[i].pattern].label}</div>${stripHtml(r, an[i], 's' + i, { h: 48, max })}</div>`).join('')}
+        <p class="why"><b>Why this:</b> stacked strips work like a heatmap over time: you can watch a band disappear, a hotspot shrink or a new problem spread.</p>
+    </div>
+    <div class="two">
+        <div class="card">${lineChart('Scans with automatic failures', reps.map((r) => r.run), an.map((a) => a.affectedRate))}</div>
+        <div class="card">${lineChart('Failing elements in the worst 10% of scans', reps.map((r) => r.run), an.map((a) => a.top10))}</div>
+    </div>
+    <p class="why" style="margin-top:-4px">Two separate charts on purpose: each one has its own 0–100% scale, and each tells half the story. Fewer failing scans, while the failures that remain gather in a few scans, means the shared problems were fixed.</p>
+    <div class="card">
+        <h3>Reach of each rule, run by run</h3>
+        <div class="tbl-scroll"><table>
+            <thead><tr><th scope="col">Rule</th><th scope="col">Reach per run</th>${reps.map((_, i) => `<th scope="col" class="num">Run ${i + 1}</th>`).join('')}<th scope="col">Trend</th></tr></thead>
+            <tbody>${rows.map((r) => `<tr><td><code>${esc(r.id)}</code></td><td>${spark(r.v)}</td>${r.v.map((v) => `<td class="num">${v ? pct(v) : '–'}</td>`).join('')}<td><span class="chg ${r.kind}">${CHG[r.kind]}</span></td></tr>`).join('')}</tbody>
+        </table></div>
+        <p class="why"><b>Why this:</b> this is the existing rule grid with one new column. A rule whose count stays flat while its reach drops is being contained, and the sparkline shows it.</p>
+    </div>`;
+    reps.forEach((r, i) => wireStrip(el, r, an[i], 's' + i));
+}
+
+/* ------------------------------------------------------------------ *
+ * Controls
+ * ------------------------------------------------------------------ */
+const order = ['widespread', 'concentrated', 'scattered', 'mixed', 'few'];
+const btns = document.getElementById('scenario-btns');
+btns.innerHTML = order.map((k, i) => `<button type="button" data-k="${k}" aria-pressed="${i === 0}">${SCENARIOS[k].name}</button>`).join('');
+btns.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    btns.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    renderReport(b.dataset.k);
+});
+const pairKeys = ['widespread', 'mixed', 'concentrated', 'nearlyClean', 'scattered', 'few'];
+const selA = document.getElementById('selA'), selB = document.getElementById('selB');
+const opts = pairKeys.map((k) => `<option value="${k}">${esc(SCENARIOS[k].run)} (${SCENARIOS[k].name})</option>`).join('');
+selA.innerHTML = opts;
+selB.innerHTML = opts;
+selA.value = 'widespread';
+selB.value = 'concentrated';
+const onPair = () => renderPair(selA.value, selB.value);
+selA.addEventListener('change', onPair);
+selB.addEventListener('change', onPair);
+
+document.querySelectorAll('[data-theme-btn]').forEach((b) => b.addEventListener('click', () => {
+    const t = b.dataset.themeBtn;
+    if (t === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('[data-theme-btn]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+}));
+
+renderReport('widespread');
+onPair();
+renderSeries();
+})();
+</script>
+</body>
+</html>

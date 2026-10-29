@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>surea11y scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script src="./report/jszip.min.js"></script>
+    <script>
+        (function () {
+            try {
+                let key = 'a11y-lab-theme';
+                let stored = localStorage.getItem(key);
+                // Default to Light when nothing is stored yet; an explicit
+                // Auto/Light/Dark choice the user made always wins.
+                let theme = (stored === 'auto' || stored === 'light' || stored === 'dark') ? stored : 'light';
+                let root = document.documentElement;
+
+                // Prevent transitions while the theme is being applied on first paint
+                root.classList.add('no-theme-transition');
+
+                if (theme && theme !== 'auto') {
+                    root.dataset.theme = theme; // "light" or "dark"
+                } else {
+                    root.removeAttribute('data-theme'); // auto
+                }
+            } catch (e) {
+                // ignore
+            }
+
+            try {
+                let mode = localStorage.getItem('a11ylab-active-mode');
+                document.documentElement.setAttribute(
+                    'data-initial-mode',
+                    (mode === 'report' || mode === 'compare') ? mode : 'run'
+                );
+            } catch (e) {
+                document.documentElement.setAttribute('data-initial-mode', 'run');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="css/a11y-lab-ui.css">
+    <link rel="icon" type="image/png" href="./icon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./icon/favicon.svg" />
+    <link rel="shortcut icon" href="./icon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icon/apple-touch-icon.png" />
+    <link rel="manifest" href="./icon/site.webmanifest" />
+</head>
+<body>
+
+<header>
+    <h1>
+        <img src="icon/logo.png" alt="" class="site-logo" />
+        <span class="wordmark"><span class="wordmark-sure">sure</span><span class="wordmark-a11y">a11y</span><span class="wordmark-product">scanner</span></span>
+    </h1>
+    <button type="button" class="theme-switch" data-theme-toggle aria-label="Colour theme: Light">
+        <svg class="theme-switch__icon theme-switch__icon--auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <rect x="3" y="4" width="18" height="12" rx="2"></rect>
+            <path d="M8 20h8M12 16v4"></path>
+        </svg>
+        <svg class="theme-switch__icon theme-switch__icon--light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"></path>
+        </svg>
+        <svg class="theme-switch__icon theme-switch__icon--dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"></path>
+        </svg>
+    </button>
+</header>
+<main class="page">
+    <!-- Mode switch: sticks to the top of the window as the page scrolls,
+         with "Back to top" at its end once the header is out of view. -->
+    <div class="mode-bar">
+        <div class="mode-switch" role="tablist" aria-label="Mode">
+            <button type="button"
+                    id="mode-run"
+                    class="mode-tab"
+                    role="tab"
+                    aria-label="run workflow"
+                    aria-selected="true"
+                    aria-controls="pane-run">
+                <span id="mode-run-text">run workflow</span>
+            </button>
+            <button type="button"
+                    id="mode-open"
+                    class="mode-tab"
+                    role="tab"
+                    aria-label="open report"
+                    aria-selected="false"
+                    aria-controls="pane-open"
+                    tabindex="-1">
+                open report
+            </button>
+            <button type="button"
+                    id="mode-compare"
+                    class="mode-tab"
+                    role="tab"
+                    aria-label="compare reports"
+                    aria-selected="false"
+                    aria-controls="pane-compare"
+                    tabindex="-1">
+                compare
+            </button>
+            <button type="button"
+                    id="mode-queue"
+                    class="mode-tab"
+                    role="tab"
+                    aria-label="queue"
+                    aria-selected="false"
+                    aria-controls="pane-queue"
+                    tabindex="-1">
+                queue
+            </button>
+        </div>
+        <button type="button" id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M5 4h14"></path>
+                <path d="M12 20V9"></path>
+                <path d="M7 13l5-5 5 5"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Run pane: your existing form goes inside -->
+    <section id="pane-run" role="tabpanel" aria-labelledby="mode-run-text">
+        <form id="scan-form">
+            <section id="config-section" class="config-section">
+                <header class="config-header">
+                    <h2 class="config-heading">
+                        <button
+                                type="button"
+                                id="config-toggle"
+                                class="config-header-row"
+                                aria-expanded="true"
+                                aria-controls="config-content"
+                        >
+                            <span class="config-title">Configuration</span>
+                            <span class="config-toggle-word" aria-hidden="true">Collapse</span>
+                        </button>
+                    </h2>
+                </header>
+                <div id="config-content" role="region" aria-label="Configuration">
+                    <div class="config-data">
+                        <div class="field-row field-inline">
+                            <div>
+                                <label for="url-input">URL to scan
+                                    <span class="req-badge" title="Required">*</span>
+                                </label>
+                                <input
+                                        type="text"
+                                        id="url-input"
+                                        name="url"
+                                        placeholder="https://example.com"
+                                        required
+                                        aria-describedby="url-error-hint"
+                                />
+                                <span id="url-error-hint"></span>
+                            </div>
+
+                            <div>
+                                <label for="scenario-name">Scenario name</label>
+                                <input
+                                        type="text"
+                                        id="scenario-name"
+                                        name="scenarioName"
+                                        placeholder="e.g. Mobile menu open, Version B, Logged in"
+                                />
+                            </div>
+                        </div>
+                        <fieldset class="config-group">
+                            <legend>How the page is shown</legend>
+                            <div class="field-row field-inline field-inline-top">
+                                <div>
+                                    <label for="viewport-preset">Viewport preset</label>
+                                    <select id="viewport-preset" name="viewportPreset">
+                                        <option value="default">Default (1280 × 720)</option>
+                                        <option value="desktop-xlg">Desktop extra-large (1972 × 1100)</option>
+                                        <option value="desktop-lg">Desktop large (1440 × 900)</option>
+                                        <option value="desktop-md">Desktop medium (1280 × 720)</option>
+                                        <option value="tablet">Tablet portrait (768 × 1024)</option>
+                                        <option value="mobile">Mobile (375 × 812)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="run-color-scheme">Color scheme</label>
+                                    <select id="run-color-scheme" name="colorScheme">
+                                        <option value="">Browser default</option>
+                                        <option value="light">Light</option>
+                                        <option value="dark">Dark</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="run-high-contrast">High contrast</label>
+                                    <select id="run-high-contrast" name="highContrast">
+                                        <option value="off">Off</option>
+                                        <option value="on">On</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="run-language">Language</label>
+                                    <!-- The languages are Set language's, added from the step definitions. -->
+                                    <select id="run-language" name="language">
+                                        <option value="">Browser default</option>
+                                        <option value="other">Other…</option>
+                                    </select>
+                                </div>
+                                <div id="run-language-other-field" hidden>
+                                    <label for="run-language-other">Other language</label>
+                                    <input type="text" id="run-language-other" spellcheck="false" autocomplete="off"
+                                           placeholder="e.g. es-MX or {var:lang}" aria-describedby="run-language-other-error"/>
+                                    <span id="run-language-other-error" class="field-error" hidden></span>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="field-row config-file">
+            <span>
+                <span id="history-management">
+                </span>
+
+                <span class="file-action">
+                    <span id="config-file-split-btn-slot"></span>
+                    <input
+                            type="file"
+                            id="config-file"
+                            accept=".a11y-config.json,.json,application/json,.zip,application/zip"
+                            hidden
+                            aria-hidden="true"
+                            tabindex="-1"
+                    />
+                    <input
+                            type="file"
+                            id="append-config-file"
+                            accept=".a11y-config.json,.json,application/json"
+                            hidden
+                            aria-hidden="true"
+                            tabindex="-1"
+                    />
+                </span>
+
+                <button type="button" id="save-config-button" class="secondary-button">
+                    Export config
+                </button>
+            </span>
+                    </div>
+                    <!-- Batch: the workflow below once per row of a pasted JSON list. Before
+                         the steps because the rows feed them. Kept out of the automatic
+                         config capture (data-config-exclude): the rows travel with an
+                         exported config as its batch. -->
+                    <div class="field-row">
+                        <fieldset class="batch-fieldset" data-config-exclude>
+                            <legend class="batch-legend">
+                                <button
+                                        type="button"
+                                        id="batch-toggle"
+                                        class="legend-toggle"
+                                        aria-expanded="false"
+                                        aria-controls="batch-content"
+                                >
+                                    <span class="legend-toggle-label">Batch</span>
+                                    <span id="batch-count-badge" class="custom-steps-count-badge" hidden></span>
+                                </button>
+                                <button
+                                        type="button"
+                                        class="icon-button secondary-button section-end-toggle"
+                                        data-section-toggle="batch-toggle"
+                                        aria-controls="batch-content"
+                                ></button>
+                            </legend>
+                            <div id="batch-content" class="batch-content" role="region" aria-labelledby="batch-toggle" hidden>
+                                <p class="batch-off-note">Batch disabled: Run runs the workflow once. The workflows stay here.</p>
+                                <p class="hint" id="batch-hint">
+                                    Run the workflow below once per entry of a JSON list: while the batch is enabled, Run queues one run per workflow.
+                                    Each workflow is a JSON object with a <code>name</code>,
+                                    an optional <code>url</code> that replaces the workflow’s, and optional <code>vars</code>
+                                    the workflow reads as <code>{var:…}</code>.
+                                    A file of workflows can also be dropped here.
+                                </p>
+                                <div class="batch-rows-head">
+                                    <label for="batch-rows">Workflows (JSON)</label>
+                                    <span class="batch-rows-actions">
+                                        <button type="button" id="batch-file-btn" class="secondary-button">Load file…</button>
+                                        <button type="button" id="batch-use" class="secondary-button batch-use">Enable batch</button>
+                                    </span>
+                                    <input type="file" id="batch-file" accept=".json,application/json" hidden aria-hidden="true" tabindex="-1"/>
+                                </div>
+                                <textarea id="batch-rows" class="batch-rows" rows="8" spellcheck="false" autocomplete="off"
+                                          aria-describedby="batch-hint batch-check"
+                                          placeholder='[ { "name": "v2.3", "url": "https://example.com/v2.3", "vars": { "date": "2026-03-01" } } ]'></textarea>
+                                <div class="batch-name-field">
+                                    <label for="batch-name-pattern">Run name</label>
+                                    <input type="text" id="batch-name-pattern" autocomplete="off" aria-describedby="batch-name-hint"
+                                           placeholder="e.g. Product {var:name}"/>
+                                    <p class="hint" id="batch-name-hint">
+                                        Fills <code>{var:…}</code> from each workflow: its vars, plus <code>{var:name}</code>,
+                                        <code>{var:url}</code> and <code>{var:row}</code>. Leave empty to use each workflow’s name.
+                                    </p>
+                                </div>
+                                <div id="batch-check" class="status batch-check" role="status"></div>
+                                <ul id="batch-problems" class="batch-problems" hidden></ul>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="field-row">
+                        <fieldset class="custom-steps-fieldset">
+                            <legend class="custom-steps-legend">
+                                <button
+                                        type="button"
+                                        id="custom-steps-toggle"
+                                        class="legend-toggle"
+                                        aria-expanded="false"
+                                        aria-controls="custom-steps-content"
+                                        aria-label="Expand custom steps"
+                                >
+                                    <span class="legend-toggle-label">Custom steps</span>
+                                    <span
+                                            id="custom-steps-count-badge"
+                                            class="custom-steps-count-badge"
+                                            role="status"
+                                            aria-live="polite"
+                                            aria-atomic="true"
+                                            aria-label="No custom steps defined"
+                                            hidden
+                                    >0</span>
+                                </button>
+                                <button
+                                        type="button"
+                                        id="custom-step-actions-collapse-all-toggle"
+                                        class="icon-button secondary-button collapse-all-toggle"
+                                        aria-label="Collapse all steps"
+                                        title="Collapse all steps"
+                                        hidden
+                                ></button>
+                                <button
+                                        type="button"
+                                        class="icon-button secondary-button section-end-toggle"
+                                        data-section-toggle="custom-steps-toggle"
+                                        aria-controls="custom-steps-content"
+                                ></button>
+                            </legend>
+                            <input type="hidden" id="custom-steps-json"/>
+                            <div id="custom-steps-content" class="custom-steps-content" role="region" aria-label="Custom steps" hidden>
+                            <div class="custom-steps-panel">
+                                <div class="custom-steps-list-panel">
+                                    <div id="custom-steps-list" class="custom-steps-list" role="tablist" aria-orientation="vertical" aria-label="Custom steps">
+                                        <div id="custom-steps-list-actions" class="custom-steps-list-actions">
+                                            <button
+                                                    type="button"
+                                                    id="custom-step-add-btn"
+                                                    class="secondary-button icon-button"
+                                                    aria-label="Add custom step"
+                                                    title="Add custom step"
+                                            >
+                                                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" class="add">
+                                                    <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                                    <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                                </svg>
+                                            </button>
+                                            <button
+                                                    type="button"
+                                                    id="custom-step-paste-btn"
+                                                    class="secondary-button icon-button"
+                                                    aria-label="Paste custom step"
+                                                    title="Paste custom step"
+                                                    disabled
+                                            >
+                                                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                                    <path d="M8 4h8v3h3v13H5V7h3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                                                    <rect x="9" y="2" width="6" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span id="custom-steps-history-management" class="history-management"></span>
+                                </div>
+                                <div id="custom-steps-tabpanel" class="custom-steps-editor-panel" role="tabpanel">
+                                    <div class="custom-step-panel-toolbar">
+                                        <button
+                                                type="button"
+                                                id="custom-step-copy-btn"
+                                                class="secondary-button custom-step-panel-action"
+                                                aria-label="Copy this custom step"
+                                        >
+                                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                                <rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                                                <rect x="4" y="4" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6"></rect>
+                                            </svg>
+                                            <span>Copy step</span>
+                                        </button>
+                                        <button
+                                                type="button"
+                                                id="custom-step-delete-btn"
+                                                class="secondary-button remove custom-step-panel-action"
+                                                aria-label="Delete this custom step"
+                                        >
+                                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                                <path d="M4 7h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                                <path d="M10 11v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                                <path d="M14 11v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                                <path d="M6 7l1 14h10l1-14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                                                <path d="M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                                            </svg>
+                                            <span>Delete step</span>
+                                        </button>
+                                    </div>
+                                    <div class="field-row field-inline">
+                                        <div>
+                                            <label for="custom-step-id">Step name <span class="req-badge" title="Required">*</span></label>
+                                            <input type="text" id="custom-step-id" placeholder="scan-desktop-mobile"/>
+                                        </div>
+                                        <div>
+                                            <label for="custom-step-name">Display name</label>
+                                            <input type="text" id="custom-step-name" placeholder="Desktop + Mobile scan"/>
+                                        </div>
+                                    </div>
+                                    <div class="field-row">
+                                        <div>
+                                            <label for="custom-step-inputs">Inputs (one per line, add * for required)</label>
+                                            <textarea id="custom-step-inputs" rows="4" placeholder="viewLabel*&#10;section"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="interaction-workflow">
+                                        <fieldset class="actions-builder" id="custom-step-actions-builder">
+                                            <legend class="actions-builder-header">Custom step actions</legend>
+                                            <div id="custom-step-actions-container" role="group" aria-label="Custom step actions" tabindex="-1"></div>
+                                            <div class="actions-builder-actions">
+                                                <div id="custom-step-actions-history-management" class="history-management"></div>
+                                                <div id="custom-step-toolbar" class="toolbar"></div>
+                                            </div>
+                                        </fieldset>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="interaction-workflow">
+                        <fieldset class="actions-builder" id="actions-builder">
+                            <legend class="actions-builder-header">
+                                <button
+                                        type="button"
+                                        id="workflow-toggle"
+                                        class="legend-toggle"
+                                        aria-expanded="true"
+                                        aria-controls="workflow-content"
+                                        aria-label="Collapse workflow"
+                                >
+                                    <span class="legend-toggle-label">Workflow</span>
+                                </button>
+                                <button
+                                        type="button"
+                                        id="step-tree-open-btn"
+                                        class="icon-button secondary-button collapse-all-toggle step-tree-toggle"
+                                        aria-label="show workflow steps tree"
+                                        title="Show workflow steps tree"
+                                ></button>
+                                <button
+                                        type="button"
+                                        id="workflow-collapse-all-toggle"
+                                        class="icon-button secondary-button collapse-all-toggle"
+                                        aria-label="Collapse all steps"
+                                        title="Collapse all steps"
+                                        hidden
+                                ></button>
+                                <button
+                                        type="button"
+                                        class="icon-button secondary-button section-end-toggle"
+                                        data-section-toggle="workflow-toggle"
+                                        aria-controls="workflow-content"
+                                ></button>
+                            </legend>
+                            <div id="workflow-content" class="workflow-content" role="region" aria-label="Workflow">
+                                <div id="actionsContainer" role="group" aria-label="Configured actions list"></div>
+                                <div class="actions-builder-actions">
+                                    <div id="toolbar" class="toolbar"></div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+                <div class="inline-actions">
+                    <div id="statusRun" class="status" role="status"></div>
+                    <button type="button" id="cancel-button" class="secondary-button">Cancel</button>
+                    <button type="button" id="dry-run-button" class="secondary-button" aria-describedby="dry-run-hint">Dry run</button>
+                    <span id="dry-run-hint" hidden>Takes every step but the scans, screenshots and evidence, to see that the workflow still fits the site.</span>
+                    <button type="submit" id="scan-button">Run</button>
+                </div>
+            </section>
+            <section id="dry-run-report" class="dry-run-report" aria-labelledby="dry-run-report-title" hidden>
+                <h2 id="dry-run-report-title">Dry run</h2>
+                <p class="dry-run-verdict"></p>
+                <ol class="dry-run-steps"></ol>
+                <p class="dry-run-scans"></p>
+            </section>
+            <div id="log-panel" class="log-panel" aria-live="polite"></div>
+            <div id="log-panel-toolbar" class="log-panel-toolbar">
+                <button type="button" id="log-copy-last-btn" class="secondary-button log-copy-btn">Copy last 30 lines</button>
+                <button type="button" id="log-copy-all-btn" class="secondary-button log-copy-btn">Copy all</button>
+            </div>
+            <div id="live-stream" class="live-stream">
+                <div class="live-stream-grid" id="live-stream-grid"></div>
+            </div>
+        </form>
+    </section>
+
+    <section id="pane-open" role="tabpanel" aria-labelledby="mode-open" hidden>
+        <div class="open-results-panel">
+            <p class="hint">
+                Load a report zip from “Download report”, with its pictures, or a JSON report, with the button or by dropping the files here.
+            </p>
+            <div class="field-row">
+                <div class="file-action">
+                    <button type="button" id="results-file-btn" class="secondary-button" aria-controls="resultsFiles">
+                        Add report(s)
+                    </button>
+                    <input
+                            type="file"
+                            id="resultsFiles"
+                            accept=".a11y-report.json,.json,application/json,.zip,application/zip"
+                            multiple
+                            hidden
+                            aria-hidden="true"
+                            tabindex="-1"
+                    />
+                </div>
+                <div class="file-action">
+                    <input
+                            type="file"
+                            id="groupingFile"
+                            accept=".json,application/json"
+                            hidden
+                            aria-hidden="true"
+                            tabindex="-1"
+                    />
+                </div>
+            </div>
+
+            <div id="report-files-staging" class="open-results-panel" hidden>
+                <p class="hint" id="report-files-hint">
+                    Selected report files, review and remove items if needed, then load.
+                </p>
+
+                <ul id="report-files-list" aria-describedby="report-files-hint"></ul>
+
+                <div class="inline-actions">
+                    <span class="hint" id="report-files-count"></span>
+                    <span>
+                        <button type="button" id="report-files-load-btn" class="secondary-button" aria-disabled="true">
+                            Load selected
+                        </button>
+                        <button type="button" id="report-files-clear-btn" class="secondary-button" aria-disabled="true">
+                            Clear list
+                        </button>
+                    </span>
+                </div>
+            </div>
+
+            <div id="statusReport" class="status" role="status"></div>
+        </div>
+    </section>
+
+    <!-- Compare pane: two reports diff side by side, three or more open the dashboard -->
+    <section id="pane-compare" role="tabpanel" aria-labelledby="mode-compare" hidden>
+        <div class="compare-panel">
+            <p class="hint">Compare exported reports — how accessibility evolved over time, or several variants side by side.
+                Two reports give the side-by-side diff; three or more open the dashboard.
+                A zip from “Download with the reports” loads back as the comparison it was; any other zip loads the reports in it.
+                Load them with the button, or drop them anywhere on this tab.</p>
+
+            <div class="compare-controls">
+                <span class="ctx-label">What are you comparing?</span>
+                <div class="ctx-seg" role="group" aria-label="What are you comparing?" id="compare-context-seg">
+                    <button type="button" class="ctx-opt" data-context="time" aria-pressed="true">↗ Runs over time</button>
+                    <button type="button" class="ctx-opt" data-context="versions" aria-pressed="false">⇈ Versions</button>
+                    <button type="button" class="ctx-opt" data-context="variants" aria-pressed="false">⇄ Variants</button>
+                </div>
+                <span class="ctx-desc" id="compare-context-desc">One subject scanned again and again. Ordered by each report’s own timestamp, and the headline says how long ago that was.</span>
+            </div>
+
+            <div class="compare-loaders">
+                <div class="compare-loader">
+                    <button type="button" id="compare-load" class="secondary-button">Load reports…</button>
+                    <input type="file" id="compare-input" multiple accept=".a11y-report.json,.json,application/json,.zip,application/zip" class="visually-hidden" tabindex="-1" aria-hidden="true" />
+                </div>
+                <button type="button" id="compare-clear" class="secondary-button" hidden>Remove all</button>
+            </div>
+
+            <p class="compare-order-note" id="compare-order-note" hidden></p>
+
+            <!-- What this comparison calls itself: the same metadata line a
+                 report carries, corrected the same way. Rendered by
+                 writeComparisonData(); the values travel into the exported file,
+                 the controls that set them do not. -->
+            <div id="compare-doc" class="compare-doc"></div>
+
+            <ul id="compare-reports" class="compare-reports" aria-label="Reports loaded for comparison"></ul>
+
+            <div id="compare-actions" class="compare-actions"></div>
+            <div id="compare-status" class="status" role="status"></div>
+            <div id="run-comparison" class="run-comparison"></div>
+        </div>
+    </section>
+
+    <!-- Queue pane: workflows added with "Add to queue" run here, up to N at a
+         time, and each result is saved on the server as it finishes. -->
+    <section id="pane-queue" role="tabpanel" aria-labelledby="mode-queue" hidden>
+        <div class="queue-panel">
+            <p class="hint">Batches started with “Run batch” run here, one workflow after another or a few at a time.
+                Each result is saved on the server the moment it finishes, in a folder named after the time the queue started.</p>
+
+            <div class="queue-controls">
+                <label for="queue-concurrency">Runs at the same time</label>
+                <select id="queue-concurrency">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+                <button type="button" id="queue-cancel-all" class="secondary-button" aria-disabled="true">Cancel all</button>
+                <!-- Shown only where the browser can notify (run-queue-panel.js). -->
+                <label class="queue-notify" hidden><input type="checkbox" id="queue-notify"> Notify me when a batch finishes</label>
+            </div>
+
+            <div id="queue-status" class="status" role="status"></div>
+            <div id="queue-sessions" class="queue-sessions"></div>
+        </div>
+    </section>
+
+    <section id="results-container" class="results" aria-labelledby="results-header">
+        <div id="report-data"></div>
+        <div class="results-header-row">
+            <h2 id="results-header">Results</h2>
+        </div>
+        <div id="scan-tag-filter" class="scan-tag-filter" role="group" aria-label="Filter scans by tag" hidden></div>
+        <div id="summary" class="summary" aria-live="polite"></div>
+        <div id="results"></div>
+    </section>
+
+    <section id="screenshots-container" class="results">
+        <h2 id="screenshots-header">Screenshots</h2>
+        <div id="screenshots"></div>
+    </section>
+</main>
+
+<dialog id="step-tree-dialog" class="src-dialog" aria-labelledby="step-tree-dialog-title">
+    <div class="src-dialog-header">
+        <h3 id="step-tree-dialog-title" class="src-dialog-title">Step tree</h3>
+        <button type="button" id="step-tree-close-btn" class="src-dialog-close">Close</button>
+    </div>
+    <div class="src-dialog-body">
+        <p class="src-dialog-meta">Select a step to jump to its configuration.</p>
+        <div id="step-tree-container" class="step-tree"></div>
+    </div>
+</dialog>
+
+<script src="./shared/a11y-metric-defs.js"></script>
+<script src="./shared/workflow-payload-deps.js"></script>
+<script src="./shared/workflow-payload-builder.js"></script>
+<script src="./shared/scan-sort.js"></script>
+<script src="./shared/scan-inputs.js"></script>
+<script src="./shared/run-spec.js"></script>
+<script src="./shared/config-upgrade.js"></script>
+<script src="./shared/batch-rows.js"></script>
+<script src="./shared/batch-config.js"></script>
+<script src="./shared/workflow-step-plan.js"></script>
+<script src="./shared/workflow-step-counter.js"></script>
+<script src="./shared/issue-dispersion.js"></script>
+<script src="./shared/issue-dispersion-view.js"></script>
+<script src="./shared/report-scan.js"></script>
+<script src="./shared/report-format.js"></script>
+<script src="./shared/json-schema-check.js"></script>
+<script src="./shared/report-schemas.js"></script>
+<script src="./shared/report-identity.js"></script>
+<script src="./shared/report-diff.js"></script>
+<script src="./shared/report-conformance.js"></script>
+<script src="./shared/run-health.js"></script>
+<script src="./shared/report-multi-diff.js"></script>
+<script src="./shared/plain-language.js"></script>
+<script src="./shared/toast.js"></script>
+<script src="./js/a11y-ui.js" type="module"></script>
+</body>
+</html>

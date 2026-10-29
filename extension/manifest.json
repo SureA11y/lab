@@ -1,0 +1,50 @@
+{
+  "manifest_version": 2,
+  "name": "surea11y manual runner",
+  "version": "0.1.0",
+
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "surea11y-manual-runner@jorge.dev"
+    }
+  },
+
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "<all_urls>"
+  ],
+  "browser_action": {
+    "default_title": "surea11y manual runner",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": [
+      "conformance-targets.js",
+      "fullpage-screenshot.js",
+      "engines/a11y-extension-surea11y-engine.js",
+      "a11y-extension-engine.js",
+      "background.js"
+    ],
+    "persistent": false
+  },
+  "content_scripts": [],
+  "devtools_page": "devtools.html",
+  "commands": {
+    "run-a11y-scan": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+X",
+        "mac": "Command+Shift+X"
+      },
+      "description": "Run accessibility scan in the current inspected page"
+    }
+  }
+}

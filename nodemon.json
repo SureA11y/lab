@@ -1,0 +1,21 @@
+{
+  "watch": [
+    "src/server-side",
+    "src/workflow",
+    "src/shared",
+    "server.js"
+  ],
+  "ext": "js,json",
+  "ignore": [
+    "reports/*",
+    "screenshots/*",
+    "coverage/*",
+    "downloads/*",
+    "tmp/*",
+
+    "node_modules/**"
+  ],
+  "delay": "200",
+  "legacyWatch": true,
+  "verbose": true
+}

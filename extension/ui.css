@@ -1,0 +1,1559 @@
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("fonts/space-grotesk/SpaceGrotesk-Regular.woff2") format("woff2");
+}
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("fonts/space-grotesk/SpaceGrotesk-Medium.woff2") format("woff2");
+}
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("fonts/space-grotesk/SpaceGrotesk-Bold.woff2") format("woff2");
+}
+@font-face {
+    font-family: "IBM Plex Mono";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("fonts/ibm-plex-mono/IBMPlexMono-Regular.woff2") format("woff2");
+}
+@font-face {
+    font-family: "IBM Plex Mono";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("fonts/ibm-plex-mono/IBMPlexMono-Medium.woff2") format("woff2");
+}
+@font-face {
+    font-family: "IBM Plex Mono";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("fonts/ibm-plex-mono/IBMPlexMono-SemiBold.woff2") format("woff2");
+}
+@font-face {
+    font-family: "Public Sans";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("fonts/public-sans/PublicSans-Regular.woff2") format("woff2");
+}
+@font-face {
+    font-family: "Public Sans";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("fonts/public-sans/PublicSans-SemiBold.woff2") format("woff2");
+}
+
+:root{
+    --font-display: "Space Grotesk", sans-serif;
+    --font-sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* Type scale — shared with the app (src/css/a11y-lab-ui.css), so extension
+       and app text sizes can't drift. rem-based off a 16px root. */
+    --fs-xxs: 0.6875rem;  /* 11px */
+    --fs-xs: 0.75rem;     /* 12px */
+    --fs-sm: 0.8125rem;   /* 13px */
+    --fs-md: 0.875rem;    /* 14px */
+    --fs-base: 0.9rem;
+    --fs-lg: 1rem;
+    --fs-xl: 1.1rem;
+    --fs-2xl: 1.5rem;
+
+    /* Radii — flat, hairlined scale. */
+    --radius-xs: 2px;
+    --radius-sm: 3px;
+    --radius-md: 4px;
+    --radius-lg: 6px;
+    --radius-pill: 999px;
+    --radius: var(--radius-lg);
+
+    --stroke-hairline: 1px;
+    --stroke-icon: 2px;
+    --stroke-accent-bar: 4px;
+
+    /* Spacing — 4px base. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+    --target-min: 44px;
+
+    /* Motion — functional only: state changes and disclosure. */
+    --duration-instant: 80ms;
+    --duration-fast: 140ms;
+    --duration-base: 200ms;
+    --ease-standard: cubic-bezier(.2, 0, .13, 1);
+    --ease-exit: cubic-bezier(.4, 0, 1, 1);
+
+    /* Disclosure chevron — a mechanism, not from the icon set. Drawn as a mask
+       so it takes currentColor and re-themes for free. Points right; rotates
+       90° when the disclosure is expanded. */
+    --chevron-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l6 6-6 6' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+    /* ---- Colour: light theme (default) ------------------------------------
+       The design system's primary surface is dark, but the extension follows
+       the app: it defaults to light and switches to dark either explicitly
+       (the header toggle sets [data-theme="dark"]) or, in Auto mode, from the
+       OS via prefers-color-scheme. Dark values live in the two blocks after
+       this rule. Only concrete leaf tokens are redefined there — the aliases
+       below (--panel, --text, --advisory, --focus-outline, …) resolve through
+       var() so they re-theme automatically. Values mirror the app's light /
+       dark palettes (src/css/a11y-lab-ui.css). */
+    color-scheme: light;
+    --brand-rgb: 91, 57, 196;
+
+    /* Layered surfaces — DS elevation scale. Replaces the ad-hoc
+       rgba(255,255,255,.0X) tints the extension used to paint cards, inputs,
+       buttons and table shells with. */
+    --surface-0: #f1f3f0;
+    --surface-1: #f3f5f2;
+    --surface-2: #f5f6f4;
+    --surface-3: #f7f8f6;
+    --surface-4: #f9faf8;
+    --surface-5: #fbfcfb;
+    --surface-hover: color-mix(in srgb, var(--surface-2) 95%, #000);
+    --surface-press: color-mix(in srgb, var(--surface-2) 90%, #000);
+
+    --bg: #f7f8f6;
+    --panel: var(--surface-1);
+    --panel2: var(--surface-0);
+
+    --text-main: #31352f;
+    --text-muted: #4e5651;
+    --text-soft: #646b66;
+    --text: var(--text-main);
+    --muted: var(--text-muted);
+
+    --line: rgba(var(--brand-rgb), .18);
+    --line-strong: rgba(var(--brand-rgb), .28);
+    /* A form field's edge, as in the app: 3:1 against what it sits on (WCAG 1.4.11). */
+    --field-border: rgba(var(--brand-rgb), .64);
+    --border: var(--line);
+
+    /* DS calls this "accent-2" — the secondary, non-result accent
+       (services/editorial/links/data). The primary accent is green (--ok). */
+    --accent-2: #5b39c4;
+    --danger: #b3271a;
+    --danger-soft: #fbe4e1;
+    --ok: #0b6e4c;
+    --ok-soft: #e1f3ea;
+    --ok-contrast: #ffffff;
+    --warn: #7a5a08;
+    --warn-soft: #fbf3dc;
+    --advisory: var(--accent-2);
+    --advisory-soft: #ede6fa;
+    --na: #5f6660;
+    --na-soft: #eef0ed;
+    --info-soft: #f4effb;
+
+    /* Flat — only Dialog/popover-like overlays float. */
+    --shadow: none;
+    --shadow-overlay: 0 12px 32px rgba(4, 21, 14, 0.38);
+    --shadow-popover: 0 4px 14px rgba(4, 21, 14, 0.26);
+    /* DS: focus-ring is always the green/pass accent, never accent-2. */
+    --focus-outline: 2px solid var(--ok);
+    --focus-outline-offset: 2px;
+
+    /* Result glyph tile ink — the knocked-out glyph colour. Light knockout
+       over the bright state fills in both themes. */
+    --glyph-ink-pass: #f7f8f6;
+    --glyph-ink-fail: #f7f8f6;
+    --glyph-ink-unknown: #f7f8f6;
+    --glyph-ink-advisory: #f7f8f6;
+    --glyph-ink-na: #f7f8f6;
+}
+
+/* ---- Colour: dark theme -------------------------------------------------
+   Applied when the reader explicitly picks Dark (:root[data-theme="dark"]) OR,
+   in Auto mode (no data-theme), when the OS prefers dark. Same values in both
+   places — the media query only changes *when* they apply. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --brand-rgb: 196, 166, 255;
+
+    --surface-0: #131715;
+    --surface-1: #171b19;
+    --surface-2: #1a1f1c;
+    --surface-3: #1d2320;
+    --surface-4: #202623;
+    --surface-5: #262c28;
+    --surface-hover: color-mix(in srgb, var(--surface-2) 93%, #fff);
+    --surface-press: color-mix(in srgb, var(--surface-2) 87%, #fff);
+
+    --bg: #101413;
+
+    --text-main: #c7d2cb;
+    --text-muted: #9ba69f;
+    --text-soft: #8b958f;
+
+    --line: #232927;
+    --line-strong: #3a4441;
+    --field-border: rgba(var(--brand-rgb), .52);
+
+    --accent-2: #c4a6ff;
+    --danger: #ff8a7a;
+    --danger-soft: rgba(255,138,122,.14);
+    --ok: #3bc98f;
+    --ok-soft: rgba(59,201,143,.16);
+    --ok-contrast: #04150e;
+    --warn: #e8c15c;
+    --warn-soft: rgba(232,193,92,.16);
+    --advisory-soft: rgba(196,166,255,.14);
+    --na: #9ba69f;
+    --na-soft: rgba(155,166,159,.14);
+    --info-soft: rgba(196,166,255,.10);
+
+    --glyph-ink-pass: #04150e;
+    --glyph-ink-fail: #2a0a05;
+    --glyph-ink-unknown: #241b02;
+    --glyph-ink-advisory: #170a2e;
+    --glyph-ink-na: #0b100f;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        color-scheme: dark;
+        --brand-rgb: 196, 166, 255;
+
+        --surface-0: #131715;
+        --surface-1: #171b19;
+        --surface-2: #1a1f1c;
+        --surface-3: #1d2320;
+        --surface-4: #202623;
+        --surface-5: #262c28;
+        --surface-hover: color-mix(in srgb, var(--surface-2) 93%, #fff);
+        --surface-press: color-mix(in srgb, var(--surface-2) 87%, #fff);
+
+        --bg: #101413;
+
+        --text-main: #c7d2cb;
+        --text-muted: #9ba69f;
+        --text-soft: #8b958f;
+
+        --line: #232927;
+        --line-strong: #3a4441;
+        --field-border: rgba(var(--brand-rgb), .52);
+
+        --accent-2: #c4a6ff;
+        --danger: #ff8a7a;
+        --danger-soft: rgba(255,138,122,.14);
+        --ok: #3bc98f;
+        --ok-soft: rgba(59,201,143,.16);
+        --ok-contrast: #04150e;
+        --warn: #e8c15c;
+        --warn-soft: rgba(232,193,92,.16);
+        --advisory-soft: rgba(196,166,255,.14);
+        --na: #9ba69f;
+        --na-soft: rgba(155,166,159,.14);
+        --info-soft: rgba(196,166,255,.10);
+
+        --glyph-ink-pass: #04150e;
+        --glyph-ink-fail: #2a0a05;
+        --glyph-ink-unknown: #241b02;
+        --glyph-ink-advisory: #170a2e;
+        --glyph-ink-na: #0b100f;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --duration-instant: 1ms;
+        --duration-fast: 1ms;
+        --duration-base: 1ms;
+    }
+}
+
+/* Prevent theme-swap transitions on first paint (removed by theme-toggle.js
+   once it has applied the saved choice). */
+html.no-theme-transition,
+html.no-theme-transition * {
+    transition: none !important;
+}
+
+*{ box-sizing: border-box; }
+
+body.popup,
+html:has(body.popup) {
+    width: 700px;
+    margin: 0;
+}
+
+html {
+    min-height: 100%;
+    background: var(--bg);
+}
+
+body {
+    margin: 0;
+    background: transparent;
+    font: var(--fs-md) var(--font-sans);
+    color: var(--text);
+}
+
+a {
+    color: var(--accent-2);
+}
+
+button {
+    text-align: center;
+}
+
+.ext-brand {
+    /* Logo.jsx derives the mark and wordmark from one shared size — the
+       wordmark text sits at size * 0.95, near-identical scale to the tile. */
+    --logo-size: 20px;
+
+    display: flex;
+    align-items: center;
+    gap: calc(var(--logo-size) * 0.42);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--line);
+}
+.ext-brand img { display: block; width: var(--logo-size); height: var(--logo-size); }
+.ext-brand-word {
+    font-family: var(--font-display);
+    font-size: calc(var(--logo-size) * 0.95);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--text-main);
+}
+.ext-brand-accent { color: var(--ok); font-weight: 700; }
+/* Inline product lockup — a feature of the one tool, not sold separately:
+   same face and size, weight 400, muted, gap = size * 0.3. */
+.ext-brand-product {
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: calc(var(--logo-size) * 0.3);
+}
+
+/* Colour-theme toggle — a single icon button in the header that cycles
+   Auto → Light → Dark, the same control the app and the report use. Pushed to
+   the trailing edge of the flex header. */
+.theme-switch {
+    margin-left: auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 36px;
+    height: 36px;
+    padding: 0;
+
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-strong);
+
+    background: var(--surface-3);
+    color: var(--text-main);
+
+    cursor: pointer;
+    box-shadow: none;
+    transition: background-color var(--duration-fast) var(--ease-standard),
+                border-color var(--duration-fast) var(--ease-standard);
+}
+
+.theme-switch:hover:not(:disabled) {
+    background: var(--surface-4);
+}
+
+.theme-switch:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+.theme-switch__icon {
+    display: none;
+    width: 18px;
+    height: 18px;
+}
+
+/* Show the icon matching the active choice; before the script runs (no
+   data-choice yet) default to the Auto icon. */
+.theme-switch:not([data-choice]) .theme-switch__icon--auto,
+.theme-switch[data-choice="auto"] .theme-switch__icon--auto,
+.theme-switch[data-choice="light"] .theme-switch__icon--light,
+.theme-switch[data-choice="dark"] .theme-switch__icon--dark {
+    display: block;
+}
+
+.a11y-ui{ padding: var(--space-3); }
+
+.topbar{
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.card{
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+}
+
+.meta{
+    font-size: var(--fs-xs);
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+
+.mono{
+    font-family: var(--font-mono);
+}
+
+.grid2{
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-2);
+    align-items: end;
+}
+
+.field{ display: flex; flex-direction: column; gap: 6px; }
+.field-checkbox{ flex-direction: row; align-items: center; gap: 8px; }
+/* The best practices a scan included, below its requirements. */
+.best-practices{ margin-top: 16px; padding-top: 8px; border-top: 1px solid var(--border, currentColor); }
+.best-practices-title{ margin: 0 0 4px; font-size: var(--fs-base, 1em); }
+.best-practices-note{ margin: 0 0 8px; font-size: 0.9em; }
+.field-checkbox input{ margin: 0; accent-color: var(--accent); }
+.field-checkbox input:focus-visible{ outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+.label{ font-size: var(--fs-xs); color: var(--muted); }
+
+input, textarea, select{
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    outline: none;
+}
+
+textarea{ min-height: 72px; resize: vertical; }
+
+/* The browser's own placeholder grey fell below 4.5:1 on these fields. */
+::placeholder{ color: var(--text-soft); opacity: 1; }
+
+input:focus, textarea:focus, select:focus{
+    border-color: color-mix(in srgb, var(--accent-2) 55%, transparent);
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+.field-compact{ min-width: 92px; }
+.select-compact{ padding-left: 10px; padding-right: 10px; }
+
+.advanced{
+    margin-top: var(--space-3);
+    border-top: 1px solid var(--line);
+    padding-top: var(--space-2);
+}
+
+/* DS Disclosure — inline variant. A button (not <details>/<summary>) whose
+   whole row is the control: a leading chevron, then the label. No border, no
+   rest background — cheap to skim when collapsed. Matches the app's
+   .legend-toggle (src/css/a11y-lab-ui.css). */
+.legend-toggle{
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 36px;
+    padding: 0 var(--space-2) 0 var(--space-1);
+    margin-left: calc(var(--space-1) * -1);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-instant) var(--ease-standard),
+                color var(--duration-instant) var(--ease-standard);
+}
+
+/* Leading chevron: points right, rotates 90° down when expanded. */
+.legend-toggle::before{
+    content: "";
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    background: currentColor;
+    -webkit-mask: var(--chevron-right) center / 14px 14px no-repeat;
+    mask: var(--chevron-right) center / 14px 14px no-repeat;
+    transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.legend-toggle[aria-expanded="true"]::before{
+    transform: rotate(90deg);
+}
+
+.legend-toggle:hover:not(:disabled, [aria-disabled=true]){
+    background: var(--surface-hover);
+    color: var(--text-main);
+}
+
+.legend-toggle:active:not(:disabled, [aria-disabled=true]){
+    background: var(--surface-press);
+    color: var(--text-main);
+}
+
+.legend-toggle:focus-visible{
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+/* Inherit the toggle's colour so the label follows the rest→hover shift. */
+.legend-toggle-label{ color: inherit; }
+
+/* Disclosure content: aligns under the label, with breathing room below the
+   toggle row; removed from layout entirely when collapsed. */
+.advanced-content{ padding-top: var(--space-2); }
+.advanced-content[hidden]{ display: none !important; }
+
+.row-input-button {
+    display: grid;
+    /* minmax: a text field's own minimum width must not push its buttons out. */
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+}
+
+/* In a narrow panel a field takes the whole line, and its buttons wrap on the
+   line under it: side by side, the picker and reset buttons ran past the
+   panel's edge and the custom CSS box was squeezed to a sliver. */
+@media (max-width: 600px) {
+    .row-input-button { grid-template-columns: minmax(0, 1fr); }
+    .row-input-button > div { display: flex; flex-wrap: wrap; gap: 10px; }
+}
+
+.footer{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.status{
+    color: var(--muted);
+    flex: 1;
+}
+
+.btn{
+    /* DS Button: sm (36px) default height, IBM Plex Mono 600 UI voice,
+       radius-sm, colour-only interaction. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    border: 1px solid var(--line);
+    background: var(--surface-3);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-4);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+
+.btn:hover{ border-color: var(--line-strong); background: var(--surface-4); }
+/* DS: press is colour only — deepen the fill, never a translate. */
+.btn:active{ background: var(--surface-5); }
+.btn:focus-visible{ outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+
+.btn[disabled]{ opacity: .42; cursor: not-allowed; }
+
+/* The one primary action per view — a true solid fill, not a tint. */
+.btn-primary{
+    border-color: var(--ok);
+    background: var(--ok);
+    color: var(--ok-contrast);
+    font-weight: 600;
+}
+
+.btn-primary:hover{
+    border-color: color-mix(in srgb, var(--ok) 88%, black);
+    background: color-mix(in srgb, var(--ok) 88%, black);
+}
+
+/* Destructive action (e.g. Clear session) — ghost by default so it never
+   competes with the primary, tinting red only on hover/focus. */
+.btn-danger{
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+}
+
+.btn-danger:hover{
+    color: var(--danger);
+    border-color: var(--danger);
+    background: var(--danger-soft);
+}
+
+/* Sit the destructive control at the trailing edge of the toolbar, away from
+   the primary flow — the same trailing-edge treatment the header gives the
+   theme toggle. */
+.topbar .btn-danger{ margin-left: auto; }
+
+.out{
+    margin-top: var(--space-3);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 350px;
+    overflow: auto;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    padding: 10px;
+    border-radius: var(--radius-md);
+}
+
+.muted { opacity: .7; font-size: var(--fs-xs); }
+
+/* Spacing-scale-aligned notes injected between rendered blocks (main.js) —
+   same 4px scale as everything else, instead of one-off inline px values. */
+.muted-block { margin: var(--space-3) 0 var(--space-2); }
+.muted-footnote { margin-top: var(--space-2); }
+.result-sep { margin: var(--space-3) 0; opacity: .25; }
+
+.resultsRow {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+}
+
+.download {
+    text-align: right;
+}
+
+.shotWrap {
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.shotBox {
+    width: 200px;
+    max-width: 200px;
+
+    /* JS sets --shot-ratio to "W/H / 1" */
+    aspect-ratio: var(--shot-ratio, 16 / 9);
+
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: var(--surface-3);
+    transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.shotImg {
+    width: 100%;
+    height: 100%;
+    display: block;
+
+    object-fit: cover;
+    object-position: top left;
+}
+
+.shotMeta {
+    margin-top: var(--space-2);
+    font-size: var(--fs-xs);
+    opacity: .8;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.out {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* In a narrow panel the page's picture goes above the findings, which get
+   the panel's width, and they run down the panel rather than scroll in a
+   box of their own. */
+@media (max-width: 600px) {
+    .resultsRow { flex-direction: column; }
+    .out { max-height: none; }
+}
+
+/* Render HTML inside the former <pre id="out"> */
+.out-as-html {
+    white-space: normal;
+    font-family: inherit;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+/* Table shell */
+.table-container {
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    background: var(--surface-1);
+}
+
+.issues-table caption {
+    caption-side: top;
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    background: var(--panel2);
+    border-bottom: 1px solid var(--line);
+
+    font-family: var(--font-mono);
+    font-size: var(--fs-xxs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* Every row carries its state as a 4px left bar, in addition to the
+   status cell's glyph + word — the table must survive greyscale. An inset
+   shadow, as the wider bars, so the sticky header covers it. */
+.issues-table tr.fail td:first-child {
+    box-shadow: inset var(--stroke-accent-bar) 0 0 var(--danger);
+    padding-left: calc(var(--space-3) + var(--stroke-accent-bar));
+}
+
+.issues-table tr.cantTell td:first-child {
+    box-shadow: inset var(--stroke-accent-bar) 0 0 var(--warn);
+    padding-left: calc(var(--space-3) + var(--stroke-accent-bar));
+}
+
+/* Keep your existing min-width so headers don't wrap too much */
+.issues-table {
+    border-collapse: collapse;
+}
+
+.issues-table th,
+.issues-table td {
+    text-align: left;
+    vertical-align: top;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--line);
+}
+
+/* Sticky header aligned with your “card” look */
+.issues-table th {
+    position: sticky;
+    top: 0;
+    /* One step above the table shell (--surface-1), matching the app and the
+       dialog header — a raised bar, not the near-white top of the ramp. */
+    background: var(--surface-2);
+    z-index: 1;
+    font-size: var(--fs-xs);
+    color: var(--muted);
+    letter-spacing: .2px;
+}
+
+/* Subtle row hover, optional but helps scanning */
+.issues-table tbody tr:hover td {
+    background: var(--surface-hover);
+}
+
+.issues-table .issue-status {
+    text-align: center;
+    white-space: nowrap;
+    text-wrap: nowrap;
+}
+
+/* The status cell shows a result-glyph tile, which carries its own fill
+   and ink (see .result-glyph* below) — no per-row text colour needed. */
+
+/* =========================================================
+   RESULT GLYPH TILES — SureA11y "five outcomes"
+   A filled tile with the glyph knocked out, never a bare
+   character. radius = size × 0.21875, glyph = size × 0.68,
+   IBM Plex Mono 700. Fill is the state's tone, glyph is its ink.
+   ========================================================= */
+.result-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 16px;
+    block-size: 16px;
+    flex: none;
+    border-radius: var(--radius-md);   /* 4px ≈ 16 × 0.21875 */
+    font-family: var(--font-mono);
+    font-size: 11px;                    /* 16 × 0.68 */
+    font-weight: 700;
+    line-height: 1;
+    /* Optically centre on the adjacent text across all font sizes. */
+    vertical-align: middle;
+}
+.result-glyph--sm {
+    inline-size: 14px;
+    block-size: 14px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+}
+.result-glyph--pass     { background: var(--ok);       color: var(--glyph-ink-pass); }
+.result-glyph--fail     { background: var(--danger);   color: var(--glyph-ink-fail); }
+.result-glyph--unknown  { background: var(--warn);     color: var(--glyph-ink-unknown); }
+.result-glyph--advisory { background: var(--advisory); color: var(--glyph-ink-advisory); }
+.result-glyph--na       { background: var(--na);       color: var(--glyph-ink-na); }
+
+/* Per-scan results summary line (fail / can't tell / pass), shown above each
+   issues table to mirror the app's `.stream-counts` header. */
+.stream-counts {
+    font-size: var(--fs-xs);
+    margin: var(--space-2) 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+}
+.stream-counts .result-glyph {
+    vertical-align: middle;
+}
+.stream-fail { color: var(--danger); }
+.stream-cantTell { color: var(--warn); }
+.stream-pass { color: var(--ok); }
+
+.issues-table .issue-status dialog {
+    text-align: left;
+    white-space: initial;
+    text-wrap: initial;
+}
+
+.impact-critical { color: var(--danger); font-weight: 700; }
+.impact-serious { color: var(--warn); font-weight: 600; }
+.impact-moderate { color: var(--warn); font-weight: 500; }
+.impact-minor { color: var(--text-muted); font-weight: 400; }
+
+/* Screen-reader-only text: keeps content in the accessibility tree without
+   showing it visually (e.g. status text alongside decorative emoji icons). */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Always outlined — filled pills are reserved for result badges */
+.tag-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: transparent;
+    margin: 2px 6px 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    opacity: .95;
+}
+
+.instances-meta {
+    /* Full strength: at .85 opacity the severity colours fell below 4.5:1 on
+       a failing row's tint (3.89:1) and on the review rows (4.25:1). */
+    font-size: var(--fs-xs);
+}
+
+.engine-name {
+    white-space: nowrap;
+    color: var(--muted);
+}
+
+/* Make any action buttons inside the table inherit your button look */
+.issues-table button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    border: 1px solid var(--line);
+    background: var(--surface-3);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: var(--space-1) var(--space-3);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard),
+                border-color var(--duration-fast) var(--ease-standard),
+                color var(--duration-fast) var(--ease-standard);
+}
+.issues-table button:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-4);
+}
+/* DS: press is colour only — deepen the fill. */
+.issues-table button:active {
+    background: var(--surface-5);
+}
+.issues-table button:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+/* Dialog action buttons — DS Button treatment (were unstyled browser defaults).
+   "Close" is a standard button; the inline "details" trigger is a compact
+   variant that sits inside table rows. */
+.src-dialog-trigger,
+.src-dialog-close {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+
+.src-dialog-trigger,
+.src-dialog-close { display: inline-flex; align-items: center; justify-content: center; }
+.src-dialog-close { min-height: 36px; padding: var(--space-2) var(--space-3); }
+.src-dialog-trigger { min-height: 28px; padding: var(--space-1) var(--space-3); font-size: var(--fs-xs); }
+
+.src-dialog-trigger:hover,
+.src-dialog-close:hover { border-color: var(--line-strong); background: var(--surface-4); }
+/* DS: press is colour only — deepen the fill, never a translate. */
+.src-dialog-trigger:active,
+.src-dialog-close:active { background: var(--surface-5); }
+.src-dialog-trigger:focus-visible,
+.src-dialog-close:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+.src-dialog-trigger[disabled],
+.src-dialog-close[disabled] { opacity: .42; cursor: not-allowed; }
+
+/* Dialogs */
+.src-dialog {
+    width: min(900px, 92vw);
+    max-height: 80vh;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    background: var(--surface-1);
+    box-shadow: var(--shadow-overlay);
+    color: var(--text);
+}
+
+.src-dialog[open] {
+    display: flex;
+}
+
+/* Brand-ink scrim (same base as --shadow-overlay), not raw black. */
+.src-dialog::backdrop {
+    background: rgba(4, 21, 14, 0.65);
+}
+
+.src-dialog-header,
+.src-dialog-footer {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-2);
+    flex: 0 0 auto;
+}
+
+.src-dialog-header {
+    border-bottom: 1px solid var(--line);
+}
+
+.src-dialog-footer {
+    border-top: 1px solid var(--line);
+}
+
+.src-dialog-body {
+    padding: var(--space-3) var(--space-4);
+    overflow: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+
+/* Content styling inside dialog */
+.example-node {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+}
+.example-node:last-child { border-bottom: 0; }
+
+.example-node-header h2 {
+    font-size: var(--fs-md);
+    margin: 0 0 6px;
+}
+
+.node-selector {
+    display: block;
+    opacity: .9;
+    font-size: var(--fs-xs);
+    color: var(--muted);
+}
+
+/* Selector and its copy action share a row; the selector takes the slack and
+   wraps, the button keeps its size. */
+.node-selector-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+
+.node-selector-row .node-selector {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.node-selector-actions {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: var(--space-1);
+}
+
+.copy-selector-btn,
+.inspect-selector-btn {
+    min-height: 24px;
+    padding: 2px var(--space-2);
+
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+
+    color: var(--text);
+    background: var(--surface-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+
+    transition: background-color var(--duration-fast) var(--ease-standard),
+                border-color var(--duration-fast) var(--ease-standard),
+                color var(--duration-fast) var(--ease-standard);
+}
+
+.copy-selector-btn:hover,
+.inspect-selector-btn:hover { border-color: var(--line-strong); background: var(--surface-4); }
+.copy-selector-btn:active,
+.inspect-selector-btn:active { background: var(--surface-5); }
+.copy-selector-btn:focus-visible,
+.inspect-selector-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+/* Colour is paired with the label change in flashButtonResult, never alone. */
+.copy-selector-btn.is-ok,
+.inspect-selector-btn.is-ok {
+    color: var(--ok);
+    border-color: currentColor;
+}
+
+.copy-selector-btn.is-failed,
+.inspect-selector-btn.is-failed {
+    color: var(--danger);
+    border-color: currentColor;
+}
+
+.node-urls {
+    font-weight: normal;
+    opacity: .85;
+    font-size: var(--fs-xs);
+    color: var(--muted);
+}
+
+.example-node-code code {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    opacity: .95;
+    padding: 8px 10px;
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    overflow: auto;
+}
+
+.failure-details summary {
+    cursor: pointer;
+    color: var(--muted);
+}
+.failure-details ul {
+    margin: 8px 0 0 18px;
+    color: var(--text);
+}
+
+.scanOut { flex: 1; min-width: 0; }
+.scanOut { margin-top: 8px; }
+
+/* Screenshot preview button */
+.shotButton {
+    display: block;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+}
+
+.shotButton:hover .shotBox {
+    border-color: color-mix(in srgb, var(--accent-2) 55%, transparent);
+}
+
+.shotButton:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+.shotButton .shotImg {
+    pointer-events: none;
+}
+
+/* Screenshot dialog */
+.screenshot-dialog {
+    width: min(1100px, 94vw);
+}
+
+.screenshot-dialog-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-height: 75vh;
+}
+
+.screenshot-dialog-image {
+    display: block;
+
+    width: auto;
+    max-width: 100%;
+
+    height: auto;
+
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+}
+/* ==========================================================================
+   FORCED COLOURS (Windows High Contrast and similar)
+   ========================================================================== */
+@media (forced-colors: active) {
+    /* The OS drops box-shadows, so a results row's state bar is a border here. */
+    .table-container tr.fail > td:first-child,
+    .issues-table tbody tr.fail > td:first-child,
+    .table-container tr.cantTell > td:first-child,
+    .issues-table tbody tr.cantTell.lean-fail > td:first-child {
+        border-left: 4px solid CanvasText;
+    }
+
+    /* Drawn by painting background-color through a mask, so the forced surface
+       colour hides it against the surface it sits on. */
+    .legend-toggle::before {
+        background-color: ButtonText;
+    }
+
+    /* opacity is not forced, so a disabled control would keep its colour and
+       only dim. GrayText is the palette's own answer. */
+    .btn[disabled],
+    .src-dialog-trigger[disabled],
+    .src-dialog-close[disabled] {
+        opacity: 1;
+        color: GrayText;
+        border-color: GrayText;
+    }
+}
+
+/* ============================================================================
+   Where the failures are — issue dispersion (docs/design/issue-dispersion-design.md).
+   Emitted by src/shared/issue-dispersion-view.js in the report view, the
+   exported report and both comparison views. The two data colours (widespread
+   rules, other rules) were validated against the light and dark surfaces for
+   lightness, chroma, colour-blind separation and 3:1 contrast; they are not the
+   pass/fail status colours. Kept identical in report.css.
+   ============================================================================ */
+.dsp, .dsp-tip {
+    --dsp-wide: #5b39c4;
+    --dsp-other: #c25a0c;
+    --dsp-clean: #b9bfba;
+    --dsp-grid: rgba(49, 53, 47, .10);
+    --dsp-axis: rgba(49, 53, 47, .35);
+    --dsp-cursor: #31352f;
+}
+:root[data-theme="dark"] .dsp, :root[data-theme="dark"] .dsp-tip {
+    --dsp-wide: #8f6ee6;
+    --dsp-other: #cc7430;
+    --dsp-clean: #4a534e;
+    --dsp-grid: rgba(199, 210, 203, .09);
+    --dsp-axis: rgba(199, 210, 203, .30);
+    --dsp-cursor: #f7f8f6;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .dsp, :root:not([data-theme="light"]) .dsp-tip {
+        --dsp-wide: #8f6ee6;
+        --dsp-other: #cc7430;
+        --dsp-clean: #4a534e;
+        --dsp-grid: rgba(199, 210, 203, .09);
+        --dsp-axis: rgba(199, 210, 203, .30);
+        --dsp-cursor: #f7f8f6;
+    }
+}
+.dsp p { margin: 0 0 8px; }
+.dsp code { font-family: var(--font-mono, ui-monospace, monospace); font-size: .9em; }
+.dsp-h { font-size: 1rem; margin: 0 0 4px; color: var(--text-main); }
+.dsp-help { font-size: .85rem; color: var(--text-muted); margin: 0 0 8px; }
+.dsp-note { font-size: .85rem; color: var(--text-soft); }
+.dsp-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dsp-block { margin-top: 18px; }
+
+.dsp-verdict { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; margin-top: 10px; }
+.dsp-verdict-badge { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.dsp-verdict-meta { font-size: .8rem; color: var(--text-soft); }
+@media (max-width: 640px) { .dsp-verdict { grid-template-columns: 1fr; } }
+
+.dsp-badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px;
+    font-weight: 600; font-size: .9rem; white-space: nowrap; border: 1px solid transparent;
+}
+.dsp-badge-icon { font-family: var(--font-mono, ui-monospace, monospace); }
+.dsp-badge--widespread { background: var(--accent-soft); color: var(--accent); border-color: var(--border-strong); }
+.dsp-badge--concentrated { background: var(--warn-soft); color: var(--warn); }
+.dsp-badge--scattered { background: var(--danger-soft); color: var(--danger); }
+.dsp-badge--mixed { background: var(--na-soft); color: var(--text-main); border-color: var(--border-strong); }
+.dsp-badge--clean { background: var(--ok-soft); color: var(--ok); }
+.dsp-badge--few { background: var(--na-soft); color: var(--text-muted); }
+
+.dsp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 14px; }
+.dsp-kpi { border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 12px; background: var(--bg-elevated); }
+.dsp-kpi-v { font-size: 1.45rem; font-weight: 600; line-height: 1.15; color: var(--text-main); font-variant-numeric: tabular-nums; }
+.dsp-kpi-l { font-size: .82rem; color: var(--text-muted); }
+.dsp-kpi-s { font-size: .76rem; color: var(--text-soft); }
+
+.dsp-conc { margin-top: 14px; }
+.dsp-conc-head { font-weight: 600; color: var(--text-main); }
+.dsp-conc-row { display: grid; grid-template-columns: 130px 1fr 52px; gap: 10px; align-items: center; margin-bottom: 6px; font-size: .85rem; color: var(--text-muted); }
+.dsp-conc-bar { display: block; height: 12px; background: var(--na-soft); border-radius: 3px; overflow: hidden; }
+.dsp-conc-bar i { display: block; height: 100%; border-radius: 3px 0 0 3px; }
+.dsp-conc-bar--scans i { background: var(--dsp-other); }
+.dsp-conc-bar--elements i { background: var(--dsp-wide); }
+
+.dsp-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .8rem; color: var(--text-muted); margin: 4px 0 8px; }
+.dsp-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.dsp-sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
+.dsp-sw--wide { background: var(--dsp-wide); }
+.dsp-sw--other { background: var(--dsp-other); }
+.dsp-sw--clean { background: var(--dsp-clean); height: 3px; }
+
+.dsp-strip-fig { margin: 0; min-width: 0; }
+.dsp-strip-marks { position: relative; height: 24px; }
+.dsp-strip-fig--compact .dsp-strip-marks { height: 20px; }
+.dsp-hot { position: absolute; bottom: 2px; min-width: 6px; height: 8px; border: 1.5px solid var(--text-muted); border-bottom: 0; border-radius: 2px 2px 0 0; }
+.dsp-hot span { position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: .72rem; color: var(--text-main); }
+.dsp-hot--start span { left: 0; transform: none; }
+.dsp-hot--end span { left: auto; right: 0; transform: none; }
+.dsp-strip { position: relative; border-bottom: 1px solid var(--dsp-axis); cursor: crosshair; }
+.dsp-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dsp-strip svg { display: block; width: 100%; }
+.dsp-s-wide { fill: var(--dsp-wide); }
+.dsp-s-other { fill: var(--dsp-other); }
+.dsp-s-clean { fill: var(--dsp-clean); }
+.dsp-s-cursor { fill: none; stroke: var(--dsp-cursor); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.dsp-strip-axis { position: relative; height: 18px; font-size: .72rem; color: var(--text-soft); }
+.dsp-strip-axis span { position: absolute; top: 2px; padding-left: 3px; border-left: 1px solid var(--dsp-axis); }
+.dsp-strip-axis .dsp-axis-end { left: auto; right: 0; border-left: 0; border-right: 1px solid var(--dsp-axis); padding: 0 3px 0 0; }
+.dsp-strip-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 12px; align-items: end; margin-bottom: 6px; }
+.dsp-strip-who { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding-bottom: 20px; font-size: .82rem; color: var(--text-muted); min-width: 0; }
+.dsp-strip-who b { color: var(--text-main); overflow-wrap: anywhere; }
+@media (max-width: 640px) { .dsp-strip-row { grid-template-columns: 1fr; } .dsp-strip-who { padding-bottom: 0; flex-direction: row; flex-wrap: wrap; align-items: center; } }
+
+/* Strip controls: the column height switch and the rule filter above the strips */
+.dsp-tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 6px 0 8px; }
+.dsp-seg { display: inline-flex; align-items: center; border: 0; padding: 0; margin: 0; min-width: 0; }
+.dsp-seg legend { float: left; font-size: .8rem; color: var(--text-muted); margin-right: 8px; padding: 0; }
+.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+.dsp-seg label + label { border-left-width: 0; }
+.dsp-seg label:has(input:checked) + label { border-left-color: var(--accent); }
+.dsp-seg label:hover, .dsp-filter-btn:hover { background: var(--na-soft); }
+.dsp-seg label:first-of-type { border-radius: 4px 0 0 4px; }
+.dsp-seg label:last-of-type { border-radius: 0 4px 4px 0; }
+.dsp-seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.dsp-seg label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--text-main); font-weight: 700; }
+.dsp-seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 1; }
+.dsp-filter { position: relative; }
+.dsp-filter-btn { min-height: 0; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); font-weight: 400; line-height: 1.4; border: 1px solid var(--border-strong); border-radius: 4px; background: transparent; color: var(--text-main); cursor: pointer; }
+.dsp-filter-btn[aria-expanded="true"] { border-color: var(--accent); }
+.dsp-chip:hover { border-color: var(--accent); }
+.dsp-filter-caret { font-size: .8em; line-height: 1; }
+.dsp-filter-n { line-height: 1.5; font-family: var(--font-mono, ui-monospace, monospace); font-size: .76rem; padding: 0 7px; border-radius: 999px; background: var(--accent); color: var(--bg-elevated); }
+.dsp-filter-n[hidden] { display: none; }
+.dsp-filter-panel { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: min(420px, calc(100vw - 32px)); padding: 10px 12px 12px; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 8px 28px rgba(4, 21, 14, .18); }
+.dsp-filter-panel[hidden] { display: none; }
+.dsp-filter-find { box-sizing: border-box; width: 100%; font: inherit; font-size: .88rem; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg); color: var(--text-main); }
+.dsp-filter-list { max-height: 300px; overflow-y: auto; margin-top: 8px; }
+.dsp-filter-list fieldset { border: 0; margin: 0 0 6px; padding: 0; min-width: 0; }
+.dsp-filter-list fieldset[hidden] { display: none; }
+.dsp-filter-list legend { padding: 4px 0; font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-soft); }
+.dsp-opt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 3px 4px; border-radius: 4px; font-size: .86rem; cursor: pointer; }
+.dsp-opt[hidden] { display: none; }
+.dsp-opt:hover { background: var(--na-soft); }
+.dsp-opt code { overflow-wrap: anywhere; color: var(--text-main); }
+.dsp-opt-meta { font-size: .76rem; color: var(--text-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dsp-filter-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: .8rem; color: var(--text-soft); }
+.dsp-link { min-height: 0; font: inherit; font-size: .82rem; padding: 2px 4px; border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.dsp-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 6px; }
+.dsp-chips[hidden] { display: none; }
+.dsp-chip { min-height: 0; font-family: var(--font-mono, ui-monospace, monospace); font-size: .78rem; font-weight: 400; line-height: 1.4; display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px 2px 9px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--accent-soft); color: var(--text-main); cursor: pointer; }
+.dsp-chip span { font-size: .9rem; line-height: 1; color: var(--text-muted); }
+.dsp-strips-status { font-size: .82rem; color: var(--text-muted); margin: 0 0 4px; }
+/* The hotspots are found over every rule, so they say nothing about a few. */
+.dsp-strips--filtered .dsp-strip-marks { visibility: hidden; }
+@media (forced-colors: active) {
+    .dsp-seg label:has(input:checked) { border: 2px solid Highlight; }
+}
+
+.dsp-map svg, .dsp-line svg { display: block; width: 100%; height: auto; }
+.dsp-map { max-width: 760px; }
+.dsp-line { max-width: 440px; }
+.dsp-grid { stroke: var(--dsp-grid); stroke-width: 1; }
+.dsp-axis { stroke: var(--dsp-axis); stroke-width: 1; }
+.dsp-thr { stroke: var(--dsp-axis); stroke-width: 1; stroke-dasharray: 4 4; }
+.dsp-map text, .dsp-line text { fill: var(--text-soft); font-size: 11px; }
+.dsp-map .dsp-q { fill: var(--text-muted); font-size: 12px; font-weight: 600; }
+.dsp-map .dsp-qs { font-size: 10.5px; }
+.dsp-map .dsp-lbl { fill: var(--text-main); font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; }
+.dsp-map .dsp-ttl { fill: var(--text-muted); font-size: 11.5px; }
+.dsp { --dsp-halo: var(--surface-base, var(--bg-elevated)); }
+.dsp-map .dsp-lbl, .dsp-map .dsp-q, .dsp-map .dsp-qs { paint-order: stroke; stroke: var(--dsp-halo); stroke-width: 3px; stroke-linejoin: round; }
+.dsp-leader { stroke: var(--dsp-axis); stroke-width: 1; }
+.dsp-dot { stroke: var(--bg-elevated); stroke-width: 2; cursor: default; }
+.dsp-dot--wide { fill: var(--dsp-wide); }
+.dsp-dot--other { fill: var(--dsp-other); }
+.dsp-dot--new { stroke: var(--text-main); stroke-width: 1.5; stroke-dasharray: 2 2; }
+.dsp-ghost { fill: none; stroke: var(--text-soft); stroke-width: 1.5; }
+.dsp-gone { stroke: var(--text-soft); stroke-width: 2; }
+.dsp-hit { fill: transparent; }
+.dsp-arrow { fill: none; stroke-width: 2; }
+.dsp-arrow--contained, .dsp-arrowhead--contained { stroke: var(--ok); fill: var(--ok); }
+.dsp-arrow--contained { fill: none; }
+.dsp-arrow--spread { stroke: var(--danger); }
+.dsp-arrowhead--spread { fill: var(--danger); }
+.dsp-arrow--steady { stroke: var(--text-soft); }
+.dsp-arrowhead--steady { fill: var(--text-soft); }
+.dsp-arrowhead { stroke: none; }
+
+.dsp-line .dsp-ln { fill: none; stroke: var(--dsp-wide); stroke-width: 2; }
+.dsp-line .dsp-pt { fill: var(--dsp-wide); stroke: var(--bg-elevated); stroke-width: 2; }
+/* The halo keeps the line from crossing the label's letters. */
+.dsp-line .dsp-val { fill: var(--text-main); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--bg-elevated); stroke-width: 3px; stroke-linejoin: round; }
+.dsp-spark { vertical-align: middle; }
+.dsp-spark polyline { fill: none; stroke: var(--dsp-wide); stroke-width: 1.5; }
+.dsp-spark circle { fill: var(--dsp-wide); }
+
+.dsp-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 14px; }
+.dsp-cols > .dsp-block { margin-top: 0; }
+.dsp-shift { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.dsp-shift-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-soft); }
+.dsp-shift-arrow { color: var(--text-soft); }
+.dsp-series-badge { display: inline-flex; align-items: center; gap: 4px; }
+.dsp-series-n {
+    display: inline-grid; place-items: center; min-width: 1.4em; height: 1.4em; border-radius: 999px;
+    font-size: .72rem; font-weight: 600; background: var(--na-soft); color: var(--text-main); margin-right: 4px;
+}
+.dsp-series-key { list-style: none; padding: 0; margin: 0 0 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; color: var(--text-muted); }
+
+.dsp-change { font-size: .82rem; white-space: nowrap; }
+.dsp-change--contained, .dsp-change--resolved { color: var(--ok); }
+.dsp-change--spread, .dsp-change--new { color: var(--danger); }
+.dsp-change--steady { color: var(--text-soft); }
+
+.dsp-table { margin-top: 8px; }
+.dsp-table > summary { cursor: pointer; font-size: .85rem; color: var(--accent); }
+.dsp-table-wrap { overflow-x: auto; margin-top: 6px; }
+.dsp-table-wrap--scroll { max-height: 360px; overflow-y: auto; }
+.dsp table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+.dsp th, .dsp td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+.dsp th { font-weight: 600; color: var(--text-muted); }
+.dsp th.dsp-num, .dsp td.dsp-num { text-align: right; }
+.dsp caption { text-align: left; font-size: .8rem; color: var(--text-soft); padding-bottom: 6px; }
+
+.dsp-tip {
+    position: fixed; z-index: 1000; pointer-events: none; max-width: 300px; padding: 8px 10px;
+    background: var(--bg-elevated); color: var(--text-main); border: 1px solid var(--border-strong);
+    border-radius: 4px; box-shadow: 0 4px 14px rgba(4, 21, 14, .26); font-size: .8rem; line-height: 1.4;
+}
+.dsp-tip[hidden] { display: none; }
+.dsp-tip-meta { display: block; color: var(--text-soft); font-size: .75rem; margin-top: 2px; }
+
+@media (forced-colors: active) {
+    .dsp-s-wide, .dsp-dot--wide { fill: CanvasText; }
+    .dsp-s-other, .dsp-dot--other { fill: Highlight; }
+    .dsp-sw--wide, .dsp-conc-bar--elements i { background: CanvasText; forced-color-adjust: none; }
+    .dsp-sw--other, .dsp-conc-bar--scans i { background: Highlight; forced-color-adjust: none; }
+}
+
+/* The section is shared with the lab (src/shared/issue-dispersion-view.js) and
+   written against the lab's token names; these map them onto the panel's own
+   (scoped under body so they sit apart from the rules shared with the lab). */
+body .dsp, body .dsp-tip, body .a11y-margins, body .scan-notices, body .scan-notices-after, body .node-details-list {
+    --accent: var(--advisory);
+    --accent-soft: var(--advisory-soft);
+    --bg-elevated: var(--panel);
+    --surface-base: var(--panel);
+    --border-subtle: var(--line);
+    --border-strong: var(--line-strong);
+}
+.dsp.a11y-details { margin-top: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
+.dsp.a11y-details > summary { cursor: pointer; font-weight: 600; color: var(--text-main); }
+.a11y-margins.a11y-details { margin-top: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
+.a11y-margins.a11y-details > summary { cursor: pointer; font-weight: 600; color: var(--text-main); }
+.scan-notices-after.a11y-details { margin-top: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
+.scan-notices-after.a11y-details > summary { cursor: pointer; font-weight: 600; color: var(--text-main); }
+.scan-notices-after ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+.scan-notices-after li + li { margin-top: .3rem; }
+
+/* Notes on how a scan ran: they can explain a scan that looks clean. */
+.scan-notices {
+    margin: .4rem 0;
+    padding: .4rem .7rem;
+    border-left: 4px solid var(--warn);
+    background: var(--warn-soft);
+    color: var(--text-main);
+}
+.scan-notices-title { margin: 0; font-weight: 600; }
+.scan-notices ul { margin: .2rem 0 0; padding-left: 1.2rem; }
+
+/* "Closest to the limit": passes with little room left. */
+.a11y-margins-wrap { overflow-x: auto; margin-top: 6px; }
+.a11y-margins-table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+.a11y-margins-table th, .a11y-margins-table td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+.a11y-margins-table thead th { font-weight: 600; color: var(--text-muted); }
+.a11y-margins-table tbody th { font-weight: 400; text-transform: none; letter-spacing: normal; font-size: inherit; color: inherit; background: transparent; position: static; }
+.a11y-margins-table .a11y-margins-near > * { background: var(--warn-soft); }
+.a11y-margins-badge {
+    display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px;
+    border: 1px solid var(--warn); color: var(--warn); font-size: .75rem; white-space: nowrap;
+}
+
+/* What the engine measured for one occurrence, as label/value pairs. */
+.node-details-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 2px 16px; margin: 4px 0 0; }
+.node-details-list > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.node-details-list dt { color: var(--text-muted); }
+.node-details-list dt::after { content: ":"; }
+.node-details-list dd { margin: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
+
+/* A question's lean (core 1.14): which way its evidence points, and the
+   steps that answer it. */
+.lean-badge {
+    display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px;
+    font-size: .75rem; font-weight: 600; white-space: nowrap; vertical-align: middle;
+}
+.lean-badge-fail { border: 1px solid var(--warn); color: var(--surface-0, #fff); background: var(--warn); }
+.lean-badge-pass { border: 1px solid var(--ok); color: var(--ok); background: var(--ok-soft); }
+.node-lean { padding: 4px 8px; border-left: 3px solid var(--border-subtle); }
+.node-lean-fail { border-left-color: var(--warn); background: var(--warn-soft); }
+.node-lean-pass { border-left-color: var(--ok); background: var(--ok-soft); }
+.node-lean-measured { color: var(--text-muted); }
+/* The collapsed "How to check", as the app's occurrence details draw it. */
+.node-how-to-check details {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-base);
+    padding: .45rem .6rem;
+}
+.node-how-to-check summary { cursor: pointer; color: var(--text-main); }
+.node-detail.node-how-to-check summary { font-weight: 600; font-size: inherit; }
+.node-how-to-check ol { margin: 6px 0 6px 1.4rem; padding: 0; }
+.node-detail.node-how-to-check li { margin: 3px 0; color: var(--text-main); font-size: inherit; line-height: 1.4; }
+.node-detail.node-how-to-check p { margin: 6px 0 0; color: var(--text-main); font-size: inherit; line-height: 1.4; }
+
+/* The rows with something to act on are tinted and carry a wider bar: a
+   failure in the failure color, a review row whose questions likely fail
+   in the review color, so it stands out from the other review rows
+   without reading as a failure. Its "likely fails" badge says it in
+   words too.
+   The bar is an inset shadow, not a border: a collapsed table draws its
+   borders itself, so a border showed beside the sticky header cell
+   while the rows scrolled under it. The shadow is the cell's own paint,
+   which the header covers. */
+.table-container tr.fail > td,
+.issues-table tbody tr.fail > td { background: var(--danger-soft); }
+.table-container tbody tr.fail > td:first-child,
+.issues-table tbody tr.fail > td:first-child { box-shadow: inset 8px 0 0 var(--danger); padding-left: calc(var(--space-3) + 8px); }
+.table-container tr.cantTell.lean-fail > td,
+.issues-table tbody tr.cantTell.lean-fail > td { background: var(--warn-soft); }
+.table-container tr.cantTell.lean-fail > td:first-child,
+.issues-table tbody tr.cantTell.lean-fail > td:first-child { box-shadow: inset 8px 0 0 var(--warn); padding-left: calc(var(--space-3) + 8px); }
+
+/* In a narrow panel (a DevTools panel docked to the side) each finding is a
+   card, not a row squeezed into three columns: its status and its
+   occurrences on the first line, what it is below. The header row stays
+   for screen readers, and the roles in the markup keep the cells a table to
+   them. The bar that marks a row runs down the card. */
+@media (max-width: 600px) {
+    .issues-table,
+    .issues-table tbody,
+    .issues-table tbody td { display: block; }
+    .issues-table colgroup { display: none; }
+    .issues-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+    .table-container { max-height: none; overflow: visible; border: 0; border-radius: 0; background: none; }
+    .issues-table tbody tr {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        margin: 0 0 var(--space-3);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface-1);
+        overflow: hidden;
+    }
+    .issues-table tbody td { border-bottom: 0; padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 8px); }
+    .issues-table tbody td:nth-child(n+3) { grid-column: 1 / -1; }
+    .issues-table tbody .issue-status { text-align: left; border: 0; background: none; white-space: normal; text-wrap: wrap; }
+    .issues-table tbody td.issue-status + td.issue-status { padding-left: var(--space-2); }
+    .issues-table tbody tr.cantTell { box-shadow: inset var(--stroke-accent-bar) 0 0 var(--warn); }
+    .issues-table tbody tr.fail { background: var(--danger-soft); box-shadow: inset 8px 0 0 var(--danger); }
+    .issues-table tbody tr.cantTell.lean-fail { background: var(--warn-soft); box-shadow: inset 8px 0 0 var(--warn); }
+    .issues-table tbody tr > td,
+    .issues-table tbody tr:hover > td,
+    .issues-table tbody tr.fail > td,
+    .issues-table tbody tr.cantTell.lean-fail > td { background: transparent; }
+    .issues-table tbody tr.fail > td:first-child,
+    .issues-table tbody tr.cantTell > td:first-child,
+    .issues-table tbody tr.cantTell.lean-fail > td:first-child { box-shadow: none; padding-left: calc(var(--space-3) + 8px); }
+}
+
+/* The OS drops box-shadows: the card's bar is its left border. */
+@media (max-width: 600px) and (forced-colors: active) {
+    .issues-table tbody tr.fail,
+    .issues-table tbody tr.cantTell { border-left: 4px solid CanvasText; }
+    .table-container tr.fail > td:first-child,
+    .issues-table tbody tr.fail > td:first-child,
+    .table-container tr.cantTell > td:first-child,
+    .issues-table tbody tr.cantTell.lean-fail > td:first-child { border-left: 0; }
+}

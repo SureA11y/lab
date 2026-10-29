@@ -1,0 +1,100 @@
+{
+  "name": "surea11y-lab",
+  "version": "1.0.0",
+  "description": "Tools around surea11y for checking the accessibility of websites: a lab app to build workflows, scan pages and compare reports, and a command-line runner for scheduled and CI runs. Scans against WCAG 2.2 and EN 301 549.",
+  "main": "server.js",
+  "files": [
+    "server.js",
+    "nodemon.json",
+    "src/",
+    "schemas/",
+    "docs/",
+    "addons/",
+    "examples/",
+    "action.yml",
+    "ci/",
+    "docker/",
+    "Dockerfile"
+  ],
+  "scripts": {
+    "build:report": "node src/js/build-report-assets.cjs.js",
+    "build:extension-shared": "node src/js/copy-shared-to-extension.cjs.js",
+    "build:extension": "node src/js/build-extension.cjs.js",
+    "build:guide": "node src/js/build-guide.cjs.js",
+    "build:action-docs": "node src/js/generate-action-docs.cjs.js",
+    "dev:server": "nodemon server.js",
+    "start:server": "node server.js",
+    "dev": "node src/scripts/launch.js dev",
+    "start": "node src/scripts/launch.js start",
+    "run:workflow": "node src/cli/run-workflow.js",
+    "addon:list": "node src/scripts/addon.js list",
+    "addon:install": "node src/scripts/addon.js install",
+    "addon:remove": "node src/scripts/addon.js remove",
+    "test:addons": "node --test addons/*/engines/*.addon-spec.js && echo && echo \"Note: the add-ons' browser tests (addons/*/engines/*.browserspec.js) need Chrome and run separately: npm run test:addons:dom\"",
+    "batch:metrics": "node src/scripts/batch-metrics.js",
+    "start:debug": "cross-env A11Y_DEBUG_MODE=1 node server.js",
+    "start:debug-json": "cross-env A11Y_DUMP_RESULT_JSON=1 node server.js",
+    "extract-resources": "node src/scripts/extract-images-and-styles.js",
+    "test": "node --test; code=$?; echo; echo 'Note: Chrome/Puppeteer-dependent tests (click-utils.js, deep-by-text.js, dom-metrics.js, text-metrics.js, page conditions, the Compare hold) are NOT included above - they run separately via: npm run test:dom'; exit $code",
+    "test:watch": "node --test --watch",
+    "test:coverage": "node --test --experimental-test-coverage",
+    "test:dom": "node --test src/workflow/click-utils.browserspec.js src/workflow/deep-by-text.browserspec.js src/workflow/engine/nav.browserspec.js src/server-side/metrics/dom-metrics.browserspec.js src/server-side/metrics/text-metrics.browserspec.js src/server-side/engines/surea11y-scan.browserspec.js src/server-side/page-conditions.browserspec.js src/server-side/hostile-pages.browserspec.js src/js/compare-hold.browserspec.js",
+    "// test:dom:coverage": "reported % always understates real coverage: these files run most of their logic inside page.evaluate() callbacks executed in Chrome's own V8 isolate via CDP, invisible to Node's coverage instrumentation - see the comment at the top of each .browserspec.js file",
+    "test:dom:coverage": "node --test --experimental-test-coverage src/workflow/click-utils.browserspec.js src/workflow/deep-by-text.browserspec.js src/workflow/engine/nav.browserspec.js src/server-side/metrics/dom-metrics.browserspec.js src/server-side/metrics/text-metrics.browserspec.js src/server-side/engines/surea11y-scan.browserspec.js src/server-side/page-conditions.browserspec.js src/server-side/hostile-pages.browserspec.js src/js/compare-hold.browserspec.js",
+    "test:addons:dom": "node --test addons/*/engines/*.browserspec.js"
+  },
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "wcag",
+    "wcag-2.2",
+    "en-301-549",
+    "surea11y",
+    "accessibility-testing",
+    "puppeteer"
+  ],
+  "author": "Jorge Rumoroso",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "homepage": "https://github.com/SureA11y/lab#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SureA11y/lab.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SureA11y/lab/issues"
+  },
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
+  "devDependencies": {
+    "clean-css": "^5.3.3",
+    "css-tree": "^3.2.1",
+    "esbuild": "^0.28.1",
+    "jsdom": "^29.1.1",
+    "nodemon": "^3.1.14",
+    "terser": "^5.49.1"
+  },
+  "dependencies": {
+    "@surea11y/core": "^1.14.1",
+    "@surea11y/pack-en301549": "^1.1.0",
+    "@surea11y/puppeteer": "^1.5.0",
+    "archiver": "^8.0.0",
+    "cheerio": "^1.2.0",
+    "cross-env": "^10.1.0",
+    "express": "^5.2.1",
+    "jszip": "^3.10.1",
+    "puppeteer": "^25.5.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.10.4",
+    "sharp": "^0.35.2"
+  },
+  "allowScripts": {
+    "puppeteer": true,
+    "esbuild": true,
+    "fsevents": true
+  },
+  "overrides": {
+    "@surea11y/core": "$@surea11y/core"
+  }
+}

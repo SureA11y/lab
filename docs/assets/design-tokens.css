@@ -1,0 +1,52 @@
+/* SureA11y design system tokens, for the static reference docs under docs/.
+   Single source of truth for their palette/type/radius/elevation so the
+   three pages (step-definitions.html, a11y-metrics-reference.html,
+   a11y-summary-ui-guide.html) can't drift out of sync with each other the
+   way their hand-authored, ad-hoc styling had. If the brand tokens change,
+   update this one file.
+
+   Dark is the brand's primary surface. These are read-only reference
+   documents, not the product UI, so there's no light/dark toggle here;
+   just the dark defaults. */
+
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:ital,wght@0,400;0,600;1,400&display=swap");
+
+:root {
+    color-scheme: dark;
+
+    /* ---- Brand ---------------------------------------------------------- */
+    --pass: #3BC98F;      /* green: means pass, is the primary UI accent */
+    --fail: #FF8A7A;
+    --unknown: #E8C15C;   /* "can't tell" */
+    --advisory: #C4A6FF;  /* violet: secondary accent - links, non-result UI */
+    --na: #9BA69F;
+
+    /* ---- Surfaces -------------------------------------------------------- */
+    --surface: #101413;         /* --ink */
+    --surface-sunken: #0B100F;  /* --ink-sunken */
+    --surface-raised: #161C1A;  /* --ink-raised */
+    --border: #232927;          /* --hairline-dark */
+    --border-strong: #3A4441;   /* --hairline-dark-strong */
+
+    /* ---- Text -------------------------------------------------------- */
+    --text-strong: #F7F8F6;
+    --text-body: #C7D2CB;
+    --text-muted: #9BA69F;      /* --slate */
+
+    /* ---- Interactive accents --------------------------------------------- */
+    --accent: var(--pass);       /* primary: green */
+    --accent-2: var(--advisory); /* secondary: violet */
+    --danger: var(--fail);
+
+    /* ---- Type -------------------------------------------------------- */
+    --font-display: "Space Grotesk", var(--font-body);
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-body: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+
+    /* ---- Radius / elevation ---------------------------------------------- */
+    --radius-sm: 3px;
+    --radius-md: 4px;
+    --radius-lg: 6px;
+    --radius-pill: 999px;
+    --shadow-popover: 0 4px 14px rgba(4, 21, 14, 0.26);
+}
