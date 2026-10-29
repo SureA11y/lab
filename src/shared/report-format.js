@@ -121,7 +121,7 @@
      * occurrence holds with the same value (its `url` when that is
      * [pageUrl]), the record and `evidence` themselves when nothing else is
      * left. A third of a report was these. What an engine records beyond them
-     * (axe's checks) stays.
+     * stays.
      */
     function compactOccurrence(o) {
         if (!o || typeof o !== 'object') return o;

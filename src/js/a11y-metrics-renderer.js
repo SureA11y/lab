@@ -10,7 +10,7 @@
  * - direction (polarity)
  *
  * Remaining UI text is limited to:
- * - KPI (axe counts) explanations
+ * - KPI (findings counts) explanations
  * - Banner narrative and reason wording
  *
  * - For metrics with an explicit range (defs.min and defs.max are finite numbers),
@@ -112,7 +112,8 @@ export function generateA11yMetricsContents({a11ySummary, domMetrics, coverageSu
     const inputs = s && s.inputs ? s.inputs : {};
     const flags = s && s.flags ? s.flags : {};
 
-    const axe = inputs.axe || {};
+    // The findings' counts; `axe` is the name saved reports keep them under.
+    const counts = inputs.axe || {};
     const controls = inputs.controls || {};
 
     const tm = d && d.textMetrics ? d.textMetrics : null;
@@ -130,9 +131,9 @@ export function generateA11yMetricsContents({a11ySummary, domMetrics, coverageSu
     const buttonsNoTextRate = num(controls.buttonsNoTextRate, num(tmButtons.buttonsNoVisibleTextRate, null));
     const buttonsNoTextNoNameRate = num(controls.buttonsNoTextNoNameRate, num(tmButtons.buttonsNoTextNoNameSignalRate, null));
 
-    const a11yViolations = num(axe.violations, 0);
-    const a11yIncomplete = num(axe.incomplete, 0);
-    const a11yPasses = num(axe.passes, 0);
+    const a11yViolations = num(counts.violations, 0);
+    const a11yIncomplete = num(counts.incomplete, 0);
+    const a11yPasses = num(counts.passes, 0);
     const a11yTotalChecks = a11yViolations + a11yIncomplete + a11yPasses;
     // Share of the same denominator that is unresolved — a pass-rate gauge must
     // state this alongside the number, never show a bare percentage on its own.
@@ -326,7 +327,8 @@ function renderScoreState(a11ySummary) {
 
     const inputs = (a11ySummary && a11ySummary.inputs) ? a11ySummary.inputs : {};
     const units = inputs.contentUnits || {};
-    const axe = inputs.axe || {};
+    // The findings' counts; `axe` is the name saved reports keep them under.
+    const counts = inputs.axe || {};
 
     const size = Number(units.primarySize);
     const sizeText = Number.isFinite(size)
@@ -334,8 +336,8 @@ function renderScoreState(a11ySummary) {
         : 'too little testable content was found';
 
     const found = [
-        Number(axe.violations) > 0 ? `${fmtCount(axe.violations)} failing ${Number(axe.violations) === 1 ? 'check' : 'checks'}` : null,
-        Number(axe.incomplete) > 0 ? `${fmtCount(axe.incomplete)} needing review` : null
+        Number(counts.violations) > 0 ? `${fmtCount(counts.violations)} failing ${Number(counts.violations) === 1 ? 'check' : 'checks'}` : null,
+        Number(counts.incomplete) > 0 ? `${fmtCount(counts.incomplete)} needing review` : null
     ].filter(Boolean).join(' and ');
 
     // The engines' confidence belongs here rather than on a dial of its own. Beside

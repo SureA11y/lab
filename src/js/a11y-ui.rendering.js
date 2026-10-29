@@ -15,7 +15,7 @@ import {
     normalizeGroupingSpec, isValidGroupingSpecShape, groupIssuesBySpec, NOT_IN_WCAG_GROUP, OTHERS_GROUP
 } from './grouping-spec.js';
 import {formatMarginLimit, formatMarginRoom, formatMarginValue, isNearMiss, scanMargins} from './margins.js';
-import {collectEngineOptions} from './engine-filter.js';
+import {collectEngineOptions} from './report-engines.js';
 
 // The standard a scan checked against, or null for plain WCAG, read the same
 // way from every report, old or new (shared/report-scan.js).
@@ -1074,8 +1074,8 @@ export function createRenderer({
     // ---------------------------------------------------------------------
 
     // Whether the results tables have an Engine column: only for a report
-    // more than one engine ran (the more-engines add-on), as with surea11y
-    // alone every row would say the same. Set for the whole report before it
+    // saved with findings of more than one engine, by an earlier lab; with
+    // surea11y alone every row would say the same. Set for the whole report before it
     // is drawn (setReportEngines), so all its tables have the same columns.
     let showEngineColumn = false;
 

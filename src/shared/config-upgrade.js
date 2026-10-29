@@ -36,8 +36,8 @@
  * - a scan's disableRules, a second Exclude rules that surea11y did not
  *   read, joins its excludeRuleIds, which every engine reads.
  *
- * A scan naming an engine of the more-engines add-on is kept as it is, with a
- * note. The app's Load config runs every file through this; the command line
+ * A scan's engine field is dropped: surea11y is the lab's one engine. A scan
+ * that named another runs with surea11y now, and a note says so. The app's Load config runs every file through this; the command line
  * has src/cli/convert-config.js.
  *
  * Browser: available as globalThis.A11Y_CONFIG_UPGRADE (after run-spec.js).
@@ -97,11 +97,13 @@
                     set({ wcagLevel: undefined, conformanceProfile: undefined }, `${from} dropped: it has a profile already`);
                 }
             }
-            // Every engine but surea11y moved to the more-engines add-on: the
-            // step keeps its engine, which runs once the add-on is installed.
-            const engine = typeof s.engine === 'string' ? s.engine.trim() : '';
-            if (engine && engine.toLowerCase() !== 'surea11y' && !engine.includes('{var:')) {
-                notes.push(`its engine ${show(engine)} comes with the more-engines add-on now: install it (npm run addon:install -- more-engines), or choose surea11y`);
+            // surea11y is the lab's one engine: a scan names none.
+            if ('engine' in s) {
+                const engine = typeof s.engine === 'string' ? s.engine.trim() : '';
+                set({ engine: undefined }, `engine ${show(s.engine)} dropped (surea11y is the lab's one engine)`);
+                if (engine && engine.toLowerCase() !== 'surea11y') {
+                    notes.push(`it named the engine ${show(engine)}, which the lab no longer has: it runs with surea11y now, and its findings may differ`);
+                }
             }
             if (retiredProfile(s.profile)) set({ profile: retiredProfile(s.profile) }, retiredMessage(s.profile, retiredProfile(s.profile)));
             // A run has no profile any more: a scan that had none of its own

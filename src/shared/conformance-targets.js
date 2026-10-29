@@ -10,10 +10,9 @@
  * field (`wcagLevel`) names a target: WCAG 2.2 at Level A, AA or AAA, or a
  * standard, which sets a WCAG version and Level AA. With the step's "Include
  * best-practice rules" it resolves to one selection, { version, level,
- * profile, bestPractices }, which every engine's adapter maps to its own
- * terms: surea11y takes the target (runOnly.wcag) or the standard itself
- * (engineOptions.profile), axe-core the version/level tags, and Alfa, Pa11y
- * and QualWeb the level alone. Steps saved before the targets were one list
+ * profile, bestPractices }, which surea11y's adapter maps to its own terms:
+ * the target (runOnly.wcag) or the standard itself (engineOptions.profile).
+ * Steps saved before the targets were one list
  * may hold a bare level (A, AA, AAA), of the version the run gives.
  *
  * Every standard here is WCAG Level A and AA. What differs is the WCAG
@@ -21,11 +20,10 @@
  * EN 301 549 V3.2.1 is WCAG 2.1 and still has 4.1.1 Parsing, and V4.1.1 is
  * WCAG 2.2.
  *
- * Not every engine can check every target. An engine selects by `standard`
- * (it applies a standard in full: surea11y), by `version` (a WCAG version and
- * level: axe-core) or by `level` (a WCAG level, for every version it covers:
- * Alfa, Pa11y, QualWeb), as its adapter's capabilities.selectsBy says, and
- * each target says what it needs.
+ * An engine selects by `standard` (it applies a standard in full, as
+ * surea11y does), by `version` (a WCAG version and level) or by `level` (a
+ * WCAG level, for every version it covers), as its adapter's
+ * capabilities.selectsBy says, and each target says what it needs.
  */
 
 (function (root, factory) {
@@ -50,8 +48,8 @@
     const BEST_PRACTICE_TAG = 'best-practice';
 
     /**
-     * The version/level tags of a WCAG target, the way axe-core and surea11y
-     * tag their rules: every version up to it, every level up to it.
+     * The version/level tags of a WCAG target, the way surea11y tags its
+     * rules: every version up to it, every level up to it.
      * wcagTags('2.1', 'AA') -> ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
      */
     function wcagTags(version, level) {
@@ -211,7 +209,7 @@
 
     /**
      * The selection of a caller that gives none, from what it gives instead:
-     * WCAG tags in runOnly (`tags`, or axe-core's { type: 'tag', values }), a
+     * WCAG tags in runOnly (`tags`, or { type: 'tag', values }), a
      * level, a standard. Null when none of them names a version, level or
      * standard: the engine then runs as it does without a selection.
      *
@@ -235,7 +233,7 @@
         return runOnlyTags(runOnly).filter((t) => !WCAG_LEVEL_TAG.test(t) && t.toLowerCase() !== BEST_PRACTICE_TAG);
     }
 
-    /** The tags a selection comes to, for engines that select by tags (axe-core). */
+    /** The tags a selection comes to, recorded on a scan. */
     function selectionTags(selection) {
         if (!selection) return [];
         const tags = wcagTags(selection.version, selection.level);

@@ -309,8 +309,7 @@ per rule) and a SARIF file (GitHub code scanning). `earl` is there too, for
 tools that read W3C EARL. The files go in `exports/` next to `payload.json`,
 so a CI job can pick them up with a pattern such as `exports/*.junit.xml`.
 
-These files come from surea11y alone; a scan run only with another engine has
-nothing in them. A rule that could not decide shows as a skipped test, and as a
+A rule that could not decide shows as a skipped test, and as a
 warning in SARIF. Each of those questions carries the steps that answer it
 ("How to check", with what a person sees if it passes and if it fails), so the
 person reading the CI tab knows what to look at.
@@ -462,7 +461,7 @@ size that is not a preset) is reported when it opens.
   "actions": [
     { "type": "a11yScan", "label": "Cart", "profile": "en301549-v4.1.1", "context": "main", "exclude": ".ads, .cookie-banner" },
     { "type": "click", "selector": "#to-payment" },
-    { "type": "a11yScan", "label": "Payment", "engine": "surea11y", "context": "main" }
+    { "type": "a11yScan", "label": "Payment", "context": "main" }
   ],
 
   "viewport": "desktop-lg",
@@ -473,7 +472,7 @@ size that is not a preset) is reported when it opens.
 | Field | Required | Notes |
 | --- | --- | --- |
 | `url` | yes | Where the workflow starts. `http` or `https` only |
-| `actions` | yes | At least one. Same actions the app's builder produces. A scan runs with `surea11y` unless it names another engine (`"engine": "axe"`), which the `more-engines` add-on provides: `axe`, `alfa`, `pa11y`, `pa11y-htmlcs`, `qualweb` and the QualWeb variants |
+| `actions` | yes | At least one. Same actions the app's builder produces. Every scan runs with surea11y |
 | `scenarioName` | no | Names the folder and the reports |
 | `viewport` | no | A preset name, or `{"width": 1280, "height": 720}` |
 | `colorScheme` | no | `light` or `dark`: the color scheme the page is shown in from the first page. Left out, the browser's own (light). In the app it is the configuration's Color scheme. Set color scheme and contrast changes it; its Run default comes back to this |
@@ -652,8 +651,9 @@ disappears. Fix the workflow before trusting the numbers.
 **"not promoting a degraded run to a baseline"** — working as intended. Fix the
 run, then promote it.
 
-**The numbers differ from the app** — check the engine. `surea11y` and `axe`
-report different rule sets. Check the `engine` of each scan in the spec.
+**The numbers differ from the app** — check what the scans check against and
+how the page is shown: each scan's `profile`, and the spec's `viewport`,
+`colorScheme` and `language`, against the app's run.
 
 ---
 

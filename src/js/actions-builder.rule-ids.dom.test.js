@@ -1,7 +1,7 @@
 'use strict';
 
-// A scan step's rule ids are checked against the rule ids the selected
-// engines accept (/api/engine/rule-ids): an id none of them has runs
+// A scan step's rule ids are checked against the rule ids surea11y
+// accepts (/api/engine/rule-ids): an id it does not have runs
 // nothing, or every rule. Drives the REAL builder under jsdom, as
 // actions-builder.validation-reveal.dom.test.js does, with fetch stubbed.
 
@@ -80,20 +80,17 @@ async function builderFor(step, lists) {
 }
 
 describe('scan step rule ids', () => {
-    const lists = { surea11y: ['img-alt-present', 'region'], axe: ['color-contrast', 'region'], alfa: null };
+    const lists = { surea11y: ['img-alt-present', 'region'] };
 
-    test('asks for the ids of the step\'s engine, the default one without', async () => {
-        const own = await builderFor({ type: 'a11yScan', engine: 'axe' }, lists);
-        assert.ok(own.asked.includes('/api/engine/rule-ids?engineId=axe'), own.asked.join(' '));
-
-        const none = await builderFor({ type: 'a11yScan' }, lists);
-        assert.ok(none.asked.includes('/api/engine/rule-ids?engineId=surea11y'), none.asked.join(' '));
+    test('asks for surea11y\'s ids', async () => {
+        const { asked } = await builderFor({ type: 'a11yScan' }, lists);
+        assert.ok(asked.includes('/api/engine/rule-ids?engineId=surea11y'), asked.join(' '));
     });
 
-    test('flags an id the step\'s engine does not have, and accepts one it has', async () => {
-        const { builder, actionsEl } = await builderFor({ type: 'a11yScan', engine: 'axe', includeRuleIds: 'color-contrast, img-alt-present' }, lists);
+    test('flags an id surea11y does not have, and accepts one it has', async () => {
+        const { builder, actionsEl } = await builderFor({ type: 'a11yScan', includeRuleIds: 'img-alt-present, color-contrast' }, lists);
         assert.equal(builder.validate().ok, false);
-        assert.equal(errorOf(actionsEl, 'includeRuleIds'), 'axe has no rule named "img-alt-present"');
+        assert.equal(errorOf(actionsEl, 'includeRuleIds'), 'surea11y has no rule named "color-contrast"');
     });
 
     test('names every unknown id, in the exclude fields too', async () => {
@@ -102,8 +99,8 @@ describe('scan step rule ids', () => {
         assert.equal(errorOf(actionsEl, 'excludeRuleIds'), 'surea11y has no rules named "nope", "zilch"');
     });
 
-    test('says nothing when the engine publishes no list, or for a variable token', async () => {
-        const unknownList = await builderFor({ type: 'a11yScan', engine: 'alfa', includeRuleIds: 'anything' }, lists);
+    test('says nothing when the list can\'t be had, or for a variable token', async () => {
+        const unknownList = await builderFor({ type: 'a11yScan', includeRuleIds: 'anything' }, { surea11y: null });
         assert.equal(unknownList.builder.validate().ok, true);
 
         const token = await builderFor({ type: 'a11yScan', includeRuleIds: '{var:rules}' }, lists);

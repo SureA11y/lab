@@ -9,7 +9,6 @@
     "src/",
     "schemas/",
     "docs/",
-    "addons/",
     "examples/",
     "action.yml",
     "ci/",
@@ -27,10 +26,6 @@
     "dev": "node src/scripts/launch.js dev",
     "start": "node src/scripts/launch.js start",
     "run:workflow": "node src/cli/run-workflow.js",
-    "addon:list": "node src/scripts/addon.js list",
-    "addon:install": "node src/scripts/addon.js install",
-    "addon:remove": "node src/scripts/addon.js remove",
-    "test:addons": "node --test addons/*/engines/*.addon-spec.js && echo && echo \"Note: the add-ons' browser tests (addons/*/engines/*.browserspec.js) need Chrome and run separately: npm run test:addons:dom\"",
     "batch:metrics": "node src/scripts/batch-metrics.js",
     "start:debug": "cross-env A11Y_DEBUG_MODE=1 node server.js",
     "start:debug-json": "cross-env A11Y_DUMP_RESULT_JSON=1 node server.js",
@@ -40,8 +35,7 @@
     "test:coverage": "node --test --experimental-test-coverage",
     "test:dom": "node --test src/workflow/click-utils.browserspec.js src/workflow/deep-by-text.browserspec.js src/workflow/engine/nav.browserspec.js src/server-side/metrics/dom-metrics.browserspec.js src/server-side/metrics/text-metrics.browserspec.js src/server-side/engines/surea11y-scan.browserspec.js src/server-side/page-conditions.browserspec.js src/server-side/hostile-pages.browserspec.js src/js/compare-hold.browserspec.js",
     "// test:dom:coverage": "reported % always understates real coverage: these files run most of their logic inside page.evaluate() callbacks executed in Chrome's own V8 isolate via CDP, invisible to Node's coverage instrumentation - see the comment at the top of each .browserspec.js file",
-    "test:dom:coverage": "node --test --experimental-test-coverage src/workflow/click-utils.browserspec.js src/workflow/deep-by-text.browserspec.js src/workflow/engine/nav.browserspec.js src/server-side/metrics/dom-metrics.browserspec.js src/server-side/metrics/text-metrics.browserspec.js src/server-side/engines/surea11y-scan.browserspec.js src/server-side/page-conditions.browserspec.js src/server-side/hostile-pages.browserspec.js src/js/compare-hold.browserspec.js",
-    "test:addons:dom": "node --test addons/*/engines/*.browserspec.js"
+    "test:dom:coverage": "node --test --experimental-test-coverage src/workflow/click-utils.browserspec.js src/workflow/deep-by-text.browserspec.js src/workflow/engine/nav.browserspec.js src/server-side/metrics/dom-metrics.browserspec.js src/server-side/metrics/text-metrics.browserspec.js src/server-side/engines/surea11y-scan.browserspec.js src/server-side/page-conditions.browserspec.js src/server-side/hostile-pages.browserspec.js src/js/compare-hold.browserspec.js"
   },
   "keywords": [
     "accessibility",

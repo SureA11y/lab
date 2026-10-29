@@ -89,7 +89,8 @@ the lab. It is strict on what such a reader relies on and open on the rest
 - An occurrence does not repeat itself: `summary` is left out when it is its
   `failureSummary`, and `evidence.engineNode` (an engine's own record of the
   element) holds only what the occurrence does not say, so it is gone for
-  surea11y's findings and keeps an add-on engine's extra detail. Read
+  surea11y's findings and keeps an older report's extra detail from another
+  engine. Read
   `failureSummary`, and `summary` only when there is no `failureSummary`.
 - Each scan says what it was checked against: `profile` (`{ id, label }`,
   e.g. `{ "id": "en301549-v4.1.1", "label": "EN 301 549 V4.1.1" }`, or a WCAG 2.2 level

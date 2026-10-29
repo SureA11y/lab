@@ -41,14 +41,6 @@ import {setupModeSwitch} from './tabs-ui.js';
 import {createRunQueuePanel, describeRunNow} from './run-queue-panel.js';
 import {createBatchPanel, runLabelFor} from './batch-panel.js';
 import {collectScanTags, makeTagFilter, isTagFilterActive, scanMatchesTagFilter, applyScanTagsEdit} from './scan-tag-filter.js';
-import {
-    ALL_ENGINES,
-    collectEngineOptions,
-    engineLabelFor,
-    engineScoresFollow,
-    isEngineFilterActive,
-    scansForEngine,
-} from './engine-filter.js';
 import {canCompareReport, createComparisonController, MAX_REPORTS as MAX_COMPARE_REPORTS} from './report-comparison-controller.js';
 import {pickReportNamePrefill} from './report-name.js';
 import {formatReportTimestamp} from './report-timestamp.js';
@@ -176,10 +168,6 @@ function storeActiveMode(mode) {
     let activeTagSelection = { tags: [], untagged: false, mode: 'or' };
     let activeTagFilter = makeTagFilter(activeTagSelection);
 
-    // Which engine the report is being read through. A view lens, like the
-    // presentation mode: it never edits the payload, it only decides which
-    // findings the render and the aggregates are computed from.
-    let activeEngineFilter = ALL_ENGINES;
     function scanMatchesActiveTagFilter(scan) {
         return scanMatchesTagFilter(scan, activeTagFilter);
     }
@@ -391,7 +379,6 @@ function storeActiveMode(mode) {
             mode,
             payload: bucketFor(mode).payload,
             grouping: getSelectedBuiltInGroupingId(mode),
-            engine: activeEngineFilter,
             tags: JSON.stringify(activeTagSelection),
             sort: activeScanSort,
             summary: lastSummaryReportValue,
@@ -690,7 +677,7 @@ function storeActiveMode(mode) {
         const payload = getActiveBucket()?.payload;
         if (!current || !payload) return;
 
-        const scans = scansForEngine(getIncludedScans(payload), activeEngineFilter);
+        const scans = getIncludedScans(payload);
         const html = renderer.buildDispersionSectionHtml(scans);
         // Nothing fails in view any more: nothing to place.
         if (!html) {
@@ -927,10 +914,6 @@ function storeActiveMode(mode) {
     function setRunPayload(payload, meta = {}) {
         const normalizedPayload = normalizePayloadForUi(payload) || null;
 
-        // A new report brings its own engines, so a lens left over from the
-        // previous one would filter this one down to nothing.
-        activeEngineFilter = ALL_ENGINES;
-
         lastPromptedScenarioByMode.run = seedPromptedScenarioFor(normalizedPayload);
 
         if (normalizedPayload) {
@@ -959,10 +942,6 @@ function storeActiveMode(mode) {
 
     function setReportPayload(payload, meta = {}) {
         const normalizedPayload = normalizePayloadForUi(payload) || null;
-
-        // A new report brings its own engines, so a lens left over from the
-        // previous one would filter this one down to nothing.
-        activeEngineFilter = ALL_ENGINES;
 
         lastPromptedScenarioByMode.report = seedPromptedScenarioFor(normalizedPayload);
 
@@ -2704,9 +2683,7 @@ function storeActiveMode(mode) {
         ensureScansIncludedFlag(payload);
         ensureScanSummaryCounts(payload);
 
-        // Everything derived here is derived through the engine lens, so the
-        // global findings and the totals agree with the tables on screen.
-        const includedScans = scansForEngine(getIncludedScans(payload), activeEngineFilter);
+        const includedScans = getIncludedScans(payload);
         const metricDefs = pickMetricDefsFromPayload(payload);
 
         payload.a11yGlobalFindings = getA11yGlobalFindings(includedScans);
@@ -9101,12 +9078,6 @@ function storeActiveMode(mode) {
 
         // ---- SCANS ----
         if (Array.isArray(updatedData.scans)) {
-            // The engine lens goes on first: everything below reads findings, so
-            // narrowing them here is what makes the tables, the counts and the
-            // summary rows follow the Engine select in one step. It copies, so
-            // the payload this was read from is untouched.
-            updatedData.scans = scansForEngine(updatedData.scans, activeEngineFilter);
-
             updatedData.scans = updatedData.scans.map((scan) => {
                 const updatedScan = keepOnlyKeys(scan, SCAN_FIELDS);
 
@@ -9262,123 +9233,12 @@ function storeActiveMode(mode) {
 
         containerEl.appendChild(summaryReport);
 
-        const engineSelect = buildEngineFilterSelect(data);
-        if (engineSelect) {
-            containerEl.appendChild(engineSelect);
-        }
-
         const groupingSelect = buildVisualizationGroupingSelect();
         if (groupingSelect) {
             containerEl.appendChild(groupingSelect);
         }
 
         return containerEl;
-    }
-
-    /**
-     * The "Engine" select: read the report as one engine saw it.
-     *
-     * A run can use several engines at once and every finding records which one
-     * produced it, so this narrows the whole report - tables, counts, summary
-     * rows, sort - to a single engine's findings. "All engines" is the default
-     * and puts everything back.
-     *
-     * Returns null for a report with no engine recorded at all (nothing to
-     * offer); a single-engine report gets the select disabled rather than
-     * hidden, so the toolbar still says which engine produced what is on screen.
-     */
-    function buildEngineFilterSelect(data) {
-        // The options come from the payload, never from `data`: `data` has
-        // already been through the lens, so reading it while an engine is
-        // selected would offer that engine as the only one there is.
-        const source = getActiveBucket()?.payload || data;
-        const engines = collectEngineOptions(getScansFromPayload(source));
-        if (!engines.length) return null;
-
-        const options = { [ALL_ENGINES]: 'All engines' };
-        engines.forEach(({ key, label }) => { options[key] = label; });
-
-        // A lens can outlive its report - loading another one resets it, but a
-        // scan-level edit can drop the last finding of an engine mid-session.
-        if (!Object.prototype.hasOwnProperty.call(options, activeEngineFilter)) {
-            activeEngineFilter = ALL_ENGINES;
-        }
-
-        const wrapper = buildLabeledSelect({
-            id: 'engine-filter',
-            name: 'engineFilter',
-            labelText: 'Engine',
-            options,
-            selected: activeEngineFilter,
-            onChange: (e, value) => {
-                // buildLabeledSelect fires onChange once for the initial value;
-                // that call is a no-op here, which also stops it re-entering the
-                // render that built this control.
-                const next = Object.prototype.hasOwnProperty.call(options, value) ? value : ALL_ENGINES;
-                if (next === activeEngineFilter) return;
-
-                activeEngineFilter = next;
-                updateResults(e?.target, onEngineFilterChanged);
-            }
-        });
-
-        // Tagged so the HTML export can drop it: the exported report is a static
-        // document that cannot re-derive anything, so a live lens control there
-        // would be a select that looks interactive and does nothing. What it was
-        // set to still shows, in the engine line of the report metadata.
-        wrapper.classList.add('engine-filter');
-
-        const select = wrapper.querySelector('select');
-        if (select && engines.length < 2) {
-            select.disabled = true;
-            select.setAttribute('aria-disabled', 'true');
-        }
-
-        // Metrics follow the selection when the scans can supply that engine's
-        // own - which multi-engine runs now record per engine, and single-engine
-        // scans have by definition. A report written before that only carries
-        // one score per scan, over everything that ran, so say so rather than
-        // letting a gauge read as this engine's.
-        if (isEngineFilterActive(activeEngineFilter)
-            && !engineScoresFollow(getScansFromPayload(source), activeEngineFilter)) {
-            const note = document.createElement('span');
-            note.className = 'hint engine-filter__note';
-            note.textContent = 'This report predates per-engine metrics, so its scores still cover all engines.';
-            wrapper.appendChild(note);
-        }
-
-        return wrapper;
-    }
-
-    /**
-     * Re-read the whole report through the new lens.
-     *
-     * Unlike the tag filter, which only hides scan cards that are already
-     * rendered, changing the engine changes what every table holds - so this is
-     * a full re-render rather than a visibility pass. The payload is untouched;
-     * only what is derived from it changes.
-     */
-    function onEngineFilterChanged() {
-        const bucket = getActiveBucket();
-        if (!bucket?.payload) return;
-
-        const previousScrollY = window.scrollY;
-
-        recomputeDerivedReportData(bucket.payload);
-        renderActiveBucket();
-
-        const scans = getScansFromPayload(bucket.payload);
-        const label = engineLabelFor(scans, activeEngineFilter);
-        const message = label
-            ? `Showing findings from ${label} only.`
-            : 'Showing findings from all engines.';
-
-        if (resultsState.activeMode === 'report') setStatusReport(message, STATUS.OK);
-        else setStatusRun(message, STATUS.OK);
-
-        requestAnimationFrame(() => {
-            window.scrollTo({ top: previousScrollY });
-        });
     }
 
     function getCurrentReportName(data) {

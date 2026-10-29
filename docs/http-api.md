@@ -88,10 +88,9 @@ tab; the app is otherwise as it always opens.
 | Call | What it answers |
 | --- | --- |
 | `GET /health` | `{ status: "ok" }`. |
-| `GET /workflows/actions` | The step definitions, with the engines installed filled in: what `schemas/run-spec.v1.schema.json` is generated from. |
-| `GET /api/engines` | The engines installed, and the default. |
-| `GET /api/engine/capabilities?engineId=` | What an engine can check: its options and the profiles it supports. |
-| `GET /api/engine/rules?engineId=` | An engine's rules catalog. |
+| `GET /workflows/actions` | The step definitions: what `schemas/run-spec.v1.schema.json` is generated from. |
+| `GET /api/engine/capabilities` | What surea11y can check: its options and the profiles it supports. |
+| `GET /api/engine/rules` | surea11y's rules catalog. |
 
 Everything else the server answers is the app's own (its page, the report
 assets, the manual-scan flow) and may change with it.

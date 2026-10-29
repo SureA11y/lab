@@ -16,7 +16,6 @@ const error = { type: 'object', properties: { error: { type: 'string' }, details
 const runId = { name: 'runId', in: 'query', required: true, schema: { type: 'string' } };
 const since = { name: 'since', in: 'query', required: false, schema: { type: 'integer', minimum: 0 }, description: 'The log index to start from: the last answer\'s nextIndex.' };
 const pathParam = (name) => ({ name, in: 'path', required: true, schema: { type: 'string' } });
-const engineId = { name: 'engineId', in: 'query', required: false, schema: { type: 'string' } };
 
 const progress = {
     type: 'object',
@@ -136,10 +135,9 @@ function httpApiSchema() {
             '/queue/sessions/{sessionId}/delete': { post: { summary: 'Delete a finished batch', parameters: [pathParam('sessionId')], responses: ok('Deleted') } },
             '/queue/sessions/{sessionId}/download.zip': { get: { summary: 'The batch as a report package', parameters: [pathParam('sessionId')], responses: { 200: { description: 'A zip', content: { 'application/zip': {} } } } } },
             '/queue/sessions/{sessionId}/items/{itemId}/download.zip': { get: { summary: 'One run as a report package', parameters: [pathParam('sessionId'), pathParam('itemId')], responses: { 200: { description: 'A zip', content: { 'application/zip': {} } } } } },
-            '/workflows/actions': { get: { summary: 'The step definitions, with the engines installed', responses: ok('The definitions') } },
-            '/api/engines': { get: { summary: 'The engines installed', responses: ok('The engines') } },
-            '/api/engine/capabilities': { get: { summary: 'What an engine can check', parameters: [engineId], responses: ok('Its capabilities') } },
-            '/api/engine/rules': { get: { summary: 'An engine\'s rules catalog', parameters: [engineId], responses: ok('The catalog') } },
+            '/workflows/actions': { get: { summary: 'The step definitions', responses: ok('The definitions') } },
+            '/api/engine/capabilities': { get: { summary: 'What surea11y can check: its options and the profiles it supports', responses: ok('Its capabilities') } },
+            '/api/engine/rules': { get: { summary: 'surea11y\'s rules catalog', responses: ok('The catalog') } },
         },
     };
 }

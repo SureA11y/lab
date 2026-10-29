@@ -102,9 +102,6 @@ function getReportContent({ includeFilteredOut = false } = {}) {
         '#hide-excluded-scans-btn',
         // The tag filter is a live control, never part of the exported report.
         '.scan-tag-filter',
-        // Same for the engine lens: the export is static and carries whichever
-        // engine was selected, so the control would do nothing there.
-        '.engine-filter',
         // And for the report metadata editors: the name, URL and date they were
         // set to are part of the line, but nothing in a static document can
         // change them.

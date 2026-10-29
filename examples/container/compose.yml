@@ -16,8 +16,6 @@ services:
     image: surea11y-lab
     build:
       context: ../..
-      # args:
-      #   ADDONS: more-engines   # engines besides surea11y
     command: server
     ports:
       # This machine only: the server has no login.

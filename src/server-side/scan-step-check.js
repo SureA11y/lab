@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * A workflow's scan steps, checked before its run starts: each names its own
- * engine (or runs with the default one), and the profile it chooses must be
- * one that engine can check (conformance-targets.js).
+ * A workflow's scan steps, checked before its run starts: each runs with
+ * surea11y, the lab's one engine, and the profile it chooses must be one
+ * surea11y can check (conformance-targets.js).
  */
 
 const { SCAN_TARGETS, scanTargetId, targetSupported } = require('./conformance-targets');
@@ -26,16 +26,15 @@ function scanStepsOf(actions, out = []) {
 }
 
 /**
- * Checks each scan step of a workflow and of its custom steps: an engine that
- * is not installed, a profile that is not one (a bare level such as "AA"
- * included, which would otherwise be read as no profile at all), or a profile
- * the step's engine cannot check, fails the run there and then, naming the
- * scan, rather than when that scan comes. A profile with a {var:...} token is
- * only known at runtime and is not checked; an engine is never a variable.
+ * Checks each scan step of a workflow and of its custom steps: a step still
+ * naming another engine (from a spec written for an earlier lab), a profile
+ * that is not one (a bare level such as "AA" included, which would otherwise
+ * be read as no profile at all), or a profile surea11y cannot check, fails the
+ * run there and then, naming the scan, rather than when that scan comes. A
+ * profile with a {var:...} token is only known at runtime and is not checked.
  *
- * describeEngine(id | null) gives { id, name, selectsBy } for an engine, the
- * default one for null, and throws for one that is not installed. A scan
- * without a profile checks WCAG 2.2 AA, which every engine can.
+ * describeEngine(id | null) gives { id, name, selectsBy } for surea11y, and
+ * throws for any other engine. A scan without a profile checks WCAG 2.2 AA.
  */
 function checkScanSteps(actions, customSteps, describeEngine) {
     const customActions = (Array.isArray(customSteps) ? customSteps : [])
@@ -59,7 +58,7 @@ function checkScanSteps(actions, customSteps, describeEngine) {
         }
         if (targetSupported(target, described.selectsBy)) continue;
         const label = SCAN_TARGETS[scanTargetId(target)].label;
-        problems.push(`Scan ${name}: ${described.name || described.id} cannot check ${label}. Choose another profile, or another engine.`);
+        problems.push(`Scan ${name}: ${described.name || described.id} cannot check ${label}. Choose another profile.`);
     }
     if (problems.length) throw new Error(problems.join('\n'));
 }

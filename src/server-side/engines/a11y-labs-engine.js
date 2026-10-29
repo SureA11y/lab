@@ -70,7 +70,7 @@ try { ENGINE_VERSION = require('@surea11y/core/package.json').version || null; }
 /**
  * Normalizes severity strings coming from @surea11y/core's rule catalog / check
  * results into the canonical set (critical/serious/moderate/minor/info), the same
- * way canonical-shared.js and pa11y-engine.js do. An unrecognized spelling
+ * way canonical-shared.js does. An unrecognized spelling
  * would otherwise fall through to the generic default weight and could fail
  * canonical validation.
  */
@@ -884,9 +884,9 @@ function resolveRunSelection({ selection, runOnly, wcagLevel, cfg, requestedProf
             effectiveRunOnly.includeRuleIds = filtered;
         }
 
-        // 4) Leave out the rule ids surea11y doesn't have. A scan step's ids
-        //    go to every engine, so an axe-core id is expected here, but core
-        //    throws when no id in an include list names one of its rules.
+        // 4) Leave out the rule ids surea11y doesn't have (a typo, or a step
+        //    written for another engine): core throws when no id in an
+        //    include list names one of its rules.
         const isKnownRuleId = makeKnownRuleIdTest(cfg);
         for (const key of ['includeRuleIds', 'excludeRuleIds']) {
             const list = Array.isArray(effectiveRunOnly[key]) ? effectiveRunOnly[key] : [];

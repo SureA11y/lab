@@ -55,9 +55,6 @@ is in `A11Y_ALLOWED_HOSTS`: `-e A11Y_ALLOWED_HOSTS=lab.example.com`.
 ## Notes
 
 - **Size.** About 1.9 GB, most of it the browser and its fonts.
-- **More engines.** The image has surea11y alone. `docker build --build-arg
-  ADDONS=more-engines .` adds the others (about 250 MB more;
-  `addons/more-engines/README.md`).
 - **Behind a proxy that inspects TLS**, the build needs the proxy's CA, which
   the image does not carry: build from a base that adds it, for example with
   `docker build --build-context node:24-bookworm-slim=docker-image://<your base> .`.

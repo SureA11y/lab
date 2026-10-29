@@ -24,14 +24,11 @@ see what a release fixed and what it broke.
 ![The lab's compare tab: release 2 of the demo shop against release 1, accessibility improved, 9 failures down to 2](docs/assets/screens/app-compare.png)
 
 Scans check against WCAG 2.2 (A, AA, AAA) and EN 301 549 (V4.1.1 and
-V3.2.1), with surea11y applying each standard in full. Other
-engines (axe-core, Alfa, Pa11y, QualWeb) are an optional add-on, for comparing
-engines.
+V3.2.1), with surea11y applying each standard in full.
 
 ## Quick start
 
-Requires Node.js 22.13 or later, or 24 or later (the more-engines add-on
-needs 22.22.2 or later, or 24.15 or later).
+Requires Node.js 22.13 or later, or 24 or later.
 
 ```bash
 npm ci
@@ -71,7 +68,6 @@ src/shared/          Code the app, the server, the runner and the extension shar
 src/cli/             The command-line runner
 src/report/          The downloadable report and comparison
 extension/           The browser extension
-addons/              Optional add-ons: more-engines
 schemas/             The published JSON Schemas
 examples/            Runnable examples and the demo shop
 docs/                Guides and references; docs/design/ holds the design notes
@@ -90,5 +86,4 @@ Copyright (C) 2026 Jorge Rumoroso. The lab is free software under the GNU
 Affero General Public License, version 3 ([LICENSE](LICENSE)): use it, change
 it and share it, and if you offer a changed version to others over a network,
 offer them its source too. The engine it is built on, `@surea11y/core`, is
-under the Mozilla Public License 2.0. The optional engines add-on installs
-engines under their own licenses ([addons/more-engines](addons/more-engines/README.md)).
+under the Mozilla Public License 2.0.

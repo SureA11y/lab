@@ -1437,13 +1437,6 @@ button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
     grid-auto-columns: 1fr;
 }
 
-/* The Engine lens filters findings and everything counted from them, but not the
-   precomputed per-scan scores; the note that says so sits under its select. */
-.engine-filter__note {
-    display: block;
-    margin-top: .15rem;
-}
-
 #results .results-tools {
     display: grid;
     grid-template-columns: repeat(5, auto);

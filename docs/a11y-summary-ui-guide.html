@@ -294,7 +294,7 @@
           DOM structure and complexity (semantic markup, hidden content, stateful components, and the rest) show
           up as individual rows in a collapsed "Page structure signals" section instead of a composite score - see
           <a href="#struct">Page structure signals</a> below. They no longer feed the live confidence value either;
-          that role is now filled by what the engines themselves report (see Assessment Confidence below).
+          that role is now filled by what the engine itself reports (see Assessment Confidence below).
         </p>
       </div>
       <div class="callout">
@@ -361,17 +361,17 @@
         <div class="card">
           <h3>Assessment Confidence</h3>
           <p class="small">
-            A reliability indicator for the automated evidence, on both report types. It comes from the engines
-            themselves - the mean of the confidence each engine reported on its own findings - not from page
-            structure, so it can be absent ("not measured") rather than guessed when an engine reports none. It is
+            A reliability indicator for the automated evidence, on both report types. It comes from the engine
+            itself - the mean of the confidence surea11y reported on its findings - not from page structure, so
+            it can be absent ("not measured") rather than guessed when the findings carry none. It is
             not a quality score, it is about trust in what automation could evaluate.
           </p>
 
           <h4 style="margin:10px 0 6px;">Typical interpretations</h4>
           <ul class="tight small">
-            <li><strong>High</strong>: the engines were confident in what they reported.</li>
+            <li><strong>High</strong>: surea11y was confident in what it reported.</li>
             <li><strong>Medium</strong>: some uncertainty in what was reported, treat automation as a hint.</li>
-            <li><strong>Low, or absent</strong>: the engines were unsure, or none of them reported a confidence at all - treat automation as a rough hint only, manual review is likely required.</li>
+            <li><strong>Low, or absent</strong>: surea11y was unsure, or its findings carried no confidence at all - treat automation as a rough hint only, manual review is likely required.</li>
           </ul>
 
           <div class="callout">

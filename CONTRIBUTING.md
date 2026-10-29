@@ -38,12 +38,7 @@ on; [the examples](examples/README.md) run against it.
 ```bash
 npm test             # every unit and DOM test (jsdom), without a browser
 npm run test:dom     # the tests that drive a real browser
-npm run test:addons  # the add-ons' own tests, with them installed
 ```
-
-`npm test` runs without the optional add-ons; the few tests that compare
-engines are skipped then, and say why. With the more-engines add-on installed
-(`npm run addon:install -- more-engines`) they run too.
 
 A change comes with tests for what it changes, and the whole suite passes.
 For a change to the app, check it in a browser too: the tests do not see
@@ -60,7 +55,6 @@ layout, focus or what a screen reader announces.
 | `src/js/` | The app | Browser (ES modules) |
 | `src/report/` | The downloadable report and comparison | Browser |
 | `extension/` | The browser extension; its copies of shared modules come from `npm run build:extension-shared` | Browser |
-| `addons/` | Optional add-ons, each with its own dependencies | Node |
 
 `src/shared/tier-boundaries.test.js` keeps the tiers apart: browser code does
 not reach into the server, and the server does not reach into the app.
@@ -86,8 +80,9 @@ A feature of some size starts with a note in `docs/design/`: the problem, the
 options, what was chosen and why, and what was left out on purpose. They stay
 as the record of how it came to be.
 
-## Engines
+## The engine
 
-surea11y is the lab's engine. Other engines live in add-ons
-([docs/engines.md](docs/engines.md) explains how); a new one belongs in an
-add-on, not in the lab's own dependencies.
+The lab runs one engine: surea11y, [`@surea11y/core`](https://github.com/SureA11y/core).
+What a scan finds, and how, is core's: a change there belongs in core, not
+in the lab. The lab's side of it is its adapter,
+`src/server-side/engines/a11y-labs-engine.js`.

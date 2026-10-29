@@ -740,7 +740,7 @@
     },
     "/workflows/actions": {
       "get": {
-        "summary": "The step definitions, with the engines installed",
+        "summary": "The step definitions",
         "responses": {
           "200": {
             "description": "The definitions",
@@ -755,36 +755,9 @@
         }
       }
     },
-    "/api/engines": {
-      "get": {
-        "summary": "The engines installed",
-        "responses": {
-          "200": {
-            "description": "The engines",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/engine/capabilities": {
       "get": {
-        "summary": "What an engine can check",
-        "parameters": [
-          {
-            "name": "engineId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "summary": "What surea11y can check: its options and the profiles it supports",
         "responses": {
           "200": {
             "description": "Its capabilities",
@@ -801,17 +774,7 @@
     },
     "/api/engine/rules": {
       "get": {
-        "summary": "An engine's rules catalog",
-        "parameters": [
-          {
-            "name": "engineId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "summary": "surea11y's rules catalog",
         "responses": {
           "200": {
             "description": "The catalog",

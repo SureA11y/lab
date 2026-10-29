@@ -42,7 +42,7 @@ describe('checkScanSteps', () => {
 
     test('fails on a profile the step\'s engine cannot check, naming the scan, the engine and the profile', () => {
         assert.throws(check([{ type: 'a11yScan', label: 'Home', engine: 'axe', profile: 'en301549-v3.2.1' }]), {
-            message: 'Scan "Home": axe-core cannot check EN 301 549 V3.2.1. Choose another profile, or another engine.',
+            message: 'Scan "Home": axe-core cannot check EN 301 549 V3.2.1. Choose another profile.',
         });
     });
 

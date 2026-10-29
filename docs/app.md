@@ -159,9 +159,3 @@ downloads as one zip and goes to the compare tab in one go. A batch whose
 workflow types a password asks for it once, before it starts.
 
 The same batches run from the command line ([the runner's guide](scheduled-scans-guide.md)).
-
-## More engines
-
-The app scans with surea11y. With the [more-engines](../addons/more-engines/README.md)
-add-on installed, each scan step can run with axe-core, Alfa, Pa11y or
-QualWeb instead, and a Merged scan can put several engines' results together.

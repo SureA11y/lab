@@ -567,65 +567,19 @@ export function createActionsBuilder ({
     };
 
     // ---- The scan step's engine ----
-    // Each scan step names its engine (its Engine field), and the step shows
-    // what that engine uses: the server gives the engines' capabilities with
-    // the definitions (defs.a11yScan.fields.engine.engineCapabilities). A field
-    // an engine does not use is hidden and not saved, and a profile
-    // it cannot check is not available. With nothing known about an engine,
-    // everything shows.
-    const engineFieldDef = defs?.a11yScan?.fields?.engine || null;
-    const DEFAULT_ENGINE_ID = "surea11y";
+    // Every scan runs with surea11y, the lab's one engine, and a step shows
+    // all its fields and profiles. The rule ids surea11y has are loaded when a
+    // step first uses them, for typed ids to be checked against.
+    const ENGINE_ID = "surea11y";
 
-    function defaultEngineId() {
-        const d = engineFieldDef && typeof engineFieldDef.default === "string" ? engineFieldDef.default.trim() : "";
-        return (d || DEFAULT_ENGINE_ID).toLowerCase();
+    /** The engine a scan step line runs with: surea11y. */
+    function engineOfLine() {
+        return ENGINE_ID;
     }
 
-    /** The engine a scan step line runs with: its Engine field, else the default. */
-    function engineOfLine(lineEl) {
-        const control = lineEl
-            ? lineEl.querySelector(':scope > .fields > .field[data-field-name="engine"] select, :scope > .fields > .field[data-field-name="engine"] input')
-            : null;
-        const v = control && typeof control.value === "string" ? control.value.trim().toLowerCase() : "";
-        return v && !v.includes("{") ? v : defaultEngineId();
-    }
-
-    /** The one engine installed, when there is only one, else null. */
-    function onlyEngine() {
-        const options = engineFieldDef && Array.isArray(engineFieldDef.options) ? engineFieldDef.options : [];
-        return options.length === 1 ? String(options[0].value).toLowerCase() : null;
-    }
-
-    function engineLabel(engineId) {
-        const options = engineFieldDef && Array.isArray(engineFieldDef.options) ? engineFieldDef.options : [];
-        const found = options.find((o) => o && String(o.value).toLowerCase() === engineId);
-        return found && found.label ? String(found.label) : engineId;
-    }
-
-    /** What is known about an engine: { fields, conformanceTargets }, or null. */
-    function capabilitiesOf(engineId) {
-        const all = engineFieldDef && engineFieldDef.engineCapabilities;
-        const caps = all && typeof all === "object" ? all[engineId] : null;
-        return caps && typeof caps === "object" ? caps : null;
-    }
-
-    function fieldUsedBy(fieldEl, engineId) {
-        const only = String(fieldEl.dataset.engines || "").split(",").map((id) => id.trim().toLowerCase()).filter(Boolean);
-        if (only.length && !only.includes(engineId)) return false;
-        const caps = capabilitiesOf(engineId);
-        const fields = caps && caps.fields;
-        return !(fields && fields[fieldEl.dataset.fieldName] === false);
-    }
-
-    /** The profiles an engine can check, or null when that is not known. */
-    function targetsOf(engineId) {
-        const caps = capabilitiesOf(engineId);
-        return caps && Array.isArray(caps.conformanceTargets) ? caps.conformanceTargets.map(String) : null;
-    }
-
-    // The rule ids each engine accepts in a scan step (a Set, or null for an
-    // engine that publishes no list), loaded when a step first uses it, for
-    // typed ids to be checked against. Not loaded yet: nothing is checked.
+    // The rule ids the engine accepts in a scan step (a Set), loaded when a
+    // step first uses them. Not loaded yet, or not to be had: nothing is
+    // checked.
     const knownRuleIdsByEngine = new Map();
 
     function ensureKnownRuleIds(engineId) {
@@ -643,9 +597,9 @@ export function createActionsBuilder ({
     }
 
     /**
-     * The ids in a rule id field that the step's engine does not have, or []
-     * when that can't be told: its list is not loaded, or it publishes none.
-     * An id with a {var:...} token is only known at runtime.
+     * The ids in a rule id field that the engine does not have, or [] when
+     * that can't be told: its list is not loaded. An id with a {var:...}
+     * token is only known at runtime.
      */
     function unknownRuleIds(value, engineId) {
         const set = knownRuleIdsByEngine.get(engineId);
@@ -656,55 +610,10 @@ export function createActionsBuilder ({
             .filter((id) => id && !id.includes("{") && !set.has(id));
     }
 
-    /**
-     * Shows a scan step line as its engine has it: the fields the engine does
-     * not use hidden (and left out when the step is saved), and the targets it
-     * cannot check disabled in the Conformance target select.
-     */
+    /** Readies a scan step line: the rule ids it is checked against. */
     function applyEngineToLine(lineEl) {
         if (!lineEl || lineEl.dataset.actionType !== "a11yScan") return;
-        const engineId = engineOfLine(lineEl);
-        const advancedOpen = !lineEl.querySelector(":scope > .fields")?.classList.contains("is-collapsed");
-
-        lineEl.querySelectorAll(":scope > .fields > .field").forEach((fieldEl) => {
-            const used = fieldUsedBy(fieldEl, engineId);
-            fieldEl.classList.toggle("is-unsupported", !used);
-            if (!used) fieldEl.hidden = true;
-            else if (fieldEl.classList.contains("is-advanced")) fieldEl.hidden = !advancedOpen;
-            else if (!fieldEl.classList.contains("is-conditionally-hidden")) fieldEl.hidden = false;
-        });
-
-        // With one engine installed (surea11y, unless an add-on brings more)
-        // there is nothing to choose: the field shows only for a step that
-        // names another engine, which then says why it cannot run.
-        const engineField = lineEl.querySelector(':scope > .fields > .field[data-field-name="engine"]');
-        if (engineField && onlyEngine() && engineId === onlyEngine()) engineField.hidden = true;
-
-        const targets = targetsOf(engineId);
-        const targetSelect = lineEl.querySelector(':scope > .fields > .field[data-field-name="profile"] select');
-        if (targetSelect) {
-            Array.from(targetSelect.options).forEach((o) => {
-                o.disabled = !!(targets && o.value && !o.value.includes("{") && o.value !== SELECT_TOKEN_SENTINEL && !targets.includes(o.value));
-            });
-        }
-
-        ensureKnownRuleIds(engineId);
-    }
-
-    /**
-     * The message for a profile the step's engine cannot check,
-     * else null. Such a value only comes from a saved or pasted step: the
-     * select does not offer it.
-     */
-    function unsupportedTargetError(fieldEl, val) {
-        if (fieldEl.dataset.fieldName !== "profile" || !val || String(val).includes("{")) return null;
-        const lineEl = fieldEl.closest(".line");
-        const engineId = engineOfLine(lineEl);
-        const targets = targetsOf(engineId);
-        if (!targets || targets.includes(String(val))) return null;
-        const option = Array.from(fieldEl.querySelectorAll("option")).find((o) => o.value === String(val));
-        const label = option ? option.textContent.trim() : String(val);
-        return `${engineLabel(engineId)} cannot check ${label}. Choose another profile, or another engine.`;
+        ensureKnownRuleIds(ENGINE_ID);
     }
 
     // ---- Tiny utils ----
@@ -1730,10 +1639,6 @@ export function createActionsBuilder ({
         });
         if (fieldDef.cssSelector === true) wrapper.dataset.cssSelector = "true";
         if (fieldDef.ruleIds === true) wrapper.dataset.ruleIds = "true";
-        if (Array.isArray(fieldDef.engines) && fieldDef.engines.length) {
-            wrapper.dataset.engines = fieldDef.engines.map(String).join(",");
-            if (fieldDef.default !== undefined) wrapper.dataset.enginesDefault = String(fieldDef.default);
-        }
 
         const labelText = fieldDef.alias ? String(fieldDef.alias) : fieldName;
         const labelEl = createEl("label", {htmlFor: fieldId}, labelText);
@@ -2510,7 +2415,7 @@ export function createActionsBuilder ({
             fieldsWrap.classList.toggle("is-collapsed", !on);
 
             advancedBlocks.forEach((el) => {
-                el.hidden = !on || el.classList.contains("is-unsupported");
+                el.hidden = !on;
             });
 
             if (on && moveFocus) {
@@ -2705,10 +2610,7 @@ export function createActionsBuilder ({
         function wireScanEngine(lineEl) {
             // Only applies to a11yScan actions
             if (!lineEl || lineEl.dataset.actionType !== "a11yScan") return;
-            const engineControl = lineEl.querySelector(':scope > .fields > .field[data-field-name="engine"] select, :scope > .fields > .field[data-field-name="engine"] input');
-            if (engineControl) engineControl.addEventListener("change", () => applyEngineToLine(lineEl));
-            // Exposed so populateLineFromObject can apply a loaded engine:
-            // setFieldValue() does not dispatch "change".
+            // Exposed so populateLineFromObject can ready a loaded step.
             lineEl._applyScanEngine = () => applyEngineToLine(lineEl);
             applyEngineToLine(lineEl);
         }
@@ -2870,7 +2772,6 @@ export function createActionsBuilder ({
 
             setError(control, null);
             control.removeAttribute(RESERVED_ERROR_ATTR);
-            if (fieldEl.classList.contains("is-unsupported")) return;
             if (fieldEl._selectTokenUi && fieldEl._selectTokenUi.tokenInput) {
                 setError(fieldEl._selectTokenUi.tokenInput, null);
             }
@@ -2928,22 +2829,10 @@ export function createActionsBuilder ({
 
             if (allowed && allowed.length) {
                 if (!allowed.map(String).includes(String(val))) {
-                    // An engine a saved step names, which no installed engine is.
-                    const missingEngine = fieldEl.dataset.fieldName === "engine" && String(val) !== "";
-                    setError(control, missingEngine
-                        ? `The engine "${val}" is not installed here: it comes with an add-on (npm run addon:list). Choose ${allowed.join(", ")}, or install it.`
-                        : `Choose one of: ${allowed.join(", ")}`);
+                    setError(control, `Choose one of: ${allowed.join(", ")}`);
                     note(control, {missing: required && String(val) === ""});
                     ok = false;
                     return;
-                }
-                // A target the step's engine cannot check: caught here,
-                // before a run.
-                const targetError = unsupportedTargetError(fieldEl, val);
-                if (targetError) {
-                    setError(control, targetError);
-                    note(control);
-                    ok = false;
                 }
                 return;
             }
@@ -2983,13 +2872,13 @@ export function createActionsBuilder ({
             // A selector the browser can't parse fails the scan, so it is
             // caught here, before a run. One with a {var:...} token is only
             // known at runtime.
-            // An id the step's engine does not have would run nothing, or
-            // every rule: a typo is caught here, before a run.
+            // An id surea11y does not have would run nothing, or every rule:
+            // a typo is caught here, before a run.
             if (fieldEl.dataset.ruleIds === "true" && val) {
                 const engineId = engineOfLine(lineEl);
                 const unknown = unknownRuleIds(val, engineId);
                 if (unknown.length) {
-                    const name = engineLabel(engineId);
+                    const name = engineId;
                     setError(control, unknown.length === 1
                         ? `${name} has no rule named "${unknown[0]}"`
                         : `${name} has no rules named ${unknown.map((id) => `"${id}"`).join(", ")}`);
@@ -3164,8 +3053,6 @@ export function createActionsBuilder ({
 
         // Only direct fields of this line
         lineEl.querySelectorAll(":scope > .fields > .field").forEach((fieldEl) => {
-            // A field the step's engine does not use is not part of the step.
-            if (fieldEl.classList.contains("is-unsupported")) return;
             const name = fieldEl.dataset.fieldName;
             const ftype = fieldEl.dataset.fieldType;
             const required = fieldEl.dataset.required === "true";

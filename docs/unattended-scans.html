@@ -808,7 +808,7 @@ Instances   <span class="hot">4 new</span>, 9 fixed, 0 still failing
   "actions": [
     { "type": "a11yScan", "label": "Cart", "profile": "en301549-v4.1.1" },
     { "type": "click", "selector": "#to-payment" },
-    { "type": "a11yScan", "label": "Payment", "engine": "surea11y" }
+    { "type": "a11yScan", "label": "Payment" }
   ],
 
   "viewport": "desktop-lg",
@@ -824,7 +824,7 @@ Instances   <span class="hot">4 new</span>, 9 fixed, 0 still failing
                     </thead>
                     <tbody>
                         <tr><td><code>url</code></td><td>yes</td><td>Where the workflow starts. <code>http</code> or <code>https</code> only</td></tr>
-                        <tr><td><code>actions</code></td><td>yes</td><td>At least one. The same actions the app’s builder produces. Each scan names its engine (<code>"engine": "axe"</code>); one without runs with <code>surea11y</code>. The engines: <code>surea11y</code>, <code>axe</code>, <code>alfa</code>, <code>pa11y</code>, <code>pa11y-htmlcs</code>, <code>qualweb</code> and its variants</td></tr>
+                        <tr><td><code>actions</code></td><td>yes</td><td>At least one. The same actions the app’s builder produces. Every scan runs with <code>surea11y</code></td></tr>
                         <tr><td><code>scenarioName</code></td><td>no</td><td>Names the folder and the reports</td></tr>
                         <tr><td><code>viewport</code></td><td>no</td><td>A preset name, or <code>{"width": 1280, "height": 720}</code></td></tr>
                         <tr><td><code>context</code></td><td>no</td><td>Only scan the elements these selectors match (<code>main, footer</code>). In the app it is the configuration’s Include selectors. A scan’s own <code>context</code> replaces it</td></tr>
@@ -949,7 +949,7 @@ Result     the workflow does not fit the site as it stands: 2 problems above</co
                 </div>
                 <div>
                     <dt>The numbers differ from the app</dt>
-                    <dd>Check the engine. <code>surea11y</code> and <code>axe</code> report different rule sets. Check the <code>engine</code> of each scan in the spec.</dd>
+                    <dd>Check what the scans check against and how the page is shown: each scan’s <code>profile</code>, and the spec’s <code>viewport</code>, <code>colorScheme</code> and <code>language</code>, against the app’s run.</dd>
                 </div>
             </dl>
         </section>

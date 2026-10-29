@@ -53,8 +53,6 @@ The first public release.
   comparisons, diffs and the HTTP API, in `schemas/`.
 - **A GitHub Action** (`action.yml`), **a container image** (`Dockerfile`),
   and **the HTTP API** (`docs/http-api.md`, with an OpenAPI description).
-- **More engines as an add-on** (`npm run addon:install -- more-engines`),
-  for comparing engines; surea11y is the one built in.
 - **A browser extension** (`extension/`) to scan the page in front of you
   and send a session to the lab.
 - **Examples** that run against a demo shop, a getting-started guide, and
@@ -74,4 +72,6 @@ The first public release.
 
 `node src/cli/convert-config.js <file or folder>` lists what it would change
 to bring them up to date, and `--write` updates them; the app does the same
-as it loads them. Reports saved before still open, merge and compare.
+as it loads them. surea11y is the lab's one engine: a scan that named
+another runs with surea11y, and the conversion says so. Reports saved before
+still open, merge and compare, with the engines they were scanned with.

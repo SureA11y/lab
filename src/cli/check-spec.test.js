@@ -7,7 +7,6 @@ const os = require('os');
 const path = require('path');
 
 const { checkSpec, specDocumentOf } = require('./check-spec');
-const { MORE_ENGINES_SKIP } = require('../test-support/more-engines');
 const { main } = require('./run-workflow');
 
 const SPEC = {
@@ -110,16 +109,10 @@ describe('checkSpec', () => {
             ],
         };
         const { errors, warnings } = checkSpec(spec);
-        assert.deepEqual(warnings, []);
+        assert.deepEqual(warnings, ['$.actions[1].engine "engine" is not a known field']);
         assert.equal(errors.length, 2);
         assert.match(errors[0], /^Scan "Old": "AA" is not a profile/);
-        assert.match(errors[1], /^Scan "Gone": Failed to resolve accessibility engine "nope"/);
-    });
-
-    test('checks a scan\'s profile against what its engine can check', { skip: MORE_ENGINES_SKIP }, () => {
-        const { errors } = checkSpec({ ...SPEC, actions: [{ type: 'a11yScan', label: 'Axe', engine: 'axe', profile: 'en301549-v3.2.1' }] });
-        assert.equal(errors.length, 1);
-        assert.match(errors[0], /^Scan "Axe": axe-core cannot check EN 301 549 V3\.2\.1/);
+        assert.match(errors[1], /^Scan "Gone": The lab runs surea11y only; "nope" is not an engine it has/);
     });
 
     test('a run profile is an error, and the converter is the way on', () => {

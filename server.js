@@ -4,7 +4,6 @@ const express = require("express");
 const { runA11yWorkflow, getBrowserPid } = require("./src/server-side/a11y-runner");
 const { REPORTS_ROOT } = require("./src/server-side/report-paths");
 const { ACTION_DEFINITIONS } = require("./src/workflow/action-definitions");
-const { withEngineChoices } = require("./src/server-side/scan-engine-field");
 const a11yEngine = require("./src/server-side/a11y-engine");
 const {
     PAYLOAD,
@@ -106,21 +105,13 @@ app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
 });
 
-// ACTION_DEFINITIONS and the engines installed never change at runtime, so the
-// definitions' JSON, with the scan step's engines filled in, is stable for the
-// life of the process - compute it once, on the first request, instead of on
-// every one.
+// ACTION_DEFINITIONS never change at runtime, so their JSON is computed once,
+// on the first request, instead of on every one.
 let actionDefinitionsJson = null;
 
 app.get("/workflows/actions", (_req, res) => {
     if (!actionDefinitionsJson) {
-        let defs = ACTION_DEFINITIONS;
-        try {
-            defs = withEngineChoices(ACTION_DEFINITIONS, a11yEngine);
-        } catch (e) {
-            console.error("Failed to list the scan step's engines:", e);
-        }
-        actionDefinitionsJson = JSON.stringify(defs);
+        actionDefinitionsJson = JSON.stringify(ACTION_DEFINITIONS);
     }
     if (!res.get('Content-Type')) res.set('Content-Type', 'application/json');
     res.send(actionDefinitionsJson);
@@ -145,8 +136,8 @@ app.get("/api/engine/rules", (req, res) => {
     return res.status(501).json({ error: "Rules catalog not available for current engine" });
 });
 
-// The rule ids each selected engine accepts, for the step editor to check
-// a scan step's typed ids against. engineId may list several, comma-separated.
+// The rule ids surea11y accepts, for the step editor to check a scan step's
+// typed ids against.
 app.get("/api/engine/rule-ids", (req, res) => {
     res.set("Cache-Control", "no-store");
 
@@ -164,25 +155,6 @@ app.get("/api/engine/rule-ids", (req, res) => {
     }
 
     return res.json({ engines: [] });
-});
-
-app.get("/api/engines", (_req, res) => {
-    res.set("Cache-Control", "no-store");
-
-    try {
-        if (a11yEngine && typeof a11yEngine.listEngines === "function") {
-            return res.json(a11yEngine.listEngines());
-        }
-
-        return res.json({
-            engines: [],
-            defaultEngineId: a11yEngine?.engineId ?? null,
-            selectedEngineId: a11yEngine?.engineId ?? null
-        });
-    } catch (e) {
-        console.error("Failed to list available engines:", e);
-        return res.status(500).json({ error: "Failed to list available engines" });
-    }
 });
 
 app.get("/api/engine/capabilities", (req, res) => {

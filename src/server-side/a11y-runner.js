@@ -577,8 +577,8 @@ function automationCoverageForEngines(wcagLevel, engineIds, version = DEFAULT_WC
     // question here needs: whether ANY rule can reach a criterion, not how many.
     const coverage = rules.length ? buildAutomationCoverage({rules, level, version}) : null;
 
-    // Not every adapter exposes a catalog - the QualWeb ones report none - so a union
-    // can silently come down to a subset of the engines that ran. The criteria those
+    // An adapter that exposes no catalog would make a union silently come down
+    // to a subset of the engines that ran. The criteria those
     // engines evaluate still land in the numerator, so leaving this unsaid reports
     // their work against a scope that never included their reach.
     if (coverage && ids.length > 1) {
@@ -1424,7 +1424,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
         // The step's engine; without one, the default engine.
         const scanEngineId = (typeof meta.engine === 'string' && meta.engine.trim()) ? meta.engine.trim() : null;
         const engineOptions = {engineMode: meta.engineMode};
-        // Allow engine-specific options to pass through (QualWeb, Pa11y, custom engines, etc.)
+        // Engine options a step or spec gives pass through to surea11y.
         if (meta.engineOptions && typeof meta.engineOptions === 'object' && !Array.isArray(meta.engineOptions)) {
             Object.assign(engineOptions, meta.engineOptions);
         }
@@ -1478,8 +1478,8 @@ async function runA11yWorkflow(url, tags, options = {}) {
         }
         if (Object.keys(disableMerged).length) engineOptions.rules = disableMerged;
 
-        // The selection's tags, recorded on the scan as before; no engine
-        // selects by them but axe-core, whose adapter builds its own.
+        // The selection's tags, recorded on the scan as before; surea11y
+        // selects by its profile, not by them.
         const tagsForScan = selectionTags(selection);
         const wcagLevel = selection.level;
         // What the scan checks against, as its report records it: the

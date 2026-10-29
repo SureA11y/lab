@@ -54,11 +54,6 @@ RUN npm ci --omit=dev --no-audit --no-fund
 COPY . .
 COPY --from=assets /lab/src/report/ /lab/src/report/
 
-# Add-ons to install, space-separated: --build-arg ADDONS=more-engines adds
-# the other engines (addons/more-engines). None by default: surea11y alone.
-ARG ADDONS=""
-RUN for addon in $ADDONS; do npm --prefix "addons/$addon" ci --omit=dev --no-audit --no-fund || exit 1; done
-
 RUN chmod +x docker/entrypoint.sh \
     && mkdir -p /work /lab/reports \
     && chown -R node:node /work /lab/reports

@@ -45,11 +45,8 @@
 
 ## Configure and extend
 
-- [Configuration](configuration.md): environment variables, engine settings
-  and add-ons.
-- [Engines](engines.md): how scan engines plug in, and how to add one in an
-  add-on. [More engines](../addons/more-engines/README.md): the add-on with
-  axe-core, Alfa, Pa11y and QualWeb.
+- [Configuration](configuration.md): environment variables and engine
+  settings.
 
 ## Design notes
 

@@ -148,13 +148,11 @@ function primaryContentUnit(units) {
  * Only fail/cantTell findings are weighted, since those are the ones a verdict
  * rests on.
  *
- * Not every engine reports a per-check confidence: axe-core stamps a flat 1.0,
- * surea11y maps its own high/medium/low, and pa11y and QualWeb report none at
- * all. Dropping the ones that report none makes the mean describe a subset while
- * reading as though it covered everything - a run of axe plus QualWeb would
- * report full confidence off axe's findings alone, however much of the evidence
- * came from QualWeb. `coverage` is what stops that: the mean still says what the
- * engines said, and the caller can see how much of the run it speaks for.
+ * surea11y maps its own high/medium/low to a confidence, but a finding may
+ * carry none (one from a report saved before, with another engine's). Dropping
+ * those makes the mean describe a subset while reading as though it covered
+ * everything. `coverage` is what stops that: the mean still says what the
+ * findings said, and the caller can see how much of the run it speaks for.
  *
  * @returns {{mean: number, coverage: number}|null} null when nothing carried one.
  */
@@ -317,7 +315,7 @@ function buildA11ySummary({ canonical, domMetrics, textMetrics, coverageSummary 
         passes = [];
     }
 
-    // ---- Axe risk (combine breadth + depth, depth normalized per 1k nodes) ----
+    // ---- Findings risk (combine breadth + depth, depth normalized per 1k nodes) ----
     const violationBreadth = sumWeightedRuleBreadth(violations);
     const incompleteBreadth = sumWeightedRuleBreadth(incomplete);
 

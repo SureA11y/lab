@@ -24,30 +24,20 @@ Read by the server and the command-line runner alike.
 | `A11Y_QUEUE_DIR` | Where the queue keeps its batches, inside the reports folder (default `batches`) |
 | `A11Y_QUEUE_METRICS` | Each batch writes `metrics.jsonl`, what the server and browser used as it ran (default on) |
 | `A11Y_MAX_RUNS` | How many runs started from the app's Run workflow (or `POST /workflow-start`) go at once; the others wait their turn, and say so in their log (default `4`). The queue has its own setting |
-| `A11Y_ENGINE` | The engine a scan step that names none runs with (default `surea11y`) |
-| `A11Y_ENGINE_ADDONS` | `off` leaves every add-on's engines out, installed or not |
-| `A11Y_VALIDATE_CANONICAL` | Check every scan's result against the lab's result model; for engine development |
-| `A11Y_DEBUG_MODE` | More logging on the server, and each engine's own output kept in the report |
+| `A11Y_VALIDATE_CANONICAL` | Check every scan's result against the lab's result model; for development |
+| `A11Y_DEBUG_MODE` | More logging on the server, and surea11y's own output kept in the report |
 | `A11Y_ECHO_BROWSER_CONSOLE` | Copy the scanned page's console output to the server's (set to `1`) |
-| `A11Y_DUMP_RESULT_JSON`, `A11Y_DUMP_DIR`, `A11Y_DUMP_LOG` | Write every engine's raw result to `a11y-dumps/` (or the folder given), and log where |
+| `A11Y_DUMP_RESULT_JSON`, `A11Y_DUMP_DIR`, `A11Y_DUMP_LOG` | Write surea11y's raw result for every scan to `a11y-dumps/` (or the folder given), and log where |
 
 Variables a workflow reads secrets from (`{"$env": "NAME"}`) are the
 workflow's own: see [the runner's guide](scheduled-scans-guide.md#passwords).
 
-## Engines and add-ons
+## The engine
 
-surea11y is built in, and the only engine installed. Add-ons, in `addons/`,
-bring more:
-
-```bash
-npm run addon:list                    # the add-ons, and which are installed
-npm run addon:install -- more-engines # axe-core, Alfa, Pa11y and QualWeb
-npm run addon:remove -- more-engines
-```
-
-Restart the server after either. [Engines](engines.md) explains how an engine
-plugs in; `a11y-engine.config.json`, in the working folder, can set the
-default engine (`{ "engineId": "surea11y" }`) and options for it.
+The lab scans with surea11y, [`@surea11y/core`](https://github.com/SureA11y/core),
+its one engine. `a11y-engine.config.json`, in the working folder, can set
+options for it (`{ "engineOptions": { "surea11y": { … } } }`) and turn on
+the result model check (`"validateCanonical": true`).
 
 ## The command-line runner
 
