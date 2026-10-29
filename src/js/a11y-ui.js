@@ -305,6 +305,14 @@ function storeActiveMode(mode) {
         return mode;
     }
 
+    // Set when a run finishes: the next summary written for it gives its
+    // result (runResultText) to the run status's last message ("Finished: 6
+    // failures in 7 elements, across 1 scan. Total time: 3 seconds"), which a
+    // screen reader announces. The summary itself is not a live region: it
+    // arrives with its controls inside a container that was hidden.
+    let runResultToStatus = false;
+    let runResultText = '';
+
     function getActiveBucket() {
         return resultsState.activeMode === 'report' ? resultsState.report : resultsState.run;
     }
@@ -1377,6 +1385,9 @@ function storeActiveMode(mode) {
 
     /** @type {{ key: string, file: File, name: string, size: number, lastModified: number, ok: boolean, error: string|null, parsed: any|null }[]} */
     let stagedReportFiles = [];
+    // The staged report a single pick opened at once, which the next single
+    // pick replaces while the list holds nothing else.
+    let reportOpenedAlone = null;
 
     function makeFileKey(file) {
         // stable-enough dedupe key for user-selected files
@@ -2328,7 +2339,6 @@ function storeActiveMode(mode) {
     function clearLogsPanel() {
         if (!logsPanelEl) return;
         logsPanelEl.innerHTML = '';
-        logsPanelEl.style.display = 'none';
         logToolbarEl?.classList.remove('is-visible');
     }
 
@@ -3766,7 +3776,6 @@ function storeActiveMode(mode) {
     function appendLog(message, type, opts) {
         if (!logsPanelEl || !message) return;
 
-        if (logsPanelEl.style.display === 'none') logsPanelEl.style.display = 'block';
         logToolbarEl?.classList.add('is-visible');
 
         const entry = document.createElement('div');
@@ -3884,6 +3893,8 @@ function storeActiveMode(mode) {
 
         if (st === 'running') {
             setStatusRun(message || 'Running, please wait...', STATUS.BUSY);
+            runResultToStatus = false;
+            runResultText = '';
             document.body.classList.add('is-running');
             document.body.classList.remove('is-done');
 
@@ -3903,6 +3914,7 @@ function storeActiveMode(mode) {
 
         if (st === 'done') {
             setStatusRun(message || 'Finished', STATUS.OK);
+            runResultToStatus = !/^Dry run/.test(message || '');
             document.body.classList.remove('is-running');
             document.body.classList.add('is-done');
 
@@ -6136,7 +6148,20 @@ function storeActiveMode(mode) {
             input.value = ''; // always reset so same file selection triggers change again
 
             if (!files.length) return;
-            await stageReportFiles(files);
+            // One report on its own opens at once, as one given by address
+            // does, and the next one picked the same way takes its place;
+            // several, or one added to a list, wait in the list to be
+            // reviewed, chosen from and merged with Load selected.
+            if (reportOpenedAlone && stagedReportFiles.length === 1 && stagedReportFiles[0] === reportOpenedAlone) {
+                stagedReportFiles = [];
+            }
+            reportOpenedAlone = null;
+            const listedBefore = stagedReportFiles.length;
+            const allReports = await stageReportFiles(files);
+            if (allReports && listedBefore === 0 && stagedReportFiles.length === 1) {
+                reportOpenedAlone = stagedReportFiles[0];
+                reportFilesLoadBtn?.click();
+            }
         });
     }
 
@@ -8203,7 +8228,8 @@ function storeActiveMode(mode) {
 
                 // After an error the status keeps saying what went wrong.
                 if (failed) appendLog(`Total time: ${t}`, STATUS.INFO);
-                else setStatusRun(`Total time: ${t}`, STATUS.OK);
+                else setStatusRun(`${runResultText ? runResultText + ' ' : ''}Total time: ${t}`, STATUS.OK);
+                runResultText = '';
             }
 
             runStartedAtMs = null;
@@ -8577,6 +8603,11 @@ function storeActiveMode(mode) {
             '</div>' +
             rgaaRateHtml(getScansFromPayload(data, {includedOnly: true})) +
             (scansListHtml || '');
+
+        if (runResultToStatus && resultsState.activeMode === 'run' && headerText == null) {
+            runResultToStatus = false;
+            runResultText = 'Finished: ' + header.replace(/^Workflow scan - /, '');
+        }
     }
 
     /* ==================== "View all scans" grid dialog ==================== */
@@ -9445,6 +9476,16 @@ function storeActiveMode(mode) {
                 const reportName = askForReportName(payloadForExport);
                 return reportName !== null;
             },
+            // After a run the Configuration panel is collapsed, Export config
+            // inside it; a run that worked is when its workflow is worth
+            // keeping, so it is offered here too. Not for a report opened from
+            // a file: the configuration on screen is not the one it ran with.
+            extraItems: resultsState.activeMode === 'run' ? [{
+                id: 'config',
+                label: 'Export config',
+                description: 'The workflow and its settings, to load or run again',
+                onSelect: () => $('#save-config-button')?.click(),
+            }] : [],
         });
         containerEl.appendChild(downloadReportSplitBtn);
 

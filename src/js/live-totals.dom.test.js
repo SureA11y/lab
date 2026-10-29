@@ -38,6 +38,29 @@ describe('createLiveTotals', () => {
         assert.equal(document.getElementById('live-totals'), null);
     });
 
+    test('says the tally from a status that is on the page, empty, before the first scan', async () => {
+        const totals = createLiveTotals();
+        await Promise.resolve();
+        const status = document.getElementById('live-totals-announce');
+        assert.ok(status, 'the status is there before any scan');
+        assert.equal(status.getAttribute('role'), 'status');
+        assert.equal(status.getAttribute('aria-live'), 'polite');
+        assert.equal(status.textContent, '');
+
+        totals.add({counts: {violations: 3, incomplete: 2, passes: 10}, domNodes: 1200});
+        assert.equal(status.textContent, "3 fail, 2 can't tell, 10 pass, 1 scan");
+        totals.finish();
+        assert.equal(status.textContent, "3 fail, 2 can't tell, 10 pass, 1 scan, run finished");
+
+        totals.setHidden(true);
+        totals.add({counts: {violations: 1}});
+        assert.equal(status.textContent, "3 fail, 2 can't tell, 10 pass, 1 scan, run finished", 'quiet on another tab');
+
+        totals.setHidden(false);
+        totals.reset();
+        assert.equal(status.textContent, '');
+    });
+
     test('creates the counter on the first scan and shows the four totals', () => {
         const totals = createLiveTotals();
         totals.add({counts: {violations: 3, incomplete: 2, passes: 10}, domNodes: 1200});
@@ -45,8 +68,9 @@ describe('createLiveTotals', () => {
         const el = document.getElementById('live-totals');
         assert.ok(el, 'counter is mounted');
         assert.equal(el.tagName, 'DIV'); // an aside may not be a status
-        assert.equal(el.getAttribute('role'), 'status');
-        assert.equal(el.getAttribute('aria-live'), 'polite');
+        assert.equal(el.getAttribute('role'), 'region');
+        assert.equal(el.getAttribute('aria-label'), 'Live scan totals');
+        assert.equal(el.getAttribute('aria-live'), null, 'the card is not the live region');
 
         assert.equal(valueText(el, '.live-totals-fail'), '3');
         assert.equal(valueText(el, '.live-totals-cantTell'), '2');
@@ -626,7 +650,7 @@ describe('createLiveTotals: step progress', () => {
         assert.equal(el.id, 'watch-1-totals');
         assert.equal(el.tagName, 'DIV');
         assert.ok(el.classList.contains('live-totals--inline'));
-        assert.equal(el.getAttribute('role'), 'status');
+        assert.equal(el.getAttribute('role'), 'region');
         assert.equal(el.querySelector('.live-totals-dismiss'), null);
         assert.ok(el.querySelector('#watch-1-totals-bytag'));
         assert.ok(el.querySelector('#watch-1-totals-bystep'));

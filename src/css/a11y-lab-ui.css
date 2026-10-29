@@ -3164,6 +3164,22 @@ tr.cantTell .issue-status { color: var(--warn); }
     display: none;
 }
 
+/* The run log is a live region. Empty, it takes no room but stays in the
+   accessibility tree: one that is display:none while empty comes into the
+   tree with its first line already in it, which a screen reader may never
+   announce. */
+#log-panel { display: block; }
+#log-panel:empty {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+
 #log-panel.ok,
 .log-panel.ok {
     border-color: var(--log-ok);
