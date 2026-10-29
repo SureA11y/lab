@@ -2,7 +2,7 @@ const scan = {
     version: "1.0",
 
     engine: {                // from meta.engine (a11y-engine.js passes this)
-        id: "surea11y",
+        id: "surea11y",      // the adapter's engineId
         name: "surea11y",
         version: "x.y.z"       // or null
     },
@@ -58,11 +58,11 @@ const scan = {
             },
 
             wcag: {
-                // prefers enriched mapping item.SC (array of {ref, level?}), falls back to parsed wcag tags
-                sc: [{ref: "1.4.3", level: "AA"}],
+                // the criteria's numbers, from the engine's mapping or its wcag tags
+                sc: ["1.4.3"],
                 // subset of sc the rule actually enforces; excludes informative references.
                 // Coverage and scoring must read this one to avoid over-attributing criteria.
-                scNormative: [{ref: "1.4.3", level: "AA"}]
+                scNormative: ["1.4.3"]
             },
 
             occurrences: [

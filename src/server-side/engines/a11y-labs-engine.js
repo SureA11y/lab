@@ -55,7 +55,7 @@ const coreGetCompositeRulesCatalog = (opts) => core.getRulesCatalog(withPacks(op
 const getCheckDefById = (ruleId, opts) => core.getCheckDefById(ruleId, withPacks(opts));
 // The scan itself runs through @surea11y/puppeteer, with core's
 // runa11yCoreInPage (see surea11y-scan.js).
-const { scanPage, captureScreenshots } = require('./surea11y-scan');
+const { scanPage, captureScreenshots, coreHooksFrom, installCoreHooks } = require('./surea11y-scan');
 const { getScanNotes } = require('@surea11y/puppeteer');
 const { elementScreenshotOf } = require('../element-screenshots');
 
@@ -1720,11 +1720,20 @@ module.exports = {
     // report export
     saveHtmlReport,
 
+    // page readiness: core's hooks, before the page's own scripts run
+    preparePage: (page, { hooks } = {}) => installCoreHooks(page, Array.isArray(hooks) ? hooks : undefined),
+    pageHooksFrom: coreHooksFrom,
+
+    // core's own result, for the CI exports and baselines
+    ownResult: coreResultFromNative,
+
     // capability metadata (used by UI to hide unsupported fields)
     capabilities: {
         // The conformance targets it can check (conformance-targets.js):
         // surea11y applies a standard in full (its profile).
         selectsBy: 'standard',
+        // It names EN 301 549's clauses itself (canonical/en301549.js).
+        namesEn301549Clauses: true,
         actions: {
             a11yScan: {
                 label: true,

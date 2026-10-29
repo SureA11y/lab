@@ -567,33 +567,35 @@ export function createActionsBuilder ({
     };
 
     // ---- The scan step's engine ----
-    // Every scan runs with surea11y, the lab's one engine, and a step shows
-    // all its fields and profiles. The rule ids surea11y has are loaded when a
-    // step first uses them, for typed ids to be checked against.
-    const ENGINE_ID = "surea11y";
+    // Every scan runs with the lab's one engine, which the server names
+    // (surea11y by default, see a11y-engine.js). Its rule ids are loaded when
+    // a step first uses them, for typed ids to be checked against, and the
+    // engine's id comes with them.
+    let labEngineId = null;
 
-    /** The engine a scan step line runs with: surea11y. */
+    /** The engine a scan step line runs with: the lab's, once it is known. */
     function engineOfLine() {
-        return ENGINE_ID;
+        return labEngineId;
     }
 
     // The rule ids the engine accepts in a scan step (a Set), loaded when a
-    // step first uses them. Not loaded yet, or not to be had: nothing is
-    // checked.
-    const knownRuleIdsByEngine = new Map();
+    // step first uses them. Not loaded yet (undefined), or not to be had
+    // (null): nothing is checked.
+    let knownRuleIds;
+    let knownRuleIdsAsked = false;
 
-    function ensureKnownRuleIds(engineId) {
-        if (!engineId || knownRuleIdsByEngine.has(engineId) || typeof fetch !== "function") return;
-        knownRuleIdsByEngine.set(engineId, undefined);
+    function ensureKnownRuleIds() {
+        if (knownRuleIdsAsked || typeof fetch !== "function") return;
+        knownRuleIdsAsked = true;
         const base = options.ruleIdsUrl || "/api/engine/rule-ids";
-        fetch(`${base}?engineId=${encodeURIComponent(engineId)}`, {headers: {"Accept": "application/json"}})
+        fetch(base, {headers: {"Accept": "application/json"}})
             .then((res) => (res.ok ? res.json() : null))
             .then((json) => {
-                const engines = Array.isArray(json && json.engines) ? json.engines : [];
-                const own = engines.find((e) => e && String(e.id).toLowerCase() === engineId) || engines[0];
-                knownRuleIdsByEngine.set(engineId, own && Array.isArray(own.ruleIds) ? new Set(own.ruleIds.map(String)) : null);
+                const own = Array.isArray(json && json.engines) ? json.engines[0] : null;
+                if (own && own.id) labEngineId = String(own.id);
+                knownRuleIds = own && Array.isArray(own.ruleIds) ? new Set(own.ruleIds.map(String)) : null;
             })
-            .catch(() => knownRuleIdsByEngine.set(engineId, null));
+            .catch(() => { knownRuleIds = null; });
     }
 
     /**
@@ -601,19 +603,18 @@ export function createActionsBuilder ({
      * that can't be told: its list is not loaded. An id with a {var:...}
      * token is only known at runtime.
      */
-    function unknownRuleIds(value, engineId) {
-        const set = knownRuleIdsByEngine.get(engineId);
-        if (!set) return [];
+    function unknownRuleIds(value) {
+        if (!knownRuleIds) return [];
         return String(value || "")
             .split(",")
             .map((id) => id.trim())
-            .filter((id) => id && !id.includes("{") && !set.has(id));
+            .filter((id) => id && !id.includes("{") && !knownRuleIds.has(id));
     }
 
     /** Readies a scan step line: the rule ids it is checked against. */
     function applyEngineToLine(lineEl) {
         if (!lineEl || lineEl.dataset.actionType !== "a11yScan") return;
-        ensureKnownRuleIds(ENGINE_ID);
+        ensureKnownRuleIds();
     }
 
     // ---- Tiny utils ----
@@ -2872,13 +2873,12 @@ export function createActionsBuilder ({
             // A selector the browser can't parse fails the scan, so it is
             // caught here, before a run. One with a {var:...} token is only
             // known at runtime.
-            // An id surea11y does not have would run nothing, or every rule:
-            // a typo is caught here, before a run.
+            // An id the engine does not have would run nothing, or every
+            // rule: a typo is caught here, before a run.
             if (fieldEl.dataset.ruleIds === "true" && val) {
-                const engineId = engineOfLine(lineEl);
-                const unknown = unknownRuleIds(val, engineId);
+                const unknown = unknownRuleIds(val);
                 if (unknown.length) {
-                    const name = engineId;
+                    const name = engineOfLine(lineEl) || "The engine";
                     setError(control, unknown.length === 1
                         ? `${name} has no rule named "${unknown[0]}"`
                         : `${name} has no rules named ${unknown.map((id) => `"${id}"`).join(", ")}`);

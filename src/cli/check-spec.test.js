@@ -112,7 +112,7 @@ describe('checkSpec', () => {
         assert.deepEqual(warnings, ['$.actions[1].engine "engine" is not a known field']);
         assert.equal(errors.length, 2);
         assert.match(errors[0], /^Scan "Old": "AA" is not a profile/);
-        assert.match(errors[1], /^Scan "Gone": The lab runs surea11y only; "nope" is not an engine it has/);
+        assert.match(errors[1], /^Scan "Gone": "nope" is not an engine the lab has/);
     });
 
     test('a run profile is an error, and the converter is the way on', () => {

@@ -53,7 +53,6 @@ const { captureScreenshotArtifact } = require('./screenshot-capture.js');
 const { CAPTURE_BUDGET_MS, screenshotOptionsForStep, storeElementScreenshots } = require('./element-screenshots.js');
 const { splitWcagTagToRef } = require('../shared/canonical-shared');
 const { LOCALES } = require('./engines/a11y-labs-engine');
-const { installCoreHooks } = require('./engines/surea11y-scan');
 const { resolveScanSelection, selectionTags, targetLabel, DEFAULT_WCAG_VERSION } = require('./conformance-targets');
 const { checkScanSteps } = require('./scan-step-check');
 const { pushLog, varsForLog } = require('../workflow/engine/log');
@@ -625,8 +624,9 @@ const HEAVY_SKIP_SUGGESTIONS = [
 /**
  * The standard a scan was checked against, as { id, label }, or null.
  *
- * When surea11y ran, its own report of the profile it applied decides: it
- * leaves one out when the step's included rules or tags took precedence. In a
+ * When an engine that applies a standard in full ran (surea11y), its own
+ * report of the profile it applied decides: it leaves one out when the
+ * step's included rules or tags took precedence. In a
  * multi-engine scan the merged canonical keeps only the first engine's
  * runOptions, so each engine's own canonical is checked as well. Other engines
  * only get the standard's tags, which explicit includes also replace, so the
@@ -637,27 +637,15 @@ function appliedConformanceProfile(engineResult, { requested = null, overridden 
     if (engineResult && Array.isArray(engineResult.perEngine)) {
         for (const p of engineResult.perEngine) candidates.push(p && p.canonical);
     }
-    let surea11yRan = false;
+    let standardApplier = false;
     for (const c of candidates) {
         const engines = c && Array.isArray(c.engines) ? c.engines : [];
-        if (engines.some((e) => e && e.id === 'surea11y')) surea11yRan = true;
+        if (engines.some((e) => e && a11yEngine.appliesStandard(e.id))) standardApplier = true;
         const cp = c && c.runOptions ? c.runOptions.conformanceProfile : null;
         if (cp && typeof cp === 'object' && cp.id) return { id: String(cp.id), label: String(cp.label || cp.id) };
     }
-    if (!requested || surea11yRan || overridden) return null;
+    if (!requested || standardApplier || overridden) return null;
     return { id: requested, label: targetLabel(requested) };
-}
-
-/**
- * surea11y's own result from a scan's native engine output, or null when
- * surea11y did not take part. A multi-engine scan keeps native output per
- * engine under `byEngine`.
- */
-function surea11yCoreResult(native) {
-    if (!native || typeof native !== 'object') return null;
-    const own = native.byEngine && typeof native.byEngine === 'object' ? native.byEngine.surea11y : native;
-    if (!own || own.engineId !== 'surea11y' || !Array.isArray(own.checksResults)) return null;
-    return own;
 }
 
 function buildHeavySkipExtra({label = null, context = null, profile = null, url = null, estimatedNodes, threshold}) {
@@ -722,9 +710,10 @@ async function openContextAndPage(determinism) {
         } catch {}
     });
 
-    // Core's hooks run before the page's own scripts, so they go in before
-    // the first navigation. Without determinism.coreHooks, every one.
-    await installCoreHooks(page, Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined);
+    // The engine readies the page before the first navigation (surea11y
+    // installs core's hooks, which run before the page's own scripts).
+    // Without determinism.coreHooks, every one.
+    await a11yEngine.preparePage(page, { hooks: Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined });
 
     // User-Agent: an explicit determinism.userAgent wins; otherwise the
     // browser's own, which the stealth plugin, when on, de-headlesses and
@@ -1148,9 +1137,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
     } catch {}
     workflowCtx.runId = runId;
     // A worker page the workflow opens itself (crawl or forEachElement
-    // concurrency) gets core's hooks too, before it navigates.
-    workflowCtx.preparePage = (workerPage) => installCoreHooks(
-        workerPage, Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined);
+    // concurrency) is readied the same way, before it navigates.
+    workflowCtx.preparePage = (workerPage) => a11yEngine.preparePage(
+        workerPage, { hooks: Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined });
 
     // Screenshot writer (PNG/JPEG/WEBP) - saves to disk under REPORTS_ROOT/runs/<runId>/...
     // IMPORTANT: opt-in only. By default we do NOT persist non-evidence screenshots.
@@ -1842,7 +1831,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
                 // Internal only, used for explicit report export without leaking native to normal payloads
                 nativeForReport: exportReport ? collectedScans : null,
                 // Internal only: surea11y's raw result, for SARIF/JUnit/EARL export
-                coreResult: keepCoreResults ? surea11yCoreResult(collectedScans) : null,
+                coreResult: keepCoreResults ? a11yEngine.ownResult(collectedScans) : null,
                 canonical,
                 domMetrics,
                 a11ySummary,

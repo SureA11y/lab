@@ -8,8 +8,11 @@
  * - This module returns the CANONICAL result model.
  * - Swapping engines should not require changes outside engine adapter modules.
  *
- * The engine is surea11y, @surea11y/core, the one engine the lab runs; its
- * adapter is in ./engines.
+ * The lab runs one engine, surea11y (@surea11y/core) by default. Each engine
+ * is an adapter in ./engines, a file named *-engine.js, found at start. The
+ * engineId of a11y-engine.config.json names the one the lab runs. Adding an
+ * engine is adding its adapter and naming it there: what an adapter must and
+ * may export is in CONTRIBUTING.md, "Adding an engine".
  */
 
 const DEFAULT_ENGINE_NAME = 'surea11y';
@@ -167,7 +170,7 @@ const _enginesRegistry = loadEnginesRegistry();
 
 function readEngineConfigFromConfigFile() {
     // Reads a11y-engine.config.json (if present) and returns a normalized config object:
-    // { validateCanonical?, engineOptions? }
+    // { engineId?, validateCanonical?, engineOptions? }
     const candidates = [
         path.join(process.cwd(), 'a11y-engine.config.json'),
         path.join(__dirname, 'a11y-engine.config.json'),
@@ -187,7 +190,9 @@ function readEngineConfigFromConfigFile() {
 
             const engineOptions = (obj.engineOptions && typeof obj.engineOptions === 'object') ? obj.engineOptions : null;
 
-            return { validateCanonical, engineOptions };
+            const engineId = typeof obj.engineId === 'string' && obj.engineId.trim() ? obj.engineId.trim() : null;
+
+            return { engineId, validateCanonical, engineOptions };
         } catch {
             // ignore invalid config
         }
@@ -197,8 +202,10 @@ function readEngineConfigFromConfigFile() {
 }
 
 
+/** The engine the config names (by id or name), else surea11y. */
 function readRequestedEngineId() {
-    return DEFAULT_ENGINE_NAME;
+    const cfg = readEngineConfigFromConfigFile();
+    return (cfg && cfg.engineId) || DEFAULT_ENGINE_NAME;
 }
 
 function resolveEngineBundle(requestedRaw) {
@@ -229,7 +236,7 @@ function loadEngineAdapterByIdOrName(explicit) {
         ? `Known engines: ${known.map(k => `${k.id} (${k.name})`).join(', ')}`
         : 'No engines discovered in ./engines';
 
-    throw new Error(`The lab runs surea11y only; "${requested}" is not an engine it has. ${hint}`);
+    throw new Error(`"${requested}" is not an engine the lab has. ${hint}`);
 }
 
 const loaded = loadEngineAdapterByIdOrName(readRequestedEngineId());
@@ -501,10 +508,11 @@ async function runOnPage(
 
         // Always apply provenance.
         applyProvenanceToCanonical(result.canonical, engineMeta);
-        // EN 301 549's clauses on an EN 301 549 scan: surea11y's as core
-        // names them, under its profile; for an engine that cannot name them,
-        // those of the version the scan targeted.
-        if (bundle.id === 'surea11y') en301549FromMappings(result.canonical);
+        // EN 301 549's clauses on an EN 301 549 scan: the engine's own, for
+        // one that names them (surea11y, under its profile); for one that
+        // cannot, those of the version the scan targeted.
+        const caps = bundle.mod && bundle.mod.capabilities ? bundle.mod.capabilities : {};
+        if (caps.namesEn301549Clauses) en301549FromMappings(result.canonical);
         else annotateEn301549(result.canonical, { profile: scanSelection && scanSelection.profile });
         separateBestPractices(result.canonical);
     }
@@ -515,6 +523,48 @@ async function runOnPage(
     }
 
     return result;
+}
+
+/**
+ * Readies a page before its first navigation, for an adapter that needs to:
+ * surea11y installs core's hooks, which must run before the page's own
+ * scripts. `hooks` is the run's determinism.coreHooks, or undefined for the
+ * adapter's default. Returns what the adapter returns, or [] for none.
+ */
+async function preparePage(page, { hooks } = {}) {
+    if (typeof adapter.preparePage === 'function') return adapter.preparePage(page, { hooks });
+    return [];
+}
+
+/**
+ * The page hooks a setting (A11Y_CORE_HOOKS) asks for, as the adapter reads
+ * it, or undefined for its default (and for an adapter without hooks).
+ */
+function pageHooksFrom(value) {
+    if (typeof adapter.pageHooksFrom === 'function') return adapter.pageHooksFrom(value);
+    return undefined;
+}
+
+/**
+ * The engine's own result in a scan's native output, which the adapter
+ * names: for surea11y, core's result, which the CI exports (SARIF, JUnit,
+ * EARL) and baselines are built from. null for an adapter that keeps none,
+ * whose scans then have nothing to export in those formats.
+ */
+function ownResult(native) {
+    if (typeof adapter.ownResult === 'function') return adapter.ownResult(native) || null;
+    return null;
+}
+
+/**
+ * Whether the engine with this id applies a standard in full (selectsBy
+ * 'standard'), and so says itself which one it applied. false for an
+ * engine the lab doesn't have.
+ */
+function appliesStandard(id) {
+    const bundle = id ? resolveEngineBundle(id) : null;
+    const caps = bundle && bundle.mod && bundle.mod.capabilities ? bundle.mod.capabilities : {};
+    return caps.selectsBy === 'standard';
 }
 
 /**
@@ -611,5 +661,11 @@ module.exports = {
     supportsCapabilities: !!(adapter && adapter.capabilities),
 
     // engine discovery (for UI)
-    listEngines
+    listEngines,
+
+    // optional adapter hooks, with defaults for an adapter without them
+    preparePage,
+    pageHooksFrom,
+    ownResult,
+    appliesStandard
 };

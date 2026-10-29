@@ -17,7 +17,7 @@ const {
 const { METRIC_DEFS } = require('./metrics/a11y-metric-defs.cjs');
 const { createWorkflowPayloadBuilder } = require('../shared/workflow-payload-builder');
 const { buildBaselineEntries } = require('@surea11y/core/baseline');
-const { coreHooksFrom } = require('./engines/surea11y-scan');
+const a11yEngine = require('./a11y-engine');
 const { checkWorkflowSteps } = require('./step-check');
 const { resolveSecretRefs, describeMissing } = require('../shared/secret-refs.js');
 
@@ -64,7 +64,7 @@ function resolveDeterminism() {
         // Core's opt-in hooks, installed before the page loads: all by
         // default, A11Y_CORE_HOOKS=none for none, or a list
         // (internals,listener,liveRegion).
-        coreHooks: coreHooksFrom(process.env.A11Y_CORE_HOOKS),
+        coreHooks: a11yEngine.pageHooksFrom(process.env.A11Y_CORE_HOOKS),
     };
 }
 

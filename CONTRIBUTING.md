@@ -86,3 +86,50 @@ The lab runs one engine: surea11y, [`@surea11y/core`](https://github.com/SureA11
 What a scan finds, and how, is core's: a change there belongs in core, not
 in the lab. The lab's side of it is its adapter,
 `src/server-side/engines/a11y-labs-engine.js`.
+
+The rest of the lab does not know which engine it runs. The server, the
+runner, the workflows and the app talk only to the engine facade,
+`src/server-side/a11y-engine.js`, which hands them the canonical result
+model (`src/server-side/canonical-model.js`) whatever the engine.
+
+## Adding an engine
+
+An engine is an adapter: a file in `src/server-side/engines/` whose name
+ends in `-engine.js`. The facade finds every adapter there when it loads,
+and runs the one `engineId` names in `a11y-engine.config.json`. Adding an
+engine is adding its adapter and naming it there; nothing else in the lab
+changes. `src/server-side/a11y-engine.new-adapter.test.js` shows it, with
+the least adapter there can be (`src/test-support/stub-engine.js`).
+
+An adapter must export:
+
+- `engineId`: its id, lowercase letters, digits and dashes;
+- `runOnPage(page, options)`: scans a Puppeteer page and returns
+  `{ canonical }`, the findings in the canonical model. `options` holds
+  what the scan step asks for: `selection` (the conformance target),
+  `runOnly`, `wcagLevel`, `contextSelector`, `excludeSelectors` and
+  `engineOptions`;
+- `capabilities`: `selectsBy`, how it is told what to check (`standard`
+  when it applies a standard in full, as surea11y does, `tags` when it is
+  given the standard's tags), and `actions.a11yScan`, the scan step fields
+  it takes.
+
+It may also export, and the facade has a default for each it leaves out:
+
+| Export | What it does | Without it |
+| --- | --- | --- |
+| `engineName`, `engineVersion` | Its name and version, in reports | its id, no version |
+| `getRulesCatalog()` | Its rules, for the catalog and the step editor's rule id check | no catalog, no check |
+| `getSelectableRuleIds()` | Rule ids a step may name that the catalog leaves out | |
+| `ensureInjected(page)` | Puts its script in the page before a scan | |
+| `getRulesForRunOnly(page, runOnly, options)` | The rules a scan ran | none listed |
+| `preparePage(page, { hooks })` | Readies a page before its first navigation | |
+| `pageHooksFrom(value)` | Reads `A11Y_CORE_HOOKS` for `preparePage` | |
+| `ownResult(native)` | Its own result, which the SARIF, JUnit and EARL exports and baselines are built from | no exports |
+| `saveHtmlReport(model, meta)` | Its HTML report for a scan | no HTML report |
+| `capabilities.namesEn301549Clauses` | It names EN 301 549's clauses itself | the clauses of the version the scan targeted |
+
+The SARIF, JUnit and EARL exports and the baselines are made with core's
+renderers from core's own result, so an engine without `ownResult` has
+none of them. The browser extension is surea11y's alone: it does not take
+other engines.

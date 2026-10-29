@@ -56,15 +56,14 @@ const errorOf = (actionsEl, name) => {
     return err && !err.hidden ? err.textContent : '';
 };
 
-// Answers the rule ids endpoint with each engine's list in `lists`, and
-// records what it asked.
+// Answers the rule ids endpoint, which names the lab's engine, with its
+// list in `lists`, and records what it asked.
 function stubFetch(lists) {
     const asked = [];
     globalThis.fetch = async (url) => {
         asked.push(String(url));
-        const id = new URL(String(url), 'http://lab').searchParams.get('engineId');
-        if (String(url).startsWith('/api/engine/rule-ids') && id in lists) {
-            return { ok: true, json: async () => ({ engines: [{ id, ruleIds: lists[id] }] }) };
+        if (String(url).startsWith('/api/engine/rule-ids')) {
+            return { ok: true, json: async () => ({ engines: Object.entries(lists).map(([id, ruleIds]) => ({ id, ruleIds })) }) };
         }
         return { ok: false, json: async () => ({}) };
     };
@@ -82,9 +81,9 @@ async function builderFor(step, lists) {
 describe('scan step rule ids', () => {
     const lists = { surea11y: ['img-alt-present', 'region'] };
 
-    test('asks for surea11y\'s ids', async () => {
+    test('asks the server for the lab\'s engine\'s ids, once', async () => {
         const { asked } = await builderFor({ type: 'a11yScan' }, lists);
-        assert.ok(asked.includes('/api/engine/rule-ids?engineId=surea11y'), asked.join(' '));
+        assert.deepEqual(asked.filter((u) => u.startsWith('/api/engine/rule-ids')), ['/api/engine/rule-ids']);
     });
 
     test('flags an id surea11y does not have, and accepts one it has', async () => {

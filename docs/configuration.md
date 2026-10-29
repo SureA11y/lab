@@ -37,7 +37,9 @@ workflow's own: see [the runner's guide](scheduled-scans-guide.md#passwords).
 The lab scans with surea11y, [`@surea11y/core`](https://github.com/SureA11y/core),
 its one engine. `a11y-engine.config.json`, in the working folder, can set
 options for it (`{ "engineOptions": { "surea11y": { … } } }`) and turn on
-the result model check (`"validateCanonical": true`).
+the result model check (`"validateCanonical": true`). Its `engineId` names
+the engine the lab runs, `surea11y` unless another engine's adapter has been
+added ([CONTRIBUTING.md](../CONTRIBUTING.md#adding-an-engine)).
 
 ## The command-line runner
 

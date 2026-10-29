@@ -136,8 +136,8 @@ app.get("/api/engine/rules", (req, res) => {
     return res.status(501).json({ error: "Rules catalog not available for current engine" });
 });
 
-// The rule ids surea11y accepts, for the step editor to check a scan step's
-// typed ids against.
+// The rule ids the lab's engine accepts, for the step editor to check a scan
+// step's typed ids against. Without engineId, the lab's engine, by its id.
 app.get("/api/engine/rule-ids", (req, res) => {
     res.set("Cache-Control", "no-store");
 
