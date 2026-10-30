@@ -53,3 +53,19 @@
     .acr-review-head { margin: 0 calc(-1 * var(--space-3)) var(--space-3); padding: var(--space-3); }
     .acr-fields { grid-template-columns: 1fr; }
 }
+
+/* A criterion's "How to check it by hand" (procedures.js): core's steps for
+   what a person checks, folded under the draft */
+.acr-how:empty { display: none; }
+.acr-how { margin: 0 0 var(--space-2); }
+.how-assess > summary { cursor: pointer; min-height: 24px; font-size: var(--fs-sm); font-weight: 600; }
+.how-assess > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.how-assess[open] > summary { margin-bottom: var(--space-2); }
+.how-facets { margin: 0 0 var(--space-2); padding-left: 1.5rem; font-size: var(--fs-sm); }
+.how-facet { margin: 0 0 var(--space-3); }
+.how-facet p { margin: 0 0 var(--space-1); }
+.how-facet-note, .how-facet-tools { color: var(--text-muted); }
+.how-steps { margin: 0 0 var(--space-1); padding-left: 1.25rem; }
+.how-term { font-weight: 600; }
+.how-automatic { margin: 0; font-size: var(--fs-sm); }
+.how-automatic-list { margin: 0; padding-left: 1.5rem; font-size: var(--fs-sm); color: var(--text-muted); }

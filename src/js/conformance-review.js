@@ -16,6 +16,8 @@ const FIELDS = [
     ['notes', 'Notes', 'textarea'],
 ];
 
+import { loadProcedures, reportLocale, buildHowToAssessHTML } from './procedures.js';
+
 // Which part of the review a table's rows are kept in.
 const STORE = { 'wcag-a': 'criteria', 'wcag-aa': 'criteria', 'wcag-aaa': 'criteria', 'en-4': 'clauses', 'en-12': 'clauses', 'en-other': 'clauses' };
 
@@ -59,6 +61,7 @@ function rowHTML(table, row, levels, saved) {
     return `<fieldset class="acr-row" data-table="${esc(table.id)}" data-key="${esc(key)}">`
         + `<legend>${table.id === 'en-other' ? esc(row.name) : name}</legend>`
         + `<p class="acr-draft"><span class="acr-draft-label">Automated draft:</span> ${esc(levels[row.draft.conformance])}. ${esc(row.draft.remarks)}</p>`
+        + (STORE[table.id] === 'criteria' ? `<div class="acr-how" data-acr-how="${esc(row.id)}"></div>` : '')
         + `<div class="acr-fields">`
         + `<div class="acr-field"><label for="${id}-level">Conformance level</label><select id="${id}-level" data-part="conformance">${options}</select></div>`
         + `<div class="acr-field acr-field--wide"><label for="${id}-remarks">Remarks and explanations</label>`
@@ -113,6 +116,19 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
 
         dialog.querySelector('.acr-form').innerHTML = `<fieldset class="acr-product"><legend>The product and the review</legend><div class="acr-fields">${fields}</div></fieldset>`
             + tables.map((t) => tableSectionHTML(t, levels, review)).join('');
+        fillHowToAssess();
+    };
+
+    // Each criterion's "How to check it by hand", from core's procedures, once
+    // they come; none from a core without them.
+    const fillHowToAssess = async () => {
+        const slots = Array.from(dialog.querySelectorAll('[data-acr-how]'));
+        if (!slots.length) return;
+        const procedures = await loadProcedures(slots.map((el) => el.dataset.acrHow), reportLocale(payload));
+        if (!procedures) return;
+        for (const el of slots) {
+            if (el.isConnected && !el.firstChild) el.innerHTML = buildHowToAssessHTML(procedures[el.dataset.acrHow]);
+        }
     };
 
     const first = api.buildConformanceReport(payload);

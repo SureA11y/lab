@@ -139,7 +139,10 @@ as a draft from the report's scans, which never says "Supports": a failure is
 
 **Review conformance**, beside the Download menu, is where a person decides:
 the product's details, and each criterion's conformance level and remarks,
-over the draft. What you record is saved in the report as you go, so its
+over the draft. Under each criterion, **How to check it by hand** gives what a
+person checks that automated checks don't decide: the steps, what passing and
+failing look like, and what it takes (a keyboard, a screen reader, zoom), from
+surea11y core's test procedures, where the installed core has them. What you record is saved in the report as you go, so its
 downloads carry it, and opening the report again brings it back. **Copy the
 review of another report** fills in what this report has not decided yet from
 an earlier one, so a new run keeps the verdicts of the last review.
