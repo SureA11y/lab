@@ -343,10 +343,12 @@ function runChart(columns, verdict) {
         const text = marked.has(i)
             ? `<text class="dash-ptlabel" x="${(x(i) + dx).toFixed(1)}" y="${(y(v) - 12).toFixed(1)}" text-anchor="${anchor}">${v}</text>`
             : '';
+        // Not focusable: the chart is one image, whose name gives every
+        // point's value, as the table under it does; a point inside an image
+        // that took focus would be a stop a screen reader can't describe.
         return `${text}<circle class="dash-dot${i === values.length - 1 ? ' dash-dot--last' : ''}"`
-            + ` cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}" tabindex="0" role="img"`
-            + ` data-tip-label="${esc(labels[i])}" data-tip-value="${v}"`
-            + ` aria-label="${esc(labels[i])}: ${v} failures"/>`;
+            + ` cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}"`
+            + ` data-tip-label="${esc(labels[i])}" data-tip-value="${v}"/>`;
     }).join('');
 
     // The regression is flagged where it happened rather than in a caption.

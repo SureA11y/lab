@@ -7460,7 +7460,7 @@ body.queue-mode-active #screenshots-container { display: none; }
 .cmp2 .dash-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
 .cmp2 .dash-dot { fill: var(--surface-raised); stroke: var(--accent); stroke-width: 2; cursor: pointer; }
 .cmp2 .dash-dot--last { fill: var(--accent); }
-.cmp2 .dash-dot:hover, .cmp2 .dash-dot:focus-visible { stroke-width: 3; }
+.cmp2 .dash-dot:hover { stroke-width: 3; }
 /* A label can sit on the trend line: the halo, in the chart's background,
    keeps the line from crossing its letters. */
 .cmp2 .dash-ptlabel { font-family: var(--font-display); font-size: 12px; font-weight: 600; fill: var(--text-main); paint-order: stroke; stroke: var(--surface-raised); stroke-width: 3px; stroke-linejoin: round; }
@@ -7655,11 +7655,12 @@ body.queue-mode-active #screenshots-container { display: none; }
 .cmp2 .doc-warn { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-xs); color: var(--text-muted); background: var(--shared-soft); border-left: 3px solid var(--warn-line); padding: 10px 14px; border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-bottom: var(--space-3); }
 .cmp2 .doc-gen { margin-top: var(--space-3); font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .06em; color: var(--text-soft); }
 
-/* ---- chart tooltip (hover and keyboard focus) ---- */
+/* ---- chart tooltip (under the pointer) ---- */
 /* Wraps rather than running off the viewport: the label inside is a report's
-   own name and can be any length. */
+   own name and can be any length. Hidden, it takes no pointer; shown, the
+   pointer can rest on it (WCAG 1.4.13). */
 .cmp2-tip { position: fixed; pointer-events: none; z-index: 40; background: var(--surface-0); color: var(--text-main); border: 1px solid var(--border-strong); font-size: var(--fs-xs); padding: 6px 10px; border-radius: var(--radius-md); box-shadow: var(--shadow-card); opacity: 0; transition: opacity .12s ease; max-width: min(320px, 80vw); overflow-wrap: anywhere; }
-.cmp2-tip.on { opacity: 1; }
+.cmp2-tip.on { opacity: 1; pointer-events: auto; }
 .cmp2-tip b { font-family: var(--font-display); }
 @media (prefers-reduced-motion: reduce) { .cmp2-tip { transition: none; } }
 

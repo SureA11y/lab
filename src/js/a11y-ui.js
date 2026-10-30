@@ -4567,15 +4567,26 @@ function storeActiveMode(mode) {
         return json;
     }
 
-    // A shared tooltip for the dashboard's chart marks. Focus opens it too, so
-    // the values are reachable by keyboard and not only under a pointer.
+    // A shared tooltip for the dashboard's chart marks, under the pointer. The
+    // values are also in each chart's name and in the tables, for keyboard and
+    // screen reader users. As WCAG 1.4.13 asks, Escape dismisses it, and it
+    // stays while the pointer moves onto it.
     function wireDashboardTooltip(scope) {
         let tip = null;
+        let hideTimer = null;
+
+        const keep = () => clearTimeout(hideTimer);
+        const hide = () => { keep(); if (tip) tip.classList.remove('on'); };
+        // A moment's grace, to cross from the mark to the tooltip.
+        const hideSoon = () => { keep(); hideTimer = setTimeout(hide, 300); };
 
         const show = (el) => {
+            keep();
             if (!tip) {
                 tip = document.createElement('div');
                 tip.className = 'cmp2-tip';
+                tip.addEventListener('mouseenter', keep);
+                tip.addEventListener('mouseleave', hideSoon);
                 document.body.append(tip);
             }
             tip.textContent = '';
@@ -4588,15 +4599,15 @@ function storeActiveMode(mode) {
             tip.style.left = `${Math.max(8, box.left + box.width / 2 - tip.offsetWidth / 2)}px`;
             tip.style.top = `${box.top - tip.offsetHeight - 10}px`;
         };
-        const hide = () => { if (tip) tip.classList.remove('on'); };
 
-        for (const [open, close] of [['mouseover', 'mouseout'], ['focusin', 'focusout']]) {
-            scope.addEventListener(open, (event) => {
-                const mark = event.target.closest && event.target.closest('[data-tip-value]');
-                if (mark && scope.contains(mark)) show(mark);
-            });
-            scope.addEventListener(close, hide);
-        }
+        scope.addEventListener('mouseover', (event) => {
+            const mark = event.target.closest && event.target.closest('[data-tip-value]');
+            if (mark && scope.contains(mark)) show(mark);
+        });
+        scope.addEventListener('mouseout', hideSoon);
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && tip && tip.classList.contains('on')) hide();
+        });
     }
 
     // The loader takes any number of files at once, and one bad file never
