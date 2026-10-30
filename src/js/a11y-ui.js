@@ -5,19 +5,16 @@ import {setupRunSettings} from './run-settings.js';
 import {createConfigIO} from './config-io.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
 import {setupModeSwitch} from './tabs-ui.js';
-import {createBatchPanel, runLabelFor} from './batch-panel.js';
 import {collectScanTags, makeTagFilter, scanMatchesTagFilter, applyScanTagsEdit} from './scan-tag-filter.js';
 import {createAdvancedDialog} from './advanced-dialog.js';
 import {setupRulesCatalogDialog} from './rules-catalog-dialog.module.js';
 import {installInPageLinks} from './in-page-links.js';
 import {installBackToTop} from './back-to-top.js';
 import {setWhenReportDrawn} from './export.js';
-import {readCompareZip} from './comparison-bundle.js';
-import {afterPaint, isBusy, runBusy, setBusy} from './busy.js';
+import {afterPaint, isBusy, runBusy} from './busy.js';
 import {getActivity} from './activity.js';
 import {clearLazyBodies, setLazyScope} from './lazy-dialogs.js';
 import {attachFileDrop} from './file-drop.js';
-import {cleanGroupingItem} from './grouping-spec.js';
 import {buildGlobalSummary, ensureScanSummaryCounts, ensureScansIncludedFlag, getA11yGlobalFindings, hashHex16, normalizePayloadForUi, pickMetricDefsFromPayload, pickMetricDefsFromStaged, prepareDataForReport, sortByOrderKey, stripVolatileKeysDeep, validateReportOrThrow} from './report-data.js';
 import {buildActionTreeNodes, buildCustomStepMaps, collapseLineIfExpanded, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
 import {cloneCustomStepValue, collectUsedCustomStepIds, customStepTabId, deepRemapCustomStepIds, formatCustomStepInputsText, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepInputsText, parseCustomStepsJson} from './custom-steps-data.js';
@@ -33,6 +30,8 @@ import {createLiveUi} from './live-ui.js';
 import {createRunSummaryUi} from './run-summary-ui.js';
 import {createPageEvents} from './page-events.js';
 import {createReportView} from './report-view.js';
+import {createOpenReportFiles} from './open-report-files.js';
+import {createBatchUi} from './batch-ui.js';
 
 function getStoredActiveMode() {
     try {
@@ -81,7 +80,7 @@ function storeActiveMode(mode) {
         get runComparisonEl() { return runComparisonEl; },
         get setStatusReport() { return setStatusReport; },
         get setStatusRun() { return setStatusRun; },
-        get stageReportFiles() { return stageReportFiles; },
+        get stageReportFiles() { return openReportFiles.stageReportFiles; },
         get tabsmode() { return tabsmode; },
         get groupingFileInput() { return groupingFileInput; },
         get renderActiveBucket() { return renderActiveBucket; },
@@ -101,14 +100,14 @@ function storeActiveMode(mode) {
         get $() { return $; },
         get afterConfigLoaded() { return afterConfigLoaded; },
         set afterConfigLoaded(value) { afterConfigLoaded = value; },
-        get batchPanel() { return batchPanel; },
+        get batchPanel() { return batchUi.batchPanel; },
         get cfgIO() { return cfgIO; },
         set cfgIO(value) { cfgIO = value; },
         get compareTab() { return compareTab; },
         get focusReportArea() { return focusReportArea; },
         get getWorkflowWithPasswords() { return getWorkflowWithPasswords; },
         get queueRunWatch() { return queueRunWatch; },
-        get refreshRunButton() { return refreshRunButton; },
+        get refreshRunButton() { return batchUi.refreshRunButton; },
         get setReportPayload() { return setReportPayload; },
         get setSectionsState() { return setSectionsState; },
         get whenResultsComplete() { return reportView.whenResultsComplete; },
@@ -184,6 +183,32 @@ function storeActiveMode(mode) {
         get scenarioInput() { return scenarioInput; },
         get screenshotsContainer() { return screenshotsContainer; },
         get screenshotsUi() { return screenshotsUi; },
+        get captureStagingFocusToken() { return captureStagingFocusToken; },
+        get groupingFileBtn() { return groupingFileBtn; },
+        get groupingScanFileBtn() { return groupingScanFileBtn; },
+        get initEntrySelectionsFromParsed() { return initEntrySelectionsFromParsed; },
+        get loadStagedReportsIntoOpenReport() { return loadStagedReportsIntoOpenReport; },
+        get makeFileKey() { return makeFileKey; },
+        get moveStagedReportFile() { return moveStagedReportFile; },
+        get prepareSpareReport() { return prepareSpareReport; },
+        get renderStagedReportFilesList() { return renderStagedReportFilesList; },
+        get reportFilesClearBtn() { return reportFilesClearBtn; },
+        get reportFilesListEl() { return reportFilesListEl; },
+        get reportInZip() { return reportInZip; },
+        get reportOpenedAlone() { return reportOpenedAlone; },
+        set reportOpenedAlone(value) { reportOpenedAlone = value; },
+        get restoreStagingFocus() { return restoreStagingFocus; },
+        get resultsFileInput() { return resultsFileInput; },
+        get stagedReportFiles() { return stagedReportFiles; },
+        set stagedReportFiles(value) { stagedReportFiles = value; },
+        get updateStagedFileSummaryInPlace() { return updateStagedFileSummaryInPlace; },
+        get actionsBuilder() { return actionsBuilder; },
+        set actionsBuilder(value) { actionsBuilder = value; },
+        get customStepActionsBuilder() { return customStepActionsBuilder; },
+        set customStepActionsBuilder(value) { customStepActionsBuilder = value; },
+        get getCustomStepsForConfigState() { return getCustomStepsForConfigState; },
+        get prepareRunRequest() { return prepareRunRequest; },
+        get runQueueUi() { return runQueueUi; },
     };
 
     // The report's view (report-view.js): only functions, made first, as the
@@ -2391,7 +2416,7 @@ function storeActiveMode(mode) {
     /** Puts the sections back as a config saved them; one it does not name stays as it is. */
     function setSectionsState(sections) {
         if (!sections || typeof sections !== 'object') return;
-        if (typeof sections.batch === 'boolean') batchPanel?.setExpanded(!sections.batch);
+        if (typeof sections.batch === 'boolean') batchUi.batchPanel?.setExpanded(!sections.batch);
         if (typeof sections.customSteps === 'boolean') setCustomStepsExpanded(!sections.customSteps);
         if (typeof sections.workflow === 'boolean') setWorkflowExpanded(!sections.workflow);
     }
@@ -2974,134 +2999,8 @@ function storeActiveMode(mode) {
 
     /* ==================== Batch ==================== */
 
-    /** The form's URL and workflow as they stand, for checking batch rows against. */
-    function getWorkflowForBatch() {
-        let url = urlInput.value.trim();
-        if (url.length && !url.startsWith('http')) url = 'http://' + url;
-        const actionsValue = actionsBuilder ? actionsBuilder.getValue({validate: false, maskValues: 'redact'}) : null;
-        const customStepsResult = getCustomStepsForConfigState();
-        return {
-            url,
-            workflow: {
-                actions: actionsValue && actionsValue.ok ? actionsValue.value : [],
-                customSteps: customStepsResult && customStepsResult.ok ? customStepsResult.value : [],
-            },
-        };
-    }
-
-    /**
-     * One queue item per row: the form's workflow with the row's URL, name and
-     * vars. Each item's saved config is that one row, so a resumed or reloaded
-     * run is the row it came from.
-     */
-    async function onQueueBatch(runs) {
-        if (!runQueueUi.queuePanel) return false;
-        const request = prepareRunRequest({markMasked: true, fallbackUrl: runs[0]?.url || ''});
-        if (!request) return false;
-
-        let baseConfig = null;
-        // The batch's own configuration, Batch section and all: kept beside
-        // its results, so its download sets the batch up again.
-        let batchConfig = null;
-        try {
-            baseConfig = cfgIO ? cfgIO.buildConfigFile({includeBatch: false}) : null;
-            batchConfig = cfgIO ? cfgIO.buildConfigFile({includeBatch: true}) : null;
-        } catch (err) {
-            console.error('Could not build the config for the queue', err);
-        }
-
-        const items = runs.map((r) => {
-            const vars = r.vars && Object.keys(r.vars).length ? r.vars : undefined;
-            const run = {...request.payload, url: r.url, scenarioName: r.name, vars};
-            const config = baseConfig && {
-                ...baseConfig,
-                url: r.url,
-                state: {...baseConfig.state, 'url-input': r.url, 'scenario-name': r.name},
-                runSpec: baseConfig.runSpec && {...baseConfig.runSpec, url: r.url, scenarioName: r.name, ...(vars ? {vars} : {})},
-            };
-            return {run, config, row: r.row};
-        });
-
-        try {
-            await runQueueUi.queuePanel.add(items, {name: scenarioInput ? scenarioInput.value.trim() : '', config: batchConfig});
-            setStatusRun(`Queued a batch of ${items.length} run${items.length === 1 ? '' : 's'}.`, STATUS.OK);
-            return true;
-        } catch (err) {
-            setStatusRun(`Could not add the batch to the queue: ${String(err?.message || err)}`, STATUS.ERROR);
-            return false;
-        }
-    }
-
-    /** Run says what it will do: run the workflow once, or run the batch. */
-    function onBatchStatus(status) {
-        refreshRunButton(status);
-        // While the batch is on, a step that would hide a row variable is a
-        // field error in the step editors; off, those names are ordinary.
-        const names = status.active ? status.varNames : [];
-        actionsBuilder?.setReservedVariableNames?.(names);
-        customStepActionsBuilder?.setReservedVariableNames?.(names);
-    }
-
-    const BATCH_BUSY = 'A batch is already running. Wait for it to finish, or cancel it, before running another.';
-
-    /**
-     * Run says what it will do, and with the batch on it waits while another
-     * batch runs (one batch per folder). A single run from the form is never
-     * blocked by the queue. While a single run is going, setUiState owns the
-     * button's disabled state; this only adds or lifts the batch block.
-     */
-    function refreshRunButton(status = batchPanel?.getStatus()) {
-        if (!scanButton) return;
-        const blocked = !!(status && status.active && runQueueUi.queueBusy);
-        scanButton.textContent = blocked ? 'Run batch (another batch is running)' : (runLabelFor(status) || 'Run');
-        if (currentRunId) return;
-        if (blocked) {
-            scanButton.setAttribute('aria-disabled', 'true');
-            scanButton.dataset.blockedReason = BATCH_BUSY;
-        } else if (scanButton.dataset.blockedReason) {
-            scanButton.setAttribute('aria-disabled', 'false');
-            delete scanButton.dataset.blockedReason;
-        }
-    }
-
-    /**
-     * Run with the batch on: queue one run per row and go to the queue tab. A
-     * batch cannot show N reports on this page, so it always goes through the
-     * queue, where each result is saved.
-     */
-    async function runBatch(status) {
-        if (runQueueUi.queueBusy) {
-            setStatusRun(BATCH_BUSY, STATUS.ERROR);
-            return;
-        }
-        if (status.state !== 'ready') {
-            batchPanel.reveal();
-            setStatusRun(status.state === 'empty'
-                ? 'Paste the workflows in the Batch section, or disable the batch to run the workflow once.'
-                : `The batch has ${status.problems.length} problem${status.problems.length === 1 ? '' : 's'}, listed under its workflows.`, STATUS.ERROR);
-            return;
-        }
-        if (await onQueueBatch(status.runs)) {
-            batchPanel.noteQueued(status.runs.length);
-            tabsmode?.setActive('queue');
-        }
-    }
-
-    const batchRowsEl = $('#batch-rows');
-    const batchPanel = batchRowsEl ? createBatchPanel({
-        toggle: $('#batch-toggle'),
-        content: $('#batch-content'),
-        badge: $('#batch-count-badge'),
-        useButton: $('#batch-use'),
-        rowsInput: batchRowsEl,
-        namePatternInput: $('#batch-name-pattern'),
-        fileButton: $('#batch-file-btn'),
-        fileInput: $('#batch-file'),
-        checkEl: $('#batch-check'),
-        problemsEl: $('#batch-problems'),
-        getWorkflow: getWorkflowForBatch,
-        onChange: onBatchStatus,
-    }) : null;
+    // In batch-ui.js.
+    const batchUi = createBatchUi(app);
 
     // Files can be dropped where the app loads them, as well as picked with
     // the button there (src/js/file-drop.js). Inside the run workflow tab,
@@ -3189,183 +3088,6 @@ function storeActiveMode(mode) {
         // await loadStagedReportsIntoOpenReport();
     });
 
-    if (reportFilesListEl) {
-        reportFilesListEl.addEventListener('click', (event) => {
-            const btn = event.target.closest('[data-report-file-key]');
-            if (!btn) return;
-
-            const key = btn.getAttribute('data-report-file-key') || '';
-            if (!key) return;
-
-            // Expand/collapse per file
-            if (btn.getAttribute('data-report-file-toggle') === '1') {
-                const item = stagedReportFiles.find(x => x.key === key);
-                if (!item || !item.ok) return;
-
-                const token = captureStagingFocusToken();
-                item.expanded = !item.expanded;
-                renderStagedReportFilesList();
-                restoreStagingFocus(token);
-                return;
-            }
-
-            // Section select all/none
-            const sectionSelect = btn.getAttribute('data-report-section-select');
-            const section = btn.getAttribute('data-report-section');
-
-            if ((sectionSelect === 'all' || sectionSelect === 'none') && (section === 'scans' || section === 'shots')) {
-                const item = stagedReportFiles.find(x => x.key === key);
-                if (!item || !item.ok || !item.parsed) return;
-
-                const want = sectionSelect === 'all';
-
-                if (section === 'scans') {
-                    const scans = Array.isArray(item.parsed.scans) ? item.parsed.scans : [];
-                    item.includeScans = scans.map(() => want);
-                } else {
-                    const shots = Array.isArray(item.parsed.screenshots) ? item.parsed.screenshots : [];
-                    item.includeActionScreenshots = shots.map(() => want);
-                }
-
-                const token = captureStagingFocusToken();
-                renderStagedReportFilesList();
-                restoreStagingFocus(token);
-                return;
-            }
-
-            const move = btn.getAttribute('data-report-file-move');
-            if (move === '-1' || move === '1') {
-                const token = captureStagingFocusToken();
-                moveStagedReportFile(key, Number(move)); // this already re-renders
-                // moveStagedReportFile will restore focus if you applied (A). If you did not, keep next 2 lines:
-                // renderStagedReportFilesList();
-                restoreStagingFocus(token);
-                setStatusReport(move === '-1' ? 'Moved file up.' : 'Moved file down.', STATUS.OK);
-                return;
-            }
-
-            if (btn.getAttribute('data-report-file-remove') === '1') {
-                const token = captureStagingFocusToken();
-
-                // Compute fallback: next file remove button, else previous
-                const beforeIndex = stagedReportFiles.findIndex(x => x.key === key);
-                const nextItem = stagedReportFiles[beforeIndex + 1] || null;
-                const prevItem = stagedReportFiles[beforeIndex - 1] || null;
-
-                const fallbackSelector =
-                    nextItem
-                        ? `button[data-report-file-remove="1"][data-report-file-key="${CSS.escape(nextItem.key)}"]`
-                        : prevItem
-                            ? `button[data-report-file-remove="1"][data-report-file-key="${CSS.escape(prevItem.key)}"]`
-                            : null;
-
-                stagedReportFiles = stagedReportFiles.filter(x => x.key !== key);
-                renderStagedReportFilesList();
-
-                // If list became empty, focus Add report(s)
-                if (stagedReportFiles.length === 0) {
-                    focusSafely(resultsFileBtn);
-                } else {
-                    restoreStagingFocus(token, fallbackSelector);
-                }
-
-                setStatusReport('File removed from staged list.', STATUS.OK);
-            }
-        });
-
-        reportFilesListEl.addEventListener('change', (event) => {
-            const input = event.target;
-            if (!input || input.tagName !== 'INPUT' || input.type !== 'checkbox') return;
-
-            const key = input.getAttribute('data-report-file-key') || '';
-            if (!key) return;
-
-            const item = stagedReportFiles.find(x => x.key === key);
-            if (!item || !item.ok || !item.parsed) return;
-
-            const scanIdxRaw = input.getAttribute('data-report-scan-idx');
-            const shotIdxRaw = input.getAttribute('data-report-shot-idx');
-
-            if (scanIdxRaw !== null) {
-                const idx = Number(scanIdxRaw);
-                if (!Number.isFinite(idx) || idx < 0) return;
-
-                if (!Array.isArray(item.includeScans)) {
-                    const scans = Array.isArray(item.parsed.scans) ? item.parsed.scans : [];
-                    item.includeScans = scans.map(() => true);
-                }
-
-                if (idx >= item.includeScans.length) return;
-                item.includeScans[idx] = !!input.checked;
-
-                updateStagedFileSummaryInPlace(key);
-                return;
-            }
-
-            if (shotIdxRaw !== null) {
-                const idx = Number(shotIdxRaw);
-                if (!Number.isFinite(idx) || idx < 0) return;
-
-                if (!Array.isArray(item.includeActionScreenshots)) {
-                    const shots = Array.isArray(item.parsed.screenshots) ? item.parsed.screenshots : [];
-                    item.includeActionScreenshots = shots.map(() => true);
-                }
-
-                if (idx >= item.includeActionScreenshots.length) return;
-                item.includeActionScreenshots[idx] = !!input.checked;
-
-                updateStagedFileSummaryInPlace(key);
-            }
-        });
-    }
-
-    if (reportFilesClearBtn) {
-        reportFilesClearBtn.addEventListener('click', () => {
-            stagedReportFiles = [];
-            renderStagedReportFilesList();
-            focusSafely(resultsFileBtn); // next logical action
-            setStatusReport('Staged file list cleared.', STATUS.OK);
-        });
-    }
-
-    if (reportFilesLoadBtn) {
-        // The load under way, in the activity panel: a press meanwhile shows it.
-        let loading = null;
-        reportFilesLoadBtn.addEventListener('click', () => {
-            if (isBusy(reportFilesLoadBtn)) {
-                loading?.reveal();
-                return;
-            }
-            runBusy(reportFilesLoadBtn, async () => {
-                setStatusReport('Loading the report…', STATUS.BUSY);
-                await getActivity().run('Open report: load', (task) => {
-                    loading = task;
-                    return loadStagedReportsIntoOpenReport(task);
-                }, {rethrow: false, quiet: true});
-                loading = null;
-            });
-        });
-    }
-
-    // The files being read, in the activity panel: a press meanwhile shows it.
-    let readingReportFiles = null;
-    if (resultsFileBtn && resultsFileInput) {
-        resultsFileBtn.addEventListener('click', () => {
-            if (isBusy(resultsFileBtn)) readingReportFiles?.reveal();
-            else resultsFileInput.click();
-        });
-    }
-
-    if (groupingFileBtn) {
-        groupingFileBtn.hidden = true;
-        groupingFileBtn.setAttribute('aria-hidden', 'true');
-    }
-
-    if (groupingScanFileBtn) {
-        groupingScanFileBtn.hidden = true;
-        groupingScanFileBtn.setAttribute('aria-hidden', 'true');
-    }
-
     document.addEventListener('keydown', (e) => {
         const isMac = navigator.platform.toUpperCase().includes('MAC');
         const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
@@ -3404,218 +3126,8 @@ function storeActiveMode(mode) {
         }
     });
 
-    if (resultsFileInput) {
-        resultsFileInput.addEventListener('change', async (event) => {
-            const input = event.target;
-            const files = Array.from(input.files || []);
-            input.value = ''; // always reset so same file selection triggers change again
-
-            if (!files.length) return;
-            // What is picked opens at once: one report on its own, as one
-            // given by address does (and the next one picked the same way
-            // takes its place), several merged with all their scans. The list
-            // stays, to leave scans or files out and Load selected again.
-            if (reportOpenedAlone && stagedReportFiles.length === 1 && stagedReportFiles[0] === reportOpenedAlone) {
-                stagedReportFiles = [];
-            }
-            reportOpenedAlone = null;
-            const listedBefore = stagedReportFiles.length;
-            const allReports = await stageReportFiles(files);
-            if (!allReports) return;
-            if (listedBefore === 0 && stagedReportFiles.length === 1) reportOpenedAlone = stagedReportFiles[0];
-            reportFilesLoadBtn?.click();
-        });
-    }
-
-    // Stages report files in the open report tab: reads and checks each now,
-    // and loads none yet. The file picker and a report given by URL
-    // (openFromQuery) both come through here. -> true when every file is a
-    // report.
-    async function stageReportFiles(files) {
-        {
-            // Stage: parse + validate now, do not import yet. A large file
-            // takes a while to read, so say so before starting.
-            setStatusReport(files.length === 1 ? `Reading ${files[0].name}…` : `Reading ${files.length} files…`, STATUS.BUSY);
-            setBusy(resultsFileBtn, true);
-            const task = getActivity().start(files.length === 1 ? `Open report: read ${files[0].name}` : `Open report: read ${files.length} files`, {quiet: true});
-            readingReportFiles = task;
-            await afterPaint();
-            // A report package or any zip of reports (report-package.js) gives
-            // each report it holds, with its pictures, as a file of its own.
-            const sources = [];
-            for (const file of files) {
-                if (!isZipFile(file)) {
-                    sources.push(file);
-                    continue;
-                }
-                const reading = task.step(`Reading ${file.name}`);
-                await afterPaint();
-                try {
-                    const read = await readCompareZip(window.JSZip, file);
-                    // A comparison saved with its reports gives its reports.
-                    const found = read.kind === 'comparison'
-                        ? read.reports.map((r) => ({name: r.name, text: JSON.stringify(r.json)}))
-                        : read.files;
-                    for (const f of found) sources.push(reportInZip(file, f));
-                    reading.done(`${found.length} report${found.length === 1 ? '' : 's'}`);
-                } catch (err) {
-                    reading.warn(String(err?.message || err));
-                    stagedReportFiles.push({
-                        key: makeFileKey(file), file, name: file.name, size: file.size, lastModified: file.lastModified,
-                        ok: false, error: String(err?.message || err), parsed: null, expanded: false,
-                        includeScans: null, includeActionScreenshots: null
-                    });
-                }
-            }
-            for (const file of sources) {
-                const key = makeFileKey(file);
-
-                // Deduplicate exact same file selection
-                if (stagedReportFiles.some(x => x.key === key)) continue;
-
-                const checking = task.step(`Checking ${file.name}`);
-                await afterPaint();
-                try {
-                    const text = await file.text();
-
-                    let json;
-                    try {
-                        json = JSON.parse(String(text || ''));
-                    } catch {
-                        throw new Error('Invalid JSON');
-                    }
-
-                    // Keep your existing file-based key, but stage using the same shape
-                    const entry = {
-                        key,
-                        file,
-                        name: file.name,
-                        size: file.size,
-                        lastModified: file.lastModified,
-                        ok: false,
-                        error: null,
-                        parsed: null,
-                        expanded: false,
-                        includeScans: null,
-                        includeActionScreenshots: null
-                    };
-
-                    validateReportOrThrow(json, file.name);
-
-                    entry.ok = true;
-                    entry.parsed = json;
-                    initEntrySelectionsFromParsed(entry);
-
-                    stagedReportFiles.push(entry);
-                    prepareSpareReport(entry, text);
-                    checking.done();
-                } catch (err) {
-                    checking.warn(String(err?.message || err));
-                    stagedReportFiles.push({
-                        key,
-                        file,
-                        name: file.name,
-                        size: file.size,
-                        lastModified: file.lastModified,
-                        ok: false,
-                        error: String(err?.message || err),
-                        parsed: null,
-                        expanded: false,
-                        includeScans: null,
-                        includeActionScreenshots: null
-                    });
-                }
-            }
-            setBusy(resultsFileBtn, false);
-
-            renderStagedReportFilesList();
-
-            const total = stagedReportFiles.length;
-            const okCount = stagedReportFiles.filter(x => x.ok).length;
-            const badCount = total - okCount;
-
-            const staged = badCount
-                ? `Files staged. ${okCount} valid, ${badCount} invalid. Remove or fix invalid files before loading.`
-                : `Files staged. ${okCount} ready to load.`;
-            setStatusReport(staged, badCount ? STATUS.WARNING : STATUS.OK);
-            task.done(staged);
-            readingReportFiles = null;
-            return badCount === 0;
-        }
-    }
-
-    if (groupingFileInput) {
-        groupingFileInput.addEventListener('change', async (event) => {
-            const input = event.target;
-            const file = input?.files?.[0] || null;
-
-            const mode = groupingUi.groupingPickerTargetMode || resultsState.activeMode;
-            groupingUi.groupingPickerTargetMode = null;
-
-            // Always reset so picking the same file again triggers change
-            input.value = '';
-
-            if (!file) {
-                groupingUi.setSelectedBuiltInGroupingId(groupingUi.getLastResolvedGroupingSelectionId(mode), mode);
-                groupingUi.refreshBuiltInGroupingSelectOptions(mode);
-                groupingUi.applySelectedBuiltInGrouping(mode);
-                return;
-            }
-
-            function validateGroupingForUi(obj) {
-                if (!Array.isArray(obj)) return {ok: false, message: 'Grouping JSON must be an array.'};
-
-                const cleaned = [];
-
-                for (let i = 0; i < obj.length; i++) {
-                    const {item, error} = cleanGroupingItem(obj[i], i);
-                    if (error) return {ok: false, message: error};
-                    cleaned.push(item);
-                }
-
-                return {ok: true, cleaned};
-            }
-
-            try {
-                const text = await file.text();
-                const parsed = JSON.parse(String(text || ''));
-
-                const res = validateGroupingForUi(parsed);
-                if (!res.ok) {
-                    groupingUi.setSelectedBuiltInGroupingId(groupingUi.getLastResolvedGroupingSelectionId(mode), mode);
-                    groupingUi.refreshBuiltInGroupingSelectOptions(mode);
-                    groupingUi.applySelectedBuiltInGrouping(mode);
-
-                    setStatusRun(`Invalid grouping file: ${res.message} Grouping disabled.`, STATUS.ERROR);
-                    setStatusReport(`Invalid grouping file: ${res.message} Grouping disabled.`, STATUS.ERROR);
-                    return;
-                }
-
-                groupingUi.setLoadedCustomGrouping({
-                    id: 'custom-loaded',
-                    label: `Custom: ${file.name}`,
-                    groups: res.cleaned
-                }, mode);
-
-                groupingUi.setSelectedBuiltInGroupingId('custom-loaded', mode);
-
-                groupingUi.refreshBuiltInGroupingSelectOptions(mode);
-                groupingUi.applySelectedBuiltInGrouping(mode);
-
-                setStatusRun(`Grouping loaded: ${file.name}`, STATUS.OK);
-                setStatusReport(`Grouping loaded: ${file.name}`, STATUS.OK);
-            } catch (err) {
-                console.error('Could not load grouping JSON', err);
-
-                groupingUi.setSelectedBuiltInGroupingId(groupingUi.getLastResolvedGroupingSelectionId(mode), mode);
-                groupingUi.refreshBuiltInGroupingSelectOptions(mode);
-                groupingUi.applySelectedBuiltInGrouping(mode);
-
-                setStatusRun(`Could not load grouping JSON: ${String(err?.message || err)} Grouping disabled.`, STATUS.ERROR);
-                setStatusReport(`Could not load grouping JSON: ${String(err?.message || err)} Grouping disabled.`, STATUS.ERROR);
-            }
-        });
-    }
+    // In open-report-files.js.
+    const openReportFiles = createOpenReportFiles(app);
 
     /* ==================== Live UI helpers ==================== */
 
@@ -3679,11 +3191,11 @@ function storeActiveMode(mode) {
             getCustomSteps: getCustomStepsForConfigState,
             setCustomSteps: setCustomStepsFromConfigState,
             getRunSpec: collectRunSpec,
-            getBatch: () => batchPanel?.getBatchForConfig() ?? null,
-            setBatch: (batch) => batchPanel?.setBatchFromConfig(batch),
+            getBatch: () => batchUi.batchPanel?.getBatchForConfig() ?? null,
+            setBatch: (batch) => batchUi.batchPanel?.setBatchFromConfig(batch),
             getSections: getSectionsState,
             setSections: setSectionsState,
-            loadBatchRows: (rows) => batchPanel?.loadRows(rows),
+            loadBatchRows: (rows) => batchUi.batchPanel?.loadRows(rows),
             appendConfigState,
             activity: getActivity(),
 
@@ -3718,7 +3230,7 @@ function storeActiveMode(mode) {
         };
         cfgIO.setupConfigLoader(afterConfigLoaded);
         // The step editor exists now: give it the batch's row variable names.
-        batchPanel?.check();
+        batchUi.batchPanel?.check();
         // Append is an additive edit on top of the current config, so — unlike
         // load — it must stay undoable (the actions builder and custom-steps
         // list each pushed their own history entry). Don't reset the baseline.
@@ -5015,9 +4527,9 @@ function storeActiveMode(mode) {
         event?.preventDefault();
 
         // Re-checked now: the workflow may have changed since the rows were.
-        const batch = batchPanel ? batchPanel.check() : null;
+        const batch = batchUi.batchPanel ? batchUi.batchPanel.check() : null;
         if (batch && batch.active) {
-            await runBatch(batch);
+            await batchUi.runBatch(batch);
             return;
         }
 
@@ -5112,7 +4624,7 @@ function storeActiveMode(mode) {
             // one were still going (the configuration pinned, its actions hidden).
             document.body.classList.remove('is-running');
             // ...unless the batch rule still holds.
-            refreshRunButton();
+            batchUi.refreshRunButton();
         }
     }
 
@@ -5186,7 +4698,7 @@ function storeActiveMode(mode) {
      * of the last run as it was.
      */
     async function onDryRun() {
-        const batch = batchPanel ? batchPanel.check() : null;
+        const batch = batchUi.batchPanel ? batchUi.batchPanel.check() : null;
         const row = batch && batch.active && batch.state === 'ready' && Array.isArray(batch.runs) ? batch.runs[0] : null;
 
         clearLogsPanel();
@@ -5246,7 +4758,7 @@ function storeActiveMode(mode) {
             dryRunButton?.setAttribute('aria-disabled', 'false');
             cancelButton.setAttribute('aria-disabled', 'true');
             currentRunId = null;
-            refreshRunButton();
+            batchUi.refreshRunButton();
         }
     }
 
