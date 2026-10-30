@@ -73,6 +73,11 @@ import {clearLazyBodies, openLazyDialog, setLazyScope} from './lazy-dialogs.js';
 import {attachFileDrop} from './file-drop.js';
 import {groupings} from './config/groupings.js';
 import {cleanGroupingItem, normalizeGroupingSpec} from './grouping-spec.js';
+import {buildGlobalSummary, cloneJsonData, collectReportEngines, computeReportGlobals, computeTotals, ensureScanSummaryCounts, ensureScansIncludedFlag, getA11yGlobalFindings, getAllArtifactUrls, getOccurrenceOutcome, getScreenshotsFromPayload, hashHex16, keepOnlyKeys, makeGlobalFindingKey, makeHex, mergeFindingIntoMap, mergeOccurrencesWithPageUrl, normalizePayloadForUi, normalizeStringArray, parseReportText, pickMetricDefsFromPayload, pickMetricDefsFromStaged, prepareDataForReport, readReportFile, sortByOrderKey, splitFindingByOccurrenceOutcome, stripVolatileKeysDeep, sumNumericLeaves, toNumber, validateReportOrThrow} from './report-data.js';
+import {buildActionTreeNodes, buildCustomStepMaps, collapseAllLinesIn, collapseLineIfExpanded, deriveActionDisplayLabel, expandAllLinesIn, expandLineIfCollapsed, extractActionPathFromMessage, findDirectNestedActionContainerByField, focusLineForNavigation, getDirectActionLines, getDirectNestedActionContainers, getLineToggleButton, getNestedActionArraysFromAction, hasVisibleExpandedLine, initSectionEndToggles, isLineVisible, parseActionPath, resolveLineByPathFromContainer, resolveStepRefForLogEntry, setupCollapseAllStepsButton} from './action-tree.js';
+import {cloneCustomStepValue, collectUsedCustomStepIds, customStepTabId, deepRemapCustomStepIds, formatCustomStepInputsText, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepInputsText, parseCustomStepsJson} from './custom-steps-data.js';
+import {ensureRunTabIndicator, ensureTabIndicator, getBaseTabLabel, setQueueTabSpinner, setRunTabBadge, setRunTabSpinner, setTabA11ySuffix} from './tab-indicators.js';
+import {focusSafely, getFirstFocusable, isActuallyFocusable, isEditableElement, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
 
 /* ==================== Constants & enums ==================== */
 
@@ -843,11 +848,6 @@ function storeActiveMode(mode) {
         }
     }
 
-    function toNumber(v, fallback) {
-        const n = Number(v);
-        return Number.isFinite(n) ? n : fallback;
-    }
-
     function formatElapsedHuman(ms) {
         const totalSeconds = Math.max(0, Math.round(ms / 1000));
 
@@ -869,49 +869,6 @@ function storeActiveMode(mode) {
         if (parts.length === 1) return parts[0];
         if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
         return `${parts[0]}, ${parts[1]} and ${parts[2]}`;
-    }
-
-    function normalizePayloadForUi(payload) {
-        if (!payload || typeof payload !== 'object') return payload;
-
-        if (Array.isArray(payload.scans) && payload.scans.length) {
-            payload.scans = payload.scans.map((scan) => {
-                if (!scan || typeof scan !== 'object') return scan;
-
-                const canonical = scan.canonical && typeof scan.canonical === 'object' ? scan.canonical : null;
-
-                // Ensure scan.summary exists because multiple UI components expect it for the scan list cards.
-                // Map canonical outcomes to the existing summary counters.
-                if (canonical && (!scan.summary || typeof scan.summary !== 'object')) {
-                    const outcomes = canonical?.summary?.outcomes || null;
-
-                    // If outcomes are not present, derive them from findings.
-                    const findings = Array.isArray(canonical.findings) ? canonical.findings : [];
-                    const derived = outcomes || findings.reduce((acc, f) => {
-                        const o = f && f.outcome;
-                        if (o === 'fail') acc.fail += 1;
-                        else if (o === 'pass') acc.pass += 1;
-                        else if (o === 'cantTell') acc.cantTell += 1;
-                        else if (o === 'notApplicable') acc.notApplicable += 1;
-                        return acc;
-                    }, {fail: 0, pass: 0, cantTell: 0, notApplicable: 0});
-
-                    scan.summary = {
-                        failCount: toNumber(derived.fail, 0),
-                        passesCount: toNumber(derived.pass, 0),
-                        reviewCount: toNumber(derived.cantTell, 0),
-                        notApplicableCount: toNumber(derived.notApplicable, 0),
-                        skipped: !!scan.skipped,
-                        skipInfo: scan.skipInfo || null
-                    };
-                }
-
-                // If there is no canonical yet, keep the object as-is (this will surface quickly in the UI).
-                return scan;
-            });
-        }
-
-        return payload;
     }
 
     function setRunPayload(payload, meta = {}) {
@@ -1046,27 +1003,6 @@ function storeActiveMode(mode) {
     let customStepsListUndoBtnEl = null;
     let customStepsListRedoBtnEl = null;
     let customStepsHistoryDebounceT = null;
-
-    function stripVolatileKeysDeep(value) {
-        if (!value || typeof value !== 'object') return value;
-        if (Array.isArray(value)) return value.map(stripVolatileKeysDeep);
-
-        const out = {};
-        for (const k of Object.keys(value)) {
-            // Keys that commonly change between loads, renders, or edits
-            if (
-                k === 'id' || k === '_id' ||
-                k === 'uid' || k === '_uid' ||
-                k === 'key' || k === '_key' ||
-                k === 'createdAt' || k === 'updatedAt' ||
-                k === '__meta'
-            ) {
-                continue;
-            }
-            out[k] = stripVolatileKeysDeep(value[k]);
-        }
-        return out;
-    }
 
     function getActionsSig() {
         if (!actionsBuilder) return null;
@@ -1762,16 +1698,6 @@ function storeActiveMode(mode) {
         setStagingButtonsEnabled({canLoad, canClear});
     }
 
-    // -------------------- Staging focus preservation --------------------
-
-    function isActuallyFocusable(el) {
-        if (!el) return false;
-        if (!(el instanceof Element)) return false;
-        if (el.hasAttribute('disabled')) return false;
-        if (el.getAttribute('aria-disabled') === 'true') return false;
-        return typeof el.focus === 'function';
-    }
-
     function recomputeStagingButtonsEnabled() {
         const total = stagedReportFiles.length;
         const okCount = stagedReportFiles.filter(x => x.ok).length;
@@ -1815,33 +1741,6 @@ function storeActiveMode(mode) {
         if (el) el.textContent = summaryText;
 
         recomputeStagingButtonsEnabled();
-    }
-
-    function focusSafely(el) {
-        if (!el) return false;
-
-        // If the element is not natively focusable, add temporary tabindex.
-        const needsTabindex =
-            !(el instanceof HTMLButtonElement) &&
-            !(el instanceof HTMLInputElement) &&
-            !(el instanceof HTMLSelectElement) &&
-            !(el instanceof HTMLTextAreaElement) &&
-            !el.hasAttribute('tabindex');
-
-        if (needsTabindex) el.setAttribute('tabindex', '-1');
-
-        try {
-            el.focus({preventScroll: true});
-        } catch {
-            try { el.focus(); } catch { /* ignore */ }
-        }
-
-        if (needsTabindex) {
-            setTimeout(() => {
-                try { el.removeAttribute('tabindex'); } catch { /* ignore */ }
-            }, 0);
-        }
-        return true;
     }
 
     function captureStagingFocusToken() {
@@ -2340,256 +2239,6 @@ function storeActiveMode(mode) {
         while (screenshots.firstChild) screenshots.removeChild(screenshots.firstChild);
     }
 
-    // -------------------- Local merge (UI) using shared workflow payload builder --------------------
-
-    function makeHex(n, width) {
-        const s = (n >>> 0).toString(16);
-        return s.padStart(width, '0').slice(-width);
-    }
-
-    // Simple deterministic hash -> 16 hex chars (non-crypto, but stable)
-    function hashHex16(text) {
-        const str = String(text || '');
-
-        // djb2
-        let h1 = 5381;
-        for (let i = 0; i < str.length; i++) h1 = ((h1 << 5) + h1) ^ str.charCodeAt(i);
-
-        // sdbm
-        let h2 = 0;
-        for (let i = 0; i < str.length; i++) h2 = str.charCodeAt(i) + (h2 << 6) + (h2 << 16) - h2;
-
-        return makeHex(h1, 8) + makeHex(h2, 8);
-    }
-
-    function sortByOrderKey(list) {
-        const arr = Array.isArray(list) ? [...list] : [];
-        const keyOf = (x) => (x && typeof x === 'object' && typeof x.orderKey === 'string') ? x.orderKey : '';
-
-        // orderKey looks like "scanIndex:artifactIndex" in your project, sort lexicographically is fine
-        arr.sort((a, b) => {
-            const ka = keyOf(a);
-            const kb = keyOf(b);
-            if (ka < kb) return -1;
-            if (ka > kb) return 1;
-            return 0;
-        });
-        return arr;
-    }
-
-    function getOccurrenceOutcome(occ, fallbackOutcome) {
-        const occOutcome = String(occ?.occurrenceOutcome || occ?.outcome || '').trim();
-        if (occOutcome === 'fail' || occOutcome === 'cantTell') return occOutcome;
-        if (fallbackOutcome === 'fail' || fallbackOutcome === 'cantTell') return fallbackOutcome;
-        return null;
-    }
-
-    function splitFindingByOccurrenceOutcome(finding) {
-        const occs = Array.isArray(finding?.occurrences) ? finding.occurrences : [];
-        if (!occs.length) return [finding];
-
-        const failOccs = [];
-        const cantTellOccs = [];
-        for (const occ of occs) {
-            const tier = getOccurrenceOutcome(occ, finding?.outcome);
-            if (tier === 'fail') failOccs.push(occ);
-            else if (tier === 'cantTell') cantTellOccs.push(occ);
-        }
-
-        const out = [];
-        if (failOccs.length) out.push({ ...finding, outcome: 'fail', occurrences: failOccs });
-        if (cantTellOccs.length) out.push({ ...finding, outcome: 'cantTell', occurrences: cantTellOccs });
-        if (!out.length) out.push(finding);
-        return out;
-    }
-
-    function normalizeStringArray(arr) {
-        return Array.isArray(arr)
-            ? arr.map((v) => String(v)).filter(Boolean).sort()
-            : [];
-    }
-
-    function mergeOccurrencesWithPageUrl(occurrences, pageUrl, scanId) {
-        const list = Array.isArray(occurrences) ? occurrences : [];
-
-        return list.map((occ) => {
-            const out = occ && typeof occ === 'object' ? { ...occ } : {};
-
-            if (!out.pageUrl && pageUrl) out.pageUrl = pageUrl;
-            if (!out.scanId && scanId) out.scanId = scanId;
-
-            return out;
-        });
-    }
-
-    function makeGlobalFindingKey(f) {
-        return JSON.stringify({
-            outcome: f?.outcome || '',
-            ruleId: f?.ruleId || f?.id || '',
-            severity: f?.severity || '',
-            title: f?.title || f?.help || '',
-            description: f?.description || '',
-            helpUrl: f?.helpUrl || '',
-            wcagSc: normalizeStringArray(f?.wcag?.sc),
-            wcagLevels: normalizeStringArray(f?.wcag?.levels),
-            engineId: f?.provenance?.engine?.id || '',
-            engineName: f?.provenance?.engine?.name || ''
-        });
-    }
-
-    function mergeFindingIntoMap(map, finding, { pageUrl = '', scanId = null } = {}) {
-        if (!finding || typeof finding !== 'object') return;
-
-        const key = makeGlobalFindingKey(finding);
-        const incomingOccurrences = mergeOccurrencesWithPageUrl(finding.occurrences, pageUrl, scanId);
-
-        if (!map.has(key)) {
-            map.set(key, {
-                ...finding,
-                scanId,
-                occurrences: incomingOccurrences
-            });
-            return;
-        }
-
-        const existing = map.get(key);
-
-        const existingOccs = Array.isArray(existing.occurrences) ? existing.occurrences : [];
-        existing.occurrences = existingOccs.concat(incomingOccurrences);
-
-        // Merge tags defensively if they exist
-        if (existing?.wcag && finding?.wcag) {
-            const mergedSc = [...new Set([
-                ...normalizeStringArray(existing.wcag.sc),
-                ...normalizeStringArray(finding.wcag.sc)
-            ])];
-
-            const mergedLevels = [...new Set([
-                ...normalizeStringArray(existing.wcag.levels),
-                ...normalizeStringArray(finding.wcag.levels)
-            ])];
-
-            existing.wcag = {
-                ...existing.wcag,
-                ...finding.wcag,
-                sc: mergedSc,
-                levels: mergedLevels
-            };
-        }
-    }
-
-    function getA11yGlobalFindings(scans) {
-        const maps = {
-            fail: new Map(),
-            cantTell: new Map(),
-            pass: new Map(),
-            notApplicable: new Map()
-        };
-
-        for (const scan of (Array.isArray(scans) ? scans : [])) {
-            const scanId = scan?.scanId || scan?.id || null;
-            const pageUrl = scan?.canonical?.page?.url || scan?.url || '';
-            const findings = Array.isArray(scan?.canonical?.findings) ? scan.canonical.findings : [];
-
-            for (const original of findings) {
-                const expanded = splitFindingByOccurrenceOutcome(original);
-                for (const f of expanded) {
-                    if (!f || typeof f !== 'object') continue;
-
-                    const outcome = f.outcome;
-                    if (!maps[outcome]) continue;
-
-                    mergeFindingIntoMap(maps[outcome], f, { pageUrl, scanId });
-                }
-            }
-        }
-
-        return {
-            fail: Array.from(maps.fail.values()),
-            cantTell: Array.from(maps.cantTell.values()),
-            pass: Array.from(maps.pass.values()),
-            notApplicable: Array.from(maps.notApplicable.values())
-        };
-    }
-
-    function sumNumericLeaves(target, source) {
-        if (!source || typeof source !== 'object') return target;
-
-        for (const [key, value] of Object.entries(source)) {
-            if (typeof value === 'number' && Number.isFinite(value)) {
-                target[key] = (target[key] || 0) + value;
-                continue;
-            }
-
-            if (value && typeof value === 'object' && !Array.isArray(value)) {
-                const child = target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])
-                    ? target[key]
-                    : {};
-                target[key] = sumNumericLeaves(child, value);
-            }
-        }
-
-        return target;
-    }
-
-    // The run's summary over `scans`: the scores, coverage and statistics as
-    // the server builds them for a run (shared/global-summary.js), from all the
-    // scans' findings together, since a page on its own often has too little
-    // to score; with the totals and the page measurements added up here.
-    function buildGlobalSummary({ scans, metricDefs = {} }) {
-        const list = Array.isArray(scans) ? scans : [];
-
-        let failFindings = 0;
-        let passFindings = 0;
-        let cantTellFindings = 0;
-        let notApplicableFindings = 0;
-
-        const domMetricsAgg = {};
-        const a11yTotalsAgg = {};
-
-        for (const scan of list) {
-            const findings = Array.isArray(scan?.canonical?.findings) ? scan.canonical.findings : [];
-
-            for (const f of findings) {
-                if (f?.outcome === 'fail') failFindings += 1;
-                else if (f?.outcome === 'pass') passFindings += 1;
-                else if (f?.outcome === 'cantTell') cantTellFindings += 1;
-                else if (f?.outcome === 'notApplicable') notApplicableFindings += 1;
-            }
-
-            if (scan?.metrics?.domMetrics && typeof scan.metrics.domMetrics === 'object') {
-                sumNumericLeaves(domMetricsAgg, scan.metrics.domMetrics);
-            }
-
-            if (scan?.metrics?.a11ySummary?.totals && typeof scan.metrics.a11ySummary.totals === 'object') {
-                sumNumericLeaves(a11yTotalsAgg, scan.metrics.a11ySummary.totals);
-            }
-        }
-
-        const pooled = globalThis.A11Y_GLOBAL_SUMMARY.buildGlobalSummary({
-            scans: list,
-            options: {domP90: 90, useMinConfidence: false}
-        }).a11ySummary || {};
-
-        const totals = {
-            ...a11yTotalsAgg,
-            findings: failFindings + passFindings + cantTellFindings + notApplicableFindings,
-            fail: failFindings,
-            pass: passFindings,
-            cantTell: cantTellFindings,
-            notApplicable: notApplicableFindings
-        };
-
-        return {
-            domMetrics: domMetricsAgg,
-            a11ySummary: {
-                ...pooled,
-                totals
-            },
-            metricDefs
-        };
-    }
-
     // A scan counts toward the aggregate (global findings, metrics, summary
     // totals) when it is BOTH manually included AND matches the active tag
     // filter. The two dimensions are independent: the manual Exclude toggle
@@ -2603,61 +2252,6 @@ function storeActiveMode(mode) {
     function getIncludedScans(payload) {
         const scans = Array.isArray(payload?.scans) ? payload.scans : [];
         return scans.filter(isScanIncludedInReport);
-    }
-
-    function pickMetricDefsFromPayload(payload) {
-        if (payload?.metricDefs && typeof payload.metricDefs === 'object') {
-            return payload.metricDefs;
-        }
-
-        if (payload?.metrics?.metricDefs && typeof payload.metrics.metricDefs === 'object') {
-            return payload.metrics.metricDefs;
-        }
-
-        const scans = Array.isArray(payload?.scans) ? payload.scans : [];
-        for (const scan of scans) {
-            if (scan?.metrics?.metricDefs && typeof scan.metrics.metricDefs === 'object') {
-                return scan.metrics.metricDefs;
-            }
-        }
-
-        return {};
-    }
-
-    function ensureScansIncludedFlag(payload) {
-        if (!payload || !Array.isArray(payload.scans)) return payload;
-
-        payload.scans.forEach((scan) => {
-            if (!scan || typeof scan !== 'object') return;
-            if (!Object.prototype.hasOwnProperty.call(scan, 'includedInReport')) {
-                scan.includedInReport = true;
-            }
-        });
-
-        return payload;
-    }
-
-    // Backfills summary.failCount / occurrenceCount on scans that lack them
-    // (reports exported before those fields were baked), so scan sorting reads
-    // the values directly instead of walking the canonical findings on every
-    // render. Idempotent: a scan already carrying the fields is skipped.
-    function ensureScanSummaryCounts(payload) {
-        const sort = globalThis.A11Y_SCAN_SORT;
-        if (!sort || !payload || !Array.isArray(payload.scans)) return payload;
-
-        payload.scans.forEach((scan) => {
-            if (!scan || typeof scan !== 'object') return;
-            const summary = scan.summary || (scan.summary = {});
-            const needsFail = !Number.isFinite(summary.failCount);
-            const needsOcc = !Number.isFinite(summary.occurrenceCount);
-            if (!needsFail && !needsOcc) return;
-
-            const values = sort.scanSortValues(scan);
-            if (needsFail) summary.failCount = values.failures;
-            if (needsOcc) summary.occurrenceCount = values.occurrences;
-        });
-
-        return payload;
     }
 
     function recomputeDerivedReportData(payload) {
@@ -2676,23 +2270,6 @@ function storeActiveMode(mode) {
         });
 
         return payload;
-    }
-
-    function pickMetricDefsFromStaged(okItems) {
-        for (const it of (Array.isArray(okItems) ? okItems : [])) {
-            const p = it?.parsed;
-            if (!p) continue;
-
-            // common locations in your payloads
-            if (p.metricDefs && typeof p.metricDefs === 'object') return p.metricDefs;
-            if (p.metrics?.metricDefs && typeof p.metrics.metricDefs === 'object') return p.metrics.metricDefs;
-
-            const scans = Array.isArray(p.scans) ? p.scans : [];
-            for (const s of scans) {
-                if (s?.metrics?.metricDefs && typeof s.metrics.metricDefs === 'object') return s.metrics.metricDefs;
-            }
-        }
-        return {}; // safe fallback
     }
 
     /**
@@ -3106,86 +2683,6 @@ function storeActiveMode(mode) {
         });
     }
 
-    /**
-     * The icon button at the right end of the Batch, Custom steps and Workflow
-     * headers repeats its section's toggle there. It presses that toggle and
-     * follows its aria-expanded, whichever code changes it. It is there for the
-     * pointer: out of the tab order and hidden from screen readers, which reach
-     * the section's own toggle, so keyboard users stop at one, not two.
-     */
-    function initSectionEndToggles() {
-        document.querySelectorAll('button.section-end-toggle[data-section-toggle]').forEach((btn) => {
-            const toggle = document.getElementById(btn.dataset.sectionToggle);
-            if (!toggle) return;
-            btn.tabIndex = -1;
-            btn.setAttribute('aria-hidden', 'true');
-            const name = toggle.querySelector('.legend-toggle-label')?.textContent.trim().toLowerCase() || 'section';
-
-            function refresh() {
-                const expanded = toggle.getAttribute('aria-expanded') === 'true';
-                btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-                btn.querySelector('svg')?.remove();
-                btn.append(svgIcon(expanded ? 'collapse' : 'expand'));
-                const label = `${expanded ? 'Collapse' : 'Expand'} ${name}`;
-                btn.setAttribute('aria-label', label);
-                btn.title = label;
-            }
-
-            btn.addEventListener('click', () => toggle.click());
-            new MutationObserver(refresh).observe(toggle, {attributes: true, attributeFilter: ['aria-expanded']});
-            refresh();
-        });
-    }
-
-    function getDirectActionLines(containerEl) {
-        if (!containerEl) return [];
-        const out = [];
-        Array.from(containerEl.children || []).forEach((child) => {
-            if (!(child instanceof Element)) return;
-            if (child.classList.contains('line')) {
-                out.push(child);
-                return;
-            }
-            if (child.classList.contains('stepper__panel')) {
-                const line = child.querySelector(':scope > .line');
-                if (line) out.push(line);
-            }
-        });
-        return out;
-    }
-
-    function getDirectNestedActionContainers(lineEl) {
-        if (!lineEl) return [];
-        return Array.from(
-            lineEl.querySelectorAll(':scope > .action-arrays-below > .action-array > .actions-subcontainer, :scope > .action-array > .actions-subcontainer')
-        );
-    }
-
-    function findDirectNestedActionContainerByField(lineEl, fieldName) {
-        const list = getDirectNestedActionContainers(lineEl);
-        if (!list.length) return null;
-        const key = String(fieldName || '').trim();
-        if (!key) return list[0];
-        return list.find((el) => String(el.dataset?.fieldName || '') === key) || null;
-    }
-
-    function getLineToggleButton(lineEl) {
-        if (!lineEl) return null;
-        return lineEl.querySelector(':scope > .line-header .toggle-action') || lineEl.querySelector('.toggle-action');
-    }
-
-    function collapseLineIfExpanded(lineEl) {
-        if (!lineEl || lineEl.classList.contains('is-collapsed')) return;
-        const toggle = getLineToggleButton(lineEl);
-        if (toggle && !toggle.disabled) toggle.click();
-    }
-
-    function expandLineIfCollapsed(lineEl) {
-        if (!lineEl || !lineEl.classList.contains('is-collapsed')) return;
-        const toggle = getLineToggleButton(lineEl);
-        if (toggle && !toggle.disabled) toggle.click();
-    }
-
     function collapseAllCollapsibleGroups(keepOpen = null) {
         const keep = keepOpen instanceof Set ? keepOpen : new Set();
         const roots = [actionsBar, customStepActionsEl];
@@ -3198,81 +2695,6 @@ function storeActiveMode(mode) {
         });
     }
 
-    // A line hidden behind a collapsed ancestor (or any other hidden ancestor,
-    // e.g. a non-active stepper panel) doesn't count as "currently expanded"
-    // for the collapse-all/expand-all button below.
-    function isLineVisible(lineEl) {
-        return !!(lineEl && lineEl.offsetParent !== null);
-    }
-
-    function hasVisibleExpandedLine(root) {
-        if (!root) return false;
-        return Array.from(root.querySelectorAll('.line')).some(
-            (line) => !line.classList.contains('is-collapsed') && isLineVisible(line)
-        );
-    }
-
-    function collapseAllLinesIn(root) {
-        if (!root) return;
-        root.querySelectorAll('.line').forEach((line) => collapseLineIfExpanded(line));
-    }
-
-    function expandAllLinesIn(root) {
-        if (!root) return;
-        root.querySelectorAll('.line').forEach((line) => expandLineIfCollapsed(line));
-    }
-
-    // Wires a single icon-button to collapse/expand every step under `root`.
-    // Its icon/label reflect the action the NEXT click will perform: collapse
-    // while at least one step is expanded and visible, expand otherwise.
-    // Returns a `refresh()` callers can invoke after anything changes the
-    // step list (add/remove/load, individual toggle, undo/redo).
-    function setupCollapseAllStepsButton(btn, root) {
-        if (!btn) return null;
-
-        function refresh() {
-            const lineCount = root ? root.querySelectorAll('.line').length : 0;
-            btn.disabled = lineCount === 0;
-
-            const willCollapse = hasVisibleExpandedLine(root);
-            const oldSvg = btn.querySelector('svg');
-            if (oldSvg) oldSvg.remove();
-            btn.append(svgIcon(willCollapse ? 'collapse-all' : 'expand-all'));
-
-            const label = willCollapse ? 'Collapse all steps' : 'Expand all steps';
-            btn.setAttribute('aria-label', label);
-            btn.title = label;
-        }
-
-        btn.addEventListener('click', () => {
-            if (hasVisibleExpandedLine(root)) collapseAllLinesIn(root);
-            else expandAllLinesIn(root);
-            refresh();
-        });
-
-        refresh();
-        return refresh;
-    }
-
-    function focusLineForNavigation(lineEl) {
-        if (!lineEl) return;
-        lineEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        const focusTarget =
-            lineEl.querySelector(':scope > .line-header .line-title') ||
-            lineEl.querySelector(':scope > .line-header button') ||
-            lineEl.querySelector(':scope input, :scope select, :scope textarea');
-
-        if (focusTarget && typeof focusTarget.focus === 'function') {
-            focusTarget.focus({ preventScroll: true });
-            return;
-        }
-
-        const hadTabindex = lineEl.hasAttribute('tabindex');
-        if (!hadTabindex) lineEl.setAttribute('tabindex', '-1');
-        lineEl.focus({ preventScroll: true });
-        if (!hadTabindex) setTimeout(() => lineEl.removeAttribute('tabindex'), 0);
-    }
-
     function selectCustomStepById(customStepId) {
         const id = String(customStepId || '').trim();
         if (!id) return false;
@@ -3280,34 +2702,6 @@ function storeActiveMode(mode) {
         if (idx < 0) return false;
         if (idx !== selectedCustomStepIndex) selectCustomStep(idx);
         return true;
-    }
-
-    function resolveLineByPathFromContainer(containerEl, path, arrayTrail, depth = 0) {
-        const lines = getDirectActionLines(containerEl);
-        const line = lines[path[depth] - 1];
-        if (!line) return null;
-
-        if (depth >= path.length - 1) {
-            return { line, ancestors: [] };
-        }
-
-        // If we know the exact nested array field, follow it directly.
-        if (arrayTrail[depth]) {
-            const nextContainer = findDirectNestedActionContainerByField(line, arrayTrail[depth]);
-            if (!nextContainer) return null;
-            const nested = resolveLineByPathFromContainer(nextContainer, path, arrayTrail, depth + 1);
-            if (!nested) return null;
-            return { line: nested.line, ancestors: [line, ...nested.ancestors] };
-        }
-
-        // Otherwise, try every nested container until one resolves.
-        const nestedContainers = getDirectNestedActionContainers(line);
-        for (const nextContainer of nestedContainers) {
-            const nested = resolveLineByPathFromContainer(nextContainer, path, arrayTrail, depth + 1);
-            if (nested) return { line: nested.line, ancestors: [line, ...nested.ancestors] };
-        }
-
-        return null;
     }
 
     function resolveLineByStepRef(stepRef) {
@@ -3320,47 +2714,6 @@ function storeActiveMode(mode) {
         const rootContainer = stepRef.scope === 'custom-step' ? customStepActionsEl : actionsBar;
         const arrayTrail = Array.isArray(stepRef.arrayTrail) ? stepRef.arrayTrail : [];
         return resolveLineByPathFromContainer(rootContainer, path, arrayTrail, 0);
-    }
-
-    function parseActionPath(pathRaw) {
-        const txt = String(pathRaw || '').trim();
-        if (!/^\d+(?:\.\d+)*$/.test(txt)) return null;
-        const path = txt.split('.').map((part) => Number(part));
-        if (!path.length || path.some((n) => !Number.isInteger(n) || n <= 0)) return null;
-        return path;
-    }
-
-    function extractActionPathFromMessage(messageRaw) {
-        const txt = String(messageRaw || '');
-        const m = /^Action\s+([0-9]+(?:\.[0-9]+)*)\s*\(/i.exec(txt);
-        return m ? m[1] : '';
-    }
-
-    function resolveStepRefForLogEntry(entry) {
-        if (!entry || entry.type !== 'action-start') return null;
-
-        const rawActionPath = String(entry?.extra?.actionPath || '').trim() || extractActionPathFromMessage(entry?.message);
-        const path = parseActionPath(rawActionPath);
-        if (!path) return null;
-
-        const customStepStack = Array.isArray(entry?.extra?.customStepStack)
-            ? entry.extra.customStepStack.map((v) => String(v || '').trim()).filter(Boolean)
-            : [];
-
-        if (customStepStack.length) {
-            return {
-                scope: 'custom-step',
-                customStepId: customStepStack[customStepStack.length - 1],
-                path,
-                arrayTrail: []
-            };
-        }
-
-        return {
-            scope: 'workflow',
-            path,
-            arrayTrail: []
-        };
     }
 
     function goToStep(stepRef) {
@@ -3386,120 +2739,6 @@ function storeActiveMode(mode) {
         expandLineIfCollapsed(resolved.line);
         focusLineForNavigation(resolved.line);
         return true;
-    }
-
-    function getNestedActionArraysFromAction(actionObj) {
-        const out = [];
-        if (!actionObj || typeof actionObj !== 'object') return out;
-        Object.entries(actionObj).forEach(([fieldName, value]) => {
-            if (!Array.isArray(value)) return;
-            const looksLikeActions = value.some((item) => item && typeof item === 'object' && typeof item.type === 'string');
-            if (!looksLikeActions) return;
-            out.push({ fieldName, actions: value });
-        });
-        return out;
-    }
-
-    function buildCustomStepMaps(customSteps) {
-        const byId = Object.create(null);
-        const nameById = Object.create(null);
-        (Array.isArray(customSteps) ? customSteps : []).forEach((step) => {
-            const id = String(step?.id || '').trim();
-            if (!id) return;
-            byId[id] = step;
-            nameById[id] = String(step?.name || '').trim() || id;
-        });
-        return { byId, nameById };
-    }
-
-    function deriveActionDisplayLabel(action, customStepNamesById = null) {
-        if (!action || typeof action !== 'object') return '';
-        const preferred = String(action.label || action.name || action.title || action.alias || '').trim();
-        if (preferred) return preferred;
-
-        if (action.type === 'runCustomStep') {
-            const customStepId = String(action.customStepId || action.id || '').trim();
-            if (!customStepId) return '';
-            const customStepName = customStepNamesById && customStepNamesById[customStepId]
-                ? String(customStepNamesById[customStepId]).trim()
-                : '';
-            return customStepName && customStepName !== customStepId
-                ? `${customStepId} — ${customStepName}`
-                : customStepId;
-        }
-
-        return '';
-    }
-
-    function buildActionTreeNodes(actions, baseRef, pathPrefix = [], arrayTrailPrefix = [], opts = {}) {
-        const list = Array.isArray(actions) ? actions : [];
-        const customStepsById = opts.customStepsById || null;
-        const customStepNamesById = opts.customStepNamesById || null;
-        const inlineCustomSteps = opts.inlineCustomSteps === true;
-        const customStepStack = Array.isArray(opts.customStepStack) ? opts.customStepStack : [];
-
-        return list
-            .map((action, index) => {
-                if (!action || typeof action !== 'object') return null;
-                const path = pathPrefix.concat([index + 1]);
-                const type = String(action.type || 'action');
-                const customLabel = deriveActionDisplayLabel(action, customStepNamesById);
-                const primary = customLabel || type;
-                const label = `${path.join('.')} · ${primary}`;
-
-                const nestedChildren = [];
-                getNestedActionArraysFromAction(action).forEach(({ fieldName, actions: nestedActions }) => {
-                    nestedChildren.push(...buildActionTreeNodes(
-                        nestedActions,
-                        baseRef,
-                        path,
-                        arrayTrailPrefix.concat([fieldName]),
-                        opts
-                    ));
-                });
-
-                if (inlineCustomSteps && type === 'runCustomStep' && customStepsById) {
-                    const customStepId = String(action.customStepId || action.id || '').trim();
-                    const customStepDef = customStepId ? customStepsById[customStepId] : null;
-                    if (customStepDef && Array.isArray(customStepDef.actions)) {
-                        if (customStepStack.includes(customStepId)) {
-                            nestedChildren.push({
-                                label: `[cycle] custom step "${customStepId}"`,
-                                ref: {
-                                    scope: 'custom-step',
-                                    customStepId,
-                                    path: [],
-                                    arrayTrail: []
-                                },
-                                children: []
-                            });
-                        } else {
-                            const inlineChildren = buildActionTreeNodes(
-                                customStepDef.actions,
-                                { scope: 'custom-step', customStepId },
-                                [],
-                                [],
-                                {
-                                    ...opts,
-                                    customStepStack: customStepStack.concat([customStepId])
-                                }
-                            );
-                            nestedChildren.push(...inlineChildren);
-                        }
-                    }
-                }
-
-                return {
-                    label,
-                    ref: {
-                        ...baseRef,
-                        path,
-                        arrayTrail: arrayTrailPrefix.slice()
-                    },
-                    children: nestedChildren
-                };
-            })
-            .filter(Boolean);
     }
 
     function buildCurrentStepTreeModel() {
@@ -3619,117 +2858,6 @@ function storeActiveMode(mode) {
         stepTreeDialogEl.addEventListener('click', (event) => {
             if (event.target === stepTreeDialogEl) closeStepTreeDialog();
         });
-    }
-
-    function ensureRunTabIndicator() {
-        return ensureTabIndicator('mode-run');
-    }
-
-    /** The spinner (and badge) slot inside a mode tab, made on first use. */
-    function ensureTabIndicator(tabId) {
-        const tabRun = document.getElementById(tabId);
-        if (!tabRun) return null;
-
-        let host = tabRun.querySelector('.tab-indicator');
-        if (host) return host;
-
-        host = document.createElement('span');
-        host.className = 'tab-indicator';
-        host.setAttribute('aria-hidden', 'true');
-
-        const spinner = document.createElement('span');
-        spinner.className = 'tab-spinner';
-        spinner.hidden = true;
-
-        const badge = document.createElement('span');
-        badge.className = 'tab-badge';
-        badge.hidden = true;
-        badge.style.display = 'none';
-        badge.textContent = 'Done';
-
-        host.appendChild(spinner);
-        host.appendChild(badge);
-
-        tabRun.appendChild(host);
-        return host;
-    }
-
-    function setRunTabSpinner(isOn) {
-        const host = ensureRunTabIndicator();
-        if (!host) return;
-
-        const tabRun = document.getElementById('mode-run');
-        const el = host.querySelector('.tab-spinner');
-
-        if (el) el.hidden = !isOn;
-
-        // a11y name
-        if (isOn) {
-            setTabA11ySuffix(tabRun, 'running');
-        } else {
-            // only clear if badge is not showing
-            const badge = host.querySelector('.tab-badge');
-            const badgeOn = badge ? !badge.hidden : false;
-            if (!badgeOn) setTabA11ySuffix(tabRun, '');
-        }
-    }
-
-    /** The queue tab works in the background while a batch runs: same spinner and "running" name. */
-    function setQueueTabSpinner(isOn) {
-        const host = ensureTabIndicator('mode-queue');
-        if (!host) return;
-        const el = host.querySelector('.tab-spinner');
-        if (el) el.hidden = !isOn;
-        setTabA11ySuffix(document.getElementById('mode-queue'), isOn ? 'running' : '');
-    }
-
-    function setRunTabBadge(isOn) {
-        const host = ensureRunTabIndicator();
-        if (!host) return;
-
-        const tabRun = document.getElementById('mode-run');
-        const badge = host.querySelector('.tab-badge');
-
-        if (badge) {
-            badge.hidden = !isOn;
-            badge.style.display = !isOn ? 'none' : '';
-        }
-
-        // a11y name
-        if (isOn) {
-            setTabA11ySuffix(tabRun, 'updated results available');
-        } else {
-            // only clear if spinner is not showing
-            const spinner = host.querySelector('.tab-spinner');
-            const spinnerOn = spinner ? !spinner.hidden : false;
-            if (!spinnerOn) setTabA11ySuffix(tabRun, '');
-        }
-    }
-
-    function getBaseTabLabel(tabEl) {
-        if (!tabEl) return '';
-        // store once
-        if (!tabEl.dataset.baseLabel) {
-            const base =
-                tabEl.getAttribute('aria-label') ||
-                tabEl.textContent ||
-                '';
-            tabEl.dataset.baseLabel = base.trim().replace(/\s+/g, ' ');
-        }
-        return tabEl.dataset.baseLabel || '';
-    }
-
-    function setTabA11ySuffix(tabEl, suffix) {
-        if (!tabEl) return;
-        const base = getBaseTabLabel(tabEl);
-
-        const s = (suffix || '').trim();
-        if (!s) {
-            tabEl.removeAttribute('aria-label'); // go back to native name
-            return;
-        }
-
-        tabEl.setAttribute('aria-label', `${base}, ${s}`);
     }
 
     /** Linkify URLs and write to log area */
@@ -4270,20 +3398,6 @@ function storeActiveMode(mode) {
         queuePanel?.setCompareBlocked(compareLoad ? COMPARE_LOADING : null);
     }
 
-    // Give a loaded report the per-scan + portfolio globals the diff reads for
-    // its score/confidence KPIs, computed the same way the open report is (over
-    // its own included scans; no view filter applies here).
-    function computeReportGlobals(json) {
-        ensureScansIncludedFlag(json);
-        const scans = (Array.isArray(json.scans) ? json.scans : []).filter(
-            (s) => s && s.includedInReport !== false
-        );
-        const metricDefs = pickMetricDefsFromPayload(json);
-        json.a11yGlobalFindings = getA11yGlobalFindings(scans);
-        json.metrics = buildGlobalSummary({ scans, metricDefs });
-        return json;
-    }
-
     // ---- what the comparison calls itself ----
     //
     // The same metadata line a report carries, corrected the same way: rows
@@ -4572,19 +3686,6 @@ function storeActiveMode(mode) {
         }
         const json = JSON.parse(text);
         return json && json.conformanceReview && typeof json.conformanceReview === 'object' ? json.conformanceReview : null;
-    }
-
-    async function readReportFile(file) {
-        return parseReportText(await file.text(), file.name);
-    }
-
-    function parseReportText(text, name) {
-        let json;
-        try { json = JSON.parse(String(text || '')); }
-        catch { throw new Error('invalid JSON'); }
-        validateReportOrThrow(json, name);
-        computeReportGlobals(json);
-        return json;
     }
 
     // A shared tooltip for the dashboard's chart marks, under the pointer. The
@@ -5145,58 +4246,6 @@ function storeActiveMode(mode) {
         summaryEl,
         STATUS
     });
-
-    /* ==================== Focus helpers ==================== */
-
-    function isFocusable(el) {
-        if (!(el instanceof Element)) return false;
-        if ('disabled' in el && el.disabled) return false;
-
-        const style = window.getComputedStyle(el);
-        if (style.visibility === 'hidden' || style.display === 'none') return false;
-        if (el.closest('[hidden]')) return false;
-
-        const focusableTags = ['A', 'INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'];
-        if (focusableTags.includes(el.tagName)) {
-            if (el.tagName === 'A' && !el.hasAttribute('href') && !el.hasAttribute('tabindex')) return false;
-            return true;
-        }
-        if (el.hasAttribute('contenteditable')) return true;
-
-        const tabindex = el.getAttribute('tabindex');
-        if (tabindex !== null && !isNaN(tabindex)) return parseInt(tabindex, 10) >= 0;
-
-        return false;
-    }
-
-    function getFirstFocusable(el) {
-        if (!(el instanceof Element)) return null;
-        const focusableSelector = [
-            'a[href]',
-            'button:not([disabled])',
-            'input:not([disabled])',
-            'select:not([disabled])',
-            'textarea:not([disabled])',
-            '[tabindex]:not([tabindex="-1"])',
-            '[contenteditable]'
-        ].join(',');
-        const candidates = el.querySelectorAll(focusableSelector);
-        for (const c of candidates) if (isFocusable(c)) return c;
-        return null;
-    }
-
-    // Checks a report against the published report schema, reading it, in
-    // place, as the current format first: an older report's scans get their
-    // profile and occurrence ids, as they would on any merge or save.
-    function validateReportOrThrow(obj, fileLabel) {
-        if (obj && typeof obj === 'object' && !Array.isArray(obj)) globalThis.A11Y_REPORT_FORMAT.upgradeReport(obj);
-        const problems = globalThis.A11Y_JSON_SCHEMA_CHECK.checkAgainstSchema(
-            globalThis.A11Y_REPORT_SCHEMAS.openableReportSchema(), obj);
-        if (problems.length) {
-            const [first] = problems;
-            throw new Error(`Invalid report file${fileLabel ? ` (${fileLabel})` : ''}: ${first.path} , ${first.message}`);
-        }
-    }
 
     /* ==================== Events ==================== */
 
@@ -6359,55 +5408,6 @@ function storeActiveMode(mode) {
         });
     }
 
-    function isEditableElement(el) {
-        if (!(el instanceof Element)) return false;
-
-        // contenteditable (or inside)
-        if (el.isContentEditable) return true;
-        if (el.closest('[contenteditable=""],[contenteditable="true"]')) return true;
-
-        const tag = el.tagName;
-
-        // common form controls
-        if (tag === 'TEXTAREA') return true;
-
-        if (tag === 'INPUT') {
-            const t = (el.getAttribute('type') || 'text').toLowerCase();
-
-            // Treat most inputs as editable, except ones where undo/redo is not meaningful
-            const nonTextTypes = new Set([
-                'button', 'submit', 'reset',
-                'checkbox', 'radio',
-                'file', 'color',
-                'range',
-                'image'
-            ]);
-
-            // For everything else (text, search, email, url, number, tel, password, etc.), allow native undo
-            return !nonTextTypes.has(t);
-        }
-
-        // Optional: allow native undo inside selects too (usually irrelevant, but harmless)
-        if (tag === 'SELECT') return true;
-
-        return false;
-    }
-
-    function shouldIgnoreGlobalUndoRedo(e) {
-        // If user is composing IME text, don’t interfere
-        if (e.isComposing) return true;
-
-        const ae = document.activeElement;
-
-        // If focus is in an editable control, let the browser handle undo/redo for that control
-        if (isEditableElement(ae)) return true;
-
-        // Also ignore if the key event originated from an editable element even if activeElement is odd
-        if (isEditableElement(e.target)) return true;
-
-        return false;
-    }
-
     /* ==================== Live UI helpers ==================== */
 
     /** Reset live stream section and variable state */
@@ -7131,46 +6131,6 @@ function storeActiveMode(mode) {
         return {ok: true};
     }
 
-    function normalizeCustomStepInputs(rawInputs) {
-        const list = Array.isArray(rawInputs) ? rawInputs : [];
-        const out = [];
-        const seen = new Set();
-        for (const entry of list) {
-            const item = typeof entry === 'string' ? {name: entry} : entry;
-            if (!item || typeof item !== 'object') continue;
-            const name = String(item.name || '').trim();
-            if (!name || seen.has(name)) continue;
-            seen.add(name);
-            const normalized = {name};
-            if (item.required === true) normalized.required = true;
-            if (Object.prototype.hasOwnProperty.call(item, 'default')) normalized.default = item.default;
-            out.push(normalized);
-        }
-        return out;
-    }
-
-    function parseCustomStepInputsText(text) {
-        const lines = String(text || '')
-            .split(/\r?\n/)
-            .map((line) => line.trim())
-            .filter(Boolean);
-        const out = [];
-        const seen = new Set();
-        for (const line of lines) {
-            const required = line.endsWith('*');
-            const name = required ? line.slice(0, -1).trim() : line;
-            if (!name || seen.has(name)) continue;
-            seen.add(name);
-            out.push(required ? {name, required: true} : {name});
-        }
-        return out;
-    }
-
-    function formatCustomStepInputsText(inputs) {
-        const list = normalizeCustomStepInputs(inputs);
-        return list.map((item) => item.required ? `${item.name}*` : item.name).join('\n');
-    }
-
     function getCustomStepSelectChoices() {
         const out = [{ value: '', label: 'Select custom step...' }];
         customStepsData.forEach((step) => {
@@ -7211,22 +6171,6 @@ function storeActiveMode(mode) {
         });
     }
 
-    function collectUsedCustomStepIds(actions, outSet) {
-        const list = Array.isArray(actions) ? actions : [];
-        list.forEach((action) => {
-            if (!action || typeof action !== 'object') return;
-            if (action.type === 'runCustomStep') {
-                const id = String(action.customStepId || action.id || '').trim();
-                if (id) outSet.add(id);
-            }
-            Object.entries(action).forEach(([_, value]) => {
-                if (!Array.isArray(value)) return;
-                const looksLikeActions = value.some((item) => item && typeof item === 'object' && typeof item.type === 'string');
-                if (looksLikeActions) collectUsedCustomStepIds(value, outSet);
-            });
-        });
-    }
-
     function getCustomStepUsageInfo(stepId, excludeCustomStepIndex = -1) {
         const id = String(stepId || '').trim();
         if (!id) return { inWorkflow: false, usedByCustomSteps: [] };
@@ -7244,47 +6188,6 @@ function storeActiveMode(mode) {
         });
 
         return { inWorkflow: workflowUsed.has(id), usedByCustomSteps };
-    }
-
-    // Deep-clone an actions tree, rewriting every runCustomStep reference whose
-    // id appears in `remap` to its new id. Nested action arrays (repeat/if/crawl
-    // blocks, and custom steps that call other custom steps) are handled too.
-    function deepRemapCustomStepIds(actions, remap) {
-        if (!Array.isArray(actions)) return [];
-        return actions.map((action) => {
-            if (!action || typeof action !== 'object') return action;
-            const next = {...action};
-
-            if (next.type === 'runCustomStep') {
-                // Engine reads `customStepId` with a legacy fallback to `id`.
-                if (next.customStepId != null) {
-                    const ref = String(next.customStepId).trim();
-                    if (ref && Object.prototype.hasOwnProperty.call(remap, ref)) next.customStepId = remap[ref];
-                } else if (next.id != null) {
-                    const ref = String(next.id).trim();
-                    if (ref && Object.prototype.hasOwnProperty.call(remap, ref)) next.id = remap[ref];
-                }
-            }
-
-            Object.keys(next).forEach((key) => {
-                const value = next[key];
-                if (Array.isArray(value) && value.some((item) => item && typeof item === 'object' && typeof item.type === 'string')) {
-                    next[key] = deepRemapCustomStepIds(value, remap);
-                }
-            });
-
-            return next;
-        });
-    }
-
-    function makeUniqueImportedId(baseIdRaw, taken) {
-        const baseId = String(baseIdRaw || '').trim() || 'custom-step';
-        if (!taken.has(baseId)) return baseId;
-        const candidate = `${baseId}-imported`;
-        if (!taken.has(candidate)) return candidate;
-        let n = 2;
-        while (taken.has(`${baseId}-imported-${n}`)) n += 1;
-        return `${baseId}-imported-${n}`;
     }
 
     // Append the custom steps and workflow from a loaded config's `state` onto
@@ -7384,50 +6287,6 @@ function storeActiveMode(mode) {
         return {ok: true, message};
     }
 
-    function parseCustomStepsJson(rawText) {
-        const text = typeof rawText === 'string' ? rawText.trim() : '';
-        if (!text) return [];
-
-        let parsed;
-        try {
-            parsed = JSON.parse(text);
-        } catch (e) {
-            throw new Error('Custom steps JSON is invalid: ' + String(e?.message || e));
-        }
-
-        const list = Array.isArray(parsed)
-            ? parsed
-            : (parsed && typeof parsed === 'object')
-                ? Object.entries(parsed).map(([id, value]) => ({id, ...(value || {})}))
-                : null;
-
-        if (!list) throw new Error('Custom steps must be an array or object map.');
-
-        const seen = new Set();
-        const normalized = [];
-        for (let i = 0; i < list.length; i += 1) {
-            const item = list[i];
-            if (!item || typeof item !== 'object') {
-                throw new Error(`Custom step #${i + 1} must be an object.`);
-            }
-            const id = String(item.id || '').trim();
-            if (!id) throw new Error(`Custom step #${i + 1} is missing id.`);
-            if (seen.has(id)) throw new Error(`Custom step name "${id}" is duplicated.`);
-            seen.add(id);
-            if (!Array.isArray(item.actions) || !item.actions.length) {
-                throw new Error(`Custom step "${id}" must include a non-empty actions array.`);
-            }
-            normalized.push({
-                id,
-                name: String(item.name || '').trim() || id,
-                inputs: normalizeCustomStepInputs(item.inputs),
-                actions: item.actions
-            });
-        }
-
-        return normalized;
-    }
-
     function syncCustomStepsHiddenInput() {
         if (customStepsInput) {
             customStepsInput.value = customStepsData.length ? JSON.stringify(customStepsData) : '';
@@ -7468,16 +6327,6 @@ function storeActiveMode(mode) {
             customStepActionsBuilderEl.classList.toggle('is-disabled', !enabled);
             customStepActionsBuilderEl.setAttribute('aria-disabled', enabled ? 'false' : 'true');
         }
-    }
-
-    function cloneCustomStepValue(step) {
-        if (!step || typeof step !== 'object') return null;
-        return {
-            id: String(step.id || '').trim(),
-            name: String(step.name || '').trim(),
-            inputs: Array.isArray(step.inputs) ? step.inputs.map((i) => ({ ...i })) : [],
-            actions: Array.isArray(step.actions) ? JSON.parse(JSON.stringify(step.actions)) : []
-        };
     }
 
     function syncCustomStepPasteButtonState() {
@@ -7550,10 +6399,6 @@ function storeActiveMode(mode) {
         setCustomStepsExpanded(true);
         selectCustomStep(customStepsData.length - 1);
         pushCustomStepsHistory();
-    }
-
-    function customStepTabId(index) {
-        return `custom-step-tab-${index}`;
     }
 
     function renderCustomStepsList() {
@@ -8424,44 +7269,6 @@ function storeActiveMode(mode) {
         return includedOnly ? scans.filter(isScanIncludedInReport) : scans;
     }
 
-    /**
-     * The workflow screenshots, as an array whatever the payload holds.
-     *
-     * The app's own runs and exports always write the key, so reading it bare
-     * looked safe — but the report schema requires neither it nor `scans`, and a
-     * hand-written or third-party file that omits it used to take the render down
-     * on `.length`. Everything else here already coerces (`getScansFromPayload`,
-     * the renderers, the tag filter); this is the same rule for the other array.
-     */
-    function getScreenshotsFromPayload(data) {
-        return Array.isArray(data?.screenshots) ? data.screenshots : [];
-    }
-
-    /** Compute total violations and total nodes across all scans */
-    function computeTotals(scans) {
-        let totalNodes = 0;
-
-        const totalViolations = scans.reduce((acc, scan) => {
-            const s = scan.summary || {};
-            const scanNodes = (() => {
-                const findings = scan?.canonical && Array.isArray(scan.canonical.findings) ? scan.canonical.findings : [];
-                return findings.reduce((acc2, f) => {
-                    if (f?.outcome !== 'fail') return acc2;
-                    const occs = Array.isArray(f.occurrences) ? f.occurrences : [];
-                    return acc2 + occs.length;
-                }, 0);
-            })();
-
-            totalNodes += scanNodes;
-
-            const findings = scan?.canonical && Array.isArray(scan.canonical.findings) ? scan.canonical.findings : [];
-            const failCount = findings.reduce((acc2, f) => acc2 + (f?.outcome === 'fail' ? 1 : 0), 0);
-            return acc + failCount;
-        }, 0);
-
-        return {totalNodes, totalViolations};
-    }
-
     /** Build one <li> row for the scans summary list (same behavior, extracted) */
     function buildScanSummaryListItem(scan, index, total) {
         const isSkipped = !!scan.skipped || !!scan.skipInfo;
@@ -9035,148 +7842,8 @@ function storeActiveMode(mode) {
         return a;
     }
 
-    function getAllArtifactUrls(data) {
-        const urls = {
-            htmlReports: [],
-            screenshots: []
-        };
-
-        const scans = Array.isArray(data?.scans) ? data.scans : [];
-        for (const s of scans) {
-            const rep = s?.report;
-
-            // HTML report “open” link
-            if (rep?.publicUrl) urls.htmlReports.push({ url: rep.publicUrl, label: s?.label || s?.id || 'Scan report' });
-
-            // Screenshot links (prefer publicUrl, fall back to dataUrl)
-            const shots = Array.isArray(s?.screenshots) ? s.screenshots : [];
-            for (const sh of shots) {
-                const u = sh?.publicUrl || sh?.dataUrl;
-                if (u) urls.screenshots.push({ url: u, label: sh?.name || 'Screenshot' });
-            }
-        }
-
-        // Workflow-level screenshots (payload.screenshots)
-        const wfShots = Array.isArray(data?.screenshots) ? data.screenshots : [];
-        for (const sh of wfShots) {
-            const u = sh?.publicUrl || sh?.dataUrl;
-            if (u) urls.screenshots.push({ url: u, label: sh?.name || 'Workflow screenshot' });
-        }
-
-        return urls;
-    }
-
-    function keepOnlyKeys(obj, allowedKeys) {
-        return allowedKeys.reduce((acc, key) => {
-            if (key in obj) {
-                acc[key] = obj[key];
-            }
-            return acc;
-        }, {});
-    }
-
     function getActiveMode() {
         return resultsState.activeMode;
-    }
-
-    function prepareDataForReport(data) {
-        const requiredProperties = [
-            'scans',
-            'screenshots',
-            'scenarioName',
-            'reportName',
-            'url',
-            'timestamp'
-        ];
-
-        requiredProperties.push('metrics');
-        requiredProperties.push('a11yGlobalFindings');
-        // These keys must be in the allowlist so renderActionLog/renderRunDiagnostics/
-        // renderCollectedMetadata receive them in the live "run" view (finalizeAndRenderAll
-        // reads them directly off this object). See docs/design/workflow-collected-metadata-design.md §6.
-        requiredProperties.push('actionResults');
-        requiredProperties.push('runDiagnostics');
-        requiredProperties.push('collectedOutputs');
-        // The configuration the report ran: "Load configuration" sets it up
-        // again from the report (docs/report-package.md).
-        requiredProperties.push('config');
-        // A reviewer's conformance verdicts (conformance-review.js): kept with
-        // the report, so its downloads and a later opening carry them.
-        requiredProperties.push('conformanceReview');
-
-        const updatedData = keepOnlyKeys(data, requiredProperties);
-
-        // ---- SCANS ----
-        if (Array.isArray(updatedData.scans)) {
-            updatedData.scans = updatedData.scans.map((scan) => {
-                const updatedScan = keepOnlyKeys(scan, SCAN_FIELDS);
-
-                if (scan?.canonical && typeof scan.canonical === 'object') {
-                    const updatedCanonical = keepOnlyKeys(scan.canonical, CANONICAL_FIELDS);
-
-                    if (Array.isArray(scan.canonical.findings)) {
-                        updatedCanonical.findings = scan.canonical.findings.map((finding) =>
-                            pickFindingFields(finding)
-                        );
-                    }
-                    if (Array.isArray(scan.canonical.bestPractices)) {
-                        updatedCanonical.bestPractices = scan.canonical.bestPractices.map((finding) =>
-                            pickFindingFields(finding)
-                        );
-                    }
-
-                    updatedScan.canonical = updatedCanonical;
-                }
-
-                return updatedScan;
-            });
-        }
-
-        // ---- WORKFLOW SCREENSHOTS ----
-        if (Array.isArray(updatedData.screenshots)) {
-            updatedData.screenshots = updatedData.screenshots.map((screenshot) =>
-                keepOnlyKeys(screenshot, [
-                    'name',
-                    'publicUrl',
-                    'dataUrl',
-                    'buffer',
-                    'viewportRatio',
-                    'url'
-                ])
-            );
-        }
-
-        if (updatedData.runDiagnostics && typeof updatedData.runDiagnostics === 'object') {
-            const sanitizedRunDiagnostics = keepOnlyKeys(
-                updatedData.runDiagnostics,
-                ['requestFailures']
-            );
-
-            if (
-                Array.isArray(sanitizedRunDiagnostics.requestFailures) &&
-                sanitizedRunDiagnostics.requestFailures.length > 0
-            ) {
-                updatedData.runDiagnostics = sanitizedRunDiagnostics;
-            } else {
-                delete updatedData.runDiagnostics;
-            }
-        }
-
-        return updatedData;
-    }
-
-    // A deep copy of report data, as the JSON round trip would make it. Faster
-    // than that round trip for a large report; falls back to it for anything
-    // structuredClone refuses.
-    function cloneJsonData(value) {
-        if (typeof structuredClone === 'function') {
-            try {
-                return structuredClone(value);
-            } catch {
-                // fall through
-            }
-        }
-        return JSON.parse(JSON.stringify(value));
     }
 
     function buildExportPayload(data, options = {}) {
@@ -9621,38 +8288,6 @@ function storeActiveMode(mode) {
         }
         resultsContainer.removeAttribute('aria-busy');
         markResultsComplete();
-    }
-
-    // Collects the distinct accessibility engines used across a report's scans,
-    // formatted as "name version" (version omitted when unknown/unavailable).
-    // Reads canonical.engines (current shape) with a canonical.engine fallback
-    // for older/legacy canonical payloads.
-    function collectReportEngines(data) {
-        const scans = Array.isArray(data?.scans) ? data.scans : [];
-        const byId = new Map();
-
-        for (const scan of scans) {
-            const canonical = scan && scan.canonical;
-            if (!canonical) continue;
-
-            const engines = Array.isArray(canonical.engines)
-                ? canonical.engines
-                : (canonical.engine ? [canonical.engine] : []);
-
-            for (const eng of engines) {
-                if (!eng) continue;
-                const id = eng.id ? String(eng.id) : (eng.name ? String(eng.name) : null);
-                if (!id || byId.has(id)) continue;
-                byId.set(id, eng);
-            }
-        }
-
-        return Array.from(byId.values()).map((eng) => {
-            const id = eng.id ? String(eng.id).trim() : '';
-            const name = eng.name ? String(eng.name).trim() : (id || 'Unknown engine');
-            const version = eng.version ? String(eng.version).trim() : '';
-            return { id, name, version };
-        });
     }
 
     /**
