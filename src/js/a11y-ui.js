@@ -1,16 +1,10 @@
 import {createActionsBuilder, redactMaskedFieldsDeep, withPasswordStepTypeDeep} from './actions-builder.module.js';
-import {buildLabeledSelect, createEl, createImg, escapeAttr, escapeHtml, iconButton, indentPrefix, jsonBlob, linkifyUrlsToHtml, parseForEachIteration, parseRepeatIteration, safeBaseName, scanTagChipsHtml, svgIcon, createSplitButton} from './a11y-ui.utils.js';
-import {enhanceAsLiveCarousel} from './carousel-ui.js';
+import {buildLabeledSelect, createEl, createImg, escapeAttr, escapeHtml, iconButton, indentPrefix, jsonBlob, linkifyUrlsToHtml, safeBaseName, scanTagChipsHtml, svgIcon} from './a11y-ui.utils.js';
 import {fetchWorkflowResult, pollWorkflowUntilDone, runFailureMessage} from './a11y-ui.workflow.js';
 import {setupRunSettings} from './run-settings.js';
-import {createStreamCardAdder, renderAllScansCard} from './stream-ui.js';
+import {renderAllScansCard} from './stream-ui.js';
 import {scanToAllScansCardProps} from './all-scans-data.js';
-import {isFailureFreeScan, failureFreeScansNote} from './scan-failures.js';
-import {createProgressProcessor} from './progress-processor.js';
-import {createLiveTotals} from './live-totals.js';
-import {collectVarsDeep, deriveScreenshotCaption as deriveLiveScreenshotCaption, findUnresolvedVars, resolveLabelTemplate as resolveLiveLabel} from './live-view.js';
 import {createConfigIO} from './config-io.js';
-import {optInRulesLabel} from './report-fields.js';
 import {enginesHTML, howTestedHTML} from './engine-brand.js';
 import {openConformanceReview} from './conformance-review.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
@@ -32,14 +26,13 @@ import {installInPageLinks} from './in-page-links.js';
 import {installBackToTop} from './back-to-top.js';
 import {createClearReportBtn, createCompareReportBtn, createDownloadReportSplitButton, downloadConformanceReport, downloadConformanceReportDocx, setWhenReportDrawn} from './export.js';
 import {readCompareZip} from './comparison-bundle.js';
-import {watchForMissingPictures} from './missing-pictures.js';
 import {afterPaint, isBusy, runBusy, setBusy} from './busy.js';
 import {getActivity} from './activity.js';
-import {clearLazyBodies, openLazyDialog, setLazyScope} from './lazy-dialogs.js';
+import {clearLazyBodies, setLazyScope} from './lazy-dialogs.js';
 import {attachFileDrop} from './file-drop.js';
 import {cleanGroupingItem} from './grouping-spec.js';
 import {buildGlobalSummary, cloneJsonData, collectReportEngines, computeTotals, ensureScanSummaryCounts, ensureScansIncludedFlag, getA11yGlobalFindings, getAllArtifactUrls, getScreenshotsFromPayload, hashHex16, normalizePayloadForUi, pickMetricDefsFromPayload, pickMetricDefsFromStaged, prepareDataForReport, sortByOrderKey, stripVolatileKeysDeep, validateReportOrThrow} from './report-data.js';
-import {buildActionTreeNodes, buildCustomStepMaps, collapseLineIfExpanded, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, resolveStepRefForLogEntry, setupCollapseAllStepsButton} from './action-tree.js';
+import {buildActionTreeNodes, buildCustomStepMaps, collapseLineIfExpanded, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
 import {cloneCustomStepValue, collectUsedCustomStepIds, customStepTabId, deepRemapCustomStepIds, formatCustomStepInputsText, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepInputsText, parseCustomStepsJson} from './custom-steps-data.js';
 import {setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isActuallyFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
@@ -49,6 +42,9 @@ import {createCompareTab} from './compare-tab.js';
 import {createGroupingUi} from './grouping-ui.js';
 import {createScreenshotsUi} from './screenshots-ui.js';
 import {createRunQueueUi} from './run-queue-ui.js';
+import {createLiveUi} from './live-ui.js';
+import {createRunSummaryUi} from './run-summary-ui.js';
+import {createPageEvents} from './page-events.js';
 
 function getStoredActiveMode() {
     try {
@@ -128,6 +124,36 @@ function storeActiveMode(mode) {
         get setReportPayload() { return setReportPayload; },
         get setSectionsState() { return setSectionsState; },
         get whenResultsComplete() { return whenResultsComplete; },
+        get $$() { return $$; },
+        get appendLog() { return appendLog; },
+        get customStepsInput() { return customStepsInput; },
+        get groupingUi() { return groupingUi; },
+        get liveStreamEl() { return liveStreamEl; },
+        get useLiveStream() { return useLiveStream; },
+        set useLiveStream(value) { useLiveStream = value; },
+        get buildScanTagChipsHtml() { return buildScanTagChipsHtml; },
+        get buildSummaryControlsHtml() { return buildSummaryControlsHtml; },
+        get isScanIncludedInReport() { return isScanIncludedInReport; },
+        get runResultText() { return runResultText; },
+        set runResultText(value) { runResultText = value; },
+        get runResultToStatus() { return runResultToStatus; },
+        set runResultToStatus(value) { runResultToStatus = value; },
+        get scanMatchesActiveTagFilter() { return scanMatchesActiveTagFilter; },
+        get appendConfigFileEl() { return appendConfigFileEl; },
+        get cancelButton() { return cancelButton; },
+        get configFileEl() { return configFileEl; },
+        get configFileSplitBtnSlot() { return configFileSplitBtnSlot; },
+        get currentRunId() { return currentRunId; },
+        set currentRunId(value) { currentRunId = value; },
+        get dryRunButton() { return dryRunButton; },
+        get form() { return form; },
+        get loadAndRun() { return loadAndRun; },
+        set loadAndRun(value) { loadAndRun = value; },
+        get onDryRun() { return onDryRun; },
+        get onRunScan() { return onRunScan; },
+        get scanButton() { return scanButton; },
+        get setUiState() { return setUiState; },
+        get urlInput() { return urlInput; },
     };
 
     const $ = (sel, root = document) => root.querySelector(sel);
@@ -2898,147 +2924,8 @@ function storeActiveMode(mode) {
 
     /* ==================== Events ==================== */
 
-    dryRunButton?.addEventListener('click', (event) => {
-        if (event.currentTarget.getAttribute('aria-disabled') === 'true') return;
-        onDryRun().catch((e) => console.error('Dry run failed', e));
-    });
-
-    scanButton?.addEventListener('click', (event) => {
-        if (event.currentTarget.getAttribute('aria-disabled') === 'true') {
-            event.preventDefault();
-            // Disabled but focusable: say why when it says so.
-            const why = event.currentTarget.dataset.blockedReason;
-            if (why) setStatusRun(why, STATUS.ERROR);
-            return;
-        }
-        onRunScan(event).then(() => {
-        });
-    });
-
-    // Only the URL field should trigger a run on Enter (implicit submission).
-    // Without this, pressing Enter in any other text input/select nested in
-    // the Workflow or Custom Steps panels (which live inside the same <form>)
-    // accidentally submits the whole scan form. Textareas are left alone:
-    // Enter there just inserts a newline and never submits the form natively.
-    form?.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' || event.target === urlInput) return;
-        if (!(event.target instanceof HTMLElement)) return;
-
-        const target = event.target;
-        const tag = target.tagName;
-        if (tag === 'TEXTAREA') return;
-
-        // Keep native Enter activation for interactive controls.
-        if (target.closest('button, [role="button"], a[href], summary')) return;
-
-        // Prevent only implicit form submission from text-like fields.
-        if (tag === 'SELECT') {
-            event.preventDefault();
-            return;
-        }
-        if (tag === 'INPUT') {
-            const type = String(target.getAttribute('type') || 'text').toLowerCase();
-            const textLikeInputTypes = new Set([
-                'text', 'search', 'email', 'url', 'tel', 'number', 'password',
-                'date', 'datetime-local', 'month', 'week', 'time'
-            ]);
-            if (textLikeInputTypes.has(type)) event.preventDefault();
-        }
-    });
-
-    cancelButton?.addEventListener('click', async (event) => {
-        if (!currentRunId || event.currentTarget.getAttribute('aria-disabled') === 'true') {
-            event.preventDefault();
-            return;
-        }
-        try {
-            cancelButton.setAttribute('aria-disabled', 'true');
-            setUiState('cancelling', 'Cancellation requested...');
-            await fetch('/workflow-cancel', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({runId: currentRunId})
-            });
-        } catch {
-            setUiState('error', 'Could not send cancellation request.');
-            cancelButton.setAttribute('aria-disabled', 'false');
-        }
-    });
-
-    if (configFileSplitBtnSlot && configFileEl) {
-        const configFileSplitBtn = createSplitButton({
-            label: 'Load config',
-            menuLabel: 'Other load options',
-            onAction: () => {
-                loadAndRun = false;
-                configFileEl.click();
-            },
-            items: [
-                {
-                    id: 'run',
-                    label: 'Load and run',
-                    description: 'Load the file and start the scan immediately',
-                    onSelect: () => {
-                        loadAndRun = true;
-                        configFileEl.click();
-                    }
-                },
-                {
-                    id: 'append',
-                    label: 'Append config',
-                    description: 'Add another config’s custom steps and workflow to the current one',
-                    onSelect: () => {
-                        if (appendConfigFileEl) appendConfigFileEl.click();
-                    }
-                }
-            ]
-        });
-        configFileSplitBtn.querySelector('.split-button__action')?.setAttribute('aria-controls', 'config-file');
-        configFileSplitBtnSlot.replaceWith(configFileSplitBtn);
-    }
-
-    // Unified delegated clicks for dialogs and copy selector
-    document.addEventListener('click', (event) => {
-        const trigger = event.target.closest('.src-dialog-trigger');
-        if (trigger) {
-            const localDlg = trigger.closest('td')?.querySelector('dialog') || trigger.closest('tr')?.querySelector('dialog');
-
-            const dlg =
-                localDlg ||
-                (() => {
-                    const id = trigger.getAttribute('data-dialog-id');
-                    return id ? document.getElementById(id) : null;
-                })();
-
-            // Its occurrences may not be drawn yet (lazy-dialogs.js): a long
-            // list opens on a skeleton and is drawn a frame later.
-            if (dlg && typeof dlg.showModal === 'function') openLazyDialog(dlg, {afterPaint});
-            dlg?.addEventListener('click', (e) => {
-                if (e.target === dlg) dlg.close();
-            });
-            dlg?.querySelector('.src-dialog-body')?.scrollTo({top: 0});
-            return;
-        }
-
-        const closeBtn = event.target.closest('.src-dialog-close');
-        if (closeBtn) {
-            closeBtn.closest('dialog')?.close();
-            return;
-        }
-
-        const copyBtn = event.target.closest('.copy-selector-btn');
-        if (copyBtn) {
-            // A selector, or what the button holds (Copy URLs).
-            const selector = copyBtn.getAttribute('data-copy') || copyBtn.getAttribute('data-selector') || '';
-            if (selector && navigator.clipboard?.writeText) {
-                navigator.clipboard.writeText(selector).catch(() => {
-                });
-            }
-        }
-    });
-
-    // A picture a report names that cannot be shown says why, in its place.
-    watchForMissingPictures(document);
+    // In page-events.js.
+    createPageEvents(app);
 
     /* ==================== Run queue ==================== */
 
@@ -3219,7 +3106,7 @@ function storeActiveMode(mode) {
         // discarding the tally) whenever another top-level tab is active, and
         // bring it back on return. Dispatched on initial load too, so this also
         // sets the correct starting visibility.
-        liveTotals.setHidden(mode !== 'run');
+        liveUi.liveTotals.setHidden(mode !== 'run');
         // The Compare tab owns its own pane and doesn't use the run/report
         // results area — hide the shared results while it's active.
         document.body.classList.toggle('compare-mode-active', mode === 'compare');
@@ -3698,226 +3585,12 @@ function storeActiveMode(mode) {
 
     /* ==================== Live UI helpers ==================== */
 
-    /** Reset live stream section and variable state */
-    function resetLivePanels() {
-        if (liveStreamEl) liveStreamEl.style.display = 'none';
-        const grid = $('#live-stream-grid');
-        if (grid) grid.innerHTML = '';
-        groupingUi.liveVarState.index = undefined;
-        groupingUi.liveVarState.oneBased = undefined;
-        groupingUi.liveVarState.total = undefined;
-        groupingUi.liveVarState.vars = Object.create(null);
-
-        carousel?.clear?.();
-        liveTotals?.reset?.();
-        groupingUi.liveStepState.counter = null;
-    }
-
-    /**
-     * Start counting steps for the run about to go out.
-     *
-     * The plan is built from the same actions and custom steps the payload
-     * carries, so what the panel counts down is exactly what the server was
-     * asked to run. The shared module arrives as a global (see the script tags
-     * in index.html); if it is missing the run proceeds without a step counter
-     * rather than failing.
-     */
-    function startStepCounter(actions, customSteps) {
-        const api = globalThis.A11Y_WORKFLOW_STEP_COUNTER;
-        if (!api || typeof api.createStepCounter !== 'function') {
-            groupingUi.liveStepState.counter = null;
-            return;
-        }
-
-        try {
-            groupingUi.liveStepState.counter = api.createStepCounter({actions, customSteps});
-            liveTotals.setSteps(groupingUi.liveStepState.counter.snapshot());
-        } catch {
-            // A workflow the planner cannot walk still deserves to run.
-            groupingUi.liveStepState.counter = null;
-        }
-    }
-
-    // The label helpers are shared with the watch dialog's live view
-    // (src/js/live-view.js); the run tab's resolve against its own vars.
-    const resolveLabelTemplate = (raw, localVars) => resolveLiveLabel(raw, localVars, groupingUi.liveVarState);
-    const deriveScreenshotCaption = (extra) => deriveLiveScreenshotCaption(extra, groupingUi.liveVarState);
-
-    const carouselContainer = $('#live-stream-grid');
-    const carousel = carouselContainer && enhanceAsLiveCarousel(carouselContainer, {
-        title: "Live preview",
-        visibleCount: 4,
-        announceNewItems: false
-    });
-
-    const addStreamCard = createStreamCardAdder({
-        getUseLiveStream: () => useLiveStream,
-        getGrid: () => document.getElementById('live-stream-grid'),
-        getStream: () => document.getElementById('live-stream'),
-        carousel,
-        dialogs: {liveStreamDialog, scansDialog, screenshotsDialog},
-        escapeHtml,
-        escapeAttr,
-        resolveLabelTemplate,
-        findUnresolvedVars,
-        isDebug: () => !!window.__A11YLAB_DEBUG
-    });
-
-    // Floating, non-dismissable "scan totals" counter shown while a run streams
-    // scans into the live preview. It accumulates fail / can't tell / pass and
-    // total DOM elements across scans, and is removed when the run finishes.
-    const liveTotals = createLiveTotals({getMount: () => document.body});
-
-    // when iteration vars change, re-resolve pending live titles and captions
-    function tryUpdateLiveScanTitles() {
-        const cards = $$('#live-stream-grid .stream-card[data-kind="scan"] h3');
-        cards.forEach((h3) => {
-            const raw = h3.dataset.rawLabel || '';
-            if (raw && raw.includes('{var:')) {
-                const resolved = resolveLabelTemplate(raw) || 'a11y scan';
-                const desired = 'Scan: ' + resolved;
-                if (desired !== h3.textContent) h3.textContent = desired;
-            }
-        });
-    }
-
-    function tryUpdateLiveScreenshotCaptions() {
-        const caps = $$('#live-stream-grid .stream-card[data-kind="screenshot"] .stream-caption');
-        caps.forEach((el) => {
-            const raw = el.dataset.rawCaption || '';
-            if (!raw || !raw.includes('{var:')) return;
-
-            let localVars = {};
-            try {
-                localVars = JSON.parse(el.dataset.localVars || '{}');
-            } catch {
-            }
-
-            const resolved = resolveLabelTemplate(raw, localVars) || 'Screenshot';
-            const desired = 'Screenshot' + (resolved !== 'Screenshot' ? ': ' + resolved : '');
-            if (desired !== el.textContent) {
-                el.textContent = desired;
-                const img = el.nextElementSibling?.querySelector('img') || el.previousElementSibling?.querySelector('img');
-                if (img) img.alt = resolved;
-            }
-
-            if (window.__A11YLAB_DEBUG) {
-                const unresolved = findUnresolvedVars(resolveLabelTemplate(raw, localVars));
-                const card = el.closest('.stream-card');
-                if (card) {
-                    const dbg = card.querySelector('.stream-caption-debug');
-                    if (unresolved.length) {
-                        const box = dbg || document.createElement('div');
-                        box.className = 'stream-caption-debug';
-                        box.textContent = `Unresolved vars: ${unresolved.join(', ')}`;
-                        box.style.fontSize = '12px';
-                        box.style.opacity = '0.7';
-                        box.style.marginTop = '4px';
-                        if (!dbg) card.appendChild(box);
-                    } else if (dbg) {
-                        dbg.remove();
-                    }
-                }
-            }
-        });
-    }
-
-    /** Apply iteration vars from a parsed iteration object */
-    function applyIterationVars(m) {
-        if (!m) return;
-        const {oneBased, total} = m;
-
-        groupingUi.liveVarState.oneBased = Number.isFinite(oneBased) ? oneBased : undefined;
-        groupingUi.liveVarState.index = Number.isFinite(oneBased) ? oneBased - 1 : undefined;
-
-        // allow "unknown total" represented as null
-        if (total === null) {
-            groupingUi.liveVarState.total = undefined;
-        } else {
-            groupingUi.liveVarState.total = Number.isFinite(total) ? total : undefined;
-        }
-
-        tryUpdateLiveScanTitles();
-        tryUpdateLiveScreenshotCaptions();
-    }
-
-    /** Handle a single progress log entry (exact same behavior, just extracted) */
-    const progressProcessor = createProgressProcessor({
-        liveVarState: groupingUi.liveVarState,
-        liveStepState: groupingUi.liveStepState,
-        appendLog,
-        resolveStepRefForLogEntry,
-        parseForEachIteration,
-        parseRepeatIteration,
-        tryUpdateLiveScanTitles,
-        tryUpdateLiveScreenshotCaptions,
-        collectVarsDeep,
-        deriveScreenshotCaption,
-        addStreamCard,
-        addScanTotals: (payload) => liveTotals.add(payload),
-        mergeScanTotals: (payload) => liveTotals.merge(payload),
-        setStepTotals: (snapshot) => liveTotals.setSteps(snapshot),
-        getUseLiveStream: () => useLiveStream
-    });
-
-    const THEME_KEY = 'a11y-lab-theme';
-
-    // Colour-theme toggle. A single icon button in the header that cycles
-    // Auto → Light → Dark, persisting the choice to localStorage and reflecting
-    // it on <html data-theme>. Same control the report and extension use; the
-    // CSS drives dark styling from :root[data-theme="dark"] and, in Auto mode,
-    // from the OS via prefers-color-scheme. The no-FOUC head script in
-    // index.html applies the saved choice before first paint.
-    const THEME_ORDER = ['auto', 'light', 'dark'];
-    const THEME_LABELS = { auto: 'Auto', light: 'Light', dark: 'Dark' };
-
-    function applyTheme(theme, btn) {
-        const root = document.documentElement;
-
-        if (theme === 'auto') {
-            delete root.dataset.theme;
-        } else {
-            root.dataset.theme = theme;
-        }
-
-        if (btn) {
-            btn.setAttribute('data-choice', theme);
-            const label = 'Colour theme: ' + THEME_LABELS[theme];
-            btn.setAttribute('aria-label', label);
-            btn.title = label;
-        }
-    }
-
-    function initTheme() {
-        const stored = localStorage.getItem(THEME_KEY);
-        // Default to Light on a fresh view (nothing stored); an explicit
-        // Auto/Light/Dark choice the user made previously always wins.
-        let current = (stored === 'auto' || stored === 'light' || stored === 'dark') ? stored : 'light';
-
-        const btn = document.querySelector('[data-theme-toggle]');
-        applyTheme(current, btn);
-
-        btn?.addEventListener('click', () => {
-            current = THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length];
-            try {
-                localStorage.setItem(THEME_KEY, current);
-            } catch (e) {
-                /* ignore — the choice still applies for this view */
-            }
-            applyTheme(current, btn);
-        });
-
-        document.documentElement.classList.remove('no-theme-transition');
-    }
-
-    function clearCustomStepsOnFreshBoot() {
-        if (!customStepsInput) return;
-        customStepsInput.value = '';
-    }
+    // In live-ui.js.
+    const liveUi = createLiveUi(app);
 
     /* ==================== Boot ==================== */
 
-    document.addEventListener('DOMContentLoaded', initTheme);
+    document.addEventListener('DOMContentLoaded', liveUi.initTheme);
 
     setWhenReportDrawn(whenResultsComplete);
     // Downloads and the loading of reports and zips, as they go (activity.js).
@@ -3940,7 +3613,7 @@ function storeActiveMode(mode) {
         setActiveMode(initialMode);
     }
 
-    clearCustomStepsOnFreshBoot();
+    liveUi.clearCustomStepsOnFreshBoot();
     // Tooltips and the keyboard-readable scan strips of "Where the failures
     // are", in the report view and the Compare tab alike: one delegated layer.
     globalThis.A11Y_ISSUE_DISPERSION_VIEW?.installDispersionInteractions(document);
@@ -4003,7 +3676,7 @@ function storeActiveMode(mode) {
             clearResults();
             clearScreenshots();
             summaryEl.textContent = '';
-            resetLivePanels();
+            liveUi.resetLivePanels();
             if (loadAndRun) {
                 onRunScan();
             }
@@ -4045,7 +3718,7 @@ function storeActiveMode(mode) {
                 clearResults();
                 clearScreenshots();
                 summaryEl.textContent = '';
-                resetLivePanels();
+                liveUi.resetLivePanels();
                 setTimeout(setHistoryBaselineToCurrent, 50);
             }
         });
@@ -5206,7 +4879,7 @@ function storeActiveMode(mode) {
             },
             onProgress: (prog) => {
                 if (prog && Array.isArray(prog.logs) && prog.logs.length) {
-                    progressProcessor.processMany(prog.logs);
+                    liveUi.progressProcessor.processMany(prog.logs);
                 }
             }
         });
@@ -5329,7 +5002,7 @@ function storeActiveMode(mode) {
             summaryEl.textContent = '';
         }
 
-        resetLivePanels();
+        liveUi.resetLivePanels();
         loadAndRun = false;
 
         const request = prepareRunRequest();
@@ -5350,7 +5023,7 @@ function storeActiveMode(mode) {
         const plan = getPlannedLiveStreamMode(actions);
         useLiveStream = !!plan.shouldStream;
 
-        startStepCounter(actions, customSteps);
+        liveUi.startStepCounter(actions, customSteps);
 
         // Running UI state
         runStartedAtMs = performance.now();
@@ -5395,7 +5068,7 @@ function storeActiveMode(mode) {
             // floating scan-totals counter over to the user: its dismiss button
             // becomes active so they can close it after reviewing the totals.
             // A fresh run resets it again on start.
-            liveTotals?.finish?.();
+            liveUi.liveTotals?.finish?.();
 
             // always return to idle buttons, regardless of outcome
             scanButton.setAttribute('aria-disabled', 'false');
@@ -5484,7 +5157,7 @@ function storeActiveMode(mode) {
 
         clearLogsPanel();
         clearLiveStreamDialog();
-        resetLivePanels();
+        liveUi.resetLivePanels();
         if (dryRunReportEl) dryRunReportEl.hidden = true;
 
         const request = prepareRunRequest({fallbackUrl: row ? row.url : ''});
@@ -5497,7 +5170,7 @@ function storeActiveMode(mode) {
         }
 
         useLiveStream = false;
-        startStepCounter(actions, customSteps);
+        liveUi.startStepCounter(actions, customSteps);
         runStartedAtMs = performance.now();
         setUiState('running', row
             ? `Dry run with the batch's first workflow, ${row.name}: every step but the scans, screenshots and evidence...`
@@ -5533,7 +5206,7 @@ function storeActiveMode(mode) {
             runStartedAtMs = null;
             // Its step count helped while the steps ran; its scan totals are
             // all zero in a dry run, and it would cover the dry run's report.
-            liveTotals.remove();
+            liveUi.liveTotals.remove();
             setRunTabSpinner(false);
             scanButton.setAttribute('aria-disabled', 'false');
             dryRunButton?.setAttribute('aria-disabled', 'false');
@@ -5574,163 +5247,8 @@ function storeActiveMode(mode) {
 
     /* ==================== Final payload summary ==================== */
 
-    /** Normalize scans list from final payload */
-    function getScansFromPayload(data, { includedOnly = false } = {}) {
-        const scans = Array.isArray(data?.scans) ? data.scans : [];
-        return includedOnly ? scans.filter(isScanIncludedInReport) : scans;
-    }
-
-    /** Build one <li> row for the scans summary list (same behavior, extracted) */
-    function buildScanSummaryListItem(scan, index, total) {
-        const isSkipped = !!scan.skipped || !!scan.skipInfo;
-        const s = scan.summary || {};
-        const count = isSkipped ? 0 : typeof s.failCount === 'number' ? s.failCount : 0;
-        const isIncluded = scan.includedInReport !== false;
-
-        const label = scan.label || scan.id || 'Scan ' + (index + 1);
-
-        const perScanNodes = isSkipped
-            ? 0
-            : (() => {
-                const findings = scan?.canonical && Array.isArray(scan.canonical.findings) ? scan.canonical.findings : [];
-                return findings.reduce((acc2, f) => {
-                    if (f?.outcome !== 'fail') return acc2;
-                    const occs = Array.isArray(f.occurrences) ? f.occurrences : [];
-                    return acc2 + occs.length;
-                }, 0);
-            })();
-
-        const scanIdAttr = escapeAttr(scan.id || '');
-        const isFirst = index === 0;
-        const isLast = index === (total - 1);
-
-        const controlsHtml =
-            '<span class="scan-summary-controls">' +
-            `<button type="button" class="secondary-button icon-button scan-summary-rename" data-scan-action="rename" data-scan-id="${scanIdAttr}" aria-label="Rename scan" title="Rename scan">${svgIcon('edit').outerHTML}</button>` +
-            `<button type="button" class="secondary-button icon-button scan-summary-move-up" data-scan-action="move-up" data-scan-id="${scanIdAttr}" aria-label="Move scan up"${isFirst ? ' disabled aria-disabled="true"' : ''}>▲</button>` +
-            `<button type="button" class="secondary-button icon-button scan-summary-move-down" data-scan-action="move-down" data-scan-id="${scanIdAttr}" aria-label="Move scan down"${isLast ? ' disabled aria-disabled="true"' : ''}>▼</button>` +
-            `<button type="button" class="secondary-button scan-summary-toggle" data-scan-action="toggle" data-scan-id="${scanIdAttr}" aria-pressed="${isIncluded ? 'true' : 'false'}">${isIncluded ? 'Exclude' : 'Include'}</button>` +
-            '</span>';
-
-        const nameWrapperHtml =
-            '<span class="scan-name-wrapper">' +
-            `<strong class="scan-name-text" data-scan-id="${scanIdAttr}">${escapeHtml(label)}</strong>` +
-            `<input type="text" class="scan-name-input" data-scan-id="${scanIdAttr}" aria-label="Edit scan name" hidden>` +
-            '</span>';
-
-        const excludedBadgeHtml = isIncluded
-            ? ''
-            : '<span class="scan-excluded-badge">Excluded</span> ';
-
-        const liClasses = [
-            isIncluded ? '' : 'scan-summary-excluded',
-            scanMatchesActiveTagFilter(scan) ? '' : 'scan-filtered-out',
-            isFailureFreeScan(scan) ? 'scan-no-failures' : '',
-        ].filter(Boolean).join(' ');
-
-        const sortAttrs = globalThis.A11Y_SCAN_SORT
-            ? ' ' + globalThis.A11Y_SCAN_SORT.scanSortAttrs(scan, index)
-            : '';
-        let item = `<li class="${liClasses}" data-scan-id="${scanIdAttr}"${sortAttrs}>`;
-        item +=
-            nameWrapperHtml +
-            excludedBadgeHtml +
-            (isSkipped
-                ? `: <a href="#sc-${scan.id}" title="go to the report">skipped, ` +
-                escapeHtml(scan.skipInfo?.reason || 'reason not provided') +
-                (scan.skipInfo?.estimatedNodes != null && scan.skipInfo?.threshold != null
-                    ? ' · ' +
-                    escapeHtml(`estimated nodes: ${scan.skipInfo.estimatedNodes} (threshold: ${scan.skipInfo.threshold})`)
-                    : '')
-                : `: <a href="#sc-${scan.id}" title="go to the report">` +
-                count +
-                ' failure' +
-                (count === 1 ? '' : 's') +
-                (perScanNodes > 0 ? ' in ' + perScanNodes + ' element' + (perScanNodes === 1 ? '' : 's') : '')) +
-            '</a>' +
-            (isSkipped ? ''
-                : globalThis.A11Y_REPORT_SCAN?.scanProfile(scan)?.label
-                    ? ' <small>(' + escapeHtml(globalThis.A11Y_REPORT_SCAN.scanProfile(scan).label) + ')</small>' : '') +
-            (!isSkipped && optInRulesLabel(scan) ? ' <small>(plus ' + escapeHtml(optInRulesLabel(scan)) + ')</small>' : '') +
-            // A note can explain a count, such as no failures on a scope
-            // that matched nothing, so the list points to it.
-            (!isSkipped && Array.isArray(scan?.canonical?.notices) && scan.canonical.notices.length
-                ? ' <small class="scan-has-notes">· <a href="#sc-' + escapeAttr(scan.id || '') + '">' +
-                    (scan.canonical.notices.length === 1 ? 'see the note' : 'see the notes') + '</a></small>'
-                : '') +
-            buildScanTagChipsHtml(scan) +
-            controlsHtml;
-
-        item += '</li>';
-        return item;
-    }
-
-    /** Build the <ul> summary list HTML */
-    function buildScansListHtml(scans) {
-        if (!Array.isArray(scans) || !scans.length) return '';
-        const total = scans.length;
-        const items = scans.map((scan, index) => buildScanSummaryListItem(scan, index, total)).join('');
-        if (!items) return '';
-
-        // Only shown in "Failures only", so the scans that mode hides are
-        // accounted for instead of silently missing.
-        const note = failureFreeScansNote(scans);
-        const noteHtml = note ? '<p class="failure-free-scans-note">' + escapeHtml(note) + '</p>' : '';
-        return noteHtml + '<ol>' + items + '</ol>';
-    }
-
-    /**
-     * RGAA's compliance rate over the included scans that targeted it, as one
-     * line under the summary header; empty without RGAA scans. Only the
-     * criteria the automated checks settled count, which the line says.
-     */
-    function rgaaRateHtml(scans) {
-        const api = globalThis.A11Y_REPORT_CONFORMANCE;
-        const r = api && typeof api.rgaaComplianceRate === 'function' ? api.rgaaComplianceRate(scans) : null;
-        if (!r) return '';
-        const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-        const rate = r.rate == null
-            ? 'no rate yet: the automated checks settled no criterion'
-            : `<strong>${Math.round(r.rate * 100)}%</strong> (${r.met} of ${r.met + r.notMet} criteria met)`;
-        return '<p class="rgaa-rate"><span lang="fr">RGAA</span> 4.1.2 compliance rate, from automated checks only: ' + rate +
-            ' · ' + escapeHtml(plural(r.toVerify, 'criterion', 'criteria')) + ' to verify by hand' +
-            ' · ' + escapeHtml(plural(r.notApplicable, 'criterion', 'criteria')) + ' not applicable' +
-            ' · across ' + escapeHtml(plural(r.pages, 'page', 'pages')) + '. ' +
-            '<span class="rgaa-rate-note">An audit judges every criterion; this rate counts only those the checks could settle, and a criterion met here still needs a person to confirm it.</span></p>';
-    }
-
-    /** Write the main summary panel HTML */
-    function writeSummaryHtml({data, fallbackUrl, totals, scansListHtml, scansCount, headerText, allScansButtonHtml = ''}) {
-        const header = headerText != null
-            ? headerText
-            : 'Workflow scan - ' +
-            totals.totalViolations +
-            ' failure' +
-            (totals.totalViolations === 1 ? '' : 's') +
-            (totals.totalNodes > 0
-                ? ' in ' + totals.totalNodes + ' element' + (totals.totalNodes === 1 ? '' : 's')
-                : '') +
-            ', across ' +
-            scansCount +
-            ' scan' +
-            (scansCount === 1 ? '' : 's') +
-            '.';
-
-        // Sort, hide-excluded and the "View all scans" trigger cluster at the end
-        // of the header line.
-        summaryEl.innerHTML =
-            '<div class="summary-header-line">' +
-                '<span class="summary-header-text">' + header + '</span>' +
-                '<span class="summary-controls">' + buildSummaryControlsHtml() + allScansButtonHtml + '</span>' +
-            '</div>' +
-            rgaaRateHtml(getScansFromPayload(data, {includedOnly: true})) +
-            (scansListHtml || '');
-
-        if (runResultToStatus && resultsState.activeMode === 'run' && headerText == null) {
-            runResultToStatus = false;
-            runResultText = 'Finished: ' + header.replace(/^Workflow scan - /, '');
-        }
-    }
+    // In run-summary-ui.js.
+    const runSummaryUi = createRunSummaryUi(app);
 
     /* ==================== "View all scans" grid dialog ==================== */
 
@@ -5744,7 +5262,7 @@ function storeActiveMode(mode) {
 
         if (!Array.isArray(allScans) || !allScans.length || !resultsContainer) return 0;
 
-        const cardDeps = {resolveLabelTemplate, escapeHtml, escapeAttr};
+        const cardDeps = {resolveLabelTemplate: liveUi.resolveLabelTemplate, escapeHtml, escapeAttr};
 
         const dialog = document.createElement('dialog');
         dialog.id = 'all-scans-dialog';
@@ -5797,8 +5315,8 @@ function storeActiveMode(mode) {
         const data = prepareDataForReport(bucket.payload);
         const fallbackUrl = data.url || urlInput?.value?.trim() || '';
 
-        const allScans = getScansFromPayload(data);
-        const includedScans = getScansFromPayload(data, {includedOnly: true});
+        const allScans = runSummaryUi.getScansFromPayload(data);
+        const includedScans = runSummaryUi.getScansFromPayload(data, {includedOnly: true});
 
         if (!allScans.length && !getScreenshotsFromPayload(data).length) {
             summaryEl.textContent = 'No scans or screenshot returned for this workflow.';
@@ -5807,9 +5325,9 @@ function storeActiveMode(mode) {
         } else {
             const scansCount = includedScans.length;
             const totals = computeTotals(includedScans);
-            const scansListHtml = buildScansListHtml(allScans);
+            const scansListHtml = runSummaryUi.buildScansListHtml(allScans);
 
-            writeSummaryHtml({
+            runSummaryUi.writeSummaryHtml({
                 data,
                 fallbackUrl,
                 totals,
@@ -6119,7 +5637,7 @@ function storeActiveMode(mode) {
         const summaryReportSelect = tools.querySelector('#group-scans');
         if (!summaryReportSelect) return;
 
-        const includedScansCount = getScansFromPayload(data, {includedOnly: true}).length;
+        const includedScansCount = runSummaryUi.getScansFromPayload(data, {includedOnly: true}).length;
         const canUseSummaryReport = includedScansCount > 1;
 
         summaryReportSelect.disabled = !canUseSummaryReport;
@@ -6184,7 +5702,7 @@ function storeActiveMode(mode) {
         const containerEl = document.createElement('div');
         containerEl.className = 'inline-actions results-visualization';
 
-        const includedScansCount = getScansFromPayload(data, {includedOnly: true}).length;
+        const includedScansCount = runSummaryUi.getScansFromPayload(data, {includedOnly: true}).length;
         const canUseSummaryReport = includedScansCount > 1;
 
         const scanPresentationSelect = buildLabeledSelect({
@@ -6433,7 +5951,7 @@ function storeActiveMode(mode) {
                 clearRenderedResultsUi();
 
                 if (resultsState.activeMode === 'run') {
-                    resetLivePanels();
+                    liveUi.resetLivePanels();
                     clearLiveStreamDialog();
                     setStatusRun('Run results cleared.', STATUS.OK);
                     focusRuntimeArea();
@@ -6477,7 +5995,7 @@ function storeActiveMode(mode) {
         // Read both arrays through the coercing helpers rather than off the
         // payload: neither is required by the report schema, and everything this
         // function hands them to already tolerates a missing one.
-        const scans = getScansFromPayload(data);
+        const scans = runSummaryUi.getScansFromPayload(data);
         const screenshots = getScreenshotsFromPayload(data);
 
         if (activeMode === 'run') {
@@ -6534,15 +6052,15 @@ function storeActiveMode(mode) {
         results.classList.toggle('report-edit-mode', reportEditMode);
         // The Engine column shows only for a report more than one engine ran
         // (with the engine lens on, the one engine it shows).
-        screenshotsUi.renderer.setReportEngines(getScansFromPayload(data));
+        screenshotsUi.renderer.setReportEngines(runSummaryUi.getScansFromPayload(data));
 
         results.appendChild(createArtifactsPanel(data));
 
         if (scans.length || screenshots.length) resultsContainer.style.display = '';
-        if (getScansFromPayload(data, {includedOnly: true}).length > 1) {
+        if (runSummaryUi.getScansFromPayload(data, {includedOnly: true}).length > 1) {
             const groupedResultsEl = screenshotsUi.renderer.renderScansReport(data, {
                 scanPresentationMode: 'analysis',
-                dispersionScans: getScansFromPayload(data, {includedOnly: true})
+                dispersionScans: runSummaryUi.getScansFromPayload(data, {includedOnly: true})
             });
             if (groupedResultsEl) {
                 results.appendChild(groupedResultsEl);
@@ -6713,8 +6231,8 @@ function storeActiveMode(mode) {
 
     /** Render final payload using existing paths */
     async function renderFinalPayload(data, fallbackUrl) {
-        const allScans = getScansFromPayload(data);
-        const includedScans = getScansFromPayload(data, {includedOnly: true});
+        const allScans = runSummaryUi.getScansFromPayload(data);
+        const includedScans = runSummaryUi.getScansFromPayload(data, {includedOnly: true});
 
         if (!allScans.length && !getScreenshotsFromPayload(data).length) {
             setUiState('error', 'Workflow executed without output.');
@@ -6727,8 +6245,8 @@ function storeActiveMode(mode) {
         const scansCount = includedScans.length;
 
         const totals = computeTotals(includedScans);
-        const scansListHtml = buildScansListHtml(allScans);
-        writeSummaryHtml({
+        const scansListHtml = runSummaryUi.buildScansListHtml(allScans);
+        runSummaryUi.writeSummaryHtml({
             data,
             fallbackUrl,
             totals,
