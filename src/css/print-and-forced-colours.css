@@ -1,0 +1,456 @@
+/* The app's styles, part 11 of 14: printing and forced colours (Windows High Contrast).
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* ==========================================================================
+   PRINT OVERRIDES
+   Paste at END of your stylesheet
+   ========================================================================== */
+
+@media print {
+
+    /* --- Page setup --- */
+    @page {
+        /* Use one or set per your preference:
+           size: A4;
+           size: Letter;
+        */
+        margin: 12mm;
+    }
+
+    html, body {
+        background: #fff !important;
+        color: #000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        min-height: auto !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* --- Force LIGHT theme tokens in print, regardless of screen theme --- */
+    :root {
+        color-scheme: light !important;
+
+        /* Surfaces */
+        --bg: #ffffff;
+        --bg-elevated: #ffffff;
+        --bg-subtle: #ffffff;
+        --bg-soft: #ffffff;
+        --bg-gradient-start: #ffffff;
+
+        /* Borders */
+        --border-subtle: #e2e8f0;
+        --border-strong: #cbd5e1;
+        --border-soft: #e2e8f0;
+
+        /* Text */
+        --text-main: #000000;
+        --text-muted: #222222;
+        --text-soft: #333333;
+
+        /* Accent */
+        --accent: #0c66e4;
+        --accent-dark: #075985;
+        --accent-soft: #dbeafe;
+        --accent-border: rgba(3,105,161,.35);
+        --accent-ring: rgba(3,105,161,.45);
+
+        /* Status */
+        --danger: #b3271a;
+        --danger-soft: #fbe4e1;
+        --ok: #0b6e4c;
+        --ok-soft: #e1f3ea;
+        --warn: #7a5a08;
+        --warn-soft: #fbf3dc;
+        --info-soft: #f4effb;
+        --na: #5f6660;
+        --na-soft: #eef0ed;
+        --advisory: var(--accent);
+        --advisory-soft: var(--accent-soft);
+
+        /* Shadows/focus (paper-safe) */
+        --shadow-card: none;
+        --shadow-soft: none;
+        --focus-outline: 2px solid rgba(3,105,161,.45);
+        --focus-outline-offset: 2px;
+        --focus-ring: none;
+
+        /* Neutral palette */
+        --neutral-50: #fafafa;
+        --neutral-75: #f7f7f7;
+        --neutral-100: #eeeeee;
+        --neutral-300: #cccccc;
+        --neutral-600: #444444;
+        --neutral-700: #333333;
+
+        /* Legacy aliases */
+        --panel: var(--bg-elevated);
+        --panel2: var(--bg-subtle);
+        --text: var(--text-main);
+        --muted: var(--text-muted);
+        --shadow: none;
+
+        --surface-0: #fafafa;
+        --surface-1: #f7f7f7;
+        --surface-2: #f3f4f6;
+        --surface-3: #eef2f7;
+        --surface-4: #e8edf5;
+        --surface-5: #e3e8f0;
+
+        --surface-base: var(--surface-1);
+        --surface-raised: var(--surface-2);
+        --surface-overlay: var(--surface-4);
+
+        --surface-grad-soft: linear-gradient(180deg, var(--surface-4), var(--surface-1));
+        --surface-grad-panel: linear-gradient(to bottom right, var(--surface-3), var(--surface-1));
+    }
+
+    /* Remove app-like framing */
+    header, main, .page {
+        max-width: none !important;
+        margin: 0 !important;
+    }
+
+    a {
+        color: var(--accent) !important;
+    }
+
+    .page {
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    /* Body background gradient must go away */
+    body {
+        background: #fff !important;
+    }
+
+    /* --- Hide UI that doesn't belong on paper --- */
+    /* Buttons + interactive controls */
+    button,
+    .secondary-button,
+    .copy-selector-btn,
+    .src-dialog-trigger,
+    .flyout-root,
+    .flyout-menu,
+    .mode-bar,
+    #live-stream,
+    dialog,
+    .paged-dialog,
+    .src-dialog,
+    #results-header,
+    .inline-actions,
+    .open-results-panel,
+    .a11y-help,
+    .a11y-help-disclosure,
+    .theme-switch,
+    #report-files-staging {
+        display: none !important;
+    }
+
+    /* Typically you don't want the builder in print (big + controls). Uncomment if you DO want it:
+       :is(#actions-builder, #custom-step-actions-builder) { display: none !important; }
+    */
+    :is(#actions-builder, #custom-step-actions-builder) { display: none !important; }
+
+    /* Logs/diagnostics: usually not needed in print */
+    #log-panel,
+    .log-panel,
+    .run-diagnostics {
+        display: none !important;
+    }
+
+    header {
+        padding-left: 0 !important;
+        gap: 2mm !important;
+        margin-bottom: 4mm !important;
+        page-break-after: avoid;
+    }
+
+    header h1 {
+        font-size: 18pt !important;
+        letter-spacing: 0 !important;
+    }
+
+    header p {
+        font-size: 10.5pt !important;
+        max-width: none !important;
+    }
+
+    h2 { font-size: 13.5pt !important; page-break-after: avoid; }
+    h3 { font-size: 12pt !important; page-break-after: avoid; }
+    h4 { font-size: 11pt !important; page-break-after: avoid; }
+
+    /* Avoid awkward breaks around headings */
+    h2, h3, h4, h5,
+    .summary,
+    .scan-results-meta {
+        break-inside: avoid;
+    }
+
+    /* --- Form/config sections: usually not needed in a report --- */
+    form,
+    .interaction-workflow,
+    #config-section,
+    .config-section {
+        display: none !important;
+    }
+
+    /* If you *do* want the summary printed, keep it (itâ€™s useful) */
+    .summary {
+        display: block !important;
+        padding: 4mm !important;
+        margin: 0 0 4mm 0 !important;
+    }
+
+    /* Prevent scrollboxes in print (they truncate!) */
+    .summary ul,
+    .summary ol,
+    .table-container,
+    .src-dialog-body {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* --- Results layout: convert to print-friendly flow --- */
+    .results-container {
+        display: block !important;
+    }
+
+    .results {
+        font-size: 10.5pt !important;
+    }
+
+    .a11y-scoregrid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+    }
+
+    .scan-results-container {
+        display: block !important; /* stack instead of side-by-side */
+    }
+
+    .screenshot-preview {
+        width: auto !important;
+        flex: none !important;
+        margin: 0 0 4mm 0 !important;
+        break-inside: avoid;
+    }
+
+    /* Make screenshots print nicely */
+    .screenshot-preview img,
+    #results img,
+    .stream-preview img,
+    #screenshots img {
+        max-width: 100% !important;
+        height: auto !important;
+        border: 1px solid #000 !important;
+    }
+
+    /* Screenshot button wrapper becomes inert */
+    .screenshot-btn {
+        border: none !important;
+        box-shadow: none !important;
+        height: auto !important;
+    }
+
+    /* --- Tables: remove sticky header, ensure borders print, avoid clipped rows --- */
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        border: 1px solid #AAA !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+    }
+
+    th, td {
+        border-bottom: 1px solid #AAA !important;
+        padding: 2.5mm 2.5mm !important;
+        color: #000 !important;
+    }
+
+    th {
+        position: static !important; /* IMPORTANT: sticky headers break print */
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Keep issue blocks together where possible */
+    tr, td, th {
+        break-inside: avoid;
+    }
+
+    /* Code blocks / HTML snippets: wrap instead of horizontal scrolling */
+    code,
+    .node-html,
+    .example-node-html code {
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+        overflow: visible !important;
+        border: 1px solid #AAA !important;
+    }
+
+    /* --- Page-break helpers: keep sections readable --- */
+    .scan-results-meta,
+    #results h3 {
+        break-after: avoid;
+    }
+
+    .scoreGauge {
+        font-size: 9pt;
+    }
+
+    .scoreGauge__name {
+        font-size: 9pt !important;
+    }
+
+    /* --- Remove purely visual shadows/radii everywhere --- */
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+        filter: none !important;
+    }
+}
+
+.issues-group-coverage {
+    margin: 0 0 8px;
+    font-size: 0.85em;
+    opacity: 0.85;
+}
+
+.issues-group-empty {
+    margin: 0 0 8px;
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+/* The best practices a scan included, below its requirements. */
+.best-practices {
+    margin-top: 16px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-subtle, currentColor);
+}
+
+.best-practices-note {
+    margin: 0 0 8px;
+    font-size: 0.9em;
+}
+
+.a11y-review-signals {
+    margin: 10px 0 0;
+    font-size: 0.88em;
+}
+
+.a11y-review-signals-head {
+    margin: 0 0 4px;
+    font-weight: 600;
+}
+
+.a11y-review-signals-list {
+    margin: 0;
+    padding-left: 1.2em;
+}
+
+.a11y-review-signals-none {
+    opacity: 0.75;
+}
+
+/* The score block's own state, above the chips. A withheld score is shown rather than
+   hidden: an absent tile reads the same as a clean one, and in an exported report
+   nobody knows a tile can be absent. Uses the warn tokens, which are theme-aware. */
+.a11y-score-state {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--warn);
+    background: var(--warn-soft);
+    border-radius: 4px;
+    font-size: 0.88em;
+}
+
+.a11y-score-state-head {
+    margin: 0 0 4px;
+    font-weight: 600;
+}
+
+.a11y-score-state-why {
+    margin: 0;
+    opacity: 0.85;
+}
+
+.a11y-occurrences code {
+    font-size: 0.92em;
+    word-break: break-all;
+}
+
+.a11y-occurrences .a11y-cov-table th[scope="row"] {
+    max-width: 30em;
+    white-space: normal;
+}
+
+
+/* ==========================================================================
+   FORCED COLOURS (Windows High Contrast and similar)
+   The OS palette replaces every colour, removes box-shadows and gradients, and
+   forces background-color. That erases the three things this UI leans on for
+   state: mask-drawn chevrons, selection carried by a tint, and disabled
+   carried by opacity.
+   ========================================================================== */
+@media (forced-colors: active) {
+    /* The OS drops box-shadows, so a results row's state bar is a border here. */
+    .table-container tr.fail > td:first-child,
+    .issues-table tbody tr.fail > td:first-child,
+    .table-container tr.cantTell > td:first-child,
+    .issues-table tbody tr.cantTell.lean-fail > td:first-child {
+        border-left: 4px solid CanvasText;
+    }
+    /* Drawn by painting background-color through a mask, so the forced surface
+       colour hides them against the surface they sit on. */
+    .legend-toggle::before,
+    .config-toggle-word::after {
+        background-color: ButtonText;
+    }
+
+    /* A tab is underlined, not filled: every rest border is transparent, which
+       the OS makes visible, so the unselected ones are pushed back to the
+       surface and only the current tab keeps a line. */
+    .mode-tab {
+        border-bottom-color: Canvas;
+    }
+    .mode-tab[aria-selected="true"] {
+        border-bottom-color: Highlight;
+    }
+
+    /* Chosen rows and options are filled instead, using the one pair the OS
+       guarantees reads as a selection. */
+    .tag-input__option.is-active,
+    .stepper__dot[aria-current="action"],
+    .sb-palette .sb-palette-item.is-active .sb-palette-btn,
+    .sb-palette .sb-palette-item[aria-selected="true"] .sb-palette-btn {
+        background: Highlight;
+        color: HighlightText;
+        border-color: Highlight;
+    }
+    .custom-steps-item-row:has(.custom-steps-item.is-active) {
+        background: Highlight;
+    }
+    .custom-steps-item-row:has(.custom-steps-item.is-active) .custom-steps-item {
+        color: HighlightText;
+    }
+
+    /* opacity is not forced, so a disabled control would keep its colour and
+       only dim. GrayText is the palette's own answer. */
+    button:disabled,
+    button[aria-disabled="true"] {
+        opacity: 1;
+        color: GrayText;
+        border-color: GrayText;
+    }
+
+    /* The one overlay that floats on a shadow rather than a border. */
+    .paged-dialog {
+        border: 1px solid CanvasText;
+    }
+}

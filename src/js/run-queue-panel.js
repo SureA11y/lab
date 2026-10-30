@@ -226,7 +226,7 @@ function iconAction(doc, tag, verb, iconName, name, attrs) {
     }, [icon(doc, iconName), el(doc, 'span', { className: 'visually-hidden', text: `${verb} ${name}` })]);
 }
 
-// One turn of .tab-spinner (its tabSpin animation in a11y-lab-ui.css).
+// One turn of .tab-spinner (its tabSpin animation in css/controls.css).
 const SPIN_MS = 900;
 
 /**

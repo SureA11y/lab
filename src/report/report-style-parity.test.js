@@ -11,7 +11,9 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
-const APP_CSS = fs.readFileSync(path.join(ROOT, 'src', 'css', 'a11y-lab-ui.css'), 'utf8');
+const {readAppCss} = require('../css/app-styles');
+
+const APP_CSS = readAppCss();
 const REPORT_CSS = fs.readFileSync(path.join(ROOT, 'src', 'report', 'report.css'), 'utf8');
 
 const RENDERER_SOURCES = [
@@ -58,7 +60,7 @@ describe('exported report styling parity', () => {
 
     test('every class the app styles is styled for the exported report too', () => {
         for (const cls of styledInApp) {
-            assert.ok(REPORT_CSS.includes('.' + cls), `${cls} is styled in a11y-lab-ui.css but missing from report.css, so it renders unstyled once exported`);
+            assert.ok(REPORT_CSS.includes('.' + cls), `${cls} is styled in the app stylesheet but missing from report.css, so it renders unstyled once exported`);
         }
     });
 
@@ -123,8 +125,8 @@ describe('exported comparison styling', () => {
     test('the extraction markers are present and ordered', () => {
         const start = APP_CSS.indexOf(COMPARE_START);
         const end = APP_CSS.indexOf(COMPARE_END);
-        assert.notEqual(start, -1, `${COMPARE_START} missing from a11y-lab-ui.css — build:report cannot extract the comparison styles`);
-        assert.notEqual(end, -1, `${COMPARE_END} missing from a11y-lab-ui.css`);
+        assert.notEqual(start, -1, `${COMPARE_START} missing from the app stylesheet — build:report cannot extract the comparison styles`);
+        assert.notEqual(end, -1, `${COMPARE_END} missing from the app stylesheet`);
         assert.ok(end > start, 'the compare markers are in the wrong order');
     });
 
@@ -144,7 +146,7 @@ describe('exported comparison styling', () => {
         for (const cls of styledInApp) {
             assert.ok(
                 block.includes('.' + cls) || REPORT_CSS.includes('.' + cls),
-                `${cls} is styled in a11y-lab-ui.css but reaches neither the extracted compare block nor report.css, so it renders unstyled in an exported comparison`
+                `${cls} is styled in the app stylesheet but reaches neither the extracted compare block nor report.css, so it renders unstyled in an exported comparison`
             );
         }
     });
@@ -284,7 +286,7 @@ describe('app and report stylesheet drift', () => {
         for (const [name, value] of a) {
             if (!b.has(name) || TOKENS_ALLOWED_TO_DIFFER.includes(name)) continue;
             assert.equal(value, b.get(name),
-                `${name} is ${value} in a11y-lab-ui.css and ${b.get(name)} in report.css - the exported report would render it differently`);
+                `${name} is ${value} in the app stylesheet and ${b.get(name)} in report.css - the exported report would render it differently`);
         }
     });
 
@@ -376,14 +378,14 @@ describe('the build carries the stylesheets through intact', () => {
 // ---------------------------------------------------------------------------
 
 describe('focus indicators survive hover', () => {
-    for (const [label, file] of [
-        ['a11y-lab-ui.css', path.join(ROOT, 'src', 'css', 'a11y-lab-ui.css')],
-        ['report.css', path.join(ROOT, 'src', 'report', 'report.css')],
-        ['ui.css', path.join(ROOT, 'extension', 'ui.css')]
+    for (const [label, css] of [
+        ['the app stylesheet', APP_CSS],
+        ['report.css', REPORT_CSS],
+        ['ui.css', fs.readFileSync(path.join(ROOT, 'extension', 'ui.css'), 'utf8')]
     ]) {
         test(`${label} has no hover rule that clears the outline`, () => {
             const offenders = [];
-            csstree.walk(csstree.parse(fs.readFileSync(file, 'utf8'), { positions: true, onParseError() {} }), {
+            csstree.walk(csstree.parse(css, { positions: true, onParseError() {} }), {
                 visit: 'Rule',
                 enter(rule) {
                     const sel = csstree.generate(rule.prelude);

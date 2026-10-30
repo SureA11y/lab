@@ -15,7 +15,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const CSS = fs.readFileSync(path.join(__dirname, 'a11y-lab-ui.css'), 'utf8');
+const {readAppCss} = require('./app-styles');
+
+const CSS = readAppCss();
 
 // The tracks the grids are built from: N columns need N * MIN_COL + (N - 1) * GAP.
 const MIN_COL = 180;

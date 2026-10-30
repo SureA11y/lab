@@ -1,0 +1,456 @@
+/* The app's styles, part 3 of 14: the custom steps editor.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* ==========================================================================
+   CUSTOM STEPS UI
+   ========================================================================== */
+
+.custom-steps-panel {
+    display: grid;
+    grid-template-columns: minmax(200px, 280px) 1fr;
+    gap: 0;
+    padding: 14px;
+    border: 1px solid var(--sb-border);
+    border-radius: var(--radius-md);
+    background: var(--surface-base);
+}
+
+.custom-steps-fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.custom-steps-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* Inline disclosure sits in normal flow, aligned with the Workflow row.
+       Full width so the collapse-all button below can sit at the row's true
+       right edge instead of right next to the toggle's own shrink-wrapped box. */
+    width: 100%;
+    margin: 0;
+    padding: 0 0 0 3px;
+}
+
+/* Collapse/expand-all-steps button in the Workflow and Custom steps legends:
+   pinned to the right edge of the panel header row, only shown while that
+   panel is expanded (toggled via the hidden attribute in JS).
+   - `button.collapse-all-toggle` (not just `.collapse-all-toggle`) so this
+     beats the base `.secondary-button` padding rule, which has the same
+     0-1-0 specificity and sits later in the file (source order would
+     otherwise let it win and widen the button).
+   - `[hidden]` needs `display: none !important` because the base `button`
+     rule sets `display: inline-flex` as an author style, which otherwise
+     overrides the UA stylesheet's `[hidden] { display: none }`. */
+button.collapse-all-toggle {
+    margin-left: auto;
+    padding: 6px 8px;
+    min-width: 36px;
+    min-height: 36px;
+    justify-content: center;
+    gap: 0;
+    /* Ghost style, like .legend-toggle next to it: no rest border, so it
+       reads as part of the header row rather than a boxed control. */
+    border-color: transparent;
+}
+
+button.collapse-all-toggle[hidden] { display: none !important; }
+
+/* The Workflow legend's Step tree button sits just left of collapse-all, the
+   two together at the right edge: it takes the push to the right. */
+button.step-tree-toggle + button.collapse-all-toggle { margin-left: 0; }
+
+/* Each section's own expand/collapse icon at the very end of its header
+   row: it takes the push to the right unless the step buttons shown before
+   it already have, so it stays put whether they show or not. */
+button.section-end-toggle {
+    margin-left: auto;
+    padding: 6px 8px;
+    min-width: 36px;
+    min-height: 36px;
+    justify-content: center;
+    gap: 0;
+    border-color: transparent;
+}
+
+button.collapse-all-toggle:not([hidden]) ~ button.section-end-toggle { margin-left: 0; }
+
+button.section-end-toggle:hover:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-5);
+}
+
+button.section-end-toggle:active:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-3);
+}
+
+button.collapse-all-toggle:hover:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-5);
+}
+
+button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-3);
+}
+
+/* DS Disclosure — inline variant (Custom steps, Workflow). Peers in a stack:
+   the chevron leads, then the label, because the row is the control. No border,
+   no rest background — cheap to skim when collapsed. */
+.legend-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 36px;
+    padding: 0 var(--space-2) 0 var(--space-1);
+    margin-left: calc(var(--space-1) * -1);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    box-shadow: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-instant) var(--ease-standard), color var(--duration-instant) var(--ease-standard);
+}
+
+/* Leading chevron: points right, rotates 90° down when expanded. */
+.legend-toggle::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    background: currentColor;
+    -webkit-mask: var(--chevron-right) center / 14px 14px no-repeat;
+    mask: var(--chevron-right) center / 14px 14px no-repeat;
+    transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.legend-toggle[aria-expanded="true"]::before {
+    transform: rotate(90deg);
+}
+
+.legend-toggle:hover:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-hover);
+    color: var(--text-main);
+}
+
+.legend-toggle:active:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-press);
+    color: var(--text-main);
+}
+
+.legend-toggle:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+}
+
+.legend-toggle-label {
+    /* Inherit the toggle's colour so it follows the DS rest→hover shift. */
+    color: inherit;
+}
+
+/* DS Disclosure count — a machine number beside the label, not a decorative
+   badge: mono, muted, tabular figures. */
+.custom-steps-count-badge {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xxs);
+    font-weight: 600;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.custom-steps-count-badge[hidden] {
+    display: none !important;
+}
+
+.custom-steps-content[hidden] {
+    display: none !important;
+}
+
+/* ---- Batch section (run workflow tab) ---- */
+.batch-fieldset { border: 0; padding: 0; margin: 0; }
+.batch-legend { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0; padding: 0 0 0 3px; }
+.batch-content { display: grid; gap: var(--space-2); padding: var(--space-2) 0 var(--space-2) var(--space-6); }
+.batch-content[hidden] { display: none !important; }
+.batch-content .hint { margin: 0; }
+.batch-rows-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); }
+.batch-rows { width: 100%; min-height: 9rem; font-family: var(--font-mono); font-size: var(--fs-sm); }
+/* An invalid field's edge is still its edge: the full danger colour keeps it at 3:1. */
+.batch-rows[aria-invalid="true"] { border-color: var(--danger); }
+.batch-name-field { display: grid; gap: var(--space-1); }
+.batch-name-field label { margin-bottom: 0; }
+.batch-check:empty { display: none; }
+.batch-problems { margin: 0; padding-left: 1.25rem; font-size: var(--fs-sm); }
+.batch-problems--error { color: var(--danger); }
+.batch-problems--warning { color: var(--text-muted); }
+.batch-problems li + li { margin-top: var(--space-1); }
+/* Rows kept while the batch is off: dashed, greyed boxes and softer text say
+   "not in use". Not opacity: the rows can still be edited, and opacity would
+   take the hint text below 4.5:1. The button keeps its look. */
+.batch-content.is-off > :not(.batch-rows-head, .batch-off-note),
+.batch-content.is-off .batch-rows-head > label { color: var(--text-soft); }
+/* Says what "off" means, above the rows it is about. */
+.batch-off-note { display: none; margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-main); }
+.batch-content.is-off .batch-off-note { display: block; }
+.batch-content.is-off .batch-rows,
+.batch-content.is-off .batch-name-field input { border-style: dashed; background: var(--surface-2); color: var(--text-soft); }
+/* Load file… and the batch's on/off button, side by side at the rows' head. */
+.batch-rows-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
+@media (max-width: 600px) {
+    /* The indent under the toggle costs too much width on a phone. */
+    .batch-content { padding-left: 0; }
+}
+
+.workflow-content[hidden] {
+    display: none !important;
+}
+
+.custom-steps-list-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-right: 1px solid var(--sb-border);
+}
+
+#custom-steps-list #custom-step-add-btn,
+#custom-steps-list #custom-step-paste-btn {
+    align-self: flex-end;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+    margin-top: 4px;
+}
+
+.custom-steps-list-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 4px;
+    padding-right: 14px;
+}
+
+.custom-steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-height: 160px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+.custom-steps-item-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    padding-right: 8px;
+}
+
+.custom-steps-item-row:has(.custom-steps-item.is-active) {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 70%, transparent);
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+    border-color: var(--sb-border);
+    border-style: solid;
+    border-width: 1px 0;
+}
+
+.custom-steps-item-row:has(.custom-steps-item:hover:not(.is-active)) {
+    background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+.custom-steps-item-row:has(.custom-steps-item:focus-visible) {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+}
+
+.custom-steps-item-row:has(.custom-steps-item.is-active:focus-visible) {
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 70%, transparent);
+    outline-offset: -5px;
+}
+
+.custom-steps-item.is-active:focus-visible {
+    outline: none;
+}
+
+.custom-steps-item {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 10px 12px;
+    text-align: left;
+    color: var(--text-main);
+    box-shadow: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.custom-steps-item:hover {
+    background: transparent !important;
+    border-color: transparent !important;
+}
+
+.custom-steps-item-id {
+    display: block;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-steps-item-name {
+    display: block;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-steps-empty {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.custom-steps-editor-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 14px;
+}
+
+/* Per-step actions (copy/delete) live at the top of the editor panel and act
+   on the step whose tab is active, replacing the old per-tab icon buttons. */
+.custom-step-panel-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--sb-border);
+}
+
+.custom-step-panel-action svg {
+    flex: 0 0 auto;
+}
+
+/* Keep builder toolbar buttons in their natural size inside custom-step editor.
+   Without this, the generic ".field-row.field-inline button { width:100% }"
+   rule stretches them and breaks the actions-builder-actions layout. */
+#custom-step-actions-builder button {
+    width: auto;
+}
+
+#custom-step-actions-builder {
+    width: 100%;
+    min-width: 0;
+    font-family: var(--sb-font);
+    padding: 0;
+    border: none;
+}
+
+/* Deeply nested workflows: the field grids already drop columns to fit the
+   space left after indenting (see container-type on .line), but that only
+   holds if the ancestors pass the real width down. min-width: 0 stops these
+   grid/flex ancestors from refusing to shrink below their content's natural
+   width, which would hand the grids a container wider than the panel. */
+.custom-steps-editor-panel,
+.interaction-workflow,
+:is(#actions-builder, #custom-step-actions-builder) {
+    min-width: 0;
+}
+
+#custom-step-actions-builder .actions-builder-actions,
+#custom-step-actions-builder .toolbar {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--sb-gap);
+    margin-bottom: 4px;
+}
+
+#custom-step-actions-builder .line {
+    border-radius: var(--sb-radius);
+    border-color: var(--sb-border-dark) var(--sb-border) var(--sb-border);
+    border-style: solid;
+    border-width: 3px 1px 1px;
+    padding: var(--sb-pad);
+    margin-bottom: 8px;
+    background: var(--surface-base);
+    width: 100%;
+}
+
+#custom-step-actions-builder.is-disabled {
+    opacity: 0.6;
+}
+
+#custom-step-actions-builder.is-disabled #custom-step-toolbar,
+#custom-step-actions-builder.is-disabled #custom-step-actions-container {
+    pointer-events: none;
+}
+
+@media (max-width: 980px) {
+    .custom-steps-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
+.inline-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+#results .inline-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    justify-content: flex-end;
+    align-items: end;
+}
+
+/* The visualization panel carries three selects, or four once a report records
+   more than one engine and the Engine lens is offered, so let its columns follow
+   the controls actually present instead of being fixed at three. */
+#results .results-visualization {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+}
+
+#results .results-tools {
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    gap: 10px;
+}
+
+/* At phone width the selects take a row of their own, as many abreast as
+   fit, and the buttons wrap under them. */
+@media (max-width: 600px) {
+    #results .results-tools {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+    #results .results-visualization {
+        flex: 1 1 100%;
+        grid-auto-flow: row;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    }
+    #results .results-visualization select { min-width: 0; width: 100%; }
+}

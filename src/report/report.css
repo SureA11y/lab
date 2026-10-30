@@ -7,7 +7,7 @@
 
     /* --------------------------------------------------------------------
        Design-system foundations — shared across light & dark.
-       Mirrors src/css/a11y-lab-ui.css so the exported report speaks the
+       Mirrors the app's src/css/tokens.css so the exported report speaks the
        same visual language as the app UI.
        -------------------------------------------------------------------- */
 
@@ -170,7 +170,7 @@
    header toggle (:root[data-theme="dark"]) OR, in Auto mode (no
    data-theme set), when their OS prefers dark. Same token values in
    both places — the media query only changes *when* they apply.
-   Mirrors a11y-lab-ui.css.
+   Mirrors the app's src/css/tokens.css.
    -------------------------------------------------------------------- */
 :root[data-theme="dark"] {
     color-scheme: dark;
@@ -2894,7 +2894,7 @@ a.engine-brand {
 }
 
 /* ==================== "View all scans" grid dialog ====================
-   Mirrors the app's live-preview scan cards (css/a11y-lab-ui.css) so the
+   Mirrors the app's live-preview scan cards (css/live.css) so the
    exported report renders the "View all scans" grid identically. The base
    .stream-* / .result-glyph / ellipsis helpers are only used by these cards in
    the exported document (the live stream itself is never exported). The tokens
@@ -2954,7 +2954,7 @@ a.engine-brand {
 .stream-preview img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border-subtle); }
 
 /* Icon-only trigger: a 2x2 grid glyph, squared to the DS sm (36px) floor like
-   the other icon buttons. Mirrors the app (css/a11y-lab-ui.css). */
+   the other icon buttons. Mirrors the app (src/css/). */
 .all-scans-open-btn {
     margin-left: .5rem;
     vertical-align: middle;

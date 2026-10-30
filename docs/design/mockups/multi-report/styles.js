@@ -6,7 +6,7 @@
  *
  * The dashboard itself is NOT styled here. It comes from the app's own
  * stylesheet (the block between the compare markers in
- * src/css/a11y-lab-ui.css) on the app's own tokens (src/report/report.css), the
+ * src/css/compare.css) on the app's own tokens (src/report/report.css), the
  * same two pieces the exported comparison ships, so this page shows the shipped
  * component rather than a lookalike.
  */

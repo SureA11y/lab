@@ -51,10 +51,10 @@ function baseStyles() {
 
 /** The Compare-tab block, extracted the way build:report extracts it. */
 function compareStyles() {
-    const css = fs.readFileSync(path.join(ROOT, 'src/css/a11y-lab-ui.css'), 'utf8');
+    const css = fs.readFileSync(path.join(ROOT, 'src/css/compare.css'), 'utf8');
     const start = css.indexOf('/* compare:start');
     const end = css.indexOf('/* compare:end */');
-    if (start === -1 || end === -1) throw new Error('compare markers missing from a11y-lab-ui.css');
+    if (start === -1 || end === -1) throw new Error('compare markers missing from src/css/compare.css');
     return css.slice(css.indexOf('*/', start) + 2, end);
 }
 

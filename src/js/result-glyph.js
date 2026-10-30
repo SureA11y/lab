@@ -7,7 +7,7 @@
  * radius = size × 0.21875, glyph = size × 0.68, IBM Plex Mono 700.
  * Colour + glyph + word, never colour alone. The tile itself is
  * decorative (aria-hidden); the word beside it carries the meaning.
- * Styling lives in css/a11y-lab-ui.css (.result-glyph*); the spec is
+ * Styling lives in css/results.css (.result-glyph*); the spec is
  * the design system's guidelines/result-glyphs.md.
  *
  * The app's canonical outcome keys map onto the design system's state

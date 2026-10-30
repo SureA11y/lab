@@ -1,0 +1,439 @@
+/* The app's styles, part 2 of 14: the page layout and form fields.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* ==========================================================================
+   BASE LAYOUT
+   ========================================================================== */
+
+* { box-sizing: border-box; }
+
+html:has(dialog[open]),
+body:has(dialog[open]) {
+    overflow: hidden;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 1.75rem;
+
+    background: var(--bg);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+}
+
+header, main, .page {
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.page {
+    padding: 1.5rem 1.75rem 2rem;
+
+    background: var(--surface-1);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 900px) {
+    .page { padding: 2rem 2.25rem 2.5rem; }
+}
+
+/* At phone width the margins around the page and the boxes inside it give
+   their room to the content. */
+@media (max-width: 600px) {
+    body { padding: .75rem .5rem; }
+    .page { padding: 1rem .75rem 1.5rem; }
+    form { padding: .75rem .5rem; }
+}
+
+h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--fs-xl);
+    font-weight: 500;
+}
+
+h3 {
+    margin: 10px 0;
+    font-size: var(--fs-lg);
+    font-weight: 600;
+}
+
+h4 {
+    margin: 10px 0;
+    font-size: var(--fs-base);
+    font-weight: 600;
+}
+
+.issues-group:nth-of-type(1) h4 {
+    margin-top: 5px;
+}
+
+h5 {
+    margin: 10px 0 0;
+    font-size: var(--fs-base);
+    font-weight: normal;
+    text-decoration: underline;
+}
+
+/* Header */
+header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    position: relative;
+}
+
+header h1 {
+    /* Logo.jsx derives the mark and wordmark from one shared size — the
+       wordmark text sits at size * 0.95, near-identical scale to the tile. */
+    --logo-size: 32px;
+
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: calc(var(--logo-size) * 0.42);
+
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+}
+
+header h1 .site-logo {
+    width: var(--logo-size);
+    height: var(--logo-size);
+}
+
+/* Wordmark splits at the seam: "sure" regular, "a11y" bold accent.
+   Product name lockup — inline pattern (a feature of the one tool, not sold
+   separately): same face and size, weight 400, muted, gap = size * 0.3.
+   The "divided" pattern (a 1px rule + full-strength text) is reserved for
+   things sold separately, e.g. reports/other products. */
+.wordmark {
+    display: inline-flex;
+    align-items: center;
+    font-size: calc(var(--logo-size) * 0.95);
+    line-height: 1;
+}
+
+.wordmark-sure {
+    font-weight: 400;
+    color: var(--wordmark-sure-color, var(--text-main));
+}
+
+.wordmark-a11y {
+    font-weight: 700;
+    color: var(--ok);
+}
+
+.wordmark-product {
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: calc(var(--logo-size) * 0.3);
+}
+
+/* At phone width the logo shrinks and keeps clear of the colour-theme and
+   Activity buttons in the corner, which come down into the page's margin. */
+@media (max-width: 600px) {
+    header h1 { --logo-size: 26px; padding-right: 84px; }
+    .theme-switch,
+    button.activity-button { top: 0; }
+}
+@media (max-width: 400px) {
+    header h1 { --logo-size: 21px; }
+}
+
+header p {
+    margin: 0;
+    max-width: 60rem;
+
+    font-size: var(--fs-base);
+    color: var(--text-muted);
+}
+
+/* Colour-theme toggle — a single icon button that cycles Auto → Light → Dark,
+   the same control used by the report and the extension. */
+.theme-switch {
+    position: absolute;
+    top: -20px;
+    right: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 36px;
+    height: 36px;
+    padding: 0;
+
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+
+    background: var(--surface-3);
+    color: var(--text-main);
+
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.theme-switch:hover:not(:disabled) {
+    background: var(--surface-4);
+    border-color: var(--accent-border);
+}
+
+.theme-switch:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+}
+
+.theme-switch__icon {
+    display: none;
+    width: 18px;
+    height: 18px;
+}
+
+/* Show the icon matching the active choice; before the script runs (no
+   data-choice yet) default to the Auto icon. */
+.theme-switch:not([data-choice]) .theme-switch__icon--auto,
+.theme-switch[data-choice="auto"] .theme-switch__icon--auto,
+.theme-switch[data-choice="light"] .theme-switch__icon--light,
+.theme-switch[data-choice="dark"] .theme-switch__icon--dark {
+    display: block;
+}
+
+/* ==========================================================================
+   FORM
+   ========================================================================== */
+
+form {
+    margin: 0 0 0.75rem;
+    padding: 1rem 1rem 1.1rem;
+
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-2);
+}
+
+/* The configuration's groups of fields (How the page is shown, What the
+   scans check): a fieldset for its name, without a box of its own. */
+.config-group {
+    margin: 1rem 0 .75rem;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+}
+
+.config-group > legend {
+    margin-bottom: .35rem;
+    padding: 0;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.field-row { margin-bottom: .5rem; }
+.field-row:last-of-type { margin-bottom: 0; }
+
+.field-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+}
+
+.field-inline > div {
+    flex: 1 1 180px;
+    min-width: 160px;
+}
+
+/* A row whose controls differ in height (an input beside a textarea): its
+   labels line up, rather than its controls' bottoms. */
+.field-inline.field-inline-top {
+    align-items: start;
+}
+
+label {
+    display: inline-block;
+    margin-bottom: 0.25rem;
+
+    font-size: var(--fs-sm);
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+}
+
+.select-with-button {
+    display: flex;
+    gap: 5px;
+}
+
+.interaction-workflow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    padding: 0;
+    margin-bottom: 10px;
+
+    background: var(--surface-2);
+}
+
+/* Controls */
+:is(input[type="text"], input[type="url"], select, textarea),
+.field-row.field-inline button {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+
+    border-radius: var(--radius-md);
+    border: 1px solid var(--field-border);
+
+    font: inherit;
+    color: var(--text-main);
+    background: var(--surface-2);
+
+    transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+
+/* Buttons carry their own DS disabled treatment (opacity .42, not-allowed) in
+   the BUTTONS section; here we only dim disabled form fields and their labels. */
+input:disabled,
+select:disabled,
+textarea:disabled,
+div:has(:is(input:disabled, select:disabled, textarea:disabled, button:disabled)) > label {
+    opacity: .3;
+}
+
+.field-row.field-inline button {
+    text-align: center;
+    display: inline-block;
+    min-height: 0;             /* sized to match the paired input, not the 36px button height */
+}
+
+textarea {
+    min-height: 3.5rem;
+    resize: vertical;
+}
+
+/* The browser's own placeholder grey (#757575) fell below 4.5:1 on these
+   fields: 4.3:1 in the light theme, 3.6:1 in the dark one. */
+::placeholder {
+    color: var(--text-soft);
+    opacity: 1;
+}
+
+:is(input[type="text"], input[type="url"], select, textarea):focus {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    border-color: var(--accent-border);
+    background: var(--surface-4);
+}
+
+input[type="checkbox"] {
+    margin-right: 0.4rem;
+    vertical-align: middle;
+}
+
+#workflow-preset-select { width: auto; }
+
+#history-management,
+.history-management {
+    vertical-align: bottom;
+    display: inline-flex;
+    gap: 5px;
+}
+
+.config-file {
+    padding: 5px 0;
+    margin: 10px 0;
+
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.config-file label { margin: 5px 0; }
+
+.hint {
+    margin-top: .2rem;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+/* Notes on how a scan ran: they can explain a scan that looks clean. */
+.scan-notices {
+    margin: .4rem 0;
+    padding: .4rem .7rem;
+    border-left: 4px solid var(--warn);
+    background: var(--warn-soft);
+    color: var(--text-main);
+}
+.scan-notices-title { margin: 0; font-weight: 600; }
+.scan-notices ul { margin: .2rem 0 0; padding-left: 1.2rem; }
+
+/* RGAA's compliance rate under the summary header, with what it leaves out. */
+.rgaa-rate { margin: .4rem 0; }
+.rgaa-rate-note { display: block; font-size: var(--fs-sm); color: var(--text-muted); }
+
+/* What the engine measured for one occurrence, as label/value pairs. */
+.node-details-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 2px 16px; margin: 4px 0 0; }
+.node-details-list > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.node-details-list dt { color: var(--text-muted); }
+.node-details-list dt::after { content: ":"; }
+.node-details-list dd { margin: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
+
+/* A question's lean (core 1.14): which way its evidence points, and the
+   steps that answer it. */
+.lean-badge {
+    display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px;
+    font-size: .75rem; font-weight: 600; white-space: nowrap; vertical-align: middle;
+}
+.lean-badge-fail { border: 1px solid var(--warn); color: var(--surface-0, #fff); background: var(--warn); }
+.lean-badge-pass { border: 1px solid var(--ok); color: var(--ok); background: var(--ok-soft); }
+.instances-lean { font-size: .8rem; color: var(--text-muted); white-space: normal; }
+/* The cell's count line does not wrap (.instances-meta); this one may, but
+   only between its parts: "1 likely fails," / "1 needs a person". */
+.instances-lean__part { white-space: nowrap; }
+/* A sentence in place of the count ("Partly checked: …") wraps in the column. */
+.instances-meta.instances-meta--note { white-space: normal; }
+.node-lean { padding: 4px 8px; border-left: 3px solid var(--border-subtle); }
+.node-lean-fail { border-left-color: var(--warn); background: var(--warn-soft); }
+.node-lean-pass { border-left-color: var(--ok); background: var(--ok-soft); }
+.node-lean-measured { color: var(--text-muted); }
+.node-detail.node-how-to-check summary { font-weight: 600; font-size: inherit; }
+.node-how-to-check ol { margin: 6px 0 6px 1.4rem; padding: 0; }
+.node-detail.node-how-to-check li { margin: 3px 0; color: var(--text-main); font-size: inherit; line-height: 1.4; }
+.node-detail.node-how-to-check p { margin: 6px 0 0; color: var(--text-main); font-size: inherit; line-height: 1.4; }
+
+/* The rows with something to act on are tinted and carry a wider bar: a
+   failure in the failure color, a review row whose questions likely fail
+   in the review color, so it stands out from the other review rows
+   without reading as a failure. Its "likely fails" badge says it in
+   words too.
+   The bar is an inset shadow, not a border: a collapsed table draws its
+   borders itself, so a border showed beside the sticky header cell
+   while the rows scrolled under it. The shadow is the cell's own paint,
+   which the header covers. */
+.table-container tr.fail > td,
+.issues-table tbody tr.fail > td { background: var(--danger-soft); }
+.table-container tbody tr.fail > td:first-child,
+.issues-table tbody tr.fail > td:first-child { box-shadow: inset 8px 0 0 var(--danger); padding-left: calc(.6rem + 8px); }
+.table-container tr.cantTell.lean-fail > td,
+.issues-table tbody tr.cantTell.lean-fail > td { background: var(--warn-soft); }
+.table-container tr.cantTell.lean-fail > td:first-child,
+.issues-table tbody tr.cantTell.lean-fail > td:first-child { box-shadow: inset 8px 0 0 var(--warn); padding-left: calc(.6rem + 8px); }
+
+/* Notes that qualify some results, below them and collapsed. */
+.scan-notices-after ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+.scan-notices-after li + li { margin-top: .3rem; }
+
+/* "Closest to the limit": passes with little room left. */
+.a11y-margins-wrap { overflow-x: auto; margin-top: 6px; }
+.a11y-margins-table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+.a11y-margins-table th, .a11y-margins-table td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+.a11y-margins-table thead th { font-weight: 600; color: var(--text-muted); }
+.a11y-margins-table tbody th { font-weight: 400; text-transform: none; letter-spacing: normal; font-size: inherit; color: inherit; background: transparent; position: static; }
+.a11y-margins-table .a11y-margins-near > * { background: var(--warn-soft); }
+.a11y-margins-badge {
+    display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px;
+    border: 1px solid var(--warn); color: var(--warn); font-size: .75rem; white-space: nowrap;
+}
