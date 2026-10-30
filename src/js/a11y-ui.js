@@ -6905,18 +6905,7 @@ function storeActiveMode(mode) {
                 }
             },
             onProgress: (prog) => {
-                if (prog && typeof prog === 'object') {
-                    const actionIndex = Number.isFinite(prog.actionIndex) ? prog.actionIndex : null;
-                    const actionTotal = Number.isFinite(prog.actionTotal) ? prog.actionTotal : null;
-                    const elapsed = typeof prog.elapsedText === 'string' ? prog.elapsedText : '';
-
-                    if (actionIndex != null && actionTotal != null) {
-                        const bits = ['Running', `Action ${actionIndex} of ${actionTotal}`];
-                        if (elapsed) bits.push(elapsed);
-                        setRunStatusUi({ state: 'running', text: bits.join(' · ') });
-                    }
-                }
-                if (Array.isArray(prog.logs) && prog.logs.length) {
+                if (prog && Array.isArray(prog.logs) && prog.logs.length) {
                     progressProcessor.processMany(prog.logs);
                 }
             }
