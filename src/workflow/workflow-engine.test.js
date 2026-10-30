@@ -2469,9 +2469,7 @@ describe('applyActions / _applyActionsImpl (per-action bookkeeping)', () => {
 // (same rationale as the "page-driving actions" block above). This also exercises crawlQueue's
 // private URL/pattern helpers (normalizeUrlCandidate, parsePatternLines/compilePattern/
 // testPattern, applyIncludeExclude, normalizeAndFilterUrls) indirectly, since none of them are
-// exported. Note: sampleUrlList (defined near these helpers) is never actually called by
-// crawlQueue or anything else in this file - it's dead code, so it can't be covered without
-// exporting it purely for tests, which we don't do here.
+// exported.
 describe('crawlQueue', () => {
     async function runCrawl(page, actions, ctx, localVars = Object.create(null)) {
         await applyActions(page, actions, null, 0, ctx, localVars, 0, null);

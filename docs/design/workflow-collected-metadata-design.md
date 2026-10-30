@@ -203,9 +203,10 @@ scan's file. A flat CSV export of a single key's values was deferred as a fast-f
 
 ## 9. Where things live
 
-- Engine: `src/workflow/workflow-engine.js` — `createWorkflowContext`/`createChildContext`
-  (the collector array), `runActionAction`'s `case 'collectOutput'`,
-  `buildConditionConfig`/`evaluateConditionPredicate` (shared with `skipIteration`).
+- Engine: `src/workflow/engine/context.js` — `createWorkflowContext`/`createChildContext`
+  (the collector array), `stepCollectOutput` in `src/workflow/steps/data.js`,
+  `buildConditionConfig`/`evaluateConditionPredicate` in `src/workflow/engine/conditions.js`
+  (shared with `skipIteration`).
 - Runner → payload: `src/server-side/a11y-runner.js` (all three return sites) →
   `src/shared/workflow-payload-builder.js` (`buildWorkflowPayloadBase`) → `server.js`
   (`/workflow-scan`, `/workflow-start`).

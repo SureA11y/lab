@@ -48,7 +48,7 @@ layout, focus or what a screen reader announces.
 
 | Folder | What lives there | Loads as |
 | --- | --- | --- |
-| `src/workflow/` | The workflow engine, and `action-definitions.js`, the one definition of every step | Node |
+| `src/workflow/` | The workflow engine (`workflow-engine.js` runs a list of steps), what each step does (`steps/`, one module per kind of step, a handler per step type), the helpers they share (`engine/`), and `action-definitions.js`, the one definition of every step | Node |
 | `src/server-side/` | Running scans in a browser, the engine facade and surea11y's adapter, metrics, the queue | Node |
 | `src/cli/` | The command-line runner | Node |
 | `src/shared/` | Code the server, the app, the runner and the extension all use: reports, diffs, run specs, schemas | Node and browser (UMD) |
