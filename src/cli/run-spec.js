@@ -38,6 +38,7 @@ function parseCliArgs(argv) {
         check: false,
         dryRun: false,
         noBatch: false,
+        acceptUntrustedCerts: false,
         help: false,
     };
     const errors = [];
@@ -56,6 +57,10 @@ function parseCliArgs(argv) {
         }
         if (arg === '--debug-native') {
             options.debugNative = true;
+            continue;
+        }
+        if (arg === '--accept-untrusted-certs') {
+            options.acceptUntrustedCerts = true;
             continue;
         }
         if (arg === '--fail-on-lean') {

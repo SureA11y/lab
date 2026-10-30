@@ -188,6 +188,7 @@ async function executeWorkflowRun(spec, hooks = {}) {
         colorScheme,
         highContrast,
         language,
+        acceptUntrustedCerts,
         scenarioName,
         vars
     } = spec || {};
@@ -260,6 +261,7 @@ async function executeWorkflowRun(spec, hooks = {}) {
     const engineCustomSteps = secrets.value.customSteps;
 
     const wantReport = hasEvidenceCaptureAction(actions);
+    const acceptsUntrusted = acceptUntrustedCerts === true || acceptUntrustedCerts === 'on';
 
     try {
         const out = await runA11yWorkflow(url, null, {
@@ -270,6 +272,7 @@ async function executeWorkflowRun(spec, hooks = {}) {
             colorScheme,
             highContrast,
             language,
+            acceptUntrustedCerts: acceptsUntrusted,
             vars,
             progress,
             debugNative,
@@ -306,6 +309,10 @@ async function executeWorkflowRun(spec, hooks = {}) {
             includeScanScreenshots: true,
         });
 
+        // A run that accepted untrusted certificates says so with its results.
+        if (acceptsUntrusted) {
+            payload.runDiagnostics = { ...(payload.runDiagnostics || {}), untrustedCertsAccepted: true };
+        }
         if (keepCoreResults) attachCoreBaselines(payload, out.scans);
         PAYLOAD.finalizeWorkflowPayload(payload);
 

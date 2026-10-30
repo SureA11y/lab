@@ -225,6 +225,21 @@
                                 </div>
                             </div>
                         </fieldset>
+                        <fieldset class="config-group">
+                            <legend>Connection</legend>
+                            <div class="field-row field-inline field-inline-top">
+                                <div class="field-narrow">
+                                    <label for="run-untrusted-certs">Untrusted certificates</label>
+                                    <select id="run-untrusted-certs" name="acceptUntrustedCerts" aria-describedby="run-untrusted-certs-hint">
+                                        <option value="off">Refuse</option>
+                                        <option value="on">Accept</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="field-row">
+                                <p class="hint" id="run-untrusted-certs-hint">For a site whose certificate the browser does not trust: a staging server's own, or any site on a network that inspects HTTPS. Accepted, the browser cannot tell the site from one pretending to be it, so sign in only where you trust the network.</p>
+                            </div>
+                        </fieldset>
                     </div>
                     <div class="field-row config-file">
             <span>

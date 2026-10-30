@@ -584,12 +584,13 @@ export function prepareDataForReport(data) {
     if (updatedData.runDiagnostics && typeof updatedData.runDiagnostics === 'object') {
         const sanitizedRunDiagnostics = keepOnlyKeys(
             updatedData.runDiagnostics,
-            ['requestFailures']
+            ['requestFailures', 'untrustedCertsAccepted']
         );
 
         if (
-            Array.isArray(sanitizedRunDiagnostics.requestFailures) &&
-            sanitizedRunDiagnostics.requestFailures.length > 0
+            (Array.isArray(sanitizedRunDiagnostics.requestFailures) &&
+            sanitizedRunDiagnostics.requestFailures.length > 0) ||
+            sanitizedRunDiagnostics.untrustedCertsAccepted === true
         ) {
             updatedData.runDiagnostics = sanitizedRunDiagnostics;
         } else {

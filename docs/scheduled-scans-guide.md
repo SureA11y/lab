@@ -372,6 +372,12 @@ node src/cli/run-workflow.js <spec.json> [options]
   --url <url>        Override the url in the spec
   --scenario <name>  Override the scenario name in the spec
   --debug-native     Keep raw engine output in the payload
+  --accept-untrusted-certs
+                     Open sites whose certificate the browser does not trust
+                     (a staging server's own, or any site on a network that
+                     inspects HTTPS), as the spec's acceptUntrustedCerts does.
+                     The browser cannot then tell a site from one pretending
+                     to be it: sign in only where you trust the network.
   --format <list>    Also write surea11y's results as sarif, junit and/or
                      earl (comma-separated), into <out>/exports. Can be
                      repeated. Scans run without surea11y are left out.
@@ -489,6 +495,7 @@ size that is not a preset) is reported when it opens.
 | `viewport` | no | A preset name, or `{"width": 1280, "height": 720}` |
 | `colorScheme` | no | `light` or `dark`: the color scheme the page is shown in from the first page. Left out, the browser's own (light). In the app it is the configuration's Color scheme. Set color scheme and contrast changes it; its Run default comes back to this |
 | `highContrast` | no | `on` or `off`: forced colors (high contrast) from the first page. Left out, off. In the app it is the configuration's High contrast |
+| `acceptUntrustedCerts` | no | `true` to open sites whose certificate the browser does not trust: a staging server's own, or any site on a network that inspects HTTPS. Left out, such a site fails the run, saying why. The browser cannot then tell a site from one pretending to be it, so sign in only where you trust the network; the run says so in its log and in `runDiagnostics.untrustedCertsAccepted`. In the app it is the configuration's Untrusted certificates; `--accept-untrusted-certs` sets it for a whole run or batch |
 | `language` | no | A BCP 47 tag (`es-ES`, `de`, `pt-BR`), or a variable such as `{var:lang}` so each batch row can set its own: the language the page is shown in from the first page. Left out, the browser's own. In the app it is the configuration's Language. Set language changes it; its Run default comes back to this |
 | `customSteps` | no | Reusable step definitions the actions refer to |
 

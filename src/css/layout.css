@@ -247,6 +247,12 @@ form {
     min-width: 160px;
 }
 
+/* A field alone in its row keeps about the width of one of four beside each
+   other, instead of growing to the whole row. */
+.field-inline > div.field-narrow {
+    flex: 0 1 15rem;
+}
+
 /* A row whose controls differ in height (an input beside a textarea): its
    labels line up, rather than its controls' bottoms. */
 .field-inline.field-inline-top {

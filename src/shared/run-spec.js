@@ -31,7 +31,7 @@
 
     const KNOWN_SPEC_KEYS = new Set([
         '$schema', 'specVersion', 'version', 'type', 'url', 'scenarioName', 'actions', 'customSteps',
-        'viewport', 'colorScheme', 'highContrast', 'language',
+        'viewport', 'colorScheme', 'highContrast', 'language', 'acceptUntrustedCerts',
         'metadata', 'groupScans', 'vars'
     ]);
 
@@ -64,6 +64,7 @@
         viewport: ['viewport-preset', 'viewportPreset'],
         colorScheme: ['run-color-scheme'],
         highContrast: ['run-high-contrast'],
+        acceptUntrustedCerts: ['run-untrusted-certs'],
     };
 
     // The language field: a select of languages, whose "Other…" shows a text
@@ -78,6 +79,11 @@
 
     function trimmedString(v) {
         return typeof v === 'string' && v.trim() ? v.trim() : null;
+    }
+
+    // A yes/no setting: true in a spec, "on" in the app's form.
+    function isOn(v) {
+        return v === true || trimmedString(v) === 'on';
     }
 
     /**
@@ -123,6 +129,7 @@
         if (input.highContrast === true || trimmedString(input.highContrast) === 'on') spec.highContrast = 'on';
         const language = trimmedString(input.language);
         if (language && language !== 'default') spec.language = language;
+        if (isOn(input.acceptUntrustedCerts)) spec.acceptUntrustedCerts = true;
 
         if (isPlainObject(input.vars) && Object.keys(input.vars).length) spec.vars = { ...input.vars };
 
@@ -154,6 +161,10 @@
         if (language !== undefined) spec.language = language;
         // Off is the browser's own: nothing to say.
         if (spec.highContrast === 'off') delete spec.highContrast;
+        if (spec.acceptUntrustedCerts !== undefined) {
+            if (isOn(spec.acceptUntrustedCerts)) spec.acceptUntrustedCerts = true;
+            else delete spec.acceptUntrustedCerts;
+        }
 
         if (spec.url === undefined && raw && raw.url) spec.url = raw.url;
 
@@ -181,6 +192,7 @@
             [first('viewport')]: 'default',
             [first('colorScheme')]: '',
             [first('highContrast')]: 'off',
+            [first('acceptUntrustedCerts')]: 'off',
             [LANGUAGE_STATE_KEY]: '',
             [LANGUAGE_OTHER_STATE_KEY]: '',
             [first('customSteps')]: '',
@@ -216,6 +228,7 @@
         const colorScheme = trimmedString(spec.colorScheme);
         if (colorScheme === 'light' || colorScheme === 'dark') state[first('colorScheme')] = colorScheme;
         if (spec.highContrast === true || trimmedString(spec.highContrast) === 'on') state[first('highContrast')] = 'on';
+        if (isOn(spec.acceptUntrustedCerts)) state[first('acceptUntrustedCerts')] = 'on';
         // A language the list has is chosen there; any other, with "Other…".
         const language = trimmedString(spec.language);
         if (language && language !== 'default') {
@@ -315,6 +328,20 @@
      * variable ({var:lang}), read once the run's variables are known; any
      * other is taken in its canonical form.
      */
+    /**
+     * Whether the run opens sites whose certificate the browser does not
+     * trust: off unless the spec says so, as the browser cannot tell such a
+     * site from one pretending to be it.
+     */
+    function normalizeUntrustedCerts(source, errors) {
+        const v = source.acceptUntrustedCerts;
+        if (isOn(v)) return { acceptUntrustedCerts: true };
+        if (!(v == null || v === false || v === '' || v === 'off')) {
+            errors.push(`acceptUntrustedCerts ${JSON.stringify(v)} is not a setting: use true or false`);
+        }
+        return { acceptUntrustedCerts: false };
+    }
+
     function normalizeRunConditions(source, errors) {
         const out = { colorScheme: null, highContrast: false, language: null };
 
@@ -450,6 +477,7 @@
             customSteps: normalizeCustomSteps(source.customSteps, errors),
             viewport: normalizeViewport(source.viewport, buildViewportFromPreset, errors, warnings),
             ...normalizeRunConditions(source, errors),
+            ...normalizeUntrustedCerts(source, errors),
             scenarioName: trimmedString(source.scenarioName),
         };
 

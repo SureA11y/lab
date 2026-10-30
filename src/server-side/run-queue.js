@@ -50,7 +50,7 @@ const TERMINAL = new Set(['done', 'cancelled', 'error']);
 // A run's Include and Exclude selectors are its scans' by then (upgradeRunSpec).
 const RUN_FIELDS = [
     'url', 'actions', 'customSteps', 'viewport', 'colorScheme', 'highContrast', 'language',
-    'scenarioName', 'vars'
+    'acceptUntrustedCerts', 'scenarioName', 'vars'
 ];
 
 function queueError(statusCode, message) {

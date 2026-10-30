@@ -25,6 +25,12 @@ A workflow is the page to start on and the steps to take there. The
   and **Language** (one from the list, or any tag or variable with Other…).
   Steps can change them as the workflow goes; their **Run default** comes
   back to these.
+- **Connection**: **Untrusted certificates**, Refuse unless you choose
+  Accept, for a site whose certificate the browser does not trust (a staging
+  server's own, or any site on a network that inspects HTTPS). Refused, the
+  run fails on it and says why. Accepted, the browser cannot tell the site
+  from one pretending to be it, so sign in only where you trust the network;
+  the run's log says it accepted them.
 
 What a scan checks, its **Include selectors** and **Exclude selectors** (limit
 it to the parts of the page some CSS selectors match, `main, footer`, or leave

@@ -202,7 +202,7 @@ app.use(
 // --------------------------- Core endpoints ---------------------------
 
 app.post("/workflow-scan", async (req, res) => {
-    const { url, tags, actions, scenarioName, viewport, colorScheme, highContrast, language } = req.body || {};
+    const { url, tags, actions, scenarioName, viewport, colorScheme, highContrast, language, acceptUntrustedCerts } = req.body || {};
 
     const debugNative =
         DEBUG_MODE ||
@@ -223,6 +223,7 @@ app.post("/workflow-scan", async (req, res) => {
             colorScheme,
             highContrast,
             language,
+            acceptUntrustedCerts: acceptUntrustedCerts === true || acceptUntrustedCerts === 'on',
             determinism,
             debugNative,
             exportReport: wantReport,
@@ -589,7 +590,7 @@ function newRunId() {
 }
 
 app.post("/workflow-start", async (req, res) => {
-    const { url, actions, customSteps, scenarioName, viewport, colorScheme, highContrast, language, vars } = req.body || {};
+    const { url, actions, customSteps, scenarioName, viewport, colorScheme, highContrast, language, acceptUntrustedCerts, vars } = req.body || {};
     // Dry run: every step but the scans, screenshots and evidence, and what
     // that found as a summary instead of a report (dry-run-summary.js).
     const dryRun = req.body?.dryRun === true;
@@ -642,7 +643,7 @@ app.post("/workflow-start", async (req, res) => {
             let outcome;
             try {
                 outcome = await executeWorkflowRun(
-                    { url, actions, customSteps, viewport, colorScheme, highContrast, language, scenarioName, vars },
+                    { url, actions, customSteps, viewport, colorScheme, highContrast, language, acceptUntrustedCerts: acceptUntrustedCerts === true || acceptUntrustedCerts === 'on', scenarioName, vars },
                     {
                         progress,
                         debugNative,

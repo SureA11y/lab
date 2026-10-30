@@ -67,6 +67,7 @@ describe('parseCliArgs', () => {
             '--format', 'acr',
             '--review', 'runs/last/payload.json',
             '--debug-native',
+            '--accept-untrusted-certs',
             '--fail-on-lean',
             '--fail-on-failures',
             '--check',
@@ -92,6 +93,7 @@ describe('parseCliArgs', () => {
             check: true,
             dryRun: false,
             noBatch: false,
+            acceptUntrustedCerts: true,
             help: false,
         });
     });

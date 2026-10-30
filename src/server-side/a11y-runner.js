@@ -75,16 +75,25 @@ const { interpolateVarTokensLoose } = require('../workflow/engine/vars');
 
 const DEFAULT_SCAN_CSS = `{filter: opacity(.8) blur(5px);}`;
 
-/** @type {import('puppeteer').Browser | null} */
-let browser = null;
+/**
+ * The shared browsers: the one every run uses, which refuses a certificate it
+ * does not trust, and the one a run that accepts untrusted certificates uses
+ * (acceptUntrustedCerts), launched the first time one asks. Whether a browser
+ * accepts them is set when it launches, for all its pages, so runs that differ
+ * on it cannot share one.
+ * @type {{strict: import('puppeteer').Browser | null, untrusted: import('puppeteer').Browser | null}}
+ */
+const browsers = {strict: null, untrusted: null};
 
 
-/** Launches (once) or reuses a single browser instance. */
-async function getBrowser() {
-    if (browser && browser.connected) return browser;
-    browser = await puppeteer.launch({
+/** Launches (once) or reuses the shared browser a run asks for. */
+async function getBrowser({acceptUntrustedCerts = false} = {}) {
+    const key = acceptUntrustedCerts ? 'untrusted' : 'strict';
+    const existing = browsers[key];
+    if (existing && existing.connected) return existing;
+    const browser = await puppeteer.launch({
         headless: 'new',
-        ignoreHTTPSErrors: true,
+        acceptInsecureCerts: !!acceptUntrustedCerts,
         args: [
             // Drop the "navigator.webdriver = true" / automation banner that
             // WAFs fingerprint on.
@@ -98,6 +107,7 @@ async function getBrowser() {
     answerDialogs(browser);
     keepOpenersShown(browser);
 
+    browsers[key] = browser;
     return browser;
 }
 
@@ -143,21 +153,24 @@ function keepOpenersShown(browserRef) {
     });
 }
 
-/** The shared browser's process id, or null while none runs. */
+/** The shared browser's process id (the one every run uses), or null while none runs. */
 function getBrowserPid() {
+    const browser = browsers.strict;
     if (!browser || !browser.connected) return null;
     const proc = typeof browser.process === 'function' ? browser.process() : null;
     return proc && Number.isInteger(proc.pid) ? proc.pid : null;
 }
 
-/** Closes the shared browser, ignoring transient errors. */
+/** Closes the shared browsers, ignoring transient errors. */
 async function closeBrowser() {
-    if (browser) {
+    for (const key of Object.keys(browsers)) {
+        const browser = browsers[key];
+        browsers[key] = null;
+        if (!browser) continue;
         try {
             await browser.close();
         } catch {
         }
-        browser = null;
     }
 }
 
@@ -679,8 +692,8 @@ function getSuccessCriteria(tags) {
 /**
  * Open a page according to determinism hints.
  */
-async function openContextAndPage(determinism) {
-    const browserInstance = await getBrowser();
+async function openContextAndPage(determinism, {acceptUntrustedCerts = false} = {}) {
+    const browserInstance = await getBrowser({acceptUntrustedCerts});
 
     let context = null;
     let usedIsolated = false;
@@ -1068,6 +1081,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
         colorScheme = null,
         highContrast = false,
         language = null,
+        // Open sites whose certificate the browser does not trust (a staging
+        // server's own, or any site through a network that inspects HTTPS).
+        acceptUntrustedCerts = false,
         vars,
         progress,
         isCancelled,
@@ -1105,7 +1121,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
         };
     }
 
-    const {context: ctx, page, usedIsolated} = await openContextAndPage(determinism);
+    const {context: ctx, page, usedIsolated} = await openContextAndPage(determinism, {acceptUntrustedCerts});
 
     const hardCancelWatch = hardCancel
         ? startHardCancelWatch({context: ctx, page, usedIsolated, isCancelled, progress})
@@ -2109,6 +2125,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
 
         if (typeof progress === 'function') {
             try {
+                if (acceptUntrustedCerts) {
+                    progress({time: new Date().toISOString(), type: 'warn', message: 'This run accepts certificates the browser does not trust: it cannot tell a site from one pretending to be it, so type no password you would not give away'});
+                }
                 progress({time: new Date().toISOString(), type: 'info', message: `browsing to ${url}`});
             } catch {
             }

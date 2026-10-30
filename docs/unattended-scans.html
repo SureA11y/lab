@@ -729,6 +729,12 @@ Instances   <span class="hot">4 new</span>, 9 fixed, 0 still failing
   --url &lt;url&gt;        Override the url in the spec
   --scenario &lt;name&gt;  Override the scenario name in the spec
   --debug-native     Keep raw engine output in the payload
+  --accept-untrusted-certs
+                     Open sites whose certificate the browser does not trust
+                     (a staging server's own, or any site on a network that
+                     inspects HTTPS), as the spec's acceptUntrustedCerts does.
+                     The browser cannot then tell a site from one pretending
+                     to be it: sign in only where you trust the network.
   --format &lt;list&gt;    Also write surea11y's results as sarif, junit and/or
                      earl (comma-separated), into &lt;out&gt;/exports. Can be
                      repeated. Scans run without surea11y are left out.

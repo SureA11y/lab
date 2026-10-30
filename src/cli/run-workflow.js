@@ -67,6 +67,12 @@ Options:
   --url <url>        Override the url in the spec
   --scenario <name>  Override the scenario name in the spec
   --debug-native     Keep raw engine output in the payload
+  --accept-untrusted-certs
+                     Open sites whose certificate the browser does not trust
+                     (a staging server's own, or any site on a network that
+                     inspects HTTPS), as the spec's acceptUntrustedCerts does.
+                     The browser cannot then tell a site from one pretending
+                     to be it: sign in only where you trust the network.
   --format <list>    Also write surea11y's results as sarif, junit and/or
                      earl (comma-separated), into <out>/exports. Can be
                      repeated. Scans run without surea11y are left out.
@@ -221,6 +227,11 @@ function printComparison(comparison, baselinePayload, baselineLabel) {
  * screenshots or evidence, then how each went (dry-run-report.js). Nothing is
  * written, so a dry run never becomes the run a baseline compares with.
  */
+// What the command line sets on every run, a batch's rows too.
+function withCliSettings(spec, options) {
+    return options.acceptUntrustedCerts ? { ...spec, acceptUntrustedCerts: true } : spec;
+}
+
 async function runDry(spec, options) {
     const cancel = watchCancel('Cancelling the dry run. Press Ctrl+C again to force exit.');
 
@@ -232,7 +243,7 @@ async function runDry(spec, options) {
     const logs = [];
     let result;
     try {
-        result = await executeWorkflowRun(spec, {
+        result = await executeWorkflowRun(withCliSettings(spec, options), {
             dryRun: true,
             stepsChecked: true,
             isCancelled: cancel.isCancelled,
@@ -652,7 +663,7 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
         console.log(`Running ${finalSpec.scenarioName || finalSpec.url} (${finalSpec.actions.length} actions${stepNote})`);
     }
 
-    const { status, payload, error, coreResults } = await executeWorkflowRun(finalSpec, {
+    const { status, payload, error, coreResults } = await executeWorkflowRun(withCliSettings(finalSpec, options), {
         debugNative: options.debugNative || isDebugMode(),
         keepCoreResults: options.formats.length > 0 || options.failOnLean,
         isCancelled,

@@ -119,6 +119,7 @@ function storeActiveMode(mode) {
     // How the page is shown as the run starts, beside the viewport.
     const colorSchemeSelect = $('#run-color-scheme');
     const highContrastSelect = $('#run-high-contrast');
+    const untrustedCertsSelect = $('#run-untrusted-certs');
     const languageSelect = $('#run-language');
     const languageOtherField = $('#run-language-other-field');
     const languageOtherInput = $('#run-language-other');
@@ -5672,6 +5673,7 @@ function storeActiveMode(mode) {
             stateDefaults: {
                 'run-color-scheme': '',
                 'run-high-contrast': 'off',
+                'run-untrusted-certs': 'off',
                 'run-language': '',
                 'run-language-other': '',
             },
@@ -6826,6 +6828,7 @@ function storeActiveMode(mode) {
             viewport: viewportSelect ? buildViewportFromPreset(viewportSelect.value) : null,
             colorScheme: colorSchemeSelect ? colorSchemeSelect.value : '',
             highContrast: highContrastSelect ? highContrastSelect.value : '',
+            acceptUntrustedCerts: untrustedCertsSelect ? untrustedCertsSelect.value : '',
             language: runLanguageValue(),
             scenarioName: scenarioInput ? scenarioInput.value.trim() : '',
         });
