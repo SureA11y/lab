@@ -57,16 +57,16 @@ import {afterPaint, isBusy, runBusy, setBusy} from './busy.js';
 import {getActivity} from './activity.js';
 import {clearLazyBodies, openLazyDialog, setLazyScope} from './lazy-dialogs.js';
 import {attachFileDrop} from './file-drop.js';
-import {groupings} from './config/groupings.js';
-import {cleanGroupingItem, normalizeGroupingSpec} from './grouping-spec.js';
+import {cleanGroupingItem} from './grouping-spec.js';
 import {buildGlobalSummary, cloneJsonData, collectReportEngines, computeTotals, ensureScanSummaryCounts, ensureScansIncludedFlag, getA11yGlobalFindings, getAllArtifactUrls, getScreenshotsFromPayload, hashHex16, normalizePayloadForUi, pickMetricDefsFromPayload, pickMetricDefsFromStaged, prepareDataForReport, sortByOrderKey, stripVolatileKeysDeep, validateReportOrThrow} from './report-data.js';
 import {buildActionTreeNodes, buildCustomStepMaps, collapseLineIfExpanded, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, resolveStepRefForLogEntry, setupCollapseAllStepsButton} from './action-tree.js';
 import {cloneCustomStepValue, collectUsedCustomStepIds, customStepTabId, deepRemapCustomStepIds, formatCustomStepInputsText, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepInputsText, parseCustomStepsJson} from './custom-steps-data.js';
 import {setQueueTabSpinner, setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isActuallyFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
-import {STATUS, PROGRESS_POLL_INTERVAL_MS, TAB_MODE_STORAGE_KEY, GROUPING_STATE_STORAGE_KEY} from './ui-constants.js';
+import {STATUS, PROGRESS_POLL_INTERVAL_MS, TAB_MODE_STORAGE_KEY} from './ui-constants.js';
 import {createQueueRunWatch} from './queue-run-watch.js';
 import {createCompareTab} from './compare-tab.js';
+import {createGroupingUi} from './grouping-ui.js';
 
 function getStoredActiveMode() {
     try {
@@ -117,6 +117,10 @@ function storeActiveMode(mode) {
         get setStatusRun() { return setStatusRun; },
         get stageReportFiles() { return stageReportFiles; },
         get tabsmode() { return tabsmode; },
+        get groupingFileInput() { return groupingFileInput; },
+        get renderActiveBucket() { return renderActiveBucket; },
+        get renderer() { return renderer; },
+        get updateResults() { return updateResults; },
     };
 
     const $ = (sel, root = document) => root.querySelector(sel);
@@ -402,7 +406,7 @@ function storeActiveMode(mode) {
         return {
             mode,
             payload: bucketFor(mode).payload,
-            grouping: getSelectedBuiltInGroupingId(mode),
+            grouping: groupingUi.getSelectedBuiltInGroupingId(mode),
             tags: JSON.stringify(activeTagSelection),
             sort: activeScanSort,
             summary: lastSummaryReportValue,
@@ -497,15 +501,15 @@ function storeActiveMode(mode) {
             setRunTabBadge(false);
         }
 
-        let selected = findBuiltInGroupingById(
-            getSelectedBuiltInGroupingId(resultsState.activeMode),
+        let selected = groupingUi.findBuiltInGroupingById(
+            groupingUi.getSelectedBuiltInGroupingId(resultsState.activeMode),
             resultsState.activeMode
         );
 
         if (!selected) {
-            const fallbackId = getLastResolvedGroupingSelectionId(resultsState.activeMode) || 'none';
-            setSelectedBuiltInGroupingId(fallbackId, resultsState.activeMode);
-            selected = findBuiltInGroupingById(fallbackId, resultsState.activeMode) || findBuiltInGroupingById('none', resultsState.activeMode);
+            const fallbackId = groupingUi.getLastResolvedGroupingSelectionId(resultsState.activeMode) || 'none';
+            groupingUi.setSelectedBuiltInGroupingId(fallbackId, resultsState.activeMode);
+            selected = groupingUi.findBuiltInGroupingById(fallbackId, resultsState.activeMode) || groupingUi.findBuiltInGroupingById('none', resultsState.activeMode);
         }
 
         if (!selected || selected.id === 'custom' || !selected.groups) {
@@ -980,7 +984,7 @@ function storeActiveMode(mode) {
         resultsRenderedFor = {
             mode: resultsState.activeMode,
             payload: bucket.payload,
-            grouping: getSelectedBuiltInGroupingId(resultsState.activeMode),
+            grouping: groupingUi.getSelectedBuiltInGroupingId(resultsState.activeMode),
         };
     }
 
@@ -1900,336 +1904,8 @@ function storeActiveMode(mode) {
 
     // -------------------- Grouping (UI state) --------------------
 
-    let groupingLoaded = false;
-    let builtInGroupingSelectEls = [];
-    let groupingPickerTargetMode = null;
-
-    const groupingStateByMode = {
-        run: {
-            selectedBuiltInGroupingId: 'none',
-            lastResolvedGroupingSelectionId: 'none',
-            loadedCustomGrouping: null
-        },
-        report: {
-            selectedBuiltInGroupingId: 'none',
-            lastResolvedGroupingSelectionId: 'none',
-            loadedCustomGrouping: null
-        }
-    };
-
-    function normalizeStoredGroupingEntry(raw) {
-        const out = {
-            selectedBuiltInGroupingId: 'none',
-            lastResolvedGroupingSelectionId: 'none',
-            loadedCustomGrouping: null
-        };
-
-        if (!raw || typeof raw !== 'object') return out;
-
-        const selectedBuiltInGroupingId = String(raw.selectedBuiltInGroupingId || 'none').trim() || 'none';
-        const lastResolvedGroupingSelectionId = String(raw.lastResolvedGroupingSelectionId || 'none').trim() || 'none';
-
-        out.selectedBuiltInGroupingId = selectedBuiltInGroupingId;
-        out.lastResolvedGroupingSelectionId = lastResolvedGroupingSelectionId;
-
-        const custom = raw.loadedCustomGrouping;
-        if (
-            custom &&
-            typeof custom === 'object' &&
-            String(custom.id || '').trim() &&
-            String(custom.label || '').trim() &&
-            Array.isArray(custom.groups)
-        ) {
-            const cleanedGroups = normalizeGroupingSpec(custom.groups);
-
-            if (cleanedGroups.length) {
-                out.loadedCustomGrouping = {
-                    id: String(custom.id).trim(),
-                    label: String(custom.label).trim(),
-                    groups: cleanedGroups
-                };
-            }
-        }
-
-        if (out.selectedBuiltInGroupingId === 'custom-loaded' && !out.loadedCustomGrouping) {
-            out.selectedBuiltInGroupingId = out.lastResolvedGroupingSelectionId || 'none';
-            if (out.selectedBuiltInGroupingId === 'custom-loaded') {
-                out.selectedBuiltInGroupingId = 'none';
-            }
-        }
-
-        if (out.lastResolvedGroupingSelectionId === 'custom-loaded' && !out.loadedCustomGrouping) {
-            out.lastResolvedGroupingSelectionId = 'none';
-        }
-
-        return out;
-    }
-
-    function loadGroupingStateFromStorage() {
-        try {
-            const raw = localStorage.getItem(GROUPING_STATE_STORAGE_KEY);
-            if (!raw) return;
-
-            const parsed = JSON.parse(raw);
-            if (!parsed || typeof parsed !== 'object') return;
-
-            const runEntry = normalizeStoredGroupingEntry(parsed.run);
-            const reportEntry = normalizeStoredGroupingEntry(parsed.report);
-
-            groupingStateByMode.run = runEntry;
-            groupingStateByMode.report = reportEntry;
-        } catch {
-            // ignore storage errors
-        }
-    }
-
-    function saveGroupingStateToStorage() {
-        try {
-            const payload = {
-                run: {
-                    selectedBuiltInGroupingId: groupingStateByMode.run.selectedBuiltInGroupingId,
-                    lastResolvedGroupingSelectionId: groupingStateByMode.run.lastResolvedGroupingSelectionId,
-                    loadedCustomGrouping: groupingStateByMode.run.loadedCustomGrouping
-                },
-                report: {
-                    selectedBuiltInGroupingId: groupingStateByMode.report.selectedBuiltInGroupingId,
-                    lastResolvedGroupingSelectionId: groupingStateByMode.report.lastResolvedGroupingSelectionId,
-                    loadedCustomGrouping: groupingStateByMode.report.loadedCustomGrouping
-                }
-            };
-
-            localStorage.setItem(GROUPING_STATE_STORAGE_KEY, JSON.stringify(payload));
-        } catch {
-            // ignore storage errors
-        }
-    }
-
-    function getGroupingState(mode = resultsState.activeMode) {
-        return mode === 'report'
-            ? groupingStateByMode.report
-            : groupingStateByMode.run;
-    }
-
-    function getSelectedBuiltInGroupingId(mode = resultsState.activeMode) {
-        return getGroupingState(mode).selectedBuiltInGroupingId;
-    }
-
-    function setSelectedBuiltInGroupingId(value, mode = resultsState.activeMode) {
-        getGroupingState(mode).selectedBuiltInGroupingId = value;
-        saveGroupingStateToStorage();
-    }
-
-    function getLastResolvedGroupingSelectionId(mode = resultsState.activeMode) {
-        return getGroupingState(mode).lastResolvedGroupingSelectionId;
-    }
-
-    function setLastResolvedGroupingSelectionId(value, mode = resultsState.activeMode) {
-        getGroupingState(mode).lastResolvedGroupingSelectionId = value;
-        saveGroupingStateToStorage();
-    }
-
-    function getLoadedCustomGrouping(mode = resultsState.activeMode) {
-        return getGroupingState(mode).loadedCustomGrouping;
-    }
-
-    function setLoadedCustomGrouping(value, mode = resultsState.activeMode) {
-        getGroupingState(mode).loadedCustomGrouping = value;
-        saveGroupingStateToStorage();
-    }
-
-    loadGroupingStateFromStorage();
-
-    function normalizeGroupingPresetList(list) {
-        if (!Array.isArray(list)) return [];
-
-        return list
-            .map((item) => {
-                if (!item || typeof item !== 'object') return null;
-
-                const id = String(item.id || '').trim();
-                const label = String(item.label || '').trim();
-                const groups = Array.isArray(item.groups) ? item.groups : [];
-
-                if (!id || !label || !groups.length) return null;
-
-                return {
-                    id,
-                    label,
-                    groups
-                };
-            })
-            .filter(Boolean);
-    }
-
-    function getAvailableBuiltInGroupings(mode = resultsState.activeMode) {
-        const items = [
-            {id: 'none', label: 'None', groups: null},
-            ...normalizeGroupingPresetList(groupings)
-        ];
-
-        const loadedCustomGrouping = getLoadedCustomGrouping(mode);
-        if (loadedCustomGrouping) {
-            items.push(loadedCustomGrouping);
-        }
-
-        items.push({id: 'custom', label: 'Custom...', groups: null});
-
-        return items;
-    }
-
-    function findBuiltInGroupingById(id, mode = resultsState.activeMode) {
-        const wanted = String(id || 'none').trim() || 'none';
-        return getAvailableBuiltInGroupings(mode).find((item) => item.id === wanted) || null;
-    }
-
-    function refreshBuiltInGroupingSelectOptions(mode = resultsState.activeMode) {
-        if (!builtInGroupingSelectEls.length) return;
-
-        const currentValue = getSelectedBuiltInGroupingId(mode);
-        const available = getAvailableBuiltInGroupings(mode);
-
-        builtInGroupingSelectEls.forEach((selectEl) => {
-            if (!selectEl) return;
-
-            selectEl.innerHTML = '';
-
-            for (const item of available) {
-                const opt = document.createElement('option');
-                opt.value = item.id;
-                opt.textContent = item.label;
-                if (item.id === currentValue) opt.selected = true;
-                selectEl.appendChild(opt);
-            }
-
-            selectEl.value = findBuiltInGroupingById(currentValue, mode) ? currentValue : 'none';
-        });
-    }
-
-    function applySelectedBuiltInGrouping(mode = resultsState.activeMode) {
-        const selectedBuiltInGroupingId = getSelectedBuiltInGroupingId(mode);
-        const selected = findBuiltInGroupingById(selectedBuiltInGroupingId, mode);
-
-        if (!selected || selected.id === 'custom' || !selected.groups) {
-            renderer.setIssueGroupingSpec(null);
-        } else {
-            renderer.setIssueGroupingSpec(selected.groups);
-            setLastResolvedGroupingSelectionId(selected.id, mode);
-        }
-
-        if (selected && selected.id === 'none') {
-            setLastResolvedGroupingSelectionId('none', mode);
-        }
-
-        if (mode === resultsState.activeMode) {
-            renderActiveBucket();
-        }
-    }
-
-    function buildVisualizationGroupingSelect() {
-        const wrapper = document.createElement('div');
-
-        const selectId = 'results-grouping-select';
-
-        const label = document.createElement('label');
-        label.textContent = 'Grouping';
-        label.htmlFor = selectId;
-        wrapper.appendChild(label);
-
-        const select = document.createElement('select');
-        select.id = selectId;
-        select.name = 'resultsGrouping';
-
-        const mode = resultsState.activeMode;
-        const available = getAvailableBuiltInGroupings(mode);
-        const selectedValue = findBuiltInGroupingById(getSelectedBuiltInGroupingId(mode), mode)
-            ? getSelectedBuiltInGroupingId(mode)
-            : 'none';;
-
-        for (const item of available) {
-            const opt = document.createElement('option');
-            opt.value = item.id;
-            opt.textContent = item.label;
-            if (item.id === selectedValue) {
-                opt.selected = true;
-            }
-            select.appendChild(opt);
-        }
-
-        wrapper.appendChild(select);
-
-        select.addEventListener('change', () => {
-            const value = select.value;
-            const nextValue = findBuiltInGroupingById(value, mode) ? value : 'none';
-
-            if (nextValue === 'custom') {
-                groupingPickerTargetMode = mode;
-                groupingFileInput?.click();
-
-                // Restore visible selection to the current resolved one,
-                // because the custom file picker has not loaded anything yet.
-                select.value = findBuiltInGroupingById(getSelectedBuiltInGroupingId(mode), mode)
-                    ? getSelectedBuiltInGroupingId(mode)
-                    : 'none';
-                return;
-            }
-
-            setSelectedBuiltInGroupingId(nextValue, mode);
-            updateResults(select, () => {
-                applySelectedBuiltInGrouping(mode);
-                announceGrouping();
-            });
-        });
-
-        function announceGrouping() {
-            const selectedGrouping = findBuiltInGroupingById(
-                getSelectedBuiltInGroupingId(mode),
-                mode
-            );
-            const labelText = selectedGrouping?.label || 'None';
-
-            if (mode === 'report') {
-                setStatusReport(
-                    getSelectedBuiltInGroupingId(mode) === 'none'
-                        ? 'Grouping disabled.'
-                        : `Grouping applied: ${labelText}`,
-                    STATUS.OK
-                );
-            } else {
-                setStatusRun(
-                    getSelectedBuiltInGroupingId(mode) === 'none'
-                        ? 'Grouping disabled.'
-                        : `Grouping applied: ${labelText}`,
-                    STATUS.OK
-                );
-            }
-        }
-
-        return wrapper;
-    }
-
-    function updateGroupingButtonUi() {
-        // No-op for now, old custom grouping buttons are hidden.
-    }
-
-    function setGroupingLoaded(isLoaded) {
-        groupingLoaded = !!isLoaded;
-        updateGroupingButtonUi();
-    }
-
-    setGroupingLoaded(false);
-
-    // track simple iteration vars for placeholder resolution
-    const liveVarState = {
-        index: undefined, // zero-based
-        oneBased: undefined, // one-based
-        total: undefined,
-        vars: Object.create(null)
-    };
-
-    // The step counter for the run in flight. Rebuilt per run because it is
-    // seeded from that run's actions, and cleared between runs so a stale plan
-    // can never be counted against new logs.
-    const liveStepState = {counter: null};
+    // In grouping-ui.js.
+    const groupingUi = createGroupingUi(app);
 
     /* ==================== UI helpers ==================== */
 
@@ -4314,16 +3990,16 @@ function storeActiveMode(mode) {
             const input = event.target;
             const file = input?.files?.[0] || null;
 
-            const mode = groupingPickerTargetMode || resultsState.activeMode;
-            groupingPickerTargetMode = null;
+            const mode = groupingUi.groupingPickerTargetMode || resultsState.activeMode;
+            groupingUi.groupingPickerTargetMode = null;
 
             // Always reset so picking the same file again triggers change
             input.value = '';
 
             if (!file) {
-                setSelectedBuiltInGroupingId(getLastResolvedGroupingSelectionId(mode), mode);
-                refreshBuiltInGroupingSelectOptions(mode);
-                applySelectedBuiltInGrouping(mode);
+                groupingUi.setSelectedBuiltInGroupingId(groupingUi.getLastResolvedGroupingSelectionId(mode), mode);
+                groupingUi.refreshBuiltInGroupingSelectOptions(mode);
+                groupingUi.applySelectedBuiltInGrouping(mode);
                 return;
             }
 
@@ -4347,34 +4023,34 @@ function storeActiveMode(mode) {
 
                 const res = validateGroupingForUi(parsed);
                 if (!res.ok) {
-                    setSelectedBuiltInGroupingId(getLastResolvedGroupingSelectionId(mode), mode);
-                    refreshBuiltInGroupingSelectOptions(mode);
-                    applySelectedBuiltInGrouping(mode);
+                    groupingUi.setSelectedBuiltInGroupingId(groupingUi.getLastResolvedGroupingSelectionId(mode), mode);
+                    groupingUi.refreshBuiltInGroupingSelectOptions(mode);
+                    groupingUi.applySelectedBuiltInGrouping(mode);
 
                     setStatusRun(`Invalid grouping file: ${res.message} Grouping disabled.`, STATUS.ERROR);
                     setStatusReport(`Invalid grouping file: ${res.message} Grouping disabled.`, STATUS.ERROR);
                     return;
                 }
 
-                setLoadedCustomGrouping({
+                groupingUi.setLoadedCustomGrouping({
                     id: 'custom-loaded',
                     label: `Custom: ${file.name}`,
                     groups: res.cleaned
                 }, mode);
 
-                setSelectedBuiltInGroupingId('custom-loaded', mode);
+                groupingUi.setSelectedBuiltInGroupingId('custom-loaded', mode);
 
-                refreshBuiltInGroupingSelectOptions(mode);
-                applySelectedBuiltInGrouping(mode);
+                groupingUi.refreshBuiltInGroupingSelectOptions(mode);
+                groupingUi.applySelectedBuiltInGrouping(mode);
 
                 setStatusRun(`Grouping loaded: ${file.name}`, STATUS.OK);
                 setStatusReport(`Grouping loaded: ${file.name}`, STATUS.OK);
             } catch (err) {
                 console.error('Could not load grouping JSON', err);
 
-                setSelectedBuiltInGroupingId(getLastResolvedGroupingSelectionId(mode), mode);
-                refreshBuiltInGroupingSelectOptions(mode);
-                applySelectedBuiltInGrouping(mode);
+                groupingUi.setSelectedBuiltInGroupingId(groupingUi.getLastResolvedGroupingSelectionId(mode), mode);
+                groupingUi.refreshBuiltInGroupingSelectOptions(mode);
+                groupingUi.applySelectedBuiltInGrouping(mode);
 
                 setStatusRun(`Could not load grouping JSON: ${String(err?.message || err)} Grouping disabled.`, STATUS.ERROR);
                 setStatusReport(`Could not load grouping JSON: ${String(err?.message || err)} Grouping disabled.`, STATUS.ERROR);
@@ -4389,14 +4065,14 @@ function storeActiveMode(mode) {
         if (liveStreamEl) liveStreamEl.style.display = 'none';
         const grid = $('#live-stream-grid');
         if (grid) grid.innerHTML = '';
-        liveVarState.index = undefined;
-        liveVarState.oneBased = undefined;
-        liveVarState.total = undefined;
-        liveVarState.vars = Object.create(null);
+        groupingUi.liveVarState.index = undefined;
+        groupingUi.liveVarState.oneBased = undefined;
+        groupingUi.liveVarState.total = undefined;
+        groupingUi.liveVarState.vars = Object.create(null);
 
         carousel?.clear?.();
         liveTotals?.reset?.();
-        liveStepState.counter = null;
+        groupingUi.liveStepState.counter = null;
     }
 
     /**
@@ -4411,23 +4087,23 @@ function storeActiveMode(mode) {
     function startStepCounter(actions, customSteps) {
         const api = globalThis.A11Y_WORKFLOW_STEP_COUNTER;
         if (!api || typeof api.createStepCounter !== 'function') {
-            liveStepState.counter = null;
+            groupingUi.liveStepState.counter = null;
             return;
         }
 
         try {
-            liveStepState.counter = api.createStepCounter({actions, customSteps});
-            liveTotals.setSteps(liveStepState.counter.snapshot());
+            groupingUi.liveStepState.counter = api.createStepCounter({actions, customSteps});
+            liveTotals.setSteps(groupingUi.liveStepState.counter.snapshot());
         } catch {
             // A workflow the planner cannot walk still deserves to run.
-            liveStepState.counter = null;
+            groupingUi.liveStepState.counter = null;
         }
     }
 
     // The label helpers are shared with the watch dialog's live view
     // (src/js/live-view.js); the run tab's resolve against its own vars.
-    const resolveLabelTemplate = (raw, localVars) => resolveLiveLabel(raw, localVars, liveVarState);
-    const deriveScreenshotCaption = (extra) => deriveLiveScreenshotCaption(extra, liveVarState);
+    const resolveLabelTemplate = (raw, localVars) => resolveLiveLabel(raw, localVars, groupingUi.liveVarState);
+    const deriveScreenshotCaption = (extra) => deriveLiveScreenshotCaption(extra, groupingUi.liveVarState);
 
     const carouselContainer = $('#live-stream-grid');
     const carousel = carouselContainer && enhanceAsLiveCarousel(carouselContainer, {
@@ -4513,14 +4189,14 @@ function storeActiveMode(mode) {
         if (!m) return;
         const {oneBased, total} = m;
 
-        liveVarState.oneBased = Number.isFinite(oneBased) ? oneBased : undefined;
-        liveVarState.index = Number.isFinite(oneBased) ? oneBased - 1 : undefined;
+        groupingUi.liveVarState.oneBased = Number.isFinite(oneBased) ? oneBased : undefined;
+        groupingUi.liveVarState.index = Number.isFinite(oneBased) ? oneBased - 1 : undefined;
 
         // allow "unknown total" represented as null
         if (total === null) {
-            liveVarState.total = undefined;
+            groupingUi.liveVarState.total = undefined;
         } else {
-            liveVarState.total = Number.isFinite(total) ? total : undefined;
+            groupingUi.liveVarState.total = Number.isFinite(total) ? total : undefined;
         }
 
         tryUpdateLiveScanTitles();
@@ -4529,8 +4205,8 @@ function storeActiveMode(mode) {
 
     /** Handle a single progress log entry (exact same behavior, just extracted) */
     const progressProcessor = createProgressProcessor({
-        liveVarState,
-        liveStepState,
+        liveVarState: groupingUi.liveVarState,
+        liveStepState: groupingUi.liveStepState,
         appendLog,
         resolveStepRefForLogEntry,
         parseForEachIteration,
@@ -6927,7 +6603,7 @@ function storeActiveMode(mode) {
 
         containerEl.appendChild(summaryReport);
 
-        const groupingSelect = buildVisualizationGroupingSelect();
+        const groupingSelect = groupingUi.buildVisualizationGroupingSelect();
         if (groupingSelect) {
             containerEl.appendChild(groupingSelect);
         }
