@@ -7149,7 +7149,9 @@ body.queue-mode-active #screenshots-container { display: none; }
 .compare-report-arrow:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
 .compare-report-arrow:disabled { opacity: .35; cursor: default; }
 .compare-report-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.compare-report-meta { font-size: var(--fs-xs); color: var(--text-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 34ch; }
+/* Wraps rather than being cut: with wider text spacing (WCAG 1.4.12) or a
+   long name, the end of the name and the date would be lost. */
+.compare-report-meta { font-size: var(--fs-xs); color: var(--text-soft); max-width: 34ch; min-width: 0; overflow-wrap: anywhere; }
 .compare-report-meta:empty { display: none; }
 .compare-report-x { font: inherit; font-size: var(--fs-md); line-height: 1; color: var(--text-soft); background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm); padding: 2px 7px; cursor: pointer; }
 .compare-report-x:hover { color: var(--danger); background: var(--danger-soft); }

@@ -36,6 +36,28 @@ the demo shop, each one file that opens in any browser.
 Scans check against WCAG 2.2 (A, AA, AAA) and EN 301 549 (V4.1.1 and
 V3.2.1), with surea11y applying each standard in full.
 
+## How far to trust it
+
+What the lab finds, surea11y finds, and surea11y is checked against the
+W3C's own test cases for accessibility rules
+([ACT](https://www.w3.org/WAI/standards-guidelines/act/rules/)). On the 957
+cases of the 60 rules it implements, it flags none that the W3C marks as
+passing or not applying. It misses 18 of the cases the W3C marks as failing,
+most of them judgement calls. Where it cannot decide, it says so ("can't
+tell") and gives the steps to check by hand, rather than guessing.
+
+Those are results on those cases, not a promise for every page. Automated
+checks cover only part of WCAG, so a report with no failures is not a claim
+that a site conforms.
+
+These figures are from 26 October 2026. The current ones are in
+[core's README](https://github.com/SureA11y/core#checked-against-the-act-corpus).
+The [EARL implementation report](https://surea11y.github.io/act-report/act-report.jsonld)
+has the outcome of every case, and
+[ACT_RULE_MAPPING.md](https://github.com/SureA11y/core/blob/main/docs/ACT_RULE_MAPPING.md)
+lists each miss with the reasoning. Every report and comparison links there
+too, beside the engine's name.
+
 ## Quick start
 
 Requires Node.js 22.13 or later, or 24 or later.

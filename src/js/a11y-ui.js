@@ -35,7 +35,7 @@ import {
 import {createConfigIO} from './config-io.js';
 import {createRenderer} from './a11y-ui.rendering.js';
 import {SCAN_FIELDS, pickFindingFields, optInRulesLabel, CANONICAL_FIELDS} from './report-fields.js';
-import {enginesHTML} from './engine-brand.js';
+import {enginesHTML, howTestedHTML} from './engine-brand.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
 import {setupModeSwitch} from './tabs-ui.js';
 import {createRunQueuePanel, describeRunNow} from './run-queue-panel.js';
@@ -4330,7 +4330,7 @@ function storeActiveMode(mode) {
         const engines = comparisonController.engines();
         if (!engines.length) return '';
         const label = engines.length > 1 ? 'Engines' : 'Engine';
-        return `<li><strong>${label}:</strong> <span>${enginesHTML(engines)}</span></li>`;
+        return `<li><strong>${label}:</strong> <span>${enginesHTML(engines)}${howTestedHTML(engines)}</span></li>`;
     }
 
     function writeComparisonData() {
@@ -9655,7 +9655,7 @@ function storeActiveMode(mode) {
         const engines = collectReportEngines(data);
         if (engines.length) {
             const label = engines.length > 1 ? 'Engines' : 'Engine';
-            const value = enginesHTML(engines);
+            const value = enginesHTML(engines) + howTestedHTML(engines);
             // Not editable: what ran is the one thing on this line the report
             // cannot be talked out of.
             reportData += `<li><strong>${label}:</strong> <span>${value}</span></li>`;
