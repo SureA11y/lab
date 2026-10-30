@@ -85,6 +85,14 @@
 
 .results-container .stream-counts,
 .scan-results-meta .stream-counts {
+    white-space: normal;
+}
+
+/* The line wraps between its counts, never inside one: on a narrow screen
+   with WCAG 1.4.12's text spacing it needs more than one line, and kept on
+   one (it was nowrap) its last count was cut off at the card's edge. */
+.results-container .stream-counts > span,
+.scan-results-meta .stream-counts > span {
     white-space: nowrap;
 }
 

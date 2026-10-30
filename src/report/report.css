@@ -1422,6 +1422,11 @@ a:hover { text-decoration-thickness: 2px; }
 
 .results-container .stream-counts,
 .scan-results-meta .stream-counts {
+    white-space: normal;
+}
+/* Wraps between its counts, never inside one (WCAG 1.4.12). Mirrors the app. */
+.results-container .stream-counts > span,
+.scan-results-meta .stream-counts > span {
     white-space: nowrap;
 }
 .screenshot-card button.screenshot-btn {
