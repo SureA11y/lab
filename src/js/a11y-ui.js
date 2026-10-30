@@ -2529,28 +2529,10 @@ function storeActiveMode(mode) {
         return target;
     }
 
-    function averageTopLevelNumericMetrics(list) {
-        const out = {};
-        const counts = {};
-
-        for (const item of list) {
-            if (!item || typeof item !== 'object') continue;
-
-            for (const [key, value] of Object.entries(item)) {
-                if (typeof value === 'number' && Number.isFinite(value)) {
-                    out[key] = (out[key] || 0) + value;
-                    counts[key] = (counts[key] || 0) + 1;
-                }
-            }
-        }
-
-        for (const key of Object.keys(out)) {
-            out[key] = counts[key] ? out[key] / counts[key] : out[key];
-        }
-
-        return out;
-    }
-
+    // The run's summary over `scans`: the scores, coverage and statistics as
+    // the server builds them for a run (shared/global-summary.js), from all the
+    // scans' findings together, since a page on its own often has too little
+    // to score; with the totals and the page measurements added up here.
     function buildGlobalSummary({ scans, metricDefs = {} }) {
         const list = Array.isArray(scans) ? scans : [];
 
@@ -2561,7 +2543,6 @@ function storeActiveMode(mode) {
 
         const domMetricsAgg = {};
         const a11yTotalsAgg = {};
-        const scoreEntries = [];
 
         for (const scan of list) {
             const findings = Array.isArray(scan?.canonical?.findings) ? scan.canonical.findings : [];
@@ -2580,13 +2561,12 @@ function storeActiveMode(mode) {
             if (scan?.metrics?.a11ySummary?.totals && typeof scan.metrics.a11ySummary.totals === 'object') {
                 sumNumericLeaves(a11yTotalsAgg, scan.metrics.a11ySummary.totals);
             }
-
-            if (scan?.metrics?.a11ySummary?.scores && typeof scan.metrics.a11ySummary.scores === 'object') {
-                scoreEntries.push(scan.metrics.a11ySummary.scores);
-            }
         }
 
-        const averagedScores = averageTopLevelNumericMetrics(scoreEntries);
+        const pooled = globalThis.A11Y_GLOBAL_SUMMARY.buildGlobalSummary({
+            scans: list,
+            options: {domP90: 90, useMinConfidence: false}
+        }).a11ySummary || {};
 
         const totals = {
             ...a11yTotalsAgg,
@@ -2600,8 +2580,8 @@ function storeActiveMode(mode) {
         return {
             domMetrics: domMetricsAgg,
             a11ySummary: {
-                totals,
-                scores: averagedScores
+                ...pooled,
+                totals
             },
             metricDefs
         };
