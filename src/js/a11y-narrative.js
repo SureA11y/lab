@@ -84,8 +84,8 @@ export function renderA11yNarrative({ a11ySummary, domMetrics, metricDefs, seed,
   const inputs = s?.inputs || {};
   const flags = s?.flags || {};
 
-  // The findings' counts; `axe` is the name saved reports keep them under.
-  const counts = inputs.axe || {};
+  // The findings' counts.
+  const counts = inputs.engine || {};
   const controls = inputs.controls || {};
 
   const tm = d?.textMetrics || null;

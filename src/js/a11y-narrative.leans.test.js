@@ -13,7 +13,7 @@ before(async () => {
     ({ renderA11yNarrative } = await import('./a11y-narrative.js'));
 });
 
-const summary = (axe) => ({ scores: { adjusted: 70, evidence: 80, confidence: 60 }, inputs: { axe }, flags: {} });
+const summary = (engine) => ({ scores: { adjusted: 70, evidence: 80, confidence: 60 }, inputs: { engine }, flags: {} });
 const dom = { totalElements: 400 };
 
 describe('narrative: questions that lean fail', () => {

@@ -47,9 +47,9 @@ describe('grouping issues', () => {
     });
 
     test('a requirement no group takes is "Not in WCAG" when it corresponds to no WCAG criterion, else Others', () => {
-        const r = G.groupIssuesBySpec([rgaaUnlinked, { id: 'axe-only', SC: ['1.4.6'] }, { id: 'none', SC: [] }], [{ group: 'Contrast', WCAG: ['1.4.3'] }]);
+        const r = G.groupIssuesBySpec([rgaaUnlinked, { id: 'other-only', SC: ['1.4.6'] }, { id: 'none', SC: [] }], [{ group: 'Contrast', WCAG: ['1.4.3'] }]);
         assert.deepEqual(r.notInWcag.map((i) => i.id), ['rgaa-x']);
-        assert.deepEqual(r.unmatched.map((i) => i.id), ['axe-only', 'none']);
+        assert.deepEqual(r.unmatched.map((i) => i.id), ['other-only', 'none']);
     });
 
     test('a WCAG criterion matches exactly, a clause or RGAA criterion also by its start', () => {

@@ -44,19 +44,19 @@ const scanWith = (findings, engines) => ({
 describe('findingEngine', () => {
     test('reads the nested shape the facade stamps', async () => {
         const { findingEngine } = await load();
-        assert.deepEqual(findingEngine(serverFinding('axe', 'axe-core')), { id: 'axe', name: 'axe-core' });
+        assert.deepEqual(findingEngine(serverFinding('engine-b', 'Engine B')), { id: 'engine-b', name: 'Engine B' });
     });
 
     test('reads the flat shape an extension report carries', async () => {
         const { findingEngine } = await load();
-        assert.deepEqual(findingEngine(extensionFinding('axe', 'axe-core')), { id: 'axe', name: 'axe-core' });
+        assert.deepEqual(findingEngine(extensionFinding('engine-b', 'Engine B')), { id: 'engine-b', name: 'Engine B' });
     });
 
     test('falls back to the id when no name is recorded', async () => {
         const { findingEngine } = await load();
-        assert.deepEqual(findingEngine({ provenance: { engineId: 'qualweb-act' } }), {
-            id: 'qualweb-act',
-            name: 'qualweb-act',
+        assert.deepEqual(findingEngine({ provenance: { engineId: 'engine-d' } }), {
+            id: 'engine-d',
+            name: 'engine-d',
         });
     });
 
@@ -73,10 +73,10 @@ describe('collectEngineOptions', () => {
         const { collectEngineOptions } = await load();
         const scans = [
             scanWith([serverFinding('surea11y', 'surea11y')], [{ id: 'surea11y', name: 'surea11y' }]),
-            scanWith([serverFinding('axe', 'axe-core')], [{ id: 'axe', name: 'axe-core' }]),
+            scanWith([serverFinding('engine-b', 'Engine B')], [{ id: 'engine-b', name: 'Engine B' }]),
         ];
         assert.deepEqual(collectEngineOptions(scans), [
-            { key: 'axe', label: 'axe-core' },
+            { key: 'engine-b', label: 'Engine B' },
             { key: 'surea11y', label: 'surea11y' },
         ]);
     });
@@ -85,17 +85,17 @@ describe('collectEngineOptions', () => {
         // It only exists in the scan's declared engine list. Selecting it - to
         // see that it found nothing - is a legitimate thing to want.
         const { collectEngineOptions } = await load();
-        const scans = [scanWith([serverFinding('axe', 'axe-core')], [
-            { id: 'axe', name: 'axe-core' },
-            { id: 'pa11y', name: 'Pa11y (axe)' },
+        const scans = [scanWith([serverFinding('engine-b', 'Engine B')], [
+            { id: 'engine-b', name: 'Engine B' },
+            { id: 'engine-c', name: 'Engine C' },
         ])];
-        assert.deepEqual(collectEngineOptions(scans).map((o) => o.key), ['axe', 'pa11y']);
+        assert.deepEqual(collectEngineOptions(scans).map((o) => o.key), ['engine-b', 'engine-c']);
     });
 
     test('finds engines in a report whose scans lost their engine list', async () => {
         const { collectEngineOptions } = await load();
-        const scans = [{ id: 's', canonical: { findings: [serverFinding('axe', 'axe-core')] } }];
-        assert.deepEqual(collectEngineOptions(scans), [{ key: 'axe', label: 'axe-core' }]);
+        const scans = [{ id: 's', canonical: { findings: [serverFinding('engine-b', 'Engine B')] } }];
+        assert.deepEqual(collectEngineOptions(scans), [{ key: 'engine-b', label: 'Engine B' }]);
     });
 
     test('is empty when nothing records an engine', async () => {

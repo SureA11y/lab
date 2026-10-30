@@ -19,7 +19,7 @@
  * Engine-agnostic runtime:
  * - Evidence is computed from canonical findings across scans.
  * - If a caller explicitly provides mergedA11y, we still support it for debug/compat.
- * - Output uses neutral keys (engine), with legacy axe aliases preserved.
+ * - Output uses neutral keys (engine).
  */
 
 // Shared by the server, which builds a run's summary, and the app, which
@@ -233,9 +233,6 @@
             }
         };
     }
-
-    // Backward-compatible alias
-    const computePortfolioAxeInputs = computePortfolioMergedInputs;
 
     /**
      * Build a "global domMetrics" object with the same shape as collectDomMetrics().
@@ -517,16 +514,8 @@
             engineCounts: m.counts
         };
 
-        // Legacy aliases
-        out.axeCounts = out.engineCounts;
-        out.riskAxeRaw = out.riskRaw;
-        out.riskAxeClamped = out.riskClamped;
-
         return out;
     }
-
-    // Backward-compatible alias
-    const computeGlobalEvidenceFromMergedAxe = computeGlobalEvidenceFromMerged;
 
     /**
      * Compute portfolio evidence inputs directly from canonical findings across scans.
@@ -640,11 +629,6 @@
             riskClamped: Math.round(riskClamped * 10) / 10,
             evidence: Math.round(evidence)
         };
-
-        // Legacy aliases
-        out.axeCounts = out.engineCounts;
-        out.riskAxeRaw = out.riskRaw;
-        out.riskAxeClamped = out.riskClamped;
 
         return out;
     }
@@ -854,11 +838,6 @@
             base.scores.adjusted = Math.round(composeAdjusted(100 - ev.evidence, safeNum(base.scores.confidence, 100) / 100));
         }
 
-        // Backward-compatible aliases (keep until UI no longer expects them)
-        base.inputs.axe = base.inputs.engine;
-        base.inputs.risk.axeRaw = base.inputs.risk.engineRaw;
-        base.inputs.risk.axeClamped = base.inputs.risk.engineClamped;
-
         if (useMinConfidence) {
             // A withheld score is absent, not zero. safeNum(null) would return 0 here,
             // silently dragging the portfolio down with pages that reported nothing.
@@ -937,10 +916,6 @@
 
         // Neutral names
         computePortfolioMergedInputs,
-        computeGlobalEvidenceFromMerged,
-
-        // Backward-compatible exports
-        computePortfolioAxeInputs,
-        computeGlobalEvidenceFromMergedAxe
+        computeGlobalEvidenceFromMerged
     };
 });

@@ -85,7 +85,7 @@ describe('a11y-labs-engine: normalizeSeverity', () => {
         }
     });
 
-    test('alias spellings are mapped to their canonical equivalent (matching canonical-shared.js / pa11y-engine.js)', () => {
+    test('alias spellings are mapped to their canonical equivalent (matching canonical-shared.js)', () => {
         assert.equal(normalizeSeverity('severe'), 'serious');
         assert.equal(normalizeSeverity('low'), 'minor');
         assert.equal(normalizeSeverity('medium'), 'moderate');
@@ -1180,7 +1180,7 @@ describe('a11y-labs-engine: saveHtmlReport', () => {
         const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'labs-report-'));
         try {
             assert.equal(saveHtmlReport({ native: null }, { outDir }), null);
-            assert.equal(saveHtmlReport({ native: { byEngine: { axe: { checksResults: [] } } } }, { outDir }), null);
+            assert.equal(saveHtmlReport({ native: { byEngine: { 'engine-b': { checksResults: [] } } } }, { outDir }), null);
             assert.deepEqual(fs.readdirSync(outDir), []);
         } finally {
             fs.rmSync(outDir, { recursive: true, force: true });

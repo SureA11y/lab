@@ -167,7 +167,7 @@ still writes the partial payload. `src/cli/run-spec.js` normalizes the input and
 reports every problem in one pass instead of failing on the first.
 
 Verified with the server running: the CLI and
-`/workflow-start` produced identical findings, occurrence counts, axe inputs,
+`/workflow-start` produced identical findings, occurrence counts, findings inputs,
 DOM totals and metric scores from the same spec.
 
 **Phase 2 — the run spec. Done.** The format and its normalization live in

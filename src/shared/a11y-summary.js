@@ -333,7 +333,7 @@
         const incompleteDepthPer1k = (sumWeightedInstanceDepth(incomplete) / domTotal) * 1000;
 
         // Tune: slower saturation to avoid collapsing to 0 too easily
-        const riskAxeRaw =
+        const riskByDomRaw =
             satScore(violationBreadth, 8) +
             0.25 * satScore(incompleteBreadth, 10) +
             satScore(violationDepthPer1k, 35) +
@@ -341,11 +341,11 @@
 
         // Convert sum into a weighted average so risk stays 0..100
         const riskWeightsSum = (1 + 0.25 + 1 + 0.2);
-        const riskAxe = clamp(riskAxeRaw / riskWeightsSum, 0, 100);
+        const riskByDom = clamp(riskByDomRaw / riskWeightsSum, 0, 100);
 
         // Superseded as the headline by the content-normalized model below, kept so a
         // run can still be compared against how it used to score.
-        const evidenceByDom = clamp(100 - riskAxe, 0, 100);
+        const evidenceByDom = clamp(100 - riskByDom, 0, 100);
 
         // ---- Content-normalized risk (drives the headline) ----
         const contentUnits = contentUnitsFrom(domMetrics, textMetrics);
@@ -476,7 +476,7 @@
         return {
             inputs: {
                 domTotal,
-                axe: {
+                engine: {
                     violations: violations.length,
                     incomplete: incomplete.length,
                     // Of the incomplete checks' questions, those whose evidence
@@ -493,8 +493,8 @@
                     incompleteWeighted: Math.round(incompleteDepthPer1k * 10) / 10
                 },
                 risk: {
-                    axeRaw: Math.round(riskAxeRaw * 10) / 10,
-                    axeClamped: Math.round(riskAxe * 10) / 10,
+                    engineRaw: Math.round(riskByDomRaw * 10) / 10,
+                    engineClamped: Math.round(riskByDom * 10) / 10,
                     contentRaw: Math.round(riskContentRaw * 10) / 10,
                     contentClamped: Math.round(riskContent * 10) / 10,
                     // what the headline is actually 100 minus

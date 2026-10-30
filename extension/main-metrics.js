@@ -148,16 +148,16 @@
         const violationDepthPer1k = (sumWeightedInstanceDepth(violations) / domTotal) * 1000;
         const incompleteDepthPer1k = (sumWeightedInstanceDepth(incomplete) / domTotal) * 1000;
 
-        const riskAxeRaw =
+        const riskByDomRaw =
             satScore(violationBreadth, 8) +
             0.25 * satScore(incompleteBreadth, 10) +
             satScore(violationDepthPer1k, 35) +
             0.2 * satScore(incompleteDepthPer1k, 45);
 
         const riskWeightsSum = (1 + 0.25 + 1 + 0.2);
-        const riskAxe = clamp(riskAxeRaw / riskWeightsSum, 0, 100);
+        const riskByDom = clamp(riskByDomRaw / riskWeightsSum, 0, 100);
 
-        const evidence = clamp(100 - riskAxe, 0, 100);
+        const evidence = clamp(100 - riskByDom, 0, 100);
 
         const semanticRatio = safeNum(domMetrics && domMetrics.semanticRatio, 0);
         const coverageRatio = safeNum(domMetrics && domMetrics.coverageRatio, 0);
@@ -226,7 +226,7 @@
         return {
             inputs: {
                 domTotal,
-                axe: { violations: violations.length, incomplete: incomplete.length, passes: passes.length },
+                engine: { violations: violations.length, incomplete: incomplete.length, passes: passes.length },
                 breadth: {
                     violationsWeighted: Math.round(violationBreadth * 10) / 10,
                     incompleteWeighted: Math.round(incompleteBreadth * 10) / 10
@@ -235,7 +235,7 @@
                     violationsWeighted: Math.round(violationDepthPer1k * 10) / 10,
                     incompleteWeighted: Math.round(incompleteDepthPer1k * 10) / 10
                 },
-                risk: { axeRaw: Math.round(riskAxeRaw * 10) / 10, axeClamped: Math.round(riskAxe * 10) / 10 },
+                risk: { engineRaw: Math.round(riskByDomRaw * 10) / 10, engineClamped: Math.round(riskByDom * 10) / 10 },
                 controls: {
                     linksPer1k: Math.round(linksPer1k * 10) / 10,
                     linkTextShare: Math.round(linkTextShare * 1000) / 1000,

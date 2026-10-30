@@ -49,7 +49,7 @@
       <a href="#common">Common helper functions</a>
       <a href="#dom">DOM metrics</a>
       <a href="#text">Text metrics</a>
-      <a href="#axe">Findings-derived metrics</a>
+      <a href="#findings">Findings-derived metrics</a>
       <a href="#scores">Scores</a>
       <a href="#flags">Flags</a>
       <a href="#portfolio">Portfolio / multi-page summaries</a>
@@ -543,7 +543,7 @@ sumWeightedInstanceDepth(items) = Σ weightForImpact(item.impact) * sqrt(max(0, 
       </table>
     </section>
 
-    <section id="axe">
+    <section id="findings">
       <div class="callout"><p><strong>In plain English</strong></p><p>This section turns canonical findings into a single “risk” number by combining two ideas: how many different rule types fail (breadth) and how widespread the failures are (depth). Both are weighted by severity, and depth is normalized against how much of the page there was to evaluate. The result is then flipped into an “evidence” score so that higher is better.</p></div>
 
       <h2>Risk and evidence</h2>
@@ -589,16 +589,16 @@ riskContent = clamp(riskContentRaw / riskWeightsSum, 0, 100)</code></pre>
 
       <h3>Superseded: the DOM-normalized model</h3>
       <p class="small">An earlier version of this pipeline normalized depth per 1000 raw DOM nodes instead of per
-        content unit. That model is still computed and returned - as <code>inputs.risk.axeRaw</code>/<code>axeClamped</code>
+        content unit. That model is still computed and returned - as <code>inputs.risk.engineRaw</code>/<code>engineClamped</code>
         and <code>scores.evidenceByDom</code> - purely so a run can be compared against how it used to score. It no
         longer feeds the headline <code>scores.evidence</code> or <code>scores.adjusted</code>.</p>
       <pre><code>violationDepthPer1k  = ( Σ weightForImpact(v.impact) * sqrt(v.nodes.length) / domTotal ) * 1000
 incompleteDepthPer1k = ( Σ weightForImpact(i.impact) * sqrt(i.nodes.length) / domTotal ) * 1000
 
-riskAxeRaw = satScore(violationBreadth, 8) + 0.25 * satScore(incompleteBreadth, 10)
+riskByDomRaw = satScore(violationBreadth, 8) + 0.25 * satScore(incompleteBreadth, 10)
            + satScore(violationDepthPer1k, 35) + 0.2 * satScore(incompleteDepthPer1k, 45)
-riskAxe = clamp(riskAxeRaw / 2.45, 0, 100)
-evidenceByDom = clamp(100 - riskAxe, 0, 100)</code></pre>
+riskByDom = clamp(riskByDomRaw / 2.45, 0, 100)
+evidenceByDom = clamp(100 - riskByDom, 0, 100)</code></pre>
     </section>
 
     <section id="scores">

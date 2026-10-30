@@ -112,8 +112,8 @@ export function generateA11yMetricsContents({a11ySummary, domMetrics, coverageSu
     const inputs = s && s.inputs ? s.inputs : {};
     const flags = s && s.flags ? s.flags : {};
 
-    // The findings' counts; `axe` is the name saved reports keep them under.
-    const counts = inputs.axe || {};
+    // The findings' counts.
+    const counts = inputs.engine || {};
     const controls = inputs.controls || {};
 
     const tm = d && d.textMetrics ? d.textMetrics : null;
@@ -327,8 +327,8 @@ function renderScoreState(a11ySummary) {
 
     const inputs = (a11ySummary && a11ySummary.inputs) ? a11ySummary.inputs : {};
     const units = inputs.contentUnits || {};
-    // The findings' counts; `axe` is the name saved reports keep them under.
-    const counts = inputs.axe || {};
+    // The findings' counts.
+    const counts = inputs.engine || {};
 
     const size = Number(units.primarySize);
     const sizeText = Number.isFinite(size)

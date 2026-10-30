@@ -66,10 +66,7 @@ function snapshotPartialOut(ctx, actionResults, extra = null) {
 /** ------------- artifacts estimator (a11y scans + screenshots) -------- */
 
 function countPlannedArtifacts(actions, customStepsRaw = null) {
-    // Backward compatible return keys:
-    // - a11yScans is the engine-agnostic name
-    // - axe is kept as an alias for older callers (same number as a11yScans)
-    if (!Array.isArray(actions)) return {a11yScans: 0, screenshots: 0, evidence: 0, totalArtifacts: 0, axe: 0};
+    if (!Array.isArray(actions)) return {a11yScans: 0, screenshots: 0, evidence: 0, totalArtifacts: 0};
 
     const add = (a, b) => ({
         a11yScans: a.a11yScans + b.a11yScans,
@@ -189,8 +186,7 @@ function countPlannedArtifacts(actions, customStepsRaw = null) {
         a11yScans,
         screenshots,
         evidence,
-        totalArtifacts: a11yScans + screenshots + evidence,
-        axe: a11yScans
+        totalArtifacts: a11yScans + screenshots + evidence
     };
 }
 

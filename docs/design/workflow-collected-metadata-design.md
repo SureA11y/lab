@@ -196,7 +196,7 @@ metadata entry) was deferred as a fast-follow; only the metadata→log direction
 
 Included automatically in the in-app "Download JSON" export (a side effect of the
 `prepareDataForReport` fix above — both go through the same function). Deliberately
-**not** added to the on-disk per-scan report sidecar (`saveAxeHtmlReport`): that file is
+**not** added to the on-disk per-scan report sidecar (`saveHtmlReport`): that file is
 written once per scan, while `collectedOutputs` is a whole-run aggregate with no clean
 way to partition per scan — bolting it on would just duplicate the same array into every
 scan's file. A flat CSV export of a single key's values was deferred as a fast-follow.

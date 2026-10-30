@@ -32,7 +32,7 @@ before(async () => {
 
 function summary(overrides = {}) {
     return {
-        inputs: {domTotal: 1000, axe: {violations: 2, incomplete: 1, passes: 5}, controls: {}},
+        inputs: {domTotal: 1000, engine: {violations: 2, incomplete: 1, passes: 5}, controls: {}},
         scores: {evidence: 70, readiness: 60, confidence: 90, adjusted: 63, avgPageAccessibility: 63},
         flags: {manualReviewNeeded: true},
         ...overrides
@@ -500,7 +500,7 @@ describe('metrics panel: a scan too thin to measure', () => {
     const thin = summary({
         inputs: {
             domTotal: 146,
-            axe: {violations: 2, incomplete: 5, passes: 32},
+            engine: {violations: 2, incomplete: 5, passes: 32},
             controls: {},
             contentUnits: {evaluable: 12, primary: 'evaluable', primarySize: 12}
         },

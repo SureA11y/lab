@@ -102,7 +102,7 @@ function scanWith(target, html = '<img class="hero">') {
                 outcome: 'fail',
                 severity: 'critical',
                 title: 'Images must have alternative text',
-                provenance: {engine: {name: 'axe-core'}},
+                provenance: {engine: {name: 'Engine B'}},
                 occurrences: [{target, html, failureSummary: 'Fix this', outcome: 'fail'}],
             }],
         },

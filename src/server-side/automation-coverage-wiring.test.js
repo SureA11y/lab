@@ -48,7 +48,7 @@ describe('runner automation coverage', () => {
     });
 
     test('a failed engine lookup does not poison the default engine cache', async () => {
-        await getAutomationCoverage('AA', 'axe');
+        await getAutomationCoverage('AA', 'engine-b');
         const cov = await getAutomationCoverage('AA');
         assert.ok(cov && cov.totals.inScope === 55);
     });

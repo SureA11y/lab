@@ -10,9 +10,7 @@ const {
     buildScanCoverage,
     automationCoverageFromScans,
     computePortfolioMergedInputs,
-    computeGlobalEvidenceFromMerged,
-    computePortfolioAxeInputs,
-    computeGlobalEvidenceFromMergedAxe
+    computeGlobalEvidenceFromMerged
 } = require('./global-summary');
 
 const { buildA11ySummary } = require('./a11y-summary');
@@ -74,10 +72,6 @@ describe('computePortfolioMergedInputs', () => {
         assert.deepEqual(out.breadth, { violationsWeighted: 0, incompleteWeighted: 0 });
         assert.deepEqual(out.depthAbs, { violationsWeighted: 0, incompleteWeighted: 0 });
     });
-
-    test('computePortfolioAxeInputs is a backward-compatible alias for the same function', () => {
-        assert.equal(computePortfolioAxeInputs, computePortfolioMergedInputs);
-    });
 });
 
 describe('computeGlobalEvidenceFromMerged', () => {
@@ -96,17 +90,6 @@ describe('computeGlobalEvidenceFromMerged', () => {
             violations: Array.from({ length: 5 }, () => ({ impact: 'critical', nodes: [{}, {}, {}] }))
         }, 500);
         assert.ok(heavy.evidence < light.evidence);
-    });
-
-    test('exposes legacy aliases (axeCounts, riskAxeRaw, riskAxeClamped) mirroring the neutral names', () => {
-        const out = computeGlobalEvidenceFromMerged({ violations: [{ impact: 'serious', nodes: [] }] }, 500);
-        assert.equal(out.axeCounts, out.engineCounts);
-        assert.equal(out.riskAxeRaw, out.riskRaw);
-        assert.equal(out.riskAxeClamped, out.riskClamped);
-    });
-
-    test('computeGlobalEvidenceFromMergedAxe is a backward-compatible alias', () => {
-        assert.equal(computeGlobalEvidenceFromMergedAxe, computeGlobalEvidenceFromMerged);
     });
 });
 
@@ -514,12 +497,11 @@ describe('buildGlobalSummary', () => {
         assert.ok(out.a11ySummary.inputs.depthPer1k.incompleteWeighted > 0);
     });
 
-    test('backward-compatible aliases mirror the neutral engine-based fields', () => {
+    test('the portfolio names its counts and risk after no engine in particular', () => {
         const scans = [scan({ findings: [{ uid: 'a', outcome: 'fail', severity: 'serious', occurrences: [{}] }] })];
         const out = buildGlobalSummary({ scans });
-        assert.equal(out.a11ySummary.inputs.axe, out.a11ySummary.inputs.engine);
-        assert.equal(out.a11ySummary.inputs.risk.axeRaw, out.a11ySummary.inputs.risk.engineRaw);
-        assert.equal(out.a11ySummary.inputs.risk.axeClamped, out.a11ySummary.inputs.risk.engineClamped);
+        assert.equal(out.a11ySummary.inputs.engine.violations, 1);
+        assert.deepEqual(Object.keys(out.a11ySummary.inputs.risk), ['engineRaw', 'engineClamped']);
     });
 
     test('an alias severity spelling ("severe") produces the same portfolio evidence as its canonical equivalent ("serious"), and the same as buildA11ySummary would score it per-page - both paths share one normalization function', () => {

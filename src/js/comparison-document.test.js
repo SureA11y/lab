@@ -297,23 +297,23 @@ describe('comparison document: opt-in rules', () => {
 describe('comparison document: engine releases', () => {
     const withEngines = (o, engines) => ({ ...report(o), scans: [{ id: 's', canonical: { findings: [], engines } }] });
     const sa = (version) => ({ id: 'surea11y', name: 'surea11y', version });
-    const axe = (version) => ({ id: 'axe', name: 'axe-core', version });
+    const engineB = (version) => ({ id: 'engine-b', name: 'Engine B', version });
 
     test('a report\'s identity lists the engine releases its scans ran, once each', () => {
         const { reportIdentity } = require('../shared/report-identity.js');
         const r = { ...report(), scans: [
-            { id: 's1', canonical: { engines: [sa('1.10.0'), axe('4.12.1')] } },
+            { id: 's1', canonical: { engines: [sa('1.10.0'), engineB('4.12.1')] } },
             { id: 's2', canonical: { engines: [sa('1.10.0')] } },
         ] };
-        assert.deepEqual(reportIdentity(r).engines, [{ name: 'axe-core', version: '4.12.1' }, { name: 'surea11y', version: '1.10.0' }]);
+        assert.deepEqual(reportIdentity(r).engines, [{ name: 'Engine B', version: '4.12.1' }, { name: 'surea11y', version: '1.10.0' }]);
         assert.deepEqual(reportIdentity(report()).engines, []);
     });
 
     test('names the engines whose release differs, in column order, and warns', async () => {
         const { provenanceHTML } = await load();
         const reports = [
-            withEngines({ runId: 'a' }, [sa('1.9.0'), axe('4.12.1')]),
-            withEngines({ runId: 'b' }, [sa('1.10.0'), axe('4.12.1')]),
+            withEngines({ runId: 'a' }, [sa('1.9.0'), engineB('4.12.1')]),
+            withEngines({ runId: 'b' }, [sa('1.10.0'), engineB('4.12.1')]),
         ];
         const d = doc(reports);
         assert.deepEqual(d.engineChanges, [{ name: 'surea11y', versions: ['1.9.0', '1.10.0'] }]);
@@ -321,14 +321,14 @@ describe('comparison document: engine releases', () => {
         assert.match(html, /different releases of\s+surea11y \(1\.9\.0, 1\.10\.0\)/);
         // surea11y as its brand tag, as the report names it; another engine as text.
         assert.match(html, /class="engine-brand" aria-label="surea11y core 1\.9\.0"/);
-        const other = provenanceHTML([{ label: 'A', name: 'x', engines: [{ name: 'axe-core', version: '4.12.1' }] }], d);
-        assert.match(other, /<span class="doc-engines">axe-core 4\.12\.1<\/span>/);
+        const other = provenanceHTML([{ label: 'A', name: 'x', engines: [{ name: 'Engine B', version: '4.12.1' }] }], d);
+        assert.match(other, /<span class="doc-engines">Engine B 4\.12\.1<\/span>/);
     });
 
     test('no warning for the same releases, a missing version, or an engine only one report ran', () => {
         assert.deepEqual(doc([withEngines({ runId: 'a' }, [sa('1.10.0')]), withEngines({ runId: 'b' }, [sa('1.10.0')])]).engineChanges, []);
         assert.deepEqual(doc([withEngines({ runId: 'a' }, [sa(null)]), withEngines({ runId: 'b' }, [sa('1.10.0')])]).engineChanges, []);
-        assert.deepEqual(doc([withEngines({ runId: 'a' }, [sa('1.10.0')]), withEngines({ runId: 'b' }, [sa('1.10.0'), axe('4.12.1')])]).engineChanges, []);
+        assert.deepEqual(doc([withEngines({ runId: 'a' }, [sa('1.10.0')]), withEngines({ runId: 'b' }, [sa('1.10.0'), engineB('4.12.1')])]).engineChanges, []);
     });
 });
 

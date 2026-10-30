@@ -339,7 +339,7 @@ describe('normalizeRunSpec', () => {
 
     describe('engines and selectors', () => {
         test('does not read a run-level engine: each scan step names its own', () => {
-            const { ok, spec, warnings } = normalize(specWith({ scanEngine: 'axe' }));
+            const { ok, spec, warnings } = normalize(specWith({ scanEngine: 'engine-b' }));
             assert.equal(ok, true);
             assert.ok(!('scanEngine' in spec));
             assert.deepEqual(warnings, ['"scanEngine" is not read any more: each scan step names its engine (its "engine" field), and a step without one runs with the default engine']);
