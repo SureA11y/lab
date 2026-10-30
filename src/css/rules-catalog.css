@@ -221,13 +221,16 @@ label.rules-catalog__name { cursor: pointer; }
 
     list-style: none;
     display: grid;
+    /* Rows no wider than the block, whatever a value holds: a long date or
+       the engine's tag sized it past a phone's screen with text spacing. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 5px;
 }
 
 /* Each row becomes a 2-column layout: label | value */
 .report-meta > li {
     display: grid;
-    grid-template-columns: 110px 1fr;
+    grid-template-columns: 110px minmax(0, 1fr);
     align-items: start;
     gap: 0;
 
@@ -255,7 +258,7 @@ label.rules-catalog__name { cursor: pointer; }
     overflow-wrap: anywhere;
 }
 
-/* Optional, make URL look â€œcode-ishâ€ if itâ€™s a link */
+/* Optional, make URL look “code-ish” if it’s a link */
 .report-meta a {
     font-family: var(--font-mono);
     font-size: 0.95em;
@@ -433,7 +436,7 @@ input.report-meta-editor__input:focus {
 /* Better spacing on narrow screens */
 @media (max-width: 520px) {
     .report-meta > li {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
         gap: 4px;
     }
 }

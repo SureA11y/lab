@@ -138,7 +138,7 @@ describe('comparisonDiffHTML — accessibility invariants', () => {
                 'the plot must be hidden from assistive tech once its data ships as a table');
             assert.doesNotMatch(html, /<svg class="dumbbell"[^>]*role="img"/,
                 'role="img" suppresses the per-shape <title>, so the values would be unreachable');
-            assert.match(html, /<table class="visually-hidden"><caption>/);
+            assert.match(html, /<div class="visually-hidden"><table><caption>/);
             assert.match(html, /<th scope="col">Severity<\/th>/);
             assert.match(html, /<th scope="row">/);
         });

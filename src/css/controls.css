@@ -84,6 +84,9 @@ body.is-running .config-header .config-actions {
    the row collapses the block (the DS rule that the whole header is the control). */
 .config-header-row {
     display: flex;
+    /* "Collapse" goes under the heading when the two don't fit on one line
+       (a 320px screen with text spacing). */
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-4);
@@ -571,6 +574,10 @@ html:has(.mode-bar) {
     display: inline-flex;
     gap: var(--space-1);
     margin: 0;
+    /* The tabs shrink, their names wrapping, before the back-to-top button
+       is pushed off the screen. */
+    min-width: 0;
+    flex: 0 1 auto;
 
     border: 0;
     border-bottom: 1px solid var(--border-strong);
@@ -596,6 +603,20 @@ html:has(.mode-bar) {
 
     box-shadow: none;
     transition: color var(--duration-instant) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+}
+
+/* On a narrow screen the tabs take less padding, so with text spacing the
+   four of them and the back-to-top button still fit. */
+@media (max-width: 420px) {
+    .mode-tab {
+        padding: .65rem .5rem;
+    }
+}
+
+/* When even wrapped names do not fit beside the back-to-top button (a narrow
+   screen with text spacing), back-to-top.js wraps the tabs on two rows. */
+.mode-switch.is-wrapped {
+    flex-wrap: wrap;
 }
 
 .mode-tab[aria-selected="true"] {

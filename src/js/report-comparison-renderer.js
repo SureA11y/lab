@@ -263,10 +263,12 @@ function dumbbellSvg(d) {
     return `<div class="chart-title"><span class="t">${chartTitle}</span>`
         + `<div class="legend">${legend}</div></div>`
         + `<svg class="dumbbell" viewBox="0 0 ${W} ${H}" aria-hidden="true">${els}</svg>`
-        + `<table class="visually-hidden"><caption>${esc(chartTitle)}</caption>`
+        // Hidden in a div: a table grows to its content whatever its width,
+        // so hidden itself it ran past a phone's screen.
+        + `<div class="visually-hidden"><table><caption>${esc(chartTitle)}</caption>`
         + `<thead><tr><th scope="col">Severity</th><th scope="col">${esc(sideA)}</th>`
         + `<th scope="col">${esc(sideB)}</th><th scope="col">Change</th></tr></thead>`
-        + `<tbody>${dataRows}</tbody></table>`;
+        + `<tbody>${dataRows}</tbody></table></div>`;
 }
 
 // ---------- narrative ----------

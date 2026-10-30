@@ -1289,7 +1289,8 @@ input:focus, textarea:focus, select:focus{
 .dsp-tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 6px 0 8px; }
 .dsp-seg { display: inline-flex; align-items: center; border: 0; padding: 0; margin: 0; min-width: 0; }
 .dsp-seg legend { float: left; font-size: .8rem; color: var(--text-muted); margin-right: 8px; padding: 0; }
-.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+/* Wraps inside its segment when the line has no room. Mirrors the app. */
+.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: normal; min-width: 0; }
 .dsp-seg label + label { border-left-width: 0; }
 .dsp-seg label:has(input:checked) + label { border-left-color: var(--accent); }
 .dsp-seg label:hover, .dsp-filter-btn:hover { background: var(--na-soft); }

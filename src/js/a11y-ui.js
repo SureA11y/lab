@@ -1553,7 +1553,7 @@ function storeActiveMode(mode) {
             // NOTE: no em dashes
             li.innerHTML = `
             <div style="display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;">
-                <div style="min-width:260px; text-align: left;">
+                <div style="min-width:min(260px, 100%); text-align: left;">
                     <strong>${escapeHtml(item.name)}</strong>
                     <small style="opacity:.85;"> - ${escapeHtml(statusText)}</small>
                     <div>
@@ -1603,7 +1603,7 @@ function storeActiveMode(mode) {
 
             <div id="${escapeAttr(panelId)}" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.12);" ${expanded ? '' : 'hidden'}>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <div style="min-width:260px; flex:1; padding-right: 10px; border-right: 1px dotted;">
+                    <div style="min-width:min(260px, 100%); flex:1; padding-right: 10px; border-right: 1px dotted;">
                         <div style="display:flex; gap:8px; align-items:center; justify-content:space-between;">
                             <strong>Scans (${scanTotal})</strong>
                             <span style="display:flex; gap:8px; align-items:center;">
@@ -1645,7 +1645,7 @@ function storeActiveMode(mode) {
                         </ul>` : `<p style="margin:8px 0 0 0; opacity:.85;">No scans in this file.</p>`}
                     </div>
 
-                    <div style="min-width:260px; flex:1;">
+                    <div style="min-width:min(260px, 100%); flex:1;">
                         <div style="display:flex; gap:8px; align-items:center; justify-content:space-between;">
                             <strong>Action screenshots (${shotTotal})</strong>
                             <span style="display:flex; gap:8px; align-items:center;">

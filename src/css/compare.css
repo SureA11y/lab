@@ -264,7 +264,11 @@ body.queue-mode-active #screenshots-container { display: none; }
    is "Timestamp". "Description" fills it exactly and ends up touching its own
    value, so this line asks for a little more room. Same rows, same rule, wider
    column. */
-.compare-doc .report-meta > li { grid-template-columns: 128px 1fr; }
+.compare-doc .report-meta > li { grid-template-columns: 128px minmax(0, 1fr); }
+/* On a phone the label goes above its value, as on a report. */
+@media (max-width: 520px) {
+    .compare-doc .report-meta > li { grid-template-columns: minmax(0, 1fr); }
+}
 /* A value the reader has not set, and one they did not choose: both are said in
    the line's own voice rather than left blank, so the row still reads as a
    statement and still offers its control. */
@@ -1043,7 +1047,9 @@ body.queue-mode-active #screenshots-container { display: none; }
 .dsp-tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 6px 0 8px; }
 .dsp-seg { display: inline-flex; align-items: center; border: 0; padding: 0; margin: 0; min-width: 0; }
 .dsp-seg legend { float: left; font-size: .8rem; color: var(--text-muted); margin-right: 8px; padding: 0; }
-.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+/* A label wraps inside its segment when the line has no room (a phone with
+   text spacing), rather than run past the screen's edge. */
+.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: normal; min-width: 0; }
 .dsp-seg label + label { border-left-width: 0; }
 .dsp-seg label:has(input:checked) + label { border-left-color: var(--accent); }
 .dsp-seg label:hover, .dsp-filter-btn:hover { background: var(--na-soft); }
