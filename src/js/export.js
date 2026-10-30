@@ -445,6 +445,35 @@ function comparisonFileBaseName() {
     return safeBaseName(stamp ? `${base} ${stamp}` : base);
 }
 
+/**
+ * Downloads the Accessibility Conformance Report (VPAT 2.5, WCAG and EU) of a
+ * report `payload` as one HTML file (shared/conformance-report.js): the
+ * automated draft, and whatever a reviewer recorded in it. Returns its name.
+ */
+export function downloadConformanceReport(payload) {
+    const model = globalThis.A11Y_CONFORMANCE_REPORT;
+    const view = globalThis.A11Y_CONFORMANCE_REPORT_HTML;
+    if (!model || !view) throw new Error('The conformance report modules are not loaded.');
+    const acr = model.buildConformanceReport(payload);
+    const fileName = `${safeBaseName(getReportNameFromUi() || acr.product.name)} - conformance report.html`;
+    downloadBlob(new Blob([view.conformanceReportHTML(acr)], { type: 'text/html' }), fileName);
+    return fileName;
+}
+
+/**
+ * The same report as a Word document (.docx), for teams that edit and sign
+ * it there (shared/conformance-report-docx.js). Returns its name.
+ */
+export async function downloadConformanceReportDocx(payload) {
+    const model = globalThis.A11Y_CONFORMANCE_REPORT;
+    const docx = globalThis.A11Y_CONFORMANCE_REPORT_DOCX;
+    if (!model || !docx || !globalThis.JSZip) throw new Error('The conformance report modules are not loaded.');
+    const acr = model.buildConformanceReport(payload);
+    const fileName = `${safeBaseName(getReportNameFromUi() || acr.product.name)} - conformance report.docx`;
+    downloadBlob(await docx.conformanceReportDocx(acr, globalThis.JSZip), fileName);
+    return fileName;
+}
+
 function downloadBlob(blob, fileName) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

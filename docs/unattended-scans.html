@@ -732,6 +732,12 @@ Instances   <span class="hot">4 new</span>, 9 fixed, 0 still failing
   --format &lt;list&gt;    Also write surea11y's results as sarif, junit and/or
                      earl (comma-separated), into &lt;out&gt;/exports. Can be
                      repeated. Scans run without surea11y are left out.
+                     acr writes the run's conformance report (VPAT 2.5,
+                     WCAG and EN 301 549) there too, as HTML and Word.
+  --review &lt;file&gt;    A report (its JSON, payload.json or package zip) whose
+                     conformance review this run takes on, filling in only
+                     what it has not decided; saved in payload.json. Without
+                     it, a baseline's review is carried on.
   --no-batch         Run a config's workflow once, with its batch left off
   --dry-run          Take every step in a browser but the scans, screenshots
                      and evidence, and say how each went: which failed and

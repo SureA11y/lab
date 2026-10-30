@@ -1,0 +1,212 @@
+// The Conformance view: where a reviewer records what automation cannot
+// decide, criterion by criterion, starting from the automated draft
+// (shared/conformance-report.js, docs/design/conformance-report-design.md).
+//
+// What they record is the report's `conformanceReview`, saved in it as they
+// go, so it travels with every download of the report, the conformance report
+// included. Chapter 9 of EN 301 549 restates WCAG, so it is not asked twice.
+
+const FIELDS = [
+    ['name', 'Product name'],
+    ['version', 'Product version'],
+    ['description', 'Product description', 'textarea'],
+    ['contact', 'Contact'],
+    ['reviewer', 'Reviewed by'],
+    ['methods', 'Evaluation methods', 'textarea'],
+    ['notes', 'Notes', 'textarea'],
+];
+
+// Which part of the review a table's rows are kept in.
+const STORE = { 'wcag-a': 'criteria', 'wcag-aa': 'criteria', 'wcag-aaa': 'criteria', 'en-4': 'clauses', 'en-12': 'clauses', 'en-other': 'clauses' };
+
+function esc(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function emptyReview() {
+    return { product: {}, criteria: {}, clauses: {} };
+}
+
+/** The review a report holds, made whole so it can be written to. */
+export function reviewOf(payload) {
+    const r = payload && payload.conformanceReview && typeof payload.conformanceReview === 'object'
+        ? payload.conformanceReview : emptyReview();
+    r.product = r.product && typeof r.product === 'object' ? r.product : {};
+    r.criteria = r.criteria && typeof r.criteria === 'object' ? r.criteria : {};
+    r.clauses = r.clauses && typeof r.clauses === 'object' ? r.clauses : {};
+    return r;
+}
+
+// The key a row is kept under: a chapter's own line is "chapter-5".
+function keyOf(table, row) {
+    return table.id === 'en-other' ? `chapter-${row.id}` : row.id;
+}
+
+/** Carries an earlier review forward: shared/conformance-report.js. */
+export function carryReviewForward(review, other) {
+    return globalThis.A11Y_CONFORMANCE_REPORT.carryReviewForward(review, other);
+}
+
+function rowHTML(table, row, levels, saved) {
+    const key = keyOf(table, row);
+    const id = `acr-${table.id}-${key}`.replace(/[^A-Za-z0-9_-]/g, '-');
+    const options = [`<option value="">Keep the automated draft (${esc(row.draft.conformance ? levels[row.draft.conformance] : '')})</option>`]
+        .concat(Object.entries(levels).map(([value, label]) => `<option value="${value}"${saved && saved.conformance === value ? ' selected' : ''}>${esc(label)}</option>`))
+        .join('');
+    const name = `${esc(row.id)} ${esc(row.name)}${row.level ? ` (Level ${esc(row.level)})` : ''}`;
+    return `<fieldset class="acr-row" data-table="${esc(table.id)}" data-key="${esc(key)}">`
+        + `<legend>${table.id === 'en-other' ? esc(row.name) : name}</legend>`
+        + `<p class="acr-draft"><span class="acr-draft-label">Automated draft:</span> ${esc(levels[row.draft.conformance])}. ${esc(row.draft.remarks)}</p>`
+        + `<div class="acr-fields">`
+        + `<div class="acr-field"><label for="${id}-level">Conformance level</label><select id="${id}-level" data-part="conformance">${options}</select></div>`
+        + `<div class="acr-field acr-field--wide"><label for="${id}-remarks">Remarks and explanations</label>`
+        + `<textarea id="${id}-remarks" rows="2" data-part="remarks">${esc(saved && saved.remarks)}</textarea></div>`
+        + `</div></fieldset>`;
+}
+
+function tableSectionHTML(table, levels, review) {
+    const part = STORE[table.id];
+    const reviewed = table.rows.filter((row) => review[part][keyOf(table, row)]?.conformance).length;
+    return `<details class="acr-section" data-section="${esc(table.id)}">`
+        + `<summary><span class="acr-section-title">${esc(table.title)}</span> `
+        + `<span class="acr-count" data-count>${reviewed} of ${table.rows.length} reviewed</span></summary>`
+        + table.rows.map((row) => rowHTML(table, row, levels, review[part][keyOf(table, row)])).join('')
+        + `</details>`;
+}
+
+/**
+ * Opens the Conformance view for `payload` (the report on screen). Every
+ * change is written to payload.conformanceReview at once; `onChange` is told.
+ * `readOtherReview(file)` reads another report's review from a file the
+ * reviewer picks, or null when it has none.
+ */
+export function openConformanceReview({ payload, onChange = () => {}, readOtherReview = null } = {}) {
+    const api = globalThis.A11Y_CONFORMANCE_REPORT;
+    if (!api || !payload) return null;
+    const review = reviewOf(payload);
+    payload.conformanceReview = review;
+    const levels = api.LEVEL_LABEL;
+
+    let dialog = document.getElementById('acr-review-dialog');
+    if (dialog) dialog.remove();
+    dialog = document.createElement('dialog');
+    dialog.id = 'acr-review-dialog';
+    dialog.className = 'acr-review';
+    dialog.setAttribute('aria-labelledby', 'acr-review-title');
+
+    // The form, drawn again when a review is copied in; the head, the status
+    // and the actions stay, so the status's new text is announced.
+    const drawForm = () => {
+        const acr = api.buildConformanceReport(payload);
+        const tables = acr.tables.filter((t) => STORE[t.id]);
+        const product = review.product;
+        const fields = FIELDS.map(([key, label, kind]) => {
+            const value = key === 'reviewer' || key === 'methods' ? review[key] : product[key];
+            const placeholder = key === 'name' ? ` placeholder="${esc(acr.product.name)}"` : '';
+            const control = kind === 'textarea'
+                ? `<textarea id="acr-p-${key}" rows="2" data-product="${key}">${esc(value)}</textarea>`
+                : `<input type="text" id="acr-p-${key}" data-product="${key}" value="${esc(value)}"${placeholder}/>`;
+            return `<div class="acr-field${kind === 'textarea' ? ' acr-field--wide' : ''}"><label for="acr-p-${key}">${esc(label)}</label>${control}</div>`;
+        }).join('');
+
+        dialog.querySelector('.acr-form').innerHTML = `<fieldset class="acr-product"><legend>The product and the review</legend><div class="acr-fields">${fields}</div></fieldset>`
+            + tables.map((t) => tableSectionHTML(t, levels, review)).join('');
+    };
+
+    const first = api.buildConformanceReport(payload);
+    dialog.innerHTML = `<div class="acr-review-shell">`
+        + `<div class="acr-review-head"><h2 id="acr-review-title">Review conformance</h2>`
+        + `<button type="button" class="acr-close" data-acr-close aria-label="Close">×</button></div>`
+        + `<p class="acr-intro">What automation cannot decide, decided by a person: set each criterion's conformance level and say why. `
+        + `The automated draft stays where you leave it, and never says "Supports". What you record is saved in this report as you go, `
+        + `and goes with it when you download it, the conformance report included.</p>`
+        + `<p class="acr-status" role="status" data-acr-status>${first.totals.reviewed} of ${first.totals.criteria} WCAG criteria reviewed.</p>`
+        + `<div class="acr-actions">`
+        + (readOtherReview ? `<button type="button" class="secondary-button" data-acr-carry>Copy the review of another report…</button>`
+            + `<input type="file" data-acr-carry-file accept=".json,application/json,.zip,application/zip" hidden aria-hidden="true" tabindex="-1"/>` : '')
+        + `</div>`
+        + `<form class="acr-form" novalidate></form></div>`;
+
+    const status = (text) => {
+        const el = dialog.querySelector('[data-acr-status]');
+        if (el) el.textContent = text;
+    };
+
+    const recount = (section) => {
+        if (!section) return;
+        const tableId = section.dataset.section;
+        const part = STORE[tableId];
+        const rows = section.querySelectorAll('.acr-row');
+        const done = Array.from(rows).filter((r) => review[part][r.dataset.key]?.conformance).length;
+        const count = section.querySelector('[data-count]');
+        if (count) count.textContent = `${done} of ${rows.length} reviewed`;
+    };
+
+    dialog.addEventListener('input', (event) => {
+        const el = event.target;
+        if (el.dataset.product) {
+            const key = el.dataset.product;
+            const value = el.value.trim();
+            if (key === 'reviewer' || key === 'methods') review[key] = value;
+            else review.product[key] = value;
+        } else {
+            const row = el.closest('.acr-row');
+            if (!row) return;
+            const part = STORE[row.dataset.table];
+            const key = row.dataset.key;
+            const entry = { ...(review[part][key] || {}) };
+            entry[el.dataset.part] = el.value;
+            if (!entry.conformance && !String(entry.remarks || '').trim()) delete review[part][key];
+            else review[part][key] = entry;
+            recount(row.closest('.acr-section'));
+        }
+        review.updatedAt = new Date().toISOString();
+        const acr = api.buildConformanceReport(payload);
+        status(`Saved in this report. ${acr.totals.reviewed} of ${acr.totals.criteria} WCAG criteria reviewed.`);
+        onChange(review);
+    });
+
+    dialog.addEventListener('click', async (event) => {
+        if (event.target.closest('[data-acr-close]')) {
+            dialog.close();
+            return;
+        }
+        if (event.target.closest('[data-acr-carry]')) {
+            dialog.querySelector('[data-acr-carry-file]')?.click();
+        }
+    });
+
+    dialog.addEventListener('change', async (event) => {
+        const input = event.target.closest('[data-acr-carry-file]');
+        if (!input || !input.files || !input.files[0]) return;
+        const file = input.files[0];
+        input.value = '';
+        let other = null;
+        try {
+            other = await readOtherReview(file);
+        } catch (err) {
+            status(`Could not read ${file.name}: ${String(err && err.message || err)}`);
+            return;
+        }
+        if (!other) {
+            status(`${file.name} has no conformance review to copy.`);
+            return;
+        }
+        const copied = carryReviewForward(review, other);
+        review.updatedAt = new Date().toISOString();
+        drawForm();
+        onChange(review);
+        status(copied
+            ? `Copied ${copied} verdict${copied === 1 ? '' : 's'} from ${file.name}, where this report had none. Saved in this report.`
+            : `${file.name} has no verdict this report does not already have.`);
+        dialog.querySelector('[data-acr-carry]')?.focus();
+    });
+
+    drawForm();
+    document.body.append(dialog);
+    dialog.showModal();
+    dialog.querySelector('#acr-p-name')?.focus();
+    return dialog;
+}

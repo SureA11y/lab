@@ -309,6 +309,12 @@ per rule) and a SARIF file (GitHub code scanning). `earl` is there too, for
 tools that read W3C EARL. The files go in `exports/` next to `payload.json`,
 so a CI job can pick them up with a pattern such as `exports/*.junit.xml`.
 
+`acr` adds the run's conformance report, as `exports/conformance-report.html`
+and `.docx`: the automated draft, under the review the run carries on from its
+baseline or from `--review <report>`, so a release's report can be made
+unattended once a person has reviewed the last one
+([Write a conformance report](use-cases/write-a-conformance-report.md)).
+
 A rule that could not decide shows as a skipped test, and as a
 warning in SARIF. Each of those questions carries the steps that answer it
 ("How to check", with what a person sees if it passes and if it fails), so the
@@ -369,6 +375,12 @@ node src/cli/run-workflow.js <spec.json> [options]
   --format <list>    Also write surea11y's results as sarif, junit and/or
                      earl (comma-separated), into <out>/exports. Can be
                      repeated. Scans run without surea11y are left out.
+                     acr writes the run's conformance report (VPAT 2.5,
+                     WCAG and EN 301 549) there too, as HTML and Word.
+  --review <file>    A report (its JSON, payload.json or package zip) whose
+                     conformance review this run takes on, filling in only
+                     what it has not decided; saved in payload.json. Without
+                     it, a baseline's review is carried on.
   --no-batch         Run a config's workflow once, with its batch left off
   --dry-run          Take every step in a browser but the scans, screenshots
                      and evidence, and say how each went: which failed and

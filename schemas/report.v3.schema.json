@@ -65,9 +65,57 @@
     },
     "runDiagnostics": {
       "type": "object"
+    },
+    "conformanceReview": {
+      "type": "object",
+      "description": "A reviewer's conformance verdicts over the automated draft (docs/design/conformance-report-design.md): `product` (name, version, description, contact, notes), `reviewer`, `methods`, and per WCAG criterion (`criteria`, by number) or EN 301 549 clause (`clauses`) a `conformance` (supports, partiallySupports, doesNotSupport, notApplicable, notEvaluated) and `remarks`.",
+      "properties": {
+        "product": {
+          "type": "object"
+        },
+        "reviewer": {
+          "type": "string"
+        },
+        "methods": {
+          "type": "string"
+        },
+        "criteria": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/conformanceEntry"
+          }
+        },
+        "clauses": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/conformanceEntry"
+          }
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      }
     }
   },
   "$defs": {
+    "conformanceEntry": {
+      "type": "object",
+      "properties": {
+        "conformance": {
+          "enum": [
+            "supports",
+            "partiallySupports",
+            "doesNotSupport",
+            "notApplicable",
+            "notEvaluated",
+            ""
+          ]
+        },
+        "remarks": {
+          "type": "string"
+        }
+      }
+    },
     "actionResult": {
       "type": "object",
       "required": [

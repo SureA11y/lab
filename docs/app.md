@@ -114,6 +114,24 @@ package. A link can open a report in the app directly:
 `http://127.0.0.1:3000/?report=<url of its JSON or zip>`
 ([how](http-api.md#opening-reports-in-the-app-by-address)).
 
+## A conformance report
+
+**Conformance report**, in the Download menu, gives an Accessibility
+Conformance Report in the layout of the VPAT 2.5 (WCAG and EU edition), as
+one HTML file: a table per WCAG level and the EN 301 549 chapters.
+**Conformance report (Word)** gives the same as a `.docx`, to edit and sign
+in Word. It starts
+as a draft from the report's scans, which never says "Supports": a failure is
+"Does Not Support", nothing to apply to is "Not Applicable", and the rest is
+"Not Evaluated", with what the scans asked a person to check.
+
+**Review conformance**, beside the Download menu, is where a person decides:
+the product's details, and each criterion's conformance level and remarks,
+over the draft. What you record is saved in the report as you go, so its
+downloads carry it, and opening the report again brings it back. **Copy the
+review of another report** fills in what this report has not decided yet from
+an earlier one, so a new run keeps the verdicts of the last review.
+
 ## Opening saved reports
 
 The **open report** tab opens reports saved before: their JSON, or a

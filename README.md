@@ -15,6 +15,11 @@ see what a release fixed and what it broke.
 - **The runner.** The same workflow from the command line, with no window:
   for a nightly run that compares itself with the last one, a check on every
   pull request, or a batch over a list of pages.
+- **Conformance reports.** An Accessibility Conformance Report (VPAT 2.5,
+  WCAG and EN 301 549) as HTML and Word, drafted from the runs and finished
+  by a person in the app, criterion by criterion; the review carries on to
+  the next release. The draft never says "Supports": that is a person's
+  call ([how](docs/use-cases/write-a-conformance-report.md)).
 - **Formats you can build on.** Workflows, reports, comparisons and diffs are
   JSON with published schemas, so other tools can write the workflows and read
   the results: an issue tracker, a dashboard, a script.

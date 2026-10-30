@@ -16,7 +16,7 @@ function normalizeRunSpec(raw, { validateUrl = null } = {}) {
 }
 
 const FLAGS_WITH_VALUE = new Set([
-    '--spec', '--out', '--url', '--scenario', '--baseline', '--promote', '--keep', '--store', '--format'
+    '--spec', '--out', '--url', '--scenario', '--baseline', '--promote', '--keep', '--store', '--format', '--review'
 ]);
 
 function parseCliArgs(argv) {
@@ -32,6 +32,7 @@ function parseCliArgs(argv) {
         quiet: false,
         debugNative: false,
         formats: [],
+        reviewPath: null,
         failOnLean: false,
         failOnFailures: false,
         check: false,
@@ -92,6 +93,7 @@ function parseCliArgs(argv) {
             if (arg === '--promote') options.promote = String(value);
             if (arg === '--url') options.url = String(value);
             if (arg === '--scenario') options.scenarioName = String(value);
+            if (arg === '--review') options.reviewPath = String(value);
             if (arg === '--format') {
                 const parsed = parseFormats(value);
                 errors.push(...parsed.errors);
@@ -128,6 +130,7 @@ function parseCliArgs(argv) {
         const unused = [
             ['--out', options.outDir], ['--store', options.storeRoot], ['--baseline', options.baselinePath],
             ['--promote', options.promote], ['--keep', options.keep], ['--format', options.formats.length || null],
+            ['--review', options.reviewPath],
             ['--fail-on-lean', options.failOnLean || null], ['--fail-on-failures', options.failOnFailures || null],
             ['--check', options.check || null],
         ].filter(([, value]) => value != null).map(([flag]) => flag);

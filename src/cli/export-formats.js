@@ -25,7 +25,9 @@ const { matchBaseline } = require('@surea11y/core/baseline');
 const { leaningFailures } = require('@surea11y/core');
 const { PACKS } = require('../server-side/engines/a11y-labs-engine');
 
-const FORMATS = ['sarif', 'junit', 'earl'];
+// acr is the run's conformance report (conformance-export.js), not one
+// file per scan.
+const FORMATS = ['sarif', 'junit', 'earl', 'acr'];
 
 let CORE_VERSION = null;
 try { CORE_VERSION = require('@surea11y/core/package.json').version || null; } catch {}

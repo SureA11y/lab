@@ -12,6 +12,7 @@ and adds one, as in [Getting started](../getting-started.md).
 | [release-1.html](release-1.html) | The tour of release 1: each page's failures and the questions to check by hand, with screenshots and pictures of the flagged elements |
 | [release-2.html](release-2.html) | The same tour of release 2 |
 | [comparison.html](comparison.html) | Release 2 against release 1: what it fixed, what it broke, what is still failing |
+| [conformance-report.html](conformance-report.html), [.docx](conformance-report.docx) | Release 2's conformance report (VPAT 2.5, WCAG and EN 301 549), with an example review of a few criteria carried on from release 1; the rest is the automated draft |
 
 Each is one file that opens in any browser, offline, with its pictures inside:
 the reports as the app's **Download as a single file** makes them, the

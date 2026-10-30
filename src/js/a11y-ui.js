@@ -36,6 +36,7 @@ import {createConfigIO} from './config-io.js';
 import {createRenderer} from './a11y-ui.rendering.js';
 import {SCAN_FIELDS, pickFindingFields, optInRulesLabel, CANONICAL_FIELDS} from './report-fields.js';
 import {enginesHTML, howTestedHTML} from './engine-brand.js';
+import {openConformanceReview} from './conformance-review.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
 import {setupModeSwitch} from './tabs-ui.js';
 import {createRunQueuePanel, describeRunNow} from './run-queue-panel.js';
@@ -58,6 +59,8 @@ import {
     createClearReportBtn,
     createCompareReportBtn,
     createDownloadReportSplitButton,
+    downloadConformanceReport,
+    downloadConformanceReportDocx,
     setWhenReportDrawn,
     createDownloadComparisonBtn
 } from './export.js';
@@ -4553,6 +4556,22 @@ function storeActiveMode(mode) {
 
         setCompareStatus(message, tone);
         return message;
+    }
+
+    // The conformance review another report holds: its JSON, or the report's
+    // JSON inside a downloaded package; null when it has none.
+    async function readConformanceReviewFile(file) {
+        let text;
+        if (/\.zip$/i.test(file.name)) {
+            const zip = await globalThis.JSZip.loadAsync(file);
+            const entry = Object.values(zip.files).find((e) => !e.dir && /(\.a11y-report\.json|payload\.json)$/i.test(e.name));
+            if (!entry) return null;
+            text = await entry.async('string');
+        } else {
+            text = await file.text();
+        }
+        const json = JSON.parse(text);
+        return json && json.conformanceReview && typeof json.conformanceReview === 'object' ? json.conformanceReview : null;
     }
 
     async function readReportFile(file) {
@@ -9080,6 +9099,9 @@ function storeActiveMode(mode) {
         // The configuration the report ran: "Load configuration" sets it up
         // again from the report (docs/report-package.md).
         requiredProperties.push('config');
+        // A reviewer's conformance verdicts (conformance-review.js): kept with
+        // the report, so its downloads and a later opening carry them.
+        requiredProperties.push('conformanceReview');
 
         const updatedData = keepOnlyKeys(data, requiredProperties);
 
@@ -9347,14 +9369,46 @@ function storeActiveMode(mode) {
             // inside it; a run that worked is when its workflow is worth
             // keeping, so it is offered here too. Not for a report opened from
             // a file: the configuration on screen is not the one it ran with.
-            extraItems: resultsState.activeMode === 'run' ? [{
-                id: 'config',
-                label: 'Export config',
-                description: 'The workflow and its settings, to load or run again',
-                onSelect: () => $('#save-config-button')?.click(),
-            }] : [],
+            extraItems: [
+                {
+                    id: 'conformance',
+                    label: 'Conformance report',
+                    description: 'A VPAT 2.5 report (WCAG and EN 301 549), drafted from these results',
+                    onSelect: () => downloadConformanceReport(buildExportPayload(getActiveBucket()?.payload || data, {includedOnly: true})),
+                },
+                {
+                    id: 'conformance-docx',
+                    label: 'Conformance report (Word)',
+                    description: 'The same report as a .docx, to edit and sign in Word',
+                    onSelect: () => downloadConformanceReportDocx(buildExportPayload(getActiveBucket()?.payload || data, {includedOnly: true})),
+                },
+                ...(resultsState.activeMode === 'run' ? [{
+                    id: 'config',
+                    label: 'Export config',
+                    description: 'The workflow and its settings, to load or run again',
+                    onSelect: () => $('#save-config-button')?.click(),
+                }] : []),
+            ],
         });
         containerEl.appendChild(downloadReportSplitBtn);
+
+        // The Conformance view: a reviewer's verdicts, criterion by criterion,
+        // over the automated draft, saved in the report (conformance-review.js).
+        if (globalThis.A11Y_CONFORMANCE_REPORT) {
+            const reviewBtn = document.createElement('button');
+            reviewBtn.type = 'button';
+            reviewBtn.className = 'secondary-button';
+            reviewBtn.textContent = 'Review conformance';
+            reviewBtn.addEventListener('click', () => {
+                const dialog = openConformanceReview({
+                    payload: getActiveBucket()?.payload || data,
+                    readOtherReview: readConformanceReviewFile,
+                });
+                // Back to the button that opened it.
+                dialog?.addEventListener('close', () => reviewBtn.focus(), {once: true});
+            });
+            containerEl.appendChild(reviewBtn);
+        }
 
         // "Compare" sits before "Clear" so the row reads download / compare /
         // discard: the two things you can still do with this report, then the one

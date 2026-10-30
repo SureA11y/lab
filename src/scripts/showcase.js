@@ -8,7 +8,8 @@
  *   docs/assets/screens/app-compare.png   release 2 compared with release 1
  *   docs/assets/screens/demo.gif          a run, its report, the comparison
  *   docs/gallery/                         the reports and the comparison as
- *                                         files that open in any browser
+ *                                         files that open in any browser, and
+ *                                         a conformance report, HTML and Word
  *
  * It runs the demo shop tour on release 1 and on release 2 against it, as
  * docs/getting-started.md does, then opens the results in the app. Run it
@@ -34,6 +35,24 @@ const VIEWPORT = { width: 1280, height: 900 };
 // Under reports/, which the lab serves at /reports, so the app can open them.
 const STORE_NAME = 'showcase';
 const STORE = path.join(ROOT, 'reports', STORE_NAME);
+
+// An example review of release 1, as a person would record it in the app,
+// which release 2's run carries on: for the gallery's conformance report.
+const EXAMPLE_REVIEW = {
+    product: { name: 'Demo shop', version: '2.0', description: 'The small shop surea11y-lab\'s examples run against, with accessibility problems on purpose.', contact: 'An example: no one to write to.' },
+    reviewer: 'An example reviewer',
+    methods: 'An example: keyboard and screen reader checks of the shopping flow.',
+    criteria: {
+        '2.1.1': { conformance: 'supports', remarks: 'Every control of the shopping flow can be reached and used with the keyboard.' },
+        '2.4.3': { conformance: 'supports', remarks: 'Focus follows the reading order on every page of the tour.' },
+        '2.4.7': { conformance: 'partiallySupports', remarks: 'The cart\'s promo code field shows no focus indicator.' },
+        '3.1.1': { conformance: 'supports', remarks: 'Every page states its language.' },
+    },
+    clauses: {
+        '4.2.1': { conformance: 'partiallySupports', remarks: 'The product images on the list have no text alternative.' },
+        'chapter-8': { conformance: 'notApplicable', remarks: 'A website: no hardware.' },
+    },
+};
 
 const children = [];
 
@@ -188,9 +207,15 @@ async function main() {
     const spec = path.join('examples', 'specs', 'site-tour.spec.json');
     cli([spec, '--store', STORE, '--promote', 'release-1', '-q']);
     const run1 = latestRun();
-    cli([spec, '--store', STORE, '--url', 'http://localhost:8781/', '--baseline', '@release-1', '-q']);
+    // Release 1 reviewed, as the app saves a review in a report.
+    const baseline = path.join(STORE, path.basename(path.dirname(path.dirname(run1))), 'baselines', 'release-1.json');
+    fs.writeFileSync(baseline, JSON.stringify({ ...JSON.parse(fs.readFileSync(baseline, 'utf8')), conformanceReview: EXAMPLE_REVIEW }));
+    cli([spec, '--store', STORE, '--url', 'http://localhost:8781/', '--baseline', '@release-1', '--format', 'acr', '-q']);
     const run2 = latestRun();
     fs.copyFileSync(path.join(run2, 'comparison.html'), path.join(GALLERY, 'comparison.html'));
+    for (const ext of ['html', 'docx']) {
+        fs.copyFileSync(path.join(run2, 'exports', `conformance-report.${ext}`), path.join(GALLERY, `conformance-report.${ext}`));
+    }
 
     start(['server.js'], { PORT: String(PORT) });
     await waitFor(`${APP}/health`);

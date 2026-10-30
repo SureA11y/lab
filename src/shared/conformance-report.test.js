@@ -1,0 +1,177 @@
+'use strict';
+
+const { test, describe } = require('node:test');
+const assert = require('node:assert/strict');
+
+const { buildConformanceReport, carryReviewForward } = require('./conformance-report.js');
+const { conformanceReportHTML } = require('./conformance-report-html.js');
+
+function finding(sc, outcome, elements = 1) {
+    return {
+        ruleId: `wcag-${sc}`,
+        title: `Rule for ${sc}`,
+        outcome,
+        wcag: { sc: [sc], scNormative: [sc] },
+        occurrences: Array.from({ length: elements }, (_, i) => ({ target: [`#e${i}`] })),
+    };
+}
+
+function scan(label, findings, criteria) {
+    return {
+        label: `Scan: ${label}`,
+        url: `https://shop.test/${label.toLowerCase()}`,
+        canonical: { findings, engines: [{ id: 'surea11y', name: 'surea11y', version: '1.14.1' }] },
+        metrics: { coverageSummary: { criteria } },
+    };
+}
+
+const report = {
+    scenarioName: 'Shop',
+    timestamp: '2026-10-30T09:00:00Z',
+    scans: [
+        scan('Home', [finding('1.1.1', 'fail', 2), finding('2.4.7', 'cantTell')], [
+            { sc: '1.1.1', status: 'doesNotSupport' },
+            { sc: '1.2.1', status: 'notApplicable' },
+            { sc: '1.4.1', status: 'supports' },
+            { sc: '2.4.7', status: 'needsReview' },
+        ]),
+        scan('Cart', [finding('1.1.1', 'fail', 1)], [
+            { sc: '1.1.1', status: 'doesNotSupport' },
+            { sc: '1.2.1', status: 'notApplicable' },
+        ]),
+    ],
+};
+
+const rowOf = (acr, tableId, id) => acr.tables.find((t) => t.id === tableId).rows.find((r) => r.id === id);
+
+describe('the conformance report\'s draft', () => {
+    const acr = buildConformanceReport(report);
+
+    test('a failure on some page is "Does Not Support", with where and how many', () => {
+        const r = rowOf(acr, 'wcag-a', '1.1.1');
+        assert.equal(r.conformance, 'doesNotSupport');
+        assert.equal(r.source, 'draft');
+        assert.equal(r.remarks, 'Automated checks found 3 failing elements, on Home and Cart.');
+    });
+
+    test('nothing to apply to on any page is "Not Applicable", to confirm', () => {
+        const r = rowOf(acr, 'wcag-a', '1.2.1');
+        assert.equal(r.conformance, 'notApplicable');
+        assert.match(r.remarks, /confirm for the rest of the product/);
+    });
+
+    test('automation never says "Supports": no failure is "Not Evaluated", and says why', () => {
+        assert.equal(rowOf(acr, 'wcag-a', '1.4.1').conformance, 'notEvaluated');
+        assert.match(rowOf(acr, 'wcag-a', '1.4.1').remarks, /check only part of this criterion/);
+        assert.equal(rowOf(acr, 'wcag-aa', '2.4.7').conformance, 'notEvaluated');
+        assert.match(rowOf(acr, 'wcag-aa', '2.4.7').remarks, /need a person to confirm this on Home/);
+        assert.equal(rowOf(acr, 'wcag-a', '2.1.1').remarks, 'Only a person can check this.');
+        assert.equal(acr.totals.byLevel.supports, 0);
+        assert.equal(acr.totals.byLevel.partiallySupports, 0);
+    });
+
+    test('WCAG 2.2 AA by default, with EN 301 549 V4.1.1, whose chapter 9 restates it', () => {
+        assert.deepEqual(acr.target, { wcagVersion: '2.2', level: 'AA', en301549: 'V4.1.1' });
+        assert.equal(acr.totals.criteria, 55);
+        const ch9 = acr.tables.find((t) => t.id === 'en-9').rows;
+        assert.equal(ch9.length, 55);
+        assert.equal(rowOf(acr, 'en-9', '9.1.1.1').conformance, 'doesNotSupport');
+        assert.ok(!ch9.some((r) => r.id === '9.4.1.1'), '4.1.1 is not in WCAG 2.2');
+    });
+
+    test('chapters 4 and 12 and the others are for the author', () => {
+        assert.equal(acr.tables.find((t) => t.id === 'en-4').rows.length, 11);
+        assert.equal(acr.tables.find((t) => t.id === 'en-12').rows.length, 5);
+        assert.ok(acr.tables.find((t) => t.id === 'en-4').rows.every((r) => r.conformance === 'notEvaluated'));
+    });
+
+    test('the product and what was evaluated come from the report', () => {
+        assert.equal(acr.product.name, 'Shop');
+        assert.equal(acr.product.date, '2026-10-30');
+        assert.deepEqual(acr.evaluation.pages.map((p) => p.label), ['Home', 'Cart']);
+        assert.deepEqual(acr.evaluation.engine, { name: 'surea11y', version: '1.14.1' });
+    });
+});
+
+describe('a reviewer\'s verdicts', () => {
+    const review = {
+        product: { name: 'Shop', version: '3.1' },
+        criteria: { '1.1.1': { conformance: 'partiallySupports', remarks: 'Product images lack alt text.' } },
+        clauses: { '4.2.1': { conformance: 'supports', remarks: 'Tested with a screen reader.' } },
+    };
+    const acr = buildConformanceReport(report, { review });
+
+    test('take the draft\'s place, in WCAG and in chapter 9 alike', () => {
+        for (const [table, id] of [['wcag-a', '1.1.1'], ['en-9', '9.1.1.1']]) {
+            const r = rowOf(acr, table, id);
+            assert.equal(r.conformance, 'partiallySupports');
+            assert.equal(r.source, 'review');
+            assert.equal(r.remarks, 'Product images lack alt text.');
+            assert.equal(r.draft.conformance, 'doesNotSupport', 'the draft is kept beside it');
+        }
+        assert.equal(rowOf(acr, 'en-4', '4.2.1').conformance, 'supports');
+        assert.equal(acr.product.version, '3.1');
+        assert.equal(acr.totals.reviewed, 1);
+    });
+
+    test('an unknown level is ignored rather than shown', () => {
+        const odd = buildConformanceReport(report, { review: { criteria: { '1.1.1': { conformance: 'great' } } } });
+        assert.equal(rowOf(odd, 'wcag-a', '1.1.1').source, 'draft');
+    });
+});
+
+test('a WCAG 2.1 target uses EN 301 549 V3.2.1, whose chapter 9 has 4.1.1 and not WCAG 2.2\'s criteria', () => {
+    const acr = buildConformanceReport(report, { target: { wcagVersion: '2.1' } });
+    assert.equal(acr.target.en301549, 'V3.2.1');
+    const ids = acr.tables.find((t) => t.id === 'en-9').rows.map((r) => r.id);
+    assert.ok(ids.includes('9.4.1.1'));
+    assert.ok(!ids.includes('9.2.4.11'));
+    assert.equal(acr.totals.criteria, 50);
+});
+
+describe('the HTML file', () => {
+    const html = conformanceReportHTML(buildConformanceReport({ ...report, scenarioName: 'Shop <script>alert(1)</script>' }), { generatedAt: '2026-10-30' });
+
+    test('is a complete, titled, English document', () => {
+        assert.match(html, /^<!doctype html>\n<html lang="en">/);
+        assert.match(html, /<title>Shop &lt;script&gt;alert\(1\)&lt;\/script&gt;: Accessibility Conformance Report<\/title>/);
+        assert.doesNotMatch(html, /<script>alert/);
+    });
+
+    test('has a captioned table for each part, with a row header per criterion', () => {
+        assert.equal((html.match(/<table class="criteria" role="table"><caption>/g) || []).length, 6);
+        assert.match(html, /<th scope="row" role="rowheader">1\.1\.1 Non-text Content \(Level A\)<\/th>/);
+        assert.match(html, /<th scope="row" role="rowheader">9\.1\.1\.1 Non-text Content \(Level A\)<\/th>/);
+    });
+
+    test('says which entries are still the draft', () => {
+        assert.match(html, /still the automated draft/);
+        assert.match(html, /Automated draft<\/span>/);
+    });
+});
+
+test('carrying a review forward fills in only what this report has not decided', () => {
+    const review = {
+        product: { name: 'Shop' },
+        criteria: { '1.1.1': { conformance: 'doesNotSupport', remarks: 'Still missing.' } },
+        clauses: {},
+    };
+    const earlier = {
+        product: { name: 'Old name', version: '3.0' },
+        reviewer: 'A. Reviewer',
+        criteria: {
+            '1.1.1': { conformance: 'supports', remarks: 'Fixed then.' },
+            '2.1.1': { conformance: 'supports', remarks: 'Keyboard checked.' },
+            '2.4.7': { remarks: 'A note without a level.' },
+        },
+        clauses: { '4.2.1': { conformance: 'partiallySupports', remarks: 'Screen reader gaps.' } },
+    };
+    assert.equal(carryReviewForward(review, earlier), 2);
+    assert.equal(review.criteria['1.1.1'].conformance, 'doesNotSupport', 'this report\'s own verdict stays');
+    assert.equal(review.criteria['2.1.1'].remarks, 'Keyboard checked.');
+    assert.equal(review.criteria['2.4.7'], undefined, 'a note without a level is not a verdict');
+    assert.equal(review.clauses['4.2.1'].conformance, 'partiallySupports');
+    assert.deepEqual(review.product, { name: 'Shop', version: '3.0' });
+    assert.equal(review.reviewer, 'A. Reviewer');
+    assert.equal(carryReviewForward(review, null), 0);
+});

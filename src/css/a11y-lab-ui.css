@@ -8417,3 +8417,56 @@ button.activity-button:hover:not(:disabled, [aria-disabled=true]) {
     .dry-run-notes { margin-left: 0; }
 }
 
+
+/* ==========================================================================
+   CONFORMANCE REVIEW (conformance-review.js): a reviewer's verdicts over the
+   automated draft, in a dialog that scrolls as one page
+   ========================================================================== */
+.acr-review {
+    width: min(960px, 94vw);
+    max-width: 94vw;
+    max-height: 90vh;
+    padding: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--surface-base);
+    color: var(--text-main);
+}
+.acr-review::backdrop { background: rgba(0, 0, 0, .45); }
+.acr-review-shell { padding: 0 var(--space-4) var(--space-4); }
+.acr-review-head {
+    position: sticky; top: 0; z-index: 1;
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+    margin: 0 calc(-1 * var(--space-4)) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface-base);
+}
+.acr-review-head h2 { margin: 0; font-size: var(--fs-lg); }
+.acr-close { font: inherit; font-size: var(--fs-lg); line-height: 1; min-width: 32px; min-height: 32px; color: var(--text-muted); background: transparent; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; }
+.acr-close:hover { color: var(--text-main); background: var(--surface-2); }
+.acr-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.acr-intro { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--fs-sm); }
+.acr-status { margin: 0 0 var(--space-3); font-size: var(--fs-sm); font-weight: 600; }
+.acr-actions { margin: 0 0 var(--space-3); }
+.acr-review form.acr-form { border: 0; padding: 0; margin: 0; background: none; box-shadow: none; }
+.acr-form fieldset { border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-3); margin: 0 0 var(--space-3); min-width: 0; }
+.acr-form legend { font-weight: 600; padding: 0 .25rem; overflow-wrap: anywhere; }
+.acr-fields { display: grid; grid-template-columns: minmax(12rem, 16rem) 1fr; gap: var(--space-2) var(--space-3); align-items: start; }
+.acr-product .acr-fields { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.acr-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.acr-field label { font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); }
+.acr-product .acr-field--wide { grid-column: 1 / -1; }
+.acr-field select, .acr-field input, .acr-field textarea { font: inherit; width: 100%; min-height: 32px; }
+.acr-draft { margin: 0 0 var(--space-2); font-size: var(--fs-sm); color: var(--text-muted); }
+.acr-draft-label { font-weight: 600; }
+.acr-section { margin: 0 0 var(--space-3); border-top: 1px solid var(--border-subtle); padding-top: var(--space-2); }
+.acr-section > summary { cursor: pointer; padding: var(--space-2) 0; min-height: 24px; font-weight: 600; }
+.acr-section > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.acr-count { font-weight: 400; color: var(--text-muted); font-size: var(--fs-sm); }
+@media (max-width: 600px) {
+    .acr-review { width: 100vw; max-width: 100vw; max-height: 100vh; height: 100vh; border-radius: 0; }
+    .acr-review-shell { padding: 0 var(--space-3) var(--space-3); }
+    .acr-review-head { margin: 0 calc(-1 * var(--space-3)) var(--space-3); padding: var(--space-3); }
+    .acr-fields { grid-template-columns: 1fr; }
+}
