@@ -1,6 +1,5 @@
-import {createActionsBuilder, redactMaskedFieldsDeep, withPasswordStepTypeDeep} from './actions-builder.module.js';
+import {createActionsBuilder} from './actions-builder.module.js';
 import {createEl, escapeAttr, escapeHtml, iconButton, indentPrefix, jsonBlob, linkifyUrlsToHtml, safeBaseName, scanTagChipsHtml, svgIcon} from './a11y-ui.utils.js';
-import {fetchWorkflowResult, pollWorkflowUntilDone, runFailureMessage} from './a11y-ui.workflow.js';
 import {setupRunSettings} from './run-settings.js';
 import {createConfigIO} from './config-io.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
@@ -17,10 +16,10 @@ import {clearLazyBodies, setLazyScope} from './lazy-dialogs.js';
 import {attachFileDrop} from './file-drop.js';
 import {buildGlobalSummary, ensureScanSummaryCounts, ensureScansIncludedFlag, getA11yGlobalFindings, hashHex16, normalizePayloadForUi, pickMetricDefsFromPayload, pickMetricDefsFromStaged, prepareDataForReport, sortByOrderKey, stripVolatileKeysDeep, validateReportOrThrow} from './report-data.js';
 import {buildActionTreeNodes, buildCustomStepMaps, collapseLineIfExpanded, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
-import {cloneCustomStepValue, collectUsedCustomStepIds, customStepTabId, deepRemapCustomStepIds, formatCustomStepInputsText, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepInputsText, parseCustomStepsJson} from './custom-steps-data.js';
+import {parseCustomStepsJson} from './custom-steps-data.js';
 import {setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isActuallyFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
-import {STATUS, PROGRESS_POLL_INTERVAL_MS, TAB_MODE_STORAGE_KEY} from './ui-constants.js';
+import {STATUS, TAB_MODE_STORAGE_KEY} from './ui-constants.js';
 import {createQueueRunWatch} from './queue-run-watch.js';
 import {createCompareTab} from './compare-tab.js';
 import {createGroupingUi} from './grouping-ui.js';
@@ -32,6 +31,8 @@ import {createPageEvents} from './page-events.js';
 import {createReportView} from './report-view.js';
 import {createOpenReportFiles} from './open-report-files.js';
 import {createBatchUi} from './batch-ui.js';
+import {createCustomStepsUi} from './custom-steps-ui.js';
+import {createRunWorkflowUi} from './run-workflow-ui.js';
 
 function getStoredActiveMode() {
     try {
@@ -105,7 +106,7 @@ function storeActiveMode(mode) {
         set cfgIO(value) { cfgIO = value; },
         get compareTab() { return compareTab; },
         get focusReportArea() { return focusReportArea; },
-        get getWorkflowWithPasswords() { return getWorkflowWithPasswords; },
+        get getWorkflowWithPasswords() { return customStepsUi.getWorkflowWithPasswords; },
         get queueRunWatch() { return queueRunWatch; },
         get refreshRunButton() { return batchUi.refreshRunButton; },
         get setReportPayload() { return setReportPayload; },
@@ -136,8 +137,8 @@ function storeActiveMode(mode) {
         get form() { return form; },
         get loadAndRun() { return loadAndRun; },
         set loadAndRun(value) { loadAndRun = value; },
-        get onDryRun() { return onDryRun; },
-        get onRunScan() { return onRunScan; },
+        get onDryRun() { return runWorkflowUi.onDryRun; },
+        get onRunScan() { return runWorkflowUi.onRunScan; },
         get scanButton() { return scanButton; },
         get setUiState() { return setUiState; },
         get urlInput() { return urlInput; },
@@ -150,7 +151,7 @@ function storeActiveMode(mode) {
         get applyScanPresentationMode() { return applyScanPresentationMode; },
         get applyScanSort() { return applyScanSort; },
         get clearActiveBucketState() { return clearActiveBucketState; },
-        get clearLiveStreamDialog() { return clearLiveStreamDialog; },
+        get clearLiveStreamDialog() { return runWorkflowUi.clearLiveStreamDialog; },
         get clearRenderedResultsUi() { return clearRenderedResultsUi; },
         get clearResults() { return clearResults; },
         get clearScreenshots() { return clearScreenshots; },
@@ -206,14 +207,69 @@ function storeActiveMode(mode) {
         set actionsBuilder(value) { actionsBuilder = value; },
         get customStepActionsBuilder() { return customStepActionsBuilder; },
         set customStepActionsBuilder(value) { customStepActionsBuilder = value; },
-        get getCustomStepsForConfigState() { return getCustomStepsForConfigState; },
-        get prepareRunRequest() { return prepareRunRequest; },
+        get getCustomStepsForConfigState() { return customStepsUi.getCustomStepsForConfigState; },
+        get prepareRunRequest() { return runWorkflowUi.prepareRunRequest; },
         get runQueueUi() { return runQueueUi; },
+        get copiedCustomStep() { return copiedCustomStep; },
+        set copiedCustomStep(value) { copiedCustomStep = value; },
+        get createCustomStepActionsHistoryButtons() { return createCustomStepActionsHistoryButtons; },
+        get createCustomStepsListHistoryButtons() { return createCustomStepsListHistoryButtons; },
+        get customStepActionsBuilderEl() { return customStepActionsBuilderEl; },
+        get customStepActionsEl() { return customStepActionsEl; },
+        get customStepAddBtn() { return customStepAddBtn; },
+        get customStepCopyBtn() { return customStepCopyBtn; },
+        get customStepDeleteBtn() { return customStepDeleteBtn; },
+        get customStepIdInput() { return customStepIdInput; },
+        get customStepInputsTextarea() { return customStepInputsTextarea; },
+        get customStepNameInput() { return customStepNameInput; },
+        get customStepPasteBtn() { return customStepPasteBtn; },
+        get customStepToolbarEl() { return customStepToolbarEl; },
+        get customStepsCountBadgeEl() { return customStepsCountBadgeEl; },
+        get customStepsData() { return customStepsData; },
+        set customStepsData(value) { customStepsData = value; },
+        get customStepsListActionsEl() { return customStepsListActionsEl; },
+        set customStepsListActionsEl(value) { customStepsListActionsEl = value; },
+        get customStepsListEl() { return customStepsListEl; },
+        get customStepsPanelEl() { return customStepsPanelEl; },
+        get pushCustomStepsHistory() { return pushCustomStepsHistory; },
+        get resetCustomStepsHistory() { return resetCustomStepsHistory; },
+        get rulesCatalog() { return rulesCatalog; },
+        get scheduleCustomStepsHistoryPush() { return scheduleCustomStepsHistoryPush; },
+        get selectedCustomStepIndex() { return selectedCustomStepIndex; },
+        set selectedCustomStepIndex(value) { selectedCustomStepIndex = value; },
+        get setCustomStepActionsHistoryBaselineToCurrent() { return setCustomStepActionsHistoryBaselineToCurrent; },
+        get setCustomStepsExpanded() { return setCustomStepsExpanded; },
+        get syncingCustomStepEditor() { return syncingCustomStepEditor; },
+        set syncingCustomStepEditor(value) { syncingCustomStepEditor = value; },
+        get batchUi() { return batchUi; },
+        get clearLogsPanel() { return clearLogsPanel; },
+        get colorSchemeSelect() { return colorSchemeSelect; },
+        get customStepsUi() { return customStepsUi; },
+        get dryRunReportEl() { return dryRunReportEl; },
+        get formatElapsedHuman() { return formatElapsedHuman; },
+        get getPlannedLiveStreamMode() { return getPlannedLiveStreamMode; },
+        get highContrastSelect() { return highContrastSelect; },
+        get languageOtherError() { return languageOtherError; },
+        get languageOtherField() { return languageOtherField; },
+        get languageOtherInput() { return languageOtherInput; },
+        get languageSelect() { return languageSelect; },
+        get retryUntrustedButton() { return retryUntrustedButton; },
+        get revealCustomStepError() { return revealCustomStepError; },
+        get runSettings() { return runSettings; },
+        get runStartedAtMs() { return runStartedAtMs; },
+        set runStartedAtMs(value) { runStartedAtMs = value; },
+        get setConfigExpanded() { return setConfigExpanded; },
+        get setRunPayload() { return setRunPayload; },
+        get untrustedCertsSelect() { return untrustedCertsSelect; },
+        get validateRunInputs() { return validateRunInputs; },
+        get viewportSelect() { return viewportSelect; },
     };
 
     // The report's view (report-view.js): only functions, made first, as the
     // boot below already draws with them.
     const reportView = createReportView(app);
+    // The custom steps editor (custom-steps-ui.js): only functions too.
+    const customStepsUi = createCustomStepsUi(app);
 
     const $ = (sel, root = document) => root.querySelector(sel);
     const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -235,6 +291,9 @@ function storeActiveMode(mode) {
     const languageOtherField = $('#run-language-other-field');
     const languageOtherInput = $('#run-language-other');
     const languageOtherError = $('#run-language-other-error');
+    // Running a workflow (run-workflow-ui.js): made once the fields its
+    // listeners take are found, before the boot uses it.
+    const runWorkflowUi = createRunWorkflowUi(app);
     const scanButton = $('#scan-button');
     const cancelButton = $('#cancel-button');
     const dryRunButton = $('#dry-run-button');
@@ -1043,7 +1102,7 @@ function storeActiveMode(mode) {
     function clearRenderedResultsUi() {
         clearResults();
         clearScreenshots();
-        clearResultDialogs();
+        runWorkflowUi.clearResultDialogs();
         summaryEl.textContent = '';
         lastWorkflowResponse = null;
     }
@@ -1336,10 +1395,10 @@ function storeActiveMode(mode) {
                 ? Math.min(Math.max(snap.selectedIndex, 0), customStepsData.length - 1)
                 : -1;
 
-            renderCustomStepsList();
-            loadSelectedCustomStepIntoEditor();
-            syncCustomStepsHiddenInput();
-            refreshRunCustomStepSelectors();
+            customStepsUi.renderCustomStepsList();
+            customStepsUi.loadSelectedCustomStepIntoEditor();
+            customStepsUi.syncCustomStepsHiddenInput();
+            customStepsUi.refreshRunCustomStepSelectors();
 
             lastCustomStepsHistorySig = getCustomStepsListSig(snap.steps);
 
@@ -2484,7 +2543,7 @@ function storeActiveMode(mode) {
         if (!id) return false;
         const idx = customStepsData.findIndex((step) => String(step?.id || '').trim() === id);
         if (idx < 0) return false;
-        if (idx !== selectedCustomStepIndex) selectCustomStep(idx);
+        if (idx !== selectedCustomStepIndex) customStepsUi.selectCustomStep(idx);
         return true;
     }
 
@@ -2527,7 +2586,7 @@ function storeActiveMode(mode) {
 
     function buildCurrentStepTreeModel() {
         const workflowActions = actionsBuilder?.getValue({ validate: false, maskValues: 'text' })?.value || [];
-        const customStepsState = readCustomStepsFromUi({ validate: false });
+        const customStepsState = customStepsUi.readCustomStepsFromUi({ validate: false });
         const customSteps = customStepsState?.ok && Array.isArray(customStepsState.value) ? customStepsState.value : [];
         const { byId: customStepsById, nameById: customStepNamesById } = buildCustomStepMaps(customSteps);
 
@@ -3184,19 +3243,19 @@ function storeActiveMode(mode) {
                 'run-language-other': '',
             },
             onStateApplied: () => {
-                syncRunLanguageOther();
+                runWorkflowUi.syncRunLanguageOther();
                 runSettings.sync();
             },
-            getLanguages: runLanguageTags,
-            getCustomSteps: getCustomStepsForConfigState,
-            setCustomSteps: setCustomStepsFromConfigState,
-            getRunSpec: collectRunSpec,
+            getLanguages: runWorkflowUi.runLanguageTags,
+            getCustomSteps: customStepsUi.getCustomStepsForConfigState,
+            setCustomSteps: customStepsUi.setCustomStepsFromConfigState,
+            getRunSpec: runWorkflowUi.collectRunSpec,
             getBatch: () => batchUi.batchPanel?.getBatchForConfig() ?? null,
             setBatch: (batch) => batchUi.batchPanel?.setBatchFromConfig(batch),
             getSections: getSectionsState,
             setSections: setSectionsState,
             loadBatchRows: (rows) => batchUi.batchPanel?.loadRows(rows),
-            appendConfigState,
+            appendConfigState: customStepsUi.appendConfigState,
             activity: getActivity(),
 
             configFileEl,
@@ -3213,7 +3272,7 @@ function storeActiveMode(mode) {
         afterConfigLoaded = () => {
             if (customStepActionsBuilder) {
                 try {
-                    setCustomStepsInUi(parseCustomStepsJson(customStepsInput?.value || ''), {selectFirst: true});
+                    customStepsUi.setCustomStepsInUi(parseCustomStepsJson(customStepsInput?.value || ''), {selectFirst: true});
                 } catch (e) {
                     setUiState('error', String(e?.message || e));
                 }
@@ -3224,7 +3283,7 @@ function storeActiveMode(mode) {
             summaryEl.textContent = '';
             liveUi.resetLivePanels();
             if (loadAndRun) {
-                onRunScan();
+                runWorkflowUi.onRunScan();
             }
             setHistoryBaselineToCurrent();
         };
@@ -3241,7 +3300,7 @@ function storeActiveMode(mode) {
         if (openQuery) compareTab.openFromQuery(openQuery).catch((e) => console.error('Could not open from the address', e));
         if (customStepActionsBuilder) {
             try {
-                setCustomStepsInUi(parseCustomStepsJson(customStepsInput?.value || ''), {selectFirst: true});
+                customStepsUi.setCustomStepsInUi(parseCustomStepsJson(customStepsInput?.value || ''), {selectFirst: true});
             } catch (e) {
                 setUiState('error', String(e?.message || e));
             }
@@ -3425,7 +3484,7 @@ function storeActiveMode(mode) {
         loadDefinitions()
             .then((defs) => {
                 if (defs?.runCustomStep?.fields?.customStepId) {
-                    defs.runCustomStep.fields.customStepId.optionsProvider = () => getCustomStepSelectChoices();
+                    defs.runCustomStep.fields.customStepId.optionsProvider = () => customStepsUi.getCustomStepSelectChoices();
                 }
                 if (defs?.runCustomStep) {
                     defs.runCustomStep.getStepInputsSchema = (customStepId) => {
@@ -3445,8 +3504,8 @@ function storeActiveMode(mode) {
                     }
                 });
                 createHistoryButtons();
-                initCustomStepsUi(defs);
-                fillRunLanguages(defs);
+                customStepsUi.initCustomStepsUi(defs);
+                runWorkflowUi.fillRunLanguages(defs);
                 runSettings.sync();
                 callback();
             })
@@ -3564,8 +3623,9 @@ function storeActiveMode(mode) {
 
     /* ==================== Actions ==================== */
 
+
     function getPlannedLiveStreamMode(actions) {
-        const customSteps = getCustomStepsForConfigState()?.value || [];
+        const customSteps = customStepsUi.getCustomStepsForConfigState()?.value || [];
         const planned = countPlannedArtifacts(actions, customSteps);
 
         // Always stream for workflows, even if there's only 1 scan and no screenshots.
@@ -3604,7 +3664,7 @@ function storeActiveMode(mode) {
 
         // The run's language, when typed with "Other…": a tag, or a variable
         // only known once the run starts.
-        const languageProblem = runLanguageProblem();
+        const languageProblem = runWorkflowUi.runLanguageProblem();
         if (languageProblem) languageOtherInput?.setAttribute('aria-invalid', 'true');
         else languageOtherInput?.removeAttribute('aria-invalid');
         if (languageOtherError) {
@@ -3649,1147 +3709,8 @@ function storeActiveMode(mode) {
         return {ok: true};
     }
 
-    function getCustomStepSelectChoices() {
-        const out = [{ value: '', label: 'Select custom step...' }];
-        customStepsData.forEach((step) => {
-            const id = String(step?.id || '').trim();
-            if (!id) return;
-            const name = String(step?.name || '').trim();
-            out.push({
-                value: id,
-                label: name && name !== id ? `${id} - ${name}` : id
-            });
-        });
-        return out;
-    }
-
-    function refreshRunCustomStepSelectors() {
-        const choices = getCustomStepSelectChoices();
-        const setOfKnown = new Set(choices.map((x) => String(x.value)));
-        const selector = '.line[data-action-type="runCustomStep"] .field[data-field-name="customStepId"] select';
-        const selects = Array.from(document.querySelectorAll(selector));
-        selects.forEach((sel) => {
-            const previousValue = String(sel.value || '');
-            sel.innerHTML = '';
-            choices.forEach((entry) => {
-                const opt = document.createElement('option');
-                opt.value = String(entry.value);
-                opt.textContent = String(entry.label);
-                sel.appendChild(opt);
-            });
-            if (previousValue && !setOfKnown.has(previousValue)) {
-                const missing = document.createElement('option');
-                missing.value = previousValue;
-                missing.textContent = `${previousValue} (missing)`;
-                sel.appendChild(missing);
-            }
-            sel.value = previousValue;
-            if (!sel.value) sel.value = '';
-            sel.dispatchEvent(new Event('change', {bubbles: true}));
-        });
-    }
-
-    function getCustomStepUsageInfo(stepId, excludeCustomStepIndex = -1) {
-        const id = String(stepId || '').trim();
-        if (!id) return { inWorkflow: false, usedByCustomSteps: [] };
-
-        const workflowUsed = new Set();
-        const currentWorkflow = actionsBuilder?.getValue({ validate: false, maskValues: 'text' });
-        collectUsedCustomStepIds(currentWorkflow?.value || [], workflowUsed);
-
-        const usedByCustomSteps = [];
-        customStepsData.forEach((step, idx) => {
-            if (!step || idx === excludeCustomStepIndex) return;
-            const refs = new Set();
-            collectUsedCustomStepIds(step.actions || [], refs);
-            if (refs.has(id)) usedByCustomSteps.push(String(step.id || `custom-step-${idx + 1}`));
-        });
-
-        return { inWorkflow: workflowUsed.has(id), usedByCustomSteps };
-    }
-
-    // Append the custom steps and workflow from a loaded config's `state` onto
-    // the current configuration, without replacing it. Custom steps whose id
-    // collides with an existing one are given a fresh unique id, and every
-    // reference to them — in the imported workflow and in the imported steps
-    // themselves — is remapped to match, so nothing that the current config
-    // already relies on is altered.
-    function appendConfigState(state) {
-        if (!state || typeof state !== 'object') {
-            return {ok: false, message: 'Config JSON must contain a "state" object.'};
-        }
-
-        let importedSteps;
-        try {
-            const rawSteps = state['custom-steps-json'] || state['custom-steps-definitions'] || '';
-            importedSteps = parseCustomStepsJson(rawSteps);
-        } catch (e) {
-            return {ok: false, message: 'Could not append config: ' + String(e?.message || e)};
-        }
-
-        const importedWorkflow = Array.isArray(state['actions-workflow']) ? state['actions-workflow'] : [];
-
-        if (!importedSteps.length && !importedWorkflow.length) {
-            return {ok: false, message: 'This config has no custom steps or workflow steps to append.'};
-        }
-
-        // Flush any in-progress edits in the custom-step editor into customStepsData
-        // so the merge sees the true current set.
-        if (customStepActionsBuilder) {
-            const persisted = persistSelectedCustomStepActions({validate: false});
-            if (!persisted.ok) {
-                return {ok: false, message: 'Resolve the current custom step errors before appending.'};
-            }
-        }
-
-        const taken = new Set(
-            customStepsData.map((s) => String(s.id || '').trim()).filter(Boolean)
-        );
-        const remap = {};
-        const toAdd = [];
-        let renamedCount = 0;
-
-        importedSteps.forEach((imp) => {
-            const impId = String(imp.id || '').trim();
-
-            if (taken.has(impId)) {
-                const newId = makeUniqueImportedId(impId, taken);
-                remap[impId] = newId;
-                taken.add(newId);
-                toAdd.push({...imp, id: newId});
-                renamedCount += 1;
-                return;
-            }
-
-            taken.add(impId);
-            toAdd.push({...imp});
-        });
-
-        // Rewrite references now that the full remap is known. Every added step's
-        // actions are remapped (a non-renamed step may still reference a renamed one).
-        const addedSteps = toAdd.map((step) => ({
-            id: step.id,
-            name: String(step.name || '').trim() || step.id,
-            inputs: normalizeCustomStepInputs(step.inputs),
-            actions: deepRemapCustomStepIds(step.actions, remap)
-        }));
-        const remappedWorkflow = deepRemapCustomStepIds(importedWorkflow, remap);
-
-        if (addedSteps.length) {
-            customStepsData = customStepsData.concat(addedSteps);
-        }
-
-        let workflowAppended = 0;
-        if (remappedWorkflow.length && actionsBuilder && typeof actionsBuilder.appendActions === 'function') {
-            const res = actionsBuilder.appendActions(remappedWorkflow, {focusFirst: false});
-            workflowAppended = (res && Array.isArray(res.added)) ? res.added.length : 0;
-        }
-
-        // Refresh the custom-steps panel + selectors and record one undo entry.
-        if (addedSteps.length) {
-            setCustomStepsExpanded(true);
-            selectCustomStep(customStepsData.length - 1);
-            pushCustomStepsHistory();
-        }
-        refreshRunCustomStepSelectors();
-
-        const parts = [];
-        if (workflowAppended) parts.push(`${workflowAppended} workflow step${workflowAppended === 1 ? '' : 's'}`);
-        if (addedSteps.length) parts.push(`${addedSteps.length} custom step${addedSteps.length === 1 ? '' : 's'}`);
-
-        let message = parts.length ? `Appended ${parts.join(' and ')}.` : 'Nothing new to append.';
-        if (renamedCount) {
-            message += ` (${renamedCount} custom step${renamedCount === 1 ? '' : 's'} renamed to avoid id conflicts.)`;
-        }
-
-        return {ok: true, message};
-    }
-
-    function syncCustomStepsHiddenInput() {
-        if (customStepsInput) {
-            customStepsInput.value = customStepsData.length ? JSON.stringify(customStepsData) : '';
-        }
-        syncCustomStepsCountBadge();
-    }
-
-    function syncCustomStepsCountBadge() {
-        if (!customStepsCountBadgeEl) return;
-        const count = Array.isArray(customStepsData) ? customStepsData.length : 0;
-        if (!count) {
-            customStepsCountBadgeEl.hidden = true;
-            customStepsCountBadgeEl.textContent = '0';
-            customStepsCountBadgeEl.setAttribute('aria-label', 'No custom steps defined');
-            customStepsCountBadgeEl.title = 'No custom steps defined';
-            return;
-        }
-        const label = `${count} custom step${count === 1 ? '' : 's'} defined`;
-        customStepsCountBadgeEl.hidden = false;
-        customStepsCountBadgeEl.textContent = String(count);
-        customStepsCountBadgeEl.setAttribute('aria-label', label);
-        customStepsCountBadgeEl.title = label;
-    }
-
-    function setCustomStepEditorEnabled(enabled) {
-        const controls = [
-            customStepIdInput,
-            customStepNameInput,
-            customStepInputsTextarea,
-            customStepCopyBtn,
-            customStepDeleteBtn
-        ];
-        controls.forEach((el) => {
-            if (!el) return;
-            el.disabled = !enabled;
-        });
-        if (customStepActionsBuilderEl) {
-            customStepActionsBuilderEl.classList.toggle('is-disabled', !enabled);
-            customStepActionsBuilderEl.setAttribute('aria-disabled', enabled ? 'false' : 'true');
-        }
-    }
-
-    function syncCustomStepPasteButtonState() {
-        if (!customStepPasteBtn) return;
-        const hasClipboard = !!copiedCustomStep;
-        customStepPasteBtn.disabled = !hasClipboard;
-        customStepPasteBtn.setAttribute('aria-disabled', hasClipboard ? 'false' : 'true');
-        customStepPasteBtn.title = hasClipboard ? 'Paste custom step' : 'Copy a custom step first';
-    }
-
-    function appendCustomStepsListActions() {
-        if (!customStepsListEl) return;
-        if (!customStepPasteBtn && !customStepAddBtn) return;
-
-        if (!customStepsListActionsEl) {
-            customStepsListActionsEl = createEl('div', {
-                id: 'custom-steps-list-actions',
-                className: 'custom-steps-list-actions'
-            });
-        }
-
-        if (customStepPasteBtn && customStepPasteBtn.parentElement !== customStepsListActionsEl) {
-            customStepsListActionsEl.appendChild(customStepPasteBtn);
-        }
-        if (customStepAddBtn && customStepAddBtn.parentElement !== customStepsListActionsEl) {
-            customStepsListActionsEl.appendChild(customStepAddBtn);
-        }
-
-        customStepsListEl.appendChild(customStepsListActionsEl);
-    }
-
-    function copyCustomStepAt(index) {
-        if (index < 0 || index >= customStepsData.length) return;
-        const persist = persistSelectedCustomStepActions({validate: false});
-        if (!persist.ok) return;
-        copiedCustomStep = cloneCustomStepValue(customStepsData[index]);
-        syncCustomStepPasteButtonState();
-    }
-
-    function makeUniqueCustomStepId(baseIdRaw) {
-        const baseId = String(baseIdRaw || '').trim() || 'custom-step';
-        const used = new Set(customStepsData.map((step) => String(step?.id || '').trim()).filter(Boolean));
-        if (!used.has(baseId)) return baseId;
-
-        let candidate = `${baseId}-copy`;
-        if (!used.has(candidate)) return candidate;
-
-        let n = 2;
-        while (used.has(`${baseId}-copy-${n}`)) n += 1;
-        return `${baseId}-copy-${n}`;
-    }
-
-    function pasteCopiedCustomStep() {
-        if (!copiedCustomStep) return;
-        const persist = persistSelectedCustomStepActions({validate: false});
-        if (!persist.ok) return;
-
-        const nextId = makeUniqueCustomStepId(copiedCustomStep.id || 'custom-step');
-        const sourceName = String(copiedCustomStep.name || copiedCustomStep.id || '').trim();
-        const nextName = sourceName
-            ? (sourceName.endsWith(' (copy)') ? sourceName : `${sourceName} (copy)`)
-            : nextId;
-
-        customStepsData.push({
-            id: nextId,
-            name: nextName,
-            inputs: Array.isArray(copiedCustomStep.inputs) ? copiedCustomStep.inputs.map((i) => ({ ...i })) : [],
-            actions: Array.isArray(copiedCustomStep.actions) ? JSON.parse(JSON.stringify(copiedCustomStep.actions)) : []
-        });
-        setCustomStepsExpanded(true);
-        selectCustomStep(customStepsData.length - 1);
-        pushCustomStepsHistory();
-    }
-
-    function renderCustomStepsList() {
-        if (!customStepsListEl) return;
-        customStepsListEl.innerHTML = '';
-        if (!customStepsData.length) {
-            const empty = document.createElement('p');
-            empty.className = 'custom-steps-empty';
-            empty.textContent = 'No custom steps yet.';
-            customStepsListEl.appendChild(empty);
-            appendCustomStepsListActions();
-            // No tab is active — the panel isn't labelled by anything.
-            customStepsPanelEl?.removeAttribute('aria-labelledby');
-            syncCustomStepPasteButtonState();
-            return;
-        }
-
-        // Roving tabindex: exactly one tab is in the page tab order. Prefer the
-        // selected step; if somehow none is selected, make the first tab reachable.
-        const activeIndex = (selectedCustomStepIndex >= 0 && selectedCustomStepIndex < customStepsData.length)
-            ? selectedCustomStepIndex
-            : 0;
-
-        customStepsData.forEach((step, index) => {
-            const isSelected = index === selectedCustomStepIndex;
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.id = customStepTabId(index);
-            btn.className = `custom-steps-item${isSelected ? ' is-active' : ''}`;
-            btn.setAttribute('role', 'tab');
-            btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
-            // Every tab controls the same, reused editor panel.
-            btn.setAttribute('aria-controls', 'custom-steps-tabpanel');
-            btn.tabIndex = index === activeIndex ? 0 : -1;
-            btn.dataset.index = String(index);
-
-            const id = document.createElement('span');
-            id.className = 'custom-steps-item-id';
-            id.textContent = step.id || `(step ${index + 1})`;
-            btn.appendChild(id);
-
-            const name = document.createElement('span');
-            name.className = 'custom-steps-item-name';
-            name.textContent = step.name || step.id || '';
-            btn.appendChild(name);
-
-            btn.addEventListener('click', () => activateCustomStepTab(index));
-
-            // The row is presentational so the tab reads as a direct child of
-            // the tablist. Copy/delete now live in the editor panel toolbar.
-            const row = createEl('div', {className: 'custom-steps-item-row'}, [btn]);
-            customStepsListEl.appendChild(row);
-        });
-
-        appendCustomStepsListActions();
-        // Label the shared panel by whichever tab is currently active.
-        customStepsPanelEl?.setAttribute('aria-labelledby', customStepTabId(activeIndex));
-        syncCustomStepPasteButtonState();
-    }
-
-    // Activate a tab: select its step (loads it into the panel) and, since the
-    // list is re-rendered, move focus back onto the freshly-built active tab.
-    function activateCustomStepTab(index) {
-        selectCustomStep(index);
-        const tab = customStepsListEl?.querySelector(`.custom-steps-item[data-index="${index}"]`);
-        tab?.focus();
-    }
-
-    // Vertical tablist keyboard model (WAI-ARIA APG): Up/Down move between tabs,
-    // Home/End jump to the ends, wrapping around, with automatic activation.
-    function handleCustomStepsTablistKeydown(event) {
-        const target = event.target;
-        if (!target || target.getAttribute?.('role') !== 'tab') return;
-
-        const count = customStepsData.length;
-        if (!count) return;
-
-        const current = Number(target.dataset.index);
-        if (!Number.isFinite(current)) return;
-
-        let nextIndex;
-        switch (event.key) {
-            case 'ArrowDown':
-                nextIndex = (current + 1) % count;
-                break;
-            case 'ArrowUp':
-                nextIndex = (current - 1 + count) % count;
-                break;
-            case 'Home':
-                nextIndex = 0;
-                break;
-            case 'End':
-                nextIndex = count - 1;
-                break;
-            default:
-                return;
-        }
-
-        event.preventDefault();
-        activateCustomStepTab(nextIndex);
-    }
-
-    function removeCustomStepAt(index) {
-        if (index < 0 || index >= customStepsData.length) return;
-        const persist = persistSelectedCustomStepActions({validate: false});
-        if (!persist.ok) return;
-
-        const toRemove = customStepsData[index];
-        const removeId = String(toRemove?.id || '').trim();
-        const usage = getCustomStepUsageInfo(removeId, index);
-        if (usage.inWorkflow || usage.usedByCustomSteps.length) {
-            const parts = [];
-            if (usage.inWorkflow) parts.push('it is used in the current workflow');
-            if (usage.usedByCustomSteps.length) parts.push(`it is referenced by custom step(s): ${usage.usedByCustomSteps.join(', ')}`);
-            const msg = `Cannot delete custom step "${removeId}" because ${parts.join(' and ')}. Remove those references first.`;
-            window.alert(msg);
-            setUiState('error', msg);
-            return;
-        }
-
-        customStepsData.splice(index, 1);
-        if (!customStepsData.length) {
-            selectedCustomStepIndex = -1;
-        } else if (index === selectedCustomStepIndex) {
-            selectedCustomStepIndex = Math.min(index, customStepsData.length - 1);
-        } else if (index < selectedCustomStepIndex) {
-            selectedCustomStepIndex -= 1;
-        }
-        renderCustomStepsList();
-        loadSelectedCustomStepIntoEditor();
-        syncCustomStepsHiddenInput();
-        refreshRunCustomStepSelectors();
-        pushCustomStepsHistory();
-    }
-
-    function persistSelectedCustomStepActions({validate = false} = {}) {
-        if (selectedCustomStepIndex < 0) return {ok: true};
-        const selected = customStepsData[selectedCustomStepIndex];
-        if (!selected || !customStepActionsBuilder) return {ok: true};
-        // The value stays in memory so runs started from the app still work;
-        // markMasked records which fields must be dropped when a config is saved.
-        const result = customStepActionsBuilder.getValue({validate, maskValues: 'text', markMasked: true});
-        if (!result.ok) {
-            return {
-                ok: false,
-                message: 'Please fix validation errors in custom step actions.',
-                firstErrorEl: result.firstErrorEl || null
-            };
-        }
-        selected.actions = Array.isArray(result.value) ? result.value : [];
-        return {ok: true};
-    }
-
-    function loadSelectedCustomStepIntoEditor() {
-        const selected = customStepsData[selectedCustomStepIndex];
-        syncingCustomStepEditor = true;
-        try {
-            if (!selected) {
-                if (customStepIdInput) customStepIdInput.value = '';
-                if (customStepNameInput) customStepNameInput.value = '';
-                if (customStepInputsTextarea) customStepInputsTextarea.value = '';
-                if (customStepActionsBuilder) customStepActionsBuilder.clear();
-                setCustomStepEditorEnabled(false);
-                return;
-            }
-
-            setCustomStepEditorEnabled(true);
-            if (customStepIdInput) customStepIdInput.value = selected.id || '';
-            if (customStepNameInput) customStepNameInput.value = selected.name || '';
-            if (customStepInputsTextarea) customStepInputsTextarea.value = formatCustomStepInputsText(selected.inputs);
-            if (customStepActionsBuilder) {
-                customStepActionsBuilder.loadActions(Array.isArray(selected.actions) ? selected.actions : [], {
-                    clearFirst: true,
-                    focusFirst: false,
-                    injectDefaultWhenEmpty: false
-                });
-            }
-        } finally {
-            syncingCustomStepEditor = false;
-            // A different step's (or no step's) actions are now loaded — undo
-            // must not be able to reach across into whatever was here before.
-            setCustomStepActionsHistoryBaselineToCurrent();
-        }
-    }
-
-    function syncSelectedCustomStepMetaFromEditor() {
-        if (syncingCustomStepEditor || selectedCustomStepIndex < 0) return;
-        const selected = customStepsData[selectedCustomStepIndex];
-        if (!selected) return;
-        selected.id = String(customStepIdInput?.value || '').trim();
-        selected.name = String(customStepNameInput?.value || '').trim() || selected.id;
-        selected.inputs = parseCustomStepInputsText(customStepInputsTextarea?.value || '');
-        renderCustomStepsList();
-        syncCustomStepsHiddenInput();
-        refreshRunCustomStepSelectors();
-        scheduleCustomStepsHistoryPush();
-    }
-
-    function selectCustomStep(index) {
-        const persist = persistSelectedCustomStepActions({validate: false});
-        if (!persist.ok) return;
-        selectedCustomStepIndex = Number.isFinite(index) ? index : -1;
-        renderCustomStepsList();
-        loadSelectedCustomStepIntoEditor();
-        syncCustomStepsHiddenInput();
-    }
-
-    function normalizeCustomStepsFromState(steps) {
-        return steps.map((item, index) => ({
-            id: String(item.id || `custom-step-${index + 1}`).trim() || `custom-step-${index + 1}`,
-            name: String(item.name || '').trim() || String(item.id || `custom-step-${index + 1}`),
-            inputs: normalizeCustomStepInputs(item.inputs),
-            actions: Array.isArray(item.actions) ? withPasswordStepTypeDeep(item.actions) : []
-        }));
-    }
-
-    function setCustomStepsInUi(steps, {selectFirst = true} = {}) {
-        customStepsData = normalizeCustomStepsFromState(Array.isArray(steps) ? steps : []);
-        selectedCustomStepIndex = customStepsData.length && selectFirst ? 0 : -1;
-        renderCustomStepsList();
-        loadSelectedCustomStepIntoEditor();
-        syncCustomStepsHiddenInput();
-        refreshRunCustomStepSelectors();
-        // Whole set just got replaced (initial load, or a new config loaded
-        // over it) — undo shouldn't be able to reach past this baseline.
-        resetCustomStepsHistory();
-    }
-
-    function initCustomStepsUi(defs) {
-        if (!customStepActionsEl || !customStepToolbarEl) return;
-        if (!customStepActionsBuilder) {
-            customStepActionsBuilder = createActionsBuilder({
-                defs,
-                toolbarEl: customStepToolbarEl,
-                actionsEl: customStepActionsEl,
-                options: {
-                    openRulesCatalog: (options) => rulesCatalog.open(options),
-                    useHorizontalStepper: false
-                }
-            });
-            createCustomStepActionsHistoryButtons();
-            createCustomStepsListHistoryButtons();
-        }
-
-        // Delegated so it survives the list being re-rendered on every change.
-        if (customStepsListEl) {
-            customStepsListEl.addEventListener('keydown', handleCustomStepsTablistKeydown);
-        }
-
-        if (customStepAddBtn) {
-            customStepAddBtn.addEventListener('click', () => {
-                const persist = persistSelectedCustomStepActions({validate: false});
-                if (!persist.ok) return;
-                const nextIndex = customStepsData.length + 1;
-                customStepsData.push({
-                    id: `custom-step-${nextIndex}`,
-                    name: `Custom step ${nextIndex}`,
-                    inputs: [],
-                    actions: []
-                });
-                setCustomStepsExpanded(true);
-                selectCustomStep(customStepsData.length - 1);
-                pushCustomStepsHistory();
-            });
-        }
-
-        if (customStepPasteBtn) {
-            customStepPasteBtn.addEventListener('click', () => {
-                pasteCopiedCustomStep();
-            });
-        }
-
-        if (customStepCopyBtn) {
-            customStepCopyBtn.addEventListener('click', () => {
-                if (selectedCustomStepIndex >= 0) copyCustomStepAt(selectedCustomStepIndex);
-            });
-        }
-
-        if (customStepDeleteBtn) {
-            customStepDeleteBtn.addEventListener('click', () => {
-                if (selectedCustomStepIndex >= 0) removeCustomStepAt(selectedCustomStepIndex);
-            });
-        }
-
-        [customStepIdInput, customStepNameInput, customStepInputsTextarea].forEach((el) => {
-            if (!el) return;
-            el.addEventListener('input', syncSelectedCustomStepMetaFromEditor);
-            el.addEventListener('change', syncSelectedCustomStepMetaFromEditor);
-        });
-
-        setCustomStepEditorEnabled(false);
-        syncCustomStepPasteButtonState();
-        setCustomStepsInUi(parseCustomStepsJson(customStepsInput?.value || ''), {selectFirst: true});
-    }
-
-    function readCustomStepsFromUi({validate = false} = {}) {
-        const persist = persistSelectedCustomStepActions({validate});
-        if (!persist.ok) return persist;
-
-        if (validate) {
-            const seen = new Set();
-            for (let i = 0; i < customStepsData.length; i += 1) {
-                const step = customStepsData[i];
-                const id = String(step.id || '').trim();
-                if (!id) return {ok: false, message: `Custom step #${i + 1} is missing id.`};
-                if (seen.has(id)) return {ok: false, message: `Custom step name "${id}" is duplicated.`};
-                seen.add(id);
-            }
-        }
-        syncCustomStepsHiddenInput();
-        return {ok: true, value: customStepsData};
-    }
-
-    /** The workflow as the editor holds it, passwords included, for Resume to reuse them. */
-    function getWorkflowWithPasswords() {
-        try {
-            const actionsValue = actionsBuilder?.getValue({validate: false, maskValues: 'text', markMasked: true});
-            const customSteps = customStepActionsBuilder
-                ? readCustomStepsFromUi({validate: false})
-                : {ok: true, value: parseCustomStepsJson(customStepsInput?.value || '')};
-            return {
-                actions: actionsValue?.ok ? actionsValue.value : [],
-                customSteps: customSteps.ok ? customSteps.value : [],
-            };
-        } catch {
-            return null;
-        }
-    }
-
-    function getCustomStepsForConfigState() {
-        // Masked values live in customStepsData so the app can run the step, but
-        // they must not reach a saved config - redact on the way out.
-        if (customStepActionsBuilder) {
-            const read = readCustomStepsFromUi({validate: false});
-            if (!read.ok) return read;
-            return {ok: true, value: redactMaskedFieldsDeep(read.value || [])};
-        }
-        try {
-            return {ok: true, value: redactMaskedFieldsDeep(parseCustomStepsJson(customStepsInput?.value || ''))};
-        } catch (e) {
-            return {ok: false, message: String(e?.message || e), value: []};
-        }
-    }
-
-    function setCustomStepsFromConfigState(rawValue) {
-        if (!customStepActionsBuilder) {
-            if (customStepsInput) customStepsInput.value = String(rawValue || '');
-            return;
-        }
-        try {
-            const parsed = parseCustomStepsJson(String(rawValue || ''));
-            setCustomStepsInUi(parsed, {selectFirst: true});
-        } catch (e) {
-            setUiState('error', String(e?.message || e));
-        }
-    }
-
     // ---- The run's language: Set language's list, or any tag with "Other…" ----
 
-    /** The languages Set language lists, as the Language field's choices. */
-    function fillRunLanguages(defs) {
-        if (!languageSelect) return;
-        const options = defs?.setLanguage?.fields?.language?.options;
-        if (!Array.isArray(options)) return;
-        const other = languageSelect.querySelector('option[value="other"]');
-        for (const o of options) {
-            if (!o || o.value === 'default') continue;
-            languageSelect.insertBefore(new Option(String(o.label ?? o.value), String(o.value)), other);
-        }
-    }
-
-    function runLanguageTags() {
-        return languageSelect
-            ? Array.from(languageSelect.options).map((o) => o.value).filter((v) => v && v !== 'other')
-            : [];
-    }
-
-    // "Other language" shows only while "Other…" is chosen.
-    function syncRunLanguageOther() {
-        if (!languageSelect || !languageOtherField) return;
-        const other = languageSelect.value === 'other';
-        languageOtherField.hidden = !other;
-        if (!other && languageOtherError) {
-            languageOtherError.hidden = true;
-            languageOtherInput?.removeAttribute('aria-invalid');
-        }
-    }
-
-    /** The language the run starts in, '' for the browser's own. */
-    function runLanguageValue() {
-        if (!languageSelect) return '';
-        if (languageSelect.value === 'other') return languageOtherInput ? languageOtherInput.value.trim() : '';
-        return languageSelect.value;
-    }
-
-    /** Why the typed language cannot run, or ''. */
-    function runLanguageProblem() {
-        if (!languageSelect || languageSelect.value !== 'other') return '';
-        const typed = languageOtherInput ? languageOtherInput.value.trim() : '';
-        if (!typed) return 'Type a language, such as es-MX, or choose one from the list';
-        if (typed.includes('{')) return '';
-        try {
-            if (Intl.getCanonicalLocales(typed).length === 1) return '';
-        } catch {
-            // not a tag
-        }
-        return `"${typed}" is not a language tag: use one such as es-MX, fr-CA or zh-Hant-HK`;
-    }
-
-    languageSelect?.addEventListener('change', () => {
-        syncRunLanguageOther();
-        if (languageSelect.value === 'other') languageOtherInput?.focus();
-    });
-
-    function buildRunSpecFromUi({url, actions, customSteps}) {
-        const specTools = globalThis.A11Y_RUN_SPEC;
-        if (!specTools) throw new Error('shared/run-spec.js must be loaded before a11y-ui.js');
-
-        const {buildViewportFromPreset} = globalThis.A11Y_SCAN_INPUTS;
-
-        return specTools.buildRunSpec({
-            url,
-            actions,
-            customSteps,
-            viewport: viewportSelect ? buildViewportFromPreset(viewportSelect.value) : null,
-            colorScheme: colorSchemeSelect ? colorSchemeSelect.value : '',
-            highContrast: highContrastSelect ? highContrastSelect.value : '',
-            acceptUntrustedCerts: untrustedCertsSelect ? untrustedCertsSelect.value : '',
-            language: runLanguageValue(),
-            scenarioName: scenarioInput ? scenarioInput.value.trim() : '',
-        });
-    }
-
-    // The run request is the spec plus grouping, which only the report uses.
-    function buildWorkflowPayload({url, actions, customSteps}) {
-        const spec = buildRunSpecFromUi({url, actions, customSteps});
-        return {
-            payload: {...spec, groupScans: true},
-            viewport: spec.viewport || null
-        };
-    }
-
-    /** The spec for the workflow as the form currently stands, for saving it. */
-    function collectRunSpec() {
-        // The spec is only built to be written into a saved config, so masked
-        // values are redacted here too (and the default "object" shape, which
-        // the runner cannot consume, is avoided).
-        const actionsValue = actionsBuilder
-            ? actionsBuilder.getValue({ maskValues: 'redact', markMasked: true, reveal: false })
-            : null;
-        if (!actionsValue || !actionsValue.ok) return null;
-
-        const customStepsResult = getCustomStepsForConfigState();
-
-        return buildRunSpecFromUi({
-            url: urlInput ? urlInput.value.trim() : '',
-            actions: actionsValue.value,
-            customSteps: customStepsResult && customStepsResult.ok ? customStepsResult.value : []
-        });
-    }
-
-    function buildRunningMessage(actions) {
-        const totalActions = Array.isArray(actions) ? actions.length : 0;
-        const a11yScanCount = totalActions ? actions.filter((st) => st?.type === 'a11yScan').length : 0;
-
-        return totalActions > 0
-            ? `Running workflow scan with ${totalActions} action${totalActions === 1 ? '' : 's'}${
-                a11yScanCount ? ` (${a11yScanCount} a11yScan${a11yScanCount === 1 ? '' : 's'})` : ''
-            }, please wait...`
-            : 'Running, please wait...';
-    }
-
-    async function runWorkflow(payload) {
-        const startRes = await fetch('/workflow-start', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-
-        if (!startRes.ok) {
-            await handleScanHttpError(startRes);
-            return {ok: false, final: null};
-        }
-
-        const {runId} = await startRes.json();
-        if (!runId) throw new Error('No runId returned by /workflow-start');
-
-        currentRunId = runId;
-        cancelButton.setAttribute('aria-disabled', 'false');
-
-        appendLog('Live logging started...', STATUS.INFO);
-
-        // Poll progress until terminal state
-        await pollWorkflowUntilDone(runId, {
-            pollIntervalMs: PROGRESS_POLL_INTERVAL_MS,
-            onStatus: (s) => {
-                if (s === 'cancelling') {
-                    setUiState('cancelling', 'Cancelling... finishing current action');
-                } else if (s === 'cancelled') {
-                    setUiState('cancelled', 'Cancelled');
-                } else if (s === 'done') {
-                    setUiState('done', 'Finished');
-                } else if (s === 'error') {
-                    setUiState('error', 'Workflow failed');
-                }
-            },
-            onProgress: (prog) => {
-                if (prog && Array.isArray(prog.logs) && prog.logs.length) {
-                    liveUi.progressProcessor.processMany(prog.logs);
-                }
-            }
-        });
-
-        // Get final result payload
-        const final = await fetchWorkflowResult(runId);
-        const finalStatus = final && typeof final.status === 'string' ? final.status : 'error';
-        return {ok: finalStatus === 'done' || finalStatus === 'cancelled', final};
-    }
-
-    async function handleTerminalResult(final, url) {
-        if (final.status === 'done' && final.payload) {
-            setRunPayload(final.payload, {url, status: 'done'});
-            return;
-        }
-
-        if (final.status === 'error') {
-            setUiState('error', 'Workflow failed: ' + (final.payload?.details || 'Unknown error'));
-            return;
-        }
-
-        if (final.status === 'cancelled') {
-            setUiState('error', 'Run cancelled.');
-            summaryEl.textContent = 'The workflow was cancelled by the user.';
-            setRunPayload(final.payload, {url, status: 'cancelled'});
-            return;
-        }
-
-        setUiState('error', 'Unexpected workflow status: ' + final.status);
-    }
-
-    // A run the browser refused for a certificate it does not trust: the
-    // status says so, and offers to run again accepting such certificates.
-    function offerUntrustedRetry(final) {
-        const details = final?.payload?.errorDetails || final?.error || null;
-        const message = String((details && (details.message || details.details)) || details || '');
-        if (!/net::ERR_CERT_/.test(message) || !untrustedCertsSelect || untrustedCertsSelect.value === 'on') return;
-        setUiState('error', 'Workflow failed: the browser does not trust this site\'s certificate');
-        if (retryUntrustedButton) retryUntrustedButton.hidden = false;
-    }
-
-    retryUntrustedButton?.addEventListener('click', () => {
-        retryUntrustedButton.hidden = true;
-        untrustedCertsSelect.value = 'on';
-        untrustedCertsSelect.dispatchEvent(new Event('change', {bubbles: true}));
-        runSettings.sync();
-        scanButton.click();
-    });
-
-    function clearResultDialogs() {
-        scansDialog.clearItems();
-        screenshotsDialog.clearItems();
-    }
-
-    function clearLiveStreamDialog() {
-        liveStreamDialog.clearItems();
-    }
-
-    /**
-     * The form read and validated as one run request: what Run sends to
-     * /workflow-start and Add to queue sends to /queue/items. Problems are shown
-     * on the form; null means there is nothing to send.
-     */
-    function prepareRunRequest({markMasked = false, fallbackUrl = ''} = {}) {
-        // A batch whose rows all carry a URL can leave the form's empty.
-        let url = urlInput.value.trim() || fallbackUrl;
-        if (url.length && !url.startsWith('http')) url = 'http://' + url;
-        const actionsValue = actionsBuilder.getValue({validate: true, maskValues: 'text', markMasked});
-
-        // Validate URL + action builder fields
-        const valid = validateRunInputs({url, actionsValue});
-        if (!valid.ok) return null;
-
-        const actions = actionsValue.value || [];
-
-        let customSteps = [];
-        if (customStepActionsBuilder) {
-            const customStepsResult = readCustomStepsFromUi({validate: true});
-            if (!customStepsResult.ok) {
-                revealCustomStepError(customStepsResult.firstErrorEl);
-                setUiState('error', customStepsResult.message || 'Custom steps are invalid.');
-                return null;
-            }
-            customSteps = customStepsResult.value || [];
-        } else {
-            try {
-                customSteps = parseCustomStepsJson(customStepsInput ? customStepsInput.value : '');
-            } catch (e) {
-                setUiState('error', String(e?.message || e));
-                return null;
-            }
-        }
-
-        const {payload} = buildWorkflowPayload({url, actions, customSteps});
-        return {url, actions, customSteps, payload};
-    }
-
-    async function onRunScan(event) {
-        event?.preventDefault();
-
-        // Re-checked now: the workflow may have changed since the rows were.
-        const batch = batchUi.batchPanel ? batchUi.batchPanel.check() : null;
-        if (batch && batch.active) {
-            await batchUi.runBatch(batch);
-            return;
-        }
-
-        clearLogsPanel();
-        clearResultDialogs();
-        clearLiveStreamDialog();
-
-        resultsState.run.payload = null;
-        resultsState.run.meta = {};
-        lastWorkflowResponse = null;
-        setRunTabBadge(false);
-
-        if (resultsState.activeMode === 'run') {
-            clearResults();
-            clearScreenshots();
-            summaryEl.textContent = '';
-        }
-
-        liveUi.resetLivePanels();
-        loadAndRun = false;
-
-        const request = prepareRunRequest();
-        if (!request) return;
-        const {url, actions, customSteps, payload} = request;
-
-        // The configuration as it is now, before the form can change while
-        // the run goes: the report carries it, so it can be set up again
-        // (docs/report-package.md).
-        let runConfig = null;
-        try {
-            runConfig = cfgIO ? cfgIO.buildConfigFile({includeBatch: false}) : null;
-        } catch (err) {
-            console.error('Could not keep the configuration with the report', err);
-        }
-
-        // Decide live stream mode based on actions array
-        const plan = getPlannedLiveStreamMode(actions);
-        useLiveStream = !!plan.shouldStream;
-
-        liveUi.startStepCounter(actions, customSteps);
-
-        // Running UI state
-        runStartedAtMs = performance.now();
-        const runningMessage = buildRunningMessage(actions);
-        setUiState('running', runningMessage);
-
-        // Whether the run ended in an error, whose message the status keeps.
-        let failed = false;
-        try {
-            const {ok, final} = await runWorkflow(payload);
-            if (!ok) {
-                failed = true; // handleScanHttpError already set UI message
-                offerUntrustedRetry(final);
-                return;
-            }
-
-            failed = !final || final.status === 'error';
-            if (runConfig && final?.payload && typeof final.payload === 'object' && Array.isArray(final.payload.scans)) {
-                final.payload.config = runConfig;
-            }
-            await handleTerminalResult(final, url);
-        } catch (e) {
-            // The server could not be reached, or stopped answering: the run
-            // is over here, and the log says why.
-            failed = true;
-            setUiState('error', runFailureMessage(e, {started: !!currentRunId}));
-        } finally {
-            // total time log, last message
-            if (typeof runStartedAtMs === 'number') {
-                const elapsed = performance.now() - runStartedAtMs;
-                const t = formatElapsedHuman(elapsed);
-
-                // After an error the status keeps saying what went wrong.
-                if (failed) appendLog(`Total time: ${t}`, STATUS.INFO);
-                else setStatusRun(`${runResultText ? runResultText + ' ' : ''}Total time: ${t}`, STATUS.OK);
-                runResultText = '';
-            }
-
-            runStartedAtMs = null;
-
-            // The workflow has finished (done / cancelled / error) — hand the
-            // floating scan-totals counter over to the user: its dismiss button
-            // becomes active so they can close it after reviewing the totals.
-            // A fresh run resets it again on start.
-            liveUi.liveTotals?.finish?.();
-
-            // always return to idle buttons, regardless of outcome
-            scanButton.setAttribute('aria-disabled', 'false');
-            cancelButton.setAttribute('aria-disabled', 'true');
-            currentRunId = null;
-            // A failed run is over too: the error state leaves the page as if
-            // one were still going (the configuration pinned, its actions hidden).
-            document.body.classList.remove('is-running');
-            // ...unless the batch rule still holds.
-            batchUi.refreshRunButton();
-        }
-    }
-
-    /** Shows a dry run's summary (dry-run-summary.js): how each step went. */
-    function renderDryRunReport(summary) {
-        if (!dryRunReportEl) return;
-        const verdictEl = dryRunReportEl.querySelector('.dry-run-verdict');
-        const stepsEl = dryRunReportEl.querySelector('.dry-run-steps');
-        const scansEl = dryRunReportEl.querySelector('.dry-run-scans');
-        stepsEl.replaceChildren();
-        scansEl.textContent = '';
-        verdictEl.className = 'dry-run-verdict';
-
-        if (!summary || summary.outcome !== 'finished') {
-            dryRunReportEl.hidden = true;
-            return;
-        }
-
-        const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-        verdictEl.textContent = summary.fits
-            ? 'Every step ran: the workflow fits the site.'
-            : `The workflow does not fit the site as it stands: ${plural(summary.problems, 'problem')}.`;
-        verdictEl.classList.add(summary.fits ? 'fits' : 'does-not-fit');
-
-        const STATUS_TEXT = {
-            'done': 'Done',
-            'failed': 'Failed',
-            'failed-optional': 'Failed, optional',
-            'off': 'Switched off',
-            'not-run': 'Not reached',
-        };
-        for (const step of summary.steps) {
-            const li = document.createElement('li');
-            const status = document.createElement('span');
-            status.className = `dry-run-status dry-run-status-${step.status}`;
-            status.textContent = STATUS_TEXT[step.status] || step.status;
-            const number = document.createElement('span');
-            number.className = 'dry-run-number';
-            number.textContent = step.number;
-            li.append(status, number, document.createTextNode(step.title));
-            if (step.error || step.failedAt) {
-                const reason = document.createElement('span');
-                reason.className = 'dry-run-reason';
-                reason.textContent = `${step.failedAt ? ` (at step ${step.failedAt})` : ''}${step.error ? `: ${step.error}` : ''}`;
-                li.append(reason);
-            }
-            if (step.notes && step.notes.length) {
-                const notes = document.createElement('ul');
-                notes.className = 'dry-run-notes';
-                for (const note of step.notes) {
-                    const item = document.createElement('li');
-                    item.textContent = note;
-                    notes.append(item);
-                }
-                li.append(notes);
-            }
-            stepsEl.append(li);
-        }
-
-        scansEl.textContent = `${plural(summary.scansNotRun, 'scan')} not run`
-            + (summary.scansWithNothing ? `, ${summary.scansWithNothing} of them would check nothing (said under its step).` : '.')
-            + (summary.loops ? ` Loops: ${summary.loops}.` : '');
-        dryRunReportEl.hidden = false;
-    }
-
-    /**
-     * Dry run: the workflow as the form stands, every step but the scans,
-     * screenshots and evidence, to see that it still fits the site. With the
-     * batch on, with its first workflow's URL and variables: a dry run checks
-     * the steps, which every workflow of the batch shares. Leaves the report
-     * of the last run as it was.
-     */
-    async function onDryRun() {
-        const batch = batchUi.batchPanel ? batchUi.batchPanel.check() : null;
-        const row = batch && batch.active && batch.state === 'ready' && Array.isArray(batch.runs) ? batch.runs[0] : null;
-
-        clearLogsPanel();
-        clearLiveStreamDialog();
-        liveUi.resetLivePanels();
-        if (dryRunReportEl) dryRunReportEl.hidden = true;
-
-        const request = prepareRunRequest({fallbackUrl: row ? row.url : ''});
-        if (!request) return;
-        const {actions, customSteps} = request;
-        const payload = {...request.payload, dryRun: true};
-        if (row) {
-            payload.url = row.url || payload.url;
-            if (row.vars && Object.keys(row.vars).length) payload.vars = row.vars;
-        }
-
-        useLiveStream = false;
-        liveUi.startStepCounter(actions, customSteps);
-        runStartedAtMs = performance.now();
-        setUiState('running', row
-            ? `Dry run with the batch's first workflow, ${row.name}: every step but the scans, screenshots and evidence...`
-            : 'Dry run: every step but the scans, screenshots and evidence...');
-
-        try {
-            const {final} = await runWorkflow(payload);
-            if (!final) return; // handleScanHttpError has said why
-            const summary = final.dryRun || null;
-            renderDryRunReport(summary);
-            document.body.classList.remove('is-running');
-            if (!summary) {
-                setUiState('error', 'Dry run failed: ' + (final.error?.details || final.status || 'no result'));
-            } else if (summary.outcome === 'cancelled') {
-                setUiState('cancelled', 'Dry run cancelled.');
-            } else if (summary.outcome === 'not-started') {
-                setUiState('error', `Dry run could not start: ${summary.startError}`);
-            } else {
-                setUiState('done', summary.fits ? 'Dry run: every step ran, the workflow fits the site.' : 'Dry run: the workflow does not fit the site as it stands.');
-                if (!summary.fits) {
-                    setStatusRun('Dry run: the workflow does not fit the site as it stands. See the dry run below.', STATUS.WARNING);
-                    // The steps are what needs fixing: show them again.
-                    setConfigExpanded(true);
-                }
-                dryRunReportEl?.scrollIntoView({block: 'nearest'});
-            }
-        } catch (e) {
-            setUiState('error', runFailureMessage(e, {started: !!currentRunId}));
-        } finally {
-            if (typeof runStartedAtMs === 'number') {
-                appendLog(`Total time: ${formatElapsedHuman(performance.now() - runStartedAtMs)}`, STATUS.INFO);
-            }
-            runStartedAtMs = null;
-            // Its step count helped while the steps ran; its scan totals are
-            // all zero in a dry run, and it would cover the dry run's report.
-            liveUi.liveTotals.remove();
-            setRunTabSpinner(false);
-            scanButton.setAttribute('aria-disabled', 'false');
-            dryRunButton?.setAttribute('aria-disabled', 'false');
-            cancelButton.setAttribute('aria-disabled', 'true');
-            currentRunId = null;
-            batchUi.refreshRunButton();
-        }
-    }
-
-    async function handleScanHttpError(response) {
-        const text = await response.text();
-        let statusMessage = 'Scan failed. Server responded with status ' + response.status + '.';
-        try {
-            const json = JSON.parse(text);
-            if (json && (json.details || json.error)) {
-                const detail = json.details || json.error;
-                statusMessage = 'Scan failed (HTTP ' + response.status + '): ' + detail;
-            }
-        } catch {
-        }
-
-        setUiState('error', statusMessage);
-        summaryEl.textContent = '';
-
-        if (text) {
-            const errorBlob = new Blob([text], {type: 'application/json'});
-            const errorUrl = URL.createObjectURL(errorBlob);
-            const errorLink = document.createElement('a');
-            errorLink.href = errorUrl;
-            errorLink.target = '_blank';
-            errorLink.rel = 'noopener noreferrer';
-            errorLink.textContent = 'Open error details (JSON)';
-            errorLink.style.display = 'inline-block';
-            errorLink.style.marginTop = '0.5rem';
-            summaryEl.appendChild(errorLink);
-        }
-    }
 
     /* ==================== Final payload summary ==================== */
 
