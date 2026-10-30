@@ -128,7 +128,7 @@ removed): in its JSON as `config`, and in its package as
 row, in its folder (`docs/design/workflow-queue-batch-design.md` §6), so Download
 all carries it.
 
-"Load configuration" takes a zip or a report as well as a configuration:
+**Load config** takes a zip or a report as well as a configuration:
 
 - a zip: its `.a11y-config.json` (the one nearest the top); failing that,
   one rebuilt from its `batch.json` (a batch saved before batches kept
