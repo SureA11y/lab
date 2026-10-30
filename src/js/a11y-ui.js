@@ -1,42 +1,23 @@
 import {createActionsBuilder, redactMaskedFieldsDeep, withPasswordStepTypeDeep} from './actions-builder.module.js';
-import {
-    buildLabeledSelect,
-    createEl,
-    createImg,
-    escapeAttr,
-    escapeHtml,
-    iconButton,
-    indentPrefix,
-    jsonBlob,
-    jsonToBrowserLink,
-    linkifyUrlsToHtml,
-    parseForEachIteration,
-    parseRepeatIteration,
-    safeBaseName,
-    scanTagChipsHtml,
-    svgIcon,
-    createSplitButton
-} from './a11y-ui.utils.js';
+import {buildLabeledSelect, createEl, createImg, escapeAttr, escapeHtml, iconButton, indentPrefix, jsonBlob, linkifyUrlsToHtml, parseForEachIteration, parseRepeatIteration, safeBaseName, scanTagChipsHtml, svgIcon, createSplitButton} from './a11y-ui.utils.js';
 import {enhanceAsLiveCarousel} from './carousel-ui.js';
 import {fetchWorkflowResult, pollWorkflowUntilDone, runFailureMessage} from './a11y-ui.workflow.js';
 import {setupRunSettings} from './run-settings.js';
-import {createStreamCardAdder, renderAllScansCard, screenshotAlt} from './stream-ui.js';
+import {createStreamCardAdder, renderAllScansCard} from './stream-ui.js';
 import {scanToAllScansCardProps} from './all-scans-data.js';
 import {isFailureFreeScan, failureFreeScansNote} from './scan-failures.js';
 import {createProgressProcessor} from './progress-processor.js';
 import {createLiveTotals} from './live-totals.js';
 import {collectVarsDeep, deriveScreenshotCaption as deriveLiveScreenshotCaption, findUnresolvedVars, resolveLabelTemplate as resolveLiveLabel} from './live-view.js';
 import {createConfigIO} from './config-io.js';
-import {createRenderer} from './a11y-ui.rendering.js';
 import {optInRulesLabel} from './report-fields.js';
 import {enginesHTML, howTestedHTML} from './engine-brand.js';
 import {openConformanceReview} from './conformance-review.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
 import {setupModeSwitch} from './tabs-ui.js';
-import {createRunQueuePanel} from './run-queue-panel.js';
 import {createBatchPanel, runLabelFor} from './batch-panel.js';
 import {collectScanTags, makeTagFilter, isTagFilterActive, scanMatchesTagFilter, applyScanTagsEdit} from './scan-tag-filter.js';
-import {canCompareReport, MAX_REPORTS as MAX_COMPARE_REPORTS} from './report-comparison-controller.js';
+import {canCompareReport} from './report-comparison-controller.js';
 import {pickReportNamePrefill} from './report-name.js';
 import {formatReportTimestamp} from './report-timestamp.js';
 import {reportMetaField} from './report-meta-fields.js';
@@ -52,7 +33,6 @@ import {installBackToTop} from './back-to-top.js';
 import {createClearReportBtn, createCompareReportBtn, createDownloadReportSplitButton, downloadConformanceReport, downloadConformanceReportDocx, setWhenReportDrawn} from './export.js';
 import {readCompareZip} from './comparison-bundle.js';
 import {watchForMissingPictures} from './missing-pictures.js';
-import {folderOf, rebaseImageRefs} from './report-package.js';
 import {afterPaint, isBusy, runBusy, setBusy} from './busy.js';
 import {getActivity} from './activity.js';
 import {clearLazyBodies, openLazyDialog, setLazyScope} from './lazy-dialogs.js';
@@ -61,12 +41,14 @@ import {cleanGroupingItem} from './grouping-spec.js';
 import {buildGlobalSummary, cloneJsonData, collectReportEngines, computeTotals, ensureScanSummaryCounts, ensureScansIncludedFlag, getA11yGlobalFindings, getAllArtifactUrls, getScreenshotsFromPayload, hashHex16, normalizePayloadForUi, pickMetricDefsFromPayload, pickMetricDefsFromStaged, prepareDataForReport, sortByOrderKey, stripVolatileKeysDeep, validateReportOrThrow} from './report-data.js';
 import {buildActionTreeNodes, buildCustomStepMaps, collapseLineIfExpanded, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, resolveStepRefForLogEntry, setupCollapseAllStepsButton} from './action-tree.js';
 import {cloneCustomStepValue, collectUsedCustomStepIds, customStepTabId, deepRemapCustomStepIds, formatCustomStepInputsText, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepInputsText, parseCustomStepsJson} from './custom-steps-data.js';
-import {setQueueTabSpinner, setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
+import {setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isActuallyFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
 import {STATUS, PROGRESS_POLL_INTERVAL_MS, TAB_MODE_STORAGE_KEY} from './ui-constants.js';
 import {createQueueRunWatch} from './queue-run-watch.js';
 import {createCompareTab} from './compare-tab.js';
 import {createGroupingUi} from './grouping-ui.js';
+import {createScreenshotsUi} from './screenshots-ui.js';
+import {createRunQueueUi} from './run-queue-ui.js';
 
 function getStoredActiveMode() {
     try {
@@ -92,9 +74,9 @@ function storeActiveMode(mode) {
     // What the parts of the app moved into modules of their own reach of
     // the rest: accessors, so they read and set the values as they are.
     const app = {
-        get fetchJson() { return fetchJson; },
-        get openQueuedResult() { return openQueuedResult; },
-        get queuePanel() { return queuePanel; },
+        get fetchJson() { return runQueueUi.fetchJson; },
+        get openQueuedResult() { return runQueueUi.openQueuedResult; },
+        get queuePanel() { return runQueueUi.queuePanel; },
         get buildExportPayload() { return buildExportPayload; },
         get compareActionsEl() { return compareActionsEl; },
         get compareClearBtn() { return compareClearBtn; },
@@ -119,8 +101,33 @@ function storeActiveMode(mode) {
         get tabsmode() { return tabsmode; },
         get groupingFileInput() { return groupingFileInput; },
         get renderActiveBucket() { return renderActiveBucket; },
-        get renderer() { return renderer; },
+        get renderer() { return screenshotsUi.renderer; },
         get updateResults() { return updateResults; },
+        get getScanTagSuggestions() { return getScanTagSuggestions; },
+        get liveStreamDialog() { return liveStreamDialog; },
+        get moveScan() { return moveScan; },
+        get renameScan() { return renameScan; },
+        get results() { return results; },
+        get scansDialog() { return scansDialog; },
+        get screenshots() { return screenshots; },
+        get screenshotsDialog() { return screenshotsDialog; },
+        get summaryEl() { return summaryEl; },
+        get toggleScanIncludedInReport() { return toggleScanIncludedInReport; },
+        get updateScanTags() { return updateScanTags; },
+        get $() { return $; },
+        get afterConfigLoaded() { return afterConfigLoaded; },
+        set afterConfigLoaded(value) { afterConfigLoaded = value; },
+        get batchPanel() { return batchPanel; },
+        get cfgIO() { return cfgIO; },
+        set cfgIO(value) { cfgIO = value; },
+        get compareTab() { return compareTab; },
+        get focusReportArea() { return focusReportArea; },
+        get getWorkflowWithPasswords() { return getWorkflowWithPasswords; },
+        get queueRunWatch() { return queueRunWatch; },
+        get refreshRunButton() { return refreshRunButton; },
+        get setReportPayload() { return setReportPayload; },
+        get setSectionsState() { return setSectionsState; },
+        get whenResultsComplete() { return whenResultsComplete; },
     };
 
     const $ = (sel, root = document) => root.querySelector(sel);
@@ -513,9 +520,9 @@ function storeActiveMode(mode) {
         }
 
         if (!selected || selected.id === 'custom' || !selected.groups) {
-            renderer.setIssueGroupingSpec(null);
+            screenshotsUi.renderer.setIssueGroupingSpec(null);
         } else {
-            renderer.setIssueGroupingSpec(selected.groups);
+            screenshotsUi.renderer.setIssueGroupingSpec(selected.groups);
         }
 
         // Coming back to a tab whose results are already on screen: drawing
@@ -706,7 +713,7 @@ function storeActiveMode(mode) {
         if (!current || !payload) return;
 
         const scans = getIncludedScans(payload);
-        const html = renderer.buildDispersionSectionHtml(scans);
+        const html = screenshotsUi.renderer.buildDispersionSectionHtml(scans);
         // Nothing fails in view any more: nothing to place.
         if (!html) {
             current.remove();
@@ -2758,199 +2765,8 @@ function storeActiveMode(mode) {
 
     /* ==================== Screenshots ==================== */
 
-    function imgToBtn(src, alt, viewportRatio = 1) {
-        if (!src) return null;
-        const button = document.createElement('button');
-        const img = document.createElement('img');
-        // "Screenshot: Home", which names the button that opens it larger too.
-        img.alt = screenshotAlt(alt);
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.src = src;
-        const btnContent = document.createElement('span');
-        btnContent.style.aspectRatio = viewportRatio;
-        if (viewportRatio > 1) {
-            btnContent.style.width = '100%';
-            btnContent.style.height = 'auto';
-        } else {
-            btnContent.style.width = 'auto';
-            btnContent.style.height = '100%';
-        }
-        button.appendChild(btnContent);
-        btnContent.appendChild(img);
-        button.classList.add('screenshot-btn');
-        return button;
-    }
-
-    function buildScreenshotElements(scan) {
-        const out = [];
-        const scanLabel = scan?.label?.replace("Scan: ", "");
-
-        if (scan && Array.isArray(scan.screenshots) && scan.screenshots.length) {
-            scan.screenshots.forEach((s, i) => {
-                let src = null;
-                // A merged scan holds one screenshot per context, each named by
-                // its context and with its own proportions (mobile, desktop).
-                const context = scan.mergedScan === true && s && typeof s === 'object' && s.label ? String(s.label) : '';
-                let alt = scanLabel ? scanLabel : (s && s.name ? s.name : `Screenshot ${i + 1}`);
-                if (context) alt = `${alt} — ${context}`;
-                if (typeof s === 'string') {
-                    src = s;
-                } else if (s) {
-                    src = s.publicUrl || s.dataUrl || null;
-                }
-                const ratio = (context && Number.isFinite(s.viewportRatio)) ? s.viewportRatio : scan.viewportRatio;
-                const btn = imgToBtn(src, alt, ratio || 1);
-                if (!btn) return;
-                btn.firstChild.style.aspectRatio = ratio;
-                btn.onclick = () => scansDialog.openById(src);
-                if (context) {
-                    // Captioned with its context: seen, not read twice, as the
-                    // image's alt already names it.
-                    const figure = document.createElement('figure');
-                    figure.className = 'screenshot-context-figure';
-                    const caption = document.createElement('figcaption');
-                    caption.setAttribute('aria-hidden', 'true');
-                    caption.textContent = context;
-                    figure.append(btn, caption);
-                    out.push(figure);
-                    return;
-                }
-                out.push(btn);
-            });
-            if (out.length) return out;
-        }
-
-        const report = scan && scan.report ? scan.report : null;
-        if (report && typeof report === 'object') {
-            const main =
-                report.screenshotPublicUrl ||
-                report.screenshotDataUrl ||
-                (report.publicUrl ? report.publicUrl.replace(/\.html?$/i, '') + '-screenshot.jpg' : null);
-
-            const mainBtn = imgToBtn(main, 'Main screenshot');
-            mainBtn.onclick = () => scansDialog.openById(main);
-            if (mainBtn) out.push(mainBtn);
-        }
-
-        return out;
-    }
-
-    const renderer = createRenderer({
-        resultsEl: results,
-        screenshotsEl: screenshots,
-        escapeAttr,
-        escapeHtml,
-        jsonToBrowserLink,
-        buildScreenshotElements,
-        imgToBtn,
-        dialogs: {scansDialog, screenshotsDialog, liveStreamDialog},
-        onToggleScanIncludedInReport: toggleScanIncludedInReport,
-        onMoveScan: moveScan,
-        onRenameScan: renameScan,
-        onEditScanTags: updateScanTags,
-        getScanTagSuggestions
-    });
-
-    function findSummaryScanNameEls(scanId) {
-        const idSel = CSS.escape(scanId);
-        return {
-            text: summaryEl.querySelector(`.scan-name-text[data-scan-id="${idSel}"]`),
-            input: summaryEl.querySelector(`.scan-name-input[data-scan-id="${idSel}"]`)
-        };
-    }
-
-    function focusSummaryRenameBtn(scanId) {
-        const btn = summaryEl.querySelector(`[data-scan-action="rename"][data-scan-id="${CSS.escape(scanId)}"]`);
-        try {
-            btn && btn.focus();
-        } catch {
-            // ignore
-        }
-    }
-
-    function enterSummaryNameEdit(scanId) {
-        const {text, input} = findSummaryScanNameEls(scanId);
-        if (!text || !input) return;
-
-        input.value = text.textContent;
-        text.classList.add('visually-hidden');
-        input.hidden = false;
-
-        requestAnimationFrame(() => {
-            try {
-                input.focus();
-                input.select();
-            } catch {
-                // ignore
-            }
-        });
-    }
-
-    function exitSummaryNameEdit(scanId) {
-        const {text, input} = findSummaryScanNameEls(scanId);
-        if (!input) return;
-
-        input.hidden = true;
-        if (text) text.classList.remove('visually-hidden');
-    }
-
-    function saveSummaryNameEdit(scanId) {
-        const {input} = findSummaryScanNameEls(scanId);
-        if (!input) return;
-
-        const raw = String(input.value || '').trim();
-        exitSummaryNameEdit(scanId);
-        focusSummaryRenameBtn(scanId);
-        renameScan(scanId, raw || null);
-    }
-
-    function cancelSummaryNameEdit(scanId) {
-        exitSummaryNameEdit(scanId);
-        focusSummaryRenameBtn(scanId);
-    }
-
-    summaryEl.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-scan-action]');
-        if (!btn) return;
-
-        const {scanAction, scanId} = btn.dataset;
-        if (!scanId) return;
-
-        if (scanAction === 'toggle') updateResults(btn, () => toggleScanIncludedInReport(scanId));
-        else if (scanAction === 'move-up') moveScan(scanId, -1);
-        else if (scanAction === 'move-down') moveScan(scanId, 1);
-        else if (scanAction === 'rename') {
-            e.preventDefault();
-            enterSummaryNameEdit(scanId);
-        }
-    });
-
-    summaryEl.addEventListener('keydown', (e) => {
-        const input = e.target.closest('.scan-name-input');
-        if (!input) return;
-
-        const scanId = input.dataset.scanId;
-        if (!scanId) return;
-
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            saveSummaryNameEdit(scanId);
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            cancelSummaryNameEdit(scanId);
-        }
-    });
-
-    summaryEl.addEventListener('focusout', (e) => {
-        const input = e.target.closest('.scan-name-input');
-        if (!input || input.hidden) return;
-
-        const scanId = input.dataset.scanId;
-        if (!scanId) return;
-
-        saveSummaryNameEdit(scanId);
-    });
+    // In screenshots-ui.js.
+    const screenshotsUi = createScreenshotsUi(app);
 
     // ---- Scan sorting ----
     // Sort is a stable ordering of every scan card, applied by the shared module
@@ -3226,186 +3042,8 @@ function storeActiveMode(mode) {
 
     /* ==================== Run queue ==================== */
 
-    const queueListEl = $('#queue-sessions');
-    // A batch is running on the server (from GET /queue): Run batch waits.
-    let queueBusy = false;
-    const queuePanel = queueListEl ? createRunQueuePanel({
-        listEl: queueListEl,
-        concurrencySelect: $('#queue-concurrency'),
-        cancelAllButton: $('#queue-cancel-all'),
-        notifyToggle: $('#queue-notify'),
-        statusEl: $('#queue-status'),
-        onOpen: openQueuedResult,
-        onLoadWorkflow: loadQueuedWorkflow,
-        onSendToCompare: sendQueueSessionToCompare,
-        activity: getActivity(),
-        getFormWorkflow: getWorkflowWithPasswords,
-        onWatch: (item, session) => queueRunWatch.watchQueuedRun(item, session),
-        onRunningChange: (isRunning) => {
-            setQueueTabSpinner(isRunning);
-            queueBusy = isRunning;
-            refreshRunButton();
-        },
-    }) : null;
-    // A batch still running from before a reload shows its spinner straight away.
-    queuePanel?.refresh();
-
-    async function fetchJson(url) {
-        const res = await fetch(url, {method: 'GET'});
-        if (!res.ok) throw new Error(`the server answered ${res.status}`);
-        return res.json();
-    }
-
-    /**
-     * A queued run's result: its batch's folder is a report package, and
-     * the result names its pictures by their path there, which the lab
-     * serves (report-package.js).
-     */
-    async function fetchQueuedResult(item) {
-        const res = await fetch(item.fileUrl, {method: 'GET'});
-        if (!res.ok) throw new Error(`the server answered ${res.status}`);
-        return JSON.parse(rebaseImageRefs(await res.text(), folderOf(item.fileUrl)));
-    }
-
-    /** Opens a result the queue saved in the report view, as if loaded from a file. */
-    async function openQueuedResult(item) {
-        // A long run's result takes a while: the activity panel shows it, the
-        // status lines say how it ended (quiet).
-        const task = getActivity().start(`Open “${item.name}” from the queue`, {quiet: true});
-        try {
-            task.step('Downloading the result');
-            const payload = await fetchQueuedResult(item);
-            task.step('Checking it');
-            await afterPaint();
-            validateReportOrThrow(payload, item.file);
-            task.step('Drawing the report');
-            await afterPaint();
-            setReportPayload(payload, {fileName: item.file});
-            tabsmode?.setActive('report');
-            const message = `Loaded “${item.name}” from the queue.`;
-            setStatusReport(message, STATUS.OK);
-            focusReportArea();
-            await whenResultsComplete();
-            task.done(message);
-        } catch (err) {
-            const message = `Could not open “${item.name}”: ${String(err?.message || err)}`;
-            queuePanel?.setStatus(message, 'error');
-            task.fail(message);
-        }
-    }
-
-    /**
-     * Puts an interrupted run's workflow back in the form. Used for runs whose
-     * masked values were never saved: the user types them again and re-adds it.
-     */
-    async function loadQueuedWorkflow(item, session) {
-        try {
-            const manifest = await fetchJson(session.manifestUrl);
-            const entry = (manifest.items || []).find((i) => i.id === item.id);
-            if (!entry || !entry.config) throw new Error('its workflow is missing from batch.json');
-            if (!cfgIO) throw new Error('the workflow editor is not ready yet');
-            const problem = cfgIO.applyConfig(entry.config, afterConfigLoaded);
-            if (problem) throw new Error(problem);
-            afterConfigLoaded();
-            // A batch run's vars live in its run spec, not in the form: put its
-            // row back in the Batch section so running it again keeps them.
-            const isRow = Number.isInteger(entry.row) || (entry.vars && Object.keys(entry.vars).length);
-            if (isRow && batchPanel) {
-                batchPanel.loadRows([{name: item.name, url: item.url, ...(entry.vars ? {vars: entry.vars} : {})}], {namePattern: ''});
-                // Its row opened the Batch section; the config says how it was.
-                setSectionsState(entry.config.sections);
-            }
-            tabsmode?.setActive('run');
-            const notes = cfgIO.takeLoadNotes();
-            setStatusRun((isRow
-                ? `Loaded “${item.name}” from the queue, with its workflow in the Batch section. Enter its passwords again, then Run.`
-                : `Loaded “${item.name}” from the queue. Enter its passwords again, then Run.`)
-                + (notes.length ? ' ' + notes.join(' ') : ''), notes.length ? STATUS.WARNING : STATUS.INFO);
-        } catch (err) {
-            queuePanel?.setStatus(`Could not load “${item.name}”: ${String(err?.message || err)}`, 'error');
-        }
-    }
-
-    /**
-     * Loads a queue session's saved results into the Compare tab, in queue
-     * order. A batch's runs are versions in row order, so they arrive arranged
-     * that way and under "Versions"; scan times need not follow the rows.
-     * A batch is a comparison of its own, so it replaces what is loaded, as a
-     * downloaded comparison does, rather than mixing into it.
-     */
-    async function sendQueueSessionToCompare(session) {
-        if (!compareTab.comparisonController) return;
-        if (compareTab.refuseWhileCompareLoads((message) => queuePanel?.setStatus(message, 'error'))) return;
-        // Reading a batch's results takes a while: the activity panel lists
-        // each, the Compare status says how it ended (quiet).
-        await compareTab.runCompareLoad(`Send ${session.name ? `“${session.name}”` : 'the batch'} to Compare`,
-            (task) => sendQueueSessionToCompareAs(session, task));
-    }
-
-    async function sendQueueSessionToCompareAs(session, task) {
-        const withFiles = session.items.filter((i) => i.fileUrl);
-
-        if (!await compareTab.replaceLoadedComparison(task, 'with this batch’s runs')) {
-            const message = 'Not sent; the reports already in Compare stay.';
-            queuePanel?.setStatus(message);
-            if (!task.ended) task.done(message);
-            return;
-        }
-
-        const items = withFiles.slice(0, MAX_COMPARE_REPORTS);
-
-        const keys = [];
-        const failures = [];
-        let duplicates = 0;
-        for (const item of items) {
-            const adding = task.step(`Adding ${item.name}`);
-            await afterPaint();
-            try {
-                const result = compareTab.comparisonController.addReport(await fetchQueuedResult(item), item.file, {draw: false});
-                if (!result.ok) {
-                    failures.push(`${item.file} (${result.error})`);
-                    adding.warn(result.error);
-                    continue;
-                }
-                keys.push(result.key);
-                if (result.duplicate) duplicates += 1;
-                adding.done();
-            } catch (err) {
-                failures.push(`${item.file} (${String(err?.message || err)})`);
-                adding.warn(String(err?.message || err));
-            }
-        }
-        if (withFiles.length > items.length) {
-            const more = `${withFiles.length - items.length} more run${withFiles.length - items.length === 1 ? '' : 's'} (the dashboard holds ${MAX_COMPARE_REPORTS} reports at once)`;
-            failures.push(more);
-            task.step('Some runs were left out').warn(more);
-        }
-        task.step('Drawing the comparison');
-        await afterPaint();
-
-        if (keys.length > 1) {
-            compareTab.comparisonController.arrange(keys);
-            if (session.items.some((i) => Number.isInteger(i.row))) compareTab.comparisonController.setContext('versions');
-        } else {
-            compareTab.comparisonController.refresh();
-        }
-
-        // The comparison is the batch's now, so it goes by the batch's name;
-        // a batch without one leaves it to the reports.
-        const batchName = typeof session.name === 'string' ? session.name.trim() : '';
-        if (batchName && keys.length) compareTab.comparisonController.setDocument({title: batchName});
-
-        tabsmode?.setActive('compare');
-        compareTab.renderCompareChips();
-        const said = compareTab.describeCompareLoad({
-            added: keys.length,
-            failures,
-            duplicates,
-            lead: `${keys.length} run${keys.length === 1 ? '' : 's'} added from the queue`,
-        });
-        if (keys.length) task.done(said);
-        else task.fail(said);
-    }
+    // In run-queue-ui.js.
+    const runQueueUi = createRunQueueUi(app);
 
 
     /* ==================== Watching a queued run ==================== */
@@ -3436,7 +3074,7 @@ function storeActiveMode(mode) {
      * run is the row it came from.
      */
     async function onQueueBatch(runs) {
-        if (!queuePanel) return false;
+        if (!runQueueUi.queuePanel) return false;
         const request = prepareRunRequest({markMasked: true, fallbackUrl: runs[0]?.url || ''});
         if (!request) return false;
 
@@ -3464,7 +3102,7 @@ function storeActiveMode(mode) {
         });
 
         try {
-            await queuePanel.add(items, {name: scenarioInput ? scenarioInput.value.trim() : '', config: batchConfig});
+            await runQueueUi.queuePanel.add(items, {name: scenarioInput ? scenarioInput.value.trim() : '', config: batchConfig});
             setStatusRun(`Queued a batch of ${items.length} run${items.length === 1 ? '' : 's'}.`, STATUS.OK);
             return true;
         } catch (err) {
@@ -3493,7 +3131,7 @@ function storeActiveMode(mode) {
      */
     function refreshRunButton(status = batchPanel?.getStatus()) {
         if (!scanButton) return;
-        const blocked = !!(status && status.active && queueBusy);
+        const blocked = !!(status && status.active && runQueueUi.queueBusy);
         scanButton.textContent = blocked ? 'Run batch (another batch is running)' : (runLabelFor(status) || 'Run');
         if (currentRunId) return;
         if (blocked) {
@@ -3511,7 +3149,7 @@ function storeActiveMode(mode) {
      * queue, where each result is saved.
      */
     async function runBatch(status) {
-        if (queueBusy) {
+        if (runQueueUi.queueBusy) {
             setStatusRun(BATCH_BUSY, STATUS.ERROR);
             return;
         }
@@ -3587,7 +3225,7 @@ function storeActiveMode(mode) {
         document.body.classList.toggle('compare-mode-active', mode === 'compare');
         // The queue tab, like Compare, owns its pane and has no results bucket.
         document.body.classList.toggle('queue-mode-active', mode === 'queue');
-        queuePanel?.setVisible(mode === 'queue');
+        runQueueUi.queuePanel?.setVisible(mode === 'queue');
         if (mode === 'queue') {
             storeActiveMode('queue');
             return;
@@ -6192,7 +5830,7 @@ function storeActiveMode(mode) {
         }
 
         if (includedScans.length > 1) {
-            const newGroupedResults = renderer.renderScansReport(data, {
+            const newGroupedResults = screenshotsUi.renderer.renderScansReport(data, {
                 scanPresentationMode: 'analysis',
                 dispersionScans: includedScans
             });
@@ -6896,13 +6534,13 @@ function storeActiveMode(mode) {
         results.classList.toggle('report-edit-mode', reportEditMode);
         // The Engine column shows only for a report more than one engine ran
         // (with the engine lens on, the one engine it shows).
-        renderer.setReportEngines(getScansFromPayload(data));
+        screenshotsUi.renderer.setReportEngines(getScansFromPayload(data));
 
         results.appendChild(createArtifactsPanel(data));
 
         if (scans.length || screenshots.length) resultsContainer.style.display = '';
         if (getScansFromPayload(data, {includedOnly: true}).length > 1) {
-            const groupedResultsEl = renderer.renderScansReport(data, {
+            const groupedResultsEl = screenshotsUi.renderer.renderScansReport(data, {
                 scanPresentationMode: 'analysis',
                 dispersionScans: getScansFromPayload(data, {includedOnly: true})
             });
@@ -6918,10 +6556,10 @@ function storeActiveMode(mode) {
         // goes back to where it was, which needs every scan in place.
         const scanOptions = {scanPresentationMode: 'analysis', reportEditMode};
         const firstBatch = drawScansInBatches ? Math.min(scans.length, SCANS_FIRST_BATCH) : scans.length;
-        renderer.renderAllScans(scans, {...scanOptions, range: [0, firstBatch]});
+        screenshotsUi.renderer.renderAllScans(scans, {...scanOptions, range: [0, firstBatch]});
 
         if (screenshots.length) screenshotsContainer.style.display = '';
-        renderer.renderAllScreenshots(screenshots);
+        screenshotsUi.renderer.renderAllScreenshots(screenshots);
 
         renderScanTagFilter(data);
         applyScanTagFilterVisibility(scans);
@@ -6954,7 +6592,7 @@ function storeActiveMode(mode) {
             await afterPaint();
             // The area was cleared or drawn again meanwhile.
             if (pendingScanDraw !== draw) return;
-            renderer.renderAllScans(scans, {...scanOptions, range: [start, start + SCANS_PER_BATCH]});
+            screenshotsUi.renderer.renderAllScans(scans, {...scanOptions, range: [start, start + SCANS_PER_BATCH]});
             // Each batch joins the filter and the order the earlier ones are in.
             applyScanTagFilterVisibility(scans);
             applyScanSort();
