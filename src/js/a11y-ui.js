@@ -5330,7 +5330,8 @@ function storeActiveMode(mode) {
 
         const copyBtn = event.target.closest('.copy-selector-btn');
         if (copyBtn) {
-            const selector = copyBtn.getAttribute('data-selector') || '';
+            // A selector, or what the button holds (Copy URLs).
+            const selector = copyBtn.getAttribute('data-copy') || copyBtn.getAttribute('data-selector') || '';
             if (selector && navigator.clipboard?.writeText) {
                 navigator.clipboard.writeText(selector).catch(() => {
                 });

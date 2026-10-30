@@ -3,6 +3,7 @@
 /**
  * Rendering helpers for a11y-ui.
  */
+import {occurrencePagesHtml} from './occurrence-pages.js';
 import {generateA11yMetricsContents} from './a11y-metrics-renderer.js';
 import {iconButton, scanTagChipsHtml} from './a11y-ui.utils.js';
 import {buildTagsInputControl} from './tags-input.js';
@@ -698,22 +699,24 @@ export function createRenderer({
                 const rawHtml = (n.html || '').replace(/\s+/g, ' ').trim();
                 const shortHtml = rawHtml.length > 250 ? rawHtml.slice(0, 247) + '…' : rawHtml;
                 const failure = (n.failureSummary || '').trim();
-                const urls = [...new Set((Array.isArray(n.urls) ? n.urls : []))].map(url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`).join(', ');
+                // Where it was found: under the heading, never in it, short
+                // whatever the addresses are like (occurrence-pages.js).
+                const pages = occurrencePagesHtml(n.urls);
                 const instanceLabel = type === 'fail' ? 'Occurrence' : 'Instance';
                 const inContexts = contextsLabel(n);
 
                 const selectorPart = selector
                     ? '<div class="example-node-header">' +
                     '<h2>' + instanceLabel + ' ' + (nodeIndex + 1) +
-                    (urls?.length ? ' <span>URLs: ' + urls + '</span>' : '') +
                     (inContexts ? ' <span class="node-contexts">' + escapeHtml(inContexts) + '</span>' : '') +
                     (n.lean ? ' ' + leanBadgeHtml(reviewGroupOfNode(n)) : '') + '</h2>' +
+                    pages +
                     '<code hidden="hidden">' + escapeHtml(selector) + '</code>' +
                     '</div>'
                     : '<div class="example-node-header"><h2>Instance ' +
                     (nodeIndex + 1) +
                     (inContexts ? ' <span class="node-contexts">' + escapeHtml(inContexts) + '</span>' : '') +
-                    '</h2><code>(no target selector)</code></div>';
+                    '</h2>' + pages + '<code>(no target selector)</code></div>';
 
                 const htmlPart = shortHtml
                     ? '<div class="example-node-code"><div class="example-node-html"><code>' + escapeHtml(shortHtml) + '</code><button type="button" class="copy-selector-btn" data-selector="' + escapeAttr(selector) + '">Copy selector</button></div></div>'

@@ -3346,6 +3346,9 @@ button.src-dialog-close {
 
     box-shadow: none;
     cursor: pointer;
+    /* "Close" whole, never broken across lines in a narrow header. */
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 button.src-dialog-close:hover {
@@ -3465,6 +3468,18 @@ li:has(> .step-tree-list) > .step-tree-node {
 
 /* Instance header */
 .example-node-header { margin-bottom: .35rem; }
+
+/* Where an occurrence was found (occurrence-pages.js): a line under its
+   heading, short addresses, the rest of a long list to open. */
+.example-node-header .node-pages { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; margin: .1rem 0 .5rem; font-size: var(--fs-sm); color: var(--text-muted); }
+.example-node-header .node-pages-line { margin: 0; flex: 1 1 18rem; min-width: 0; overflow-wrap: anywhere; }
+.example-node-header .node-pages-label { font-weight: 600; color: var(--text-main); }
+.example-node-header .node-pages .copy-urls-btn { margin: 0; }
+.example-node-header .node-pages-more { flex: 1 1 100%; }
+.example-node-header .node-pages-more summary { cursor: pointer; min-height: 24px; }
+.example-node-header .node-pages-more ul { margin: .25rem 0 0; padding-left: 1.2rem; overflow-wrap: anywhere; }
+/* One to a line, so not links in a sentence: each a 24px target (WCAG 2.5.8). */
+.example-node-header .node-pages-more li a { display: inline-block; min-height: 24px; line-height: 24px; }
 
 .example-node-header h2 span { font-weight: normal; font-size: var(--fs-sm); }
 

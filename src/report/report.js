@@ -352,7 +352,8 @@ function viewDetailsDialogButtons() {
             });
 
             dialog.querySelectorAll('.copy-selector-btn').forEach(copyBtn => {
-                const selector = copyBtn.getAttribute('data-selector') || '';
+                // A selector, or what the button holds (Copy URLs).
+                const selector = copyBtn.getAttribute('data-copy') || copyBtn.getAttribute('data-selector') || '';
                 if (selector && navigator.clipboard?.writeText) {
                     copyBtn.addEventListener('click', () => {
                         const text = String(selector || '');
