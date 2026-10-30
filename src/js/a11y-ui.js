@@ -5072,6 +5072,10 @@ function storeActiveMode(mode) {
         comparisonController.refresh();
     }
 
+    // Tables that scroll sideways on a narrow screen take focus while they
+    // do, wherever the app draws them (shared/scroll-reach.js).
+    globalThis.A11Y_SCROLL_REACH?.keepScrollBoxesReachable(document.body);
+
     // ---- "View all scans" dialog interactions (wired once) ----
     // The dialog + trigger button are rebuilt on every report refresh, so these
     // listeners are delegated on the document and keyed by data-attribute. The

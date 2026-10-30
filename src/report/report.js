@@ -1066,6 +1066,8 @@ initScanSort();
 if (globalThis.A11Y_ISSUE_DISPERSION_VIEW) globalThis.A11Y_ISSUE_DISPERSION_VIEW.installDispersionInteractions(document);
 initComparisonPanes();
 initComparisonDashboard();
+// Tables that scroll sideways on a narrow screen take focus while they do.
+if (globalThis.A11Y_SCROLL_REACH) globalThis.A11Y_SCROLL_REACH.keepScrollBoxesReachable(document.body);
 viewDetailsDialogButtons();
 createDialogs();
 addVisualizationModeSelector();

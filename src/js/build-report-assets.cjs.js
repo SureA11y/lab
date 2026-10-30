@@ -111,10 +111,12 @@ async function buildReportAssets() {
     }
 
     // Shared modules the exported report runs at runtime, prepended so their
-    // globals (A11Y_SCAN_SORT, A11Y_TOAST) exist before report.js uses them.
+    // globals (A11Y_SCAN_SORT, A11Y_TOAST, A11Y_SCROLL_REACH) exist before
+    // report.js uses them.
     const sharedModules = [
         path.join(__dirname, '..', 'shared', 'scan-sort.js'),
         path.join(__dirname, '..', 'shared', 'toast.js'),
+        path.join(__dirname, '..', 'shared', 'scroll-reach.js'),
         // Order matters: the view module reads the analysis module's global.
         path.join(__dirname, '..', 'shared', 'issue-dispersion.js'),
         path.join(__dirname, '..', 'shared', 'issue-dispersion-view.js')
