@@ -5207,20 +5207,19 @@ function storeActiveMode(mode) {
             input.value = ''; // always reset so same file selection triggers change again
 
             if (!files.length) return;
-            // One report on its own opens at once, as one given by address
-            // does, and the next one picked the same way takes its place;
-            // several, or one added to a list, wait in the list to be
-            // reviewed, chosen from and merged with Load selected.
+            // What is picked opens at once: one report on its own, as one
+            // given by address does (and the next one picked the same way
+            // takes its place), several merged with all their scans. The list
+            // stays, to leave scans or files out and Load selected again.
             if (reportOpenedAlone && stagedReportFiles.length === 1 && stagedReportFiles[0] === reportOpenedAlone) {
                 stagedReportFiles = [];
             }
             reportOpenedAlone = null;
             const listedBefore = stagedReportFiles.length;
             const allReports = await stageReportFiles(files);
-            if (allReports && listedBefore === 0 && stagedReportFiles.length === 1) {
-                reportOpenedAlone = stagedReportFiles[0];
-                reportFilesLoadBtn?.click();
-            }
+            if (!allReports) return;
+            if (listedBefore === 0 && stagedReportFiles.length === 1) reportOpenedAlone = stagedReportFiles[0];
+            reportFilesLoadBtn?.click();
         });
     }
 

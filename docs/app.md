@@ -147,8 +147,9 @@ an earlier one, so a new run keeps the verdicts of the last review.
 ## Opening saved reports
 
 The **open report** tab opens reports saved before: their JSON, or a
-package's zip. Several are merged into one report, with a choice of which
-scans and screenshots of each to keep. Reports saved by older versions of the
+package's zip. What you add opens at once; several are merged into one
+report with all their scans, and stay listed, to choose which scans and
+screenshots of each to keep and **Load selected** again. Reports saved by older versions of the
 lab open as they always did.
 
 ## Comparing reports
