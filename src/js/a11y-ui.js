@@ -8379,6 +8379,12 @@ function storeActiveMode(mode) {
             // cannot be talked out of.
             reportData += `<li><strong>${label}:</strong> <span>${value}</span></li>`;
         }
+        // A run that accepted untrusted certificates says so to whoever reads
+        // its report: it could not tell a site from one pretending to be it.
+        if (data?.runDiagnostics?.untrustedCertsAccepted === true) {
+            reportData += '<li><strong>Certificates:</strong> <span>Untrusted accepted: the run did not require '
+                + 'the sites\' certificates to be trusted</span></li>';
+        }
 
         container.innerHTML = reportData.length ? `<ul class="report-meta">${reportData}</ul>` : '';
 
