@@ -4,7 +4,7 @@
 // and the checks a person makes (core's procedures, procedures.js), each with
 // its steps, what passing and failing look like, and a result to tick.
 
-import { splitFacets, ANSWERS } from './procedures.js';
+import { splitFacets, ANSWERS, resultOf } from './procedures.js';
 
 function esc(v) {
     return String(v == null ? '' : v)
@@ -69,7 +69,7 @@ function criterionHTML(row, procedure, entry, levelLabels) {
         + (found ? `<p class="found"><span class="term">What the scans found:</span> ${esc(found)}</p>` : '')
         + (verdict ? `<p class="verdict"><span class="term">Recorded so far:</span> ${esc(verdict)}${isText(entry.remarks) ? `. ${esc(entry.remarks)}` : ''}</p>` : '')
         + (forPerson.length
-            ? `<ol class="checks">${forPerson.map((f) => checkHTML(f, row.id, entry && entry.facets && entry.facets[f.id])).join('')}</ol>`
+            ? `<ol class="checks">${forPerson.map((f) => checkHTML(f, row.id, resultOf(entry && entry.facets, f.id))).join('')}</ol>`
             : `<p class="meta">${procedure ? 'Automated checks decide this criterion in full.' : 'No procedure for this criterion yet: check it against its Understanding document.'}</p>`)
         + (automatic.length ? `<p class="automatic"><span class="term">Automated checks decide:</span> ${automatic.map((f) => esc(f.label)).join('; ')}.</p>` : '')
         + `</section>`;

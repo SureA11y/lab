@@ -60,6 +60,11 @@ td.level[data-level="supports"] { color: var(--ok); }
 td.level[data-level="notApplicable"], td.level[data-level="notEvaluated"] { color: var(--na); }
 .source { display: block; font-weight: 400; font-size: .8rem; color: var(--muted); }
 ul.pages { margin: 0; padding-left: 1.2rem; }
+.checks-head { margin: .5rem 0 .2rem; font-weight: 600; font-size: .9rem; }
+ul.checks { margin: 0; padding-left: 1.1rem; font-size: .9rem; }
+.result { font-weight: 600; }
+.result[data-result="fail"] { color: var(--fail); }
+.result[data-result="pass"] { color: var(--ok); }
 a { color: #3b2db3; }
 @media print {
   main { max-width: none; padding: 0; }
@@ -72,6 +77,14 @@ a { color: #3b2db3; }
         return value ? `<dt>${esc(term)}</dt><dd>${value}</dd>` : '';
     }
 
+    // What a person checked for a criterion, under its remarks.
+    function checksHTML(checks) {
+        if (!Array.isArray(checks) || !checks.length) return '';
+        return `<p class="checks-head">Checked by hand:</p><ul class="checks">`
+            + checks.map((c) => `<li><span class="result" data-result="${esc(c.result)}">${esc(c.resultLabel)}:</span> ${esc(c.label)}</li>`).join('')
+            + `</ul>`;
+    }
+
     function tableHTML(table) {
         const isWcag = table.standard === 'wcag';
         const head = `<tr role="row"><th scope="col" role="columnheader">Criteria</th><th scope="col" role="columnheader">Conformance Level</th><th scope="col" role="columnheader">Remarks and Explanations</th></tr>`;
@@ -80,7 +93,7 @@ a { color: #3b2db3; }
             const by = r.source === 'review' ? 'Reviewed' : 'Automated draft';
             return `<tr role="row"><th scope="row" role="rowheader">${name}</th>`
                 + `<td role="cell" class="level" data-level="${esc(r.conformance)}" data-label="Conformance Level">${esc(r.conformanceLabel)}<span class="source">${by}</span></td>`
-                + `<td role="cell" data-label="Remarks and Explanations">${esc(r.remarks)}</td></tr>`;
+                + `<td role="cell" data-label="Remarks and Explanations">${esc(r.remarks)}${checksHTML(r.checks)}</td></tr>`;
         }).join('');
         // No box to scroll: wide, three columns; on a phone, a card a row.
         return `<table class="criteria" role="table"><caption>${esc(table.title)}</caption><thead role="rowgroup">${head}</thead><tbody role="rowgroup">${body}</tbody></table>`;
@@ -96,15 +109,10 @@ a { color: #3b2db3; }
         const e = acr.evaluation;
         const t = acr.target;
         const title = `${p.name}${p.version ? ` ${p.version}` : ''}: Accessibility Conformance Report`;
-        const engine = e.engine ? `${e.engine.name}${e.engine.version ? ` ${e.engine.version}` : ''}` : '';
         const pages = e.pages.length
             ? `<ul class="pages">${e.pages.map((pg) => `<li>${esc(pg.label || pg.url)}${pg.url && pg.label ? `: ${esc(pg.url)}` : ''}</li>`).join('')}</ul>`
             : '';
-        const methods = [
-            engine ? `Automated checks with ${esc(engine)} against WCAG ${esc(t.wcagVersion)} Level ${esc(t.level)}.` : '',
-            e.reviewer ? `Manual review by ${esc(e.reviewer)}.` : '',
-            e.methods ? esc(e.methods) : '',
-        ].filter(Boolean).join(' ');
+        const methods = esc(acr.evaluation.methodsText);
         const drafts = acr.totals.draftsLeft;
         const wcagTables = acr.tables.filter((tb) => tb.standard === 'wcag');
         const enTables = acr.tables.filter((tb) => tb.standard === 'en301549');

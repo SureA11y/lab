@@ -96,9 +96,11 @@ test('answers suggest a level once every check is answered', async () => {
     const scansFailed = { conformance: 'doesNotSupport', remarks: 'Automated checks found 2 failing elements, on Home.' };
     const s = suggestFromAnswers(PROCEDURE, both('pass', 'pass'), scansFailed);
     assert.equal(s.conformance, 'partiallySupports', 'a failure the scans found counts');
-    assert.equal(s.remarks, 'Automated checks found 2 failing elements, on Home. Checked by hand (2 checks). Passes: No text is cut off; Controls keep working.');
+    assert.equal(s.remarks, 'Automated checks found 2 failing elements, on Home. Checked by hand, 2 checks: 2 pass.');
     assert.equal(suggestFromAnswers(PROCEDURE, both('na', 'na'), scansFailed).conformance, 'doesNotSupport');
-    assert.equal(suggestFromAnswers(PROCEDURE, both('fail', 'na')).remarks, 'Checked by hand (2 checks). Fails: No text is cut off. Does not apply: Controls keep working.');
+    assert.equal(suggestFromAnswers(PROCEDURE, both('fail', 'na')).remarks, "Checked by hand, 2 checks: 1 fails, 1 doesn't apply.");
+    const one = { facets: [PROCEDURE.facets[2]] };
+    assert.equal(suggestFromAnswers(one, { 'controls-keep-working': 'pass' }).remarks, 'Checked by hand: it passes.');
 });
 
 test('whether the server has procedures is asked once', async () => {
@@ -110,4 +112,14 @@ test('whether the server has procedures is asked once', async () => {
     assert.equal(await proceduresAvailable({ fetchImpl }), true);
     assert.equal(asked, 1);
     assert.equal(proceduresKnownAvailable(), true);
+});
+
+test('an answer is kept with the check\'s words, and read either way', async () => {
+    const { resultOf, suggestFromAnswers } = await load();
+    assert.equal(resultOf({ a: { result: 'fail', label: 'A' } }, 'a'), 'fail');
+    assert.equal(resultOf({ a: 'pass' }, 'a'), 'pass');
+    assert.equal(resultOf({ a: { result: 'maybe' } }, 'a'), '');
+    assert.equal(resultOf(null, 'a'), '');
+    const answers = { 'text-spacing-content-loss': { result: 'pass', label: 'x' }, 'controls-keep-working': { result: 'fail', label: 'y' } };
+    assert.equal(suggestFromAnswers(PROCEDURE, answers).conformance, 'partiallySupports');
 });

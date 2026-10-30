@@ -183,3 +183,32 @@ test('carrying a review forward keeps the answers and remarks a row already has'
     assert.deepEqual(review.criteria['2.1.1'], { conformance: 'doesNotSupport', remarks: 'Mine.', facets: { a: 'fail', b: 'pass' } });
     assert.equal(review.criteria['1.1.1'].conformance, 'supports', 'a verdict of its own is kept');
 });
+
+test('the checks a person answered are listed under their criterion, and counted in the methods', () => {
+    const reviewed = {
+        ...report,
+        conformanceReview: {
+            reviewer: 'Ana',
+            criteria: {
+                '2.4.7': { conformance: 'partiallySupports', remarks: 'Checked by hand, 2 checks: 1 fails, 1 passes.', facets: {
+                    'focus-visible-keyboard': { result: 'fail', label: 'Focus is visible <always>' },
+                    'focus-visible-custom': { result: 'pass', label: 'Custom focus styles show' },
+                } },
+                '1.4.1': { facets: { 'color-only': 'na', bogus: { result: 'maybe' } } },
+            },
+        },
+    };
+    const acr = buildConformanceReport(reviewed);
+    assert.deepEqual(rowOf(acr, 'wcag-aa', '2.4.7').checks.map((c) => [c.resultLabel, c.label]), [['Fails', 'Focus is visible <always>'], ['Passes', 'Custom focus styles show']]);
+    assert.deepEqual(rowOf(acr, 'wcag-a', '1.4.1').checks.map((c) => [c.id, c.resultLabel, c.label]), [['color-only', "Doesn't apply", 'color-only']], 'answers alone, with no verdict yet, are listed too');
+    assert.deepEqual(rowOf(acr, 'wcag-a', '1.1.1').checks, []);
+    assert.equal(rowOf(acr, 'en-9', '9.2.4.7').checks.length, 2, 'chapter 9 restates the criterion');
+    assert.deepEqual(acr.evaluation.manualChecks, { checks: 3, criteria: 2 });
+    assert.equal(acr.evaluation.methodsText, 'Automated checks with surea11y 1.14.1 against WCAG 2.2 Level AA. Manual review by Ana. '
+        + 'Manual checks following the test procedures of surea11y 1.14.1: 3 checks answered, on 2 criteria, each listed under its criterion.');
+    assert.doesNotMatch(buildConformanceReport(report).evaluation.methodsText, /Manual checks/, 'none without answers');
+
+    const html = conformanceReportHTML(acr);
+    assert.match(html, /<p class="checks-head">Checked by hand:<\/p><ul class="checks"><li><span class="result" data-result="fail">Fails:<\/span> Focus is visible &lt;always&gt;<\/li>/);
+    assert.match(html, /<dt>Evaluation methods<\/dt><dd>[^<]*3 checks answered, on 2 criteria/);
+});

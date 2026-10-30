@@ -146,7 +146,9 @@ surea11y core's test procedures, where the installed core has them. Each
 check takes a result (Passes, Fails, Doesn't apply), kept in the report with
 the review; once every check of a criterion has one, the dialog suggests its
 level, and **Use it** sets that level, with remarks written from the answers
-where you have written none.
+where you have written none. The conformance report, in HTML and in Word,
+lists each criterion's answered checks under its remarks, and its evaluation
+methods say how many were answered.
 
 **Manual review checklist**, in the Download menu where the core has the
 procedures, is the same for every criterion of the report's target as a page

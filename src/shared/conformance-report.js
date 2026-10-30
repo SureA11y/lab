@@ -128,12 +128,28 @@
         return { conformance: 'notEvaluated', remarks: PERSON_ONLY };
     }
 
+    // A person's answer to a check, in the report's words.
+    const RESULT_LABEL = { pass: 'Passes', fail: 'Fails', na: "Doesn't apply" };
+
+    // The checks a person answered for a row, kept with the review as
+    // { [facet]: { result, label } }: [{ id, label, result, resultLabel }].
+    function checksOf(reviewed) {
+        const facets = reviewed && typeof reviewed === 'object' && reviewed.facets && typeof reviewed.facets === 'object' ? reviewed.facets : {};
+        return Object.entries(facets)
+            .map(([id, v]) => {
+                const result = typeof v === 'string' ? v : (v && v.result);
+                return RESULT_LABEL[result] ? { id, label: str(v && v.label) || id, result, resultLabel: RESULT_LABEL[result] } : null;
+            })
+            .filter(Boolean);
+    }
+
     // A row as the table shows it: the reviewer's verdict where there is one,
-    // else the draft. `source` says which.
+    // else the draft. `source` says which; `checks`, what a person checked.
     function row(base, draft, reviewed) {
         const r = reviewed && typeof reviewed === 'object' && LEVEL_LABEL[reviewed.conformance] ? reviewed : null;
         return {
             ...base,
+            checks: checksOf(reviewed),
             conformance: r ? r.conformance : draft.conformance,
             conformanceLabel: LEVEL_LABEL[r ? r.conformance : draft.conformance],
             remarks: r ? str(r.remarks) : draft.remarks,
@@ -164,6 +180,20 @@
             if (e) return { name: str(e.name) || str(e.id), version: str(e.version) || null };
         }
         return null;
+    }
+
+    // The evaluation methods as the report states them: the automated checks,
+    // the manual review and the checks it answered, then the reviewer's own
+    // words.
+    function methodsText(engine, target, review, manualChecks) {
+        const name = engine ? `${engine.name}${engine.version ? ` ${engine.version}` : ''}` : '';
+        const m = manualChecks;
+        return [
+            name ? `Automated checks with ${name} against WCAG ${target.wcagVersion} Level ${target.level}.` : '',
+            str(review && review.reviewer) ? `Manual review by ${str(review.reviewer)}.` : '',
+            m.checks ? `Manual checks following the test procedures of ${name || 'surea11y core'}: ${m.checks} check${m.checks === 1 ? '' : 's'} answered, on ${m.criteria} criteri${m.criteria === 1 ? 'on' : 'a'}, each listed under its criterion.` : '',
+            str(review && review.methods),
+        ].filter(Boolean).join(' ');
     }
 
     /**
@@ -225,6 +255,11 @@
 
         const product = (review && review.product) || {};
         const rows = [...wcagRows, ...enTables.flatMap((t) => t.rows)];
+        const engine = engineOf(report);
+        const manualChecks = {
+            checks: wcagRows.reduce((n, r) => n + r.checks.length, 0),
+            criteria: wcagRows.filter((r) => r.checks.length).length,
+        };
         return {
             product: {
                 name: str(product.name) || str(report && (report.scenarioName || report.name)) || 'Untitled product',
@@ -235,10 +270,13 @@
                 date: str(product.date) || str(report && report.timestamp).slice(0, 10),
             },
             evaluation: {
-                engine: engineOf(report),
+                engine,
                 pages: evaluatedPages(report),
                 reviewer: str(review && review.reviewer),
                 methods: str(review && review.methods),
+                // How many checks a person answered, on how many criteria.
+                manualChecks,
+                methodsText: methodsText(engine, target, review, manualChecks),
             },
             target,
             tables: [...wcagTables, ...enTables],

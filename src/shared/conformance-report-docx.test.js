@@ -20,7 +20,7 @@ const report = {
         },
         metrics: { coverageSummary: { criteria: [{ sc: '1.1.1', status: 'doesNotSupport' }] } },
     }],
-    conformanceReview: { criteria: { '1.4.3': { conformance: 'supports', remarks: 'Checked by hand.' } } },
+    conformanceReview: { criteria: { '1.4.3': { conformance: 'supports', remarks: 'Checked by hand.', facets: { 'contrast-images': { result: 'pass', label: 'Text in images has enough contrast' } } } } },
 };
 
 describe('the conformance report as a Word document', () => {
@@ -73,4 +73,11 @@ describe('the conformance report as a Word document', () => {
         assert.match(doc, /Reviewed/);
         assert.doesNotMatch(doc, /&lt;w:/, 'no markup written as text');
     });
+});
+
+test('a criterion\'s answered checks follow its remarks in the Word document', async () => {
+    const buffer = await conformanceReportDocx(buildConformanceReport(report), JSZip, { type: 'nodebuffer', generatedAt: '2026-10-30' });
+    const doc = await (await JSZip.loadAsync(buffer)).file('word/document.xml').async('string');
+    assert.match(doc, /Checked by hand\.<\/w:t>[\s\S]*?Checked by hand:<\/w:t>[\s\S]*?Passes: Text in images has enough contrast<\/w:t>/);
+    assert.match(doc, /1 check answered, on 1 criterion/);
 });

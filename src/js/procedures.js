@@ -78,6 +78,17 @@ export const ANSWERS = [
 
 const safeId = (v) => String(v).replace(/[^A-Za-z0-9_-]/g, '-');
 
+/**
+ * The result a person gave a check: 'pass', 'fail', 'na', or '' for none.
+ * The review keeps each as { result, label }, the check's words with it, so
+ * the conformance report can list it without the procedures.
+ */
+export function resultOf(answers, facetId) {
+    const v = answers && answers[facetId];
+    const result = typeof v === 'string' ? v : (v && typeof v === 'object' ? v.result : '');
+    return ['pass', 'fail', 'na'].includes(result) ? result : '';
+}
+
 // The answer's radio buttons, when the facets are drawn to be answered:
 // `name` is the group's, unique to the criterion and the facet.
 function answerHTML(f, name, answer) {
@@ -107,7 +118,7 @@ function facetHTML(f, { name = null, answer = '' } = {}) {
 /** "2 of 3 answered", for a criterion's checks and a person's answers. */
 export function answeredText(procedure, answers) {
     const { forPerson } = splitFacets(procedure);
-    const done = forPerson.filter((f) => answers && answers[f.id]).length;
+    const done = forPerson.filter((f) => resultOf(answers, f.id)).length;
     return done ? `${done} of ${forPerson.length} answered` : '';
 }
 
@@ -127,7 +138,7 @@ export function buildHowToAssessHTML(procedure, { name = null, answers = null } 
         + `<summary>How to check it by hand (${n} ${n === 1 ? 'check' : 'checks'})`
         + (name ? `<span class="how-answered" data-how-answered>${answered ? ` · ${esc(answered)}` : ''}</span>` : '')
         + `</summary>`
-        + `<ol class="how-facets">${forPerson.map((f) => facetHTML(f, { name, answer: answers && answers[f.id] })).join('')}</ol>`
+        + `<ol class="how-facets">${forPerson.map((f) => facetHTML(f, { name, answer: resultOf(answers, f.id) })).join('')}</ol>`
         + (automatic.length
             ? `<p class="how-automatic"><span class="how-term">Automated checks decide:</span></p><ul class="how-automatic-list">${automatic.map((f) => `<li>${esc(f.label)}</li>`).join('')}</ul>`
             : '')
@@ -146,8 +157,8 @@ export function buildHowToAssessHTML(procedure, { name = null, answers = null } 
 export function suggestFromAnswers(procedure, answers, draft = null) {
     const { forPerson } = splitFacets(procedure);
     if (!forPerson.length || !answers) return null;
-    if (!forPerson.every((f) => ['pass', 'fail', 'na'].includes(answers[f.id]))) return null;
-    const by = (value) => forPerson.filter((f) => answers[f.id] === value).map((f) => f.label);
+    if (!forPerson.every((f) => resultOf(answers, f.id))) return null;
+    const by = (value) => forPerson.filter((f) => resultOf(answers, f.id) === value);
     const passes = by('pass');
     const fails = by('fail');
     const na = by('na');
@@ -155,12 +166,16 @@ export function suggestFromAnswers(procedure, answers, draft = null) {
     let conformance;
     if (!fails.length && !scansFailed) conformance = passes.length ? 'supports' : 'notApplicable';
     else conformance = passes.length ? 'partiallySupports' : 'doesNotSupport';
+    // The checks themselves are listed beside the remarks in the conformance
+    // report, so the remarks only count them.
+    const counted = [[fails, 'fails', 'fail'], [passes, 'passes', 'pass'], [na, "doesn't apply", "don't apply"]]
+        .filter(([list]) => list.length)
+        .map(([list, one, many]) => `${list.length} ${list.length === 1 ? one : many}`);
     const parts = [];
     if (scansFailed && isText(draft.remarks)) parts.push(draft.remarks.trim());
-    parts.push(`Checked by hand${forPerson.length > 1 ? ` (${forPerson.length} checks)` : ''}.`);
-    if (fails.length) parts.push(`Fails: ${fails.join('; ')}.`);
-    if (passes.length) parts.push(`Passes: ${passes.join('; ')}.`);
-    if (na.length) parts.push(`Does not apply: ${na.join('; ')}.`);
+    parts.push(forPerson.length === 1
+        ? `Checked by hand: it ${counted[0].replace(/^1 /, '')}.`
+        : `Checked by hand, ${forPerson.length} checks: ${counted.join(', ')}.`);
     return { conformance, remarks: parts.join(' ') };
 }
 

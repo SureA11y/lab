@@ -211,9 +211,14 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
             const entry = { ...(review[part][key] || {}) };
             if (el.dataset.facet) {
                 const facets = { ...(entry.facets || {}) };
-                if (el.value) facets[el.dataset.facet] = el.value;
+                const facet = (procedures[key]?.facets || []).find((f) => f.id === el.dataset.facet);
+                if (el.value) facets[el.dataset.facet] = { result: el.value, label: facet?.label || el.dataset.facet };
                 else delete facets[el.dataset.facet];
-                if (Object.keys(facets).length) entry.facets = facets;
+                // In the procedure's order, as the report lists them.
+                const order = (procedures[key]?.facets || []).map((f) => f.id);
+                const rank = (id) => (order.indexOf(id) + 1) || order.length + 1;
+                const sorted = Object.fromEntries(Object.entries(facets).sort(([a], [b]) => rank(a) - rank(b)));
+                if (Object.keys(sorted).length) entry.facets = sorted;
                 else delete entry.facets;
             } else {
                 entry[el.dataset.part] = el.value;

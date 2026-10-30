@@ -67,7 +67,9 @@
         const rows = t.rows.map((r) => [
             `${r.id} ${r.name}${isWcagRow(r) && r.level ? ` (Level ${r.level})` : ''}`,
             { xml: para(r.conformanceLabel, null, { bold: true }) + para(r.source === 'review' ? 'Reviewed' : 'Automated draft', 'Small') },
-            r.remarks || '',
+            r.checks && r.checks.length
+                ? { xml: para(r.remarks || '') + para('Checked by hand:', null, { bold: true }) + r.checks.map((c) => para(`${c.resultLabel}: ${c.label}`)).join('') }
+                : (r.remarks || ''),
         ]);
         return table(t.title, ['Criteria', 'Conformance Level', 'Remarks and Explanations'], rows, [1800, 1100, 2100]);
     }
@@ -76,12 +78,7 @@
         const p = acr.product;
         const e = acr.evaluation;
         const t = acr.target;
-        const engine = e.engine ? `${e.engine.name}${e.engine.version ? ` ${e.engine.version}` : ''}` : '';
-        const methods = [
-            engine ? `Automated checks with ${engine} against WCAG ${t.wcagVersion} Level ${t.level}.` : '',
-            e.reviewer ? `Manual review by ${e.reviewer}.` : '',
-            e.methods,
-        ].filter(Boolean).join(' ');
+        const methods = e.methodsText;
         const facts = [
             ['Report date', p.date],
             ['Product description', p.description],
