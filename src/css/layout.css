@@ -359,6 +359,100 @@ input[type="checkbox"] {
 
 .config-file label { margin: 5px 0; }
 
+/* The Run settings button at the end of the URL line: its own width, its
+   bottom on the fields' bottoms, as tall as they are. */
+.field-inline > .run-settings-cell {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+/* Icon only, its name in aria-label and its tooltip; as tall as the fields. */
+.run-settings-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+}
+
+/* Hidden until a run fails on a certificate: a button's display would show it. */
+#retry-untrusted-certs[hidden] {
+    display: none;
+}
+
+/* A chip for each run setting, under the URL line: muted at its default, the
+   ones changed in the accent, so a change stands out among them. */
+.run-settings-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+}
+
+button.run-setting-chip {
+    min-height: 24px;
+    padding: 2px var(--space-3);
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: var(--fs-sm);
+    cursor: pointer;
+    gap: 0;
+}
+
+/* A word's space between name and value: a button's flex box trims the one
+   in the text (which a screen reader still reads), and its gap was wider. */
+.run-setting-name {
+    font-weight: 600;
+    margin-right: 0.3em;
+}
+
+button.run-setting-chip.is-changed {
+    border-color: var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--text-main);
+}
+
+button.run-setting-chip:hover {
+    background: var(--surface-hover);
+}
+
+button.run-setting-chip:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+}
+
+/* Accepting untrusted certificates weakens the connection: it reads as a warning. */
+button.run-setting-chip.is-warn {
+    border-color: var(--warn);
+    background: var(--warn-soft);
+}
+
+/* On a phone the chips take a smaller font, so two or three share a line
+   rather than one each; they keep their 24px height (WCAG 2.5.8). */
+@media (max-width: 600px) {
+    .run-settings-summary {
+        gap: var(--space-1);
+    }
+
+    button.run-setting-chip {
+        padding: 2px var(--space-2);
+        font-size: var(--fs-xs);
+    }
+}
+
+.run-settings-dialog {
+    width: min(760px, 100% - 2rem);
+}
+
+.run-settings-dialog .src-dialog-body {
+    padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
 .hint {
     margin-top: .2rem;
     font-size: var(--fs-sm);

@@ -19,18 +19,23 @@ A workflow is the page to start on and the steps to take there. The
 
 - **URL to scan**: the page the workflow starts on.
 - **Scenario name**: what the run is called, in reports and file names.
-- **How the page is shown**, from the first page on: its **Viewport preset**
-  (the window size, from a phone to a wide desktop), **Color scheme** (light
-  or dark), **High contrast** (forced colors, as Windows' contrast themes)
-  and **Language** (one from the list, or any tag or variable with Other…).
-  Steps can change them as the workflow goes; their **Run default** comes
-  back to these.
-- **Connection**: **Untrusted certificates**, Refuse unless you choose
-  Accept, for a site whose certificate the browser does not trust (a staging
-  server's own, or any site on a network that inspects HTTPS). Refused, the
-  run fails on it and says why. Accepted, the browser cannot tell the site
-  from one pretending to be it, so sign in only where you trust the network;
-  the run's log says it accepted them.
+- **Run settings**, the button at the end of that line, opens them in a
+  dialog; under the line a chip says what each one is, so what the run will
+  use is seen at a glance (the ones changed from their default stand out, and
+  a chip opens the dialog at its setting):
+  - **How the page is shown**, from the first page on: its **Viewport
+    preset** (the window size, from a phone to a wide desktop), **Color
+    scheme** (light or dark), **High contrast** (forced colors, as Windows'
+    contrast themes) and **Language** (one from the list, or any tag or
+    variable with Other…). Steps can change them as the workflow goes; their
+    **Run default** comes back to these.
+  - **Connection**: **Untrusted certificates**, Refuse unless you choose
+    Accept, for a site whose certificate the browser does not trust (a
+    staging server's own, or any site on a network that inspects HTTPS).
+    Refused, the run fails on it, says why, and offers **Run again, accepting
+    this certificate**. Accepted, the browser cannot tell the site from one
+    pretending to be it, so sign in only where you trust the network; the
+    chip reads as a warning, and the run's log says it accepted them.
 
 What a scan checks, its **Include selectors** and **Exclude selectors** (limit
 it to the parts of the page some CSS selectors match, `main, footer`, or leave
@@ -71,8 +76,9 @@ lists every step and field.
 says which steps would fail, and where: the quick way to see whether a
 workflow still fits a site that has changed.
 
-**Export config** downloads the workflow, with the form as you left it, as a
-`*.a11y-config.json` file. **Load config** opens one, or a run spec written by
+**Export config**, in the Configuration header beside **Load config**,
+downloads the workflow, with the form as you left it, as a `*.a11y-config.json`
+file. **Load config** opens one, or a run spec written by
 hand or by a tool; **Append config** adds one's steps to the workflow you
 have. A link with the workflow in it (`?state=`) opens it in someone else's
 app.

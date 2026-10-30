@@ -151,6 +151,38 @@
                             <span class="config-toggle-word" aria-hidden="true">Collapse</span>
                         </button>
                     </h2>
+                    <!-- Out of the heading's button: loading and saving a configuration
+                         are actions of their own, there when the section is collapsed. -->
+                    <div class="config-file config-actions">
+                        <span>
+                            <span id="history-management">
+                            </span>
+
+                            <span class="file-action">
+                                <span id="config-file-split-btn-slot"></span>
+                                <input
+                                        type="file"
+                                        id="config-file"
+                                        accept=".a11y-config.json,.json,application/json,.zip,application/zip"
+                                        hidden
+                                        aria-hidden="true"
+                                        tabindex="-1"
+                                />
+                                <input
+                                        type="file"
+                                        id="append-config-file"
+                                        accept=".a11y-config.json,.json,application/json"
+                                        hidden
+                                        aria-hidden="true"
+                                        tabindex="-1"
+                                />
+                            </span>
+
+                            <button type="button" id="save-config-button" class="secondary-button">
+                                Export config
+                            </button>
+                        </span>
+                    </div>
                 </header>
                 <div id="config-content" role="region" aria-label="Configuration">
                     <div class="config-data">
@@ -179,97 +211,89 @@
                                         placeholder="e.g. Mobile menu open, Version B, Logged in"
                                 />
                             </div>
+
+                            <div class="run-settings-cell">
+                                <button type="button" id="run-settings-button" class="icon-button secondary-button run-settings-button"
+                                        aria-haspopup="dialog" aria-controls="run-settings-dialog"
+                                        aria-label="Run settings" title="Run settings">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                                </button>
+                            </div>
                         </div>
-                        <fieldset class="config-group">
-                            <legend>How the page is shown</legend>
-                            <div class="field-row field-inline field-inline-top">
-                                <div>
-                                    <label for="viewport-preset">Viewport preset</label>
-                                    <select id="viewport-preset" name="viewportPreset">
-                                        <option value="default">Default (1280 × 720)</option>
-                                        <option value="desktop-xlg">Desktop extra-large (1972 × 1100)</option>
-                                        <option value="desktop-lg">Desktop large (1440 × 900)</option>
-                                        <option value="desktop-md">Desktop medium (1280 × 720)</option>
-                                        <option value="tablet">Tablet portrait (768 × 1024)</option>
-                                        <option value="mobile">Mobile (375 × 812)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="run-color-scheme">Color scheme</label>
-                                    <select id="run-color-scheme" name="colorScheme">
-                                        <option value="">Browser default</option>
-                                        <option value="light">Light</option>
-                                        <option value="dark">Dark</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="run-high-contrast">High contrast</label>
-                                    <select id="run-high-contrast" name="highContrast">
-                                        <option value="off">Off</option>
-                                        <option value="on">On</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="run-language">Language</label>
-                                    <!-- The languages are Set language's, added from the step definitions. -->
-                                    <select id="run-language" name="language">
-                                        <option value="">Browser default</option>
-                                        <option value="other">Other…</option>
-                                    </select>
-                                </div>
-                                <div id="run-language-other-field" hidden>
-                                    <label for="run-language-other">Other language</label>
-                                    <input type="text" id="run-language-other" spellcheck="false" autocomplete="off"
-                                           placeholder="e.g. es-MX or {var:lang}" aria-describedby="run-language-other-error"/>
-                                    <span id="run-language-other-error" class="field-error" hidden></span>
-                                </div>
+                        <!-- What each run setting is, its default too, so what a run will use
+                             is seen at a glance; each opens the dialog at its field. Filled by
+                             run-settings.js. -->
+                        <div id="run-settings-summary" class="run-settings-summary" role="group"
+                             aria-label="Run settings"></div>
+                        <!-- Inside .config-data, so a saved configuration keeps these fields. -->
+                        <dialog id="run-settings-dialog" class="src-dialog run-settings-dialog" aria-labelledby="run-settings-title">
+                            <div class="src-dialog-header">
+                                <h3 id="run-settings-title" class="src-dialog-title">Run settings</h3>
+                                <button type="button" id="run-settings-close" class="src-dialog-close">Close</button>
                             </div>
-                        </fieldset>
-                        <fieldset class="config-group">
-                            <legend>Connection</legend>
-                            <div class="field-row field-inline field-inline-top">
-                                <div class="field-narrow">
-                                    <label for="run-untrusted-certs">Untrusted certificates</label>
-                                    <select id="run-untrusted-certs" name="acceptUntrustedCerts" aria-describedby="run-untrusted-certs-hint">
-                                        <option value="off">Refuse</option>
-                                        <option value="on">Accept</option>
-                                    </select>
-                                </div>
+                            <div class="src-dialog-body">
+                                <fieldset class="config-group">
+                                    <legend>How the page is shown</legend>
+                                    <div class="field-row field-inline field-inline-top">
+                                        <div>
+                                            <label for="viewport-preset">Viewport preset</label>
+                                            <select id="viewport-preset" name="viewportPreset">
+                                                <option value="default">Default (1280 × 720)</option>
+                                                <option value="desktop-xlg">Desktop extra-large (1972 × 1100)</option>
+                                                <option value="desktop-lg">Desktop large (1440 × 900)</option>
+                                                <option value="desktop-md">Desktop medium (1280 × 720)</option>
+                                                <option value="tablet">Tablet portrait (768 × 1024)</option>
+                                                <option value="mobile">Mobile (375 × 812)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="run-color-scheme">Color scheme</label>
+                                            <select id="run-color-scheme" name="colorScheme">
+                                                <option value="">Browser default</option>
+                                                <option value="light">Light</option>
+                                                <option value="dark">Dark</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="run-high-contrast">High contrast</label>
+                                            <select id="run-high-contrast" name="highContrast">
+                                                <option value="off">Off</option>
+                                                <option value="on">On</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="run-language">Language</label>
+                                            <!-- The languages are Set language's, added from the step definitions. -->
+                                            <select id="run-language" name="language">
+                                                <option value="">Browser default</option>
+                                                <option value="other">Other…</option>
+                                            </select>
+                                        </div>
+                                        <div id="run-language-other-field" hidden>
+                                            <label for="run-language-other">Other language</label>
+                                            <input type="text" id="run-language-other" spellcheck="false" autocomplete="off"
+                                                   placeholder="e.g. es-MX or {var:lang}" aria-describedby="run-language-other-error"/>
+                                            <span id="run-language-other-error" class="field-error" hidden></span>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="config-group">
+                                    <legend>Connection</legend>
+                                    <div class="field-row field-inline field-inline-top">
+                                        <div class="field-narrow">
+                                            <label for="run-untrusted-certs">Untrusted certificates</label>
+                                            <select id="run-untrusted-certs" name="acceptUntrustedCerts" aria-describedby="run-untrusted-certs-hint">
+                                                <option value="off">Refuse</option>
+                                                <option value="on">Accept</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="field-row">
+                                        <p class="hint" id="run-untrusted-certs-hint">For a site whose certificate the browser does not trust: a staging server's own, or any site on a network that inspects HTTPS. Accepted, the browser cannot tell the site from one pretending to be it, so sign in only where you trust the network.</p>
+                                    </div>
+                                </fieldset>
                             </div>
-                            <div class="field-row">
-                                <p class="hint" id="run-untrusted-certs-hint">For a site whose certificate the browser does not trust: a staging server's own, or any site on a network that inspects HTTPS. Accepted, the browser cannot tell the site from one pretending to be it, so sign in only where you trust the network.</p>
-                            </div>
-                        </fieldset>
-                    </div>
-                    <div class="field-row config-file">
-            <span>
-                <span id="history-management">
-                </span>
-
-                <span class="file-action">
-                    <span id="config-file-split-btn-slot"></span>
-                    <input
-                            type="file"
-                            id="config-file"
-                            accept=".a11y-config.json,.json,application/json,.zip,application/zip"
-                            hidden
-                            aria-hidden="true"
-                            tabindex="-1"
-                    />
-                    <input
-                            type="file"
-                            id="append-config-file"
-                            accept=".a11y-config.json,.json,application/json"
-                            hidden
-                            aria-hidden="true"
-                            tabindex="-1"
-                    />
-                </span>
-
-                <button type="button" id="save-config-button" class="secondary-button">
-                    Export config
-                </button>
-            </span>
+                        </dialog>
                     </div>
                     <!-- Batch: the workflow below once per row of a pasted JSON list. Before
                          the steps because the rows feed them. Kept out of the automatic
@@ -508,6 +532,7 @@
                 </div>
                 <div class="inline-actions">
                     <div id="statusRun" class="status" role="status"></div>
+                    <button type="button" id="retry-untrusted-certs" class="secondary-button" hidden>Run again, accepting this certificate</button>
                     <button type="button" id="cancel-button" class="secondary-button">Cancel</button>
                     <button type="button" id="dry-run-button" class="secondary-button" aria-describedby="dry-run-hint">Dry run</button>
                     <span id="dry-run-hint" hidden>Takes every step but the scans, screenshots and evidence, to see that the workflow still fits the site.</span>

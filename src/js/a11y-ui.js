@@ -19,6 +19,7 @@ import {
 } from './a11y-ui.utils.js';
 import {enhanceAsLiveCarousel} from './carousel-ui.js';
 import {fetchWorkflowResult, pollWorkflowUntilDone, runFailureMessage} from './a11y-ui.workflow.js';
+import {setupRunSettings} from './run-settings.js';
 import {createStreamCardAdder, renderAllScansCard, screenshotAlt} from './stream-ui.js';
 import {scanToAllScansCardProps} from './all-scans-data.js';
 import {isFailureFreeScan, failureFreeScansNote} from './scan-failures.js';
@@ -120,6 +121,9 @@ function storeActiveMode(mode) {
     const colorSchemeSelect = $('#run-color-scheme');
     const highContrastSelect = $('#run-high-contrast');
     const untrustedCertsSelect = $('#run-untrusted-certs');
+    // The run settings' dialog, and a chip beside the URL for each one changed.
+    const runSettings = setupRunSettings();
+    const retryUntrustedButton = $('#retry-untrusted-certs');
     const languageSelect = $('#run-language');
     const languageOtherField = $('#run-language-other-field');
     const languageOtherInput = $('#run-language-other');
@@ -2982,6 +2986,7 @@ function storeActiveMode(mode) {
 
         if (st === 'running') {
             setStatusRun(message || 'Running, please wait...', STATUS.BUSY);
+            if (retryUntrustedButton) retryUntrustedButton.hidden = true;
             runResultToStatus = false;
             runResultText = '';
             document.body.classList.add('is-running');
@@ -5677,7 +5682,10 @@ function storeActiveMode(mode) {
                 'run-language': '',
                 'run-language-other': '',
             },
-            onStateApplied: syncRunLanguageOther,
+            onStateApplied: () => {
+                syncRunLanguageOther();
+                runSettings.sync();
+            },
             getLanguages: runLanguageTags,
             getCustomSteps: getCustomStepsForConfigState,
             setCustomSteps: setCustomStepsFromConfigState,
@@ -5938,6 +5946,7 @@ function storeActiveMode(mode) {
                 createHistoryButtons();
                 initCustomStepsUi(defs);
                 fillRunLanguages(defs);
+                runSettings.sync();
                 callback();
             })
             .catch(() => {
@@ -6119,8 +6128,14 @@ function storeActiveMode(mode) {
         }
 
         if (errorMessage) {
-            elementToFocus = isFocusable(elementToFocus) ? elementToFocus : getFirstFocusable(elementToFocus);
-            if (elementToFocus) elementToFocus.focus();
+            if (elementToFocus?.closest?.('#run-settings-dialog')) {
+                // A run setting: its dialog opens at it.
+                runSettings.open(elementToFocus.id);
+                elementToShow = null;
+            } else {
+                elementToFocus = isFocusable(elementToFocus) ? elementToFocus : getFirstFocusable(elementToFocus);
+                if (elementToFocus) elementToFocus.focus();
+            }
             // Same landing as the step tree: the step sits in the middle of the
             // viewport rather than wherever focus() happened to scroll it.
             if (elementToShow?.scrollIntoView) {
@@ -6941,6 +6956,24 @@ function storeActiveMode(mode) {
         setUiState('error', 'Unexpected workflow status: ' + final.status);
     }
 
+    // A run the browser refused for a certificate it does not trust: the
+    // status says so, and offers to run again accepting such certificates.
+    function offerUntrustedRetry(final) {
+        const details = final?.payload?.errorDetails || final?.error || null;
+        const message = String((details && (details.message || details.details)) || details || '');
+        if (!/net::ERR_CERT_/.test(message) || !untrustedCertsSelect || untrustedCertsSelect.value === 'on') return;
+        setUiState('error', 'Workflow failed: the browser does not trust this site\'s certificate');
+        if (retryUntrustedButton) retryUntrustedButton.hidden = false;
+    }
+
+    retryUntrustedButton?.addEventListener('click', () => {
+        retryUntrustedButton.hidden = true;
+        untrustedCertsSelect.value = 'on';
+        untrustedCertsSelect.dispatchEvent(new Event('change', {bubbles: true}));
+        runSettings.sync();
+        scanButton.click();
+    });
+
     function clearResultDialogs() {
         scansDialog.clearItems();
         screenshotsDialog.clearItems();
@@ -7048,6 +7081,7 @@ function storeActiveMode(mode) {
             const {ok, final} = await runWorkflow(payload);
             if (!ok) {
                 failed = true; // handleScanHttpError already set UI message
+                offerUntrustedRetry(final);
                 return;
             }
 
@@ -7085,6 +7119,9 @@ function storeActiveMode(mode) {
             scanButton.setAttribute('aria-disabled', 'false');
             cancelButton.setAttribute('aria-disabled', 'true');
             currentRunId = null;
+            // A failed run is over too: the error state leaves the page as if
+            // one were still going (the configuration pinned, its actions hidden).
+            document.body.classList.remove('is-running');
             // ...unless the batch rule still holds.
             refreshRunButton();
         }
