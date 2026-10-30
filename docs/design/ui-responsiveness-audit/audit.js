@@ -72,13 +72,16 @@ async function measure(page, name, action, done) {
 
     await measure(page, 'click "open report" tab (empty)', () => page.click('#mode-open'));
 
-    await measure(page, 'pick file -> staged list shown',
+    // A report picked on its own opens at once (it used to wait in the list
+    // for Load selected), so picking it is timed until it is on screen; Load
+    // selected, pressed again, redraws it from the list.
+    await measure(page, 'pick file -> report on screen',
         () => page.setInputFiles('#resultsFiles', reportPath),
-        () => page.waitForFunction(() => /ready to load/i.test(document.querySelector('#statusReport')?.textContent || ''), null, { timeout: 300000 }));
-
-    await measure(page, 'click "Load selected" -> report on screen',
-        () => page.click('#report-files-load-btn'),
         () => page.waitForFunction(() => /loaded/i.test(document.querySelector('#statusReport')?.textContent || ''), null, { timeout: 300000 }));
+
+    await measure(page, 'click "Load selected" again -> report on screen',
+        () => page.click('#report-files-load-btn'),
+        () => page.waitForFunction(() => /loaded/i.test(document.querySelector('#statusReport')?.textContent || '') && document.querySelectorAll('#results *').length > 1000, null, { timeout: 300000 }));
 
     await measure(page, 'switch to "run workflow" tab (no run results)', () => page.click('#mode-run'));
     await measure(page, 'switch back to "open report" tab', () => page.click('#mode-open'),

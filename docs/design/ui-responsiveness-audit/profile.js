@@ -39,11 +39,9 @@ async function profiled(cdp, page, name, fn) {
     await cdp.send('Profiler.setSamplingInterval', { interval: 500 });
     await page.goto('http://127.0.0.1:3000/', { waitUntil: 'load' });
     await page.click('#mode-open');
-    await page.setInputFiles('#resultsFiles', reportPath);
-    await page.waitForFunction(() => /ready to load/i.test(document.querySelector('#statusReport')?.textContent || ''), null, { timeout: 300000 });
-
-    await profiled(cdp, page, 'Load selected', async () => {
-        await page.click('#report-files-load-btn');
+    // A report picked on its own opens at once: picking it is what is profiled.
+    await profiled(cdp, page, 'Open a report', async () => {
+        await page.setInputFiles('#resultsFiles', reportPath);
         await page.waitForFunction(() => /loaded/i.test(document.querySelector('#statusReport')?.textContent || ''), null, { timeout: 300000 });
     });
 
