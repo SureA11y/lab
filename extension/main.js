@@ -190,6 +190,8 @@ function initUi() {
     const sendToUiBtn = document.getElementById('sendToUi');
 
     const out = document.getElementById('out');
+    // The output scrolls past 350px: reachable by keyboard while it does.
+    if (out && globalThis.A11Y_SCROLL_REACH) globalThis.A11Y_SCROLL_REACH.keepScrollBoxesReachable(out.parentElement || document.body, '.out');
     const statusEl = document.getElementById('status');
     const runIdEl = document.getElementById('runId');
     const labelInput = document.getElementById('label');

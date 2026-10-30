@@ -61,6 +61,14 @@ function buildMetaLine({context}, children = []) {
     return meta;
 }
 
+// A screenshot's text alternative: "Screenshot: Home", which also names the
+// button that opens it larger, for a scan ("Scan: Home") or a caption.
+export function screenshotAlt(name) {
+    const n = String(name || '').replace(/^Scan:\s*/, '').trim();
+    if (!n) return 'Screenshot';
+    return /screenshot/i.test(n) ? n : `Screenshot: ${n}`;
+}
+
 // Builds the framed thumbnail used by every stream card: a `.screenshot-btn`
 // wrapper holding an aspect-ratio-locked box around the image. `tag` picks the
 // element — a <button> for the live cards (which open the lightbox) or an <a>
@@ -235,7 +243,7 @@ export function renderScanCard(props, deps) {
 
     if (props.previewUrl) {
         const {liveStreamDialog, scansDialog, screenshotsDialog} = deps.dialogs;
-        const alt = (titleEl.textContent || 'a11y scan') + ' preview';
+        const alt = screenshotAlt(titleEl.textContent);
         card.appendChild(
             buildPreviewButton({
                 previewUrl: props.previewUrl,
@@ -245,7 +253,7 @@ export function renderScanCard(props, deps) {
             })
         );
 
-        createImg({src: props.previewUrl, alt: alt || 'Screenshot'}, [liveStreamDialog, scansDialog]);
+        createImg({src: props.previewUrl, alt}, [liveStreamDialog, scansDialog]);
     }
     appendDroppedNote(card, props);
 
@@ -280,13 +288,13 @@ export function renderScreenshotCard(props, deps) {
         card.appendChild(
             buildPreviewButton({
                 previewUrl: props.previewUrl,
-                alt: resolvedCaption || 'Screenshot',
+                alt: screenshotAlt(resolvedCaption),
                 dialogs: deps.dialogs,
                 viewportRatio: props.viewportRatio
             })
         );
 
-        createImg({src: props.previewUrl, alt: resolvedCaption || 'Screenshot'}, [liveStreamDialog, screenshotsDialog]);
+        createImg({src: props.previewUrl, alt: screenshotAlt(resolvedCaption)}, [liveStreamDialog, screenshotsDialog]);
     }
     appendDroppedNote(card, props);
 

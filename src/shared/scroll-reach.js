@@ -1,11 +1,12 @@
 'use strict';
 
-// Tables in a box that scrolls sideways, reachable by keyboard while they
-// scroll. On a wide screen a table fits and its box is no stop in the tab
-// order; on a phone it overflows, and the box becomes a named region that
-// takes focus, so the arrow keys scroll it in every browser. A box the markup
-// already makes a stop (the dashboard's charts and grids) is left as it is.
-// The app and the downloaded reports run it.
+// Boxes that scroll, reachable by keyboard while they do: tables that scroll
+// sideways on a narrow screen, and output that grows past its box. While its
+// content fits, a box is no stop in the tab order; once it overflows, it
+// becomes a named region that takes focus, so the arrow keys scroll it in
+// every browser. A box the markup already makes a stop (the dashboard's
+// charts and grids) is left as it is.
+// The app, the downloaded reports and the extension run it.
 
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) {
@@ -16,8 +17,11 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
     const BOXES = '.dash-table-scroll, .dsp-table-wrap, .dash-csv-text';
 
-    // Its table's caption, else the heading of the part it is in.
+    // The name it is given (data-scroll-name), else its table's caption,
+    // else the heading of the part it is in.
     function nameFor(box) {
+        const given = box.dataset.scrollName;
+        if (given) return given;
         const caption = box.querySelector('caption');
         const text = caption && caption.textContent.trim();
         if (text) return text;
@@ -29,7 +33,7 @@
     function sync(box) {
         const ours = Object.prototype.hasOwnProperty.call(box.dataset, 'scrollReach');
         if (!ours && box.hasAttribute('tabindex')) return;
-        const over = box.scrollWidth > box.clientWidth + 1;
+        const over = box.scrollWidth > box.clientWidth + 1 || box.scrollHeight > box.clientHeight + 1;
         if (over && !ours) {
             box.dataset.scrollReach = '';
             box.tabIndex = 0;
@@ -44,18 +48,19 @@
     }
 
     /**
-     * Keeps every table box under `root` reachable while it overflows: those
+     * Keeps every box under `root` that `selector` names (the app's and the
+     * reports' table boxes by default) reachable while it overflows: those
      * there now, and those drawn later, as their size changes (a window made
      * narrower, a closed section opened).
      */
-    function keepScrollBoxesReachable(root) {
+    function keepScrollBoxesReachable(root, selector = BOXES) {
         if (!root || typeof root.querySelectorAll !== 'function') return;
         const seen = new WeakSet();
         const resized = typeof ResizeObserver === 'function'
             ? new ResizeObserver((entries) => entries.forEach((entry) => sync(entry.target)))
             : null;
         const scan = () => {
-            root.querySelectorAll(BOXES).forEach((box) => {
+            root.querySelectorAll(selector).forEach((box) => {
                 if (resized && !seen.has(box)) {
                     seen.add(box);
                     resized.observe(box);

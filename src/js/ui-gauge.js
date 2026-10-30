@@ -154,10 +154,15 @@ export function buildScoreGauge({
 
     const visual = document.createElement('div');
     visual.className = 'scoreGauge__visual';
-    visual.style.width = `${size}px`;
+    // As wide as its card, up to its own size: a narrow card shrinks the dial
+    // rather than cutting it off.
+    visual.style.width = '100%';
+    visual.style.maxWidth = `${size}px`;
 
     const svg = svgEl('svg', { width: size, height, viewBox: `0 0 ${size} ${height}`, 'aria-hidden': 'true' });
     svg.style.display = 'block';
+    svg.style.width = '100%';
+    svg.style.height = 'auto';
 
     svg.appendChild(svgEl('path', { d: path, fill: 'none', stroke: 'var(--border-soft)', 'stroke-width': thickness, 'stroke-linecap': 'butt' }));
     svg.appendChild(svgEl('path', {
@@ -298,10 +303,15 @@ export function buildRatingGauge({
 
     const visual = document.createElement('div');
     visual.className = 'scoreGauge__visual';
-    visual.style.width = `${size}px`;
+    // As wide as its card, up to its own size: a narrow card shrinks the dial
+    // rather than cutting it off.
+    visual.style.width = '100%';
+    visual.style.maxWidth = `${size}px`;
 
     const svg = svgEl('svg', { width: size, height, viewBox: `0 0 ${size} ${height}`, 'aria-hidden': 'true' });
     svg.style.display = 'block';
+    svg.style.width = '100%';
+    svg.style.height = 'auto';
 
     svg.appendChild(svgEl('path', { d: path, fill: 'none', stroke: 'var(--border-soft)', 'stroke-width': thickness, 'stroke-linecap': 'butt' }));
 

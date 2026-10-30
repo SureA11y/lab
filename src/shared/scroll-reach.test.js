@@ -7,20 +7,21 @@ const { JSDOM } = require('jsdom');
 const { sync } = require('./scroll-reach.js');
 
 // jsdom lays nothing out: each box is given the widths a browser would.
-function boxIn(html, { scrollWidth, clientWidth }) {
+function boxIn(html, size) {
     const { document } = new JSDOM(`<!doctype html><body>${html}</body>`).window;
     const box = document.querySelector('[data-box]');
-    Object.defineProperty(box, 'scrollWidth', { configurable: true, get: () => scrollWidth });
-    Object.defineProperty(box, 'clientWidth', { configurable: true, get: () => clientWidth });
+    resize(box, size);
     return box;
 }
 
-function resize(box, { scrollWidth, clientWidth }) {
+function resize(box, { scrollWidth, clientWidth, scrollHeight = 100, clientHeight = 100 }) {
     Object.defineProperty(box, 'scrollWidth', { configurable: true, get: () => scrollWidth });
     Object.defineProperty(box, 'clientWidth', { configurable: true, get: () => clientWidth });
+    Object.defineProperty(box, 'scrollHeight', { configurable: true, get: () => scrollHeight });
+    Object.defineProperty(box, 'clientHeight', { configurable: true, get: () => clientHeight });
 }
 
-describe('a table box that scrolls sideways', () => {
+describe('a box that scrolls', () => {
     test('takes focus as a region named by its caption while it overflows', () => {
         const box = boxIn('<div class="dash-table-scroll" data-box><table><caption>Failures by run</caption></table></div>', { scrollWidth: 600, clientWidth: 320 });
         sync(box);
@@ -50,6 +51,13 @@ describe('a table box that scrolls sideways', () => {
         assert.equal(box.hasAttribute('tabindex'), false);
         assert.equal(box.hasAttribute('role'), false);
         assert.equal(box.hasAttribute('aria-label'), false);
+    });
+
+    test('output grown past its box takes focus, under the name it is given', () => {
+        const box = boxIn('<pre class="out" data-scroll-name="Scan output" data-box>…</pre>', { scrollWidth: 300, clientWidth: 300, scrollHeight: 1200, clientHeight: 350 });
+        sync(box);
+        assert.equal(box.getAttribute('tabindex'), '0');
+        assert.equal(box.getAttribute('aria-label'), 'Scan output');
     });
 
     test('a box the markup already makes a stop is left as it is', () => {

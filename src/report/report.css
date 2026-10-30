@@ -2048,6 +2048,9 @@ a:hover { text-decoration-thickness: 2px; }
 .scoreGauge__readout--rating {
     position: static;
     flex-direction: row;
+    /* "can't tell" goes under the value when the card is too narrow for both,
+       rather than past the card's edge. */
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     width: 100%;

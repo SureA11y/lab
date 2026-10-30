@@ -19,7 +19,7 @@ import {
 } from './a11y-ui.utils.js';
 import {enhanceAsLiveCarousel} from './carousel-ui.js';
 import {fetchWorkflowResult, pollWorkflowUntilDone, runFailureMessage} from './a11y-ui.workflow.js';
-import {createStreamCardAdder, renderAllScansCard} from './stream-ui.js';
+import {createStreamCardAdder, renderAllScansCard, screenshotAlt} from './stream-ui.js';
 import {scanToAllScansCardProps} from './all-scans-data.js';
 import {isFailureFreeScan, failureFreeScansNote} from './scan-failures.js';
 import {createProgressProcessor} from './progress-processor.js';
@@ -3938,7 +3938,8 @@ function storeActiveMode(mode) {
         if (!src) return null;
         const button = document.createElement('button');
         const img = document.createElement('img');
-        img.alt = alt || 'Screenshot';
+        // "Screenshot: Home", which names the button that opens it larger too.
+        img.alt = screenshotAlt(alt);
         img.loading = 'lazy';
         img.decoding = 'async';
         img.src = src;
