@@ -265,8 +265,14 @@
         let copied = 0;
         for (const part of ['criteria', 'clauses']) {
             for (const [key, entry] of Object.entries(other[part] || {})) {
-                if (!entry || !entry.conformance || review[part][key]) continue;
-                review[part][key] = { ...entry };
+                const own = review[part][key];
+                if (!entry || !entry.conformance || (own && own.conformance)) continue;
+                // A row with only answers to its checks, or remarks, so far
+                // takes the verdict and keeps what it had.
+                const merged = { ...entry };
+                if (own && str(own.remarks)) merged.remarks = own.remarks;
+                if (own && own.facets) merged.facets = { ...(entry.facets || {}), ...own.facets };
+                review[part][key] = merged;
                 copied += 1;
             }
         }

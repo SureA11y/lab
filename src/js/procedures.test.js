@@ -72,3 +72,42 @@ test('a report\'s procedures are in the locale its scans ran in', async () => {
     assert.equal(reportLocale({ scans: [{ canonical: { runOptions: { locale: { resolved: 'de' } } } }] }), 'de');
     assert.equal(reportLocale({}), 'en');
 });
+
+test('with a name, each check can be answered, and the answers so far are kept', async () => {
+    const { buildHowToAssessHTML } = await load();
+    const html = buildHowToAssessHTML(PROCEDURE, { name: 'acr-x', answers: { 'controls-keep-working': 'fail' } });
+    assert.match(html, /1 of 2 answered/);
+    assert.match(html, /<legend><span class="visually-hidden">Controls keep working: <\/span>Result<\/legend>/);
+    assert.match(html, /name="acr-x-controls-keep-working" value="fail" data-facet="controls-keep-working" checked/);
+    assert.match(html, /name="acr-x-text-spacing-content-loss" value="" data-facet="text-spacing-content-loss" checked/, 'not checked yet');
+    assert.doesNotMatch(buildHowToAssessHTML(PROCEDURE), /type="radio"/, 'without a name, steps only');
+});
+
+test('answers suggest a level once every check is answered', async () => {
+    const { suggestFromAnswers } = await load();
+    const both = (a, b) => ({ 'text-spacing-content-loss': a, 'controls-keep-working': b });
+    assert.equal(suggestFromAnswers(PROCEDURE, { 'controls-keep-working': 'pass' }), null, 'one left');
+    assert.equal(suggestFromAnswers(PROCEDURE, both('pass', 'pass')).conformance, 'supports');
+    assert.equal(suggestFromAnswers(PROCEDURE, both('pass', 'na')).conformance, 'supports');
+    assert.equal(suggestFromAnswers(PROCEDURE, both('na', 'na')).conformance, 'notApplicable');
+    assert.equal(suggestFromAnswers(PROCEDURE, both('pass', 'fail')).conformance, 'partiallySupports');
+    assert.equal(suggestFromAnswers(PROCEDURE, both('fail', 'fail')).conformance, 'doesNotSupport');
+
+    const scansFailed = { conformance: 'doesNotSupport', remarks: 'Automated checks found 2 failing elements, on Home.' };
+    const s = suggestFromAnswers(PROCEDURE, both('pass', 'pass'), scansFailed);
+    assert.equal(s.conformance, 'partiallySupports', 'a failure the scans found counts');
+    assert.equal(s.remarks, 'Automated checks found 2 failing elements, on Home. Checked by hand (2 checks). Passes: No text is cut off; Controls keep working.');
+    assert.equal(suggestFromAnswers(PROCEDURE, both('na', 'na'), scansFailed).conformance, 'doesNotSupport');
+    assert.equal(suggestFromAnswers(PROCEDURE, both('fail', 'na')).remarks, 'Checked by hand (2 checks). Fails: No text is cut off. Does not apply: Controls keep working.');
+});
+
+test('whether the server has procedures is asked once', async () => {
+    const { proceduresAvailable, proceduresKnownAvailable } = await load();
+    let asked = 0;
+    const fetchImpl = async () => { asked += 1; return { ok: true, json: async () => ({ available: true, procedures: { '1.1.1': { id: '1.1.1' } } }) }; };
+    assert.equal(proceduresKnownAvailable(), false);
+    assert.equal(await proceduresAvailable({ fetchImpl }), true);
+    assert.equal(await proceduresAvailable({ fetchImpl }), true);
+    assert.equal(asked, 1);
+    assert.equal(proceduresKnownAvailable(), true);
+});

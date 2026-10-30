@@ -7,6 +7,8 @@ import {afterPaint} from './busy.js';
 import {getActivity, isCancelError} from './activity.js';
 import {createImageStore, decodeBase64DataUrl, packPayloadImages, storedReportJson} from './report-package.js';
 import {comparisonDescription, comparisonDocumentHtml, reportDocumentHtml} from './viewer-documents.js';
+import {loadProcedures, reportLocale} from './procedures.js';
+import {buildManualChecklistHTML} from './manual-checklist.js';
 
 async function loadTemplate() {
     const res = await fetch('./report/report-template.html');
@@ -471,6 +473,28 @@ export async function downloadConformanceReportDocx(payload) {
     const acr = model.buildConformanceReport(payload);
     const fileName = `${safeBaseName(getReportNameFromUi() || acr.product.name)} - conformance report.docx`;
     downloadBlob(await docx.conformanceReportDocx(acr, globalThis.JSZip), fileName);
+    return fileName;
+}
+
+/**
+ * The manual review checklist (manual-checklist.js): what the report leaves
+ * for a person, criterion by criterion, with core's procedures. Returns its
+ * name, or null when the server's core has no procedures.
+ */
+export async function downloadManualChecklist(payload) {
+    const model = globalThis.A11Y_CONFORMANCE_REPORT;
+    if (!model) throw new Error('The conformance report modules are not loaded.');
+    const acr = model.buildConformanceReport(payload);
+    const ids = acr.tables.filter((t) => /^wcag-/.test(t.id)).flatMap((t) => t.rows.map((r) => r.id));
+    const locale = reportLocale(payload);
+    const procedures = await loadProcedures(ids, locale);
+    if (!procedures) return null;
+    const title = getReportNameFromUi() || acr.product.name;
+    const html = buildManualChecklistHTML({
+        acr, procedures, review: payload && payload.conformanceReview, levelLabels: model.LEVEL_LABEL, lang: locale, title,
+    });
+    const fileName = `${safeBaseName(title)} - manual review checklist.html`;
+    downloadBlob(new Blob([html], { type: 'text/html' }), fileName);
     return fileName;
 }
 

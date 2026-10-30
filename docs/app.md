@@ -142,7 +142,16 @@ the product's details, and each criterion's conformance level and remarks,
 over the draft. Under each criterion, **How to check it by hand** gives what a
 person checks that automated checks don't decide: the steps, what passing and
 failing look like, and what it takes (a keyboard, a screen reader, zoom), from
-surea11y core's test procedures, where the installed core has them. What you record is saved in the report as you go, so its
+surea11y core's test procedures, where the installed core has them. Each
+check takes a result (Passes, Fails, Doesn't apply), kept in the report with
+the review; once every check of a criterion has one, the dialog suggests its
+level, and **Use it** sets that level, with remarks written from the answers
+where you have written none.
+
+**Manual review checklist**, in the Download menu where the core has the
+procedures, is the same for every criterion of the report's target as a page
+to print or share: what the scans found, what has been recorded so far, and
+each check a person makes, with its steps. What you record is saved in the report as you go, so its
 downloads carry it, and opening the report again brings it back. **Copy the
 review of another report** fills in what this report has not decided yet from
 an earlier one, so a new run keeps the verdicts of the last review.

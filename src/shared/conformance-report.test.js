@@ -175,3 +175,11 @@ test('carrying a review forward fills in only what this report has not decided',
     assert.equal(review.reviewer, 'A. Reviewer');
     assert.equal(carryReviewForward(review, null), 0);
 });
+
+test('carrying a review forward keeps the answers and remarks a row already has', () => {
+    const review = { product: {}, criteria: { '2.1.1': { remarks: 'Mine.', facets: { a: 'fail' } }, '1.1.1': { conformance: 'supports' } }, clauses: {} };
+    const other = { criteria: { '2.1.1': { conformance: 'doesNotSupport', remarks: 'Theirs.', facets: { a: 'pass', b: 'pass' } }, '1.1.1': { conformance: 'doesNotSupport' } } };
+    assert.equal(carryReviewForward(review, other), 1);
+    assert.deepEqual(review.criteria['2.1.1'], { conformance: 'doesNotSupport', remarks: 'Mine.', facets: { a: 'fail', b: 'pass' } });
+    assert.equal(review.criteria['1.1.1'].conformance, 'supports', 'a verdict of its own is kept');
+});

@@ -69,3 +69,11 @@
 .how-term { font-weight: 600; }
 .how-automatic { margin: 0; font-size: var(--fs-sm); }
 .how-automatic-list { margin: 0; padding-left: 1.5rem; font-size: var(--fs-sm); color: var(--text-muted); }
+.acr-form fieldset.how-answer, .how-answer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); margin: var(--space-2) 0 0; padding: var(--space-1) var(--space-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); }
+.acr-form .how-answer legend, .how-answer legend { float: left; margin-right: var(--space-2); padding: 0; font-weight: 600; }
+.how-answer-option { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; }
+.how-answer-option input { margin: 0; width: 18px; height: 18px; }
+.how-answered { font-weight: 400; color: var(--text-muted); }
+.acr-suggest:empty { display: none; }
+.acr-suggest { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); font-size: var(--fs-sm); }
+.acr-suggest-text { margin: 0; }

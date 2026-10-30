@@ -15,7 +15,8 @@ import {pickReportNamePrefill} from './report-name.js';
 import {formatReportTimestamp} from './report-timestamp.js';
 import {reportMetaField} from './report-meta-fields.js';
 import {META_FIELD_ATTR, META_VALUE_CLASS, mountReportMetaEditors} from './report-meta-edit.js';
-import {createClearReportBtn, createCompareReportBtn, createDownloadReportSplitButton, downloadConformanceReport, downloadConformanceReportDocx} from './export.js';
+import {createClearReportBtn, createCompareReportBtn, createDownloadReportSplitButton, downloadConformanceReport, downloadConformanceReportDocx, downloadManualChecklist} from './export.js';
+import {proceduresAvailable, proceduresKnownAvailable} from './procedures.js';
 import {afterPaint, runBusy} from './busy.js';
 import {cloneJsonData, collectReportEngines, computeTotals, getAllArtifactUrls, getScreenshotsFromPayload, prepareDataForReport} from './report-data.js';
 import {focusSafely} from './focus-utils.js';
@@ -26,6 +27,10 @@ import {STATUS} from './ui-constants.js';
  * ($, SCANS_FIRST_BATCH, SCANS_PER_BATCH, activeTagFilter, activeTagSelection, applyScanPresentationMode, applyScanSort, clearActiveBucketState, clearLiveStreamDialog, clearRenderedResultsUi, clearResults, clearScreenshots, compareTab, drawScansInBatches, focusRuntimeArea, getActiveBucket, groupingUi, isScanIncludedInReport, lastPromptedScenarioByMode, lastScanPresentationValue, lastSummaryReportValue, lastWorkflowResponse, liveUi, pendingScanDraw, recomputeDerivedReportData, reportDataContainer, reportEditMode, reportMetaEditors, results, resultsCompleteWaiters, resultsContainer, resultsFileBtn, resultsState, runSummary, runSummaryUi, scanMatchesActiveTagFilter, scanTagFilterEl, scansDialog, scenarioInput, screenshotsContainer, screenshotsDialog, screenshotsUi, setStatusReport, setStatusRun, setUiState, summaryEl, urlInput).
  */
 export function createReportView(app) {
+    // Asked once, as the app starts, so a report's Download menu knows
+    // whether to offer the manual review checklist.
+    if (typeof fetch === 'function' && typeof location !== 'undefined' && /^https?:/.test(location.protocol)) proceduresAvailable();
+
     // Rebuilds the (hidden) all-scans dialog inside #results-container so the
     // report exporter, which clones that container, carries it into the exported
     // HTML. Returns the number of scans visible in the current view (tag filter
@@ -653,6 +658,13 @@ export function createReportView(app) {
                     description: 'The same report as a .docx, to edit and sign in Word',
                     onSelect: () => downloadConformanceReportDocx(buildExportPayload(app.getActiveBucket()?.payload || data, {includedOnly: true})),
                 },
+                // Only where the server's core has the procedures it lists.
+                ...(proceduresKnownAvailable() ? [{
+                    id: 'manual-checklist',
+                    label: 'Manual review checklist',
+                    description: 'What a person still has to check, criterion by criterion, with the steps',
+                    onSelect: () => downloadManualChecklist(buildExportPayload(app.getActiveBucket()?.payload || data, {includedOnly: true})),
+                }] : []),
                 ...(app.resultsState.activeMode === 'run' ? [{
                     id: 'config',
                     label: 'Export config',

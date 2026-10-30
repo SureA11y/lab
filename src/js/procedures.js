@@ -49,6 +49,8 @@ export async function loadProcedures(ids, locale = 'en', { fetchImpl = globalThi
 /** Forgets what was loaded (for tests). */
 export function clearProceduresCache() {
     cache.clear();
+    availability = null;
+    knownAvailable = false;
 }
 
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
@@ -66,7 +68,29 @@ export function splitFacets(procedure) {
     return { forPerson, automatic };
 }
 
-function facetHTML(f) {
+// A person's answer to a check, as the review keeps it.
+export const ANSWERS = [
+    ['', 'Not checked'],
+    ['pass', 'Passes'],
+    ['fail', 'Fails'],
+    ['na', "Doesn't apply"],
+];
+
+const safeId = (v) => String(v).replace(/[^A-Za-z0-9_-]/g, '-');
+
+// The answer's radio buttons, when the facets are drawn to be answered:
+// `name` is the group's, unique to the criterion and the facet.
+function answerHTML(f, name, answer) {
+    const options = ANSWERS.map(([value, label]) => {
+        const id = `${name}-${value || 'none'}`;
+        const checked = (answer || '') === value ? ' checked' : '';
+        return `<span class="how-answer-option"><input type="radio" id="${esc(id)}" name="${esc(name)}" value="${value}" data-facet="${esc(f.id)}"${checked}/>`
+            + `<label for="${esc(id)}">${esc(label)}</label></span>`;
+    }).join('');
+    return `<fieldset class="how-answer"><legend><span class="visually-hidden">${esc(f.label)}: </span>Result</legend>${options}</fieldset>`;
+}
+
+function facetHTML(f, { name = null, answer = '' } = {}) {
     const p = f.procedure;
     const steps = p.steps.filter(isText);
     const tools = (Array.isArray(f.tools) ? f.tools : []).map((t) => t && t.label).filter(isText);
@@ -76,23 +100,83 @@ function facetHTML(f) {
         + (steps.length ? `<ol class="how-steps">${steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : '')
         + (isText(p.passWhen) ? `<p class="how-when"><span class="how-term">Passes:</span> ${esc(p.passWhen)}</p>` : '')
         + (isText(p.failWhen) ? `<p class="how-when"><span class="how-term">Fails:</span> ${esc(p.failWhen)}</p>` : '')
+        + (name ? answerHTML(f, `${name}-${safeId(f.id)}`, answer) : '')
         + `</li>`;
+}
+
+/** "2 of 3 answered", for a criterion's checks and a person's answers. */
+export function answeredText(procedure, answers) {
+    const { forPerson } = splitFacets(procedure);
+    const done = forPerson.filter((f) => answers && answers[f.id]).length;
+    return done ? `${done} of ${forPerson.length} answered` : '';
 }
 
 /**
  * "How to check it by hand", folded: what a person checks for a criterion,
- * step by step, and what automated checks decide in full. '' when the
- * procedure has nothing for a person.
+ * step by step, and what automated checks decide in full. With `name`, each
+ * check can be answered (Passes, Fails, Doesn't apply), `answers` being those
+ * given so far ({ [facet]: 'pass' | 'fail' | 'na' }). '' when the procedure
+ * has nothing for a person.
  */
-export function buildHowToAssessHTML(procedure) {
+export function buildHowToAssessHTML(procedure, { name = null, answers = null } = {}) {
     const { forPerson, automatic } = splitFacets(procedure);
     if (!forPerson.length) return '';
     const n = forPerson.length;
+    const answered = name ? answeredText(procedure, answers) : '';
     return `<details class="how-assess">`
-        + `<summary>How to check it by hand (${n} ${n === 1 ? 'check' : 'checks'})</summary>`
-        + `<ol class="how-facets">${forPerson.map(facetHTML).join('')}</ol>`
+        + `<summary>How to check it by hand (${n} ${n === 1 ? 'check' : 'checks'})`
+        + (name ? `<span class="how-answered" data-how-answered>${answered ? ` · ${esc(answered)}` : ''}</span>` : '')
+        + `</summary>`
+        + `<ol class="how-facets">${forPerson.map((f) => facetHTML(f, { name, answer: answers && answers[f.id] })).join('')}</ol>`
         + (automatic.length
             ? `<p class="how-automatic"><span class="how-term">Automated checks decide:</span></p><ul class="how-automatic-list">${automatic.map((f) => `<li>${esc(f.label)}</li>`).join('')}</ul>`
             : '')
         + `</details>`;
+}
+
+/**
+ * What a person's answers suggest for a criterion, once every check is
+ * answered: { conformance, remarks }, or null. A failure the scans found
+ * counts as a check that fails. Every check passing (or not applying, with
+ * at least one passing) and no failure from the scans: Supports. Failures and
+ * passes: Partially Supports. Only failures: Does Not Support. Nothing that
+ * applies, and no failure: Not Applicable. The person decides; this only
+ * saves them the arithmetic and the typing.
+ */
+export function suggestFromAnswers(procedure, answers, draft = null) {
+    const { forPerson } = splitFacets(procedure);
+    if (!forPerson.length || !answers) return null;
+    if (!forPerson.every((f) => ['pass', 'fail', 'na'].includes(answers[f.id]))) return null;
+    const by = (value) => forPerson.filter((f) => answers[f.id] === value).map((f) => f.label);
+    const passes = by('pass');
+    const fails = by('fail');
+    const na = by('na');
+    const scansFailed = draft && draft.conformance === 'doesNotSupport';
+    let conformance;
+    if (!fails.length && !scansFailed) conformance = passes.length ? 'supports' : 'notApplicable';
+    else conformance = passes.length ? 'partiallySupports' : 'doesNotSupport';
+    const parts = [];
+    if (scansFailed && isText(draft.remarks)) parts.push(draft.remarks.trim());
+    parts.push(`Checked by hand${forPerson.length > 1 ? ` (${forPerson.length} checks)` : ''}.`);
+    if (fails.length) parts.push(`Fails: ${fails.join('; ')}.`);
+    if (passes.length) parts.push(`Passes: ${passes.join('; ')}.`);
+    if (na.length) parts.push(`Does not apply: ${na.join('; ')}.`);
+    return { conformance, remarks: parts.join(' ') };
+}
+
+/** Whether the server's core has procedures, asked once. */
+let availability = null;
+let knownAvailable = false;
+export function proceduresAvailable({ fetchImpl = globalThis.fetch } = {}) {
+    if (!availability) {
+        availability = loadProcedures(['1.1.1'], 'en', { fetchImpl })
+            .then((p) => { knownAvailable = !!p; return knownAvailable; })
+            .catch(() => false);
+    }
+    return availability;
+}
+
+/** True once proceduresAvailable() has found them. */
+export function proceduresKnownAvailable() {
+    return knownAvailable;
 }
