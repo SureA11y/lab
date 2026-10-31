@@ -44,9 +44,9 @@ test('lists each WCAG criterion with what the scans found and the checks left fo
     });
     assert.match(html, /^<!doctype html>\n<html lang="fr">/);
     assert.match(html, /<title>Shop &lt;2&gt;: manual review checklist<\/title>/);
-    assert.match(html, /WCAG 2\.2 Level AA: 3 criteria, 2 checks for a person\. Report of 2026-10-30\./);
+    assert.match(html, /WCAG 2\.2 Level AA: 3 criteria; 2 checks for a person\. Report of 2026-10-30\./);
     assert.match(html, /<h2 id="t-wcag-a">Table 1: Success Criteria, Level A<\/h2>/);
-    assert.doesNotMatch(html, /Chapter 4/, 'WCAG only');
+    assert.doesNotMatch(html, /Chapter 4/, 'WCAG only, without EN 301 549\'s procedures');
     assert.match(html, /<h3 id="h-2-1-1">2\.1\.1 Keyboard \(Level A\)<\/h3>/);
     assert.match(html, /Recorded so far:<\/span> Partially Supports\. The menu traps focus\./);
     assert.match(html, /value="fail" checked\/>Fails/, 'a recorded answer is ticked');
@@ -64,4 +64,34 @@ test('the radio groups are named apart and labelled by their check', async () =>
     assert.deepEqual(names, ['c-2-1-1-all-by-keyboard', 'c-1-4-3-contrast-images']);
     assert.match(html, /<legend><span class="visually-hidden">Label of all-by-keyboard: <\/span>Result<\/legend>/);
     for (const m of html.matchAll(/<label for="([^"]+)"><input type="radio" id="([^"]+)"/g)) assert.equal(m[1], m[2]);
+});
+
+test('with EN 301 549\'s procedures, its own requirements follow the WCAG criteria', async () => {
+    const { buildManualChecklistHTML } = await load();
+    const acr = {
+        ...ACR,
+        target: { ...ACR.target, en301549: 'V4.1.1' },
+        tables: [
+            ...ACR.tables,
+            { id: 'en-9', title: 'Chapter 9: Web', rows: [{ id: '9.2.1.1', name: 'Keyboard', draft: {} }] },
+            { id: 'en-other', title: 'Chapters 5 to 8, 10, 11 and 13', rows: [{ id: '11', name: 'Chapter 11: Non-web software', draft: { remarks: 'For the author to answer.' } }] },
+        ],
+    };
+    const enProcedures = {
+        '4.2.1': { id: '4.2.1', facets: [facet('whole-tasks', 'manual')] },
+        '11': { id: '11', facets: [facet('applies', 'manual')] },
+    };
+    const html = buildManualChecklistHTML({
+        acr, procedures: PROCEDURES, enProcedures,
+        review: { clauses: { '4.2.1': { facets: { 'whole-tasks': { result: 'pass', label: 'x' } } }, 'chapter-11': { conformance: 'notApplicable' } } },
+        levelLabels: { notApplicable: 'Not Applicable' },
+    });
+    assert.match(html, /3 criteria, and EN 301 549 V4\.1\.1&#39;s 2 requirements of its own \(its chapter 9 is the WCAG criteria\); 4 checks for a person\./);
+    assert.match(html, /<h2 id="t-en-4">EN 301 549 V4\.1\.1, Chapter 4<\/h2>/);
+    assert.match(html, /<h3 id="h-en-4-2-1">4\.2\.1 Usage without vision<\/h3>/);
+    assert.match(html, /<h3 id="h-en-11">Chapter 11: Non-web software<\/h3>/);
+    assert.match(html, /Draft:<\/span> For the author to answer\./);
+    assert.match(html, /Recorded so far:<\/span> Not Applicable/, 'a chapter\'s verdict, kept under chapter-11');
+    assert.match(html, /name="c-en-4-2-1-whole-tasks" value="pass" checked/);
+    assert.doesNotMatch(html, /Chapter 9: Web/, 'not twice');
 });

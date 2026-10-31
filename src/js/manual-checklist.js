@@ -60,38 +60,59 @@ function checkHTML(f, criterion, answer) {
         + `</li>`;
 }
 
-function criterionHTML(row, procedure, entry, levelLabels) {
+// A row of the checklist: a WCAG criterion, or one of EN 301 549's own
+// requirements (`en`), whose draft is the author's to answer, not the scans'.
+function criterionHTML(row, procedure, entry, levelLabels, { en = false } = {}) {
     const { forPerson, automatic } = splitFacets(procedure);
     const found = row.draft && isText(row.draft.remarks) ? row.draft.remarks : '';
     const verdict = entry && entry.conformance && levelLabels[entry.conformance] ? levelLabels[entry.conformance] : '';
-    return `<section aria-labelledby="h-${esc(safeId(row.id))}">`
-        + `<h3 id="h-${esc(safeId(row.id))}">${esc(row.id)} ${esc(row.name)}${row.level ? ` (Level ${esc(row.level)})` : ''}</h3>`
-        + (found ? `<p class="found"><span class="term">What the scans found:</span> ${esc(found)}</p>` : '')
+    const key = `${en ? 'en-' : ''}${row.id}`;
+    const heading = en && /^Chapter /.test(row.name) ? row.name : `${row.id} ${row.name}${row.level ? ` (Level ${row.level})` : ''}`;
+    return `<section aria-labelledby="h-${esc(safeId(key))}">`
+        + `<h3 id="h-${esc(safeId(key))}">${esc(heading)}</h3>`
+        + (found ? `<p class="found"><span class="term">${en ? 'Draft' : 'What the scans found'}:</span> ${esc(found)}</p>` : '')
         + (verdict ? `<p class="verdict"><span class="term">Recorded so far:</span> ${esc(verdict)}${isText(entry.remarks) ? `. ${esc(entry.remarks)}` : ''}</p>` : '')
         + (forPerson.length
-            ? `<ol class="checks">${forPerson.map((f) => checkHTML(f, row.id, resultOf(entry && entry.facets, f.id))).join('')}</ol>`
-            : `<p class="meta">${procedure ? 'Automated checks decide this criterion in full.' : 'No procedure for this criterion yet: check it against its Understanding document.'}</p>`)
+            ? `<ol class="checks">${forPerson.map((f) => checkHTML(f, key, resultOf(entry && entry.facets, f.id))).join('')}</ol>`
+            : `<p class="meta">${procedure ? 'Automated checks decide this criterion in full.' : `No procedure for this ${en ? 'requirement' : 'criterion'} yet${en ? '' : ': check it against its Understanding document'}.`}</p>`)
         + (automatic.length ? `<p class="automatic"><span class="term">Automated checks decide:</span> ${automatic.map((f) => esc(f.label)).join('; ')}.</p>` : '')
         + `</section>`;
 }
 
+// EN 301 549's own requirements, kept in the review as the dialog keeps them:
+// a chapter of its own under "chapter-5", the rest by number.
+const EN_OWN = ['en-4', 'en-12', 'en-other'];
+const clauseKey = (table, row) => (table.id === 'en-other' ? `chapter-${row.id}` : row.id);
+
 /**
  * The checklist page, from the conformance report's model (`acr`, from
- * shared/conformance-report.js), the procedures of its criteria, and the
- * review the report holds.
+ * shared/conformance-report.js), the procedures of its WCAG criteria
+ * (`procedures`) and of EN 301 549's own requirements (`enProcedures`, by
+ * number: '4.2.1', '12.1', '5'), and the review the report holds. Chapter 9
+ * of EN 301 549 is the WCAG criteria, so it is not listed twice.
  */
-export function buildManualChecklistHTML({ acr, procedures, review = null, levelLabels = {}, lang = 'en', title = '' }) {
-    const tables = (acr && Array.isArray(acr.tables) ? acr.tables : []).filter((t) => /^wcag-/.test(t.id));
+export function buildManualChecklistHTML({ acr, procedures, enProcedures = null, review = null, levelLabels = {}, lang = 'en', title = '' }) {
+    const all = acr && Array.isArray(acr.tables) ? acr.tables : [];
+    const tables = all.filter((t) => /^wcag-/.test(t.id));
+    const enTables = enProcedures ? all.filter((t) => EN_OWN.includes(t.id)) : [];
     const criteria = review && review.criteria ? review.criteria : {};
+    const clauses = review && review.clauses ? review.clauses : {};
     const product = acr && acr.product ? acr.product : {};
     const name = isText(title) ? title : (isText(product.name) ? product.name : 'The report');
     let checks = 0;
     for (const t of tables) for (const r of t.rows) checks += splitFacets(procedures && procedures[r.id]).forPerson.length;
+    for (const t of enTables) for (const r of t.rows) checks += splitFacets(enProcedures[r.id]).forPerson.length;
     const count = tables.reduce((n, t) => n + t.rows.length, 0);
+    const enCount = enTables.reduce((n, t) => n + t.rows.length, 0);
     const target = acr && acr.target ? `WCAG ${acr.target.wcagVersion} Level ${acr.target.level}` : 'WCAG';
+    const en = acr && acr.target && acr.target.en301549 ? `EN 301 549 ${acr.target.en301549}` : 'EN 301 549';
     const body = tables.map((t) => `<section aria-labelledby="t-${esc(t.id)}"><h2 id="t-${esc(t.id)}">${esc(t.title)}</h2>`
         + t.rows.map((r) => criterionHTML(r, procedures && procedures[r.id], criteria[r.id], levelLabels)).join('')
+        + `</section>`).join('')
+        + enTables.map((t) => `<section aria-labelledby="t-${esc(t.id)}"><h2 id="t-${esc(t.id)}">${esc(en)}, ${esc(t.title)}</h2>`
+        + t.rows.map((r) => criterionHTML(r, enProcedures[r.id], clauses[clauseKey(t, r)], levelLabels, { en: true })).join('')
         + `</section>`).join('');
+    const counted = `${count} criteria${enCount ? `, and ${en}'s ${enCount} requirements of its own (its chapter 9 is the WCAG criteria)` : ''}`;
     return `<!doctype html>
 <html lang="${esc(lang)}">
 <head>
@@ -103,7 +124,7 @@ export function buildManualChecklistHTML({ acr, procedures, review = null, level
 <body>
 <main>
 <h1>${esc(name)}: manual review checklist</h1>
-<p class="meta">${esc(target)}: ${count} criteria, ${checks} checks for a person.${isText(product.date) ? ` Report of ${esc(product.date)}.` : ''}</p>
+<p class="meta">${esc(target)}: ${esc(counted)}; ${checks} checks for a person.${isText(product.date) ? ` Report of ${esc(product.date)}.` : ''}</p>
 <p>What the automated checks of this report could not decide, criterion by criterion: what the scans found, then each check a person makes, with its steps and what passing and failing look like. Results already recorded in the report's conformance review are ticked. This page does not keep what you tick: record your answers and verdicts in the app's Review conformance, which keeps them in the report.</p>
 ${body}
 </main>

@@ -142,7 +142,10 @@ the product's details, and each criterion's conformance level and remarks,
 over the draft. Under each criterion, **How to check it by hand** gives what a
 person checks that automated checks don't decide: the steps, what passing and
 failing look like, and what it takes (a keyboard, a screen reader, zoom), from
-surea11y core's test procedures, where the installed core has them. Each
+surea11y core's test procedures, where the installed core has them. EN 301
+549's own requirements (chapter 4, chapter 12 and the other chapters, as the
+report's version numbers them) have theirs too, from the EN 301 549 pack; its
+chapter 9 is the WCAG criteria, reviewed once. Each
 check takes a result (Passes, Fails, Doesn't apply), kept in the report with
 the review; once every check of a criterion has one, the dialog suggests its
 level, and **Use it** sets that level, with remarks written from the answers
@@ -151,7 +154,8 @@ lists each criterion's answered checks under its remarks, and its evaluation
 methods say how many were answered.
 
 **Manual review checklist**, in the Download menu where the core has the
-procedures, is the same for every criterion of the report's target as a page
+procedures, is the same for every criterion of the report's target, and EN
+301 549's own requirements, as a page
 to print or share: what the scans found, what has been recorded so far, and
 each check a person makes, with its steps. What you record is saved in the report as you go, so its
 downloads carry it, and opening the report again brings it back. **Copy the

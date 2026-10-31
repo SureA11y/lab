@@ -30,6 +30,9 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const PAGE = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Fixture</title></head>'
     + '<body><main><h1>Fixture</h1><p>Some text.</p></main></body></html>';
 const HAS_PROCEDURES = typeof require('@surea11y/core').proceduresFor === 'function';
+// EN 301 549's own requirements come from its pack, when the pack has them.
+const HAS_EN_PROCEDURES = HAS_PROCEDURES
+    && !!require('../server-side/procedures').proceduresForRequirements('11', { standard: 'en301549', version: 'V4.1.1' }).procedures?.['11'];
 
 function freePort() {
     return new Promise((resolve, reject) => {
@@ -175,8 +178,42 @@ test('with procedures: answer a criterion by hand, take the suggestion, and down
 
     const acr = await download(page, downloads, /^Conformance report(?!.*Word)/, /conformance report\.html$/);
     assert.match(acr, /Checked by hand:<\/p><ul class="checks">/);
-    assert.match(acr, /answered, on 1 criterion/);
+    assert.match(acr, /answered, on 1 WCAG criterion/);
 
+    assert.deepEqual(errors, []);
+    await page.close();
+});
+
+test('with the pack\'s procedures: EN 301 549\'s own requirements are answered too, and listed in the checklist', { skip: !HAS_EN_PROCEDURES && 'the installed pack has no procedures of its own' }, async () => {
+    const downloads = fs.mkdtempSync(path.join(tmp, 'dl-'));
+    const { page, errors } = await openReport(downloads);
+    await (await buttonNamed(page, /^Review conformance$/)).click();
+    await page.waitForSelector('.acr-row[data-key="chapter-11"] .how-assess', { timeout: 30000 });
+    const counts = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.acr-section')].map((sec) => {
+        const rows = [...sec.querySelectorAll('.acr-row')];
+        return [sec.dataset.section, [rows.length, rows.filter((r) => r.querySelector('.how-assess')).length]];
+    })));
+    for (const id of ['en-4', 'en-12', 'en-other']) assert.equal(counts[id][1], counts[id][0], `every row of ${id} says how to check it`);
+
+    const row = '.acr-row[data-key="chapter-11"]';
+    await page.evaluate((sel) => {
+        const r = document.querySelector(sel);
+        r.closest('.acr-section').open = true;
+        r.querySelector('.how-assess').open = true;
+    }, row);
+    for (const r of await page.$$(`${row} input[type=radio][value="na"]`)) await r.click();
+    assert.match(await page.$eval(`${row} [data-acr-suggest]`, (el) => el.textContent), /suggest: Not Applicable/);
+    await page.click(`${row} [data-acr-use]`);
+    assert.equal(await page.$eval(`${row} [data-part="conformance"]`, (el) => el.value), 'notApplicable');
+    await page.click('[data-acr-close]');
+
+    const checklist = await download(page, downloads, /^Manual review checklist/, /manual review checklist\.html$/);
+    assert.match(checklist, /requirements of its own/);
+    assert.match(checklist, /<h3 id="h-en-11">Chapter 11: /);
+    assert.match(checklist, /<h3 id="h-en-4-2-1">4\.2\.1 Usage without vision<\/h3>/);
+
+    const acr = await download(page, downloads, /^Conformance report(?!.*Word)/, /conformance report\.html$/);
+    assert.match(acr, /EN 301 549 requirement of its own, each listed under its row/);
     assert.deepEqual(errors, []);
     await page.close();
 });

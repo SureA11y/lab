@@ -5,6 +5,8 @@
 // What they record is the report's `conformanceReview`, saved in it as they
 // go, so it travels with every download of the report, the conformance report
 // included. Chapter 9 of EN 301 549 restates WCAG, so it is not asked twice.
+// Each row can show how to check it by hand (procedures.js): a WCAG
+// criterion's from core, EN 301 549's own requirements' from its pack.
 
 const FIELDS = [
     ['name', 'Product name'],
@@ -61,9 +63,7 @@ function rowHTML(table, row, levels, saved) {
     return `<fieldset class="acr-row" data-table="${esc(table.id)}" data-key="${esc(key)}">`
         + `<legend>${table.id === 'en-other' ? esc(row.name) : name}</legend>`
         + `<p class="acr-draft"><span class="acr-draft-label">Automated draft:</span> ${esc(levels[row.draft.conformance])}. ${esc(row.draft.remarks)}</p>`
-        + (STORE[table.id] === 'criteria'
-            ? `<div class="acr-how" data-acr-how="${esc(row.id)}" data-acr-name="${esc(id)}-how"></div><div class="acr-suggest" data-acr-suggest></div>`
-            : '')
+        + `<div class="acr-how" data-acr-how="${esc(row.id)}" data-acr-standard="${table.standard === 'wcag' ? 'wcag' : 'en301549'}" data-acr-name="${esc(id)}-how"></div><div class="acr-suggest" data-acr-suggest></div>`
         + `<div class="acr-fields">`
         + `<div class="acr-field"><label for="${id}-level">Conformance level</label><select id="${id}-level" data-part="conformance">${options}</select></div>`
         + `<div class="acr-field acr-field--wide"><label for="${id}-remarks">Remarks and explanations</label>`
@@ -121,25 +121,26 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
         fillHowToAssess();
     };
 
-    // Each criterion's procedure, once loaded: { [criterion]: procedure }.
-    let procedures = {};
+    // Each row's procedure, once loaded, by its table and key.
+    const procedures = new Map();
+    const procedureOf = (rowEl) => procedures.get(`${rowEl.dataset.table}|${rowEl.dataset.key}`) || null;
+    const entryOf = (rowEl) => review[STORE[rowEl.dataset.table]][rowEl.dataset.key];
 
     // What a criterion's answers suggest, under its checks, with a button that
     // takes it; nothing until every check is answered.
     const drawSuggestion = (rowEl) => {
         const slot = rowEl && rowEl.querySelector('[data-acr-suggest]');
         if (!slot) return;
-        const key = rowEl.dataset.key;
-        const entry = review.criteria[key];
+        const entry = entryOf(rowEl);
         const row = rowOf(rowEl);
-        const suggestion = suggestFromAnswers(procedures[key], entry && entry.facets, row && row.draft);
+        const suggestion = suggestFromAnswers(procedureOf(rowEl), entry && entry.facets, row && row.draft);
         slot.innerHTML = suggestion
             ? `<p class="acr-suggest-text"><span class="acr-draft-label">Your answers suggest:</span> ${esc(levels[suggestion.conformance])}.</p>`
                 + `<button type="button" class="secondary-button" data-acr-use>Use it, with remarks from the answers</button>`
             : '';
         const answered = rowEl.querySelector('[data-how-answered]');
         if (answered) {
-            const text = answeredText(procedures[key], entry && entry.facets);
+            const text = answeredText(procedureOf(rowEl), entry && entry.facets);
             answered.textContent = text ? ` · ${text}` : '';
         }
     };
@@ -153,17 +154,26 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
 
     // Each criterion's "How to check it by hand", from core's procedures, once
     // they come; none from a core without them. Each check can be answered.
+    // EN 301 549's own requirements (chapter 4, 12 and the others) come from
+    // its pack, in the version the report targets; chapter 9 is the WCAG rows.
     const fillHowToAssess = async () => {
         const slots = Array.from(dialog.querySelectorAll('[data-acr-how]'));
         if (!slots.length) return;
-        const loaded = await loadProcedures(slots.map((el) => el.dataset.acrHow), reportLocale(payload));
-        if (!loaded) return;
-        procedures = loaded;
-        for (const el of slots) {
-            if (!el.isConnected || el.firstChild) continue;
-            const key = el.dataset.acrHow;
-            el.innerHTML = buildHowToAssessHTML(procedures[key], { name: el.dataset.acrName, answers: review.criteria[key]?.facets });
-            drawSuggestion(el.closest('.acr-row'));
+        const locale = reportLocale(payload);
+        const enVersion = api.buildConformanceReport(payload).target.en301549;
+        for (const standard of ['wcag', 'en301549']) {
+            const mine = slots.filter((el) => el.dataset.acrStandard === standard);
+            if (!mine.length) continue;
+            const loaded = await loadProcedures(mine.map((el) => el.dataset.acrHow), locale,
+                standard === 'wcag' ? {} : { standard, version: enVersion });
+            if (!loaded) continue;
+            for (const el of mine) {
+                const rowEl = el.closest('.acr-row');
+                if (!el.isConnected || el.firstChild || !rowEl) continue;
+                procedures.set(`${rowEl.dataset.table}|${rowEl.dataset.key}`, loaded[el.dataset.acrHow] || null);
+                el.innerHTML = buildHowToAssessHTML(loaded[el.dataset.acrHow], { name: el.dataset.acrName, answers: entryOf(rowEl)?.facets });
+                drawSuggestion(rowEl);
+            }
         }
     };
 
@@ -211,11 +221,11 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
             const entry = { ...(review[part][key] || {}) };
             if (el.dataset.facet) {
                 const facets = { ...(entry.facets || {}) };
-                const facet = (procedures[key]?.facets || []).find((f) => f.id === el.dataset.facet);
+                const facet = (procedureOf(row)?.facets || []).find((f) => f.id === el.dataset.facet);
                 if (el.value) facets[el.dataset.facet] = { result: el.value, label: facet?.label || el.dataset.facet };
                 else delete facets[el.dataset.facet];
                 // In the procedure's order, as the report lists them.
-                const order = (procedures[key]?.facets || []).map((f) => f.id);
+                const order = (procedureOf(row)?.facets || []).map((f) => f.id);
                 const rank = (id) => (order.indexOf(id) + 1) || order.length + 1;
                 const sorted = Object.fromEntries(Object.entries(facets).sort(([a], [b]) => rank(a) - rank(b)));
                 if (Object.keys(sorted).length) entry.facets = sorted;
@@ -245,7 +255,7 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
             // reviewer has written none; saved as if they had chosen them.
             const rowEl = use.closest('.acr-row');
             const key = rowEl.dataset.key;
-            const suggestion = suggestFromAnswers(procedures[key], review.criteria[key]?.facets, rowOf(rowEl)?.draft);
+            const suggestion = suggestFromAnswers(procedureOf(rowEl), entryOf(rowEl)?.facets, rowOf(rowEl)?.draft);
             if (!suggestion) return;
             const select = rowEl.querySelector('[data-part="conformance"]');
             const remarks = rowEl.querySelector('[data-part="remarks"]');

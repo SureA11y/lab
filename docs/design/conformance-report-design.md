@@ -45,10 +45,15 @@ or a reviewer's, and a reviewer's level is kept when a later run is applied.
   numbers. Chapter 9 restates WCAG clause by clause (9.1.4.3 is 1.4.3);
   V3.2.1 restates WCAG 2.1 with 4.1.1, V4.1.1 WCAG 2.2.
 - **EN 301 549 chapters 4 (functional performance) and 12 (documentation and
-  support):** listed for the author; no scan can judge them.
-- **Chapters 5 to 8, 10 and 11** (generic requirements, two-way voice, video,
-  hardware, non-web documents, software): one line each that the author can
-  mark Not Applicable for web content, or fill in.
+  support):** listed for the author, as the target version numbers them
+  (V4.1.1 renumbered chapter 12); no scan can judge them.
+- **Chapters 5 to 8, 10, 11 and 13** (generic requirements, two-way voice or
+  real-time communication, video, hardware, non-web documents, software,
+  relay and emergency services): one line each that the author can mark Not
+  Applicable for web content, or fill in.
+- With a core that has test procedures and the EN 301 549 pack that gives
+  them, each of these rows, like each WCAG criterion, shows how to check it
+  by hand and takes an answer per check.
 
 Product details on the report's first page: name and version, the report's
 date, what was evaluated (the pages and flows the runs covered, read from

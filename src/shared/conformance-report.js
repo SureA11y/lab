@@ -35,7 +35,9 @@
 
     // Chapter 4, functional performance statements, and chapter 12,
     // documentation and support services: what no scan can judge, listed for
-    // the author. Numbered as in EN 301 549 V3.2.1.
+    // the author, as each version numbers and names them (V4.1.1 renumbered
+    // chapter 12). The EN 301 549 pack gives the same, with how to assess
+    // each.
     const FUNCTIONAL_PERFORMANCE = [
         ['4.2.1', 'Usage without vision'],
         ['4.2.2', 'Usage with limited vision'],
@@ -49,22 +51,43 @@
         ['4.2.10', 'Usage with limited cognition, language or learning'],
         ['4.2.11', 'Privacy'],
     ];
-    const DOCUMENTATION = [
-        ['12.1.1', 'Accessibility and compatibility features'],
-        ['12.1.2', 'Accessible documentation'],
-        ['12.2.2', 'Information on accessibility and compatibility features'],
-        ['12.2.3', 'Effective communication'],
-        ['12.2.4', 'Accessible documentation'],
-    ];
+    const DOCUMENTATION = {
+        'V3.2.1': [
+            ['12.1.1', 'Accessibility and compatibility features'],
+            ['12.1.2', 'Accessible documentation'],
+            ['12.2.2', 'Information on accessibility and compatibility features'],
+            ['12.2.3', 'Effective communication'],
+            ['12.2.4', 'Accessible documentation'],
+        ],
+        'V4.1.1': [
+            ['12.1', 'Accessible information about products'],
+            ['12.2', 'Accessible information about services'],
+            ['12.3', 'Accessibility and compatibility features'],
+            ['12.4', 'Electronic program guides'],
+            ['12.5', 'Electronic program guide display'],
+        ],
+    };
     // The chapters a web product's report usually answers in one line.
-    const OTHER_CHAPTERS = [
-        ['5', 'Generic requirements'],
-        ['6', 'ICT with two-way voice communication'],
-        ['7', 'ICT with video capabilities'],
-        ['8', 'Hardware'],
-        ['10', 'Non-web documents'],
-        ['11', 'Software'],
-    ];
+    const OTHER_CHAPTERS = {
+        'V3.2.1': [
+            ['5', 'Generic requirements'],
+            ['6', 'ICT with two-way voice communication'],
+            ['7', 'ICT with video capabilities'],
+            ['8', 'Hardware'],
+            ['10', 'Non-web documents'],
+            ['11', 'Software'],
+            ['13', 'ICT providing relay or emergency service access'],
+        ],
+        'V4.1.1': [
+            ['5', 'Generic requirements'],
+            ['6', 'ICT supporting real-time bidirectional communication'],
+            ['7', 'ICT with video capabilities'],
+            ['8', 'Hardware'],
+            ['10', 'Non-web documents'],
+            ['11', 'Non-web software'],
+            ['13', 'ICT providing relay or emergency service access'],
+        ],
+    };
 
     const PERSON_ONLY = 'Only a person can check this.';
 
@@ -191,7 +214,12 @@
         return [
             name ? `Automated checks with ${name} against WCAG ${target.wcagVersion} Level ${target.level}.` : '',
             str(review && review.reviewer) ? `Manual review by ${str(review.reviewer)}.` : '',
-            m.checks ? `Manual checks following the test procedures of ${name || 'surea11y core'}: ${m.checks} check${m.checks === 1 ? '' : 's'} answered, on ${m.criteria} criteri${m.criteria === 1 ? 'on' : 'a'}, each listed under its criterion.` : '',
+            m.checks ? `Manual checks following the test procedures of ${name || 'surea11y core'}: ${m.checks} check${m.checks === 1 ? '' : 's'} answered, on `
+                + [
+                    m.criteria ? `${m.criteria} WCAG criteri${m.criteria === 1 ? 'on' : 'a'}` : '',
+                    m.enRequirements ? `${m.enRequirements} EN 301 549 requirement${m.enRequirements === 1 ? '' : 's'} of its own` : '',
+                ].filter(Boolean).join(' and ')
+                + ', each listed under its row.' : '',
             str(review && review.methods),
         ].filter(Boolean).join(' ');
     }
@@ -249,16 +277,19 @@
         const enTables = [
             { id: 'en-4', title: 'Chapter 4: Functional Performance Statements', standard: 'en301549', rows: FUNCTIONAL_PERFORMANCE.map(authorRow) },
             { id: 'en-9', title: 'Chapter 9: Web', standard: 'en301549', rows: chapter9 },
-            { id: 'en-12', title: 'Chapter 12: Documentation and Support Services', standard: 'en301549', rows: DOCUMENTATION.map(authorRow) },
-            { id: 'en-other', title: 'Chapters 5 to 8, 10 and 11', standard: 'en301549', rows: OTHER_CHAPTERS.map(([id, name]) => row({ id, name: `Chapter ${id}: ${name}` }, { conformance: 'notEvaluated', remarks: 'For the author to answer: often Not Applicable for web content.' }, reviewedClauses[`chapter-${id}`])) },
+            { id: 'en-12', title: 'Chapter 12: Documentation and Support Services', standard: 'en301549', rows: (DOCUMENTATION[target.en301549] || DOCUMENTATION['V4.1.1']).map(authorRow) },
+            { id: 'en-other', title: 'Chapters 5 to 8, 10, 11 and 13', standard: 'en301549', rows: (OTHER_CHAPTERS[target.en301549] || OTHER_CHAPTERS['V4.1.1']).map(([id, name]) => row({ id, name: `Chapter ${id}: ${name}` }, { conformance: 'notEvaluated', remarks: 'For the author to answer: often Not Applicable for web content.' }, reviewedClauses[`chapter-${id}`])) },
         ];
 
         const product = (review && review.product) || {};
         const rows = [...wcagRows, ...enTables.flatMap((t) => t.rows)];
         const engine = engineOf(report);
+        // Chapter 9's rows are the WCAG criteria's, so they are not counted twice.
+        const enOwnRows = enTables.filter((t) => t.id !== 'en-9').flatMap((t) => t.rows);
         const manualChecks = {
-            checks: wcagRows.reduce((n, r) => n + r.checks.length, 0),
+            checks: [...wcagRows, ...enOwnRows].reduce((n, r) => n + r.checks.length, 0),
             criteria: wcagRows.filter((r) => r.checks.length).length,
+            enRequirements: enOwnRows.filter((r) => r.checks.length).length,
         };
         return {
             product: {

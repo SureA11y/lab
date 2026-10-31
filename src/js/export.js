@@ -489,9 +489,12 @@ export async function downloadManualChecklist(payload) {
     const locale = reportLocale(payload);
     const procedures = await loadProcedures(ids, locale);
     if (!procedures) return null;
+    // EN 301 549's own requirements, from its pack, where the server has it.
+    const enIds = acr.tables.filter((t) => ['en-4', 'en-12', 'en-other'].includes(t.id)).flatMap((t) => t.rows.map((r) => r.id));
+    const enProcedures = await loadProcedures(enIds, locale, { standard: 'en301549', version: acr.target.en301549 });
     const title = getReportNameFromUi() || acr.product.name;
     const html = buildManualChecklistHTML({
-        acr, procedures, review: payload && payload.conformanceReview, levelLabels: model.LEVEL_LABEL, lang: locale, title,
+        acr, procedures, enProcedures, review: payload && payload.conformanceReview, levelLabels: model.LEVEL_LABEL, lang: locale, title,
     });
     const fileName = `${safeBaseName(title)} - manual review checklist.html`;
     downloadBlob(new Blob([html], { type: 'text/html' }), fileName);

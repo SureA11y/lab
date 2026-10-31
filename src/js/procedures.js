@@ -23,26 +23,30 @@ export function reportLocale(payload) {
 }
 
 /**
- * The procedures of `ids` (WCAG criteria), in `locale`: { [id]: procedure },
- * or null when the server's core has none. Asked once per criterion and
- * locale.
+ * The procedures of `ids`, in `locale`: { [id]: procedure }, or null when the
+ * server's core has none. WCAG criteria by default; with `standard`
+ * ('en301549') and its `version`, that standard's requirements, from its
+ * pack. Asked once per requirement, standard, version and locale.
  */
-export async function loadProcedures(ids, locale = 'en', { fetchImpl = globalThis.fetch } = {}) {
+export async function loadProcedures(ids, locale = 'en', { standard = 'wcag', version = '', fetchImpl = globalThis.fetch } = {}) {
+    const keyOf = (id) => `${standard}|${version}|${locale}|${id}`;
     const wanted = [...new Set((ids || []).map(String))];
-    const missing = wanted.filter((id) => !cache.has(`${locale}|${id}`));
+    const missing = wanted.filter((id) => !cache.has(keyOf(id)));
     if (missing.length) {
         let body = null;
         try {
-            const res = await fetchImpl(`/api/procedures?ids=${encodeURIComponent(missing.join(','))}&locale=${encodeURIComponent(locale)}`);
+            const query = `ids=${encodeURIComponent(missing.join(','))}&locale=${encodeURIComponent(locale)}`
+                + (standard !== 'wcag' ? `&standard=${encodeURIComponent(standard)}&version=${encodeURIComponent(version)}` : '');
+            const res = await fetchImpl(`/api/procedures?${query}`);
             body = res.ok ? await res.json() : null;
         } catch {
             body = null;
         }
         if (!body || !body.available) return null;
-        for (const id of missing) cache.set(`${locale}|${id}`, body.procedures?.[id] || null);
+        for (const id of missing) cache.set(keyOf(id), body.procedures?.[id] || null);
     }
     const out = {};
-    for (const id of wanted) out[id] = cache.get(`${locale}|${id}`) || null;
+    for (const id of wanted) out[id] = cache.get(keyOf(id)) || null;
     return out;
 }
 

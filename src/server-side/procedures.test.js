@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { proceduresForCriteria, MAX_IDS } = require('./procedures');
+const { proceduresForCriteria, proceduresForRequirements, MAX_IDS } = require('./procedures');
 
 const fakeCore = (seen = []) => ({
     proceduresFor(id, { locale }) {
@@ -25,7 +25,7 @@ test('gives each criterion asked for, once, in the locale', () => {
     assert.deepEqual(seen, [['1.4.13', 'fr'], ['2.4.3', 'fr']]);
 });
 
-test('leaves out what is not a criterion, and caps how many', () => {
+test('leaves out what is not a requirement, and caps how many', () => {
     const many = Array.from({ length: MAX_IDS + 10 }, (_, i) => `${1 + (i % 9)}.${Math.floor(i / 9)}.2`);
     const out = proceduresForCriteria(['1.1.1', 'best-practice', '../x', '9.9.9', ...many], { locale: '<script>', core: fakeCore() });
     assert.equal(out.locale, 'en', 'a locale that is no tag is English');
@@ -45,4 +45,32 @@ test('with a core that has them, a criterion comes with its facets', (t) => {
     const p = proceduresForCriteria('1.4.13').procedures['1.4.13'];
     assert.equal(p.id, '1.4.13');
     assert.ok(p.facets.some((f) => f.automation === 'manual' && f.procedure && f.procedure.steps.length));
+});
+
+test('EN 301 549\'s own requirements are read with its pack, in the version asked', () => {
+    const seen = [];
+    const core = { proceduresFor(id, options) { seen.push([id, options]); return { id }; } };
+    const pack = { name: 'pack' };
+    const out = proceduresForRequirements('4.2.1,12.1,5', { standard: 'en301549', version: 'V4.1.1', core, en301549: pack });
+    assert.deepEqual(Object.keys(out.procedures).sort(), ['12.1', '4.2.1', '5']);
+    assert.deepEqual(seen.find(([id]) => id === '5'), ['5', { locale: 'en', packs: [pack], standard: 'en301549', version: 'V4.1.1' }]);
+    assert.equal(proceduresForRequirements('5', { standard: 'en301549', version: 'V9', core, en301549: pack }).available, true);
+    assert.equal(seen[3][1].version, undefined, 'a version that is no version is left to the pack');
+    assert.deepEqual(proceduresForRequirements('5', { standard: 'en301549', core, en301549: null }), { available: false }, 'no pack');
+    assert.deepEqual(proceduresForRequirements('5', { standard: 'rgaa', core }), { available: false }, 'a standard the lab has no pack for');
+});
+
+test('with the pack and a core that reads it, every requirement of its own has procedures', (t) => {
+    const core = require('@surea11y/core');
+    if (typeof core.proceduresFor !== 'function' || typeof core.listProcedures !== 'function') return t.skip('the installed core has no procedures of packs');
+    const ids = { 'V4.1.1': ['4.2.1', '4.2.11', '12.1', '12.5', '5', '11', '13'], 'V3.2.1': ['4.2.1', '12.1.1', '12.2.4', '6', '11', '13'] };
+    for (const [version, list] of Object.entries(ids)) {
+        const out = proceduresForRequirements(list, { standard: 'en301549', version });
+        if (!out.available) return t.skip('the EN 301 549 pack is not installed');
+        for (const id of list) {
+            const p = out.procedures[id];
+            if (!p) return t.skip(`the installed pack has no procedures for ${id} ${version}`);
+            assert.ok(p.facets.every((f) => f.procedure && f.procedure.steps.length), `${version} ${id}`);
+        }
+    }
 });

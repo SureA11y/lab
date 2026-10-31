@@ -203,12 +203,42 @@ test('the checks a person answered are listed under their criterion, and counted
     assert.deepEqual(rowOf(acr, 'wcag-a', '1.4.1').checks.map((c) => [c.id, c.resultLabel, c.label]), [['color-only', "Doesn't apply", 'color-only']], 'answers alone, with no verdict yet, are listed too');
     assert.deepEqual(rowOf(acr, 'wcag-a', '1.1.1').checks, []);
     assert.equal(rowOf(acr, 'en-9', '9.2.4.7').checks.length, 2, 'chapter 9 restates the criterion');
-    assert.deepEqual(acr.evaluation.manualChecks, { checks: 3, criteria: 2 });
+    assert.deepEqual(acr.evaluation.manualChecks, { checks: 3, criteria: 2, enRequirements: 0 });
     assert.equal(acr.evaluation.methodsText, 'Automated checks with surea11y 1.14.1 against WCAG 2.2 Level AA. Manual review by Ana. '
-        + 'Manual checks following the test procedures of surea11y 1.14.1: 3 checks answered, on 2 criteria, each listed under its criterion.');
+        + 'Manual checks following the test procedures of surea11y 1.14.1: 3 checks answered, on 2 WCAG criteria, each listed under its row.');
     assert.doesNotMatch(buildConformanceReport(report).evaluation.methodsText, /Manual checks/, 'none without answers');
 
     const html = conformanceReportHTML(acr);
     assert.match(html, /<p class="checks-head">Checked by hand:<\/p><ul class="checks"><li><span class="result" data-result="fail">Fails:<\/span> Focus is visible &lt;always&gt;<\/li>/);
-    assert.match(html, /<dt>Evaluation methods<\/dt><dd>[^<]*3 checks answered, on 2 criteria/);
+    assert.match(html, /<dt>Evaluation methods<\/dt><dd>[^<]*3 checks answered, on 2 WCAG criteria/);
+});
+
+test('EN 301 549\'s own rows follow the target version, chapter 13 included', () => {
+    const v4 = buildConformanceReport(report, { target: { wcagVersion: '2.2', en301549: 'V4.1.1' } });
+    const v3 = buildConformanceReport(report, { target: { wcagVersion: '2.1', en301549: 'V3.2.1' } });
+    const ids = (acr, id) => acr.tables.find((t) => t.id === id).rows.map((r) => r.id);
+    assert.deepEqual(ids(v4, 'en-12'), ['12.1', '12.2', '12.3', '12.4', '12.5'], 'V4.1.1 renumbered chapter 12');
+    assert.deepEqual(ids(v3, 'en-12'), ['12.1.1', '12.1.2', '12.2.2', '12.2.3', '12.2.4']);
+    assert.deepEqual(ids(v4, 'en-other'), ['5', '6', '7', '8', '10', '11', '13']);
+    assert.equal(rowOf(v4, 'en-other', '11').name, 'Chapter 11: Non-web software');
+    assert.equal(rowOf(v3, 'en-other', '11').name, 'Chapter 11: Software');
+    assert.equal(ids(v4, 'en-4').length, 11);
+});
+
+test('answers on EN 301 549\'s own rows are listed, and counted apart from WCAG\'s', () => {
+    const reviewed = {
+        ...report,
+        conformanceReview: {
+            criteria: { '2.4.7': { facets: { a: { result: 'pass', label: 'A' } } } },
+            clauses: {
+                '4.2.1': { conformance: 'supports', facets: { tasks: { result: 'pass', label: 'Main tasks done with a screen reader' } } },
+                'chapter-11': { conformance: 'notApplicable', facets: { applies: { result: 'na', label: 'The product is software' } } },
+            },
+        },
+    };
+    const acr = buildConformanceReport(reviewed);
+    assert.deepEqual(rowOf(acr, 'en-4', '4.2.1').checks.map((c) => c.resultLabel), ['Passes']);
+    assert.deepEqual(rowOf(acr, 'en-other', '11').checks.map((c) => c.label), ['The product is software']);
+    assert.deepEqual(acr.evaluation.manualChecks, { checks: 3, criteria: 1, enRequirements: 2 });
+    assert.match(acr.evaluation.methodsText, /3 checks answered, on 1 WCAG criterion and 2 EN 301 549 requirements of its own, each listed under its row\.$/);
 });

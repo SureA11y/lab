@@ -24,7 +24,7 @@ const { createRunQueue } = require("./src/server-side/run-queue");
 const { createResourceSampler } = require("./src/server-side/resource-sampler");
 const { registerQueueRoutes, resolveQueueBaseDir } = require("./src/server-side/queue-routes");
 const { createRequestGuard } = require("./src/server-side/request-guard");
-const { proceduresForCriteria } = require("./src/server-side/procedures");
+const { proceduresForRequirements } = require("./src/server-side/procedures");
 
 // --------------------------- Crash guard (dev) ---------------------------
 
@@ -185,12 +185,16 @@ app.get("/api/engine/capabilities", (req, res) => {
     }
 });
 
-// How a person checks each criterion by hand, from core: ?ids=1.4.13,2.4.3
-// and &locale=fr. { available: false } from a core without them.
+// How a person checks each requirement by hand, from core: ?ids=1.4.13,2.4.3
+// and &locale=fr; EN 301 549's own, with &standard=en301549&version=V4.1.1
+// (ids such as 4.2.1, 12.1 or 5). { available: false } from a core without
+// them.
 app.get("/api/procedures", (req, res) => {
     res.set("Cache-Control", "no-store");
     try {
-        return res.json(proceduresForCriteria(req.query.ids, { locale: req.query.locale }));
+        return res.json(proceduresForRequirements(req.query.ids, {
+            locale: req.query.locale, standard: req.query.standard, version: req.query.version,
+        }));
     } catch (e) {
         console.error("Failed to read the test procedures:", e);
         return res.json({ available: false });

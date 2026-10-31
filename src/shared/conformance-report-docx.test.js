@@ -79,5 +79,5 @@ test('a criterion\'s answered checks follow its remarks in the Word document', a
     const buffer = await conformanceReportDocx(buildConformanceReport(report), JSZip, { type: 'nodebuffer', generatedAt: '2026-10-30' });
     const doc = await (await JSZip.loadAsync(buffer)).file('word/document.xml').async('string');
     assert.match(doc, /Checked by hand\.<\/w:t>[\s\S]*?Checked by hand:<\/w:t>[\s\S]*?Passes: Text in images has enough contrast<\/w:t>/);
-    assert.match(doc, /1 check answered, on 1 criterion/);
+    assert.match(doc, /1 check answered, on 1 WCAG criterion, each listed under its row/);
 });
