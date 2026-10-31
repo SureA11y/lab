@@ -19,7 +19,7 @@ const { pathToFileURL } = require('node:url');
 const crypto = require('node:crypto');
 const JSZip = require('jszip');
 
-const { buildConformanceReport } = require('./conformance-report.js');
+const { buildConformanceReport, registerStandard, clearStandards } = require('./conformance-report.js');
 const { conformanceReportHTML } = require('./conformance-report-html.js');
 const { conformanceReportDocx } = require('./conformance-report-docx.js');
 const targets = require('./conformance-targets.js');
@@ -117,4 +117,20 @@ test('WCAG and EN 301 549 give what they gave when recorded', async (t) => {
     if (!withProcedures) return;
     assert.deepEqual(now.procedures, record.procedures, 'procedures');
     assert.deepEqual(now.checklist, record.checklist, 'checklist');
+});
+
+test('EN 301 549 built from its pack\'s listing gives what was recorded', async (t) => {
+    if (!hasProcedures() || !fs.existsSync(RECORD)) return t.skip('needs a core and a pack with procedures, and the record');
+    const core = require('@surea11y/core');
+    const pack = require('@surea11y/pack-en301549');
+    for (const version of ['V3.2.1', 'V4.1.1']) {
+        assert.ok(registerStandard(core.listProcedures({ packs: [pack], standard: 'en301549', version }), { profiles: [`en301549-v${version.slice(1).toLowerCase()}`] }));
+    }
+    try {
+        const now = await current({ withProcedures: true });
+        const record = JSON.parse(fs.readFileSync(RECORD, 'utf8'));
+        for (const part of ['vpat', 'review', 'procedures', 'checklist']) assert.deepEqual(now[part], record[part], part);
+    } finally {
+        clearStandards();
+    }
 });

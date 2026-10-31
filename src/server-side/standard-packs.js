@@ -59,20 +59,92 @@ function describeStandard(pack) {
             version: p && p.version ? String(p.version) : null,
             wcagVersion: p && p.wcagVersion ? String(p.wcagVersion) : null,
         }));
+    // Two profiles of one version (the standard alone, and with WCAG, say)
+    // would read the same: each then says its id.
+    const repeated = new Set(profiles.map((p) => p.label).filter((l, i, all) => all.indexOf(l) !== i));
+    for (const p of profiles) if (repeated.has(p.label)) p.label = `${p.label} (${p.id})`;
     return { key: s.key, name, package: pack.name || null, versions, profiles };
 }
 
 let loaded = null;
 
-/** The installed packs, loaded once. */
+/**
+ * Makes the standards' profiles ones a scan step can take: scan targets
+ * (shared/conformance-targets.js) and options of the scan step's Profile
+ * field, after the ones the lab lists itself. A profile already known is left
+ * as it is. Returns the ids added.
+ */
+function registerProfiles(standards, {
+    targets = require('../shared/conformance-targets.js'),
+    actions = require('../workflow/action-definitions.js').ACTION_DEFINITIONS,
+} = {}) {
+    const added = targets.registerStandardProfiles(standards);
+    const options = actions && actions.a11yScan && actions.a11yScan.fields && actions.a11yScan.fields.profile
+        && actions.a11yScan.fields.profile.options;
+    if (Array.isArray(options)) {
+        for (const std of standards) {
+            for (const p of std.profiles) {
+                if (added.includes(p.id) && !options.some((o) => o && o.value === p.id)) options.push({ value: p.id, label: p.label });
+            }
+        }
+    }
+    return added;
+}
+
+/** The installed packs, loaded once; their profiles become scan targets. */
 function installedPacks() {
-    if (!loaded) loaded = loadPacks().packs;
+    if (!loaded) {
+        loaded = loadPacks().packs;
+        registerProfiles(loaded.map(describeStandard).filter(Boolean));
+    }
     return loaded;
 }
 
-/** The installed packs' standards. */
-function installedStandards() {
-    return installedPacks().map(describeStandard).filter(Boolean);
+/**
+ * A standard's requirements by version, from core's listProcedures, kept to
+ * what the lab builds its rows from: { [version]: { key, standard, version,
+ * requirements: [{ id, title, wcag }], groups } }. {} from a core without
+ * test procedures.
+ */
+function listingsOf(pack, std, core) {
+    if (!core || typeof core.listProcedures !== 'function') return {};
+    const slimGroup = (g) => ({ id: g.id, title: g.title, requirements: g.requirements || [], groups: (g.groups || []).map(slimGroup) });
+    const out = {};
+    for (const version of std.versions) {
+        try {
+            const l = core.listProcedures({ packs: [pack], standard: std.key, version });
+            if (!l) continue;
+            out[version] = {
+                key: std.key,
+                standard: l.standard || std.name,
+                version: l.version || version,
+                requirements: (l.requirements || []).map((r) => ({ id: r.id, title: r.title, ...(r.wcag ? { wcag: r.wcag } : {}) })),
+                groups: (l.groups || []).map(slimGroup),
+            };
+        } catch {
+            // A version core cannot list is left out.
+        }
+    }
+    return out;
+}
+
+function loadCore() {
+    try {
+        return require('@surea11y/core');
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * The installed packs' standards, each with its requirements by version
+ * (`listings`) where core can list them.
+ */
+function installedStandards({ core = loadCore() } = {}) {
+    return installedPacks().map((pack) => {
+        const std = describeStandard(pack);
+        return std ? { ...std, listings: listingsOf(pack, std, core) } : null;
+    }).filter(Boolean);
 }
 
 /** The installed pack whose standard has `key`, or null. */
@@ -80,4 +152,4 @@ function packForStandard(key) {
     return installedPacks().find((p) => p && p.standard && p.standard.key === key) || null;
 }
 
-module.exports = { loadPacks, describeStandard, installedPacks, installedStandards, packForStandard };
+module.exports = { loadPacks, describeStandard, registerProfiles, installedPacks, installedStandards, packForStandard };

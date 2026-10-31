@@ -961,6 +961,11 @@
             },
             {
               "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(-[a-z0-9.]+)+$",
+              "description": "a profile of an installed standard pack"
+            },
+            {
+              "type": "string",
               "pattern": "\\{\\s*[Vv][Aa][Rr]\\s*:|\\{\\s*(?:index|oneBased|total)\\s*\\}",
               "description": "text with a {var:…} token"
             }

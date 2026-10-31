@@ -16,7 +16,7 @@ import {formatReportTimestamp} from './report-timestamp.js';
 import {reportMetaField} from './report-meta-fields.js';
 import {META_FIELD_ATTR, META_VALUE_CLASS, mountReportMetaEditors} from './report-meta-edit.js';
 import {createClearReportBtn, createCompareReportBtn, createDownloadReportSplitButton, downloadConformanceReport, downloadConformanceReportDocx, downloadManualChecklist} from './export.js';
-import {proceduresAvailable, proceduresKnownAvailable} from './procedures.js';
+import {loadStandards, proceduresAvailable, proceduresKnownAvailable} from './procedures.js';
 import {afterPaint, runBusy} from './busy.js';
 import {cloneJsonData, collectReportEngines, computeTotals, getAllArtifactUrls, getScreenshotsFromPayload, prepareDataForReport} from './report-data.js';
 import {focusSafely} from './focus-utils.js';
@@ -29,7 +29,12 @@ import {STATUS} from './ui-constants.js';
 export function createReportView(app) {
     // Asked once, as the app starts, so a report's Download menu knows
     // whether to offer the manual review checklist.
-    if (typeof fetch === 'function' && typeof location !== 'undefined' && /^https?:/.test(location.protocol)) proceduresAvailable();
+    // The installed standards too, so the conformance review and its
+    // downloads build their rows from the packs.
+    if (typeof fetch === 'function' && typeof location !== 'undefined' && /^https?:/.test(location.protocol)) {
+        proceduresAvailable();
+        loadStandards();
+    }
 
     // Rebuilds the (hidden) all-scans dialog inside #results-container so the
     // report exporter, which clones that container, carries it into the exported
@@ -682,7 +687,8 @@ export function createReportView(app) {
             reviewBtn.type = 'button';
             reviewBtn.className = 'secondary-button';
             reviewBtn.textContent = 'Review conformance';
-            reviewBtn.addEventListener('click', () => {
+            reviewBtn.addEventListener('click', async () => {
+                await loadStandards();
                 const dialog = openConformanceReview({
                     payload: app.getActiveBucket()?.payload || data,
                     readOtherReview: app.compareTab.readConformanceReviewFile,

@@ -92,6 +92,29 @@ runner, the workflows and the app talk only to the engine facade,
 `src/server-side/a11y-engine.js`, which hands them the canonical result
 model (`src/server-side/canonical-model.js`) whatever the engine.
 
+## Adding a standard
+
+A standard besides WCAG comes as a pack for surea11y core (core's
+[`docs/PACKS.md`](https://github.com/SureA11y/core/blob/main/docs/PACKS.md)):
+EN 301 549's is `@surea11y/pack-en301549`. The lab loads every
+`@surea11y/pack-*` package it depends on, and any named in `A11Y_PACKS`
+(`src/server-side/standard-packs.js`), and learns each standard from its
+pack: its profiles become scan targets and options of the scan step's
+Profile field, and, with a core that has test procedures, its requirements
+become sections of Review conformance and of the manual review checklist,
+each with how to check it by hand. A requirement that restates a WCAG
+criterion is reviewed as that criterion. So adding a standard is adding its
+pack to `package.json`; nothing else in the lab changes. A document of the
+standard's own (France's accessibility statement for RGAA, say) is the one
+part that would be new code; the VPAT stays WCAG's and EN 301 549's.
+
+`test-fixtures/pack-sample` is the pack core's generator writes
+(`surea11y-pack new --kind standard`), and `src/js/standard-packs.browserspec.js`
+installs it and goes through the app with it: a standard the lab has no code
+for. `src/shared/standards-baseline.test.js` holds WCAG's and EN 301 549's
+outputs (the VPAT, the review's rows, the checklist, the profiles) to what
+they were before the standards came from packs.
+
 ## Adding an engine
 
 An engine is an adapter: a file in `src/server-side/engines/` whose name

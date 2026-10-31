@@ -66,6 +66,9 @@ const ACTION_DEFINITIONS = {
                 alias: "Profile",
                 description: "The profile this scan checks against, WCAG 2.2 AA unless it says otherwise: WCAG 2.2 at Level A, AA or AAA, or a standard, which sets the WCAG version and the level, all of them Level A and AA: EN 301 549 V4.1.1, the EU standard, which is WCAG 2.2, and EN 301 549 V3.2.1, its earlier version, which is WCAG 2.1 and still checks 4.1.1 Parsing. surea11y applies a standard in full, version details such as 4.1.1 included. Including rule IDs or tags explicitly takes precedence over a standard. Passing the rules does not mean the page meets the standard: many criteria still need a manual check.",
                 default: "wcag22-aa",
+                // An installed standard pack adds its profiles to these
+                // (server-side/standard-packs.js).
+                packValues: true,
                 options: [
                     {value: "wcag22-a", label: "WCAG 2.2 A"},
                     {value: "wcag22-aa", label: "WCAG 2.2 AA"},

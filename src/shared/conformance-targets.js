@@ -76,7 +76,9 @@
     // surea11y's profile of the same id. EN 301 549 V4.1.1 is WCAG 2.2 AA,
     // which an engine selecting by level comes closest to; EN 301 549 V3.2.1
     // (WCAG 2.1, with 4.1.1 Parsing) needs the standard.
-    const SCAN_TARGETS = Object.freeze({
+    // Not frozen: an installed standard pack adds its profiles at start
+    // (registerStandardProfiles); these entries are never changed.
+    const SCAN_TARGETS = ({
         'wcag22-a': target('WCAG 2.2 A', '2.2', 'A'),
         'wcag22-aa': target('WCAG 2.2 AA', '2.2', 'AA'),
         'wcag22-aaa': target('WCAG 2.2 AAA', '2.2', 'AAA'),
@@ -86,14 +88,43 @@
     const DEFAULT_SCAN_TARGET = 'wcag22-aa';
 
     // The standards: the targets that are also surea11y's profiles.
-    const CONFORMANCE_TARGETS = Object.freeze(Object.fromEntries(
+    const CONFORMANCE_TARGETS = Object.fromEntries(
         Object.entries(SCAN_TARGETS).filter(([, t]) => t.profile)
-    ));
+    );
 
     // The profiles core takes in engineOptions.profile: the standards, and
     // its own WCAG 2.2 AA one, which a caller may still ask for. A scan step's
     // WCAG 2.2 AA target is a WCAG selection, not that profile.
-    const CORE_PROFILES = Object.freeze([...Object.keys(CONFORMANCE_TARGETS), 'wcag22-aa']);
+    const CORE_PROFILES = [...Object.keys(CONFORMANCE_TARGETS), 'wcag22-aa'];
+
+    const PROFILE_ID = /^[a-z][a-z0-9]*(-[a-z0-9.]+)+$/;
+
+    /**
+     * Adds the profiles of installed standard packs (`standards`, as
+     * GET /api/standards lists them) as targets a scan step can take, each
+     * a standard surea11y applies itself: WCAG Level AA of the version its
+     * profile is built on, unless it says another level. A profile already
+     * known keeps its entry, so EN 301 549's are as above. Returns the ids
+     * added.
+     */
+    function registerStandardProfiles(standards) {
+        const added = [];
+        for (const std of Array.isArray(standards) ? standards : []) {
+            for (const p of Array.isArray(std && std.profiles) ? std.profiles : []) {
+                const id = typeof (p && p.id) === 'string' ? p.id.trim().toLowerCase() : '';
+                if (!PROFILE_ID.test(id) || Object.prototype.hasOwnProperty.call(SCAN_TARGETS, id)) continue;
+                const label = typeof p.label === 'string' && p.label.trim() ? p.label.trim() : id;
+                const version = versionOf(p.wcagVersion) || DEFAULT_WCAG_VERSION;
+                const level = levelOf(p.level) || 'AA';
+                const t = target(label, version, level, { profile: true, needs: 'standard' });
+                SCAN_TARGETS[id] = t;
+                CONFORMANCE_TARGETS[id] = t;
+                CORE_PROFILES.push(id);
+                added.push(id);
+            }
+        }
+        return added;
+    }
 
     function profileId(v) {
         const id = typeof v === 'string' ? v.trim().toLowerCase() : '';
@@ -323,6 +354,7 @@
         separateBestPractices,
         wcagTags,
         targetLabel,
-        profileId
+        profileId,
+        registerStandardProfiles
     };
 }));

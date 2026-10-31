@@ -72,13 +72,19 @@
                     description: 'A reviewer\'s conformance verdicts over the automated draft (docs/design/conformance-report-design.md): '
                         + '`product` (name, version, description, contact, notes), `reviewer`, `methods`, and per WCAG criterion '
                         + '(`criteria`, by number) or EN 301 549 clause (`clauses`) a `conformance` (supports, partiallySupports, '
-                        + 'doesNotSupport, notApplicable, notEvaluated) and `remarks`.',
+                        + 'doesNotSupport, notApplicable, notEvaluated) and `remarks`; another installed standard\'s requirements under '
+                        + '`standards`, by the standard\'s key and version. With `facets`, the checks a person answered by hand: by '
+                        + 'check, its `result` (pass, fail, na) and `label`, its words.',
                     properties: {
                         product: { type: 'object' },
                         reviewer: { type: 'string' },
                         methods: { type: 'string' },
                         criteria: { type: 'object', additionalProperties: { $ref: '#/$defs/conformanceEntry' } },
                         clauses: { type: 'object', additionalProperties: { $ref: '#/$defs/conformanceEntry' } },
+                        standards: {
+                            type: 'object',
+                            additionalProperties: { type: 'object', additionalProperties: { type: 'object', additionalProperties: { $ref: '#/$defs/conformanceEntry' } } },
+                        },
                         updatedAt: { type: 'string' },
                     },
                 },
@@ -89,6 +95,15 @@
                     properties: {
                         conformance: { enum: ['supports', 'partiallySupports', 'doesNotSupport', 'notApplicable', 'notEvaluated', ''] },
                         remarks: { type: 'string' },
+                        facets: {
+                            type: 'object',
+                            additionalProperties: {
+                                anyOf: [
+                                    { type: 'object', properties: { result: { enum: ['pass', 'fail', 'na'] }, label: { type: 'string' } } },
+                                    { enum: ['pass', 'fail', 'na'] },
+                                ],
+                            },
+                        },
                     },
                 },
                 actionResult: open({

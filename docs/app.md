@@ -146,7 +146,9 @@ surea11y core's test procedures, where the installed core has them. EN 301
 549's own requirements (chapter 4, chapter 9's 9.6 and, in V4.1.1, 9.7,
 chapter 12 and the other chapters, as the report's version numbers them) have
 theirs too, from the EN 301 549 pack; chapter 9's clauses are the WCAG
-criteria, reviewed once. Each
+criteria, reviewed once. A report scanned against another installed
+standard's profile has that standard's requirements of its own too, in
+sections by its groups ([Standards](configuration.md#standards)). Each
 check takes a result (Passes, Fails, Doesn't apply), kept in the report with
 the review; once every check of a criterion has one, the dialog suggests its
 level, and **Use it** sets that level, with remarks written from the answers

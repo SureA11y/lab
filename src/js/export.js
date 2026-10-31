@@ -7,7 +7,7 @@ import {afterPaint} from './busy.js';
 import {getActivity, isCancelError} from './activity.js';
 import {createImageStore, decodeBase64DataUrl, packPayloadImages, storedReportJson} from './report-package.js';
 import {comparisonDescription, comparisonDocumentHtml, reportDocumentHtml} from './viewer-documents.js';
-import {loadProcedures, reportLocale} from './procedures.js';
+import {loadProcedures, loadStandards, reportLocale} from './procedures.js';
 import {buildManualChecklistHTML} from './manual-checklist.js';
 
 async function loadTemplate() {
@@ -452,7 +452,8 @@ function comparisonFileBaseName() {
  * report `payload` as one HTML file (shared/conformance-report.js): the
  * automated draft, and whatever a reviewer recorded in it. Returns its name.
  */
-export function downloadConformanceReport(payload) {
+export async function downloadConformanceReport(payload) {
+    await loadStandards();
     const model = globalThis.A11Y_CONFORMANCE_REPORT;
     const view = globalThis.A11Y_CONFORMANCE_REPORT_HTML;
     if (!model || !view) throw new Error('The conformance report modules are not loaded.');
@@ -467,6 +468,7 @@ export function downloadConformanceReport(payload) {
  * it there (shared/conformance-report-docx.js). Returns its name.
  */
 export async function downloadConformanceReportDocx(payload) {
+    await loadStandards();
     const model = globalThis.A11Y_CONFORMANCE_REPORT;
     const docx = globalThis.A11Y_CONFORMANCE_REPORT_DOCX;
     if (!model || !docx || !globalThis.JSZip) throw new Error('The conformance report modules are not loaded.');
@@ -482,6 +484,7 @@ export async function downloadConformanceReportDocx(payload) {
  * name, or null when the server's core has no procedures.
  */
 export async function downloadManualChecklist(payload) {
+    await loadStandards();
     const model = globalThis.A11Y_CONFORMANCE_REPORT;
     if (!model) throw new Error('The conformance report modules are not loaded.');
     const acr = model.buildConformanceReport(payload);
@@ -492,9 +495,17 @@ export async function downloadManualChecklist(payload) {
     // EN 301 549's own requirements, from its pack, where the server has it.
     const enIds = acr.tables.filter((t) => ['en-4', 'en-9', 'en-12', 'en-other'].includes(t.id)).flatMap((t) => t.rows.filter((r) => !r.wcag).map((r) => r.id));
     const enProcedures = await loadProcedures(enIds, locale, { standard: 'en301549', version: acr.target.en301549 });
+    // Any other standard the scans checked against, by standard and version.
+    const standardProcedures = {};
+    for (const t of acr.tables.filter((tb) => tb.standard && tb.standard !== 'wcag' && tb.standard !== 'en301549' && tb.version)) {
+        const loaded = await loadProcedures(t.rows.map((r) => r.id), locale, { standard: t.standard, version: t.version });
+        if (!loaded) continue;
+        standardProcedures[t.standard] = standardProcedures[t.standard] || {};
+        standardProcedures[t.standard][t.version] = { ...(standardProcedures[t.standard][t.version] || {}), ...loaded };
+    }
     const title = getReportNameFromUi() || acr.product.name;
     const html = buildManualChecklistHTML({
-        acr, procedures, enProcedures, review: payload && payload.conformanceReview, levelLabels: model.LEVEL_LABEL, lang: locale, title,
+        acr, procedures, enProcedures, standardProcedures, review: payload && payload.conformanceReview, levelLabels: model.LEVEL_LABEL, lang: locale, title,
     });
     const fileName = `${safeBaseName(title)} - manual review checklist.html`;
     downloadBlob(new Blob([html], { type: 'text/html' }), fileName);

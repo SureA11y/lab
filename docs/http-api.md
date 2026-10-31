@@ -91,7 +91,7 @@ tab; the app is otherwise as it always opens.
 | `GET /workflows/actions` | The step definitions: what `schemas/run-spec.v1.schema.json` is generated from. |
 | `GET /api/engine/capabilities` | What surea11y can check: its options and the profiles it supports. |
 | `GET /api/engine/rules` | surea11y's rules catalog. |
-| `GET /api/standards` | The standards of the installed packs, besides WCAG: `{ standards: [{ key, name, package, versions, profiles: [{ id, label, version, wcagVersion }] }] }` ([Standards](configuration.md#standards)). |
+| `GET /api/standards` | The standards of the installed packs, besides WCAG: `{ standards: [{ key, name, package, versions, profiles: [{ id, label, version, wcagVersion }], listings }] }`, where `listings`, with a core that has test procedures, gives each version's requirements (`id`, `title`, `wcag` for one that restates a WCAG criterion) in the standard's groups ([Standards](configuration.md#standards)). |
 | `GET /api/procedures?ids=1.4.13,2.4.3` | How to check each WCAG criterion by hand, from surea11y core's test procedures: `{ available, locale, procedures: { [id]: procedure } }`, in `&locale=` where it has the text. With `&standard=en301549&version=V4.1.1`, an installed standard's own requirements (`4.2.1`, `12.1`, `5`). `{ available: false }` from a core without procedures, or for a standard with no pack installed. |
 
 Everything else the server answers is the app's own (its page, the report

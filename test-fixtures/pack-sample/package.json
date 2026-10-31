@@ -1,0 +1,28 @@
+{
+  "name": "@surea11y/pack-sample",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Accessibility standard for @surea11y/core",
+  "main": "index.js",
+  "files": [
+    "*.js",
+    "rules/",
+    "i18n/",
+    "docs/"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "lint": "eslint .",
+    "docs": "surea11y-pack docs",
+    "docs:check": "surea11y-pack docs --check"
+  },
+  "peerDependencies": {
+    "@surea11y/core": "^1.14.1"
+  },
+  "devDependencies": {
+    "@surea11y/core": "^1.14.1",
+    "eslint": "^10.8.0",
+    "jsdom": "^29.1.1",
+    "playwright": "^1.62.1"
+  }
+}

@@ -76,6 +76,12 @@
                 out.type = 'string';
                 if (values && field.otherValues === true) {
                     out.examples = values;
+                } else if (values && field.packValues === true) {
+                    // The values listed, or one an installed standard pack
+                    // adds (a profile such as "rgaa-4.1"), which the run
+                    // checks against the packs it has.
+                    const pack = { type: 'string', pattern: '^[a-z][a-z0-9]*(-[a-z0-9.]+)+$', description: 'a profile of an installed standard pack' };
+                    out.anyOf = tokenAllowed ? [{ enum: values }, pack, VAR_TOKEN] : [{ enum: values }, pack];
                 } else if (values) {
                     out.anyOf = tokenAllowed ? [{ enum: values }, VAR_TOKEN] : [{ enum: values }];
                 }

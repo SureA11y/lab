@@ -199,3 +199,42 @@ export function proceduresAvailable({ fetchImpl = globalThis.fetch } = {}) {
 export function proceduresKnownAvailable() {
     return knownAvailable;
 }
+
+/**
+ * The standards of the server's packs, registered with the conformance
+ * report's model (shared/conformance-report.js) so it builds their rows from
+ * their packs: EN 301 549's own requirements, and the tables of any other
+ * standard a report's scans checked against. Asked once; resolves to the
+ * standards, or [] where the server has none (or no listings, with a core
+ * without test procedures).
+ */
+let standardsLoad = null;
+export function loadStandards({ fetchImpl = globalThis.fetch, model = globalThis.A11Y_CONFORMANCE_REPORT } = {}) {
+    if (!standardsLoad) {
+        standardsLoad = (async () => {
+            let body = null;
+            try {
+                const res = await fetchImpl('/api/standards');
+                body = res.ok ? await res.json() : null;
+            } catch {
+                body = null;
+            }
+            const standards = Array.isArray(body?.standards) ? body.standards : [];
+            // Their profiles, as scan targets the app names (shared/conformance-targets.js).
+            globalThis.A11Y_CONFORMANCE_TARGETS?.registerStandardProfiles?.(standards);
+            for (const std of standards) {
+                const profiles = (std.profiles || []).filter((p) => p && p.version).map((p) => [p.version, p.id]);
+                for (const listing of Object.values(std.listings || {})) {
+                    model?.registerStandard?.(listing, { profiles: profiles.filter(([v]) => v === listing.version).map(([, id]) => id) });
+                }
+            }
+            return standards;
+        })();
+    }
+    return standardsLoad;
+}
+
+/** Forgets the standards loaded (for tests). */
+export function clearStandardsLoad() {
+    standardsLoad = null;
+}

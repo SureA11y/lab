@@ -113,7 +113,7 @@
 
     // What the scans found for each criterion: where it failed (and on how
     // many elements) and where they asked a person to look.
-    function scanEvidence(report) {
+    function scanEvidence(report, requirementsOf = (f) => asArray(f.wcag && (f.wcag.scNormative || f.wcag.sc))) {
         const bySc = new Map();
         const at = (sc) => {
             if (!bySc.has(sc)) bySc.set(sc, { failPages: [], failElements: 0, askPages: [], questions: [] });
@@ -124,7 +124,7 @@
             const page = str(scan.label).replace(/^Scan:\s*/, '') || str(scan.url) || 'a page';
             for (const f of asArray(scan.canonical && scan.canonical.findings)) {
                 if (!f || (f.outcome !== 'fail' && f.outcome !== 'cantTell')) continue;
-                for (const sc of asArray(f.wcag && (f.wcag.scNormative || f.wcag.sc))) {
+                for (const sc of requirementsOf(f)) {
                     const e = at(String(sc));
                     if (f.outcome === 'fail') {
                         e.failPages.push(page);
@@ -235,6 +235,118 @@
         ].filter(Boolean).join(' ');
     }
 
+    // ---- Standards from their packs -----------------------------------------
+    //
+    // What a standard's pack lists, by version: its requirements (id, title,
+    // and `wcag` where one restates a WCAG criterion) in its groups, as core's
+    // listProcedures gives them, and the profiles that scan against it. The
+    // app registers what the server's packs give, the runner what its own do;
+    // with none registered, EN 301 549's rows are the lists above, and no
+    // other standard has any.
+    const STANDARDS = new Map(); // `${key}|${version}` -> standard
+
+    function flattenGroup(group) {
+        return [...asArray(group && group.requirements).map(String), ...asArray(group && group.groups).flatMap(flattenGroup)];
+    }
+
+    /**
+     * Registers a standard's version from its listing: { key, standard (its
+     * name), version, requirements: [{ id, title, wcag? }], groups: [{ id,
+     * title, requirements, groups }] }, with `profiles`, the ids of the
+     * profiles that scan against it. Returns whether it was taken.
+     */
+    function registerStandard(listing, { profiles = [] } = {}) {
+        if (!listing || typeof listing !== 'object' || !str(listing.key) || !str(listing.version)) return false;
+        const requirements = asArray(listing.requirements)
+            .filter((r) => r && str(r.id))
+            .map((r) => ({ id: str(r.id), title: str(r.title), wcag: str(r.wcag) || null }));
+        const groups = asArray(listing.groups).filter((g) => g && str(g.id))
+            .map((g) => ({ id: str(g.id), title: str(g.title), ids: flattenGroup(g) }));
+        STANDARDS.set(`${str(listing.key)}|${str(listing.version)}`, {
+            key: str(listing.key),
+            name: str(listing.standard) || str(listing.key),
+            version: str(listing.version),
+            profiles: asArray(profiles).map(String),
+            requirements,
+            groups,
+        });
+        return true;
+    }
+
+    /** Forgets every registered standard (for tests). */
+    function clearStandards() {
+        STANDARDS.clear();
+    }
+
+    function standardOf(key, version) {
+        return STANDARDS.get(`${key}|${version}`) || null;
+    }
+
+    // EN 301 549's own rows, from its listing when registered: chapter 4,
+    // chapter 9's own requirements, chapter 12, and the other chapters.
+    function en301549Own(version) {
+        const listed = standardOf('en301549', version);
+        const fallback = {
+            chapter4: FUNCTIONAL_PERFORMANCE,
+            chapter9: CHAPTER9_OWN[version] || CHAPTER9_OWN['V4.1.1'],
+            chapter12: DOCUMENTATION[version] || DOCUMENTATION['V4.1.1'],
+            other: OTHER_CHAPTERS[version] || OTHER_CHAPTERS['V4.1.1'],
+        };
+        if (!listed) return fallback;
+        const byId = new Map(listed.requirements.map((r) => [r.id, r]));
+        const own = (ids) => ids.map((id) => byId.get(id)).filter((r) => r && !r.wcag).map((r) => [r.id, r.title]);
+        const group = (id) => listed.groups.find((g) => g.id === id);
+        const in4 = own(group('4') ? group('4').ids : []);
+        const in9 = own(group('9') ? group('9').ids : []);
+        const in12 = own(group('12') ? group('12').ids : []);
+        const other = own(listed.groups.filter((g) => !['4', '9', '12'].includes(g.id)).flatMap((g) => g.ids));
+        // A listing without one of these parts keeps the lab's own for it.
+        return {
+            chapter4: in4.length ? in4 : fallback.chapter4,
+            chapter9: group('9') ? in9 : fallback.chapter9,
+            chapter12: in12.length ? in12 : fallback.chapter12,
+            other: other.length ? other : fallback.other,
+        };
+    }
+
+    // The registered standards, besides EN 301 549 (which the report always
+    // has), that the report's scans checked against: each with the version
+    // of the profile a scan used.
+    function standardsScanned(report) {
+        const out = [];
+        const used = new Set(asArray(report && report.scans)
+            .filter((sc) => sc && sc.includedInReport !== false)
+            .map((sc) => str(sc.profile && (sc.profile.id || sc.profile)) || str(sc.canonical && sc.canonical.runOptions && sc.canonical.runOptions.engineOptions && sc.canonical.runOptions.engineOptions.profile))
+            .filter(Boolean));
+        for (const std of STANDARDS.values()) {
+            if (std.key === 'en301549') continue;
+            if (std.profiles.some((id) => used.has(id)) && !out.includes(std)) out.push(std);
+        }
+        return out;
+    }
+
+    // A registered standard's review tables: a table per group, a row per
+    // requirement of its own (one that restates a WCAG criterion is reviewed
+    // as that criterion), each drafted from what the scans found for it.
+    function standardTables(report, std, reviewedOf) {
+        const evidence = scanEvidence(report, (f) => asArray(f.standards && f.standards.normativeMappings)
+            .filter((m) => m && m.standard === std.name && (!m.version || String(m.version) === std.version))
+            .map((m) => String(m.requirement)));
+        const byId = new Map(std.requirements.map((r) => [r.id, r]));
+        const seen = new Set();
+        const tables = [];
+        const tableOf = (id, title, ids) => {
+            const rows = ids.map((rid) => byId.get(rid)).filter((r) => r && !r.wcag && !seen.has(r.id)).map((r) => {
+                seen.add(r.id);
+                return row({ id: r.id, name: r.title || `Requirement ${r.id}` }, draftFor(null, evidence.get(r.id)), reviewedOf(r.id));
+            });
+            if (rows.length) tables.push({ id: `std-${std.key}-${id}`.replace(/[^A-Za-z0-9_-]/g, '-'), title: `${std.name} ${std.version}: ${title}`, standard: std.key, version: std.version, rows });
+        };
+        for (const g of std.groups) tableOf(g.id, g.title || g.id, g.ids);
+        tableOf('other', 'Other requirements', std.requirements.map((r) => r.id));
+        return tables;
+    }
+
     /**
      * The ACR for a report: product details, how it was evaluated, and its
      * tables, each row the reviewer's verdict where there is one, else the
@@ -285,12 +397,17 @@
 
         const authorRow = ([id, name]) => row({ id, name }, { conformance: 'notEvaluated', remarks: PERSON_ONLY }, reviewedClauses[id]);
 
+        const enOwn = en301549Own(target.en301549);
         const enTables = [
-            { id: 'en-4', title: 'Chapter 4: Functional Performance Statements', standard: 'en301549', rows: FUNCTIONAL_PERFORMANCE.map(authorRow) },
-            { id: 'en-9', title: 'Chapter 9: Web', standard: 'en301549', rows: [...chapter9, ...(CHAPTER9_OWN[target.en301549] || CHAPTER9_OWN['V4.1.1']).map(authorRow)] },
-            { id: 'en-12', title: CHAPTER12_TITLE[target.en301549] || CHAPTER12_TITLE['V4.1.1'], standard: 'en301549', rows: (DOCUMENTATION[target.en301549] || DOCUMENTATION['V4.1.1']).map(authorRow) },
-            { id: 'en-other', title: 'Chapters 5 to 8, 10, 11 and 13', standard: 'en301549', rows: (OTHER_CHAPTERS[target.en301549] || OTHER_CHAPTERS['V4.1.1']).map(([id, name]) => row({ id, name: `Chapter ${id}: ${name}` }, { conformance: 'notEvaluated', remarks: 'For the author to answer: often Not Applicable for web content.' }, reviewedClauses[`chapter-${id}`])) },
+            { id: 'en-4', title: 'Chapter 4: Functional Performance Statements', standard: 'en301549', rows: enOwn.chapter4.map(authorRow) },
+            { id: 'en-9', title: 'Chapter 9: Web', standard: 'en301549', rows: [...chapter9, ...enOwn.chapter9.map(authorRow)] },
+            { id: 'en-12', title: CHAPTER12_TITLE[target.en301549] || CHAPTER12_TITLE['V4.1.1'], standard: 'en301549', rows: enOwn.chapter12.map(authorRow) },
+            { id: 'en-other', title: 'Chapters 5 to 8, 10, 11 and 13', standard: 'en301549', rows: enOwn.other.map(([id, name]) => row({ id, name: `Chapter ${id}: ${name}` }, { conformance: 'notEvaluated', remarks: 'For the author to answer: often Not Applicable for web content.' }, reviewedClauses[`chapter-${id}`])) },
         ];
+
+        const reviewedStandards = (review && review.standards) || {};
+        const otherTables = standardsScanned(report).flatMap((std) => standardTables(report, std,
+            (id) => reviewedStandards[std.key] && reviewedStandards[std.key][std.version] && reviewedStandards[std.key][std.version][id]));
 
         const product = (review && review.product) || {};
         const rows = [...wcagRows, ...enTables.flatMap((t) => t.rows)];
@@ -322,7 +439,10 @@
                 methodsText: methodsText(engine, target, review, manualChecks),
             },
             target,
-            tables: [...wcagTables, ...enTables],
+            // Other standards the scans checked against follow, for the
+            // review and the checklist; the VPAT's outputs show WCAG's and EN
+            // 301 549's alone.
+            tables: [...wcagTables, ...enTables, ...otherTables],
             totals: {
                 reviewed: wcagRows.filter((r) => r.source === 'review').length,
                 criteria: wcagRows.length,
@@ -357,6 +477,24 @@
                 copied += 1;
             }
         }
+        // Other standards' verdicts, by standard and version, the same way.
+        for (const [std, versions] of Object.entries(other.standards && typeof other.standards === 'object' ? other.standards : {})) {
+            for (const [version, entries] of Object.entries(versions && typeof versions === 'object' ? versions : {})) {
+                for (const [key, entry] of Object.entries(entries && typeof entries === 'object' ? entries : {})) {
+                    if (!entry || !entry.conformance) continue;
+                    review.standards = review.standards && typeof review.standards === 'object' ? review.standards : {};
+                    review.standards[std] = review.standards[std] || {};
+                    review.standards[std][version] = review.standards[std][version] || {};
+                    const own = review.standards[std][version][key];
+                    if (own && own.conformance) continue;
+                    const merged = { ...entry };
+                    if (own && str(own.remarks)) merged.remarks = own.remarks;
+                    if (own && own.facets) merged.facets = { ...(entry.facets || {}), ...own.facets };
+                    review.standards[std][version][key] = merged;
+                    copied += 1;
+                }
+            }
+        }
         for (const [key, value] of Object.entries(other.product || {})) {
             if (value && !review.product[key]) review.product[key] = value;
         }
@@ -366,5 +504,5 @@
         return copied;
     }
 
-    return { buildConformanceReport, carryReviewForward, LEVELS, LEVEL_LABEL, EN_VERSIONS };
+    return { buildConformanceReport, carryReviewForward, registerStandard, clearStandards, LEVELS, LEVEL_LABEL, EN_VERSIONS };
 });

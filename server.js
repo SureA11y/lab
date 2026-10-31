@@ -25,7 +25,10 @@ const { createResourceSampler } = require("./src/server-side/resource-sampler");
 const { registerQueueRoutes, resolveQueueBaseDir } = require("./src/server-side/queue-routes");
 const { createRequestGuard } = require("./src/server-side/request-guard");
 const { proceduresForRequirements } = require("./src/server-side/procedures");
-const { installedStandards } = require("./src/server-side/standard-packs");
+const { installedPacks, installedStandards } = require("./src/server-side/standard-packs");
+// The standard packs load now, so their profiles are scan targets and step
+// options from the first request.
+installedPacks();
 
 // --------------------------- Crash guard (dev) ---------------------------
 

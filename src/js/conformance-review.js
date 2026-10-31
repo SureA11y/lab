@@ -27,9 +27,38 @@ const STORE = { 'wcag-a': 'criteria', 'wcag-aa': 'criteria', 'wcag-aaa': 'criter
 // The tables the review asks about: chapter 9's clauses are the WCAG
 // criteria, so of chapter 9 only its own requirements (9.6, 9.7) are asked.
 export function reviewTables(acr) {
-    return acr.tables.filter((t) => STORE[t.id])
+    return acr.tables.filter((t) => STORE[t.id] || isOtherStandard(t))
         .map((t) => (t.id === 'en-9' ? { ...t, title: 'Chapter 9: Web, beyond the WCAG criteria', rows: t.rows.filter((r) => !r.wcag) } : t))
         .filter((t) => t.rows.length);
+}
+
+// A table of a standard besides WCAG and EN 301 549, from its pack.
+function isOtherStandard(t) {
+    return !!(t && t.standard && t.standard !== 'wcag' && t.standard !== 'en301549' && t.version);
+}
+
+// Where a table's rows are kept in the review: WCAG's under `criteria`, EN
+// 301 549's under `clauses`, another standard's under
+// `standards[key][version]`. `create` makes that place when it is missing,
+// for writing; reading leaves the review as it is.
+function storeOf(review, table, create = false) {
+    if (STORE[table.id]) return review[STORE[table.id]];
+    if (!isOtherStandard(table)) return {};
+    if (!create) return review.standards?.[table.standard]?.[table.version] || {};
+    review.standards = review.standards && typeof review.standards === 'object' ? review.standards : {};
+    review.standards[table.standard] = review.standards[table.standard] || {};
+    review.standards[table.standard][table.version] = review.standards[table.standard][table.version] || {};
+    return review.standards[table.standard][table.version];
+}
+
+// The table an element of the dialog is in, as its data says.
+function tableOfEl(el) {
+    const holder = el.closest('[data-table]') || el.closest('[data-section]');
+    return {
+        id: holder.dataset.table || holder.dataset.section,
+        standard: holder.dataset.standard || '',
+        version: holder.dataset.version || '',
+    };
 }
 
 function esc(v) {
@@ -69,10 +98,10 @@ function rowHTML(table, row, levels, saved) {
         .concat(Object.entries(levels).map(([value, label]) => `<option value="${value}"${saved && saved.conformance === value ? ' selected' : ''}>${esc(label)}</option>`))
         .join('');
     const name = `${esc(row.id)} ${esc(row.name)}${row.level ? ` (Level ${esc(row.level)})` : ''}`;
-    return `<fieldset class="acr-row" data-table="${esc(table.id)}" data-key="${esc(key)}">`
+    return `<fieldset class="acr-row" data-table="${esc(table.id)}" data-standard="${esc(table.standard || '')}" data-version="${esc(table.version || '')}" data-key="${esc(key)}">`
         + `<legend>${table.id === 'en-other' ? esc(row.name) : name}</legend>`
         + `<p class="acr-draft"><span class="acr-draft-label">Automated draft:</span> ${esc(levels[row.draft.conformance])}. ${esc(row.draft.remarks)}</p>`
-        + `<div class="acr-how" data-acr-how="${esc(row.id)}" data-acr-standard="${table.standard === 'wcag' ? 'wcag' : 'en301549'}" data-acr-name="${esc(id)}-how"></div><div class="acr-suggest" data-acr-suggest></div>`
+        + `<div class="acr-how" data-acr-how="${esc(row.id)}" data-acr-standard="${esc(table.standard || 'wcag')}" data-acr-version="${esc(table.version || '')}" data-acr-name="${esc(id)}-how"></div><div class="acr-suggest" data-acr-suggest></div>`
         + `<div class="acr-fields">`
         + `<div class="acr-field"><label for="${id}-level">Conformance level</label><select id="${id}-level" data-part="conformance">${options}</select></div>`
         + `<div class="acr-field acr-field--wide"><label for="${id}-remarks">Remarks and explanations</label>`
@@ -81,12 +110,12 @@ function rowHTML(table, row, levels, saved) {
 }
 
 function tableSectionHTML(table, levels, review) {
-    const part = STORE[table.id];
-    const reviewed = table.rows.filter((row) => review[part][keyOf(table, row)]?.conformance).length;
-    return `<details class="acr-section" data-section="${esc(table.id)}">`
+    const part = storeOf(review, table);
+    const reviewed = table.rows.filter((row) => part[keyOf(table, row)]?.conformance).length;
+    return `<details class="acr-section" data-section="${esc(table.id)}" data-standard="${esc(table.standard || '')}" data-version="${esc(table.version || '')}">`
         + `<summary><span class="acr-section-title">${esc(table.title)}</span> `
         + `<span class="acr-count" data-count>${reviewed} of ${table.rows.length} reviewed</span></summary>`
-        + table.rows.map((row) => rowHTML(table, row, levels, review[part][keyOf(table, row)])).join('')
+        + table.rows.map((row) => rowHTML(table, row, levels, part[keyOf(table, row)])).join('')
         + `</details>`;
 }
 
@@ -133,7 +162,7 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
     // Each row's procedure, once loaded, by its table and key.
     const procedures = new Map();
     const procedureOf = (rowEl) => procedures.get(`${rowEl.dataset.table}|${rowEl.dataset.key}`) || null;
-    const entryOf = (rowEl) => review[STORE[rowEl.dataset.table]][rowEl.dataset.key];
+    const entryOf = (rowEl) => storeOf(review, tableOfEl(rowEl))[rowEl.dataset.key];
 
     // What a criterion's answers suggest, under its checks, with a button that
     // takes it; nothing until every check is answered.
@@ -163,18 +192,25 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
 
     // Each criterion's "How to check it by hand", from core's procedures, once
     // they come; none from a core without them. Each check can be answered.
-    // EN 301 549's own requirements (chapter 4, 12 and the others) come from
-    // its pack, in the version the report targets; chapter 9 is the WCAG rows.
+    // Each standard's own requirements come from its pack: EN 301 549's in the
+    // version the report targets, another's in its table's; chapter 9 of EN
+    // 301 549 is the WCAG rows.
     const fillHowToAssess = async () => {
         const slots = Array.from(dialog.querySelectorAll('[data-acr-how]'));
         if (!slots.length) return;
         const locale = reportLocale(payload);
         const enVersion = api.buildConformanceReport(payload).target.en301549;
-        for (const standard of ['wcag', 'en301549']) {
-            const mine = slots.filter((el) => el.dataset.acrStandard === standard);
-            if (!mine.length) continue;
+        const groups = new Map();
+        for (const el of slots) {
+            const standard = el.dataset.acrStandard || 'wcag';
+            const version = standard === 'wcag' ? '' : (standard === 'en301549' ? enVersion : el.dataset.acrVersion);
+            const key = `${standard}|${version}`;
+            if (!groups.has(key)) groups.set(key, { standard, version, slots: [] });
+            groups.get(key).slots.push(el);
+        }
+        for (const { standard, version, slots: mine } of groups.values()) {
             const loaded = await loadProcedures(mine.map((el) => el.dataset.acrHow), locale,
-                standard === 'wcag' ? {} : { standard, version: enVersion });
+                standard === 'wcag' ? {} : { standard, version });
             if (!loaded) continue;
             for (const el of mine) {
                 const rowEl = el.closest('.acr-row');
@@ -207,10 +243,9 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
 
     const recount = (section) => {
         if (!section) return;
-        const tableId = section.dataset.section;
-        const part = STORE[tableId];
+        const part = storeOf(review, tableOfEl(section));
         const rows = section.querySelectorAll('.acr-row');
-        const done = Array.from(rows).filter((r) => review[part][r.dataset.key]?.conformance).length;
+        const done = Array.from(rows).filter((r) => part[r.dataset.key]?.conformance).length;
         const count = section.querySelector('[data-count]');
         if (count) count.textContent = `${done} of ${rows.length} reviewed`;
     };
@@ -225,9 +260,9 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
         } else {
             const row = el.closest('.acr-row');
             if (!row) return;
-            const part = STORE[row.dataset.table];
+            const part = storeOf(review, tableOfEl(row), true);
             const key = row.dataset.key;
-            const entry = { ...(review[part][key] || {}) };
+            const entry = { ...(part[key] || {}) };
             if (el.dataset.facet) {
                 const facets = { ...(entry.facets || {}) };
                 const facet = (procedureOf(row)?.facets || []).find((f) => f.id === el.dataset.facet);
@@ -242,8 +277,8 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
             } else {
                 entry[el.dataset.part] = el.value;
             }
-            if (!entry.conformance && !String(entry.remarks || '').trim() && !entry.facets) delete review[part][key];
-            else review[part][key] = entry;
+            if (!entry.conformance && !String(entry.remarks || '').trim() && !entry.facets) delete part[key];
+            else part[key] = entry;
             recount(row.closest('.acr-section'));
             if (el.dataset.facet) drawSuggestion(row);
         }

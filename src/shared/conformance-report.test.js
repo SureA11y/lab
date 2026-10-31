@@ -257,3 +257,71 @@ test('chapter 9 has its own requirements after its clauses: 9.6, and 9.7 from V4
     assert.equal(rowOf(reviewed, 'en-9', '9.7').conformance, 'supports');
     assert.equal(reviewed.evaluation.manualChecks.enRequirements, 1);
 });
+
+describe('a standard registered from its pack', () => {
+    const { registerStandard, clearStandards } = require('./conformance-report.js');
+    const LISTING = {
+        key: 'demo', standard: 'Demo Standard', version: '2.0',
+        requirements: [
+            { id: '1.1', title: 'Images have alternatives' },
+            { id: '1.2', title: 'Restates 1.4.3', wcag: '1.4.3' },
+            { id: '2.1', title: 'Forms are labelled' },
+            { id: '7', title: 'Not in any group' },
+        ],
+        groups: [
+            { id: '1', title: 'Images', requirements: [], groups: [{ id: '1.x', title: 'Sub', requirements: ['1.1', '1.2'], groups: [] }] },
+            { id: '2', title: 'Forms', requirements: ['2.1'], groups: [] },
+        ],
+    };
+    const scanned = (profile, findings = []) => ({
+        ...report,
+        scans: [{ ...report.scans[0], profile: { id: profile, label: 'Demo 2.0' }, canonical: { ...report.scans[0].canonical, findings: [...report.scans[0].canonical.findings, ...findings] } }],
+    });
+
+    test('a report whose scans used its profile gets a table per group, of the requirements of its own', () => {
+        clearStandards();
+        assert.equal(registerStandard(LISTING, { profiles: ['demo-2.0'] }), true);
+        try {
+            const acr = buildConformanceReport(scanned('demo-2.0', [{
+                ruleId: 'r', title: 'Alt', outcome: 'fail', wcag: { sc: ['1.1.1'] }, occurrences: [{}, {}],
+                standards: { normativeMappings: [{ standard: 'Demo Standard', requirement: '1.1', version: '2.0' }, { standard: 'Other', requirement: '2.1' }] },
+            }]));
+            const demo = acr.tables.filter((t) => t.standard === 'demo');
+            assert.deepEqual(demo.map((t) => [t.id, t.title, t.version, t.rows.map((r) => r.id)]), [
+                ['std-demo-1', 'Demo Standard 2.0: Images', '2.0', ['1.1']],
+                ['std-demo-2', 'Demo Standard 2.0: Forms', '2.0', ['2.1']],
+                ['std-demo-other', 'Demo Standard 2.0: Other requirements', '2.0', ['7']],
+            ]);
+            assert.equal(demo[0].rows[0].conformance, 'doesNotSupport', 'drafted from the findings that name it');
+            assert.match(demo[0].rows[0].remarks, /2 failing elements/);
+            assert.equal(demo[1].rows[0].remarks, 'Only a person can check this.', 'another standard\'s mapping is not its');
+            assert.ok(!conformanceReportHTML(acr).includes('Demo Standard'), 'the VPAT shows WCAG and EN 301 549 alone');
+            assert.equal(buildConformanceReport(scanned('wcag22-aa')).tables.some((t) => t.standard === 'demo'), false, 'not for a report that did not scan against it');
+        } finally {
+            clearStandards();
+        }
+    });
+
+    test('its verdicts are kept by standard and version, and carried forward', () => {
+        clearStandards();
+        registerStandard(LISTING, { profiles: ['demo-2.0'] });
+        try {
+            const review = { standards: { demo: { '2.0': { '2.1': { conformance: 'supports', facets: { a: { result: 'pass', label: 'A' } } } } } } };
+            const acr = buildConformanceReport({ ...scanned('demo-2.0'), conformanceReview: review });
+            const row = acr.tables.find((t) => t.id === 'std-demo-2').rows[0];
+            assert.equal(row.conformance, 'supports');
+            assert.equal(row.checks.length, 1);
+            const mine = { product: {}, criteria: {}, clauses: {}, standards: { demo: { '2.0': { '1.1': { remarks: 'Mine.' } } } } };
+            const other = { standards: { demo: { '2.0': { '1.1': { conformance: 'doesNotSupport', remarks: 'Theirs.' }, '2.1': { conformance: 'supports' } } } } };
+            assert.equal(carryReviewForward(mine, other), 2);
+            assert.deepEqual(mine.standards.demo['2.0']['1.1'], { conformance: 'doesNotSupport', remarks: 'Mine.' });
+        } finally {
+            clearStandards();
+        }
+    });
+
+    test('a listing that is not one is refused', () => {
+        assert.equal(registerStandard(null), false);
+        assert.equal(registerStandard({ key: 'x' }), false, 'no version');
+    });
+});

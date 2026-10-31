@@ -49,9 +49,20 @@ the packs installed with it: [EN 301 549](https://github.com/SureA11y/pack-en301
 `@surea11y/pack-en301549`, is a dependency. Every `@surea11y/pack-*` package
 in the lab's `package.json`, and any named in `A11Y_PACKS`, is loaded at
 start; one that does not load is left out. What the lab knows of each
-standard (its name, versions and profiles, and with a core that has test
-procedures, how to check its requirements by hand) comes from the pack, so a
-further standard needs its pack installed, not code of the lab's own.
+standard comes from the pack, so a further standard needs its pack
+installed, not code of the lab's own:
+
+- its profiles are options of a scan step's **Profile** (EN 301 549's have
+  always been there), and a scan against one names the standard's
+  requirements in its findings;
+- with a core that has test procedures, its requirements are sections of
+  **Review conformance** and of the **manual review checklist** for a report
+  whose scans used one of its profiles, each with how to check it by hand
+  and drafted from what the scans found; a requirement that restates a WCAG
+  criterion is reviewed as that criterion. The answers are kept in the
+  report with the rest of the review. The conformance report (VPAT) stays
+  WCAG's and EN 301 549's.
+
 `GET /api/standards` lists them ([the server's API](http-api.md#what-the-server-knows)).
 
 ## The command-line runner

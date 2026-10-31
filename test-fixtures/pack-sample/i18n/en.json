@@ -1,0 +1,13 @@
+{
+  "sampleLinkTextSpecific_title": "Links say where they go",
+  "sampleLinkTextSpecific_description": "Checks that no link is named only \"click here\", \"read more\" or the like.",
+  "sampleLinkTextSpecific_summary_fail": "The link is named only \"{{name}}\".",
+  "sampleLinkTextSpecific_hint_fail": "Name the link by where it goes, or add that to its name.",
+  "sampleContrastEnhanced_title": "Text reaches a contrast ratio of 7:1",
+  "sampleContrastEnhanced_description": "Checks text contrast at 7:1, or 4.5:1 for large text.",
+  "sampleNewWindowReview_title": "Links that open a new window say so",
+  "sampleNewWindowReview_description": "Lists the links that open a new window, for a person to check they say so.",
+  "sampleNewWindowReview_summary": "This link opens a new window.",
+  "sampleNewWindowReview_hint": "Check that its text, or something next to it, says so.",
+  "sample_report_note": "One result per requirement of Sample Standard, from the rules that check it."
+}
