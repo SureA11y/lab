@@ -43,7 +43,13 @@ export async function loadProcedures(ids, locale = 'en', { standard = 'wcag', ve
             body = null;
         }
         if (!body || !body.available) return null;
-        for (const id of missing) cache.set(keyOf(id), body.procedures?.[id] || null);
+        // Each keeps the language the server read it in, which is the one
+        // asked for only where the standard is all in it.
+        const readIn = typeof body.locale === 'string' && body.locale ? body.locale : '';
+        for (const id of missing) {
+            const p = body.procedures?.[id] || null;
+            cache.set(keyOf(id), p && readIn ? { ...p, locale: readIn } : p);
+        }
     }
     const out = {};
     for (const id of wanted) out[id] = cache.get(keyOf(id)) || null;
@@ -58,6 +64,12 @@ export function clearProceduresCache() {
 }
 
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
+
+// The review's own words are English; a procedure's are in the language it
+// was read in, and say so where that differs (WCAG 3.1.2).
+const langAttr = (lang) => (isText(lang) && lang.toLowerCase() !== 'en' ? ` lang="${esc(lang)}"` : '');
+// Escaped text, in a span that says its language where that isn't the page's.
+const inLang = (lang, text) => (langAttr(lang) ? `<span${langAttr(lang)}>${esc(text)}</span>` : esc(text));
 
 /**
  * A criterion's facets, as a person takes them: `forPerson`, those they check
@@ -95,27 +107,30 @@ export function resultOf(answers, facetId) {
 
 // The answer's radio buttons, when the facets are drawn to be answered:
 // `name` is the group's, unique to the criterion and the facet.
-function answerHTML(f, name, answer) {
+function answerHTML(f, name, answer, lang = '') {
+    const labelText = inLang(f.lang || lang, f.label);
     const options = ANSWERS.map(([value, label]) => {
         const id = `${name}-${value || 'none'}`;
         const checked = (answer || '') === value ? ' checked' : '';
         return `<span class="how-answer-option"><input type="radio" id="${esc(id)}" name="${esc(name)}" value="${value}" data-facet="${esc(f.id)}"${checked}/>`
             + `<label for="${esc(id)}">${esc(label)}</label></span>`;
     }).join('');
-    return `<fieldset class="how-answer"><legend><span class="visually-hidden">${esc(f.label)}: </span>Result</legend>${options}</fieldset>`;
+    return `<fieldset class="how-answer"><legend><span class="visually-hidden">${labelText}: </span>Result</legend>${options}</fieldset>`;
 }
 
-function facetHTML(f, { name = null, answer = '' } = {}) {
+function facetHTML(f, { name = null, answer = '', lang = '' } = {}) {
     const p = f.procedure;
+    const labelLang = langAttr(f.lang || lang);
+    const textLang = langAttr(f.procedureLang || f.lang || lang);
     const steps = p.steps.filter(isText);
     const tools = (Array.isArray(f.tools) ? f.tools : []).map((t) => t && t.label).filter(isText);
     return `<li class="how-facet">`
-        + `<p class="how-facet-label"><strong>${esc(f.label)}</strong>${f.automation === 'partial' ? ' <span class="how-facet-note">(automated checks decide part of it)</span>' : ''}</p>`
-        + (tools.length ? `<p class="how-facet-tools"><span class="how-term">You need:</span> ${esc(tools.join(', '))}</p>` : '')
-        + (steps.length ? `<ol class="how-steps">${steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : '')
-        + (isText(p.passWhen) ? `<p class="how-when"><span class="how-term">Passes:</span> ${esc(p.passWhen)}</p>` : '')
-        + (isText(p.failWhen) ? `<p class="how-when"><span class="how-term">Fails:</span> ${esc(p.failWhen)}</p>` : '')
-        + (name ? answerHTML(f, `${name}-${safeId(f.id)}`, answer) : '')
+        + `<p class="how-facet-label"><strong${labelLang}>${esc(f.label)}</strong>${f.automation === 'partial' ? ' <span class="how-facet-note">(automated checks decide part of it)</span>' : ''}</p>`
+        + (tools.length ? `<p class="how-facet-tools"><span class="how-term">You need:</span> ${inLang(lang, tools.join(', '))}</p>` : '')
+        + (steps.length ? `<ol class="how-steps"${textLang}>${steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : '')
+        + (isText(p.passWhen) ? `<p class="how-when"><span class="how-term">Passes:</span> ${inLang(f.procedureLang || f.lang || lang, p.passWhen)}</p>` : '')
+        + (isText(p.failWhen) ? `<p class="how-when"><span class="how-term">Fails:</span> ${inLang(f.procedureLang || f.lang || lang, p.failWhen)}</p>` : '')
+        + (name ? answerHTML(f, `${name}-${safeId(f.id)}`, answer, lang) : '')
         + `</li>`;
 }
 
@@ -138,13 +153,14 @@ export function buildHowToAssessHTML(procedure, { name = null, answers = null } 
     if (!forPerson.length) return '';
     const n = forPerson.length;
     const answered = name ? answeredText(procedure, answers) : '';
+    const lang = procedure && isText(procedure.locale) ? procedure.locale : '';
     return `<details class="how-assess">`
         + `<summary>How to check it by hand (${n} ${n === 1 ? 'check' : 'checks'})`
         + (name ? `<span class="how-answered" data-how-answered>${answered ? ` · ${esc(answered)}` : ''}</span>` : '')
         + `</summary>`
-        + `<ol class="how-facets">${forPerson.map((f) => facetHTML(f, { name, answer: resultOf(answers, f.id) })).join('')}</ol>`
+        + `<ol class="how-facets">${forPerson.map((f) => facetHTML(f, { name, lang, answer: resultOf(answers, f.id) })).join('')}</ol>`
         + (automatic.length
-            ? `<p class="how-automatic"><span class="how-term">Automated checks decide:</span></p><ul class="how-automatic-list">${automatic.map((f) => `<li>${esc(f.label)}</li>`).join('')}</ul>`
+            ? `<p class="how-automatic"><span class="how-term">Automated checks decide:</span></p><ul class="how-automatic-list">${automatic.map((f) => `<li${langAttr(f.lang || lang)}>${esc(f.label)}</li>`).join('')}</ul>`
             : '')
         + `</details>`;
 }

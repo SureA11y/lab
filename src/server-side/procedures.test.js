@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { proceduresForCriteria, proceduresForRequirements, MAX_IDS } = require('./procedures');
+const { proceduresForCriteria, proceduresForRequirements, listStandardProcedures, standardLanguages, completeLocale, MAX_IDS } = require('./procedures');
 
 const fakeCore = (seen = []) => ({
     proceduresFor(id, { locale }) {
@@ -85,4 +85,59 @@ test('the testing guide lists a standard as core does, with the choices it takes
     assert.deepEqual(listStandardProcedures({}, { core: {}, packFor }), { available: false });
     assert.deepEqual(renderStandardProcedures({ standard: 'wcag' }, { core, packFor }), { html: '<!doctype html>page', name: 'WCAG 2.2 testing guide.html' });
     assert.equal(renderStandardProcedures({ standard: 'wcag' }, { core: { listProcedures: core.listProcedures }, packFor }), null, 'a core that cannot render');
+});
+
+// A core that says which languages a standard can be read in: French all
+// of it, German one text short.
+const LANGUAGES = [
+    { locale: 'en', complete: true, missing: 0 },
+    { locale: 'de', complete: false, missing: 1 },
+    { locale: 'fr', complete: true, missing: 0 },
+];
+const languageCore = (seen = []) => ({
+    ...fakeCore(seen),
+    procedureLanguages: (options) => (options.standard === 'rgaa' ? null : LANGUAGES),
+});
+
+test('a report reads a standard in a language only where it is all in it, else in the standard\'s own', () => {
+    assert.equal(completeLocale('fr', LANGUAGES), 'fr');
+    assert.equal(completeLocale('fr-ca', LANGUAGES), 'fr', 'a regional tag reads in its language');
+    assert.equal(completeLocale('de', LANGUAGES), 'en', 'not part German, part English');
+    assert.equal(completeLocale('pt', LANGUAGES), 'en', 'a language the standard lacks');
+    assert.equal(completeLocale('pt', [{ locale: 'fr', complete: true, missing: 0 }]), 'fr', 'a standard written in French reads in French');
+    assert.equal(completeLocale('de', null), 'de', 'a core that does not say reads the locale asked for');
+
+    const seen = [];
+    const out = proceduresForCriteria('1.4.13', { locale: 'de', core: languageCore(seen) });
+    assert.equal(out.locale, 'en');
+    assert.deepEqual(seen, [['1.4.13', 'en']]);
+    assert.equal(proceduresForCriteria('1.4.13', { locale: 'FR-CA', core: languageCore() }).locale, 'fr');
+});
+
+test('the languages of a standard are core\'s, its own first', () => {
+    const packFor = (key) => (key === 'en301549' ? { standard: { key } } : null);
+    assert.deepEqual(standardLanguages({ standard: 'wcag', version: '2.1' }, { core: languageCore(), packFor }), { available: true, languages: LANGUAGES });
+    assert.deepEqual(standardLanguages({ standard: 'nope' }, { core: languageCore(), packFor }), { available: true, languages: null }, 'a standard with no pack');
+    assert.deepEqual(standardLanguages({ standard: 'wcag' }, { core: fakeCore(), packFor }), { available: false }, 'a core that does not say');
+    const asked = [];
+    standardLanguages({ standard: 'en301549', version: 'V4.1.1' }, { core: { procedureLanguages: (o) => { asked.push(o); return LANGUAGES; } }, packFor });
+    assert.deepEqual(asked, [{ standard: 'en301549', version: 'V4.1.1', packs: [{ standard: { key: 'en301549' } }] }]);
+});
+
+test('with a core that says, each language it gives reads the standard in it, and a WCAG title it has no translation of is marked English', (t) => {
+    const core = require('@surea11y/core');
+    if (typeof core.procedureLanguages !== 'function') return t.skip('the installed core does not say which languages it has');
+    for (const version of ['2.0', '2.1', '2.2']) {
+        const { languages } = standardLanguages({ standard: 'wcag', version });
+        assert.equal(languages[0].locale, 'en');
+        for (const l of languages) {
+            const { listing } = listStandardProcedures({ standard: 'wcag', version, levels: 'A,AA,AAA', locale: l.locale });
+            assert.equal(listing.locale, l.locale, `${version} ${l.locale}`);
+            // Core counts what is left in another language; the guide marks as
+            // many requirement and group titles of it.
+            const marked = listing.requirements.filter((r) => r.titleLang && r.titleLang !== l.locale).length;
+            if (l.complete) assert.equal(marked, 0, `${version} ${l.locale}`);
+            else assert.ok(marked > 0 && marked <= l.missing, `${version} ${l.locale}: ${marked} of ${l.missing}`);
+        }
+    }
 });

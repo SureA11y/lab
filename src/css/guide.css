@@ -78,6 +78,8 @@ body { margin: 0; }
     font: inherit; min-height: 40px; padding: 0 var(--space-3); max-width: 100%;
     color: var(--text-main); background: var(--surface-1); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
 }
+.guide-language-note { margin: var(--space-3) 0 0; max-width: 46rem; font-size: var(--fs-sm); color: var(--text-muted); }
+.guide-language-note[hidden] { display: none; }
 .guide-search { flex: 1 1 18rem; }
 .guide-search-box { position: relative; }
 .guide-search-box svg { position: absolute; left: 12px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }

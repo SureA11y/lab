@@ -74,6 +74,10 @@
                 <label for="guide-version">Version</label>
                 <select id="guide-version" name="version"></select>
             </div>
+            <div class="guide-field" id="guide-language-field" hidden>
+                <label for="guide-language">Language of the procedures</label>
+                <select id="guide-language" name="locale"></select>
+            </div>
             <fieldset class="guide-field guide-chips" id="guide-levels">
                 <legend>Levels</legend>
                 <label class="guide-chip"><input type="checkbox" name="level" value="A" checked><span>A</span></label>
@@ -88,6 +92,7 @@
                 </div>
             </div>
         </div>
+        <p class="guide-language-note" id="guide-language-note" hidden></p>
         <details class="guide-more" id="guide-more">
             <summary>Filters<span class="guide-more-count" id="guide-more-count"></span></summary>
             <div class="guide-more-body">

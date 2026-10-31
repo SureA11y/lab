@@ -58,6 +58,58 @@ function toolIcon(id) {
         : '';
 }
 
+// The page's own words are English; what core gives is in the language it
+// was read in, and each part says so where that differs (WCAG 3.1.2).
+const PAGE_LANG = 'en';
+const langAttr = (lang) => (isText(lang) && lang.toLowerCase() !== PAGE_LANG ? ` lang="${esc(lang)}"` : '');
+// Escaped text, in a span that says its language where that isn't the page's.
+const inLang = (lang, text) => (langAttr(lang) ? `<span${langAttr(lang)}>${esc(text)}</span>` : esc(text));
+
+// A language's name, in English or in itself ('Français'): the tag where
+// the browser has no name for it.
+function nameOf(locale, inLocale = PAGE_LANG) {
+    try {
+        const name = new Intl.DisplayNames([inLocale], { type: 'language' }).of(locale);
+        return name && name.toLowerCase() !== String(locale).toLowerCase() ? name : String(locale);
+    } catch {
+        return String(locale);
+    }
+}
+
+/** A language's name in English: 'French'. */
+export function languageName(locale) {
+    return nameOf(locale);
+}
+
+/**
+ * A language as the picker offers it: its own name, with the English one
+ * ('Français (French)'), and, where the standard isn't all in it, how many
+ * texts are shown in the standard's own language instead ('Français
+ * (French), 1 text in English'). `own` is that language.
+ */
+export function languageOption(language, own = PAGE_LANG) {
+    const english = nameOf(language.locale);
+    const self = nameOf(language.locale, language.locale);
+    const name = self.toLowerCase() === english.toLowerCase() ? english : `${self} (${english})`;
+    if (language.complete) return name;
+    const n = Number(language.missing) || 0;
+    return `${name}, ${n || 'some'} ${n === 1 ? 'text' : 'texts'} in ${nameOf(own)}`;
+}
+
+/**
+ * The language of `languages` (core's procedureLanguages, its own first) a
+ * wanted tag is read in: the tag's, else its base language's ('fr-ca',
+ * then 'fr'); the standard's own where it is none of them, with `fellBack`.
+ */
+export function pickLanguage(wanted, languages) {
+    const list = Array.isArray(languages) ? languages : [];
+    if (!list.length) return null;
+    const tag = String(wanted || '').trim().toLowerCase();
+    if (!tag) return { language: list[0], fellBack: false };
+    const found = list.find((l) => l.locale === tag) || list.find((l) => l.locale === tag.split('-')[0]);
+    return found ? { language: found, fellBack: false } : { language: list[0], fellBack: true };
+}
+
 /** The guide's state from its address: { standard, version, levels, tools, automation, q, details, id, locale }. */
 export function stateFromQuery(search) {
     const p = new URLSearchParams(search || '');
@@ -120,23 +172,25 @@ function badgesHTML(f) {
     return `<p class="guide-badges">`
         + `<span class="guide-badge guide-badge-auto" data-automation="${esc(f.automation || '')}">${esc(AUTOMATION_BADGE[f.automation] || '')}</span>`
         + (tools.length
-            ? `<span class="guide-needs">Needs</span>` + tools.map((t) => `<span class="guide-badge guide-badge-tool" title="${esc(t.label || TOOL_LABELS[t.id] || '')}">${toolIcon(t.id)}${esc(TOOL_SHORT[t.id] || t.label || t.id)}</span>`).join('')
+            ? `<span class="guide-needs">Needs</span>` + tools.map((t) => `<span class="guide-badge guide-badge-tool" title="${esc(TOOL_LABELS[t.id] || t.label || '')}">${toolIcon(t.id)}${esc(TOOL_SHORT[t.id] || t.label || t.id)}</span>`).join('')
             : '')
         + `</p>`;
 }
 
-function facetHTML(requirement, f, { details, level }) {
+function facetHTML(requirement, f, { details, level, lang }) {
     const p = f.procedure;
+    const labelLang = langAttr(f.lang || lang);
+    const textLang = langAttr(f.procedureLang || f.lang || lang);
     const covered = coveredBy(requirement, f);
     const bodyId = idOf('chk', `${requirement.id}-${f.id}`);
     const technical = details
         ? `<div class="guide-technical">`
             + `<p><span class="guide-term">Facet</span> <code>${esc(f.id)}</code></p>`
             + ((f.rules || []).length ? `<p><span class="guide-term">Rules that test it</span> ${f.rules.map((r) => `<code>${esc(r)}</code>`).join(' ')}</p>` : '')
-            + (covered.length ? `<p><span class="guide-term">Also assesses</span> ${covered.map((c) => esc(c.label || c.id)).join('; ')}</p>` : '')
+            + (covered.length ? `<p><span class="guide-term">Also assesses</span> ${covered.map((c) => inLang(c.lang || lang, c.label || c.id)).join('; ')}</p>` : '')
             + ((f.variants || []).length
                 ? `<details class="guide-variants"><summary>What scans ask about one element (${f.variants.length})</summary><ul>`
-                    + f.variants.map((v) => `<li><code>${esc(v.ruleId)}</code> <code>${esc(v.reasonCode)}</code> ${esc((v.steps || []).join(' '))}</li>`).join('')
+                    + f.variants.map((v) => `<li><code>${esc(v.ruleId)}</code> <code>${esc(v.reasonCode)}</code> ${inLang(lang, (v.steps || []).join(' '))}</li>`).join('')
                     + `</ul></details>`
                 : '')
             + `</div>`
@@ -145,21 +199,21 @@ function facetHTML(requirement, f, { details, level }) {
         + `<div class="guide-check-head">`
         + `<h${level} class="guide-facet-title"><button type="button" class="guide-toggle" aria-expanded="true" aria-controls="${esc(bodyId)}">`
         + `<svg class="guide-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg>`
-        + `<span>${esc(f.label)}</span></button></h${level}>`
+        + `<span${labelLang}>${esc(f.label)}</span></button></h${level}>`
         + badgesHTML(f)
         + `</div>`
         + `<div class="guide-check-body" id="${esc(bodyId)}">`
-        + `<ol class="guide-steps">${(p.steps || []).filter(isText).map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`
+        + `<ol class="guide-steps"${textLang}>${(p.steps || []).filter(isText).map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`
         + `<div class="guide-outcomes">`
-        + (isText(p.passWhen) ? `<div class="guide-outcome guide-pass"><p class="guide-outcome-head"><span aria-hidden="true">✓</span> Passes</p><p>${esc(p.passWhen)}</p></div>` : '')
-        + (isText(p.failWhen) ? `<div class="guide-outcome guide-fail"><p class="guide-outcome-head"><span aria-hidden="true">✗</span> Fails</p><p>${esc(p.failWhen)}</p></div>` : '')
+        + (isText(p.passWhen) ? `<div class="guide-outcome guide-pass"><p class="guide-outcome-head"><span aria-hidden="true">✓</span> Passes</p><p${textLang}>${esc(p.passWhen)}</p></div>` : '')
+        + (isText(p.failWhen) ? `<div class="guide-outcome guide-fail"><p class="guide-outcome-head"><span aria-hidden="true">✗</span> Fails</p><p${textLang}>${esc(p.failWhen)}</p></div>` : '')
         + `</div>`
         + technical
         + `</div>`
         + `</li>`;
 }
 
-function requirementHTML(r, facets, level, { details }) {
+function requirementHTML(r, facets, level, { details, lang }) {
     const lvl = Math.min(level, 6);
     const relates = Array.isArray(r.relatesTo) && r.relatesTo.length ? r.relatesTo : [];
     const pills = [
@@ -168,11 +222,11 @@ function requirementHTML(r, facets, level, { details }) {
         relates.length ? `<span class="guide-pill">Relates to WCAG ${esc(relates.join(', '))}</span>` : '',
     ].filter(Boolean).join('');
     const body = facets.length
-        ? `<ol class="guide-checks">${facets.map((f) => facetHTML(r, f, { details, level: Math.min(lvl + 1, 6) })).join('')}</ol>`
+        ? `<ol class="guide-checks">${facets.map((f) => facetHTML(r, f, { details, lang, level: Math.min(lvl + 1, 6) })).join('')}</ol>`
         : `<p class="guide-none">No check of it matches what is chosen.</p>`;
     return `<section class="guide-req" id="${esc(idOf('req', r.id))}" aria-labelledby="${esc(idOf('reqh', r.id))}">`
         + `<div class="guide-req-head">`
-        + `<h${lvl} id="${esc(idOf('reqh', r.id))}" tabindex="-1"><span class="guide-req-id">${esc(r.id)}</span> ${esc(r.title || '')}</h${lvl}>`
+        + `<h${lvl} id="${esc(idOf('reqh', r.id))}" tabindex="-1"><span class="guide-req-id">${esc(r.id)}</span> ${r.title ? inLang(r.titleLang || lang, r.title) : ''}</h${lvl}>`
         + `<button type="button" class="guide-copy" data-copy="${esc(r.id)}">`
         + `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>`
         + `Copy link<span class="visually-hidden"> to ${esc(r.id)}</span></button>`
@@ -188,6 +242,8 @@ function requirementHTML(r, facets, level, { details }) {
  */
 export function renderGuide(listing, state) {
     const requirements = Array.isArray(listing && listing.requirements) ? listing.requirements : [];
+    // The language core read the standard in; each part that is in another says so.
+    const lang = (listing && isText(listing.locale) && listing.locale) || PAGE_LANG;
     const byId = new Map(requirements.map((r) => [String(r.id), r]));
     const filters = { tools: state.tools, automation: state.automation, q: state.q };
     const filtering = state.tools.length || state.automation || String(state.q || '').trim();
@@ -203,7 +259,7 @@ export function renderGuide(listing, state) {
         if (filtering && !facets.length) return '';
         shownRequirements += 1;
         shownChecks += facets.length;
-        return requirementHTML(r, facets, level, { details: state.details });
+        return requirementHTML(r, facets, level, { details: state.details, lang });
     };
 
     const groupBlock = (g, depth) => {
@@ -215,11 +271,11 @@ export function renderGuide(listing, state) {
         if (!html) return { html: '', toc: '' };
         const count = shownRequirements - before;
         const gid = idOf('grp', g.id);
-        const title = `${g.id} ${g.title || ''}`.trim();
+        const title = `${esc(g.id)}${g.title ? ` ${inLang(g.titleLang || lang, g.title)}` : ''}`;
         const tocInner = inner.map((x) => x.toc).filter(Boolean).join('');
         return {
-            html: `<section class="guide-group guide-group-${depth}" aria-labelledby="${esc(gid)}"><h${Math.min(level, 6)} id="${esc(gid)}" class="guide-group-title">${esc(title)}</h${Math.min(level, 6)}>${html}</section>`,
-            toc: `<li><a href="#${esc(gid)}" data-toc="${esc(gid)}"><span class="guide-toc-title">${esc(title)}</span> <span class="guide-toc-count">${count}</span></a>${tocInner ? `<ul>${tocInner}</ul>` : ''}</li>`,
+            html: `<section class="guide-group guide-group-${depth}" aria-labelledby="${esc(gid)}"><h${Math.min(level, 6)} id="${esc(gid)}" class="guide-group-title">${title}</h${Math.min(level, 6)}>${html}</section>`,
+            toc: `<li><a href="#${esc(gid)}" data-toc="${esc(gid)}"><span class="guide-toc-title">${title}</span> <span class="guide-toc-count">${count}</span></a>${tocInner ? `<ul>${tocInner}</ul>` : ''}</li>`,
         };
     };
 
@@ -309,6 +365,9 @@ async function start() {
     let target = state.id;
     let widened = false;
     let listing = null;
+    // The language asked for, kept while a standard lacks it, so the next
+    // standard that has it is read in it again.
+    let wanted = state.locale;
 
     initTheme();
 
@@ -414,8 +473,53 @@ async function start() {
         }
     };
 
+    // The languages the chosen standard and version can be read in, from
+    // core: the picker offers those alone, the standard's own first, and
+    // says of one the standard isn't all in how much is in its own. A
+    // language it lacks reads in its own, and the guide says so. A core
+    // that doesn't say leaves the picker out and reads the locale asked for.
+    const languageField = $('guide-language-field');
+    const languageSelect = $('guide-language');
+    const languageNote = $('guide-language-note');
+    const fillLanguages = async () => {
+        const query = new URLSearchParams({ standard: state.standard });
+        if (state.version) query.set('version', state.version);
+        const body = await getJSON(`/api/procedures/languages?${query.toString()}`);
+        const languages = body && body.available && Array.isArray(body.languages) && body.languages.length ? body.languages : null;
+        languageField.hidden = !languages;
+        languageNote.hidden = true;
+        languageNote.textContent = '';
+        languageSelect.removeAttribute('aria-describedby');
+        if (!languages) {
+            state.locale = wanted;
+            return;
+        }
+        const own = languages[0].locale;
+        const { language, fellBack } = pickLanguage(wanted, languages);
+        state.locale = language.locale === own ? '' : language.locale;
+        languageSelect.innerHTML = languages
+            .map((l) => `<option value="${esc(l.locale)}">${esc(languageOption(l, own))}</option>`)
+            .join('');
+        languageSelect.value = language.locale;
+        const name = standardName(state, standards);
+        let note = '';
+        if (fellBack) {
+            note = `${name} has no ${languageName(wanted)} translation, so it is shown in ${languageName(own)}.`;
+            announce.textContent = note;
+        } else if (!language.complete) {
+            const n = Number(language.missing) || 0;
+            note = `${n || 'Some'} ${n === 1 ? 'text' : 'texts'} of ${name} ${n === 1 ? 'has' : 'have'} no ${languageName(language.locale)} translation yet, so ${n === 1 ? 'it is' : 'they are'} shown in ${languageName(own)}.`;
+        }
+        if (note) {
+            languageNote.textContent = note;
+            languageNote.hidden = false;
+            languageSelect.setAttribute('aria-describedby', 'guide-language-note');
+        }
+    };
+
     const load = async () => {
         status.textContent = 'Loading…';
+        await fillLanguages();
         content.setAttribute('aria-busy', 'true');
         const query = new URLSearchParams({ standard: state.standard });
         if (state.version) query.set('version', state.version);
@@ -459,6 +563,11 @@ async function start() {
         } else if (el.name === 'version') {
             state.version = el.value;
             load();
+        } else if (el.name === 'locale') {
+            // The standard's own language is no choice to keep: the next
+            // standard is read in its own.
+            wanted = el.selectedIndex === 0 ? '' : el.value;
+            load();
         } else if (el.name === 'level') {
             const levels = [...form.querySelectorAll('input[name="level"]:checked')].map((b) => b.value);
             state.levels = levels.length ? levels : ['A'];
@@ -492,7 +601,7 @@ async function start() {
         const copy = event.target.closest('.guide-copy');
         if (copy) {
             const link = new URL(location.pathname, location.href);
-            const q = new URLSearchParams({ standard: state.standard, ...(state.version ? { version: state.version } : {}), id: copy.dataset.copy });
+            const q = new URLSearchParams({ standard: state.standard, ...(state.version ? { version: state.version } : {}), ...(state.locale ? { locale: state.locale } : {}), id: copy.dataset.copy });
             link.search = q.toString();
             let ok = false;
             try {

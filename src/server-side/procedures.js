@@ -52,7 +52,10 @@ function proceduresForRequirements(ids, {
         .map((id) => String(id).trim())
         .filter((id) => REQUIREMENT.test(id));
     const wanted = [...new Set(list)].slice(0, MAX_IDS);
-    const tag = LOCALE.test(String(locale || '')) ? String(locale).toLowerCase() : 'en';
+    const asked = LOCALE.test(String(locale || '')) ? String(locale).toLowerCase() : 'en';
+    // Never part in one language and part in another: a language the
+    // standard has only in part reads in the standard's own.
+    const tag = completeLocale(asked, languagesOf(core, std === 'wcag' ? {} : options));
     const procedures = {};
     for (const id of wanted) {
         try {
@@ -62,6 +65,36 @@ function proceduresForRequirements(ids, {
         }
     }
     return { available: true, locale: tag, procedures };
+}
+
+// The languages core says the standard can be read in, or null from a core
+// that doesn't say.
+function languagesOf(core, options) {
+    if (!core || typeof core.procedureLanguages !== 'function') return null;
+    try {
+        const out = core.procedureLanguages(options);
+        return Array.isArray(out) && out.length ? out : null;
+    } catch {
+        return null;
+    }
+}
+
+// The entry of `languages` a tag is read in: the tag's, else its base
+// language's ('fr-ca', then 'fr'); null for one the standard doesn't have.
+function languageFor(tag, languages) {
+    const t = String(tag || '').toLowerCase();
+    return languages.find((l) => l.locale === t) || languages.find((l) => l.locale === t.split('-')[0]) || null;
+}
+
+/**
+ * The locale to read a standard in for `tag`, with nothing left in another
+ * language: `tag` where the standard has it complete, else the standard's
+ * own language. `tag` itself where core doesn't say (`languages` null).
+ */
+function completeLocale(tag, languages) {
+    if (!languages) return tag;
+    const found = languageFor(tag, languages);
+    return found && found.complete ? found.locale : languages[0].locale;
 }
 
 /** WCAG criteria only, as the first form of the route asked. */
@@ -116,10 +149,49 @@ function listStandardProcedures(query = {}, { core = load('@surea11y/core'), pac
     const options = listOptions(query, { packFor });
     if (!options) return { available: true, listing: null };
     try {
-        return { available: true, listing: core.listProcedures(options) || null };
+        const listing = core.listProcedures(options) || null;
+        if (listing) markEarlierWcagTitles(listing, options);
+        return { available: true, listing };
     } catch {
         return { available: true, listing: null };
     }
+}
+
+// A WCAG title core has no translation of, such as an earlier version's
+// own ("Parsing" for 4.1.1 in WCAG 2.1), stays English in every locale.
+// Core's list doesn't mark it, so it is marked here as core's page marks
+// it: a title that isn't the locale's text for it is English.
+function markEarlierWcagTitles(listing, options) {
+    const locale = String(listing.locale || options.locale || 'en');
+    if (options.standard !== 'wcag' || locale === 'en' || !LOCALE.test(locale)) return;
+    const dict = load(`@surea11y/core/procedures/${locale}`);
+    if (!dict || typeof dict !== 'object') return;
+    const mark = (item, key) => {
+        if (item && item.title && !item.titleLang && dict[key] !== item.title) item.titleLang = 'en';
+    };
+    for (const r of listing.requirements || []) mark(r, `wcag_${r.id}_title`);
+    const walk = (groups) => {
+        for (const g of groups || []) {
+            mark(g, `wcag_${String(g.id).includes('.') ? 'guideline' : 'principle'}_${g.id}`);
+            walk(g.groups);
+        }
+    };
+    walk(listing.groups);
+}
+
+/**
+ * The languages a standard's procedures can be read in, as core's
+ * procedureLanguages gives them, its own first: { available, languages:
+ * [{ locale, complete, missing }] }; languages null for a standard or
+ * version it doesn't know. { available: false } from a core that doesn't
+ * say, which reads the procedures in the locale asked for.
+ */
+function standardLanguages(query = {}, { core = load('@surea11y/core'), packFor = defaultPackFor } = {}) {
+    if (!core || typeof core.procedureLanguages !== 'function') return { available: false };
+    const options = listOptions(query, { packFor });
+    if (!options) return { available: true, languages: null };
+    const { standard, version, packs } = options;
+    return { available: true, languages: languagesOf(core, { standard, ...(version ? { version } : {}), ...(packs ? { packs } : {}) }) };
 }
 
 /**
@@ -171,4 +243,4 @@ function guideIndex({ core = load('@surea11y/core'), standards = null } = {}) {
     };
 }
 
-module.exports = { proceduresForRequirements, proceduresForCriteria, listStandardProcedures, renderStandardProcedures, listOptions, guideIndex, MAX_IDS };
+module.exports = { proceduresForRequirements, proceduresForCriteria, listStandardProcedures, standardLanguages, completeLocale, renderStandardProcedures, listOptions, guideIndex, MAX_IDS };

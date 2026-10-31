@@ -24,7 +24,7 @@ const { createRunQueue } = require("./src/server-side/run-queue");
 const { createResourceSampler } = require("./src/server-side/resource-sampler");
 const { registerQueueRoutes, resolveQueueBaseDir } = require("./src/server-side/queue-routes");
 const { createRequestGuard } = require("./src/server-side/request-guard");
-const { proceduresForRequirements, listStandardProcedures, renderStandardProcedures, guideIndex } = require("./src/server-side/procedures");
+const { proceduresForRequirements, listStandardProcedures, standardLanguages, renderStandardProcedures, guideIndex } = require("./src/server-side/procedures");
 const { installedPacks, installedStandards } = require("./src/server-side/standard-packs");
 // The standard packs load now, so their profiles are scan targets and step
 // options from the first request.
@@ -198,6 +198,18 @@ app.get("/api/procedures/list", (req, res) => {
         return res.json(listStandardProcedures(req.query));
     } catch (e) {
         console.error("Failed to list the test procedures:", e);
+        return res.json({ available: false });
+    }
+});
+
+// The languages a standard's procedures can be read in, for the testing
+// guide's language picker: ?standard=&version=, as /api/procedures/list.
+app.get("/api/procedures/languages", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json(standardLanguages(req.query));
+    } catch (e) {
+        console.error("Failed to list the procedures' languages:", e);
         return res.json({ available: false });
     }
 });

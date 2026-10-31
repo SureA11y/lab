@@ -6,7 +6,10 @@
 // - an address with a requirement opens the guide there, its heading focused;
 // - the filters narrow it, and the address keeps them;
 // - another standard (EN 301 549's pack) loads in it;
-// - "Save as a page" gives core's page of the same procedures.
+// - "Save as a page" gives core's page of the same procedures;
+// - with a core that says which languages a standard has, the guide offers
+//   those, says how much of one is in another, marks each part's language,
+//   and reads a standard that lacks the one asked for in its own.
 // With one that has none, the header has no link and the guide says so.
 //
 // Not named *.test.js, so `npm test` does not need Chrome; run with
@@ -21,6 +24,7 @@ const puppeteer = require('puppeteer');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const HAS_PROCEDURES = typeof require('@surea11y/core').listProcedures === 'function';
+const HAS_LANGUAGES = typeof require('@surea11y/core').procedureLanguages === 'function';
 
 function freePort() {
     return new Promise((resolve, reject) => {
@@ -117,6 +121,69 @@ test('opened at a AAA criterion, the guide adds the levels that show it', { skip
     await settled(page, /Level A and AA and AAA: /);
     assert.match(await page.evaluate(() => document.activeElement.textContent.trim()), /^1\.4\.6 /);
     assert.equal(await page.$eval('input[name="level"][value="AAA"]', (el) => el.checked), true);
+    assert.deepEqual(errors, []);
+    await page.close();
+});
+
+test('the guide offers the languages core has for the standard, says how much of one is not in it, and marks what is in it', { skip: !HAS_LANGUAGES && 'the installed core does not say which languages it has' }, async () => {
+    const { page, errors } = await open('/guide?standard=wcag&version=2.1&locale=fr');
+    await settled(page, /checks\./);
+    const picker = () => page.evaluate(() => {
+        const select = document.getElementById('guide-language');
+        const note = document.getElementById('guide-language-note');
+        return {
+            hidden: document.getElementById('guide-language-field').hidden,
+            value: select.value,
+            options: [...select.options].map((o) => o.textContent),
+            note: note.hidden ? '' : note.textContent,
+            describedBy: select.getAttribute('aria-describedby'),
+        };
+    });
+    let p = await picker();
+    assert.equal(p.hidden, false);
+    assert.equal(p.value, 'fr');
+    assert.equal(p.options[0], 'English', 'the standard\'s own language first');
+    assert.ok(p.options.includes('français (French), 1 text in English'), p.options.join(' | '));
+    assert.match(p.note, /^1 text of WCAG 2\.1 has no French translation yet, so it is shown in English\.$/);
+    assert.equal(p.describedBy, 'guide-language-note');
+    assert.ok(await page.$('#guide-content [lang="fr"]'), 'core\'s text is marked French');
+    assert.equal(await page.$eval('#reqh-4-1-1', (h) => h.querySelector('[lang]') ? h.querySelector('[lang]').lang : ''), '', '"Parsing" stays English, as the page');
+    assert.match(await page.$eval('#guide-save', (a) => a.href), /locale=fr/, 'the saved page is in French too');
+
+    await page.select('#guide-version', '2.2');
+    await settled(page, /^WCAG 2\.2/);
+    p = await picker();
+    assert.ok(p.options.includes('français (French)'));
+    assert.equal(p.note, '', 'WCAG 2.2 is all in French');
+
+    await page.select('#guide-standard', 'en301549');
+    await settled(page, /^EN 301 549 V4\.1\.1: /);
+    assert.equal((await picker()).value, 'fr');
+    assert.match(page.url(), /locale=fr/);
+
+    await page.select('#guide-language', 'en');
+    await settled(page, /checks\./);
+    assert.doesNotMatch(page.url(), /locale=/, 'the standard\'s own language is no choice to keep');
+    assert.equal(await page.$('#guide-content [lang]'), null);
+    assert.deepEqual(errors, []);
+    await page.close();
+
+    const pt = await open('/guide?standard=wcag&locale=pt');
+    await settled(pt.page, /checks\./);
+    const q = await pt.page.evaluate(() => ({
+        value: document.getElementById('guide-language').value,
+        note: document.getElementById('guide-language-note').textContent,
+    }));
+    assert.equal(q.value, 'en');
+    assert.equal(q.note, 'WCAG 2.2 has no Portuguese translation, so it is shown in English.');
+    assert.deepEqual(pt.errors, []);
+    await pt.page.close();
+});
+
+test('with a core that does not say which languages it has, the guide offers none', { skip: (!HAS_PROCEDURES || HAS_LANGUAGES) && 'the installed core has no procedures, or says which languages it has' }, async () => {
+    const { page, errors } = await open('/guide?standard=wcag');
+    await settled(page, /checks\./);
+    assert.equal(await page.$eval('#guide-language-field', (el) => el.hidden), true);
     assert.deepEqual(errors, []);
     await page.close();
 });

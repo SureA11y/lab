@@ -158,3 +158,20 @@ test('the links are a line of their own, which a download leaves out', async () 
     assert.equal(guideRefHtml({ SC: ['9.9.9'] }, INDEX), '');
     assert.equal(withoutGuideRefs(`<div>${html}<p>Kept.</p>${html}</div>`), '<div><p>Kept.</p></div>');
 });
+
+test('a procedure keeps the language the server read it in, and says it where it is not the page\'s', async () => {
+    const { loadProcedures, buildHowToAssessHTML } = await load();
+    const fetchImpl = async () => ({ ok: true, json: async () => ({ available: true, locale: 'en', procedures: { '1.4.12': PROCEDURE } }) });
+    const loaded = await loadProcedures(['1.4.12'], 'de', { fetchImpl });
+    assert.equal(loaded['1.4.12'].locale, 'en', 'German asked, English read: the standard is not all in German');
+    assert.doesNotMatch(buildHowToAssessHTML(loaded['1.4.12'], { name: 'acr-x' }), /lang=/, 'English, as the page');
+
+    const html = buildHowToAssessHTML({ ...PROCEDURE, locale: 'fr' }, { name: 'acr-x' });
+    assert.match(html, /<strong lang="fr">No text is cut off<\/strong>/);
+    assert.match(html, /<ol class="how-steps" lang="fr">/);
+    assert.match(html, /<span class="how-term">Passes:<\/span> <span lang="fr">Nothing is lost\.<\/span>/);
+    assert.match(html, /<span class="how-term">You need:<\/span> <span lang="fr">A keyboard<\/span>/);
+    assert.match(html, /<li lang="fr">Inline style does not force spacing<\/li>/);
+    assert.match(html, /<legend><span class="visually-hidden"><span lang="fr">No text is cut off<\/span>: <\/span>Result<\/legend>/);
+    assert.match(html, /<label for="acr-x-text-spacing-content-loss-pass">Passes<\/label>/, 'the review\'s own words stay the page\'s');
+});

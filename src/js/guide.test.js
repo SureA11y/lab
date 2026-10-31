@@ -71,7 +71,7 @@ test('the guide is drawn in the standard\'s groups, with contents and counts', a
     assert.match(out.html, /<span class="guide-pill guide-pill-level">Level A<\/span>/);
     // A check: its title a heading whose button folds it, its badges, steps, and what passes and fails.
     assert.match(out.html, /<h5 class="guide-facet-title"><button type="button" class="guide-toggle" aria-expanded="true" aria-controls="chk-1-1-1-alt-mechanism">[\s\S]*<span>Label of alt-mechanism<\/span><\/button><\/h5>/);
-    assert.match(out.html, /data-automation="partial">Partly automated<\/span><span class="guide-needs">Needs<\/span><span class="guide-badge guide-badge-tool" title="Tool devtools">/);
+    assert.match(out.html, /data-automation="partial">Partly automated<\/span><span class="guide-needs">Needs<\/span><span class="guide-badge guide-badge-tool" title="The browser&#39;s developer tools">/);
     assert.match(out.html, /<div class="guide-check-body" id="chk-1-1-1-alt-mechanism"><ol class="guide-steps"><li>Step for alt-mechanism\.<\/li><\/ol>/);
     assert.match(out.html, /<span aria-hidden="true">✓<\/span> Passes<\/p><p>alt-mechanism passes\.<\/p>[\s\S]*<span aria-hidden="true">✗<\/span> Fails<\/p><p>alt-mechanism fails\.<\/p>/);
     assert.match(out.html, /data-automation="manual">A person judges</);
@@ -111,4 +111,45 @@ test('text is escaped', async () => {
     const out = renderGuide(listing, all);
     assert.doesNotMatch(out.html, /<b>x<\/b>|<i>/);
     assert.match(out.html, /&lt;b&gt;x&lt;\/b&gt;/);
+});
+
+test('the languages are offered by their own names, and one the standard is not all in says how much is not', async () => {
+    const { languageOption, languageName, pickLanguage } = await load();
+    assert.equal(languageName('fr'), 'French');
+    assert.equal(languageOption({ locale: 'en', complete: true, missing: 0 }), 'English');
+    assert.equal(languageOption({ locale: 'fr', complete: true, missing: 0 }), 'français (French)');
+    assert.equal(languageOption({ locale: 'de', complete: false, missing: 1 }), 'Deutsch (German), 1 text in English');
+    assert.equal(languageOption({ locale: 'ja', complete: false, missing: 3 }, 'fr'), '日本語 (Japanese), 3 texts in French');
+
+    const languages = [{ locale: 'en', complete: true }, { locale: 'fr', complete: true }];
+    assert.deepEqual(pickLanguage('', languages), { language: languages[0], fellBack: false }, 'none asked: the standard\'s own');
+    assert.deepEqual(pickLanguage('FR-ca', languages), { language: languages[1], fellBack: false });
+    assert.deepEqual(pickLanguage('pt', languages), { language: languages[0], fellBack: true }, 'one it lacks: its own, saying so');
+    assert.equal(pickLanguage('fr', []), null, 'a core that does not say');
+});
+
+test('what core gives is marked with the language it was read in, and a part in another with its own', async () => {
+    const { renderGuide, stateFromQuery } = await load();
+    const listing = {
+        ...LISTING,
+        locale: 'fr',
+        requirements: [
+            ...LISTING.requirements,
+            { id: '4.1.1', title: 'Parsing', titleLang: 'en', level: 'A', facets: [facet('ids-unique', 'manual', [])] },
+        ],
+        groups: [...LISTING.groups, { id: '4', title: 'Robuste', requirements: ['4.1.1'], groups: [] }],
+    };
+    const { html, toc } = renderGuide(listing, stateFromQuery(''));
+    assert.match(html, /<span class="guide-req-id">1\.1\.1<\/span> <span lang="fr">Non-text Content<\/span>/);
+    assert.match(html, /<span class="guide-req-id">4\.1\.1<\/span> Parsing<\/h3>/, 'a title core has no translation of is English, as the page');
+    assert.match(html, /<span lang="fr">Label of ids-unique<\/span><\/button>/);
+    assert.match(html, /<ol class="guide-steps" lang="fr">/);
+    assert.match(html, /<p lang="fr">ids-unique passes\.<\/p>/);
+    assert.match(html, /class="guide-group-title">4 <span lang="fr">Robuste<\/span>/);
+    assert.match(toc, /<span class="guide-toc-title">4 <span lang="fr">Robuste<\/span><\/span>/);
+    assert.match(html, /<p class="guide-outcome-head"><span aria-hidden="true">✓<\/span> Passes<\/p>/, 'the guide\'s own words stay the page\'s');
+
+    const pack = renderGuide({ ...listing, locale: 'en', requirements: [{ id: '12.1', title: 'Informations', titleLang: 'fr', facets: [facet('docs', 'manual', [], { lang: 'fr' })] }], groups: [] }, stateFromQuery(''));
+    assert.match(pack.html, /<span lang="fr">Informations<\/span>/);
+    assert.match(pack.html, /<ol class="guide-steps" lang="fr">/, 'a pack\'s own facet in its language');
 });
