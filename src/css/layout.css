@@ -136,11 +136,14 @@ header h1 .site-logo {
    Activity buttons in the corner, which come down into the page's margin. */
 @media (max-width: 600px) {
     header h1 { --logo-size: 26px; padding-right: 84px; }
+    header:has(.guide-link:not([hidden])) h1 { padding-right: 128px; }
     .theme-switch,
-    button.activity-button { top: 0; }
+    button.activity-button,
+    .guide-link { top: 0; }
 }
 @media (max-width: 400px) {
     header h1 { --logo-size: 21px; }
+    header:has(.guide-link:not([hidden])) h1 { --logo-size: 19px; }
 }
 
 header p {
@@ -153,6 +156,26 @@ header p {
 
 /* Colour-theme toggle — a single icon button that cycles Auto → Light → Dark,
    the same control used by the report and the extension. */
+/* The testing guide's link, beside the Activity button and the theme switch. */
+.guide-link {
+    position: absolute;
+    top: -20px;
+    right: 88px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-3);
+    color: var(--text-main);
+}
+.guide-link[hidden] { display: none; }
+.guide-link svg { width: 20px; height: 20px; }
+.guide-link:hover { background: var(--surface-4); border-color: var(--accent-border); }
+.guide-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 .theme-switch {
     position: absolute;
     top: -20px;

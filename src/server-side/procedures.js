@@ -69,4 +69,77 @@ function proceduresForCriteria(ids, options = {}) {
     return proceduresForRequirements(ids, { ...options, standard: 'wcag' });
 }
 
-module.exports = { proceduresForRequirements, proceduresForCriteria, MAX_IDS };
+const WCAG_VERSIONS = ['2.0', '2.1', '2.2'];
+const LEVELS = ['A', 'AA', 'AAA'];
+const TOOLS = ['keyboard', 'pointer', 'screen-reader', 'zoom', 'contrast-theme', 'devtools'];
+const AUTOMATION = ['full', 'partial', 'manual'];
+
+// A comma-separated choice kept to the values known: ['A', 'AA'] from "A,AA".
+const pick = (v, known) => [...new Set(String(v || '').split(',').map((x) => x.trim()).filter((x) => known.includes(x)))];
+
+/**
+ * The options core's listProcedures and renderProcedures take, from what the
+ * testing guide asks for: `standard` ('wcag', 'best-practice' or an
+ * installed pack's key), `version`, `levels`, `tools`, `automation` and
+ * `locale`; null for a standard the lab has no pack for.
+ */
+function listOptions({ standard = 'wcag', version = '', levels = '', tools = '', automation = '', locale = 'en' } = {}, { packFor = defaultPackFor } = {}) {
+    const std = String(standard || 'wcag');
+    const tag = LOCALE.test(String(locale || '')) ? String(locale).toLowerCase() : 'en';
+    const out = { locale: tag };
+    const t = pick(tools, TOOLS);
+    const a = pick(automation, AUTOMATION);
+    if (t.length) out.tools = t;
+    if (a.length) out.automation = a;
+    if (std === 'wcag') {
+        out.standard = 'wcag';
+        if (WCAG_VERSIONS.includes(String(version))) out.version = String(version);
+        const l = pick(levels, LEVELS);
+        if (l.length) out.levels = l;
+        return out;
+    }
+    if (std === 'best-practice') return { ...out, standard: 'best-practice' };
+    if (!STANDARD_KEY.test(std)) return null;
+    const pack = packFor(std);
+    if (!pack) return null;
+    return { ...out, packs: [pack], standard: std, ...(VERSION.test(String(version || '')) ? { version: String(version) } : {}) };
+}
+
+/**
+ * A standard's procedures for the testing guide, as core's listProcedures
+ * gives them: { available, listing }. { available: false } from a core
+ * without them; { available: true, listing: null } for a standard or
+ * version it doesn't know.
+ */
+function listStandardProcedures(query = {}, { core = load('@surea11y/core'), packFor = defaultPackFor } = {}) {
+    if (!core || typeof core.listProcedures !== 'function') return { available: false };
+    const options = listOptions(query, { packFor });
+    if (!options) return { available: true, listing: null };
+    try {
+        return { available: true, listing: core.listProcedures(options) || null };
+    } catch {
+        return { available: true, listing: null };
+    }
+}
+
+/**
+ * The same procedures as one page to keep or print, core's renderProcedures'
+ * reference (not its worksheet): { html, name } or null.
+ */
+function renderStandardProcedures(query = {}, { core = load('@surea11y/core'), packFor = defaultPackFor } = {}) {
+    if (!core || typeof core.listProcedures !== 'function' || typeof core.renderProcedures !== 'function') return null;
+    const options = listOptions(query, { packFor });
+    if (!options) return null;
+    try {
+        const listing = core.listProcedures(options);
+        if (!listing) return null;
+        const html = core.renderProcedures(listing, { locale: options.locale, ...(options.packs ? { packs: options.packs } : {}) });
+        const name = `${String(listing.standard || options.standard)}${listing.version ? ` ${listing.version}` : ''} testing guide`
+            .replace(/[^A-Za-z0-9 ._-]/g, '').trim() || 'testing guide';
+        return { html, name: `${name}.html` };
+    } catch {
+        return null;
+    }
+}
+
+module.exports = { proceduresForRequirements, proceduresForCriteria, listStandardProcedures, renderStandardProcedures, listOptions, MAX_IDS };

@@ -32,7 +32,10 @@ export function createReportView(app) {
     // The installed standards too, so the conformance review and its
     // downloads build their rows from the packs.
     if (typeof fetch === 'function' && typeof location !== 'undefined' && /^https?:/.test(location.protocol)) {
-        proceduresAvailable();
+        // The header's link to the testing guide, once there is a guide to show.
+        proceduresAvailable().then((ok) => {
+            if (ok) document.getElementById('guide-link')?.removeAttribute('hidden');
+        });
         loadStandards();
     }
 

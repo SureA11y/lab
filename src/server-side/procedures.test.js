@@ -76,3 +76,23 @@ test('with the pack and a core that reads it, every requirement of its own has p
         }
     }
 });
+
+test('the testing guide lists a standard as core does, with the choices it takes', () => {
+    const { listOptions, listStandardProcedures, renderStandardProcedures } = require('./procedures');
+    const pack = { name: 'pack' };
+    const packFor = (k) => (k === 'en301549' ? pack : null);
+    assert.deepEqual(listOptions({ standard: 'wcag', version: '2.1', levels: 'A,AA,Z', tools: 'screen-reader,x', automation: 'manual,partial', locale: 'FR' }, { packFor }),
+        { locale: 'fr', tools: ['screen-reader'], automation: ['manual', 'partial'], standard: 'wcag', version: '2.1', levels: ['A', 'AA'] });
+    assert.deepEqual(listOptions({ standard: 'wcag', version: '9.9' }, { packFor }), { locale: 'en', standard: 'wcag' }, 'an unknown version is core\'s default');
+    assert.deepEqual(listOptions({ standard: 'best-practice' }, { packFor }), { locale: 'en', standard: 'best-practice' });
+    assert.deepEqual(listOptions({ standard: 'en301549', version: 'V4.1.1' }, { packFor }), { locale: 'en', packs: [pack], standard: 'en301549', version: 'V4.1.1' });
+    assert.equal(listOptions({ standard: 'rgaa' }, { packFor }), null, 'no pack installed');
+
+    const seen = [];
+    const core = { listProcedures: (o) => { seen.push(o); return { standard: 'WCAG', version: '2.2', requirements: [] }; }, renderProcedures: () => '<!doctype html>page' };
+    assert.deepEqual(listStandardProcedures({ standard: 'wcag' }, { core, packFor }), { available: true, listing: { standard: 'WCAG', version: '2.2', requirements: [] } });
+    assert.deepEqual(listStandardProcedures({ standard: 'rgaa' }, { core, packFor }), { available: true, listing: null });
+    assert.deepEqual(listStandardProcedures({}, { core: {}, packFor }), { available: false });
+    assert.deepEqual(renderStandardProcedures({ standard: 'wcag' }, { core, packFor }), { html: '<!doctype html>page', name: 'WCAG 2.2 testing guide.html' });
+    assert.equal(renderStandardProcedures({ standard: 'wcag' }, { core: { listProcedures: core.listProcedures }, packFor }), null, 'a core that cannot render');
+});

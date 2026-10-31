@@ -8,7 +8,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { APP_STYLESHEETS, readAppCss } = require('./app-styles');
+const { APP_STYLESHEETS, PAGE_STYLESHEETS, readAppCss } = require('./app-styles');
 
 test('index.html links every part of the stylesheet, in order', () => {
     const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
@@ -16,9 +16,16 @@ test('index.html links every part of the stylesheet, in order', () => {
     assert.deepEqual(linked, APP_STYLESHEETS);
 });
 
-test('every stylesheet beside it is a listed part', () => {
+test('every stylesheet beside it is a listed part, or another page\'s', () => {
     const onDisk = fs.readdirSync(__dirname).filter((f) => f.endsWith('.css')).sort();
-    assert.deepEqual(onDisk, [...APP_STYLESHEETS].sort());
+    assert.deepEqual(onDisk, [...APP_STYLESHEETS, ...Object.values(PAGE_STYLESHEETS).flat()].sort());
+});
+
+test('another page links its own stylesheets', () => {
+    for (const [page, sheets] of Object.entries(PAGE_STYLESHEETS)) {
+        const html = fs.readFileSync(path.join(__dirname, '..', page), 'utf8');
+        for (const sheet of sheets) assert.ok(html.includes(`href="css/${sheet}"`), `${page} links ${sheet}`);
+    }
 });
 
 test('the parts read as one text, the compare block whole inside it', () => {

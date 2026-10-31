@@ -167,6 +167,23 @@ downloads carry it, and opening the report again brings it back. **Copy the
 review of another report** fills in what this report has not decided yet from
 an earlier one, so a new run keeps the verdicts of the last review.
 
+## The testing guide
+
+**Testing guide**, the book icon in the app's header, opens in a tab of its
+own: how a person checks each requirement of a standard by hand, from
+surea11y core's test procedures, where the installed core has them. Choose
+WCAG (2.2, 2.1 or 2.0, and the levels), EN 301 549 or another installed
+standard, or the best practices; each requirement comes in the standard's
+own groups, each of its checks with the steps, what passing and failing look
+like, what it takes, and how far automated checks go. Narrow it to the checks
+that need a screen reader, say, or to what only a person can judge, or search
+it; **Show technical details** adds the rules behind each check and the
+questions scans ask about single elements. The address keeps what is chosen,
+so a link can open the guide at one requirement
+(`/guide?standard=wcag&id=1.4.3`). **Save as a page** downloads the same, as
+one page to keep or print. It records nothing: results go in a report's
+Review conformance.
+
 ## Opening saved reports
 
 The **open report** tab opens reports saved before: their JSON, or a

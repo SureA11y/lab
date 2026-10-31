@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Testing guide · surea11y scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script>
+        // The colour theme the app's switch chose, as the app applies it.
+        (function () {
+            try {
+                var stored = localStorage.getItem('a11y-lab-theme');
+                var theme = (stored === 'auto' || stored === 'light' || stored === 'dark') ? stored : 'light';
+                if (theme !== 'auto') document.documentElement.dataset.theme = theme;
+            } catch (e) {
+                // ignore
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/guide.css">
+    <link rel="icon" type="image/png" href="./icon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./icon/favicon.svg" />
+    <link rel="shortcut icon" href="./icon/favicon.ico" />
+    <link rel="manifest" href="./icon/site.webmanifest" />
+</head>
+<body>
+
+<a class="guide-skip" href="#guide-content">Skip to the requirements</a>
+
+<header>
+    <p class="guide-brand">
+        <img src="icon/logo.png" alt="" class="site-logo" />
+        <span class="wordmark"><span class="wordmark-sure">sure</span><span class="wordmark-a11y">a11y</span><span class="wordmark-product">scanner</span></span>
+    </p>
+</header>
+
+<main class="page guide">
+    <h1 id="guide-title">Testing guide</h1>
+    <p class="guide-intro">How a person checks each requirement by hand: the steps, what passing and
+        failing look like, and what it takes. It covers what automated checks cannot decide, and how
+        far they go where they can. It records nothing: results go in a report's Review conformance.</p>
+
+    <form class="guide-filters" id="guide-filters" aria-labelledby="guide-filters-title">
+        <h2 id="guide-filters-title" class="visually-hidden">What to show</h2>
+        <div class="guide-filter-row">
+            <div class="guide-field">
+                <label for="guide-standard">Standard</label>
+                <select id="guide-standard" name="standard"></select>
+            </div>
+            <div class="guide-field">
+                <label for="guide-version">Version</label>
+                <select id="guide-version" name="version"></select>
+            </div>
+            <fieldset class="guide-field guide-levels" id="guide-levels">
+                <legend>Levels</legend>
+                <label><input type="checkbox" name="level" value="A" checked> A</label>
+                <label><input type="checkbox" name="level" value="AA" checked> AA</label>
+                <label><input type="checkbox" name="level" value="AAA"> AAA</label>
+            </fieldset>
+        </div>
+        <div class="guide-filter-row">
+            <fieldset class="guide-field guide-tools" id="guide-tools">
+                <legend>Only checks that need</legend>
+            </fieldset>
+            <fieldset class="guide-field">
+                <legend>Checks</legend>
+                <label><input type="radio" name="automation" value="" checked> All</label>
+                <label><input type="radio" name="automation" value="person"> Only what a person must judge</label>
+            </fieldset>
+        </div>
+        <div class="guide-filter-row">
+            <div class="guide-field guide-search">
+                <label for="guide-search">Search</label>
+                <input type="search" id="guide-search" name="q" autocomplete="off" aria-describedby="guide-search-hint">
+                <span class="guide-hint" id="guide-search-hint">A number, a title, or words in the steps</span>
+            </div>
+            <label class="guide-details-toggle"><input type="checkbox" id="guide-details" name="details"> Show technical details</label>
+            <a class="guide-save" id="guide-save" href="#">Save as a page</a>
+        </div>
+    </form>
+
+    <p class="guide-status" id="guide-status" role="status"></p>
+
+    <div class="guide-body">
+        <nav class="guide-toc" id="guide-toc" aria-labelledby="guide-toc-title">
+            <h2 id="guide-toc-title">Contents</h2>
+            <div id="guide-toc-list"></div>
+        </nav>
+        <div class="guide-content" id="guide-content" tabindex="-1"></div>
+    </div>
+</main>
+
+<script type="module" src="js/guide.js"></script>
+</body>
+</html>

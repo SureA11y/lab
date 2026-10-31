@@ -25,8 +25,13 @@ const APP_STYLESHEETS = [
     'conformance-review.css'
 ];
 
+// The stylesheets of the lab's other pages, by page: not parts of the app's.
+const PAGE_STYLESHEETS = {
+    'guide.html': ['guide.css']
+};
+
 function readAppCss() {
     return APP_STYLESHEETS.map((name) => fs.readFileSync(path.join(__dirname, name), 'utf8')).join('\n');
 }
 
-module.exports = {APP_STYLESHEETS, readAppCss};
+module.exports = {APP_STYLESHEETS, PAGE_STYLESHEETS, readAppCss};

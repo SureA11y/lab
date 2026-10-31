@@ -24,7 +24,7 @@ const { createRunQueue } = require("./src/server-side/run-queue");
 const { createResourceSampler } = require("./src/server-side/resource-sampler");
 const { registerQueueRoutes, resolveQueueBaseDir } = require("./src/server-side/queue-routes");
 const { createRequestGuard } = require("./src/server-side/request-guard");
-const { proceduresForRequirements } = require("./src/server-side/procedures");
+const { proceduresForRequirements, listStandardProcedures, renderStandardProcedures } = require("./src/server-side/procedures");
 const { installedPacks, installedStandards } = require("./src/server-side/standard-packs");
 // The standard packs load now, so their profiles are scan targets and step
 // options from the first request.
@@ -187,6 +187,34 @@ app.get("/api/engine/capabilities", (req, res) => {
         console.error("Failed to get engine capabilities:", e);
         return res.status(500).json({ error: "Failed to get engine capabilities" });
     }
+});
+
+// The testing guide (src/guide.html): a standard's procedures, every
+// requirement in its groups, for a person to read how to test by hand.
+// ?standard=wcag|best-practice|<pack key>&version=&levels=A,AA&tools=&automation=&locale=
+app.get("/api/procedures/list", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json(listStandardProcedures(req.query));
+    } catch (e) {
+        console.error("Failed to list the test procedures:", e);
+        return res.json({ available: false });
+    }
+});
+
+// The same, as one page to keep or print (core's renderProcedures).
+app.get("/api/procedures/page", (req, res) => {
+    const page = renderStandardProcedures(req.query);
+    if (!page) return res.status(404).json({ error: "No procedures for that standard" });
+    res.set("Content-Type", "text/html; charset=utf-8");
+    res.set("Content-Disposition", `attachment; filename="${page.name}"`);
+    return res.send(page.html);
+});
+
+// The testing guide: a page of its own, beside the app.
+app.get("/guide", (req, res) => {
+    const query = req.originalUrl.indexOf("?");
+    res.redirect("/src/guide.html" + (query >= 0 ? req.originalUrl.slice(query) : ""));
 });
 
 // The standards of the installed packs, besides WCAG: their keys, names,
