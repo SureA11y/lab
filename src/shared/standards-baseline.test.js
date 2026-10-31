@@ -3,13 +3,14 @@
 // What the lab gives for WCAG and EN 301 549, recorded before the standards
 // it knows came from the installed packs rather than from lists of its own,
 // and held to since: the conformance report's model, HTML and Word, the
-// review's tables, the manual review checklist, the procedures the server
-// gives, the scan targets and the scan step's profiles. A difference is a
-// change in what a user gets, so it is a bug unless it is meant; never a
-// reason to record again. Recording writes only where no record is:
+// review's tables, the scan targets and the scan step's profiles. A
+// difference is a change in what a user gets, so it is a bug unless it is
+// meant; never a reason to record again. Recording writes only where no
+// record is:
 //   A11Y_RECORD_BASELINE=1 node --test src/shared/standards-baseline.test.js
-// The parts that need test procedures are recorded and compared only with a
-// core and an EN 301 549 pack that have them.
+// The procedures themselves are core's and the packs': whatever they say,
+// add or remove, the lab shows when its dependencies are updated, so nothing
+// here holds their content.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -24,7 +25,6 @@ const { conformanceReportHTML } = require('./conformance-report-html.js');
 const { conformanceReportDocx } = require('./conformance-report-docx.js');
 const targets = require('./conformance-targets.js');
 const { ACTION_DEFINITIONS } = require('../workflow/action-definitions.js');
-const { proceduresForRequirements } = require('../server-side/procedures.js');
 
 const RECORD = path.join(__dirname, 'fixtures', 'standards-baseline.json');
 
@@ -73,29 +73,13 @@ async function wordXml(acr) {
     return zip.file('word/document.xml').async('string');
 }
 
-function hasProcedures() {
-    const out = proceduresForRequirements('9.6', { standard: 'en301549', version: 'V4.1.1' });
-    return !!(out.available && out.procedures['9.6'] && typeof require('@surea11y/core').listProcedures === 'function');
-}
-
-async function current({ withProcedures }) {
+async function current() {
     const { reviewTables } = await import(pathToFileURL(path.join(__dirname, '..', 'js', 'conformance-review.js')).href);
-    const { buildManualChecklistHTML } = await import(pathToFileURL(path.join(__dirname, '..', 'js', 'manual-checklist.js')).href);
-    const out = { vpat: {}, review: {}, procedures: {}, checklist: {} };
+    const out = { vpat: {}, review: {} };
     for (const [name, target] of Object.entries(TARGETS)) {
         const acr = buildConformanceReport(REPORT, target ? { target } : {});
         out.vpat[name] = { model: JSON.parse(JSON.stringify(acr)), html: hash(conformanceReportHTML(acr, { generatedAt: '2026-10-30' })), word: hash(await wordXml(acr)) };
         out.review[name] = reviewTables(acr).map((t) => ({ id: t.id, title: t.title, rows: t.rows.map((r) => [r.id, r.name]) }));
-        if (!withProcedures) continue;
-        const wcagIds = acr.tables.filter((t) => /^wcag-/.test(t.id)).flatMap((t) => t.rows.map((r) => r.id));
-        const enIds = acr.tables.filter((t) => /^en-/.test(t.id)).flatMap((t) => t.rows.filter((r) => !r.wcag).map((r) => r.id));
-        const procedures = proceduresForRequirements(wcagIds).procedures;
-        const enProcedures = proceduresForRequirements(enIds, { standard: 'en301549', version: acr.target.en301549 }).procedures;
-        out.procedures[name] = {
-            wcag: Object.fromEntries(Object.entries(procedures).map(([id, p]) => [id, hash(p)])),
-            en: Object.fromEntries(Object.entries(enProcedures).map(([id, p]) => [id, hash(p)])),
-        };
-        out.checklist[name] = hash(buildManualChecklistHTML({ acr, procedures, enProcedures, review: REPORT.conformanceReview, levelLabels: { supports: 'Supports', notApplicable: 'Not Applicable', partiallySupports: 'Partially Supports' }, title: 'Shop' }));
     }
     out.targets = { scan: targets.SCAN_TARGETS, conformance: targets.CONFORMANCE_TARGETS };
     const scan = ACTION_DEFINITIONS.a11yScan || Object.values(ACTION_DEFINITIONS).find((d) => d && d.fields && d.fields.profile);
@@ -104,32 +88,40 @@ async function current({ withProcedures }) {
 }
 
 test('WCAG and EN 301 549 give what they gave when recorded', async (t) => {
-    const withProcedures = hasProcedures();
-    const now = await current({ withProcedures });
+    const now = await current();
     if (!fs.existsSync(RECORD)) {
         if (!process.env.A11Y_RECORD_BASELINE) return t.skip('no record yet');
-        if (!withProcedures) throw new Error('record with a core and a pack that have procedures');
         fs.writeFileSync(RECORD, JSON.stringify(now, null, 1) + '\n');
         return;
     }
     const record = JSON.parse(fs.readFileSync(RECORD, 'utf8'));
     for (const part of ['vpat', 'review', 'targets', 'profileOptions']) assert.deepEqual(now[part], record[part], part);
-    if (!withProcedures) return;
-    assert.deepEqual(now.procedures, record.procedures, 'procedures');
-    assert.deepEqual(now.checklist, record.checklist, 'checklist');
 });
 
-test('EN 301 549 built from its pack\'s listing gives what was recorded', async (t) => {
-    if (!hasProcedures() || !fs.existsSync(RECORD)) return t.skip('needs a core and a pack with procedures, and the record');
+test('built from its pack\'s listing, EN 301 549\'s own rows are what the pack lists, and the rest is as recorded', async (t) => {
     const core = require('@surea11y/core');
-    const pack = require('@surea11y/pack-en301549');
+    const pack = (() => { try { return require('@surea11y/pack-en301549'); } catch { return null; } })();
+    if (typeof core.listProcedures !== 'function' || !pack || !fs.existsSync(RECORD)) return t.skip('needs a core that lists procedures, the pack, and the record');
+    const listings = {};
     for (const version of ['V3.2.1', 'V4.1.1']) {
-        assert.ok(registerStandard(core.listProcedures({ packs: [pack], standard: 'en301549', version }), { profiles: [`en301549-v${version.slice(1).toLowerCase()}`] }));
+        const listing = core.listProcedures({ packs: [pack], standard: 'en301549', version });
+        if (!listing) return t.skip(`the pack lists no ${version}`);
+        listings[version] = listing;
+        registerStandard(listing, { profiles: [`en301549-v${version.slice(1).toLowerCase()}`] });
     }
     try {
-        const now = await current({ withProcedures: true });
+        const now = await current();
         const record = JSON.parse(fs.readFileSync(RECORD, 'utf8'));
-        for (const part of ['vpat', 'review', 'procedures', 'checklist']) assert.deepEqual(now[part], record[part], part);
+        const OWN = ['en-4', 'en-9', 'en-12', 'en-other'];
+        for (const [name, target] of Object.entries(TARGETS)) {
+            const acr = buildConformanceReport(REPORT, target ? { target } : {});
+            // WCAG's rows are the lab's own, as recorded.
+            assert.deepEqual(now.vpat[name].model.tables.filter((tb) => !OWN.includes(tb.id)), record.vpat[name].model.tables.filter((tb) => !OWN.includes(tb.id)), `${name}: WCAG`);
+            // EN 301 549's own: every requirement the pack lists that restates no WCAG criterion, once each.
+            const listed = listings[acr.target.en301549].requirements.filter((r) => !r.wcag).map((r) => String(r.id)).sort();
+            const shown = acr.tables.filter((tb) => OWN.includes(tb.id)).flatMap((tb) => tb.rows.filter((r) => !r.wcag).map((r) => String(r.id))).sort();
+            assert.deepEqual(shown, listed, `${name}: EN 301 549's own requirements`);
+        }
     } finally {
         clearStandards();
     }

@@ -94,20 +94,19 @@ test('the app\'s header links to the guide when there is one to show', async () 
 test('opened at a requirement, the guide shows it with its heading focused; filters narrow it, and the address keeps them', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
     const { page, errors } = await open('/guide?standard=wcag&id=1.4.12');
     await settled(page, /checks\./);
-    assert.match(await statusOf(page), /^WCAG 2\.2, Level A and AA: 55 criteria, \d+ checks\.$/);
-    assert.equal(await page.evaluate(() => document.activeElement.textContent.trim()), '1.4.12 Text Spacing');
-    assert.ok(await page.$$eval('#reqh-1-4-12 ~ .guide-facets > li', (els) => els.length) >= 2);
+    assert.match(await statusOf(page), /^WCAG 2\.2, Level A and AA: \d+ criteria, \d+ checks\.$/);
+    assert.match(await page.evaluate(() => document.activeElement.textContent.trim()), /^1\.4\.12 /);
 
     await page.click('input[name="tool"][value="screen-reader"]');
-    await settled(page, /of 55 criteria shown/);
+    await settled(page, /of \d+ criteria shown/);
     assert.match(page.url(), /tools=screen-reader/);
     await page.click('input[name="automation"][value="person"]');
-    await settled(page, /of 55 criteria shown/);
+    await settled(page, /of \d+ criteria shown/);
     assert.match(page.url(), /automation=person/);
 
     await page.select('#guide-standard', 'en301549');
     await settled(page, /^EN 301 549 V4\.1\.1: /);
-    assert.ok(await page.$('#reqh-4-2-1'), 'EN 301 549\'s own requirements, from its pack');
+    assert.ok(await page.$$eval('.guide-req', (els) => els.length) > 0, 'EN 301 549\'s requirements, from its pack');
     assert.deepEqual(errors, []);
     await page.close();
 });
@@ -115,7 +114,7 @@ test('opened at a requirement, the guide shows it with its heading focused; filt
 test('opened at a AAA criterion, the guide adds the levels that show it', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
     const { page, errors } = await open('/guide?standard=wcag&version=2.2&id=1.4.6');
     await settled(page, /Level A and AA and AAA: /);
-    assert.equal(await page.evaluate(() => document.activeElement.textContent.trim()), '1.4.6 Contrast (Enhanced)');
+    assert.match(await page.evaluate(() => document.activeElement.textContent.trim()), /^1\.4\.6 /);
     assert.equal(await page.$eval('input[name="level"][value="AAA"]', (el) => el.checked), true);
     assert.deepEqual(errors, []);
     await page.close();

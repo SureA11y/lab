@@ -116,10 +116,12 @@ part that would be new code; the VPAT stays WCAG's and EN 301 549's.
 (`surea11y-pack new --kind standard`), and `src/js/standard-packs.browserspec.js`
 installs it and goes through the app with it: a standard the lab has no code
 for. `src/shared/standards-baseline.test.js` holds WCAG's and EN 301 549's
-outputs (the VPAT, the review's rows, the checklist, the profiles) to what
-they were before the standards came from packs, and
+outputs (the VPAT, the review's rows, the profiles) to what they were before
+the standards came from packs, and
 `src/js/standards-display-baseline.dom.test.js` how reports show WCAG, EN 301
-549 and RGAA.
+549 and RGAA. Neither holds the procedures' content, which is core's and
+the packs': a procedure reworded, added or removed there is shown by the lab
+once its dependencies are updated, and no test of the lab fails for it.
 
 ## Adding an engine
 

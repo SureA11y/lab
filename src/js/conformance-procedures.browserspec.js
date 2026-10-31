@@ -31,8 +31,15 @@ const PAGE = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>
     + '<body><main><h1>Fixture</h1><p>Some text.</p></main></body></html>';
 const HAS_PROCEDURES = typeof require('@surea11y/core').proceduresFor === 'function';
 // EN 301 549's own requirements come from its pack, when the pack has them.
-const HAS_EN_PROCEDURES = HAS_PROCEDURES
-    && !!require('../server-side/procedures').proceduresForRequirements('11', { standard: 'en301549', version: 'V4.1.1' }).procedures?.['11'];
+// Whether the EN 301 549 pack gives procedures of its own: any requirement
+// it lists that restates no WCAG criterion.
+const HAS_EN_PROCEDURES = (() => {
+    const core = require('@surea11y/core');
+    if (typeof core.listProcedures !== 'function') return false;
+    const pack = require('../server-side/standard-packs').packForStandard('en301549');
+    const listing = pack && core.listProcedures({ packs: [pack], standard: 'en301549' });
+    return !!(listing && listing.requirements.some((r) => !r.wcag));
+})();
 
 function freePort() {
     return new Promise((resolve, reject) => {
@@ -131,33 +138,58 @@ async function download(page, downloads, itemPattern, filePattern) {
     throw new Error(`no ${filePattern} downloaded`);
 }
 
+// The procedures are core's and the packs': these tests take whichever
+// requirement the review shows with checks, and what the pack lists, so a
+// change there is shown, not a failure here.
+
+// A review row to answer: the first of `sections` whose draft is no failure
+// and that has at least `min` checks. Its data-key, and its requirement id.
+function pickRow(page, sections, min) {
+    return page.evaluate((secs, least) => {
+        for (const sec of document.querySelectorAll('.acr-section')) {
+            if (!secs.some((s) => sec.dataset.section.startsWith(s))) continue;
+            for (const row of sec.querySelectorAll('.acr-row')) {
+                const checks = row.querySelectorAll('.how-facets > li').length;
+                if (checks >= least && !/Does Not Support/.test(row.querySelector('.acr-draft')?.textContent || '')) {
+                    return { key: row.dataset.key, table: row.dataset.table, id: row.querySelector('[data-acr-how]').dataset.acrHow, checks };
+                }
+            }
+        }
+        return null;
+    }, sections, min);
+}
+
+const rowSel = (r) => `.acr-row[data-table="${r.table}"][data-key="${r.key}"]`;
+const headingId = (prefix, id) => `h-${prefix}${String(id).replace(/[^A-Za-z0-9_-]/g, '-')}`;
+
 test('with procedures: answer a criterion by hand, take the suggestion, and download the answers', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
     const downloads = fs.mkdtempSync(path.join(tmp, 'dl-'));
     const { page, errors } = await openReport(downloads);
 
     await (await buttonNamed(page, /^Review conformance$/)).click();
-    await page.waitForSelector('[data-acr-how="1.4.13"] .how-assess', { timeout: 30000 });
-    await page.evaluate(() => {
-        const slot = document.querySelector('[data-acr-how="1.4.13"]');
-        slot.closest('.acr-section').open = true;
-        slot.querySelector('.how-assess').open = true;
-    });
+    await page.waitForSelector('.acr-row[data-standard="wcag"] .how-assess', { timeout: 30000 });
+    const picked = await pickRow(page, ['wcag-'], 2);
+    assert.ok(picked, 'a criterion with two checks or more, not failed by the scans');
+    const row = rowSel(picked);
+    await page.evaluate((sel) => {
+        const r = document.querySelector(sel);
+        r.closest('.acr-section').open = true;
+        r.querySelector('.how-assess').open = true;
+    }, row);
 
-    const radios = (value) => page.$$(`[data-acr-how="1.4.13"] input[type=radio][value="${value}"]`);
-    const passes = await radios('pass');
-    assert.ok(passes.length >= 2, 'the criterion has checks to answer');
+    // Every check passes but the last, which fails: Partially Supports.
+    const passes = await page.$$(`${row} input[type=radio][value="pass"]`);
     for (const r of passes.slice(0, -1)) await r.click();
-    const fails = await radios('fail');
+    const fails = await page.$$(`${row} input[type=radio][value="fail"]`);
     await fails[fails.length - 1].click();
 
-    const row = '[data-acr-how="1.4.13"]';
     const answered = await page.$eval(`${row} [data-how-answered]`, (el) => el.textContent);
-    assert.match(answered, new RegExp(`${passes.length} of ${passes.length} answered`));
-    assert.match(await page.$eval(`${row} ~ [data-acr-suggest]`, (el) => el.textContent), /suggest: Partially Supports/);
+    assert.match(answered, new RegExp(`${picked.checks} of ${picked.checks} answered`));
+    assert.match(await page.$eval(`${row} [data-acr-suggest]`, (el) => el.textContent), /suggest: Partially Supports/);
 
-    await page.click(`${row} ~ [data-acr-suggest] [data-acr-use]`);
+    await page.click(`${row} [data-acr-use]`);
     const after = await page.evaluate((sel) => {
-        const r = document.querySelector(sel).closest('.acr-row');
+        const r = document.querySelector(sel);
         return {
             level: r.querySelector('[data-part="conformance"]').value,
             remarks: r.querySelector('[data-part="remarks"]').value,
@@ -172,9 +204,9 @@ test('with procedures: answer a criterion by hand, take the suggestion, and down
     await page.click('[data-acr-close]');
 
     const checklist = await download(page, downloads, /^Manual review checklist/, /manual review checklist\.html$/);
-    assert.match(checklist, /<h3 id="h-1-4-13">1\.4\.13 Content on Hover or Focus/);
+    assert.ok(checklist.includes(`<h3 id="${headingId('', picked.id)}">${picked.id} `), 'the criterion is in it');
     assert.match(checklist, /Recorded so far:<\/span> Partially Supports/);
-    assert.equal((checklist.match(/ checked\/>/g) || []).length, passes.length, 'its answers are ticked');
+    assert.equal((checklist.match(/ checked\/>/g) || []).length, picked.checks, 'its answers are ticked');
 
     const acr = await download(page, downloads, /^Conformance report(?!.*Word)/, /conformance report\.html$/);
     assert.match(acr, /Checked by hand:<\/p><ul class="checks">/);
@@ -188,15 +220,24 @@ test('with the pack\'s procedures: EN 301 549\'s own requirements are answered t
     const downloads = fs.mkdtempSync(path.join(tmp, 'dl-'));
     const { page, errors } = await openReport(downloads);
     await (await buttonNamed(page, /^Review conformance$/)).click();
-    await page.waitForSelector('.acr-row[data-key="chapter-11"] .how-assess', { timeout: 30000 });
-    const counts = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.acr-section')].map((sec) => {
-        const rows = [...sec.querySelectorAll('.acr-row')];
-        return [sec.dataset.section, [rows.length, rows.filter((r) => r.querySelector('.how-assess')).length]];
-    })));
-    for (const id of ['en-4', 'en-9', 'en-12', 'en-other']) assert.equal(counts[id][1], counts[id][0], `every row of ${id} says how to check it`);
-    assert.deepEqual(await page.$$eval('.acr-section[data-section="en-9"] .acr-row', (rows) => rows.map((r) => r.dataset.key)), ['9.6', '9.7'], 'of chapter 9, its own requirements only');
+    await page.waitForSelector('.acr-row[data-standard="en301549"] .how-assess', { timeout: 30000 });
 
-    const row = '.acr-row[data-key="chapter-11"]';
+    // What the pack lists of its own, for the version the report targets.
+    const { standards } = await (await fetch(`${base}/api/standards`)).json();
+    const version = await page.evaluate(() => globalThis.A11Y_CONFORMANCE_REPORT.buildConformanceReport({ scans: [] }).target.en301549);
+    const listing = standards.find((s) => s.key === 'en301549').listings[version];
+    const own = listing.requirements.filter((r) => !r.wcag).map((r) => String(r.id));
+    const nine = listing.groups.find((g) => g.id === '9');
+    const ownOfNine = own.filter((id) => nine && JSON.stringify(nine).includes(`"${id}"`));
+
+    const shown = await page.$$eval('.acr-section[data-standard="en301549"] .acr-row', (rows) => rows.map((r) => [r.dataset.table, r.querySelector('[data-acr-how]').dataset.acrHow, !!r.querySelector('.how-assess')]));
+    assert.deepEqual(shown.map(([, id]) => id).sort(), [...own].sort(), 'every requirement of its own the pack lists, once');
+    assert.ok(shown.every(([, , how]) => how), 'each says how to check it');
+    assert.deepEqual(shown.filter(([t]) => t === 'en-9').map(([, id]) => id).sort(), ownOfNine.sort(), 'of chapter 9, its own requirements only');
+
+    const picked = await pickRow(page, ['en-'], 1);
+    assert.ok(picked, 'a requirement of its own with checks');
+    const row = rowSel(picked);
     await page.evaluate((sel) => {
         const r = document.querySelector(sel);
         r.closest('.acr-section').open = true;
@@ -210,8 +251,7 @@ test('with the pack\'s procedures: EN 301 549\'s own requirements are answered t
 
     const checklist = await download(page, downloads, /^Manual review checklist/, /manual review checklist\.html$/);
     assert.match(checklist, /requirements of its own/);
-    assert.match(checklist, /<h3 id="h-en-11">Chapter 11: /);
-    assert.match(checklist, /<h3 id="h-en-4-2-1">4\.2\.1 Usage without vision<\/h3>/);
+    for (const id of own) assert.ok(checklist.includes(`id="${headingId('en-', id)}"`), `${id} is in it`);
 
     const acr = await download(page, downloads, /^Conformance report(?!.*Word)/, /conformance report\.html$/);
     assert.match(acr, /EN 301 549 requirement of its own, each listed under its row/);
