@@ -13,6 +13,10 @@
  * RGAA also by its number's start, so "3" takes RGAA's whole theme 3 and
  * "9.1" every clause of EN 301 549's 9.1.
  *
+ * Any other standard a report's findings name, one from a pack (BITV, say,
+ * or RGAA's pack), is named the same way, by its name as its findings give
+ * it ("Sample Standard": ["3"]), and matched like EN 301 549's.
+ *
  * A standard's requirement also counts as the WCAG criteria it corresponds
  * to (its `wcagSc`: the criterion an EN 301 549 clause restates, those RGAA's
  * own table relates an RGAA criterion to), so a grouping by WCAG criteria
@@ -21,10 +25,20 @@
  * goes to "Others".
  *
  * An issue row (findingToIssueRow) gives: SC (its WCAG criteria), EN
- * ([{ clause, wcagSc }]) and RGAA ([{ criterion, wcagSc }]).
+ * ([{ clause, wcagSc }]), RGAA ([{ criterion, wcagSc }], an older report's)
+ * and STANDARDS ([{ standard, requirement, wcagSc }], every other standard).
  */
 
+// The standards the lab has always known; any other is named by its name.
 export const STANDARD_KEYS = Object.freeze(['WCAG', 'EN 301 549', 'RGAA']);
+
+// The keys of a grouping item that name a standard: those above, then any
+// other but `group`, in the item's order.
+function standardKeysOf(item) {
+    const others = Object.keys(item && typeof item === 'object' ? item : {})
+        .filter((k) => k !== 'group' && !STANDARD_KEYS.includes(k) && k.trim());
+    return [...STANDARD_KEYS, ...others];
+}
 
 export const NOT_IN_WCAG_GROUP = 'Not in WCAG';
 export const OTHERS_GROUP = 'Others';
@@ -64,12 +78,12 @@ export function cleanGroupingItem(raw, index = 0) {
     if (!group) return { error: `Grouping item at index ${index} is missing "group" (text).` };
 
     const item = { group };
-    for (const key of STANDARD_KEYS) {
-        const list = asList(raw[key]).map(NORMALIZE[key]).filter(Boolean);
+    for (const key of standardKeysOf(raw)) {
+        const list = asList(raw[key]).map(NORMALIZE[key] || normalizeRequirement).filter(Boolean);
         if (list.length) item[key] = [...new Set(list)];
     }
-    if (!STANDARD_KEYS.some((key) => item[key])) {
-        return { error: `Grouping item "${group}" names no requirement: give "WCAG", "EN 301 549" or "RGAA" (array or string).` };
+    if (!standardKeysOf(item).some((key) => item[key])) {
+        return { error: `Grouping item "${group}" names no requirement: give "WCAG", "EN 301 549", "RGAA" or another standard by its name (array or string).` };
     }
     return { item };
 }
@@ -87,19 +101,26 @@ export function isValidGroupingSpecShape(spec) {
 }
 
 /**
- * What an issue is about, per standard: { WCAG, 'EN 301 549', RGAA }, each a
- * list, WCAG's with the criteria the issue's other requirements correspond to.
+ * What an issue is about, per standard: { WCAG, 'EN 301 549', RGAA, and any
+ * other standard it names }, each a list, WCAG's with the criteria the
+ * issue's other requirements correspond to.
  */
 export function requirementsOf(issue) {
     const own = asList(issue && issue.SC).map(normalizeScToken).filter(Boolean);
     const en = asList(issue && issue.EN).filter((e) => e && e.clause);
     const rgaa = asList(issue && issue.RGAA).filter((e) => e && e.criterion);
-    const linked = [...en, ...rgaa].flatMap((e) => asList(e.wcagSc)).map(normalizeScToken).filter(Boolean);
-    return {
+    const others = asList(issue && issue.STANDARDS).filter((e) => e && e.standard && e.requirement);
+    const linked = [...en, ...rgaa, ...others].flatMap((e) => asList(e.wcagSc)).map(normalizeScToken).filter(Boolean);
+    const out = {
         'WCAG': [...new Set([...own, ...linked])],
         'EN 301 549': en.map((e) => String(e.clause)),
         'RGAA': rgaa.map((e) => String(e.criterion)),
     };
+    for (const e of others) {
+        const list = out[e.standard] || (out[e.standard] = []);
+        if (!list.includes(String(e.requirement))) list.push(String(e.requirement));
+    }
+    return out;
 }
 
 function covers(listed, requirement, exact) {
@@ -108,9 +129,9 @@ function covers(listed, requirement, exact) {
 
 export function issueMatchesGroup(issue, groupSpec) {
     const reqs = requirementsOf(issue);
-    return STANDARD_KEYS.some((key) => {
+    return standardKeysOf(groupSpec).some((key) => {
         const listed = Array.isArray(groupSpec && groupSpec[key]) ? groupSpec[key] : [];
-        return listed.some((l) => reqs[key].some((r) => covers(l, r, key === 'WCAG')));
+        return listed.some((l) => (reqs[key] || []).some((r) => covers(l, r, key === 'WCAG')));
     });
 }
 
@@ -136,7 +157,7 @@ export function groupIssuesBySpec(issues, groupingSpec) {
         }
         if (matched) continue;
         const reqs = requirementsOf(issue);
-        const ofAnotherStandard = reqs['EN 301 549'].length > 0 || reqs.RGAA.length > 0;
+        const ofAnotherStandard = Object.entries(reqs).some(([key, list]) => key !== 'WCAG' && list.length > 0);
         if (ofAnotherStandard && !reqs.WCAG.length) notInWcag.push(issue);
         else unmatched.push(issue);
     }

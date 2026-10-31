@@ -137,6 +137,10 @@ test('Review conformance asks its requirements of its own, and the checklist lis
     await (await page.$('#resultsFiles')).uploadFile(reportFile);
     await page.waitForFunction(() => /loaded/i.test(document.querySelector('#statusReport')?.textContent || ''), { timeout: 60000 });
 
+    // Its findings' pills name its requirements, by the standard's name.
+    const shownPills = await page.$$eval('#results .tag-pill', (els) => els.map((e) => e.textContent.trim()));
+    assert.ok(shownPills.some((t) => /^Sample Standard \d/.test(t)), shownPills.join(', '));
+
     const review = await page.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => /^Review conformance$/.test(b.textContent.trim())));
     await review.click();
     await page.waitForSelector('.acr-row[data-standard="sample"] .how-assess', { timeout: 30000 });

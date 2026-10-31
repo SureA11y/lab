@@ -59,3 +59,22 @@ describe('grouping issues', () => {
         assert.equal(G.issueMatchesGroup(rgaaIssue, { RGAA: ['11'] }), true);
     });
 });
+
+describe('a standard from a pack, named by its name', () => {
+    test('a grouping item may name it, and its issues go in the group', async () => {
+        const { cleanGroupingItem, groupIssuesBySpec, requirementsOf } = await import('./grouping-spec.js');
+        assert.deepEqual(cleanGroupingItem({ group: 'Links', 'Sample Standard': ['2', 'x', 3] }).item, { group: 'Links', 'Sample Standard': ['2', '3'] });
+        const issue = { SC: [], STANDARDS: [{ standard: 'Sample Standard', requirement: '3', wcagSc: [] }, { standard: 'Sample Standard', requirement: '2', wcagSc: ['2.4.4'] }] };
+        assert.deepEqual(requirementsOf(issue)['Sample Standard'], ['3', '2']);
+        assert.deepEqual(requirementsOf(issue).WCAG, ['2.4.4'], 'and the WCAG criteria it corresponds to');
+        const { buckets } = groupIssuesBySpec([issue], [{ group: 'Links', 'Sample Standard': ['3'] }, { group: 'By WCAG', WCAG: ['2.4.4'] }]);
+        assert.deepEqual(buckets.map((b) => b.items.length), [1, 1]);
+    });
+
+    test('an issue of it no group takes, and no WCAG criterion, is "Not in WCAG"', async () => {
+        const { groupIssuesBySpec } = await import('./grouping-spec.js');
+        const issue = { SC: [], STANDARDS: [{ standard: 'Sample Standard', requirement: '3', wcagSc: [] }] };
+        const out = groupIssuesBySpec([issue], [{ group: 'Images', WCAG: ['1.1.1'] }]);
+        assert.equal(out.notInWcag.length, 1);
+    });
+});

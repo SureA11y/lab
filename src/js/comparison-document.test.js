@@ -332,14 +332,21 @@ describe('comparison document: engine releases', () => {
     });
 });
 
-describe('comparison document: RGAA and WCAG reports', () => {
+describe('comparison document: reports checked against different standards', () => {
     const targeting = (o, id) => ({ ...report(o), scans: [{ id: 's', conformanceProfile: id ? { id } : null, canonical: { findings: [] } }] });
 
     test('warns when some reports targeted RGAA and others did not', async () => {
         const { provenanceHTML } = await load();
         const d = doc([targeting({ runId: 'a' }, 'rgaa-4.1.2'), targeting({ runId: 'b' }, null)]);
         assert.equal(d.criteriaMismatch, true);
-        assert.match(provenanceHTML([{ label: 'A', name: 'x' }], d), /listed by RGAA criterion, the others by WCAG criterion/);
+        assert.match(provenanceHTML([{ label: 'A', name: 'x' }], d), /checked against different standards \(rgaa-4\.1\.2, WCAG\)/);
+    });
+
+    test('warns for EN 301 549 or any pack\'s standard against WCAG, or against another standard', () => {
+        assert.equal(doc([targeting({ runId: 'a' }, 'en301549-v4.1.1'), targeting({ runId: 'b' }, 'wcag22-aa')]).criteriaMismatch, true);
+        assert.equal(doc([targeting({ runId: 'a' }, 'sample-1.0'), targeting({ runId: 'b' }, 'en301549-v4.1.1')]).criteriaMismatch, true);
+        assert.equal(doc([targeting({ runId: 'a' }, 'en301549-v4.1.1'), targeting({ runId: 'b' }, 'en301549-v4.1.1')]).criteriaMismatch, false);
+        assert.deepEqual(doc([targeting({ runId: 'a' }, 'sample-1.0'), targeting({ runId: 'b' }, null)]).standardsCompared, ['sample-1.0', 'WCAG']);
     });
 
     test('reads the target from the canonical result too, and says nothing when all agree', () => {

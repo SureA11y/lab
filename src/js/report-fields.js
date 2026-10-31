@@ -110,5 +110,23 @@ export function pickFindingFields(finding) {
     if (finding.evidence && typeof finding.evidence === 'object' && finding.evidence.rollup) {
         out.evidence = {rollup: finding.evidence.rollup};
     }
+    // The requirements of any standard besides WCAG and EN 301 549 (one from a
+    // pack), which have no field of their own: its mappings, kept to what the
+    // view reads. WCAG's are `wcag`, EN 301 549's `en301549`.
+    const others = otherStandardMappings(finding);
+    if (others.length) out.standards = {normativeMappings: others};
     return out;
+}
+
+function otherStandardMappings(finding) {
+    const mappings = Array.isArray(finding?.standards?.normativeMappings) ? finding.standards.normativeMappings : [];
+    return mappings
+        .filter((m) => m && typeof m.standard === 'string' && m.standard !== 'WCAG' && m.standard !== 'EN 301 549' && m.requirement)
+        .map((m) => ({
+            standard: m.standard,
+            requirement: String(m.requirement),
+            ...(m.version ? {version: String(m.version)} : {}),
+            ...(m.title ? {title: String(m.title)} : {}),
+            ...(Array.isArray(m.wcagSc) ? {wcagSc: m.wcagSc.map(String)} : {}),
+        }));
 }

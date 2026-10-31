@@ -2458,7 +2458,11 @@
       "version": "1.14.1"
      }
     ],
-    "criteriaMismatch": false,
+    "criteriaMismatch": true,
+    "standardsCompared": [
+     "WCAG",
+     "EN 301 549 V4.1.1"
+    ],
     "span": {
      "from": "2026-10-31T09:00:00Z",
      "to": "2026-10-31T10:00:00Z"
@@ -2479,7 +2483,8 @@
       "version": "1.14.1"
      }
     ],
-    "rgaaTarget": false
+    "rgaaTarget": false,
+    "listedBy": []
    },
    "identityB": {
     "runId": "en301549",
@@ -2495,7 +2500,10 @@
       "version": "1.14.1"
      }
     ],
-    "rgaaTarget": false
+    "rgaaTarget": false,
+    "listedBy": [
+     "EN 301 549 V4.1.1"
+    ]
    },
    "stats": {
     "pagesA": 1,
@@ -2853,6 +2861,10 @@
      }
     ],
     "criteriaMismatch": true,
+    "standardsCompared": [
+     "WCAG",
+     "RGAA 4.1.2"
+    ],
     "span": {
      "from": "2026-10-31T09:00:00Z",
      "to": "2026-10-31T12:00:00Z"
@@ -2873,7 +2885,8 @@
       "version": "1.14.1"
      }
     ],
-    "rgaaTarget": false
+    "rgaaTarget": false,
+    "listedBy": []
    },
    "identityB": {
     "runId": "rgaa",
@@ -2889,7 +2902,10 @@
       "version": "1.14.1"
      }
     ],
-    "rgaaTarget": true
+    "rgaaTarget": true,
+    "listedBy": [
+     "RGAA 4.1.2"
+    ]
    },
    "stats": {
     "pagesA": 1,
@@ -3122,7 +3138,8 @@
        "version": "1.14.1"
       }
      ],
-     "rgaaTarget": false
+     "rgaaTarget": false,
+     "listedBy": []
     },
     "label": "Oct 31 09:00",
     "undatedLabel": null,
@@ -3921,7 +3938,10 @@
        "version": "1.14.1"
       }
      ],
-     "rgaaTarget": false
+     "rgaaTarget": false,
+     "listedBy": [
+      "EN 301 549 V4.1.1"
+     ]
     },
     "label": "Oct 31 10:00",
     "undatedLabel": null,
@@ -4869,7 +4889,10 @@
        "version": "1.14.1"
       }
      ],
-     "rgaaTarget": true
+     "rgaaTarget": true,
+     "listedBy": [
+      "RGAA 4.1.2"
+     ]
     },
     "label": "Oct 31 12:00",
     "undatedLabel": null,
@@ -6344,6 +6367,11 @@
     }
    ],
    "criteriaMismatch": true,
+   "standardsCompared": [
+    "WCAG",
+    "EN 301 549 V4.1.1",
+    "RGAA 4.1.2"
+   ],
    "span": {
     "from": "2026-10-31T09:00:00Z",
     "to": "2026-10-31T12:00:00Z"

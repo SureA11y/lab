@@ -842,7 +842,7 @@ function ruleGrid(d) {
             <th scope="row" class="dash-rule-col">
                 <span class="dash-sev-dot dash-sev-dot--${row.severity}" aria-hidden="true"></span>
                 <span class="dash-rule-name"${langAttr(words.lang)}>${esc(words.name)}</span>
-                <span class="dash-rule-meta">${SEV_LABEL[row.severity]}${row.wcag ? ` · WCAG ${esc(row.wcag)}` : ''}${esc(rgaaMeta(row.rgaa))}${
+                <span class="dash-rule-meta">${SEV_LABEL[row.severity]}${row.wcag ? ` · WCAG ${esc(row.wcag)}` : ''}${esc(rgaaMeta(row.rgaa))}${esc(standardsMeta(row.standards))}${
     reachWords(row) ? ` · ${esc(reachWords(row))}` : ''}${
     row.age && row.age.runs > 1 ? ` · open ${esc(ageWords(row, unitOf(d)))}` : ''}</span>
                 <span class="dash-rule-id mono">${esc(row.ruleId)}</span>
@@ -1159,6 +1159,16 @@ function rgaaMeta(criteria) {
     return list.length ? ` · RGAA ${list.join(', ')}` : '';
 }
 
+// " · Sample Standard 1, 2": another standard's requirements the reports'
+// findings named, standard by standard. Only scans against that standard's
+// profile carry them.
+function standardsMeta(standards) {
+    return (Array.isArray(standards) ? standards : [])
+        .filter((s) => s && s.standard && Array.isArray(s.requirements) && s.requirements.length)
+        .map((s) => ` · ${s.standard} ${s.requirements.join(', ')}`)
+        .join('');
+}
+
 function conformanceSourceNote(d) {
     const source = d.conformance.source;
     if (source === 'coverage') {
@@ -1254,7 +1264,7 @@ function conformanceGrid(d) {
         return `<tr data-dash-cat="${esc(row.category)}">
             <th scope="row" class="dash-rule-col">
                 <span class="dash-rule-name">${esc(criterionName(row.sc))}</span>
-                <span class="dash-rule-meta">WCAG ${esc(row.sc)}${row.level ? ` · level ${esc(row.level)}` : ''}${esc(en301549Meta(row.en301549))}${esc(rgaaMeta(row.rgaa))}</span>
+                <span class="dash-rule-meta">WCAG ${esc(row.sc)}${row.level ? ` · level ${esc(row.level)}` : ''}${esc(en301549Meta(row.en301549))}${esc(rgaaMeta(row.rgaa))}${esc(standardsMeta(row.standards))}</span>
             </th>${cells}
             <td class="dash-what-col"><span class="dash-cat-chip dash-cat-chip--${cat.tone}">${esc(cat.label)}</span></td>
         </tr>`;

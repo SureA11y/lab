@@ -325,6 +325,15 @@ function langAttr(lang) {
     return l && l.toLowerCase() !== 'en' && /^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i.test(l) ? ` lang="${esc(l)}"` : '';
 }
 
+// "Sample Standard 1, 2": another standard's requirements a rule's findings
+// named, one span per standard, as RGAA's are.
+function standardsHtml(standards) {
+    return (Array.isArray(standards) ? standards : [])
+        .filter((s) => s && s.standard && Array.isArray(s.requirements) && s.requirements.length)
+        .map((s) => ` <span class="wcag">${esc(s.standard)} ${esc(s.requirements.join(', '))}</span>`)
+        .join('');
+}
+
 function diffRow(row, mode) {
     const rgaa = Array.isArray(row.rgaa) ? row.rgaa : [];
     return `<details class="diff-row"><summary class="diff-summary">`
@@ -332,6 +341,7 @@ function diffRow(row, mode) {
         + `<span class="rule-cell"><span class="rule"${langAttr(row.titleLang)}>${esc(row.title)}</span>`
         + (row.wcag ? ` <span class="wcag">WCAG ${esc(row.wcag)}</span>` : '')
         + (rgaa.length ? ` <span class="wcag">RGAA ${esc(rgaa.join(', '))}</span>` : '')
+        + standardsHtml(row.standards)
         + `<br><span class="rid">${esc(row.ruleId)} · ${row.pages} ${row.pages === 1 ? 'page' : 'pages'}</span></span>`
         + `<span class="sev-label">${esc(row.severity)}</span>`
         + countMove(row, mode)

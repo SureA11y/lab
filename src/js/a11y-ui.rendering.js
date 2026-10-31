@@ -256,6 +256,44 @@ export function createRenderer({
             .join(' ');
     }
 
+    // The requirements a finding names of any other standard: one from a
+    // pack (RGAA, BITV, or the sample's), as its normativeMappings give them,
+    // grouped by standard and requirement with the versions named. WCAG's and
+    // EN 301 549's have pills of their own; an older report's RGAA criteria
+    // (`rgaa`) too, so its mappings are not shown twice.
+    function otherStandardsOf(f) {
+        const legacyRgaa = Array.isArray(f?.rgaa) && f.rgaa.length > 0;
+        const byKey = new Map();
+        const mappings = Array.isArray(f?.standards?.normativeMappings) ? f.standards.normativeMappings : [];
+        for (const m of mappings) {
+            const standard = typeof m?.standard === 'string' ? m.standard.trim() : '';
+            if (!standard || !m.requirement || standard === 'WCAG' || standard === 'EN 301 549') continue;
+            if (standard === 'RGAA' && legacyRgaa) continue;
+            const requirement = String(m.requirement);
+            const key = standard + '|' + requirement;
+            const entry = byKey.get(key) || {standard, requirement, title: m.title || '', versions: [], wcagSc: []};
+            if (m.version && !entry.versions.includes(String(m.version))) entry.versions.push(String(m.version));
+            for (const sc of Array.isArray(m.wcagSc) ? m.wcagSc : []) {
+                if (!entry.wcagSc.includes(String(sc))) entry.wcagSc.push(String(sc));
+            }
+            byKey.set(key, entry);
+        }
+        const num = (a, b) => a.localeCompare(b, undefined, {numeric: true});
+        return [...byKey.values()].sort((a, b) => num(a.standard, b.standard) || num(a.requirement, b.requirement));
+    }
+
+    // "Sample Standard 3": a pill per requirement, named by its standard as
+    // every pill is; the version only where a finding names the requirement
+    // in more than one.
+    function otherStandardPillsHtml(entries) {
+        return (Array.isArray(entries) ? entries : [])
+            .flatMap((e) => (e.versions.length > 1
+                ? e.versions.map((v) => e.standard + ' ' + e.requirement + ' (' + v + ')')
+                : [e.standard + ' ' + e.requirement]))
+            .map((text) => '<span class="tag-pill">' + escapeHtml(text) + '</span>')
+            .join(' ');
+    }
+
     // Which EN 301 549 clauses a scan's results should name, given the
     // standard the scan checked against:
     //  - an EN 301 549 version: only the clauses that version has, without
@@ -297,6 +335,7 @@ export function createRenderer({
         return [
             groupedTags.map((t) => '<span class="tag-pill">WCAG ' + escapeHtml(t) + '</span>').join(' '),
             en301549PillsHtml(v?.EN),
+            otherStandardPillsHtml(v?.STANDARDS),
             rgaaPillsHtml(v?.RGAA)
         ].filter(Boolean).join(' ');
     }
@@ -411,6 +450,7 @@ export function createRenderer({
             SC: Array.isArray(f?.wcag?.sc) ? [...new Set(f.wcag.sc.map(String).filter(Boolean))] : [],
             EN: en301549ForTarget(en301549ClausesOf(f), targetId),
             RGAA: Array.isArray(f?.rgaa) ? f.rgaa : [],
+            STANDARDS: otherStandardsOf(f),
             engine: f?.provenance?.engine || {},
             reviewHints: {
                 isComposite: (f?.meta?.atomic === false) || checksIds.length > 0 || contributors.length > 0,

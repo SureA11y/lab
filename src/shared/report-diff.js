@@ -62,6 +62,35 @@
         list.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     }
 
+    // The requirements a finding names of any standard besides WCAG and EN
+    // 301 549, one from a pack: [{ standard, requirement }]. An older report's
+    // RGAA criteria are `rgaa`'s, so its RGAA mappings are not counted twice.
+    function otherStandardsOf(f) {
+        const legacyRgaa = f && Array.isArray(f.rgaa) && f.rgaa.length > 0;
+        const out = [];
+        const mappings = f && f.standards && Array.isArray(f.standards.normativeMappings) ? f.standards.normativeMappings : [];
+        for (const m of mappings) {
+            const standard = m && typeof m.standard === 'string' ? m.standard.trim() : '';
+            if (!standard || !m.requirement || standard === 'WCAG' || standard === 'EN 301 549') continue;
+            if (standard === 'RGAA' && legacyRgaa) continue;
+            out.push({ standard, requirement: String(m.requirement) });
+        }
+        return out;
+    }
+
+    // Adds a finding's other standards to a rule's list, [{ standard,
+    // requirements }], each standard once and its requirements in its order.
+    function mergeStandards(list, entries) {
+        for (const e of entries || []) {
+            let s = list.find((x) => x.standard === e.standard);
+            if (!s) { s = { standard: e.standard, requirements: [] }; list.push(s); }
+            for (const r of e.requirements || [e.requirement]) if (r && !s.requirements.includes(r)) s.requirements.push(r);
+            s.requirements.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+        }
+        list.sort((a, b) => a.standard.localeCompare(b.standard));
+        return list;
+    }
+
     function titleLangOf(f) {
         const l = f && (f.titleLang || f.lang);
         return typeof l === 'string' && l.trim() && l.trim().toLowerCase() !== 'en' ? l.trim() : null;
@@ -114,6 +143,8 @@
                     if (!entry.wcag) entry.wcag = firstWcag(f);
                 }
                 addRgaa(entry.rgaa, f);
+                const others = otherStandardsOf(f);
+                if (others.length) entry.standards = mergeStandards(entry.standards || [], others);
 
                 const occs = Array.isArray(f.occurrences) ? f.occurrences : [];
                 for (const o of occs) {
@@ -221,6 +252,10 @@
                 severity: meta.severity,
                 wcag: meta.wcag,
                 rgaa: mergeRgaaLists(a, b),
+                // Another standard's requirements, only where a finding names one.
+                ...(((a && a.standards) || (b && b.standards))
+                    ? { standards: mergeStandards(mergeStandards([], a && a.standards), b && b.standards) }
+                    : {}),
                 aCount,
                 bCount,
                 delta: bCount - aCount,
@@ -579,5 +614,5 @@
     // diff does, instead of re-deriving the rule set from the payload.
     // pagePath travels with it so both engines normalize a page URL the same
     // way when they count how far a rule reaches.
-    return { diffReports, collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, pagePath };
+    return { diffReports, collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, pagePath, otherStandardsOf, mergeStandards };
 }));

@@ -54,7 +54,12 @@ installed, not code of the lab's own:
 
 - its profiles are options of a scan step's **Profile** (EN 301 549's have
   always been there), and a scan against one names the standard's
-  requirements in its findings;
+  requirements in its findings: each finding shows them as pills beside
+  WCAG's ("Sample Standard 3"), the criteria table and comparisons list them
+  by the WCAG criterion they correspond to, a grouping of your own can name
+  them, and the scan is counted under the WCAG criteria its requirements
+  correspond to, as a WCAG scan would be. A comparison of reports checked
+  against different standards says so, since their rows do not line up;
 - with a core that has test procedures, its requirements are sections of
   **Review conformance** and of the **manual review checklist** for a report
   whose scans used one of its profiles, each with how to check it by hand

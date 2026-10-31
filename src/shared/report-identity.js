@@ -62,7 +62,27 @@
         // rather than by WCAG criterion.
         const rgaaTarget = reportTargetsRgaa(r);
 
-        return { runId, timestamp, scenarioName, scopeUrl, label, scanTags, optInRules, engines, rgaaTarget };
+        // The standards its scans were checked against, besides WCAG
+        // (["EN 301 549 V4.1.1"]): a scan against a standard lists its
+        // results by that standard's requirements (EN 301 549's clauses,
+        // RGAA's criteria, another pack's), not by WCAG's criteria.
+        const listedBy = reportListedBy(r);
+
+        return { runId, timestamp, scenarioName, scopeUrl, label, scanTags, optInRules, engines, rgaaTarget, listedBy };
+    }
+
+    function reportListedBy(report) {
+        const scans = report && Array.isArray(report.scans) ? report.scans : [];
+        const out = [];
+        for (const s of scans) {
+            const canon = s && s.canonical && s.canonical.runOptions && s.canonical.runOptions.conformanceProfile;
+            const id = str(reportScan.scanStandardId(s)) || (canon && !/^wcag/i.test(str(canon.id) || '') ? str(canon.id) : '');
+            if (!id) continue;
+            const profile = s && s.profile && typeof s.profile === 'object' ? s.profile : null;
+            const label = str(profile && profile.id === id ? profile.label : '') || str(canon && canon.id === id ? canon.label : '') || id;
+            if (!out.includes(label)) out.push(label);
+        }
+        return out.sort();
     }
 
     function reportTargetsRgaa(report) {
@@ -288,10 +308,14 @@
             // Every engine and release the reports ran, once each: what the
             // comparison names as its engine, as a report names its own.
             engines: identitiesEngines(identities),
-            // Whether some reports targeted RGAA and others did not: an RGAA
-            // scan is listed by RGAA criterion, the others by WCAG criterion,
-            // so their rule and criterion rows never line up.
-            criteriaMismatch: new Set(identities.map((identity) => identity.rgaaTarget)).size > 1,
+            // Whether the reports were checked against different standards: a
+            // scan against a standard (EN 301 549, RGAA, another pack's) is
+            // listed by that standard's requirements, one against WCAG by WCAG
+            // criterion, so their rule and criterion rows never line up.
+            criteriaMismatch: new Set(identities.map((identity) => (identity.listedBy || []).join('|'))).size > 1,
+            // What each was checked against, once each: "WCAG" for a report
+            // checked against WCAG alone.
+            standardsCompared: [...new Set(identities.map((identity) => ((identity.listedBy || []).length ? identity.listedBy.join(' and ') : 'WCAG')))],
             span,
             summary,
         };

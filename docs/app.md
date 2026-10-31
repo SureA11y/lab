@@ -100,7 +100,8 @@ Scans can be reordered, renamed, left out of the download, and filtered by
 tag. Their findings can be grouped by WCAG principle, by WCAG level, by the
 Accessibility Product Standard's KPIs, or by a grouping of your own, loaded
 as a JSON file: a list of groups, each naming its requirements in WCAG or
-EN 301 549 terms.
+EN 301 549 terms, or those of another installed standard, by its name as its
+findings give it.
 
 ```json
 [
@@ -109,8 +110,9 @@ EN 301 549 terms.
 ]
 ```
 
-A WCAG criterion is matched exactly; an EN 301 549 clause also by its
-number's start (`"9.3"` is every clause under 9.3). A requirement of another
+A WCAG criterion is matched exactly; an EN 301 549 clause, or another
+standard's requirement, also by its number's start (`"9.3"` is every clause
+under 9.3). A requirement of another
 standard also counts as the WCAG criteria it corresponds to, so the WCAG
 groupings group EN 301 549 scans too. An issue no group takes
 goes to "Not in WCAG" when it corresponds to no WCAG criterion, and to

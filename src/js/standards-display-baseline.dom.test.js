@@ -93,3 +93,14 @@ test('reports show WCAG, EN 301 549 and RGAA as they did when recorded', (t) => 
     const record = JSON.parse(fs.readFileSync(RECORD, 'utf8'));
     for (const part of ['pills', 'conformance', 'diff', 'series']) assert.deepEqual(now[part], record[part], part);
 });
+
+test('a finding of a standard from a pack has a pill per requirement, named by its standard', () => {
+    const shown = pills(load('sample'));
+    assert.ok(shown.length > 0, 'its rows have pills');
+    assert.ok(shown.some((row) => /(^| \| )Sample Standard 1( \||$)/.test(row)), shown.join('\n'));
+    assert.ok(shown.every((row) => !/\(1\.0\)/.test(row)), 'one version: not repeated on each pill');
+    const twoVersions = load('sample');
+    const f = twoVersions.scans[0].canonical.findings[0];
+    f.standards.normativeMappings = [...f.standards.normativeMappings, { ...f.standards.normativeMappings[0], version: '2.0' }];
+    assert.ok(pills(twoVersions).some((row) => row.includes('Sample Standard 1 (1.0) | Sample Standard 1 (2.0)')));
+});

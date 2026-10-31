@@ -103,7 +103,11 @@ pack: its profiles become scan targets and options of the scan step's
 Profile field, and, with a core that has test procedures, its requirements
 become sections of Review conformance and of the manual review checklist,
 each with how to check it by hand. A requirement that restates a WCAG
-criterion is reviewed as that criterion. So adding a standard is adding its
+criterion is reviewed as that criterion. Reports show any standard's
+requirements from the findings' `standards.normativeMappings`: pills,
+groupings, the criteria table and comparisons; EN 301 549's and an older
+report's RGAA criteria keep the fields they have always had (`en301549`,
+`rgaa`). So adding a standard is adding its
 pack to `package.json`; nothing else in the lab changes. A document of the
 standard's own (France's accessibility statement for RGAA, say) is the one
 part that would be new code; the VPAT stays WCAG's and EN 301 549's.
@@ -113,7 +117,9 @@ part that would be new code; the VPAT stays WCAG's and EN 301 549's.
 installs it and goes through the app with it: a standard the lab has no code
 for. `src/shared/standards-baseline.test.js` holds WCAG's and EN 301 549's
 outputs (the VPAT, the review's rows, the checklist, the profiles) to what
-they were before the standards came from packs.
+they were before the standards came from packs, and
+`src/js/standards-display-baseline.dom.test.js` how reports show WCAG, EN 301
+549 and RGAA.
 
 ## Adding an engine
 

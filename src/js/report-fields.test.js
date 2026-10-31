@@ -50,3 +50,20 @@ test('optInRulesLabel names the standards whose own rules a scan added', async (
     assert.equal(optInRulesLabel({}), '');
     assert.equal(optInRulesLabel(null), '');
 });
+
+test('a finding keeps the requirements of a standard besides WCAG and EN 301 549, and only those', async () => {
+    const { pickFindingFields } = await import('./report-fields.js');
+    const picked = pickFindingFields({
+        ruleId: 'sample-1.0-1',
+        standards: {
+            normativeMappings: [
+                { standard: 'WCAG', requirement: '1.1.1', conformanceLevel: 'A' },
+                { standard: 'EN 301 549', requirement: '9.1.1.1', version: 'V4.1.1' },
+                { standard: 'Sample Standard', requirement: '1', version: '1.0', title: 'Images have a text alternative', wcagSc: ['1.1.1'], extra: 'left out' },
+            ],
+            informativeReferences: [{ standard: 'x' }],
+        },
+    });
+    assert.deepEqual(picked.standards, { normativeMappings: [{ standard: 'Sample Standard', requirement: '1', version: '1.0', title: 'Images have a text alternative', wcagSc: ['1.1.1'] }] });
+    assert.equal('standards' in pickFindingFields({ ruleId: 'w', standards: { normativeMappings: [{ standard: 'WCAG', requirement: '1.1.1' }] } }), false, 'none for WCAG alone');
+});
