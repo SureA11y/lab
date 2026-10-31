@@ -544,6 +544,11 @@ export function prepareDataForReport(data) {
     // ---- SCANS ----
     if (Array.isArray(updatedData.scans)) {
         updatedData.scans = updatedData.scans.map((scan) => {
+            // A scan under a standard's profile saved before its results were
+            // counted under the WCAG criteria they restate: its coverage made
+            // again from its findings, while they are whole.
+            const repaired = globalThis.A11Y_COVERAGE_SUMMARY?.repairStandardScanCoverage?.(scan);
+            if (repaired) scan = {...scan, metrics: {...scan.metrics, coverageSummary: repaired}};
             const updatedScan = keepOnlyKeys(scan, SCAN_FIELDS);
 
             if (scan?.canonical && typeof scan.canonical === 'object') {

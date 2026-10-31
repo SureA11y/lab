@@ -562,3 +562,39 @@ describe('buildCoverageAwareSummary: a scan under a standard\'s profile', () => 
         assert.equal(scOf(en, '1.1.1').status, STATUS.DOES_NOT_SUPPORT || 'doesNotSupport');
     });
 });
+
+describe('repairStandardScanCoverage: a scan saved before', () => {
+    const { repairStandardScanCoverage } = require('./coverage-summary');
+    const asClause = (f) => ({
+        ...f,
+        wcag: { sc: [], scNormative: [] },
+        standards: { normativeMappings: f.wcag.sc.map((sc) => ({ standard: 'EN 301 549', version: 'V4.1.1', requirement: `9.${sc}`, wcagSc: [sc] })), informativeReferences: [] },
+    });
+    const findings = [
+        atomic({ ruleId: 'check-a', sc: ['1.1.1'], outcome: 'fail', occurrences: [{}] }),
+        composite({ ruleId: 'sc-1.1.1', sc: ['1.1.1'], outcome: 'fail', contributors: [{ testId: 'check-a', outcome: 'fail' }], occurrences: [{}] }),
+    ];
+    const automationCoverage = { criteria: [{ sc: '1.1.1', level: 'A', automation: 'automatic' }, { sc: '2.4.7', level: 'AA', automation: 'automatic' }] };
+    // What a scan under EN 301 549's profile was given before: no criterion checked.
+    const savedBefore = {
+        layer: 'composite',
+        criteria: automationCoverage.criteria.map((c) => ({ ...c, status: 'notEvaluated', checks: { total: 0 }, inScope: true })),
+    };
+
+    test('a scan under a standard\'s profile whose coverage checked nothing is made again from its findings', () => {
+        const scan = { canonical: { findings: findings.map(asClause) }, metrics: { coverageSummary: savedBefore } };
+        const repaired = repairStandardScanCoverage(scan);
+        const fresh = buildCoverageAwareSummary({ canonical: { findings: findings.map(asClause) }, automationCoverage });
+        assert.deepEqual(repaired.criteria, fresh.criteria);
+        assert.equal(scOf(repaired, '1.1.1').status, STATUS.DOES_NOT_SUPPORT);
+    });
+
+    test('any other scan is left as it is', () => {
+        const wcagScan = { canonical: { findings }, metrics: { coverageSummary: savedBefore } };
+        assert.equal(repairStandardScanCoverage(wcagScan), null, 'its findings name WCAG criteria');
+        const good = buildCoverageAwareSummary({ canonical: { findings: findings.map(asClause) }, automationCoverage });
+        assert.equal(repairStandardScanCoverage({ canonical: { findings: findings.map(asClause) }, metrics: { coverageSummary: good } }), null, 'it checked something');
+        assert.equal(repairStandardScanCoverage({ canonical: { findings: findings.map(asClause) }, metrics: {} }), null, 'no coverage saved');
+        assert.equal(repairStandardScanCoverage(null), null);
+    });
+});

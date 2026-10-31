@@ -471,8 +471,40 @@
         };
     }
 
+    /**
+     * A scan under a standard's profile (EN 301 549's, another pack's) saved
+     * before its results were counted under the WCAG criteria they restate
+     * has a coverage summary in which no criterion was checked, although its
+     * findings say otherwise. Given such a scan (its full findings, before
+     * the app keeps only some of their fields), the summary made again from
+     * them, the criteria's automation taken from the saved one; null for any
+     * other scan, whose summary is left as it is.
+     */
+    function repairStandardScanCoverage(scan) {
+        const saved = scan && scan.metrics && scan.metrics.coverageSummary;
+        const canonical = scan && scan.canonical;
+        if (!saved || !Array.isArray(saved.criteria) || !saved.criteria.length || !canonical) return null;
+        if (saved.criteria.some((c) => c && c.checks && c.checks.total > 0)) return null;
+        const findings = asArray(canonical.findings);
+        const ownWcag = findings.some((f) => {
+            const w = f && f.wcag;
+            return w && (asArray(w.scNormative).length || asArray(w.sc).length);
+        });
+        if (ownWcag || !findings.some((f) => restatedScOf(f).length)) return null;
+        const repaired = buildCoverageAwareSummary({
+            canonical,
+            layer: saved.layer || 'auto',
+            automationCoverage: {
+                criteria: saved.criteria.filter((c) => c && c.sc).map((c) => ({ sc: c.sc, level: c.level, automation: c.automation })),
+                ...(saved.automationScope ? { engines: saved.automationScope } : {}),
+            },
+        });
+        return repaired.criteria.some((c) => c.checks && c.checks.total > 0) ? repaired : null;
+    }
+
     return {
         buildCoverageAwareSummary,
+        repairStandardScanCoverage,
         STATUS,
         VERIFICATION
     };
