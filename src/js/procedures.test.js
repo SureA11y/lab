@@ -123,3 +123,38 @@ test('an answer is kept with the check\'s words, and read either way', async () 
     const answers = { 'text-spacing-content-loss': { result: 'pass', label: 'x' }, 'controls-keep-working': { result: 'fail', label: 'y' } };
     assert.equal(suggestFromAnswers(PROCEDURE, answers).conformance, 'partiallySupports');
 });
+
+const INDEX = {
+    available: true,
+    wcag: { '2.2': ['1.1.1', '1.4.3'], '2.1': ['1.1.1', '1.4.3', '4.1.1'], '2.0': ['1.1.1', '4.1.1'] },
+    standards: [
+        { key: 'en301549', name: 'EN 301 549', versions: { 'V3.2.1': ['9.1.1.1', '9.4.1.1'], 'V4.1.1': ['9.1.1.1'] } },
+        { key: 'sample', name: 'Sample Standard', versions: { '1.0': ['3'] } },
+    ],
+};
+
+test('a finding links into the guide only for requirements the guide has, in the latest version that has them', async () => {
+    const { guideLinksFor } = await load();
+    const links = guideLinksFor({
+        SC: ['1.4.3', '4.1.1', '9.9.9'],
+        EN: [{ clause: '9.1.1.1', versions: ['V3.2.1', 'V4.1.1'] }, { clause: '9.4.1.1', versions: ['V4.1.1'] }, { clause: '9.4.1.1' }],
+        STANDARDS: [{ standard: 'Sample Standard', requirement: '3', versions: ['1.0'] }, { standard: 'Sample Standard', requirement: '7' }, { standard: 'Unknown', requirement: '1' }],
+    }, INDEX);
+    assert.deepEqual(links, [
+        { label: 'WCAG 1.4.3', href: '/guide?standard=wcag&version=2.2&id=1.4.3' },
+        { label: 'WCAG 4.1.1', href: '/guide?standard=wcag&version=2.1&id=4.1.1' },
+        { label: 'EN 301 549 9.1.1.1', href: '/guide?standard=en301549&version=V4.1.1&id=9.1.1.1' },
+        { label: 'EN 301 549 9.4.1.1', href: '/guide?standard=en301549&version=V3.2.1&id=9.4.1.1' },
+        { label: 'Sample Standard 3', href: '/guide?standard=sample&version=1.0&id=3' },
+    ], 'none for 9.9.9, for 9.4.1.1 in V4.1.1 only, for 7, or for a standard not installed');
+    assert.deepEqual(guideLinksFor({ SC: ['1.1.1'] }, null), [], 'none until the index has loaded');
+});
+
+test('the links are a line of their own, which a download leaves out', async () => {
+    const { guideRefHtml, withoutGuideRefs } = await load();
+    const html = guideRefHtml({ SC: ['1.1.1'] }, INDEX);
+    assert.equal(html, '<p class="guide-ref"><span class="guide-ref-label">The full method, in the testing guide:</span> '
+        + '<a href="/guide?standard=wcag&amp;version=2.2&amp;id=1.1.1" target="_blank" rel="noopener">WCAG 1.1.1<span class="visually-hidden"> (opens in a new tab)</span></a></p>');
+    assert.equal(guideRefHtml({ SC: ['9.9.9'] }, INDEX), '');
+    assert.equal(withoutGuideRefs(`<div>${html}<p>Kept.</p>${html}</div>`), '<div><p>Kept.</p></div>');
+});

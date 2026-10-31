@@ -16,7 +16,7 @@ import {formatReportTimestamp} from './report-timestamp.js';
 import {reportMetaField} from './report-meta-fields.js';
 import {META_FIELD_ATTR, META_VALUE_CLASS, mountReportMetaEditors} from './report-meta-edit.js';
 import {createClearReportBtn, createCompareReportBtn, createDownloadReportSplitButton, downloadConformanceReport, downloadConformanceReportDocx, downloadManualChecklist} from './export.js';
-import {loadStandards, proceduresAvailable, proceduresKnownAvailable} from './procedures.js';
+import {loadGuideIndex, loadStandards, proceduresAvailable, proceduresKnownAvailable} from './procedures.js';
 import {afterPaint, runBusy} from './busy.js';
 import {cloneJsonData, collectReportEngines, computeTotals, getAllArtifactUrls, getScreenshotsFromPayload, prepareDataForReport} from './report-data.js';
 import {focusSafely} from './focus-utils.js';
@@ -36,6 +36,8 @@ export function createReportView(app) {
         proceduresAvailable().then((ok) => {
             if (ok) document.getElementById('guide-link')?.removeAttribute('hidden');
         });
+        // What the guide has, for the links from findings into it.
+        loadGuideIndex();
         loadStandards();
     }
 

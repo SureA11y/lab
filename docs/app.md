@@ -184,6 +184,12 @@ so a link can open the guide at one requirement
 one page to keep or print. It records nothing: results go in a report's
 Review conformance.
 
+A finding's **View details** links to the guide too, above its own steps,
+which stay as they are: "The full method, in the testing guide", for each
+criterion or requirement it names that the guide has, in the latest version
+that has it. A downloaded report leaves these links out, since the guide is
+the lab's.
+
 ## Opening saved reports
 
 The **open report** tab opens reports saved before: their JSON, or a

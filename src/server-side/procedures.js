@@ -142,4 +142,33 @@ function renderStandardProcedures(query = {}, { core = load('@surea11y/core'), p
     }
 }
 
-module.exports = { proceduresForRequirements, proceduresForCriteria, listStandardProcedures, renderStandardProcedures, listOptions, MAX_IDS };
+/**
+ * What the testing guide has, for links into it to be sure to land:
+ * { available, wcag: { [version]: [criterion] }, standards: [{ key, name,
+ * versions: { [version]: [requirement] } }] }, every level; the installed
+ * packs' standards from `standards` (standard-packs.js installedStandards).
+ */
+function guideIndex({ core = load('@surea11y/core'), standards = null } = {}) {
+    if (!core || typeof core.listProcedures !== 'function') return { available: false };
+    const ids = (listing) => (listing && Array.isArray(listing.requirements) ? listing.requirements.map((r) => String(r.id)) : []);
+    const wcag = {};
+    for (const version of WCAG_VERSIONS) {
+        try {
+            wcag[version] = ids(core.listProcedures({ standard: 'wcag', version, levels: LEVELS }));
+        } catch {
+            wcag[version] = [];
+        }
+    }
+    const list = standards || require('./standard-packs').installedStandards({ core });
+    return {
+        available: true,
+        wcag,
+        standards: list.map((std) => ({
+            key: std.key,
+            name: std.name,
+            versions: Object.fromEntries(Object.entries(std.listings || {}).map(([v, l]) => [v, ids(l)])),
+        })),
+    };
+}
+
+module.exports = { proceduresForRequirements, proceduresForCriteria, listStandardProcedures, renderStandardProcedures, listOptions, guideIndex, MAX_IDS };

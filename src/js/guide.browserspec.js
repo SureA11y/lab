@@ -131,3 +131,100 @@ test('with a core without procedures, the guide says there is nothing to show', 
     assert.deepEqual(errors, []);
     await page.close();
 });
+
+// Every "View details" dialog of a report, opened, and the links into the
+// guide they hold: { links: [{ label, href }], ownSteps, dialogs }.
+async function linksOfReport(page, file) {
+    await page.click('#mode-open');
+    await (await page.$('#resultsFiles')).uploadFile(file);
+    await page.waitForFunction(() => /loaded/i.test(document.querySelector('#statusReport')?.textContent || ''), { timeout: 60000 });
+    return page.evaluate(async () => {
+        const out = { links: [], ownSteps: 0, dialogs: 0 };
+        for (const button of document.querySelectorAll('#results .src-dialog-trigger')) {
+            button.click();
+            await new Promise((resolve) => setTimeout(resolve, 30));
+            const dialog = document.getElementById(button.dataset.dialogId);
+            if (!dialog) continue;
+            out.dialogs += 1;
+            for (const a of dialog.querySelectorAll('.guide-ref a')) out.links.push({ label: a.textContent.replace(' (opens in a new tab)', ''), href: a.getAttribute('href'), target: a.target });
+            if (/How to check/.test(dialog.textContent)) out.ownSteps += 1;
+            dialog.querySelector('.src-dialog-close')?.click();
+        }
+        return out;
+    });
+}
+
+test('every link from the demo reports\' findings into the guide lands on its requirement; findings keep their own steps', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
+    const fs = require('node:fs');
+    const os = require('node:os');
+    const fixtures = path.join(__dirname, 'fixtures');
+    // The fixtures keep little of each occurrence: here their questions get
+    // the steps a scan gives them, to see that a finding keeps its own.
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-links-'));
+    const STEPS = { steps: ['Find the element the report names.'], passWhen: 'It passes.', failWhen: 'It fails.' };
+    const seen = new Map();
+    for (const name of ['standards-wcag.report.json', 'standards-en301549.report.json']) {
+        const report = JSON.parse(fs.readFileSync(path.join(fixtures, name), 'utf8'));
+        for (const scan of report.scans) {
+            for (const f of scan.canonical.findings) {
+                if (f.outcome === 'cantTell') for (const o of f.occurrences || []) o.howToCheck = STEPS;
+            }
+        }
+        const file = path.join(tmp, name);
+        fs.writeFileSync(file, JSON.stringify(report));
+        const { page, errors } = await open('/');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const found = await linksOfReport(page, file);
+        assert.ok(found.dialogs > 0 && found.links.length > 0, `${name}: ${found.dialogs} dialogs, ${found.links.length} links`);
+        assert.ok(found.ownSteps > 0, `${name}: findings keep their own How to check`);
+        for (const l of found.links) {
+            assert.equal(l.target, '_blank');
+            seen.set(l.href, l.label);
+        }
+        assert.deepEqual(errors, []);
+        await page.close();
+    }
+    fs.rmSync(tmp, { recursive: true, force: true });
+    // Each one names a requirement the guide lists, in that standard and version.
+    for (const [href, label] of seen) {
+        const q = new URL(href, base).searchParams;
+        const list = await (await fetch(`${base}/api/procedures/list?standard=${q.get('standard')}&version=${q.get('version')}&levels=A,AA,AAA`)).json();
+        assert.ok(list.listing.requirements.some((r) => String(r.id) === q.get('id')), `${label}: ${href}`);
+    }
+    // And opened, the guide shows it with its heading focused: one of each standard.
+    for (const href of [...seen.keys()].filter((h, i, all) => all.findIndex((x) => new URL(x, base).searchParams.get('standard') === new URL(h, base).searchParams.get('standard')) === i)) {
+        const { page, errors } = await open(href);
+        await settled(page, /checks\./);
+        const id = new URL(href, base).searchParams.get('id');
+        assert.ok((await page.evaluate(() => document.activeElement.textContent.trim())).startsWith(id), href);
+        assert.deepEqual(errors, []);
+        await page.close();
+    }
+});
+
+test('a downloaded report has no link into the guide', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
+    const fs = require('node:fs');
+    const os = require('node:os');
+    const downloads = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-dl-'));
+    const { page, errors } = await open('/');
+    page.on('dialog', (d) => d.accept());
+    const cdp = await page.createCDPSession();
+    await cdp.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const found = await linksOfReport(page, path.join(__dirname, 'fixtures', 'standards-wcag.report.json'));
+    assert.ok(found.links.length > 0, 'the app has them, its dialogs opened');
+    const item = await page.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => /^Download as a single file/.test(b.textContent.trim())));
+    await item.evaluate((b) => b.click());
+    let html = null;
+    for (let i = 0; i < 160 && !html; i++) {
+        const name = fs.readdirSync(downloads).find((f) => f.endsWith('.html'));
+        if (name) html = fs.readFileSync(path.join(downloads, name), 'utf8');
+        else await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    assert.ok(html, 'downloaded');
+    assert.match(html, /How to check|View details/, 'the findings are in it');
+    assert.doesNotMatch(html, /guide-ref|\/guide\?/);
+    assert.deepEqual(errors, []);
+    fs.rmSync(downloads, { recursive: true, force: true });
+    await page.close();
+});

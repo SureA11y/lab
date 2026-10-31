@@ -564,3 +564,8 @@ a:hover { text-decoration-thickness: 2px; }
     white-space: pre-wrap;
     word-break: break-word;
 }
+
+/* A finding's link into the testing guide, at the top of its "View details"
+   dialog (procedures.js guideRefHtml); left out of a downloaded report. */
+.guide-ref { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-left: 3px solid var(--accent); background: var(--surface-2); font-size: var(--fs-sm); }
+.guide-ref-label { font-weight: 600; }

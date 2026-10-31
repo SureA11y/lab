@@ -238,3 +238,96 @@ export function loadStandards({ fetchImpl = globalThis.fetch, model = globalThis
 export function clearStandardsLoad() {
     standardsLoad = null;
 }
+
+// ---- Links into the testing guide (guide.html) ------------------------------
+
+// What the guide has, by standard and version (/api/procedures/index), once
+// loaded; null until then, or where the server has no procedures.
+let guideIndexLoaded = null;
+let guideIndexLoad = null;
+
+/** Loads what the testing guide has, once; resolves to it, or null. */
+export function loadGuideIndex({ fetchImpl = globalThis.fetch } = {}) {
+    if (!guideIndexLoad) {
+        guideIndexLoad = (async () => {
+            try {
+                const res = await fetchImpl('/api/procedures/index');
+                const body = res.ok ? await res.json() : null;
+                guideIndexLoaded = body && body.available ? body : null;
+            } catch {
+                guideIndexLoaded = null;
+            }
+            return guideIndexLoaded;
+        })();
+    }
+    return guideIndexLoad;
+}
+
+/** What the guide has, if it has loaded (null otherwise). */
+export function guideIndexNow() {
+    return guideIndexLoaded;
+}
+
+/** Forgets the guide's index (for tests), or sets it. */
+export function setGuideIndex(index) {
+    guideIndexLoaded = index || null;
+    guideIndexLoad = index ? Promise.resolve(index) : null;
+}
+
+const WCAG_LATEST_FIRST = ['2.2', '2.1', '2.0'];
+const compareVersions = (a, b) => String(b).localeCompare(String(a), undefined, { numeric: true });
+
+/**
+ * The links from a finding (an issue row: SC, EN, STANDARDS) into the
+ * testing guide: [{ label, href }], each to a requirement the guide has, in
+ * the latest version that has it (of the versions the finding names, for EN
+ * 301 549 and a pack's standard); none for a requirement it lacks, and none
+ * at all until the guide's index has loaded.
+ */
+export function guideLinksFor(issue, index = guideIndexLoaded) {
+    if (!index || !issue) return [];
+    const links = [];
+    const seen = new Set();
+    const add = (label, params) => {
+        if (seen.has(label)) return;
+        seen.add(label);
+        links.push({ label, href: `/guide?${new URLSearchParams(params).toString()}` });
+    };
+    for (const sc of Array.isArray(issue.SC) ? issue.SC : []) {
+        const version = WCAG_LATEST_FIRST.find((v) => (index.wcag?.[v] || []).includes(String(sc)));
+        if (version) add(`WCAG ${sc}`, { standard: 'wcag', version, id: String(sc) });
+    }
+    const pack = (name, key) => (index.standards || []).find((s) => s.name === name || s.key === key);
+    const fromStandard = (name, key, requirement, versions) => {
+        const std = pack(name, key);
+        if (!std) return;
+        const known = Object.keys(std.versions || {}).filter((v) => (std.versions[v] || []).includes(String(requirement)));
+        const wanted = (versions && versions.length ? versions.filter((v) => known.includes(String(v))) : known).sort(compareVersions);
+        if (wanted.length) add(`${std.name} ${requirement}`, { standard: std.key, version: wanted[0], id: String(requirement) });
+    };
+    for (const c of Array.isArray(issue.EN) ? issue.EN : []) {
+        if (c && c.clause) fromStandard('EN 301 549', 'en301549', c.clause, c.versions);
+    }
+    for (const e of Array.isArray(issue.STANDARDS) ? issue.STANDARDS : []) {
+        if (e && e.standard && e.requirement) fromStandard(e.standard, null, e.requirement, e.versions);
+    }
+    return links;
+}
+
+/**
+ * A finding's links into the guide, as a line of its "View details" dialog:
+ * '' where there is none. Marked guide-ref, which a downloaded report leaves
+ * out, since the guide is the lab's and the download stands alone.
+ */
+export function guideRefHtml(issue, index = guideIndexLoaded) {
+    const links = guideLinksFor(issue, index);
+    if (!links.length) return '';
+    return `<p class="guide-ref"><span class="guide-ref-label">The full method, in the testing guide:</span> `
+        + links.map((l) => `<a href="${esc(l.href)}" target="_blank" rel="noopener">${esc(l.label)}<span class="visually-hidden"> (opens in a new tab)</span></a>`).join(', ')
+        + `</p>`;
+}
+
+/** A report's HTML with its links into the guide left out, for a download. */
+export function withoutGuideRefs(html) {
+    return String(html || '').replace(/<p class="guide-ref">[\s\S]*?<\/p>/g, '');
+}

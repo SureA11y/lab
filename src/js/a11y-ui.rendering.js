@@ -12,6 +12,7 @@ import {summarizeTopic, topicBadgeText} from './coverage-topics.js';
 import {isFailureFreeScan} from './scan-failures.js';
 import {optInRulesLabel} from './report-fields.js';
 import {registerLazyBody} from './lazy-dialogs.js';
+import {guideRefHtml} from './procedures.js';
 import {
     normalizeGroupingSpec, isValidGroupingSpecShape, groupIssuesBySpec, NOT_IN_WCAG_GROUP, OTHERS_GROUP
 } from './grouping-spec.js';
@@ -958,6 +959,7 @@ export function createRenderer({
                 '<button type="button" class="src-dialog-close" aria-label="Close dialog">Close</button>' +
                 '</div>' +
                 '<div class="src-dialog-body">' +
+                guideRefHtml(issue) +
                 buildReviewHintsBodyHtml(hints) +
                 '</div>' +
                 '<div class="src-dialog-footer">' +
@@ -976,7 +978,9 @@ export function createRenderer({
         // The occurrences are drawn when the dialog is first opened
         // (lazy-dialogs.js): drawn here, for every finding of every scan, they
         // were most of a large report's page.
-        const lazyBodyId = registerLazyBody(() => buildInstancesListHtml(nodes, type));
+        // Its own "How to check" stays as it is; a link into the testing
+        // guide, where the guide has its requirements, comes first.
+        const lazyBodyId = registerLazyBody(() => guideRefHtml(issue) + buildInstancesListHtml(nodes, type));
 
         const instanceLabel = type === 'fail' ? 'occurrence' : 'instance';
         // Each part is kept on one line; a narrow column wraps between them.

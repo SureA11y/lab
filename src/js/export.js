@@ -7,7 +7,7 @@ import {afterPaint} from './busy.js';
 import {getActivity, isCancelError} from './activity.js';
 import {createImageStore, decodeBase64DataUrl, packPayloadImages, storedReportJson} from './report-package.js';
 import {comparisonDescription, comparisonDocumentHtml, reportDocumentHtml} from './viewer-documents.js';
-import {loadProcedures, loadStandards, reportLocale} from './procedures.js';
+import {loadProcedures, loadStandards, reportLocale, withoutGuideRefs} from './procedures.js';
 import {buildManualChecklistHTML} from './manual-checklist.js';
 
 async function loadTemplate() {
@@ -184,11 +184,12 @@ function getReportContent({ includeFilteredOut = false } = {}) {
     // The app draws a "View details" dialog's occurrences when it is first
     // opened; the exported report is a static document, so it gets them all,
     // drawn straight into its text.
+    // Links into the testing guide are the lab's: the download stands alone.
     const results = resultsContainer.querySelectorAll('#results *').length > 0
-        ? fillLazyBodiesInHtml(
+        ? withoutGuideRefs(fillLazyBodiesInHtml(
             resultsContainer.innerHTML.replaceAll('()', ''),
             (body) => body.replaceAll('()', '')
-        )
+        ))
         : '';
 
     const screenshotsContainer = document
