@@ -1,0 +1,6590 @@
+{
+ "pills": {
+  "wcag": [
+   "WCAG 1.1.1",
+   "WCAG 2.4.4",
+   "WCAG 4.1.2",
+   "WCAG 1.1.1",
+   "WCAG 2.1.1",
+   "WCAG 2.4.3",
+   "WCAG 2.4.7",
+   "WCAG 2.4.2"
+  ],
+  "en301549": [
+   "EN 301 549 9.1.1.1 (V4.1.1)",
+   "EN 301 549 9.2.4.4 (V4.1.1)",
+   "EN 301 549 9.4.1.2 (V4.1.1)",
+   "EN 301 549 9.1.1.1 (V4.1.1)",
+   "EN 301 549 9.2.1.1 (V4.1.1)",
+   "EN 301 549 9.2.4.3 (V4.1.1)",
+   "EN 301 549 9.2.4.7 (V4.1.1)",
+   "EN 301 549 9.2.4.2 (V4.1.1)"
+  ],
+  "rgaa-legacy": [
+   "WCAG 1.1.1 | RGAA 1.1 | RGAA 1.2",
+   "WCAG 2.4.4 | RGAA 6.1",
+   "WCAG 4.1.2 | RGAA 7.1 | RGAA 11.1",
+   "WCAG 1.1.1 | RGAA 1.1 | RGAA 1.2",
+   "WCAG 2.1.1",
+   "WCAG 2.4.3",
+   "WCAG 2.4.7",
+   "WCAG 2.4.2"
+  ]
+ },
+ "conformance": {
+  "wcag": {
+   "source": "coverage",
+   "target": null,
+   "criteria": [
+    {
+     "sc": "1.1.1",
+     "level": null,
+     "status": "doesNotSupport",
+     "failCount": 1,
+     "occurrenceCount": 2,
+     "ruleIds": [
+      "wcag-1.1.1-non-text-content"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.2.1-audio-only-video-only-prerecorded"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.2.2-captions-prerecorded"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.3",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.4",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.5",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.3.1-info-and-relationships"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.3",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.4",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.3.4-orientation"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.5",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.3.5-identify-input-purpose"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.1-use-of-color"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.2-audio-control"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.3",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 2,
+     "ruleIds": [
+      "wcag-1.4.3-contrast-minimum"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.4",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.4-resize-text"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.5",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.5-images-of-text"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.10",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.11",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.12",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.12-text-spacing"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.13",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.1.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.1.1-keyboard"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.1.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.1.4",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.2.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.2.1-timing-adjustable"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.2.2",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.2.2-pause-stop-hide"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.3.1",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.4.1-bypass-blocks"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.2",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.4.2-page-titled"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.3",
+     "level": null,
+     "status": "needsReview",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.4.3-focus-order"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.4",
+     "level": null,
+     "status": "doesNotSupport",
+     "failCount": 1,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.4.4-link-purpose-in-context"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.5",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.6",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.4.6-headings-and-labels"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.7",
+     "level": null,
+     "status": "needsReview",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.4.7-focus-visible"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.11",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.1",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.3",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.5.3-label-in-name"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.4",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.7",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.8",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.5.8-target-size-minimum"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.1.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.1.1-language-of-page"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.1.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.1.2-language-of-parts"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.1",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.3",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.4",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.6",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.3.1-error-identification"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.3.2-labels-or-instructions"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.3",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.4",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.7",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.8",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.3.8-accessible-authentication-minimum"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "4.1.2",
+     "level": null,
+     "status": "partiallySupports",
+     "failCount": 1,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-4.1.2-name",
+      "wcag-4.1.2-aria-validity"
+     ],
+     "principle": "4",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "4.1.3",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-4.1.3-status-messages"
+     ],
+     "principle": "4",
+     "en301549": null,
+     "rgaa": null
+    }
+   ],
+   "byStatus": {
+    "doesNotSupport": 2,
+    "partiallySupports": 1,
+    "needsReview": 2,
+    "supports": 10,
+    "notApplicable": 15,
+    "notEvaluated": 25
+   },
+   "byLevel": {
+    "A": {
+     "failing": 0,
+     "concluded": 0,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 13
+    },
+    "AA": {
+     "failing": 0,
+     "concluded": 0,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 12
+    },
+    "AAA": {
+     "failing": 0,
+     "concluded": 0,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 0
+    },
+    "unstated": {
+     "failing": 3,
+     "concluded": 28,
+     "needsReview": 2,
+     "supports": 10,
+     "total": 30
+    }
+   },
+   "byPrinciple": {
+    "1": {
+     "failing": 1,
+     "concluded": 12,
+     "needsReview": 0,
+     "supports": 4,
+     "total": 20
+    },
+    "2": {
+     "failing": 1,
+     "concluded": 9,
+     "needsReview": 2,
+     "supports": 5,
+     "total": 20
+    },
+    "3": {
+     "failing": 0,
+     "concluded": 5,
+     "needsReview": 0,
+     "supports": 1,
+     "total": 13
+    },
+    "4": {
+     "failing": 1,
+     "concluded": 2,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 2
+    }
+   },
+   "totals": {
+    "failing": 3,
+    "concluded": 28,
+    "needsReview": 2,
+    "known": 55,
+    "passShare": 0.8928571428571429
+   }
+  },
+  "en301549": {
+   "source": "coverage",
+   "target": "en301549-v4.1.1",
+   "criteria": [
+    {
+     "sc": "1.1.1",
+     "level": null,
+     "status": "doesNotSupport",
+     "failCount": 1,
+     "occurrenceCount": 2,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.1.1"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.1.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.2.1"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.2.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.2.2"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.2.2",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.3",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.4",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.5",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.3.1"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.3.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.3",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.4",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.3.4"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.3.4",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.5",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.3.5"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.3.5",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.4.1"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.4.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.4.2"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.4.2",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.3",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 2,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.4.3"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.4.3",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.4",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.4.4"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.4.4",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.5",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.4.5"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.4.5",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.10",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.11",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.12",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.1.4.12"
+     ],
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.4.12",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.13",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.1.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.1.1"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.1.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.1.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.1.4",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.2.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.2.1"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.2.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.2.2",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.2.2"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.2.2",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.3.1",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.4.1"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.4.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.2",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.4.2"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.4.2",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.3",
+     "level": null,
+     "status": "needsReview",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.4.3"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.4.3",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.4",
+     "level": null,
+     "status": "doesNotSupport",
+     "failCount": 1,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.4.4"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.4.4",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.5",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.6",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.4.6"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.4.6",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.7",
+     "level": null,
+     "status": "needsReview",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.4.7"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.4.7",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.11",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.1",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.3",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.5.3"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.5.3",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.4",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.7",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.8",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.2.5.8"
+     ],
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.5.8",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "3.1.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.3.1.1"
+     ],
+     "principle": "3",
+     "en301549": {
+      "clause": "9.3.1.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "3.1.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.3.1.2"
+     ],
+     "principle": "3",
+     "en301549": {
+      "clause": "9.3.1.2",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.1",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.3",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.4",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.6",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.3.3.1"
+     ],
+     "principle": "3",
+     "en301549": {
+      "clause": "9.3.3.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.3.3.2"
+     ],
+     "principle": "3",
+     "en301549": {
+      "clause": "9.3.3.2",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.3",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.4",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.7",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.8",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.3.3.8"
+     ],
+     "principle": "3",
+     "en301549": {
+      "clause": "9.3.3.8",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "4.1.2",
+     "level": null,
+     "status": "partiallySupports",
+     "failCount": 1,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "en301549-V4.1.1-9.4.1.2"
+     ],
+     "principle": "4",
+     "en301549": {
+      "clause": "9.4.1.2",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    },
+    {
+     "sc": "4.1.3",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "en301549-V4.1.1-9.4.1.3"
+     ],
+     "principle": "4",
+     "en301549": {
+      "clause": "9.4.1.3",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null
+    }
+   ],
+   "byStatus": {
+    "doesNotSupport": 2,
+    "partiallySupports": 1,
+    "needsReview": 2,
+    "supports": 10,
+    "notApplicable": 15,
+    "notEvaluated": 25
+   },
+   "byLevel": {
+    "A": {
+     "failing": 0,
+     "concluded": 0,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 13
+    },
+    "AA": {
+     "failing": 0,
+     "concluded": 0,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 12
+    },
+    "AAA": {
+     "failing": 0,
+     "concluded": 0,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 0
+    },
+    "unstated": {
+     "failing": 3,
+     "concluded": 28,
+     "needsReview": 2,
+     "supports": 10,
+     "total": 30
+    }
+   },
+   "byPrinciple": {
+    "1": {
+     "failing": 1,
+     "concluded": 12,
+     "needsReview": 0,
+     "supports": 4,
+     "total": 20
+    },
+    "2": {
+     "failing": 1,
+     "concluded": 9,
+     "needsReview": 2,
+     "supports": 5,
+     "total": 20
+    },
+    "3": {
+     "failing": 0,
+     "concluded": 5,
+     "needsReview": 0,
+     "supports": 1,
+     "total": 13
+    },
+    "4": {
+     "failing": 1,
+     "concluded": 2,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 2
+    }
+   },
+   "totals": {
+    "failing": 3,
+    "concluded": 28,
+    "needsReview": 2,
+    "known": 55,
+    "passShare": 0.8928571428571429
+   }
+  },
+  "rgaa-legacy": {
+   "source": "coverage",
+   "target": "rgaa-4.1.2",
+   "criteria": [
+    {
+     "sc": "1.1.1",
+     "level": null,
+     "status": "doesNotSupport",
+     "failCount": 1,
+     "occurrenceCount": 2,
+     "ruleIds": [
+      "wcag-1.1.1-non-text-content"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": [
+      "1.1",
+      "1.2"
+     ]
+    },
+    {
+     "sc": "1.2.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.2.1-audio-only-video-only-prerecorded"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.2.2-captions-prerecorded"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.3",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.4",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.2.5",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.3.1-info-and-relationships"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.3",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.4",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.3.4-orientation"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.3.5",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.3.5-identify-input-purpose"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.1-use-of-color"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.2-audio-control"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.3",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 2,
+     "ruleIds": [
+      "wcag-1.4.3-contrast-minimum"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.4",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.4-resize-text"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.5",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.5-images-of-text"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.10",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.11",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.12",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-1.4.12-text-spacing"
+     ],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "1.4.13",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "1",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.1.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.1.1-keyboard"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.1.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.1.4",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.2.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.2.1-timing-adjustable"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.2.2",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.2.2-pause-stop-hide"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.3.1",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.4.1-bypass-blocks"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.2",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.4.2-page-titled"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.3",
+     "level": null,
+     "status": "needsReview",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.4.3-focus-order"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.4",
+     "level": null,
+     "status": "doesNotSupport",
+     "failCount": 1,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.4.4-link-purpose-in-context"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": [
+      "6.1"
+     ]
+    },
+    {
+     "sc": "2.4.5",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.6",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.4.6-headings-and-labels"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.7",
+     "level": null,
+     "status": "needsReview",
+     "failCount": 0,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-2.4.7-focus-visible"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.4.11",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.1",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.3",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.5.3-label-in-name"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.4",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.7",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "2.5.8",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-2.5.8-target-size-minimum"
+     ],
+     "principle": "2",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.1.1",
+     "level": null,
+     "status": "supports",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.1.1-language-of-page"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.1.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.1.2-language-of-parts"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.1",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.2",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.3",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.4",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.2.6",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.1",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.3.1-error-identification"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.2",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.3.2-labels-or-instructions"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.3",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.4",
+     "level": "AA",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.7",
+     "level": "A",
+     "status": "notEvaluated",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "3.3.8",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-3.3.8-accessible-authentication-minimum"
+     ],
+     "principle": "3",
+     "en301549": null,
+     "rgaa": null
+    },
+    {
+     "sc": "4.1.2",
+     "level": null,
+     "status": "partiallySupports",
+     "failCount": 1,
+     "occurrenceCount": 1,
+     "ruleIds": [
+      "wcag-4.1.2-name",
+      "wcag-4.1.2-aria-validity"
+     ],
+     "principle": "4",
+     "en301549": null,
+     "rgaa": [
+      "7.1",
+      "11.1"
+     ]
+    },
+    {
+     "sc": "4.1.3",
+     "level": null,
+     "status": "notApplicable",
+     "failCount": 0,
+     "occurrenceCount": 0,
+     "ruleIds": [
+      "wcag-4.1.3-status-messages"
+     ],
+     "principle": "4",
+     "en301549": null,
+     "rgaa": null
+    }
+   ],
+   "byStatus": {
+    "doesNotSupport": 2,
+    "partiallySupports": 1,
+    "needsReview": 2,
+    "supports": 10,
+    "notApplicable": 15,
+    "notEvaluated": 25
+   },
+   "byLevel": {
+    "A": {
+     "failing": 0,
+     "concluded": 0,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 13
+    },
+    "AA": {
+     "failing": 0,
+     "concluded": 0,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 12
+    },
+    "AAA": {
+     "failing": 0,
+     "concluded": 0,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 0
+    },
+    "unstated": {
+     "failing": 3,
+     "concluded": 28,
+     "needsReview": 2,
+     "supports": 10,
+     "total": 30
+    }
+   },
+   "byPrinciple": {
+    "1": {
+     "failing": 1,
+     "concluded": 12,
+     "needsReview": 0,
+     "supports": 4,
+     "total": 20
+    },
+    "2": {
+     "failing": 1,
+     "concluded": 9,
+     "needsReview": 2,
+     "supports": 5,
+     "total": 20
+    },
+    "3": {
+     "failing": 0,
+     "concluded": 5,
+     "needsReview": 0,
+     "supports": 1,
+     "total": 13
+    },
+    "4": {
+     "failing": 1,
+     "concluded": 2,
+     "needsReview": 0,
+     "supports": 0,
+     "total": 2
+    }
+   },
+   "totals": {
+    "failing": 3,
+    "concluded": 28,
+    "needsReview": 2,
+    "known": 55,
+    "passShare": 0.8928571428571429
+   }
+  }
+ },
+ "diff": {
+  "wcag-en301549": {
+   "mode": "evolution",
+   "swapped": false,
+   "document": {
+    "kind": "Accessibility comparison",
+    "title": null,
+    "note": null,
+    "count": 2,
+    "unit": {
+     "one": "run",
+     "many": "runs"
+    },
+    "framing": "Runs over time",
+    "subject": null,
+    "scope": "http://localhost:8780/products.html",
+    "scopes": [
+     "http://localhost:8780/products.html"
+    ],
+    "optInMismatch": false,
+    "engineChanges": [],
+    "engines": [
+     {
+      "name": "surea11y",
+      "version": "1.14.1"
+     }
+    ],
+    "criteriaMismatch": false,
+    "span": {
+     "from": "2026-10-31T09:00:00Z",
+     "to": "2026-10-31T10:00:00Z"
+    },
+    "summary": "2 runs, 31 Oct 2026 to 31 Oct 2026"
+   },
+   "identityA": {
+    "runId": "wcag",
+    "timestamp": "2026-10-31T09:00:00Z",
+    "scenarioName": "wcag",
+    "scopeUrl": "http://localhost:8780/products.html",
+    "label": "wcag",
+    "scanTags": [],
+    "optInRules": [],
+    "engines": [
+     {
+      "name": "surea11y",
+      "version": "1.14.1"
+     }
+    ],
+    "rgaaTarget": false
+   },
+   "identityB": {
+    "runId": "en301549",
+    "timestamp": "2026-10-31T10:00:00Z",
+    "scenarioName": "en301549",
+    "scopeUrl": "http://localhost:8780/products.html",
+    "label": "en301549",
+    "scanTags": [],
+    "optInRules": [],
+    "engines": [
+     {
+      "name": "surea11y",
+      "version": "1.14.1"
+     }
+    ],
+    "rgaaTarget": false
+   },
+   "stats": {
+    "pagesA": 1,
+    "pagesB": 1,
+    "failuresA": 3,
+    "failuresB": 3,
+    "elementsA": 2,
+    "elementsB": 2,
+    "seriousCriticalA": 3,
+    "seriousCriticalB": 3,
+    "rulesA": 3,
+    "rulesB": 3,
+    "scoreA": null,
+    "scoreB": null,
+    "confidenceA": null,
+    "confidenceB": null
+   },
+   "severity": {
+    "a": {
+     "critical": 0,
+     "serious": 3,
+     "moderate": 0,
+     "minor": 0,
+     "unknown": 0
+    },
+    "b": {
+     "critical": 0,
+     "serious": 3,
+     "moderate": 0,
+     "minor": 0,
+     "unknown": 0
+    },
+    "order": [
+     "critical",
+     "serious",
+     "moderate",
+     "minor",
+     "unknown"
+    ]
+   },
+   "verdict": {
+    "mode": "evolution",
+    "tone": "neutral",
+    "badge": "No net change",
+    "headline": "held steady",
+    "lead": "No change on either measure: the same 3 problems fail, in the same 3 places. Problems: 3 fixed, 3 newly failing, 0 still failing.",
+    "resolved": 3,
+    "added": 3,
+    "persistent": 0,
+    "net": 0,
+    "ruleNet": 0,
+    "dominant": "none"
+   },
+   "rows": [
+    {
+     "ruleId": "en301549-V4.1.1-9.1.1.1",
+     "title": "Non-text content",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "",
+     "rgaa": [],
+     "aCount": 0,
+     "bCount": 1,
+     "delta": 1,
+     "pages": 1,
+     "category": "new",
+     "occ": [
+      {
+       "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a > img",
+       "occurrenceId": "occ_bfe7610b1a0926",
+       "tag": "new",
+       "pageUrl": "http://localhost:8780/products.html",
+       "target": "html > body > main > ul > li:nth-of-type(2) > a > img"
+      }
+     ]
+    },
+    {
+     "ruleId": "en301549-V4.1.1-9.2.4.4",
+     "title": "Link purpose (in context)",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "",
+     "rgaa": [],
+     "aCount": 0,
+     "bCount": 1,
+     "delta": 1,
+     "pages": 1,
+     "category": "new",
+     "occ": [
+      {
+       "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+       "occurrenceId": "occ_e6eb77c20e7788",
+       "tag": "new",
+       "pageUrl": "http://localhost:8780/products.html",
+       "target": "html > body > main > ul > li:nth-of-type(2) > a"
+      }
+     ]
+    },
+    {
+     "ruleId": "en301549-V4.1.1-9.4.1.2",
+     "title": "Name, role, value",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "",
+     "rgaa": [],
+     "aCount": 0,
+     "bCount": 1,
+     "delta": 1,
+     "pages": 1,
+     "category": "new",
+     "occ": [
+      {
+       "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+       "occurrenceId": "occ_aafd143dba6b93",
+       "tag": "new",
+       "pageUrl": "http://localhost:8780/products.html",
+       "target": "html > body > main > ul > li:nth-of-type(2) > a"
+      }
+     ]
+    },
+    {
+     "ruleId": "wcag-1.1.1-non-text-content",
+     "title": "Non-text content: text alternatives",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "1.1.1",
+     "rgaa": [],
+     "aCount": 1,
+     "bCount": 0,
+     "delta": -1,
+     "pages": 1,
+     "category": "resolved",
+     "occ": [
+      {
+       "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a > img",
+       "occurrenceId": "occ_82cbdd03ab8ed4",
+       "tag": "fixed",
+       "pageUrl": "http://localhost:8780/products.html",
+       "target": "html > body > main > ul > li:nth-of-type(2) > a > img"
+      }
+     ]
+    },
+    {
+     "ruleId": "wcag-2.4.4-link-purpose-in-context",
+     "title": "Link Purpose (In Context)",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "2.4.4",
+     "rgaa": [],
+     "aCount": 1,
+     "bCount": 0,
+     "delta": -1,
+     "pages": 1,
+     "category": "resolved",
+     "occ": [
+      {
+       "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+       "occurrenceId": "occ_6972ebae44d735",
+       "tag": "fixed",
+       "pageUrl": "http://localhost:8780/products.html",
+       "target": "html > body > main > ul > li:nth-of-type(2) > a"
+      }
+     ]
+    },
+    {
+     "ruleId": "wcag-4.1.2-name",
+     "title": "Name, role, value: accessible name",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "4.1.2",
+     "rgaa": [],
+     "aCount": 1,
+     "bCount": 0,
+     "delta": -1,
+     "pages": 1,
+     "category": "resolved",
+     "occ": [
+      {
+       "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+       "occurrenceId": "occ_33f945cc7839f7",
+       "tag": "fixed",
+       "pageUrl": "http://localhost:8780/products.html",
+       "target": "html > body > main > ul > li:nth-of-type(2) > a"
+      }
+     ]
+    }
+   ],
+   "groups": {
+    "new": [
+     {
+      "ruleId": "en301549-V4.1.1-9.1.1.1",
+      "title": "Non-text content",
+      "titleLang": null,
+      "severity": "serious",
+      "wcag": "",
+      "rgaa": [],
+      "aCount": 0,
+      "bCount": 1,
+      "delta": 1,
+      "pages": 1,
+      "category": "new",
+      "occ": [
+       {
+        "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a > img",
+        "occurrenceId": "occ_bfe7610b1a0926",
+        "tag": "new",
+        "pageUrl": "http://localhost:8780/products.html",
+        "target": "html > body > main > ul > li:nth-of-type(2) > a > img"
+       }
+      ]
+     },
+     {
+      "ruleId": "en301549-V4.1.1-9.2.4.4",
+      "title": "Link purpose (in context)",
+      "titleLang": null,
+      "severity": "serious",
+      "wcag": "",
+      "rgaa": [],
+      "aCount": 0,
+      "bCount": 1,
+      "delta": 1,
+      "pages": 1,
+      "category": "new",
+      "occ": [
+       {
+        "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+        "occurrenceId": "occ_e6eb77c20e7788",
+        "tag": "new",
+        "pageUrl": "http://localhost:8780/products.html",
+        "target": "html > body > main > ul > li:nth-of-type(2) > a"
+       }
+      ]
+     },
+     {
+      "ruleId": "en301549-V4.1.1-9.4.1.2",
+      "title": "Name, role, value",
+      "titleLang": null,
+      "severity": "serious",
+      "wcag": "",
+      "rgaa": [],
+      "aCount": 0,
+      "bCount": 1,
+      "delta": 1,
+      "pages": 1,
+      "category": "new",
+      "occ": [
+       {
+        "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+        "occurrenceId": "occ_aafd143dba6b93",
+        "tag": "new",
+        "pageUrl": "http://localhost:8780/products.html",
+        "target": "html > body > main > ul > li:nth-of-type(2) > a"
+       }
+      ]
+     }
+    ],
+    "resolved": [
+     {
+      "ruleId": "wcag-1.1.1-non-text-content",
+      "title": "Non-text content: text alternatives",
+      "titleLang": null,
+      "severity": "serious",
+      "wcag": "1.1.1",
+      "rgaa": [],
+      "aCount": 1,
+      "bCount": 0,
+      "delta": -1,
+      "pages": 1,
+      "category": "resolved",
+      "occ": [
+       {
+        "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a > img",
+        "occurrenceId": "occ_82cbdd03ab8ed4",
+        "tag": "fixed",
+        "pageUrl": "http://localhost:8780/products.html",
+        "target": "html > body > main > ul > li:nth-of-type(2) > a > img"
+       }
+      ]
+     },
+     {
+      "ruleId": "wcag-2.4.4-link-purpose-in-context",
+      "title": "Link Purpose (In Context)",
+      "titleLang": null,
+      "severity": "serious",
+      "wcag": "2.4.4",
+      "rgaa": [],
+      "aCount": 1,
+      "bCount": 0,
+      "delta": -1,
+      "pages": 1,
+      "category": "resolved",
+      "occ": [
+       {
+        "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+        "occurrenceId": "occ_6972ebae44d735",
+        "tag": "fixed",
+        "pageUrl": "http://localhost:8780/products.html",
+        "target": "html > body > main > ul > li:nth-of-type(2) > a"
+       }
+      ]
+     },
+     {
+      "ruleId": "wcag-4.1.2-name",
+      "title": "Name, role, value: accessible name",
+      "titleLang": null,
+      "severity": "serious",
+      "wcag": "4.1.2",
+      "rgaa": [],
+      "aCount": 1,
+      "bCount": 0,
+      "delta": -1,
+      "pages": 1,
+      "category": "resolved",
+      "occ": [
+       {
+        "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+        "occurrenceId": "occ_33f945cc7839f7",
+        "tag": "fixed",
+        "pageUrl": "http://localhost:8780/products.html",
+        "target": "html > body > main > ul > li:nth-of-type(2) > a"
+       }
+      ]
+     }
+    ]
+   },
+   "narrative": [
+    "3 problems started failing that did not before — most severe: Non-text content, Link purpose (in context), Name, role, value."
+   ],
+   "margins": []
+  },
+  "wcag-rgaa": {
+   "mode": "evolution",
+   "swapped": false,
+   "document": {
+    "kind": "Accessibility comparison",
+    "title": null,
+    "note": null,
+    "count": 2,
+    "unit": {
+     "one": "run",
+     "many": "runs"
+    },
+    "framing": "Runs over time",
+    "subject": null,
+    "scope": "http://localhost:8780/products.html",
+    "scopes": [
+     "http://localhost:8780/products.html"
+    ],
+    "optInMismatch": false,
+    "engineChanges": [],
+    "engines": [
+     {
+      "name": "surea11y",
+      "version": "1.14.1"
+     }
+    ],
+    "criteriaMismatch": true,
+    "span": {
+     "from": "2026-10-31T09:00:00Z",
+     "to": "2026-10-31T12:00:00Z"
+    },
+    "summary": "2 runs, 31 Oct 2026 to 31 Oct 2026"
+   },
+   "identityA": {
+    "runId": "wcag",
+    "timestamp": "2026-10-31T09:00:00Z",
+    "scenarioName": "wcag",
+    "scopeUrl": "http://localhost:8780/products.html",
+    "label": "wcag",
+    "scanTags": [],
+    "optInRules": [],
+    "engines": [
+     {
+      "name": "surea11y",
+      "version": "1.14.1"
+     }
+    ],
+    "rgaaTarget": false
+   },
+   "identityB": {
+    "runId": "rgaa",
+    "timestamp": "2026-10-31T12:00:00Z",
+    "scenarioName": "rgaa",
+    "scopeUrl": "http://localhost:8780/products.html",
+    "label": "rgaa",
+    "scanTags": [],
+    "optInRules": [],
+    "engines": [
+     {
+      "name": "surea11y",
+      "version": "1.14.1"
+     }
+    ],
+    "rgaaTarget": true
+   },
+   "stats": {
+    "pagesA": 1,
+    "pagesB": 1,
+    "failuresA": 3,
+    "failuresB": 3,
+    "elementsA": 2,
+    "elementsB": 2,
+    "seriousCriticalA": 3,
+    "seriousCriticalB": 3,
+    "rulesA": 3,
+    "rulesB": 3,
+    "scoreA": null,
+    "scoreB": null,
+    "confidenceA": null,
+    "confidenceB": null
+   },
+   "severity": {
+    "a": {
+     "critical": 0,
+     "serious": 3,
+     "moderate": 0,
+     "minor": 0,
+     "unknown": 0
+    },
+    "b": {
+     "critical": 0,
+     "serious": 3,
+     "moderate": 0,
+     "minor": 0,
+     "unknown": 0
+    },
+    "order": [
+     "critical",
+     "serious",
+     "moderate",
+     "minor",
+     "unknown"
+    ]
+   },
+   "verdict": {
+    "mode": "evolution",
+    "tone": "neutral",
+    "badge": "No net change",
+    "headline": "held steady",
+    "lead": "No change on either measure: the same 3 problems fail, in the same 3 places. Problems: 0 fixed, 0 newly failing, 3 still failing.",
+    "resolved": 0,
+    "added": 0,
+    "persistent": 3,
+    "net": 0,
+    "ruleNet": 0,
+    "dominant": "none"
+   },
+   "rows": [
+    {
+     "ruleId": "wcag-1.1.1-non-text-content",
+     "title": "Non-text content: text alternatives",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "1.1.1",
+     "rgaa": [
+      "1.1",
+      "1.2"
+     ],
+     "aCount": 1,
+     "bCount": 1,
+     "delta": 0,
+     "pages": 1,
+     "category": "persistent",
+     "occ": [
+      {
+       "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a > img",
+       "occurrenceId": "occ_82cbdd03ab8ed4",
+       "tag": "still",
+       "pageUrl": "http://localhost:8780/products.html",
+       "target": "html > body > main > ul > li:nth-of-type(2) > a > img"
+      }
+     ]
+    },
+    {
+     "ruleId": "wcag-2.4.4-link-purpose-in-context",
+     "title": "Link Purpose (In Context)",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "2.4.4",
+     "rgaa": [
+      "6.1"
+     ],
+     "aCount": 1,
+     "bCount": 1,
+     "delta": 0,
+     "pages": 1,
+     "category": "persistent",
+     "occ": [
+      {
+       "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+       "occurrenceId": "occ_6972ebae44d735",
+       "tag": "still",
+       "pageUrl": "http://localhost:8780/products.html",
+       "target": "html > body > main > ul > li:nth-of-type(2) > a"
+      }
+     ]
+    },
+    {
+     "ruleId": "wcag-4.1.2-name",
+     "title": "Name, role, value: accessible name",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "4.1.2",
+     "rgaa": [
+      "7.1",
+      "11.1"
+     ],
+     "aCount": 1,
+     "bCount": 1,
+     "delta": 0,
+     "pages": 1,
+     "category": "persistent",
+     "occ": [
+      {
+       "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+       "occurrenceId": "occ_33f945cc7839f7",
+       "tag": "still",
+       "pageUrl": "http://localhost:8780/products.html",
+       "target": "html > body > main > ul > li:nth-of-type(2) > a"
+      }
+     ]
+    }
+   ],
+   "groups": {
+    "persistent": [
+     {
+      "ruleId": "wcag-1.1.1-non-text-content",
+      "title": "Non-text content: text alternatives",
+      "titleLang": null,
+      "severity": "serious",
+      "wcag": "1.1.1",
+      "rgaa": [
+       "1.1",
+       "1.2"
+      ],
+      "aCount": 1,
+      "bCount": 1,
+      "delta": 0,
+      "pages": 1,
+      "category": "persistent",
+      "occ": [
+       {
+        "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a > img",
+        "occurrenceId": "occ_82cbdd03ab8ed4",
+        "tag": "still",
+        "pageUrl": "http://localhost:8780/products.html",
+        "target": "html > body > main > ul > li:nth-of-type(2) > a > img"
+       }
+      ]
+     },
+     {
+      "ruleId": "wcag-2.4.4-link-purpose-in-context",
+      "title": "Link Purpose (In Context)",
+      "titleLang": null,
+      "severity": "serious",
+      "wcag": "2.4.4",
+      "rgaa": [
+       "6.1"
+      ],
+      "aCount": 1,
+      "bCount": 1,
+      "delta": 0,
+      "pages": 1,
+      "category": "persistent",
+      "occ": [
+       {
+        "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+        "occurrenceId": "occ_6972ebae44d735",
+        "tag": "still",
+        "pageUrl": "http://localhost:8780/products.html",
+        "target": "html > body > main > ul > li:nth-of-type(2) > a"
+       }
+      ]
+     },
+     {
+      "ruleId": "wcag-4.1.2-name",
+      "title": "Name, role, value: accessible name",
+      "titleLang": null,
+      "severity": "serious",
+      "wcag": "4.1.2",
+      "rgaa": [
+       "7.1",
+       "11.1"
+      ],
+      "aCount": 1,
+      "bCount": 1,
+      "delta": 0,
+      "pages": 1,
+      "category": "persistent",
+      "occ": [
+       {
+        "key": "/products.html##html > body > main > ul > li:nth-of-type(2) > a",
+        "occurrenceId": "occ_33f945cc7839f7",
+        "tag": "still",
+        "pageUrl": "http://localhost:8780/products.html",
+        "target": "html > body > main > ul > li:nth-of-type(2) > a"
+       }
+      ]
+     }
+    ]
+   },
+   "narrative": [
+    "No rule started failing that did not before — every change was a reduction or held steady."
+   ],
+   "margins": []
+  }
+ },
+ "series": {
+  "mode": "trend",
+  "columns": [
+   {
+    "index": 0,
+    "identity": {
+     "runId": "wcag",
+     "timestamp": "2026-10-31T09:00:00Z",
+     "scenarioName": "wcag",
+     "scopeUrl": "http://localhost:8780/products.html",
+     "label": "wcag",
+     "scanTags": [],
+     "optInRules": [],
+     "engines": [
+      {
+       "name": "surea11y",
+       "version": "1.14.1"
+      }
+     ],
+     "rgaaTarget": false
+    },
+    "label": "Oct 31 09:00",
+    "undatedLabel": null,
+    "stats": {
+     "pages": 1,
+     "analyzed": 1,
+     "rules": 3,
+     "failures": 3,
+     "elements": 2,
+     "seriousCritical": 3,
+     "severity": {
+      "critical": 0,
+      "serious": 3,
+      "moderate": 0,
+      "minor": 0,
+      "unknown": 0
+     },
+     "review": 5,
+     "reviewOccurrences": 5,
+     "score": null,
+     "confidence": null,
+     "scoreState": null,
+     "pageScores": null
+    },
+    "health": {
+     "ok": true,
+     "degraded": false,
+     "cancelled": false,
+     "failed": false,
+     "reasons": [],
+     "skippedScans": 0,
+     "failedActions": 0,
+     "iterationFailures": 0
+    },
+    "conformance": {
+     "source": "coverage",
+     "target": null,
+     "criteria": [
+      {
+       "sc": "1.1.1",
+       "level": null,
+       "status": "doesNotSupport",
+       "failCount": 1,
+       "occurrenceCount": 2,
+       "ruleIds": [
+        "wcag-1.1.1-non-text-content"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.2.1-audio-only-video-only-prerecorded"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.2.2-captions-prerecorded"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.3",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.4",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.5",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.3.1-info-and-relationships"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.3",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.4",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.3.4-orientation"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.5",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.3.5-identify-input-purpose"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.1-use-of-color"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.2-audio-control"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.3",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 2,
+       "ruleIds": [
+        "wcag-1.4.3-contrast-minimum"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.4",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.4-resize-text"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.5",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.5-images-of-text"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.10",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.11",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.12",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.12-text-spacing"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.13",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.1.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.1.1-keyboard"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.1.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.1.4",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.2.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.2.1-timing-adjustable"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.2.2",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.2.2-pause-stop-hide"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.3.1",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.4.1-bypass-blocks"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.2",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.4.2-page-titled"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.3",
+       "level": null,
+       "status": "needsReview",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.4.3-focus-order"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.4",
+       "level": null,
+       "status": "doesNotSupport",
+       "failCount": 1,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.4.4-link-purpose-in-context"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.5",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.6",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.4.6-headings-and-labels"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.7",
+       "level": null,
+       "status": "needsReview",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.4.7-focus-visible"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.11",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.1",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.3",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.5.3-label-in-name"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.4",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.7",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.8",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.5.8-target-size-minimum"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.1.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.1.1-language-of-page"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.1.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.1.2-language-of-parts"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.1",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.3",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.4",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.6",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.3.1-error-identification"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.3.2-labels-or-instructions"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.3",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.4",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.7",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.8",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.3.8-accessible-authentication-minimum"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "4.1.2",
+       "level": null,
+       "status": "partiallySupports",
+       "failCount": 1,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-4.1.2-name",
+        "wcag-4.1.2-aria-validity"
+       ],
+       "principle": "4",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "4.1.3",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-4.1.3-status-messages"
+       ],
+       "principle": "4",
+       "en301549": null,
+       "rgaa": null
+      }
+     ],
+     "byStatus": {
+      "doesNotSupport": 2,
+      "partiallySupports": 1,
+      "needsReview": 2,
+      "supports": 10,
+      "notApplicable": 15,
+      "notEvaluated": 25
+     },
+     "byLevel": {
+      "A": {
+       "failing": 0,
+       "concluded": 0,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 13
+      },
+      "AA": {
+       "failing": 0,
+       "concluded": 0,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 12
+      },
+      "AAA": {
+       "failing": 0,
+       "concluded": 0,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 0
+      },
+      "unstated": {
+       "failing": 3,
+       "concluded": 28,
+       "needsReview": 2,
+       "supports": 10,
+       "total": 30
+      }
+     },
+     "byPrinciple": {
+      "1": {
+       "failing": 1,
+       "concluded": 12,
+       "needsReview": 0,
+       "supports": 4,
+       "total": 20
+      },
+      "2": {
+       "failing": 1,
+       "concluded": 9,
+       "needsReview": 2,
+       "supports": 5,
+       "total": 20
+      },
+      "3": {
+       "failing": 0,
+       "concluded": 5,
+       "needsReview": 0,
+       "supports": 1,
+       "total": 13
+      },
+      "4": {
+       "failing": 1,
+       "concluded": 2,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 2
+      }
+     },
+     "totals": {
+      "failing": 3,
+      "concluded": 28,
+      "needsReview": 2,
+      "known": 55,
+      "passShare": 0.8928571428571429
+     }
+    }
+   },
+   {
+    "index": 1,
+    "identity": {
+     "runId": "en301549",
+     "timestamp": "2026-10-31T10:00:00Z",
+     "scenarioName": "en301549",
+     "scopeUrl": "http://localhost:8780/products.html",
+     "label": "en301549",
+     "scanTags": [],
+     "optInRules": [],
+     "engines": [
+      {
+       "name": "surea11y",
+       "version": "1.14.1"
+      }
+     ],
+     "rgaaTarget": false
+    },
+    "label": "Oct 31 10:00",
+    "undatedLabel": null,
+    "stats": {
+     "pages": 1,
+     "analyzed": 1,
+     "rules": 3,
+     "failures": 3,
+     "elements": 2,
+     "seriousCritical": 3,
+     "severity": {
+      "critical": 0,
+      "serious": 3,
+      "moderate": 0,
+      "minor": 0,
+      "unknown": 0
+     },
+     "review": 5,
+     "reviewOccurrences": 5,
+     "score": null,
+     "confidence": null,
+     "scoreState": null,
+     "pageScores": null
+    },
+    "health": {
+     "ok": true,
+     "degraded": false,
+     "cancelled": false,
+     "failed": false,
+     "reasons": [],
+     "skippedScans": 0,
+     "failedActions": 0,
+     "iterationFailures": 0
+    },
+    "conformance": {
+     "source": "coverage",
+     "target": "en301549-v4.1.1",
+     "criteria": [
+      {
+       "sc": "1.1.1",
+       "level": null,
+       "status": "doesNotSupport",
+       "failCount": 1,
+       "occurrenceCount": 2,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.1.1"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.1.1",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.2.1"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.2.1",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.2.2"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.2.2",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.3",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.4",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.5",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.3.1"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.3.1",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.3",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.4",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.3.4"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.3.4",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.5",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.3.5"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.3.5",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.4.1"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.4.1",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.4.2"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.4.2",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.3",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 2,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.4.3"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.4.3",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.4",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.4.4"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.4.4",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.5",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.4.5"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.4.5",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.10",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.11",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.12",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.1.4.12"
+       ],
+       "principle": "1",
+       "en301549": {
+        "clause": "9.1.4.12",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.13",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.1.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.1.1"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.1.1",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.1.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.1.4",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.2.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.2.1"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.2.1",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.2.2",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.2.2"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.2.2",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.3.1",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.4.1"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.4.1",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.2",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.4.2"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.4.2",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.3",
+       "level": null,
+       "status": "needsReview",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.4.3"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.4.3",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.4",
+       "level": null,
+       "status": "doesNotSupport",
+       "failCount": 1,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.4.4"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.4.4",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.5",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.6",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.4.6"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.4.6",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.7",
+       "level": null,
+       "status": "needsReview",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.4.7"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.4.7",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.11",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.1",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.3",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.5.3"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.5.3",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.4",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.7",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.8",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.2.5.8"
+       ],
+       "principle": "2",
+       "en301549": {
+        "clause": "9.2.5.8",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "3.1.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.3.1.1"
+       ],
+       "principle": "3",
+       "en301549": {
+        "clause": "9.3.1.1",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "3.1.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.3.1.2"
+       ],
+       "principle": "3",
+       "en301549": {
+        "clause": "9.3.1.2",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.1",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.3",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.4",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.6",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.3.3.1"
+       ],
+       "principle": "3",
+       "en301549": {
+        "clause": "9.3.3.1",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.3.3.2"
+       ],
+       "principle": "3",
+       "en301549": {
+        "clause": "9.3.3.2",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.3",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.4",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.7",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.8",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.3.3.8"
+       ],
+       "principle": "3",
+       "en301549": {
+        "clause": "9.3.3.8",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "4.1.2",
+       "level": null,
+       "status": "partiallySupports",
+       "failCount": 1,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "en301549-V4.1.1-9.4.1.2"
+       ],
+       "principle": "4",
+       "en301549": {
+        "clause": "9.4.1.2",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      },
+      {
+       "sc": "4.1.3",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "en301549-V4.1.1-9.4.1.3"
+       ],
+       "principle": "4",
+       "en301549": {
+        "clause": "9.4.1.3",
+        "versions": [
+         "V4.1.1"
+        ]
+       },
+       "rgaa": null
+      }
+     ],
+     "byStatus": {
+      "doesNotSupport": 2,
+      "partiallySupports": 1,
+      "needsReview": 2,
+      "supports": 10,
+      "notApplicable": 15,
+      "notEvaluated": 25
+     },
+     "byLevel": {
+      "A": {
+       "failing": 0,
+       "concluded": 0,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 13
+      },
+      "AA": {
+       "failing": 0,
+       "concluded": 0,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 12
+      },
+      "AAA": {
+       "failing": 0,
+       "concluded": 0,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 0
+      },
+      "unstated": {
+       "failing": 3,
+       "concluded": 28,
+       "needsReview": 2,
+       "supports": 10,
+       "total": 30
+      }
+     },
+     "byPrinciple": {
+      "1": {
+       "failing": 1,
+       "concluded": 12,
+       "needsReview": 0,
+       "supports": 4,
+       "total": 20
+      },
+      "2": {
+       "failing": 1,
+       "concluded": 9,
+       "needsReview": 2,
+       "supports": 5,
+       "total": 20
+      },
+      "3": {
+       "failing": 0,
+       "concluded": 5,
+       "needsReview": 0,
+       "supports": 1,
+       "total": 13
+      },
+      "4": {
+       "failing": 1,
+       "concluded": 2,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 2
+      }
+     },
+     "totals": {
+      "failing": 3,
+      "concluded": 28,
+      "needsReview": 2,
+      "known": 55,
+      "passShare": 0.8928571428571429
+     }
+    }
+   },
+   {
+    "index": 2,
+    "identity": {
+     "runId": "rgaa",
+     "timestamp": "2026-10-31T12:00:00Z",
+     "scenarioName": "rgaa",
+     "scopeUrl": "http://localhost:8780/products.html",
+     "label": "rgaa",
+     "scanTags": [],
+     "optInRules": [],
+     "engines": [
+      {
+       "name": "surea11y",
+       "version": "1.14.1"
+      }
+     ],
+     "rgaaTarget": true
+    },
+    "label": "Oct 31 12:00",
+    "undatedLabel": null,
+    "stats": {
+     "pages": 1,
+     "analyzed": 1,
+     "rules": 3,
+     "failures": 3,
+     "elements": 2,
+     "seriousCritical": 3,
+     "severity": {
+      "critical": 0,
+      "serious": 3,
+      "moderate": 0,
+      "minor": 0,
+      "unknown": 0
+     },
+     "review": 5,
+     "reviewOccurrences": 5,
+     "score": null,
+     "confidence": null,
+     "scoreState": null,
+     "pageScores": null
+    },
+    "health": {
+     "ok": true,
+     "degraded": false,
+     "cancelled": false,
+     "failed": false,
+     "reasons": [],
+     "skippedScans": 0,
+     "failedActions": 0,
+     "iterationFailures": 0
+    },
+    "conformance": {
+     "source": "coverage",
+     "target": "rgaa-4.1.2",
+     "criteria": [
+      {
+       "sc": "1.1.1",
+       "level": null,
+       "status": "doesNotSupport",
+       "failCount": 1,
+       "occurrenceCount": 2,
+       "ruleIds": [
+        "wcag-1.1.1-non-text-content"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": [
+        "1.1",
+        "1.2"
+       ]
+      },
+      {
+       "sc": "1.2.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.2.1-audio-only-video-only-prerecorded"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.2.2-captions-prerecorded"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.3",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.4",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.2.5",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.3.1-info-and-relationships"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.3",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.4",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.3.4-orientation"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.3.5",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.3.5-identify-input-purpose"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.1-use-of-color"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.2-audio-control"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.3",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 2,
+       "ruleIds": [
+        "wcag-1.4.3-contrast-minimum"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.4",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.4-resize-text"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.5",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.5-images-of-text"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.10",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.11",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.12",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-1.4.12-text-spacing"
+       ],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "1.4.13",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "1",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.1.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.1.1-keyboard"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.1.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.1.4",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.2.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.2.1-timing-adjustable"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.2.2",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.2.2-pause-stop-hide"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.3.1",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.4.1-bypass-blocks"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.2",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.4.2-page-titled"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.3",
+       "level": null,
+       "status": "needsReview",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.4.3-focus-order"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.4",
+       "level": null,
+       "status": "doesNotSupport",
+       "failCount": 1,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.4.4-link-purpose-in-context"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": [
+        "6.1"
+       ]
+      },
+      {
+       "sc": "2.4.5",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.6",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.4.6-headings-and-labels"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.7",
+       "level": null,
+       "status": "needsReview",
+       "failCount": 0,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-2.4.7-focus-visible"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.4.11",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.1",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.3",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.5.3-label-in-name"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.4",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.7",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "2.5.8",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-2.5.8-target-size-minimum"
+       ],
+       "principle": "2",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.1.1",
+       "level": null,
+       "status": "supports",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.1.1-language-of-page"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.1.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.1.2-language-of-parts"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.1",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.2",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.3",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.4",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.2.6",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.1",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.3.1-error-identification"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.2",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.3.2-labels-or-instructions"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.3",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.4",
+       "level": "AA",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.7",
+       "level": "A",
+       "status": "notEvaluated",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "3.3.8",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-3.3.8-accessible-authentication-minimum"
+       ],
+       "principle": "3",
+       "en301549": null,
+       "rgaa": null
+      },
+      {
+       "sc": "4.1.2",
+       "level": null,
+       "status": "partiallySupports",
+       "failCount": 1,
+       "occurrenceCount": 1,
+       "ruleIds": [
+        "wcag-4.1.2-name",
+        "wcag-4.1.2-aria-validity"
+       ],
+       "principle": "4",
+       "en301549": null,
+       "rgaa": [
+        "7.1",
+        "11.1"
+       ]
+      },
+      {
+       "sc": "4.1.3",
+       "level": null,
+       "status": "notApplicable",
+       "failCount": 0,
+       "occurrenceCount": 0,
+       "ruleIds": [
+        "wcag-4.1.3-status-messages"
+       ],
+       "principle": "4",
+       "en301549": null,
+       "rgaa": null
+      }
+     ],
+     "byStatus": {
+      "doesNotSupport": 2,
+      "partiallySupports": 1,
+      "needsReview": 2,
+      "supports": 10,
+      "notApplicable": 15,
+      "notEvaluated": 25
+     },
+     "byLevel": {
+      "A": {
+       "failing": 0,
+       "concluded": 0,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 13
+      },
+      "AA": {
+       "failing": 0,
+       "concluded": 0,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 12
+      },
+      "AAA": {
+       "failing": 0,
+       "concluded": 0,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 0
+      },
+      "unstated": {
+       "failing": 3,
+       "concluded": 28,
+       "needsReview": 2,
+       "supports": 10,
+       "total": 30
+      }
+     },
+     "byPrinciple": {
+      "1": {
+       "failing": 1,
+       "concluded": 12,
+       "needsReview": 0,
+       "supports": 4,
+       "total": 20
+      },
+      "2": {
+       "failing": 1,
+       "concluded": 9,
+       "needsReview": 2,
+       "supports": 5,
+       "total": 20
+      },
+      "3": {
+       "failing": 0,
+       "concluded": 5,
+       "needsReview": 0,
+       "supports": 1,
+       "total": 13
+      },
+      "4": {
+       "failing": 1,
+       "concluded": 2,
+       "needsReview": 0,
+       "supports": 0,
+       "total": 2
+      }
+     },
+     "totals": {
+      "failing": 3,
+      "concluded": 28,
+      "needsReview": 2,
+      "known": 55,
+      "passShare": 0.8928571428571429
+     }
+    }
+   }
+  ],
+  "rows": [
+   {
+    "ruleId": "wcag-1.1.1-non-text-content",
+    "title": "Non-text content: text alternatives",
+    "titleLang": null,
+    "severity": "serious",
+    "wcag": "1.1.1",
+    "rgaa": [
+     "1.1",
+     "1.2"
+    ],
+    "counts": [
+     1,
+     0,
+     1
+    ],
+    "present": [
+     true,
+     false,
+     true
+    ],
+    "total": 2,
+    "columns": 2,
+    "pages": [
+     1,
+     0,
+     1
+    ],
+    "reach": {
+     "pages": 1,
+     "of": 1,
+     "column": 0,
+     "scope": "systemic"
+    },
+    "lifecycle": {
+     "transitions": 2,
+     "returns": 1,
+     "firstSeen": 0,
+     "lastSeen": 2,
+     "streak": 1,
+     "flapping": true
+    },
+    "category": "flapping",
+    "direction": null,
+    "delta": 0,
+    "age": {
+     "sinceIndex": 2,
+     "runs": 1,
+     "spanMs": null,
+     "fromStart": false
+    }
+   },
+   {
+    "ruleId": "wcag-2.4.4-link-purpose-in-context",
+    "title": "Link Purpose (In Context)",
+    "titleLang": null,
+    "severity": "serious",
+    "wcag": "2.4.4",
+    "rgaa": [
+     "6.1"
+    ],
+    "counts": [
+     1,
+     0,
+     1
+    ],
+    "present": [
+     true,
+     false,
+     true
+    ],
+    "total": 2,
+    "columns": 2,
+    "pages": [
+     1,
+     0,
+     1
+    ],
+    "reach": {
+     "pages": 1,
+     "of": 1,
+     "column": 0,
+     "scope": "systemic"
+    },
+    "lifecycle": {
+     "transitions": 2,
+     "returns": 1,
+     "firstSeen": 0,
+     "lastSeen": 2,
+     "streak": 1,
+     "flapping": true
+    },
+    "category": "flapping",
+    "direction": null,
+    "delta": 0,
+    "age": {
+     "sinceIndex": 2,
+     "runs": 1,
+     "spanMs": null,
+     "fromStart": false
+    }
+   },
+   {
+    "ruleId": "wcag-4.1.2-name",
+    "title": "Name, role, value: accessible name",
+    "titleLang": null,
+    "severity": "serious",
+    "wcag": "4.1.2",
+    "rgaa": [
+     "7.1",
+     "11.1"
+    ],
+    "counts": [
+     1,
+     0,
+     1
+    ],
+    "present": [
+     true,
+     false,
+     true
+    ],
+    "total": 2,
+    "columns": 2,
+    "pages": [
+     1,
+     0,
+     1
+    ],
+    "reach": {
+     "pages": 1,
+     "of": 1,
+     "column": 0,
+     "scope": "systemic"
+    },
+    "lifecycle": {
+     "transitions": 2,
+     "returns": 1,
+     "firstSeen": 0,
+     "lastSeen": 2,
+     "streak": 1,
+     "flapping": true
+    },
+    "category": "flapping",
+    "direction": null,
+    "delta": 0,
+    "age": {
+     "sinceIndex": 2,
+     "runs": 1,
+     "spanMs": null,
+     "fromStart": false
+    }
+   },
+   {
+    "ruleId": "en301549-V4.1.1-9.1.1.1",
+    "title": "Non-text content",
+    "titleLang": null,
+    "severity": "serious",
+    "wcag": "",
+    "rgaa": [],
+    "counts": [
+     0,
+     1,
+     0
+    ],
+    "present": [
+     false,
+     true,
+     false
+    ],
+    "total": 1,
+    "columns": 1,
+    "pages": [
+     0,
+     1,
+     0
+    ],
+    "reach": {
+     "pages": 1,
+     "of": 1,
+     "column": 1,
+     "scope": "systemic"
+    },
+    "lifecycle": {
+     "transitions": 2,
+     "returns": 1,
+     "firstSeen": 1,
+     "lastSeen": 1,
+     "streak": 1,
+     "flapping": true
+    },
+    "category": "flapping",
+    "direction": null,
+    "delta": 0,
+    "age": null
+   },
+   {
+    "ruleId": "en301549-V4.1.1-9.2.4.4",
+    "title": "Link purpose (in context)",
+    "titleLang": null,
+    "severity": "serious",
+    "wcag": "",
+    "rgaa": [],
+    "counts": [
+     0,
+     1,
+     0
+    ],
+    "present": [
+     false,
+     true,
+     false
+    ],
+    "total": 1,
+    "columns": 1,
+    "pages": [
+     0,
+     1,
+     0
+    ],
+    "reach": {
+     "pages": 1,
+     "of": 1,
+     "column": 1,
+     "scope": "systemic"
+    },
+    "lifecycle": {
+     "transitions": 2,
+     "returns": 1,
+     "firstSeen": 1,
+     "lastSeen": 1,
+     "streak": 1,
+     "flapping": true
+    },
+    "category": "flapping",
+    "direction": null,
+    "delta": 0,
+    "age": null
+   },
+   {
+    "ruleId": "en301549-V4.1.1-9.4.1.2",
+    "title": "Name, role, value",
+    "titleLang": null,
+    "severity": "serious",
+    "wcag": "",
+    "rgaa": [],
+    "counts": [
+     0,
+     1,
+     0
+    ],
+    "present": [
+     false,
+     true,
+     false
+    ],
+    "total": 1,
+    "columns": 1,
+    "pages": [
+     0,
+     1,
+     0
+    ],
+    "reach": {
+     "pages": 1,
+     "of": 1,
+     "column": 1,
+     "scope": "systemic"
+    },
+    "lifecycle": {
+     "transitions": 2,
+     "returns": 1,
+     "firstSeen": 1,
+     "lastSeen": 1,
+     "streak": 1,
+     "flapping": true
+    },
+    "category": "flapping",
+    "direction": null,
+    "delta": 0,
+    "age": null
+   }
+  ],
+  "groups": {
+   "flapping": [
+    {
+     "ruleId": "wcag-1.1.1-non-text-content",
+     "title": "Non-text content: text alternatives",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "1.1.1",
+     "rgaa": [
+      "1.1",
+      "1.2"
+     ],
+     "counts": [
+      1,
+      0,
+      1
+     ],
+     "present": [
+      true,
+      false,
+      true
+     ],
+     "total": 2,
+     "columns": 2,
+     "pages": [
+      1,
+      0,
+      1
+     ],
+     "reach": {
+      "pages": 1,
+      "of": 1,
+      "column": 0,
+      "scope": "systemic"
+     },
+     "lifecycle": {
+      "transitions": 2,
+      "returns": 1,
+      "firstSeen": 0,
+      "lastSeen": 2,
+      "streak": 1,
+      "flapping": true
+     },
+     "category": "flapping",
+     "direction": null,
+     "delta": 0,
+     "age": {
+      "sinceIndex": 2,
+      "runs": 1,
+      "spanMs": null,
+      "fromStart": false
+     }
+    },
+    {
+     "ruleId": "wcag-2.4.4-link-purpose-in-context",
+     "title": "Link Purpose (In Context)",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "2.4.4",
+     "rgaa": [
+      "6.1"
+     ],
+     "counts": [
+      1,
+      0,
+      1
+     ],
+     "present": [
+      true,
+      false,
+      true
+     ],
+     "total": 2,
+     "columns": 2,
+     "pages": [
+      1,
+      0,
+      1
+     ],
+     "reach": {
+      "pages": 1,
+      "of": 1,
+      "column": 0,
+      "scope": "systemic"
+     },
+     "lifecycle": {
+      "transitions": 2,
+      "returns": 1,
+      "firstSeen": 0,
+      "lastSeen": 2,
+      "streak": 1,
+      "flapping": true
+     },
+     "category": "flapping",
+     "direction": null,
+     "delta": 0,
+     "age": {
+      "sinceIndex": 2,
+      "runs": 1,
+      "spanMs": null,
+      "fromStart": false
+     }
+    },
+    {
+     "ruleId": "wcag-4.1.2-name",
+     "title": "Name, role, value: accessible name",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "4.1.2",
+     "rgaa": [
+      "7.1",
+      "11.1"
+     ],
+     "counts": [
+      1,
+      0,
+      1
+     ],
+     "present": [
+      true,
+      false,
+      true
+     ],
+     "total": 2,
+     "columns": 2,
+     "pages": [
+      1,
+      0,
+      1
+     ],
+     "reach": {
+      "pages": 1,
+      "of": 1,
+      "column": 0,
+      "scope": "systemic"
+     },
+     "lifecycle": {
+      "transitions": 2,
+      "returns": 1,
+      "firstSeen": 0,
+      "lastSeen": 2,
+      "streak": 1,
+      "flapping": true
+     },
+     "category": "flapping",
+     "direction": null,
+     "delta": 0,
+     "age": {
+      "sinceIndex": 2,
+      "runs": 1,
+      "spanMs": null,
+      "fromStart": false
+     }
+    },
+    {
+     "ruleId": "en301549-V4.1.1-9.1.1.1",
+     "title": "Non-text content",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "",
+     "rgaa": [],
+     "counts": [
+      0,
+      1,
+      0
+     ],
+     "present": [
+      false,
+      true,
+      false
+     ],
+     "total": 1,
+     "columns": 1,
+     "pages": [
+      0,
+      1,
+      0
+     ],
+     "reach": {
+      "pages": 1,
+      "of": 1,
+      "column": 1,
+      "scope": "systemic"
+     },
+     "lifecycle": {
+      "transitions": 2,
+      "returns": 1,
+      "firstSeen": 1,
+      "lastSeen": 1,
+      "streak": 1,
+      "flapping": true
+     },
+     "category": "flapping",
+     "direction": null,
+     "delta": 0,
+     "age": null
+    },
+    {
+     "ruleId": "en301549-V4.1.1-9.2.4.4",
+     "title": "Link purpose (in context)",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "",
+     "rgaa": [],
+     "counts": [
+      0,
+      1,
+      0
+     ],
+     "present": [
+      false,
+      true,
+      false
+     ],
+     "total": 1,
+     "columns": 1,
+     "pages": [
+      0,
+      1,
+      0
+     ],
+     "reach": {
+      "pages": 1,
+      "of": 1,
+      "column": 1,
+      "scope": "systemic"
+     },
+     "lifecycle": {
+      "transitions": 2,
+      "returns": 1,
+      "firstSeen": 1,
+      "lastSeen": 1,
+      "streak": 1,
+      "flapping": true
+     },
+     "category": "flapping",
+     "direction": null,
+     "delta": 0,
+     "age": null
+    },
+    {
+     "ruleId": "en301549-V4.1.1-9.4.1.2",
+     "title": "Name, role, value",
+     "titleLang": null,
+     "severity": "serious",
+     "wcag": "",
+     "rgaa": [],
+     "counts": [
+      0,
+      1,
+      0
+     ],
+     "present": [
+      false,
+      true,
+      false
+     ],
+     "total": 1,
+     "columns": 1,
+     "pages": [
+      0,
+      1,
+      0
+     ],
+     "reach": {
+      "pages": 1,
+      "of": 1,
+      "column": 1,
+      "scope": "systemic"
+     },
+     "lifecycle": {
+      "transitions": 2,
+      "returns": 1,
+      "firstSeen": 1,
+      "lastSeen": 1,
+      "streak": 1,
+      "flapping": true
+     },
+     "category": "flapping",
+     "direction": null,
+     "delta": 0,
+     "age": null
+    }
+   ]
+  },
+  "gate": {
+   "pages": [
+    1,
+    1,
+    1
+   ],
+   "comparable": true,
+   "healthy": true,
+   "degraded": [],
+   "scored": false
+  },
+  "verdict": {
+   "mode": "trend",
+   "tone": "neutral",
+   "badge": "No net change over the window",
+   "headline": "flat",
+   "lead": "0 fewer failures than 3 hours ago. 0 rules were fixed and stayed fixed, 0 appeared and have not gone away, 0 never left, and 6 keep coming back.",
+   "net": 0,
+   "span": "3 hours",
+   "resolved": 0,
+   "added": 0,
+   "persistent": 0,
+   "flapping": 6,
+   "bestIndex": 0,
+   "worstIndex": 0,
+   "fromBest": 0,
+   "step": {
+    "from": 0,
+    "to": 1,
+    "move": 0
+   },
+   "rise": null,
+   "churn": {
+    "fixed": 6,
+    "introduced": 6,
+    "rulesFixed": 6,
+    "rulesNew": 6
+   },
+   "oldest": {
+    "ruleId": "wcag-1.1.1-non-text-content",
+    "title": "Non-text content: text alternatives",
+    "titleLang": null,
+    "severity": "serious",
+    "wcag": "1.1.1",
+    "rgaa": [
+     "1.1",
+     "1.2"
+    ],
+    "counts": [
+     1,
+     0,
+     1
+    ],
+    "present": [
+     true,
+     false,
+     true
+    ],
+    "total": 2,
+    "columns": 2,
+    "pages": [
+     1,
+     0,
+     1
+    ],
+    "reach": {
+     "pages": 1,
+     "of": 1,
+     "column": 0,
+     "scope": "systemic"
+    },
+    "lifecycle": {
+     "transitions": 2,
+     "returns": 1,
+     "firstSeen": 0,
+     "lastSeen": 2,
+     "streak": 1,
+     "flapping": true
+    },
+    "category": "flapping",
+    "direction": null,
+    "delta": 0,
+    "age": {
+     "sinceIndex": 2,
+     "runs": 1,
+     "spanMs": null,
+     "fromStart": false
+    }
+   },
+   "movedToReview": 0
+  },
+  "document": {
+   "kind": "Accessibility comparison",
+   "title": null,
+   "note": null,
+   "count": 3,
+   "unit": {
+    "one": "run",
+    "many": "runs"
+   },
+   "framing": "Runs over time",
+   "subject": null,
+   "scope": "http://localhost:8780/products.html",
+   "scopes": [
+    "http://localhost:8780/products.html"
+   ],
+   "optInMismatch": false,
+   "engineChanges": [],
+   "engines": [
+    {
+     "name": "surea11y",
+     "version": "1.14.1"
+    }
+   ],
+   "criteriaMismatch": true,
+   "span": {
+    "from": "2026-10-31T09:00:00Z",
+    "to": "2026-10-31T12:00:00Z"
+   },
+   "summary": "3 runs, 31 Oct 2026 to 31 Oct 2026"
+  },
+  "ordering": {
+   "by": "time",
+   "undated": 0,
+   "source": [
+    0,
+    1,
+    2
+   ]
+  },
+  "unit": {
+   "one": "run",
+   "many": "runs"
+  },
+  "severityOrder": [
+   "critical",
+   "serious",
+   "moderate",
+   "minor",
+   "unknown"
+  ],
+  "margins": [],
+  "review": [],
+  "flow": {
+   "steps": [
+    {
+     "from": 0,
+     "to": 1,
+     "fromLabel": "Oct 31 09:00",
+     "toLabel": "Oct 31 10:00",
+     "fixed": 3,
+     "introduced": 3,
+     "net": 0,
+     "rulesFixed": 3,
+     "rulesNew": 3
+    },
+    {
+     "from": 1,
+     "to": 2,
+     "fromLabel": "Oct 31 10:00",
+     "toLabel": "Oct 31 12:00",
+     "fixed": 3,
+     "introduced": 3,
+     "net": 0,
+     "rulesFixed": 3,
+     "rulesNew": 3
+    }
+   ],
+   "totals": {
+    "fixed": 6,
+    "introduced": 6,
+    "rulesFixed": 6,
+    "rulesNew": 6
+   }
+  },
+  "conformance": {
+   "rows": [
+    {
+     "sc": "1.1.1",
+     "level": null,
+     "principle": "1",
+     "en301549": {
+      "clause": "9.1.1.1",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": [
+      "1.1",
+      "1.2"
+     ],
+     "statuses": [
+      "doesNotSupport",
+      "doesNotSupport",
+      "doesNotSupport"
+     ],
+     "failing": [
+      true,
+      true,
+      true
+     ],
+     "columns": 3,
+     "everywhere": true,
+     "lifecycle": {
+      "transitions": 0,
+      "returns": 0,
+      "firstSeen": 0,
+      "lastSeen": 2,
+      "streak": 3,
+      "flapping": false
+     },
+     "category": "persistent"
+    },
+    {
+     "sc": "2.4.3",
+     "level": null,
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.4.3",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null,
+     "statuses": [
+      "needsReview",
+      "needsReview",
+      "needsReview"
+     ],
+     "failing": [
+      false,
+      false,
+      false
+     ],
+     "columns": 0,
+     "everywhere": false,
+     "lifecycle": {
+      "transitions": 0,
+      "returns": 0,
+      "firstSeen": -1,
+      "lastSeen": -1,
+      "streak": 3,
+      "flapping": false
+     },
+     "category": "resolved"
+    },
+    {
+     "sc": "2.4.4",
+     "level": null,
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.4.4",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": [
+      "6.1"
+     ],
+     "statuses": [
+      "doesNotSupport",
+      "doesNotSupport",
+      "doesNotSupport"
+     ],
+     "failing": [
+      true,
+      true,
+      true
+     ],
+     "columns": 3,
+     "everywhere": true,
+     "lifecycle": {
+      "transitions": 0,
+      "returns": 0,
+      "firstSeen": 0,
+      "lastSeen": 2,
+      "streak": 3,
+      "flapping": false
+     },
+     "category": "persistent"
+    },
+    {
+     "sc": "2.4.7",
+     "level": null,
+     "principle": "2",
+     "en301549": {
+      "clause": "9.2.4.7",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": null,
+     "statuses": [
+      "needsReview",
+      "needsReview",
+      "needsReview"
+     ],
+     "failing": [
+      false,
+      false,
+      false
+     ],
+     "columns": 0,
+     "everywhere": false,
+     "lifecycle": {
+      "transitions": 0,
+      "returns": 0,
+      "firstSeen": -1,
+      "lastSeen": -1,
+      "streak": 3,
+      "flapping": false
+     },
+     "category": "resolved"
+    },
+    {
+     "sc": "4.1.2",
+     "level": null,
+     "principle": "4",
+     "en301549": {
+      "clause": "9.4.1.2",
+      "versions": [
+       "V4.1.1"
+      ]
+     },
+     "rgaa": [
+      "7.1",
+      "11.1"
+     ],
+     "statuses": [
+      "partiallySupports",
+      "partiallySupports",
+      "partiallySupports"
+     ],
+     "failing": [
+      true,
+      true,
+      true
+     ],
+     "columns": 3,
+     "everywhere": true,
+     "lifecycle": {
+      "transitions": 0,
+      "returns": 0,
+      "firstSeen": 0,
+      "lastSeen": 2,
+      "streak": 3,
+      "flapping": false
+     },
+     "category": "persistent"
+    }
+   ],
+   "source": "coverage"
+  },
+  "narrative": [
+   "6 problems come and go across the window (Non-text content: text alternatives, Link Purpose (In Context), Name, role, value: accessible name). Comparing any two runs would have called each of them either fixed or new, depending on which two runs were loaded.",
+   "Across the window 6 failures were cleared and 6 were introduced. The net figure above is the difference between those two, so a quiet window is not necessarily an idle one."
+  ]
+ }
+}
