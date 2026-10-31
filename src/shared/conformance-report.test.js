@@ -325,3 +325,17 @@ describe('a standard registered from its pack', () => {
         assert.equal(registerStandard({ key: 'x' }), false, 'no version');
     });
 });
+
+test('a report scanned under a standard\'s profile is drafted from the criteria its requirements restate', () => {
+    // EN 301 549's profile: findings name clauses, not WCAG's criteria.
+    const clause = (sc, outcome, n) => ({
+        ...finding(sc, outcome, n),
+        wcag: { sc: [], scNormative: [] },
+        standards: { normativeMappings: [{ standard: 'EN 301 549', version: 'V4.1.1', requirement: `9.${sc}`, wcagSc: [sc] }] },
+    });
+    const en = { ...report, scans: [scan('Home', [clause('1.1.1', 'fail', 2), clause('2.4.7', 'cantTell')], [])] };
+    const acr = buildConformanceReport(en);
+    assert.equal(rowOf(acr, 'wcag-a', '1.1.1').conformance, 'doesNotSupport');
+    assert.equal(rowOf(acr, 'wcag-a', '1.1.1').remarks, 'Automated checks found 2 failing elements, on Home.');
+    assert.match(rowOf(acr, 'wcag-aa', '2.4.7').remarks, /need a person to confirm this on Home/);
+});

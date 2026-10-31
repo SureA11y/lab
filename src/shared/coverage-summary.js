@@ -51,9 +51,24 @@
      */
     function scRefsOf(finding) {
         const wcag = finding && finding.wcag ? finding.wcag : null;
-        if (!wcag) return [];
-        const list = Array.isArray(wcag.scNormative) ? wcag.scNormative : asArray(wcag.sc);
-        return [...new Set(list.map((s) => String(s).trim()).filter(Boolean))];
+        const list = wcag ? (Array.isArray(wcag.scNormative) ? wcag.scNormative : asArray(wcag.sc)) : [];
+        const own = [...new Set(list.map((s) => String(s).trim()).filter(Boolean))];
+        return own.length ? own : restatedScOf(finding);
+    }
+
+    /**
+     * Under a standard's profile (EN 301 549's, or another pack's), a result
+     * names the standard's requirement in place of WCAG's criteria: the
+     * criteria it restates are its mappings' `wcagSc`.
+     */
+    function restatedScOf(finding) {
+        const out = [];
+        for (const m of asArray(finding && finding.standards && finding.standards.normativeMappings)) {
+            if (!m || m.standard === 'WCAG') continue;
+            for (const sc of asArray(m.wcagSc)) out.push(String(sc).trim());
+        }
+        for (const e of asArray(finding && finding.en301549)) for (const sc of asArray(e && e.wcagSc)) out.push(String(sc).trim());
+        return [...new Set(out.filter(Boolean))];
     }
 
     /**

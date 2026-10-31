@@ -540,3 +540,25 @@ describe('buildCoverageAwareSummary: several engines in one canonical', () => {
         assert.equal(scOf(merged, '1.4.3').status, STATUS.DOES_NOT_SUPPORT);
     });
 });
+
+describe('buildCoverageAwareSummary: a scan under a standard\'s profile', () => {
+    // Under EN 301 549's profile, or another pack's, a result names the
+    // standard's requirement in place of WCAG's criteria; the criterion it
+    // restates is its mapping's wcagSc.
+    const asClause = (f, clause) => ({
+        ...f,
+        wcag: { sc: [], scNormative: [] },
+        standards: { normativeMappings: f.wcag.sc.map((sc) => ({ standard: 'EN 301 549', version: 'V4.1.1', requirement: clause, wcagSc: [sc] })), informativeReferences: [] },
+    });
+
+    test('counts each result under the WCAG criterion its requirement restates, as a WCAG scan would', () => {
+        const findings = [
+            atomic({ ruleId: 'check-a', sc: ['1.1.1'], outcome: 'fail', occurrences: [{}] }),
+            composite({ ruleId: 'sc-1.1.1', sc: ['1.1.1'], outcome: 'fail', contributors: [{ testId: 'check-a', outcome: 'fail' }], occurrences: [{}] }),
+        ];
+        const wcag = buildCoverageAwareSummary({ canonical: { findings } });
+        const en = buildCoverageAwareSummary({ canonical: { findings: findings.map((f) => asClause(f, '9.1.1.1')) } });
+        assert.equal(scOf(en, '1.1.1').status, scOf(wcag, '1.1.1').status);
+        assert.equal(scOf(en, '1.1.1').status, STATUS.DOES_NOT_SUPPORT || 'doesNotSupport');
+    });
+});

@@ -113,7 +113,21 @@
 
     // What the scans found for each criterion: where it failed (and on how
     // many elements) and where they asked a person to look.
-    function scanEvidence(report, requirementsOf = (f) => asArray(f.wcag && (f.wcag.scNormative || f.wcag.sc))) {
+    // A finding's WCAG criteria: its own, or under a standard's profile, whose
+    // results name the standard's requirement in place of WCAG's, the criteria
+    // that requirement restates (its mappings' `wcagSc`).
+    function wcagScOf(f) {
+        const own = asArray(f.wcag && (asArray(f.wcag.scNormative).length ? f.wcag.scNormative : f.wcag.sc));
+        if (own.length) return own;
+        const out = [];
+        for (const m of asArray(f.standards && f.standards.normativeMappings)) {
+            if (m && m.standard !== 'WCAG') out.push(...asArray(m.wcagSc));
+        }
+        for (const e of asArray(f.en301549)) out.push(...asArray(e && e.wcagSc));
+        return [...new Set(out.map(String))];
+    }
+
+    function scanEvidence(report, requirementsOf = wcagScOf) {
         const bySc = new Map();
         const at = (sc) => {
             if (!bySc.has(sc)) bySc.set(sc, { failPages: [], failElements: 0, askPages: [], questions: [] });
