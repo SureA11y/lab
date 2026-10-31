@@ -25,6 +25,7 @@ const { createResourceSampler } = require("./src/server-side/resource-sampler");
 const { registerQueueRoutes, resolveQueueBaseDir } = require("./src/server-side/queue-routes");
 const { createRequestGuard } = require("./src/server-side/request-guard");
 const { proceduresForRequirements } = require("./src/server-side/procedures");
+const { installedStandards } = require("./src/server-side/standard-packs");
 
 // --------------------------- Crash guard (dev) ---------------------------
 
@@ -182,6 +183,18 @@ app.get("/api/engine/capabilities", (req, res) => {
     } catch (e) {
         console.error("Failed to get engine capabilities:", e);
         return res.status(500).json({ error: "Failed to get engine capabilities" });
+    }
+});
+
+// The standards of the installed packs, besides WCAG: their keys, names,
+// versions and profiles (standard-packs.js).
+app.get("/api/standards", (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json({ standards: installedStandards() });
+    } catch (e) {
+        console.error("Failed to list the installed standards:", e);
+        return res.json({ standards: [] });
     }
 });
 

@@ -18,6 +18,7 @@ Read by the server and the command-line runner alike.
 | `A11Y_ACCEPT_LANGUAGE` | The `Accept-Language` pages are asked for (default `en-US,en;q=0.8`) |
 | `A11Y_ISOLATE_RUNS` | Each scan in a browser context of its own, for reproducible results (default on) |
 | `A11Y_DISABLE_CACHE` | No browser cache while scanning, for reproducible results (default on) |
+| `A11Y_PACKS` | More standard packs for surea11y to load, besides the `@surea11y/pack-*` packages the lab depends on: package names, or paths from the lab's folder, comma-separated ([Standards](#standards)) |
 | `A11Y_CORE_HOOKS` | Which of surea11y's hooks run before a page's own scripts: `internals` (names and roles web components set through `ElementInternals`), `listener` (event listeners added from script, for the keyboard rules) and `liveRegion` (what live regions are given, for the rule about announcements that may be missed). Default all; `none`, or a comma-separated list |
 | `HEAVY_NODE_THRESHOLD` | A page with more elements than this is skipped rather than scanned, and the report says so |
 | `A11Y_REPORTS_ROOT` | Where reports, evidence and element pictures are written (default `reports/`) |
@@ -40,6 +41,18 @@ options for it (`{ "engineOptions": { "surea11y": { … } } }`) and turn on
 the result model check (`"validateCanonical": true`). Its `engineId` names
 the engine the lab runs, `surea11y` unless another engine's adapter has been
 added ([CONTRIBUTING.md](../CONTRIBUTING.md#adding-an-engine)).
+
+## Standards
+
+Besides WCAG, which surea11y has built in, the lab knows the standards of
+the packs installed with it: [EN 301 549](https://github.com/SureA11y/pack-en301549)'s,
+`@surea11y/pack-en301549`, is a dependency. Every `@surea11y/pack-*` package
+in the lab's `package.json`, and any named in `A11Y_PACKS`, is loaded at
+start; one that does not load is left out. What the lab knows of each
+standard (its name, versions and profiles, and with a core that has test
+procedures, how to check its requirements by hand) comes from the pack, so a
+further standard needs its pack installed, not code of the lab's own.
+`GET /api/standards` lists them ([the server's API](http-api.md#what-the-server-knows)).
 
 ## The command-line runner
 

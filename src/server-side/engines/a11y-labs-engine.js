@@ -30,20 +30,14 @@ const { normalizeOccurrenceDetails, shadowHostsOf, contextMatchNotices, collectM
 const core = require('@surea11y/core');
 const { ENGINE_TAG } = core;
 
-// The standards that are not core's own come as packs: EN 301 549
-// (@surea11y/pack-en301549). Every scan is
-// given them, and so is every catalog call, so a rule's title and mappings
-// read here are the ones the scan's results carry. A standard is in play
-// only under its profile (or its tag), so a WCAG scan names
+// The standards that are not core's own come as packs (EN 301 549's,
+// @surea11y/pack-en301549, and any other installed: standard-packs.js).
+// Every scan is given them, and so is every catalog call, so a rule's title
+// and mappings read here are the ones the scan's results carry. A standard
+// is in play only under its profile (or its tag), so a WCAG scan names
 // WCAG alone, and an EN 301 549 scan reports its clauses in place of WCAG's
 // criteria. A pack that is not installed is left out.
-const PACKS = ['@surea11y/pack-en301549'].map((name) => {
-    try {
-        return require(name);
-    } catch {
-        return null;
-    }
-}).filter(Boolean);
+const PACKS = require('../standard-packs').installedPacks();
 
 const withPacks = (opts) => (PACKS.length ? { ...(opts && typeof opts === 'object' ? opts : {}), packs: PACKS } : opts);
 const coreGetChecksCatalog = (opts) => core.getChecksCatalog(withPacks(opts));

@@ -47,17 +47,19 @@ test('with a core that has them, a criterion comes with its facets', (t) => {
     assert.ok(p.facets.some((f) => f.automation === 'manual' && f.procedure && f.procedure.steps.length));
 });
 
-test('EN 301 549\'s own requirements are read with its pack, in the version asked', () => {
+test('a standard\'s own requirements are read with its pack, in the version asked', () => {
     const seen = [];
     const core = { proceduresFor(id, options) { seen.push([id, options]); return { id }; } };
     const pack = { name: 'pack' };
-    const out = proceduresForRequirements('4.2.1,12.1,5', { standard: 'en301549', version: 'V4.1.1', core, en301549: pack });
+    const packFor = (key) => (key === 'en301549' || key === 'rgaa' ? pack : null);
+    const out = proceduresForRequirements('4.2.1,12.1,5', { standard: 'en301549', version: 'V4.1.1', core, packFor });
     assert.deepEqual(Object.keys(out.procedures).sort(), ['12.1', '4.2.1', '5']);
     assert.deepEqual(seen.find(([id]) => id === '5'), ['5', { locale: 'en', packs: [pack], standard: 'en301549', version: 'V4.1.1' }]);
-    assert.equal(proceduresForRequirements('5', { standard: 'en301549', version: 'V9', core, en301549: pack }).available, true);
-    assert.equal(seen[3][1].version, undefined, 'a version that is no version is left to the pack');
-    assert.deepEqual(proceduresForRequirements('5', { standard: 'en301549', core, en301549: null }), { available: false }, 'no pack');
-    assert.deepEqual(proceduresForRequirements('5', { standard: 'rgaa', core }), { available: false }, 'a standard the lab has no pack for');
+    assert.equal(proceduresForRequirements('5', { standard: 'en301549', version: '../x', core, packFor }).available, true);
+    assert.equal(seen[seen.length - 1][1].version, undefined, 'a version that is no version is left to the pack');
+    assert.deepEqual(proceduresForRequirements('1.1', { standard: 'rgaa', version: '4.1', core, packFor }).procedures, { '1.1': { id: '1.1' } }, 'any installed standard');
+    assert.deepEqual(proceduresForRequirements('5', { standard: 'bitv', core, packFor }), { available: false }, 'a standard with no pack installed');
+    assert.deepEqual(proceduresForRequirements('5', { standard: '../x', core, packFor }), { available: false }, 'no key');
 });
 
 test('with the pack and a core that reads it, every requirement of its own has procedures', (t) => {
