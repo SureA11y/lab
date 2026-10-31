@@ -26,7 +26,7 @@ const STORE = { 'wcag-a': 'criteria', 'wcag-aa': 'criteria', 'wcag-aaa': 'criter
 
 // The tables the review asks about: chapter 9's clauses are the WCAG
 // criteria, so of chapter 9 only its own requirements (9.6, 9.7) are asked.
-function reviewTables(acr) {
+export function reviewTables(acr) {
     return acr.tables.filter((t) => STORE[t.id])
         .map((t) => (t.id === 'en-9' ? { ...t, title: 'Chapter 9: Web, beyond the WCAG criteria', rows: t.rows.filter((r) => !r.wcag) } : t))
         .filter((t) => t.rows.length);
