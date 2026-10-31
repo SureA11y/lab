@@ -66,14 +66,21 @@ test('the guide is drawn in the standard\'s groups, with contents and counts', a
     assert.equal(out.requirements, 3);
     assert.equal(out.total, 3);
     assert.equal(out.checks, 4);
-    assert.match(out.html, /<h2 id="grp-1">1 Perceivable<\/h2>[\s\S]*<h3 id="grp-1-1">1\.1 Text Alternatives<\/h3>[\s\S]*<h4 id="reqh-1-1-1" tabindex="-1">1\.1\.1 Non-text Content<\/h4>/);
-    assert.match(out.html, /<h5 class="guide-facet-title">Label of alt-mechanism<\/h5>/);
-    assert.match(out.html, /Automated checks decide part of it[\s\S]*You need:<\/span> Tool devtools[\s\S]*<li>Step for alt-mechanism\.<\/li>[\s\S]*Fails:<\/span> alt-mechanism fails\./);
-    assert.doesNotMatch(out.html, /Facet:|Rules that test it/, 'technical details only when asked');
-    assert.match(out.toc, /<a href="#grp-1">1 Perceivable<\/a><ul><li><a href="#grp-1-1">/);
+    assert.match(out.html, /<h2 id="grp-1" class="guide-group-title">1 Perceivable<\/h2>[\s\S]*<h3 id="grp-1-1" class="guide-group-title">1\.1 Text Alternatives<\/h3>[\s\S]*<h4 id="reqh-1-1-1" tabindex="-1"><span class="guide-req-id">1\.1\.1<\/span> Non-text Content<\/h4>/);
+    assert.match(out.html, /Copy link<span class="visually-hidden"> to 1\.1\.1<\/span>/);
+    assert.match(out.html, /<span class="guide-pill guide-pill-level">Level A<\/span>/);
+    // A check: its title a heading whose button folds it, its badges, steps, and what passes and fails.
+    assert.match(out.html, /<h5 class="guide-facet-title"><button type="button" class="guide-toggle" aria-expanded="true" aria-controls="chk-1-1-1-alt-mechanism">[\s\S]*<span>Label of alt-mechanism<\/span><\/button><\/h5>/);
+    assert.match(out.html, /data-automation="partial">Partly automated<\/span><span class="guide-needs">Needs<\/span><span class="guide-badge guide-badge-tool" title="Tool devtools">/);
+    assert.match(out.html, /<div class="guide-check-body" id="chk-1-1-1-alt-mechanism"><ol class="guide-steps"><li>Step for alt-mechanism\.<\/li><\/ol>/);
+    assert.match(out.html, /<span aria-hidden="true">✓<\/span> Passes<\/p><p>alt-mechanism passes\.<\/p>[\s\S]*<span aria-hidden="true">✗<\/span> Fails<\/p><p>alt-mechanism fails\.<\/p>/);
+    assert.match(out.html, /data-automation="manual">A person judges</);
+    assert.match(out.html, /data-automation="full">Automated</);
+    assert.doesNotMatch(out.html, /guide-technical/, 'technical details only when asked');
+    assert.match(out.toc, /<a href="#grp-1" data-toc="grp-1"><span class="guide-toc-title">1 Perceivable<\/span> <span class="guide-toc-count">2<\/span><\/a><ul><li><a href="#grp-1-1"/);
 
     const details = renderGuide(LISTING, { ...all, details: true });
-    assert.match(details.html, /Facet:<\/span> <code>alt-mechanism<\/code>[\s\S]*Rules that test it:<\/span> <code>rule-alt-mechanism<\/code>[\s\S]*Also assesses:<\/span> Label of img-alt/);
+    assert.match(details.html, /Facet<\/span> <code>alt-mechanism<\/code>[\s\S]*Rules that test it<\/span> <code>rule-alt-mechanism<\/code>[\s\S]*Also assesses<\/span> Label of img-alt/);
 });
 
 test('filtered, it leaves out what nothing matches, groups too, and counts what is left', async () => {
@@ -94,8 +101,8 @@ test('a pack\'s standard with requirements no group names lists them after its g
     };
     const out = renderGuide(listing, all);
     assert.match(out.html, /Relates to WCAG 1\.4\.2/);
-    assert.match(out.html, /<h2 id="grp-rest">Other requirements<\/h2>[\s\S]*Restates WCAG 1\.1\.1/);
-    assert.match(out.html, /<h3 id="reqh-9-6" tabindex="-1">9\.6 WCAG conformance requirements<\/h3>/);
+    assert.match(out.html, /<h2 id="grp-rest" class="guide-group-title">Other requirements<\/h2>[\s\S]*Restates WCAG 1\.1\.1/);
+    assert.match(out.html, /<h3 id="reqh-9-6" tabindex="-1"><span class="guide-req-id">9\.6<\/span> WCAG conformance requirements<\/h3>/);
 });
 
 test('text is escaped', async () => {

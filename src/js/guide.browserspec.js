@@ -97,6 +97,7 @@ test('opened at a requirement, the guide shows it with its heading focused; filt
     assert.match(await statusOf(page), /^WCAG 2\.2, Level A and AA: \d+ criteria, \d+ checks\.$/);
     assert.match(await page.evaluate(() => document.activeElement.textContent.trim()), /^1\.4\.12 /);
 
+    await page.click('#guide-more > summary');
     await page.click('input[name="tool"][value="screen-reader"]');
     await settled(page, /of \d+ criteria shown/);
     assert.match(page.url(), /tools=screen-reader/);
@@ -117,6 +118,77 @@ test('opened at a AAA criterion, the guide adds the levels that show it', { skip
     assert.match(await page.evaluate(() => document.activeElement.textContent.trim()), /^1\.4\.6 /);
     assert.equal(await page.$eval('input[name="level"][value="AAA"]', (el) => el.checked), true);
     assert.deepEqual(errors, []);
+    await page.close();
+});
+
+test('checks fold one by one or all at once; the contents follow; a link is copied; filters clear', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
+    const { page, errors } = await open('/guide?standard=wcag&tools=keyboard');
+    await settled(page, /of \d+ criteria shown/);
+    const ctx = browser.defaultBrowserContext();
+    await ctx.overridePermissions(base, ['clipboard-read', 'clipboard-write']);
+
+    // One check folds, and unfolds.
+    const toggle = await page.$('.guide-toggle');
+    const bodyId = await toggle.evaluate((b) => b.getAttribute('aria-controls'));
+    await toggle.click();
+    assert.equal(await toggle.evaluate((b) => b.getAttribute('aria-expanded')), 'false');
+    assert.equal(await page.$eval(`#${bodyId}`, (el) => el.hidden), true);
+    await toggle.press('Enter');
+    assert.equal(await page.$eval(`#${bodyId}`, (el) => el.hidden), false);
+
+    // All of them, from the bar.
+    await page.click('#guide-collapse');
+    assert.equal(await page.$$eval('.guide-check-body:not([hidden])', (els) => els.length), 0);
+    assert.match(await page.$eval('#guide-announce', (el) => el.textContent), /collapsed/);
+    await page.click('#guide-expand');
+    assert.equal(await page.$$eval('.guide-check-body[hidden]', (els) => els.length), 0);
+
+    // The contents mark the part on screen.
+    // A part far enough from the end for the page to bring it to the top.
+    const part = await page.$$eval('.guide-toc a[data-toc]', (links) => {
+        const room = document.documentElement.scrollHeight - innerHeight;
+        const ok = links.map((a) => document.getElementById(a.dataset.toc)).filter((h) => h && h.getBoundingClientRect().top + scrollY > 200 && h.getBoundingClientRect().top + scrollY < room);
+        return ok.length ? ok[ok.length - 1].id : null;
+    });
+    assert.ok(part, 'a part to scroll to');
+    await page.$eval(`#${part}`, (h) => h.scrollIntoView({ block: 'start' }));
+    await page.waitForFunction((id) => document.querySelector(`.guide-toc a[data-toc="${id}"]`)?.getAttribute('aria-current') === 'location', { timeout: 5000 }, part);
+
+    // A requirement's link, copied, opens the guide at it.
+    const copy = await page.$('.guide-copy');
+    const id = await copy.evaluate((b) => b.dataset.copy);
+    await copy.click();
+    await page.waitForFunction(() => /copied|Copy this link/.test(document.getElementById('guide-announce').textContent), { timeout: 5000 });
+    const copied = await page.evaluate(() => navigator.clipboard.readText().catch(() => ''));
+    if (copied) assert.match(copied, new RegExp(`/guide\\?standard=wcag&version=2\\.2&id=${id.replace(/\./g, '\\.')}$`));
+
+    // The filters say how many are on, and clear.
+    assert.match(await page.$eval('#guide-more-count', (el) => el.textContent), /1 on/);
+    await page.click('#guide-clear');
+    await settled(page, /^WCAG 2\.2, Level A and AA: \d+ criteria, \d+ checks\.$/);
+    assert.doesNotMatch(page.url(), /tools=/);
+
+    // The colour theme, as the app keeps it.
+    const before = await page.$eval('[data-theme-toggle]', (b) => b.dataset.choice);
+    await page.click('[data-theme-toggle]');
+    const after = await page.$eval('[data-theme-toggle]', (b) => b.dataset.choice);
+    assert.notEqual(after, before);
+    assert.equal(await page.evaluate(() => localStorage.getItem('a11y-lab-theme')), after);
+    await page.evaluate(() => localStorage.removeItem('a11y-lab-theme'));
+    assert.deepEqual(errors, []);
+    await page.close();
+});
+
+test('on a phone, the contents fold away and come back', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 375, height: 800 });
+    await page.goto(base + '/guide', { waitUntil: 'networkidle0' });
+    await settled(page, /checks\./);
+    assert.equal(await page.$eval('#guide-toc-toggle', (b) => b.getAttribute('aria-expanded')), 'false');
+    assert.equal(await page.$eval('#guide-toc-list', (el) => getComputedStyle(el).display), 'none');
+    await page.click('#guide-toc-toggle');
+    assert.notEqual(await page.$eval('#guide-toc-list', (el) => getComputedStyle(el).display), 'none');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 375, 'nothing wider than the screen');
     await page.close();
 });
 

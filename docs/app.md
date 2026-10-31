@@ -172,17 +172,20 @@ an earlier one, so a new run keeps the verdicts of the last review.
 **Testing guide**, the book icon in the app's header, opens in a tab of its
 own: how a person checks each requirement of a standard by hand, from
 surea11y core's test procedures, where the installed core has them. Choose
-WCAG (2.2, 2.1 or 2.0, and the levels), EN 301 549 or another installed
-standard, or the best practices; each requirement comes in the standard's
-own groups, each of its checks with the steps, what passing and failing look
-like, what it takes, and how far automated checks go. Narrow it to the checks
-that need a screen reader, say, or to what only a person can judge, or search
-it; **Show technical details** adds the rules behind each check and the
-questions scans ask about single elements. The address keeps what is chosen,
-so a link can open the guide at one requirement
-(`/guide?standard=wcag&id=1.4.3`). **Save as a page** downloads the same, as
-one page to keep or print. It records nothing: results go in a report's
-Review conformance.
+WCAG (2.2, 2.1 or 2.0, and its levels), EN 301 549 or another installed
+standard, or the best practices, and search it. Each requirement is a card in
+the standard's own groups, with a link to it to copy; each of its checks says
+whether automated checks decide it, decide part of it, or leave it to a
+person, what it needs (a keyboard, a screen reader, zoom…), the steps, and
+what passing and failing look like. A check folds to its title, or all of
+them do (**Collapse all**), to see a requirement at a glance. **Filters**
+narrow the guide to the checks that need a screen reader, say, or to what
+only a person can judge, and add the technical details: the rules behind a
+check, and the questions scans ask about single elements. The contents beside
+it follow where you are. The address keeps what is chosen, so a link opens
+the guide at one requirement (`/guide?standard=wcag&id=1.4.3`). **Save as a
+page** downloads the same, as one page to keep or print; the colour theme is
+the app's. It records nothing: results go in a report's Review conformance.
 
 A finding's **View details** links to the guide too, above its own steps,
 which stay as they are: "The full method, in the testing guide", for each

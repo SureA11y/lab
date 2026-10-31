@@ -14,10 +14,30 @@ const TOOL_LABELS = {
     'devtools': 'The browser\'s developer tools',
 };
 
-const AUTOMATION_WORDS = {
-    full: 'Automated checks decide it',
-    partial: 'Automated checks decide part of it',
-    manual: 'Only a person can judge it',
+// Short names for the badges a check carries, with the tools' icons.
+const TOOL_SHORT = {
+    'keyboard': 'Keyboard',
+    'pointer': 'Pointer',
+    'screen-reader': 'Screen reader',
+    'zoom': 'Zoom',
+    'contrast-theme': 'Contrast theme',
+    'devtools': 'Developer tools',
+};
+
+const TOOL_ICONS = {
+    'keyboard': '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+    'pointer': '<path d="M5 3l14 8-6 2-2 6z"/>',
+    'screen-reader': '<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',
+    'zoom': '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M11 8v6M8 11h6"/>',
+    'contrast-theme': '<circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/>',
+    'devtools': '<path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/>',
+};
+
+// What automated checks do of a check, as its badge says it.
+const AUTOMATION_BADGE = {
+    full: 'Automated',
+    partial: 'Partly automated',
+    manual: 'A person judges',
 };
 
 const WCAG_VERSIONS = ['2.2', '2.1', '2.0'];
@@ -30,6 +50,13 @@ export function esc(v) {
 
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
 const idOf = (prefix, id) => `${prefix}-${String(id).replace(/[^A-Za-z0-9_-]/g, '-')}`;
+
+function toolIcon(id) {
+    const path = TOOL_ICONS[id];
+    return path
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${path}</svg>`
+        : '';
+}
 
 /** The guide's state from its address: { standard, version, levels, tools, automation, q, details, id, locale }. */
 export function stateFromQuery(search) {
@@ -88,55 +115,76 @@ function coveredBy(requirement, facet) {
     return (requirement.facets || []).filter((f) => f && f.coveredBy === facet.id);
 }
 
-function facetHTML(requirement, f, { details }) {
+function badgesHTML(f) {
+    const tools = (f.tools || []).filter((t) => t && t.id);
+    return `<p class="guide-badges">`
+        + `<span class="guide-badge guide-badge-auto" data-automation="${esc(f.automation || '')}">${esc(AUTOMATION_BADGE[f.automation] || '')}</span>`
+        + (tools.length
+            ? `<span class="guide-needs">Needs</span>` + tools.map((t) => `<span class="guide-badge guide-badge-tool" title="${esc(t.label || TOOL_LABELS[t.id] || '')}">${toolIcon(t.id)}${esc(TOOL_SHORT[t.id] || t.label || t.id)}</span>`).join('')
+            : '')
+        + `</p>`;
+}
+
+function facetHTML(requirement, f, { details, level }) {
     const p = f.procedure;
-    const tools = (f.tools || []).map((t) => (t && (t.label || TOOL_LABELS[t.id])) || '').filter(isText);
     const covered = coveredBy(requirement, f);
+    const bodyId = idOf('chk', `${requirement.id}-${f.id}`);
     const technical = details
         ? `<div class="guide-technical">`
-            + `<p><span class="guide-term">Facet:</span> <code>${esc(f.id)}</code></p>`
-            + ((f.rules || []).length ? `<p><span class="guide-term">Rules that test it:</span> ${f.rules.map((r) => `<code>${esc(r)}</code>`).join(', ')}</p>` : '')
-            + (covered.length ? `<p><span class="guide-term">Also assesses:</span> ${covered.map((c) => esc(c.label || c.id)).join('; ')}</p>` : '')
+            + `<p><span class="guide-term">Facet</span> <code>${esc(f.id)}</code></p>`
+            + ((f.rules || []).length ? `<p><span class="guide-term">Rules that test it</span> ${f.rules.map((r) => `<code>${esc(r)}</code>`).join(' ')}</p>` : '')
+            + (covered.length ? `<p><span class="guide-term">Also assesses</span> ${covered.map((c) => esc(c.label || c.id)).join('; ')}</p>` : '')
             + ((f.variants || []).length
                 ? `<details class="guide-variants"><summary>What scans ask about one element (${f.variants.length})</summary><ul>`
-                    + f.variants.map((v) => `<li><code>${esc(v.ruleId)}</code> <code>${esc(v.reasonCode)}</code>: ${esc((v.steps || []).join(' '))}</li>`).join('')
+                    + f.variants.map((v) => `<li><code>${esc(v.ruleId)}</code> <code>${esc(v.reasonCode)}</code> ${esc((v.steps || []).join(' '))}</li>`).join('')
                     + `</ul></details>`
                 : '')
             + `</div>`
         : '';
-    return `<li class="guide-facet">`
-        + `<h${requirement.facetLevel} class="guide-facet-title">${esc(f.label)}</h${requirement.facetLevel}>`
-        + `<p class="guide-automation">${esc(AUTOMATION_WORDS[f.automation] || '')}</p>`
-        + (tools.length ? `<p><span class="guide-term">You need:</span> ${esc(tools.join(', '))}</p>` : '')
+    return `<li class="guide-check">`
+        + `<div class="guide-check-head">`
+        + `<h${level} class="guide-facet-title"><button type="button" class="guide-toggle" aria-expanded="true" aria-controls="${esc(bodyId)}">`
+        + `<svg class="guide-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg>`
+        + `<span>${esc(f.label)}</span></button></h${level}>`
+        + badgesHTML(f)
+        + `</div>`
+        + `<div class="guide-check-body" id="${esc(bodyId)}">`
         + `<ol class="guide-steps">${(p.steps || []).filter(isText).map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`
-        + (isText(p.passWhen) ? `<p><span class="guide-term">Passes:</span> ${esc(p.passWhen)}</p>` : '')
-        + (isText(p.failWhen) ? `<p><span class="guide-term">Fails:</span> ${esc(p.failWhen)}</p>` : '')
+        + `<div class="guide-outcomes">`
+        + (isText(p.passWhen) ? `<div class="guide-outcome guide-pass"><p class="guide-outcome-head"><span aria-hidden="true">✓</span> Passes</p><p>${esc(p.passWhen)}</p></div>` : '')
+        + (isText(p.failWhen) ? `<div class="guide-outcome guide-fail"><p class="guide-outcome-head"><span aria-hidden="true">✗</span> Fails</p><p>${esc(p.failWhen)}</p></div>` : '')
+        + `</div>`
         + technical
+        + `</div>`
         + `</li>`;
 }
 
 function requirementHTML(r, facets, level, { details }) {
     const lvl = Math.min(level, 6);
     const relates = Array.isArray(r.relatesTo) && r.relatesTo.length ? r.relatesTo : [];
-    const meta = [
-        r.level ? `Level ${esc(r.level)}` : '',
-        r.wcag ? `Restates WCAG ${esc(r.wcag)}` : '',
-        relates.length ? `Relates to WCAG ${esc(relates.join(', '))}` : '',
-    ].filter(Boolean).join(' · ');
-    const name = `${r.id} ${r.title || ''}`;
+    const pills = [
+        r.level ? `<span class="guide-pill guide-pill-level">Level ${esc(r.level)}</span>` : '',
+        r.wcag ? `<span class="guide-pill">Restates WCAG ${esc(r.wcag)}</span>` : '',
+        relates.length ? `<span class="guide-pill">Relates to WCAG ${esc(relates.join(', '))}</span>` : '',
+    ].filter(Boolean).join('');
     const body = facets.length
-        ? `<ol class="guide-facets">${facets.map((f) => facetHTML({ ...r, facetLevel: Math.min(lvl + 1, 6) }, f, { details })).join('')}</ol>`
+        ? `<ol class="guide-checks">${facets.map((f) => facetHTML(r, f, { details, level: Math.min(lvl + 1, 6) })).join('')}</ol>`
         : `<p class="guide-none">No check of it matches what is chosen.</p>`;
     return `<section class="guide-req" id="${esc(idOf('req', r.id))}" aria-labelledby="${esc(idOf('reqh', r.id))}">`
-        + `<h${lvl} id="${esc(idOf('reqh', r.id))}" tabindex="-1">${esc(name.trim())}</h${lvl}>`
-        + (meta ? `<p class="guide-meta">${meta}</p>` : '')
+        + `<div class="guide-req-head">`
+        + `<h${lvl} id="${esc(idOf('reqh', r.id))}" tabindex="-1"><span class="guide-req-id">${esc(r.id)}</span> ${esc(r.title || '')}</h${lvl}>`
+        + `<button type="button" class="guide-copy" data-copy="${esc(r.id)}">`
+        + `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>`
+        + `Copy link<span class="visually-hidden"> to ${esc(r.id)}</span></button>`
+        + `</div>`
+        + (pills ? `<p class="guide-pills">${pills}</p>` : '')
         + body
         + `</section>`;
 }
 
 /**
  * The guide's content and contents for a listing and a state: { html, toc,
- * requirements, checks }, the counts of what is shown.
+ * requirements, total, checks }, the counts of what is shown.
  */
 export function renderGuide(listing, state) {
     const requirements = Array.isArray(listing && listing.requirements) ? listing.requirements : [];
@@ -160,29 +208,33 @@ export function renderGuide(listing, state) {
 
     const groupBlock = (g, depth) => {
         const level = 2 + depth;
+        const before = shownRequirements;
         const own = (g.requirements || []).map((id) => reqBlock(id, level + 1)).join('');
         const inner = (g.groups || []).map((sub) => groupBlock(sub, depth + 1));
         const html = own + inner.map((x) => x.html).join('');
         if (!html) return { html: '', toc: '' };
+        const count = shownRequirements - before;
         const gid = idOf('grp', g.id);
         const title = `${g.id} ${g.title || ''}`.trim();
         const tocInner = inner.map((x) => x.toc).filter(Boolean).join('');
         return {
-            html: `<section class="guide-group" aria-labelledby="${esc(gid)}"><h${Math.min(level, 6)} id="${esc(gid)}">${esc(title)}</h${Math.min(level, 6)}>${html}</section>`,
-            toc: `<li><a href="#${esc(gid)}">${esc(title)}</a>${tocInner ? `<ul>${tocInner}</ul>` : ''}</li>`,
+            html: `<section class="guide-group guide-group-${depth}" aria-labelledby="${esc(gid)}"><h${Math.min(level, 6)} id="${esc(gid)}" class="guide-group-title">${esc(title)}</h${Math.min(level, 6)}>${html}</section>`,
+            toc: `<li><a href="#${esc(gid)}" data-toc="${esc(gid)}"><span class="guide-toc-title">${esc(title)}</span> <span class="guide-toc-count">${count}</span></a>${tocInner ? `<ul>${tocInner}</ul>` : ''}</li>`,
         };
     };
 
     const groups = (listing && listing.groups) || [];
     const blocks = groups.map((g) => groupBlock(g, 0));
     // Requirements no group names, after the groups.
+    const before = shownRequirements;
     const rest = requirements.filter((r) => !placed.has(r.id)).map((r) => reqBlock(r.id, 3)).join('');
+    const restTitle = groups.length ? 'Other requirements' : 'Requirements';
     const restBlock = rest
-        ? `<section class="guide-group" aria-labelledby="grp-rest"><h2 id="grp-rest">${groups.length ? 'Other requirements' : 'Requirements'}</h2>${rest}</section>`
+        ? `<section class="guide-group guide-group-0" aria-labelledby="grp-rest"><h2 id="grp-rest" class="guide-group-title">${restTitle}</h2>${rest}</section>`
         : '';
     return {
         html: blocks.map((b) => b.html).join('') + restBlock,
-        toc: `<ul>${blocks.map((b) => b.toc).join('')}${rest ? `<li><a href="#grp-rest">${groups.length ? 'Other requirements' : 'Requirements'}</a></li>` : ''}</ul>`,
+        toc: `<ul>${blocks.map((b) => b.toc).join('')}${rest ? `<li><a href="#grp-rest" data-toc="grp-rest"><span class="guide-toc-title">${restTitle}</span> <span class="guide-toc-count">${shownRequirements - before}</span></a></li>` : ''}</ul>`,
         requirements: shownRequirements,
         total: requirements.length,
         checks: shownChecks,
@@ -207,17 +259,58 @@ async function getJSON(url) {
     }
 }
 
+// The colour theme, as the app's switch has it: Auto, Light, Dark, kept in
+// the same place, so the two pages agree.
+function initTheme() {
+    const KEY = 'a11y-lab-theme';
+    const ORDER = ['auto', 'light', 'dark'];
+    const LABELS = { auto: 'Auto', light: 'Light', dark: 'Dark' };
+    const btn = document.querySelector('[data-theme-toggle]');
+    let current = 'light';
+    try {
+        const stored = localStorage.getItem(KEY);
+        if (ORDER.includes(stored)) current = stored;
+    } catch {
+        // the default
+    }
+    const apply = () => {
+        if (current === 'auto') delete document.documentElement.dataset.theme;
+        else document.documentElement.dataset.theme = current;
+        if (btn) {
+            btn.dataset.choice = current;
+            btn.setAttribute('aria-label', `Colour theme: ${LABELS[current]}`);
+            btn.title = `Colour theme: ${LABELS[current]}`;
+        }
+    };
+    apply();
+    btn?.addEventListener('click', () => {
+        current = ORDER[(ORDER.indexOf(current) + 1) % ORDER.length];
+        try {
+            localStorage.setItem(KEY, current);
+        } catch {
+            // the choice still applies for this view
+        }
+        apply();
+    });
+}
+
 async function start() {
     const $ = (id) => document.getElementById(id);
     const form = $('guide-filters');
     const content = $('guide-content');
     const status = $('guide-status');
+    const announce = $('guide-announce');
     const tocList = $('guide-toc-list');
+    const tocToggle = $('guide-toc-toggle');
     const save = $('guide-save');
+    const more = $('guide-more');
+    const moreCount = $('guide-more-count');
     const state = stateFromQuery(location.search);
     let target = state.id;
     let widened = false;
     let listing = null;
+
+    initTheme();
 
     const standards = (await getJSON('/api/standards'))?.standards || [];
     const standardSelect = $('guide-standard');
@@ -230,12 +323,20 @@ async function start() {
     standardSelect.value = state.standard;
 
     $('guide-tools').insertAdjacentHTML('beforeend', Object.entries(TOOL_LABELS)
-        .map(([id, label]) => `<label><input type="checkbox" name="tool" value="${esc(id)}"${state.tools.includes(id) ? ' checked' : ''}> ${esc(label)}</label>`)
+        .map(([id, label]) => `<label class="guide-chip"><input type="checkbox" name="tool" value="${esc(id)}"${state.tools.includes(id) ? ' checked' : ''}><span>${toolIcon(id)}${esc(label)}</span></label>`)
         .join(''));
-    form.querySelector(`input[name="automation"][value="${state.automation}"]`).checked = true;
+    form.querySelector('input[name="automation"]').checked = state.automation === 'person';
     $('guide-search').value = state.q;
     $('guide-details').checked = state.details;
     for (const box of form.querySelectorAll('input[name="level"]')) box.checked = state.levels.includes(box.value);
+
+    // How many filters are on, on the Filters disclosure; open when any is.
+    const showFilters = () => {
+        const n = state.tools.length + (state.automation ? 1 : 0) + (state.details ? 1 : 0);
+        moreCount.textContent = n ? ` (${n} on)` : '';
+        $('guide-clear').hidden = !n;
+    };
+    if (state.tools.length || state.automation || state.details) more.open = true;
 
     // The versions of the chosen standard, the latest first; the levels for
     // WCAG alone.
@@ -259,15 +360,40 @@ async function start() {
         save.href = `/api/procedures/page?${page.toString()}`;
     };
 
+    // The contents link of the part of the guide on screen.
+    let tocLinks = [];
+    let tocTargets = [];
+    const markCurrent = () => {
+        let current = null;
+        for (const h of tocTargets) {
+            if (h.getBoundingClientRect().top <= 140) current = h.id;
+            else break;
+        }
+        for (const a of tocLinks) {
+            if (a.dataset.toc === current) a.setAttribute('aria-current', 'location');
+            else a.removeAttribute('aria-current');
+        }
+    };
+    let scrolling = false;
+    window.addEventListener('scroll', () => {
+        if (scrolling) return;
+        scrolling = true;
+        requestAnimationFrame(() => { scrolling = false; markCurrent(); });
+    }, { passive: true });
+
     const draw = () => {
         if (!listing) return;
         const out = renderGuide(listing, state);
-        content.innerHTML = out.html || '<p class="guide-none">Nothing matches what is chosen.</p>';
+        content.innerHTML = out.html || '<p class="guide-none guide-empty">Nothing matches what is chosen. Clear the filters or the search to see more.</p>';
         tocList.innerHTML = out.toc;
+        tocLinks = [...tocList.querySelectorAll('a[data-toc]')];
+        tocTargets = tocLinks.map((a) => document.getElementById(a.dataset.toc)).filter(Boolean);
+        markCurrent();
         const filtering = state.tools.length || state.automation || state.q.trim();
         const noun = state.standard === 'wcag' ? 'criteria' : 'requirements';
         status.textContent = `${standardName(state, standards)}${state.standard === 'wcag' ? `, Level ${state.levels.join(' and ')}` : ''}: `
             + (filtering ? `${out.requirements} of ${out.total} ${noun} shown, ${out.checks} checks.` : `${out.total} ${noun}, ${out.checks} checks.`);
+        showFilters();
         keepAddress();
         if (target) {
             const heading = document.getElementById(idOf('reqh', target));
@@ -290,14 +416,16 @@ async function start() {
 
     const load = async () => {
         status.textContent = 'Loading…';
+        content.setAttribute('aria-busy', 'true');
         const query = new URLSearchParams({ standard: state.standard });
         if (state.version) query.set('version', state.version);
         if (state.standard === 'wcag') query.set('levels', state.levels.join(','));
         if (state.locale) query.set('locale', state.locale);
         const body = await getJSON(`/api/procedures/list?${query.toString()}`);
+        content.removeAttribute('aria-busy');
         if (!body || !body.available) {
             listing = null;
-            content.innerHTML = '<p class="guide-none">The surea11y core the lab runs has no test procedures, so there is nothing to show.</p>';
+            content.innerHTML = '<p class="guide-none guide-empty">The surea11y core the lab runs has no test procedures, so there is nothing to show.</p>';
             tocList.innerHTML = '';
             status.textContent = 'No test procedures.';
             return;
@@ -316,7 +444,7 @@ async function start() {
             return;
         }
         if (el.name === 'tool') state.tools = [...form.querySelectorAll('input[name="tool"]:checked')].map((b) => b.value);
-        else if (el.name === 'automation') state.automation = el.value;
+        else if (el.name === 'automation') state.automation = el.checked ? 'person' : '';
         else if (el.name === 'details') state.details = el.checked;
         else return;
         draw();
@@ -339,6 +467,68 @@ async function start() {
         }
     });
     form.addEventListener('submit', (event) => event.preventDefault());
+
+    $('guide-clear').addEventListener('click', () => {
+        state.tools = [];
+        state.automation = '';
+        state.details = false;
+        for (const box of form.querySelectorAll('input[name="tool"], input[name="automation"], input[name="details"]')) box.checked = false;
+        draw();
+        more.querySelector('summary').focus();
+    });
+
+    // A check folds and unfolds; all of them at once from the bar above.
+    const setOpen = (button, open) => {
+        button.setAttribute('aria-expanded', String(open));
+        const body = document.getElementById(button.getAttribute('aria-controls'));
+        if (body) body.hidden = !open;
+    };
+    content.addEventListener('click', async (event) => {
+        const toggle = event.target.closest('.guide-toggle');
+        if (toggle) {
+            setOpen(toggle, toggle.getAttribute('aria-expanded') !== 'true');
+            return;
+        }
+        const copy = event.target.closest('.guide-copy');
+        if (copy) {
+            const link = new URL(location.pathname, location.href);
+            const q = new URLSearchParams({ standard: state.standard, ...(state.version ? { version: state.version } : {}), id: copy.dataset.copy });
+            link.search = q.toString();
+            let ok = false;
+            try {
+                await navigator.clipboard.writeText(link.href);
+                ok = true;
+            } catch {
+                ok = false;
+            }
+            announce.textContent = ok ? `Link to ${copy.dataset.copy} copied.` : `Copy this link: ${link.href}`;
+            copy.classList.toggle('is-copied', ok);
+            setTimeout(() => copy.classList.remove('is-copied'), 1500);
+        }
+    });
+    $('guide-expand').addEventListener('click', () => {
+        for (const b of content.querySelectorAll('.guide-toggle')) setOpen(b, true);
+        announce.textContent = 'Every check expanded.';
+    });
+    $('guide-collapse').addEventListener('click', () => {
+        for (const b of content.querySelectorAll('.guide-toggle')) setOpen(b, false);
+        announce.textContent = 'Every check collapsed to its title.';
+    });
+
+    // The contents fold away on a narrow screen, to come before the guide
+    // without pushing it down; on a wide one they stay beside it.
+    const narrow = window.matchMedia('(max-width: 760px)');
+    const setToc = (open) => {
+        tocToggle.setAttribute('aria-expanded', String(open));
+        tocToggle.textContent = open ? 'Hide' : 'Show';
+        tocList.classList.toggle('is-collapsed', !open);
+    };
+    setToc(!narrow.matches);
+    narrow.addEventListener?.('change', (e) => setToc(!e.matches));
+    tocToggle.addEventListener('click', () => setToc(tocToggle.getAttribute('aria-expanded') !== 'true'));
+    tocList.addEventListener('click', (event) => {
+        if (event.target.closest('a') && narrow.matches) setToc(false);
+    });
 
     fillVersions();
     await load();
