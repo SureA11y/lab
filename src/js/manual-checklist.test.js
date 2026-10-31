@@ -73,7 +73,7 @@ test('with EN 301 549\'s procedures, its own requirements follow the WCAG criter
         target: { ...ACR.target, en301549: 'V4.1.1' },
         tables: [
             ...ACR.tables,
-            { id: 'en-9', title: 'Chapter 9: Web', rows: [{ id: '9.2.1.1', name: 'Keyboard', draft: {} }] },
+            { id: 'en-9', title: 'Chapter 9: Web', rows: [{ id: '9.2.1.1', name: 'Keyboard', wcag: '2.1.1', draft: {} }, { id: '9.7', name: 'User preferences for web pages', draft: {} }] },
             { id: 'en-other', title: 'Chapters 5 to 8, 10, 11 and 13', rows: [{ id: '11', name: 'Chapter 11: Non-web software', draft: { remarks: 'For the author to answer.' } }] },
         ],
     };
@@ -86,12 +86,14 @@ test('with EN 301 549\'s procedures, its own requirements follow the WCAG criter
         review: { clauses: { '4.2.1': { facets: { 'whole-tasks': { result: 'pass', label: 'x' } } }, 'chapter-11': { conformance: 'notApplicable' } } },
         levelLabels: { notApplicable: 'Not Applicable' },
     });
-    assert.match(html, /3 criteria, and EN 301 549 V4\.1\.1&#39;s 2 requirements of its own \(its chapter 9 is the WCAG criteria\); 4 checks for a person\./);
+    assert.match(html, /3 criteria, and EN 301 549 V4\.1\.1&#39;s 3 requirements of its own \(its chapter 9 is the WCAG criteria\); 4 checks for a person\./);
     assert.match(html, /<h2 id="t-en-4">EN 301 549 V4\.1\.1, Chapter 4<\/h2>/);
     assert.match(html, /<h3 id="h-en-4-2-1">4\.2\.1 Usage without vision<\/h3>/);
     assert.match(html, /<h3 id="h-en-11">Chapter 11: Non-web software<\/h3>/);
     assert.match(html, /Draft:<\/span> For the author to answer\./);
     assert.match(html, /Recorded so far:<\/span> Not Applicable/, 'a chapter\'s verdict, kept under chapter-11');
     assert.match(html, /name="c-en-4-2-1-whole-tasks" value="pass" checked/);
-    assert.doesNotMatch(html, /Chapter 9: Web/, 'not twice');
+    assert.doesNotMatch(html, /9\.2\.1\.1/, 'a clause that is a WCAG criterion is not listed twice');
+    assert.match(html, /<h3 id="h-en-9-7">9\.7 User preferences for web pages<\/h3>/, 'chapter 9\'s own requirement is');
+    assert.match(html, /No procedure for this requirement yet\./, 'the test gives 9.7 none');
 });

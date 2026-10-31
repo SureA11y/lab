@@ -81,7 +81,7 @@ function criterionHTML(row, procedure, entry, levelLabels, { en = false } = {}) 
 
 // EN 301 549's own requirements, kept in the review as the dialog keeps them:
 // a chapter of its own under "chapter-5", the rest by number.
-const EN_OWN = ['en-4', 'en-12', 'en-other'];
+const EN_OWN = ['en-4', 'en-9', 'en-12', 'en-other'];
 const clauseKey = (table, row) => (table.id === 'en-other' ? `chapter-${row.id}` : row.id);
 
 /**
@@ -94,7 +94,10 @@ const clauseKey = (table, row) => (table.id === 'en-other' ? `chapter-${row.id}`
 export function buildManualChecklistHTML({ acr, procedures, enProcedures = null, review = null, levelLabels = {}, lang = 'en', title = '' }) {
     const all = acr && Array.isArray(acr.tables) ? acr.tables : [];
     const tables = all.filter((t) => /^wcag-/.test(t.id));
-    const enTables = enProcedures ? all.filter((t) => EN_OWN.includes(t.id)) : [];
+    // Of chapter 9, only its own requirements: its clauses are the WCAG criteria.
+    const enTables = enProcedures
+        ? all.filter((t) => EN_OWN.includes(t.id)).map((t) => ({ ...t, rows: t.rows.filter((r) => !r.wcag) })).filter((t) => t.rows.length)
+        : [];
     const criteria = review && review.criteria ? review.criteria : {};
     const clauses = review && review.clauses ? review.clauses : {};
     const product = acr && acr.product ? acr.product : {};

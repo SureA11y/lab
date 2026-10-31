@@ -74,7 +74,8 @@ describe('the conformance report\'s draft', () => {
         assert.deepEqual(acr.target, { wcagVersion: '2.2', level: 'AA', en301549: 'V4.1.1' });
         assert.equal(acr.totals.criteria, 55);
         const ch9 = acr.tables.find((t) => t.id === 'en-9').rows;
-        assert.equal(ch9.length, 55);
+        assert.equal(ch9.filter((r) => r.wcag).length, 55);
+        assert.deepEqual(ch9.filter((r) => !r.wcag).map((r) => r.id), ['9.6', '9.7'], 'then its own requirements');
         assert.equal(rowOf(acr, 'en-9', '9.1.1.1').conformance, 'doesNotSupport');
         assert.ok(!ch9.some((r) => r.id === '9.4.1.1'), '4.1.1 is not in WCAG 2.2');
     });
@@ -241,4 +242,18 @@ test('answers on EN 301 549\'s own rows are listed, and counted apart from WCAG\
     assert.deepEqual(rowOf(acr, 'en-other', '11').checks.map((c) => c.label), ['The product is software']);
     assert.deepEqual(acr.evaluation.manualChecks, { checks: 3, criteria: 1, enRequirements: 2 });
     assert.match(acr.evaluation.methodsText, /3 checks answered, on 1 WCAG criterion and 2 EN 301 549 requirements of its own, each listed under its row\.$/);
+});
+
+test('chapter 9 has its own requirements after its clauses: 9.6, and 9.7 from V4.1.1', () => {
+    const v4 = buildConformanceReport(report, { target: { wcagVersion: '2.2', en301549: 'V4.1.1' } });
+    const v3 = buildConformanceReport(report, { target: { wcagVersion: '2.1', en301549: 'V3.2.1' } });
+    const own = (acr) => acr.tables.find((t) => t.id === 'en-9').rows.filter((r) => !r.wcag).map((r) => `${r.id} ${r.name}`);
+    assert.deepEqual(own(v4), ['9.6 WCAG conformance requirements', '9.7 User preferences for web pages']);
+    assert.deepEqual(own(v3), ['9.6 WCAG conformance requirements']);
+    assert.equal(rowOf(v4, 'en-9', '9.6').draft.conformance, 'notEvaluated');
+    assert.equal(v4.tables.find((t) => t.id === 'en-12').title, 'Chapter 12: Information about Products and Services');
+    assert.equal(v3.tables.find((t) => t.id === 'en-12').title, 'Chapter 12: Documentation and Support Services');
+    const reviewed = buildConformanceReport({ ...report, conformanceReview: { clauses: { '9.7': { conformance: 'supports', facets: { colours: { result: 'pass', label: 'Colours' } } } } } });
+    assert.equal(rowOf(reviewed, 'en-9', '9.7').conformance, 'supports');
+    assert.equal(reviewed.evaluation.manualChecks.enRequirements, 1);
 });

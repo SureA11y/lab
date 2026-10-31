@@ -67,6 +67,17 @@
             ['12.5', 'Electronic program guide display'],
         ],
     };
+    // Chapter 9's own requirements, beyond the WCAG criteria its clauses
+    // restate: 9.6, WCAG's conformance requirements, and, from V4.1.1, 9.7.
+    const CHAPTER9_OWN = {
+        'V3.2.1': [['9.6', 'WCAG conformance requirements']],
+        'V4.1.1': [['9.6', 'WCAG conformance requirements'], ['9.7', 'User preferences for web pages']],
+    };
+    // Chapter 12's title, which V4.1.1 changed with its numbering.
+    const CHAPTER12_TITLE = {
+        'V3.2.1': 'Chapter 12: Documentation and Support Services',
+        'V4.1.1': 'Chapter 12: Information about Products and Services',
+    };
     // The chapters a web product's report usually answers in one line.
     const OTHER_CHAPTERS = {
         'V3.2.1': [
@@ -276,16 +287,17 @@
 
         const enTables = [
             { id: 'en-4', title: 'Chapter 4: Functional Performance Statements', standard: 'en301549', rows: FUNCTIONAL_PERFORMANCE.map(authorRow) },
-            { id: 'en-9', title: 'Chapter 9: Web', standard: 'en301549', rows: chapter9 },
-            { id: 'en-12', title: 'Chapter 12: Documentation and Support Services', standard: 'en301549', rows: (DOCUMENTATION[target.en301549] || DOCUMENTATION['V4.1.1']).map(authorRow) },
+            { id: 'en-9', title: 'Chapter 9: Web', standard: 'en301549', rows: [...chapter9, ...(CHAPTER9_OWN[target.en301549] || CHAPTER9_OWN['V4.1.1']).map(authorRow)] },
+            { id: 'en-12', title: CHAPTER12_TITLE[target.en301549] || CHAPTER12_TITLE['V4.1.1'], standard: 'en301549', rows: (DOCUMENTATION[target.en301549] || DOCUMENTATION['V4.1.1']).map(authorRow) },
             { id: 'en-other', title: 'Chapters 5 to 8, 10, 11 and 13', standard: 'en301549', rows: (OTHER_CHAPTERS[target.en301549] || OTHER_CHAPTERS['V4.1.1']).map(([id, name]) => row({ id, name: `Chapter ${id}: ${name}` }, { conformance: 'notEvaluated', remarks: 'For the author to answer: often Not Applicable for web content.' }, reviewedClauses[`chapter-${id}`])) },
         ];
 
         const product = (review && review.product) || {};
         const rows = [...wcagRows, ...enTables.flatMap((t) => t.rows)];
         const engine = engineOf(report);
-        // Chapter 9's rows are the WCAG criteria's, so they are not counted twice.
-        const enOwnRows = enTables.filter((t) => t.id !== 'en-9').flatMap((t) => t.rows);
+        // Chapter 9's clauses are the WCAG criteria's rows, so they are not
+        // counted twice; its own requirements (9.6, 9.7) are.
+        const enOwnRows = enTables.flatMap((t) => t.rows).filter((r) => !r.wcag);
         const manualChecks = {
             checks: [...wcagRows, ...enOwnRows].reduce((n, r) => n + r.checks.length, 0),
             criteria: wcagRows.filter((r) => r.checks.length).length,

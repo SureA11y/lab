@@ -193,7 +193,8 @@ test('with the pack\'s procedures: EN 301 549\'s own requirements are answered t
         const rows = [...sec.querySelectorAll('.acr-row')];
         return [sec.dataset.section, [rows.length, rows.filter((r) => r.querySelector('.how-assess')).length]];
     })));
-    for (const id of ['en-4', 'en-12', 'en-other']) assert.equal(counts[id][1], counts[id][0], `every row of ${id} says how to check it`);
+    for (const id of ['en-4', 'en-9', 'en-12', 'en-other']) assert.equal(counts[id][1], counts[id][0], `every row of ${id} says how to check it`);
+    assert.deepEqual(await page.$$eval('.acr-section[data-section="en-9"] .acr-row', (rows) => rows.map((r) => r.dataset.key)), ['9.6', '9.7'], 'of chapter 9, its own requirements only');
 
     const row = '.acr-row[data-key="chapter-11"]';
     await page.evaluate((sel) => {

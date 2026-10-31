@@ -63,7 +63,7 @@ test('EN 301 549\'s own requirements are read with its pack, in the version aske
 test('with the pack and a core that reads it, every requirement of its own has procedures', (t) => {
     const core = require('@surea11y/core');
     if (typeof core.proceduresFor !== 'function' || typeof core.listProcedures !== 'function') return t.skip('the installed core has no procedures of packs');
-    const ids = { 'V4.1.1': ['4.2.1', '4.2.11', '12.1', '12.5', '5', '11', '13'], 'V3.2.1': ['4.2.1', '12.1.1', '12.2.4', '6', '11', '13'] };
+    const ids = { 'V4.1.1': ['4.2.1', '4.2.11', '9.6', '9.7', '12.1', '12.5', '5', '11', '13'], 'V3.2.1': ['4.2.1', '9.6', '12.1.1', '12.2.4', '6', '11', '13'] };
     for (const [version, list] of Object.entries(ids)) {
         const out = proceduresForRequirements(list, { standard: 'en301549', version });
         if (!out.available) return t.skip('the EN 301 549 pack is not installed');

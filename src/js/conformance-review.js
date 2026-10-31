@@ -4,7 +4,8 @@
 //
 // What they record is the report's `conformanceReview`, saved in it as they
 // go, so it travels with every download of the report, the conformance report
-// included. Chapter 9 of EN 301 549 restates WCAG, so it is not asked twice.
+// included. Chapter 9 of EN 301 549 restates WCAG, so its clauses are not
+// asked twice; its own requirements (9.6, 9.7) are asked.
 // Each row can show how to check it by hand (procedures.js): a WCAG
 // criterion's from core, EN 301 549's own requirements' from its pack.
 
@@ -21,7 +22,15 @@ const FIELDS = [
 import { loadProcedures, reportLocale, buildHowToAssessHTML, answeredText, suggestFromAnswers } from './procedures.js';
 
 // Which part of the review a table's rows are kept in.
-const STORE = { 'wcag-a': 'criteria', 'wcag-aa': 'criteria', 'wcag-aaa': 'criteria', 'en-4': 'clauses', 'en-12': 'clauses', 'en-other': 'clauses' };
+const STORE = { 'wcag-a': 'criteria', 'wcag-aa': 'criteria', 'wcag-aaa': 'criteria', 'en-4': 'clauses', 'en-9': 'clauses', 'en-12': 'clauses', 'en-other': 'clauses' };
+
+// The tables the review asks about: chapter 9's clauses are the WCAG
+// criteria, so of chapter 9 only its own requirements (9.6, 9.7) are asked.
+function reviewTables(acr) {
+    return acr.tables.filter((t) => STORE[t.id])
+        .map((t) => (t.id === 'en-9' ? { ...t, title: 'Chapter 9: Web, beyond the WCAG criteria', rows: t.rows.filter((r) => !r.wcag) } : t))
+        .filter((t) => t.rows.length);
+}
 
 function esc(v) {
     return String(v == null ? '' : v)
@@ -105,7 +114,7 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
     // and the actions stay, so the status's new text is announced.
     const drawForm = () => {
         const acr = api.buildConformanceReport(payload);
-        const tables = acr.tables.filter((t) => STORE[t.id]);
+        const tables = reviewTables(acr);
         const product = review.product;
         const fields = FIELDS.map(([key, label, kind]) => {
             const value = key === 'reviewer' || key === 'methods' ? review[key] : product[key];
