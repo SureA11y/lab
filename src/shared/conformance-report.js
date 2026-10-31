@@ -347,12 +347,22 @@
             .filter((m) => m && m.standard === std.name && (!m.version || String(m.version) === std.version))
             .map((m) => String(m.requirement)));
         const byId = new Map(std.requirements.map((r) => [r.id, r]));
+        // A requirement's title where its listing has none: as the scans'
+        // findings name it.
+        const named = new Map();
+        for (const scan of asArray(report && report.scans)) {
+            for (const f of asArray(scan && scan.canonical && scan.canonical.findings)) {
+                for (const m of asArray(f && f.standards && f.standards.normativeMappings)) {
+                    if (m && m.standard === std.name && str(m.title) && !named.has(String(m.requirement))) named.set(String(m.requirement), str(m.title));
+                }
+            }
+        }
         const seen = new Set();
         const tables = [];
         const tableOf = (id, title, ids) => {
             const rows = ids.map((rid) => byId.get(rid)).filter((r) => r && !r.wcag && !seen.has(r.id)).map((r) => {
                 seen.add(r.id);
-                return row({ id: r.id, name: r.title || `Requirement ${r.id}` }, draftFor(null, evidence.get(r.id)), reviewedOf(r.id));
+                return row({ id: r.id, name: r.title || named.get(r.id) || `Requirement ${r.id}` }, draftFor(null, evidence.get(r.id)), reviewedOf(r.id));
             });
             if (rows.length) tables.push({ id: `std-${std.key}-${id}`.replace(/[^A-Za-z0-9_-]/g, '-'), title: `${std.name} ${std.version}: ${title}`, standard: std.key, version: std.version, rows });
         };
