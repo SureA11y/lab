@@ -216,6 +216,7 @@ async function start() {
     const save = $('guide-save');
     const state = stateFromQuery(location.search);
     let target = state.id;
+    let widened = false;
     let listing = null;
 
     const standards = (await getJSON('/api/standards'))?.standards || [];
@@ -270,6 +271,15 @@ async function start() {
         keepAddress();
         if (target) {
             const heading = document.getElementById(idOf('reqh', target));
+            // Opened at a criterion the levels chosen leave out (a link from
+            // a AAA finding): every level, so it is there.
+            if (!heading && state.standard === 'wcag' && state.levels.length < 3 && !widened) {
+                widened = true;
+                state.levels = ['A', 'AA', 'AAA'];
+                for (const box of form.querySelectorAll('input[name="level"]')) box.checked = true;
+                load();
+                return;
+            }
             target = '';
             if (heading) {
                 heading.scrollIntoView({ block: 'start' });

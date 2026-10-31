@@ -112,6 +112,15 @@ test('opened at a requirement, the guide shows it with its heading focused; filt
     await page.close();
 });
 
+test('opened at a AAA criterion, the guide adds the levels that show it', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
+    const { page, errors } = await open('/guide?standard=wcag&version=2.2&id=1.4.6');
+    await settled(page, /Level A and AA and AAA: /);
+    assert.equal(await page.evaluate(() => document.activeElement.textContent.trim()), '1.4.6 Contrast (Enhanced)');
+    assert.equal(await page.$eval('input[name="level"][value="AAA"]', (el) => el.checked), true);
+    assert.deepEqual(errors, []);
+    await page.close();
+});
+
 test('"Save as a page" gives core\'s page of the same procedures', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
     const { page } = await open('/guide?standard=wcag&levels=A');
     await settled(page, /checks\./);
@@ -191,8 +200,8 @@ test('every link from the demo reports\' findings into the guide lands on its re
         const list = await (await fetch(`${base}/api/procedures/list?standard=${q.get('standard')}&version=${q.get('version')}&levels=A,AA,AAA`)).json();
         assert.ok(list.listing.requirements.some((r) => String(r.id) === q.get('id')), `${label}: ${href}`);
     }
-    // And opened, the guide shows it with its heading focused: one of each standard.
-    for (const href of [...seen.keys()].filter((h, i, all) => all.findIndex((x) => new URL(x, base).searchParams.get('standard') === new URL(h, base).searchParams.get('standard')) === i)) {
+    // And opened, the guide shows each with its heading focused.
+    for (const href of seen.keys()) {
         const { page, errors } = await open(href);
         await settled(page, /checks\./);
         const id = new URL(href, base).searchParams.get('id');
