@@ -38,11 +38,12 @@ const PROCEDURES = {
 test('lists each WCAG criterion with what the scans found and the checks left for a person', async () => {
     const { buildManualChecklistHTML } = await load();
     const html = buildManualChecklistHTML({
-        acr: ACR, procedures: PROCEDURES, lang: 'fr',
+        acr: ACR, procedures: PROCEDURES,
         review: { criteria: { '2.1.1': { conformance: 'partiallySupports', remarks: 'The menu traps focus.', facets: { 'all-by-keyboard': 'fail' } } } },
         levelLabels: { partiallySupports: 'Partially Supports' },
     });
-    assert.match(html, /^<!doctype html>\n<html lang="fr">/);
+    assert.match(html, /^<!doctype html>\n<html lang="en">/);
+    assert.doesNotMatch(html, / lang="(?!en")/, 'procedures in English, as the page, are not marked');
     assert.match(html, /<title>Shop &lt;2&gt;: manual review checklist<\/title>/);
     assert.match(html, /WCAG 2\.2 Level AA: 3 criteria; 2 checks for a person\. Report of 2026-10-30\./);
     assert.match(html, /<h2 id="t-wcag-a">Table 1: Success Criteria, Level A<\/h2>/);
@@ -55,6 +56,44 @@ test('lists each WCAG criterion with what the scans found and the checks left fo
     assert.match(html, /\(automated checks decide part of it\)/);
     assert.match(html, /Automated checks decide:<\/span> Label of contrast-measured\./);
     assert.match(html, /No procedure for this criterion yet/);
+});
+
+test('the page is in English and each procedure says the language it was read in', async () => {
+    const { buildManualChecklistHTML } = await load();
+    const html = buildManualChecklistHTML({
+        acr: ACR,
+        procedures: {
+            ...PROCEDURES,
+            '2.1.1': { ...PROCEDURES['2.1.1'], locale: 'es' },
+        },
+        lang: 'fr',
+    });
+    assert.match(html, /^<!doctype html>\n<html lang="en">/, 'the page\'s own words are English');
+    assert.match(html, /<h1>Shop &lt;2&gt;: manual review checklist<\/h1>/);
+    // 2.1.1 says it was read in Spanish: its texts are marked so.
+    assert.match(html, /<strong lang="es">Label of all-by-keyboard<\/strong>/);
+    assert.match(html, /<span class="term">You need:<\/span> <span lang="es">A keyboard<\/span>/);
+    assert.match(html, /<ol class="steps" lang="es"><li>Step for all-by-keyboard\.<\/li><\/ol>/);
+    assert.match(html, /<span class="term">Passes:<\/span> <span lang="es">all-by-keyboard passes\.<\/span>/);
+    assert.match(html, /<span class="term">Fails:<\/span> <span lang="es">all-by-keyboard fails\.<\/span>/);
+    assert.match(html, /<legend><span class="visually-hidden"><span lang="es">Label of all-by-keyboard<\/span>: <\/span>Result<\/legend>/);
+    // 1.4.3 doesn't say: it takes the language the procedures were read in.
+    assert.match(html, /<strong lang="fr">Label of contrast-images<\/strong>/);
+    assert.match(html, /Automated checks decide:<\/span> <span lang="fr">Label of contrast-measured<\/span>\./);
+    // The page's own words around them stay unmarked.
+    assert.match(html, /<span class="term">What the scans found:<\/span> Automated checks found/);
+    assert.match(html, /value="pass"\/>Passes<\/label>/);
+});
+
+test('a pack\'s facet keeps the language its pack gives it', async () => {
+    const { buildManualChecklistHTML } = await load();
+    const own = facet('own', 'manual', { lang: 'de', procedureLang: 'ja' });
+    const html = buildManualChecklistHTML({
+        acr: ACR, procedures: { '2.1.1': { id: '2.1.1', locale: 'fr', facets: [own] } },
+    });
+    assert.match(html, /<strong lang="de">Label of own<\/strong>/, 'its label, in the pack\'s language');
+    assert.match(html, /<ol class="steps" lang="ja">/, 'its procedure, in the language the pack gives it');
+    assert.match(html, /<span class="term">You need:<\/span> <span lang="fr">A keyboard<\/span>/, 'core\'s tools, in the locale read');
 });
 
 test('the radio groups are named apart and labelled by their check', async () => {

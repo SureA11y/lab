@@ -67,9 +67,9 @@ const isText = (v) => typeof v === 'string' && v.trim() !== '';
 
 // The review's own words are English; a procedure's are in the language it
 // was read in, and say so where that differs (WCAG 3.1.2).
-const langAttr = (lang) => (isText(lang) && lang.toLowerCase() !== 'en' ? ` lang="${esc(lang)}"` : '');
+export const langAttr = (lang) => (isText(lang) && lang.toLowerCase() !== 'en' ? ` lang="${esc(lang)}"` : '');
 // Escaped text, in a span that says its language where that isn't the page's.
-const inLang = (lang, text) => (langAttr(lang) ? `<span${langAttr(lang)}>${esc(text)}</span>` : esc(text));
+export const inLang = (lang, text) => (langAttr(lang) ? `<span${langAttr(lang)}>${esc(text)}</span>` : esc(text));
 
 /**
  * A criterion's facets, as a person takes them: `forPerson`, those they check

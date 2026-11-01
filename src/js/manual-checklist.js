@@ -2,9 +2,11 @@
 // a report leaves for a person, criterion by criterion. For each WCAG
 // criterion of its target: what the scans found, the verdict recorded so far,
 // and the checks a person makes (core's procedures, procedures.js), each with
-// its steps, what passing and failing look like, and a result to tick.
+// its steps, what passing and failing look like, and a result to tick. The
+// page's own words are English; each procedure's text is marked with the
+// language it was read in (WCAG 3.1.2).
 
-import { splitFacets, ANSWERS, resultOf } from './procedures.js';
+import { splitFacets, ANSWERS, resultOf, langAttr, inLang } from './procedures.js';
 
 function esc(v) {
     return String(v == null ? '' : v)
@@ -42,8 +44,10 @@ input[type=radio] { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 }
 `;
 
-function checkHTML(f, criterion, answer) {
+function checkHTML(f, criterion, answer, lang = '') {
     const p = f.procedure;
+    const labelLang = f.lang || lang;
+    const textLang = f.procedureLang || f.lang || lang;
     const name = `c-${safeId(criterion)}-${safeId(f.id)}`;
     const tools = (Array.isArray(f.tools) ? f.tools : []).map((t) => t && t.label).filter(isText);
     const options = ANSWERS.filter(([value]) => value).map(([value, label]) => {
@@ -51,20 +55,22 @@ function checkHTML(f, criterion, answer) {
         return `<label for="${esc(id)}"><input type="radio" id="${esc(id)}" name="${esc(name)}" value="${value}"${answer === value ? ' checked' : ''}/>${esc(label)}</label>`;
     }).join('');
     return `<li class="check">`
-        + `<p><strong>${esc(f.label)}</strong>${f.automation === 'partial' ? ' (automated checks decide part of it)' : ''}</p>`
-        + (tools.length ? `<p class="meta"><span class="term">You need:</span> ${esc(tools.join(', '))}</p>` : '')
-        + `<ol class="steps">${p.steps.filter(isText).map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`
-        + (isText(p.passWhen) ? `<p><span class="term">Passes:</span> ${esc(p.passWhen)}</p>` : '')
-        + (isText(p.failWhen) ? `<p><span class="term">Fails:</span> ${esc(p.failWhen)}</p>` : '')
-        + `<fieldset><legend><span class="visually-hidden">${esc(f.label)}: </span>Result</legend>${options}</fieldset>`
+        + `<p><strong${langAttr(labelLang)}>${esc(f.label)}</strong>${f.automation === 'partial' ? ' (automated checks decide part of it)' : ''}</p>`
+        + (tools.length ? `<p class="meta"><span class="term">You need:</span> ${inLang(lang, tools.join(', '))}</p>` : '')
+        + `<ol class="steps"${langAttr(textLang)}>${p.steps.filter(isText).map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`
+        + (isText(p.passWhen) ? `<p><span class="term">Passes:</span> ${inLang(textLang, p.passWhen)}</p>` : '')
+        + (isText(p.failWhen) ? `<p><span class="term">Fails:</span> ${inLang(textLang, p.failWhen)}</p>` : '')
+        + `<fieldset><legend><span class="visually-hidden">${inLang(labelLang, f.label)}: </span>Result</legend>${options}</fieldset>`
         + `</li>`;
 }
 
 // A row of the checklist: a WCAG criterion, one of EN 301 549's own
 // requirements (`en`), whose draft is the author's to answer, not the scans',
 // or another standard's (`prefix`, its key), drafted from the scans.
-function criterionHTML(row, procedure, entry, levelLabels, { en = false, prefix = '' } = {}) {
+// `lang` is the language its procedure was read in, where it doesn't say.
+function criterionHTML(row, procedure, entry, levelLabels, { en = false, prefix = '', lang = '' } = {}) {
     const { forPerson, automatic } = splitFacets(procedure);
+    const readIn = procedure && isText(procedure.locale) ? procedure.locale : lang;
     const found = row.draft && isText(row.draft.remarks) ? row.draft.remarks : '';
     const verdict = entry && entry.conformance && levelLabels[entry.conformance] ? levelLabels[entry.conformance] : '';
     const ownStandard = en || !!prefix;
@@ -75,9 +81,9 @@ function criterionHTML(row, procedure, entry, levelLabels, { en = false, prefix 
         + (found ? `<p class="found"><span class="term">${en ? 'Draft' : 'What the scans found'}:</span> ${esc(found)}</p>` : '')
         + (verdict ? `<p class="verdict"><span class="term">Recorded so far:</span> ${esc(verdict)}${isText(entry.remarks) ? `. ${esc(entry.remarks)}` : ''}</p>` : '')
         + (forPerson.length
-            ? `<ol class="checks">${forPerson.map((f) => checkHTML(f, key, resultOf(entry && entry.facets, f.id))).join('')}</ol>`
+            ? `<ol class="checks">${forPerson.map((f) => checkHTML(f, key, resultOf(entry && entry.facets, f.id), readIn)).join('')}</ol>`
             : `<p class="meta">${procedure ? 'Automated checks decide this criterion in full.' : `No procedure for this ${ownStandard ? 'requirement' : 'criterion'} yet${ownStandard ? '' : ': check it against its Understanding document'}.`}</p>`)
-        + (automatic.length ? `<p class="automatic"><span class="term">Automated checks decide:</span> ${automatic.map((f) => esc(f.label)).join('; ')}.</p>` : '')
+        + (automatic.length ? `<p class="automatic"><span class="term">Automated checks decide:</span> ${automatic.map((f) => inLang(f.lang || readIn, f.label)).join('; ')}.</p>` : '')
         + `</section>`;
 }
 
@@ -94,7 +100,9 @@ const clauseKey = (table, row) => (table.id === 'en-other' ? `chapter-${row.id}`
  * report's scans checked against (`standardProcedures`, by standard and
  * version: { [key]: { [version]: { [id]: procedure } } }), and the review the
  * report holds. Chapter 9 of EN 301 549 is the WCAG criteria, so it is not
- * listed twice.
+ * listed twice. The page is in English; `lang` is the language the
+ * procedures were read in, for those that don't say (each says its `locale`
+ * where loadProcedures gave it).
  */
 export function buildManualChecklistHTML({ acr, procedures, enProcedures = null, standardProcedures = null, review = null, levelLabels = {}, lang = 'en', title = '' }) {
     const all = acr && Array.isArray(acr.tables) ? acr.tables : [];
@@ -122,19 +130,19 @@ export function buildManualChecklistHTML({ acr, procedures, enProcedures = null,
     const target = acr && acr.target ? `WCAG ${acr.target.wcagVersion} Level ${acr.target.level}` : 'WCAG';
     const en = acr && acr.target && acr.target.en301549 ? `EN 301 549 ${acr.target.en301549}` : 'EN 301 549';
     const body = tables.map((t) => `<section aria-labelledby="t-${esc(t.id)}"><h2 id="t-${esc(t.id)}">${esc(t.title)}</h2>`
-        + t.rows.map((r) => criterionHTML(r, procedures && procedures[r.id], criteria[r.id], levelLabels)).join('')
+        + t.rows.map((r) => criterionHTML(r, procedures && procedures[r.id], criteria[r.id], levelLabels, { lang })).join('')
         + `</section>`).join('')
         + enTables.map((t) => `<section aria-labelledby="t-${esc(t.id)}"><h2 id="t-${esc(t.id)}">${esc(en)}, ${esc(t.title)}</h2>`
-        + t.rows.map((r) => criterionHTML(r, enProcedures[r.id], clauses[clauseKey(t, r)], levelLabels, { en: true })).join('')
+        + t.rows.map((r) => criterionHTML(r, enProcedures[r.id], clauses[clauseKey(t, r)], levelLabels, { en: true, lang })).join('')
         + `</section>`).join('')
         + otherTables.map((t) => `<section aria-labelledby="t-${esc(t.id)}"><h2 id="t-${esc(t.id)}">${esc(t.title)}</h2>`
-        + t.rows.map((r) => criterionHTML(r, otherProcedures(t)[r.id], otherEntries(t)[r.id], levelLabels, { prefix: t.standard })).join('')
+        + t.rows.map((r) => criterionHTML(r, otherProcedures(t)[r.id], otherEntries(t)[r.id], levelLabels, { prefix: t.standard, lang })).join('')
         + `</section>`).join('');
     const others = [...new Set(otherTables.map((t) => t.title.split(':')[0]))];
     const counted = `${count} criteria${enCount ? `, and ${en}'s ${enCount} requirements of its own (its chapter 9 is the WCAG criteria)` : ''}`
         + (otherCount ? `, and ${otherCount} requirements of ${others.join(' and ')}` : '');
     return `<!doctype html>
-<html lang="${esc(lang)}">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
