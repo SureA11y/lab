@@ -42,7 +42,11 @@ The first public release.
   9.6, 9.7, chapters 5 to 8 and 10 to 13, and chapter 12), with Table B.2 of
   V4.1.1 for its clause 4.2 criteria. surea11y and its EN 301 549 pack give
   procedures only for what their rules evaluate; these complete a manual
-  audit of either standard. The lab does not show them yet.
+  audit of either standard. The testing guide shows them beside core's and
+  the pack's, so every requirement has its procedures. They are in English:
+  in another language, the guide marks them so and says how many texts it
+  shows in English, and a report reads the standard's procedures in
+  English.
 
 ### The runner and integrations
 

@@ -3,10 +3,12 @@
 // How a person assesses a requirement by hand: core's test procedures
 // (proceduresFor, its docs/PROCEDURES.md), for the app to show beside each
 // WCAG criterion, and, read with an installed standard's pack
-// (standard-packs.js), beside each of that standard's own requirements: EN
-// 301 549's chapter 4, chapter 12 and the other chapters, by number, say. A
-// core without them answers { available: false }, and the app shows what it
-// showed before.
+// (standard-packs.js), beside each of that standard's requirements. Core and
+// the packs give them for what their rules evaluate; the lab adds its own
+// for the rest (lab-procedures.js, src/procedures/): the WCAG criteria no
+// rule evaluates, and EN 301 549's chapter 4, chapter 12 and the other
+// chapters, by number, say. A core without them answers
+// { available: false }, and the app shows what it showed before.
 
 const MAX_IDS = 120;
 // A WCAG criterion (1.4.13), a clause (4.2.1, 12.1) or a chapter (5).
@@ -28,6 +30,14 @@ function load(name) {
     }
 }
 
+// Core with the lab's procedures for what no rule evaluates
+// (lab-procedures.js), loaded once; core as it is where it can't take them.
+let labCoreLoaded;
+function labCore() {
+    if (labCoreLoaded === undefined) labCoreLoaded = require('./lab-procedures').withLabProcedures(load('@surea11y/core'));
+    return labCoreLoaded;
+}
+
 /**
  * { available, locale, procedures: { [id]: procedure | null } } for `ids` (a
  * list, or a comma-separated string), in `locale` (English where it lacks a
@@ -37,7 +47,7 @@ function load(name) {
  * installed pack has none: { available: false }.
  */
 function proceduresForRequirements(ids, {
-    locale = 'en', standard = 'wcag', version = '', core = load('@surea11y/core'), packFor = defaultPackFor,
+    locale = 'en', standard = 'wcag', version = '', core = labCore(), packFor = defaultPackFor,
 } = {}) {
     if (!core || typeof core.proceduresFor !== 'function') return { available: false };
     const std = String(standard || 'wcag');
@@ -144,7 +154,7 @@ function listOptions({ standard = 'wcag', version = '', levels = '', tools = '',
  * without them; { available: true, listing: null } for a standard or
  * version it doesn't know.
  */
-function listStandardProcedures(query = {}, { core = load('@surea11y/core'), packFor = defaultPackFor } = {}) {
+function listStandardProcedures(query = {}, { core = labCore(), packFor = defaultPackFor } = {}) {
     if (!core || typeof core.listProcedures !== 'function') return { available: false };
     const options = listOptions(query, { packFor });
     if (!options) return { available: true, listing: null };
@@ -163,7 +173,7 @@ function listStandardProcedures(query = {}, { core = load('@surea11y/core'), pac
  * version it doesn't know. { available: false } from a core that doesn't
  * say, which reads the procedures in the locale asked for.
  */
-function standardLanguages(query = {}, { core = load('@surea11y/core'), packFor = defaultPackFor } = {}) {
+function standardLanguages(query = {}, { core = labCore(), packFor = defaultPackFor } = {}) {
     if (!core || typeof core.procedureLanguages !== 'function') return { available: false };
     const options = listOptions(query, { packFor });
     if (!options) return { available: true, languages: null };
@@ -175,7 +185,7 @@ function standardLanguages(query = {}, { core = load('@surea11y/core'), packFor 
  * The same procedures as one page to keep or print, core's renderProcedures'
  * reference (not its worksheet): { html, name } or null.
  */
-function renderStandardProcedures(query = {}, { core = load('@surea11y/core'), packFor = defaultPackFor } = {}) {
+function renderStandardProcedures(query = {}, { core = labCore(), packFor = defaultPackFor } = {}) {
     if (!core || typeof core.listProcedures !== 'function' || typeof core.renderProcedures !== 'function') return null;
     const options = listOptions(query, { packFor });
     if (!options) return null;
@@ -197,7 +207,7 @@ function renderStandardProcedures(query = {}, { core = load('@surea11y/core'), p
  * versions: { [version]: [requirement] } }] }, every level; the installed
  * packs' standards from `standards` (standard-packs.js installedStandards).
  */
-function guideIndex({ core = load('@surea11y/core'), standards = null } = {}) {
+function guideIndex({ core = labCore(), standards = null } = {}) {
     if (!core || typeof core.listProcedures !== 'function') return { available: false };
     const ids = (listing) => (listing && Array.isArray(listing.requirements) ? listing.requirements.map((r) => String(r.id)) : []);
     const wcag = {};

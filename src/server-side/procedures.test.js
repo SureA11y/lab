@@ -3,6 +3,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { proceduresForCriteria, proceduresForRequirements, listStandardProcedures, standardLanguages, completeLocale, MAX_IDS } = require('./procedures');
+const { withLabProcedures } = require('./lab-procedures');
 
 const fakeCore = (seen = []) => ({
     proceduresFor(id, { locale }) {
@@ -39,16 +40,22 @@ test('a criterion core fails on gives null, not an error', () => {
     assert.deepEqual(proceduresForCriteria('1.1.1', { core }).procedures, { '1.1.1': null });
 });
 
-// The procedures are core's and the packs': these take whatever they list,
-// so a change there (a requirement added, removed or reworded) is shown, not
-// a failure here.
-test('with a core that has them, each criterion it lists comes as core gives it', (t) => {
+// The procedures are core's and the packs', and the lab's for what no rule
+// evaluates (lab-procedures.js): these take whatever they list, so a change
+// there (a requirement added, removed or reworded) is shown, not a failure
+// here.
+test('with a core that has them, each criterion it lists comes as core gives it, with the lab\'s for what no rule evaluates', (t) => {
     const core = require('@surea11y/core');
     if (typeof core.proceduresFor !== 'function' || typeof core.listProcedures !== 'function') return t.skip('the installed core has no procedures');
+    const withLab = withLabProcedures(core);
     const ids = core.listProcedures({ levels: ['A', 'AA', 'AAA'] }).requirements.map((r) => String(r.id));
     assert.ok(ids.length > 0);
     const out = proceduresForCriteria(ids.slice(0, MAX_IDS));
-    for (const id of ids.slice(0, MAX_IDS)) assert.deepEqual(out.procedures[id], core.proceduresFor(id, { locale: 'en' }), id);
+    for (const id of ids.slice(0, MAX_IDS)) {
+        assert.deepEqual(out.procedures[id], withLab.proceduresFor(id, { locale: 'en' }), id);
+        // Where core reads the lab's procedures, every criterion has one.
+        if (withLab !== core) assert.equal(out.procedures[id].complete, true, id);
+    }
 });
 
 test('with the pack and a core that reads it, each requirement of its own the pack lists comes as core gives it', (t) => {
@@ -124,7 +131,7 @@ test('the languages of a standard are core\'s, its own first', () => {
     assert.deepEqual(asked, [{ standard: 'en301549', version: 'V4.1.1', packs: [{ standard: { key: 'en301549' } }] }]);
 });
 
-test('with a core that says, each language it gives reads the standard in it, and core marks a WCAG title it has no translation of as English', (t) => {
+test('with a core that says, each language it gives reads the standard in it, and core marks a WCAG text it has no translation of as English', (t) => {
     const core = require('@surea11y/core');
     if (typeof core.procedureLanguages !== 'function') return t.skip('the installed core does not say which languages it has');
     for (const version of ['2.0', '2.1', '2.2']) {
@@ -133,9 +140,12 @@ test('with a core that says, each language it gives reads the standard in it, an
         for (const l of languages) {
             const { listing } = listStandardProcedures({ standard: 'wcag', version, levels: 'A,AA,AAA', locale: l.locale });
             assert.equal(listing.locale, l.locale, `${version} ${l.locale}`);
-            // Core counts what is left in another language; the guide marks as
-            // many requirement and group titles of it.
-            const marked = listing.requirements.filter((r) => r.titleLang && r.titleLang !== l.locale).length;
+            // Core counts what is left in another language; the guide marks
+            // what holds it: a title, a facet's label or procedure, a tool.
+            const other = (lang) => !!lang && lang !== l.locale;
+            const marked = listing.requirements.reduce((n, r) => n + (other(r.titleLang) ? 1 : 0)
+                + r.facets.reduce((m, f) => m + (other(f.lang) ? 1 : 0) + (other(f.procedureLang) ? 1 : 0)
+                    + (f.tools || []).filter((x) => other(x.lang)).length, 0), 0);
             if (l.complete) assert.equal(marked, 0, `${version} ${l.locale}`);
             else assert.ok(marked > 0 && marked <= l.missing, `${version} ${l.locale}: ${marked} of ${l.missing}`);
         }

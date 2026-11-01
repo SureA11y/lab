@@ -98,8 +98,11 @@ test('WCAG and EN 301 549 give what they gave when recorded', async (t) => {
     for (const part of ['vpat', 'review', 'targets', 'profileOptions']) assert.deepEqual(now[part], record[part], part);
 });
 
+// The listing as the app reads it (/api/standards): core's, with the lab's
+// procedures for what no rule evaluates, EN 301 549's own requirements among
+// them (src/server-side/lab-procedures.js).
 test('built from its pack\'s listing, EN 301 549\'s own rows are what the pack lists, and the rest is as recorded', async (t) => {
-    const core = require('@surea11y/core');
+    const core = require('../server-side/lab-procedures.js').withLabProcedures(require('@surea11y/core'));
     const pack = (() => { try { return require('@surea11y/pack-en301549'); } catch { return null; } })();
     if (typeof core.listProcedures !== 'function' || !pack || !fs.existsSync(RECORD)) return t.skip('needs a core that lists procedures, the pack, and the record');
     const listings = {};

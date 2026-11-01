@@ -123,3 +123,47 @@ describe('EN 301 549', () => {
         }
     });
 });
+
+describe('EN 301 549, as a version gives it (en301549.js)', () => {
+    const { ownRequirements, groupsOf } = require('./en301549.js');
+
+    test('each version\'s own requirements, with their titles and facets', () => {
+        const v3 = ownRequirements('V3.2.1');
+        const v4 = ownRequirements('V4.1.1');
+        assert.equal(v3['4.2.1'].title, 'Usage without vision');
+        assert.equal(v3['6'].title, 'ICT with two-way voice communication');
+        assert.equal(v4['6'].title, 'ICT supporting real-time bidirectional communication');
+        assert.ok(v3['12.1.1'] && !v3['12.1'] && v4['12.1'] && !v4['12.1.1']);
+        assert.ok(!v3['9.7'] && v4['9.7']);
+        assert.match(v4['9.4.1.1'].note, /void in V4\.1\.1/);
+        assert.equal(v4['9.4.1.1'].facets, undefined);
+        assert.deepEqual(ownRequirements('V9'), {});
+    });
+
+    test('a related-clauses facet is filled in, and its criterion relates to WCAG', () => {
+        const v3 = ownRequirements('V3.2.1')['4.2.4'].facets[0];
+        const v4 = ownRequirements('V4.1.1')['4.2.4'].facets[0];
+        assert.equal(v3.id, 'related-clauses');
+        assert.equal(v3.label, 'The chapter 9 clauses that serve usage without hearing are met');
+        assert.match(v3.steps[0], /column WH, for 4\.2\.4/);
+        assert.match(v3.failWhen, /a video with no captions/);
+        assert.match(v4.failWhen, /a video with no subtitles/);
+        for (const text of [v4.label, ...v4.steps, v4.passWhen, v4.failWhen]) assert.ok(!/[{}]/.test(text), `no field left unfilled: ${text}`);
+        // V4.1.1: the WCAG criteria of the chapter 9 clauses Table B.2 marks P.
+        assert.ok(ownRequirements('V4.1.1')['4.2.2'].relatesTo.includes('1.4.3'));
+        // V3.2.1: those of the clauses its procedure names.
+        assert.deepEqual(ownRequirements('V3.2.1')['4.2.3'].relatesTo, ['1.3.3', '1.4.1']);
+        // 9.6 relates to the criteria its non-interference names.
+        assert.deepEqual(ownRequirements('V4.1.1')['9.6'].relatesTo, ['1.4.2', '2.1.2', '2.2.2', '2.3.1']);
+        assert.equal(ownRequirements('V3.2.1')['5'].relatesTo, undefined);
+    });
+
+    test('the groups put each requirement in its chapter, once', () => {
+        const groups = groupsOf({ 'V3.2.1': { ...ownRequirements('V3.2.1'), '9.1.1.1': { title: 'x' } } })['V3.2.1'];
+        assert.deepEqual(groups.map((g) => [g.id, g.title]).slice(0, 2), [['4', 'Functional performance'], ['5', 'Generic requirements']]);
+        const web = groups.find((g) => g.id === '9');
+        assert.deepEqual(web.groups.map((g) => g.id), ['9.1', '9.6']);
+        assert.deepEqual(web.groups[0].groups[0], { id: '9.1.1', title: 'Text alternatives', requirements: ['9.1.1.1'] });
+        assert.equal(groups.find((g) => g.id === '12').title, 'Documentation and support services');
+    });
+});

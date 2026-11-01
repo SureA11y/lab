@@ -128,12 +128,16 @@ function listingsOf(pack, std, core) {
     return out;
 }
 
+// Core with the lab's procedures for what no rule evaluates
+// (lab-procedures.js), so a standard's listings hold its every requirement.
 function loadCore() {
+    let core;
     try {
-        return require('@surea11y/core');
+        core = require('@surea11y/core');
     } catch {
         return null;
     }
+    return require('./lab-procedures').withLabProcedures(core);
 }
 
 /**
