@@ -1,0 +1,349 @@
+/* The app's styles, part 13 of 14: scan controls, toasts, the activity panel, missing and element pictures, and the dry run.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* Scan controls in the summary header line */
+.summary-header-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+.summary-controls { display: inline-flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.scan-sort { display: inline-flex; align-items: center; gap: var(--space-2); }
+.scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-mono); }
+#scan-sort-select {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    padding: 4px var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    cursor: pointer;
+}
+#scan-sort-select:hover { color: var(--text-main); }
+#scan-sort-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Toast notifications */
+.toast-region {
+    position: fixed;
+    bottom: var(--space-5);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: center;
+    pointer-events: none;
+}
+.toast {
+    pointer-events: auto;
+    background: var(--surface-5);
+    color: var(--text-main);
+    border: 1px solid var(--border-strong);
+    border-left-width: 3px;
+    border-radius: var(--radius-md);
+    padding: 10px 16px;
+    font-size: var(--fs-sm);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+    max-width: 90vw;
+}
+.toast--warning { border-left-color: var(--warn); }
+.toast--error { border-left-color: var(--danger); }
+.toast--success { border-left-color: var(--ok); }
+.toast--info { border-left-color: var(--accent); }
+
+/* The activity panel (src/js/activity.js, docs/design/activity-panel.md): actions
+   under way, top right, each a card listing its steps. Below dialogs, above
+   the page; at phone width a strip along the bottom. It starts below the
+   header's buttons (Activity, colour theme), which it must never cover. */
+.activity-panel {
+    position: fixed;
+    top: var(--space-16);
+    right: var(--space-4);
+    z-index: 900;
+    width: min(360px, 100vw - 2 * var(--space-4));
+    max-height: calc(100vh - var(--space-16) - var(--space-4));
+    overflow-y: auto;
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--fs-sm);
+}
+.activity-panel[hidden] { display: none; }
+.activity-panel__list { display: grid; gap: var(--space-2); }
+.activity-panel.is-tucked { width: auto; }
+.activity-panel.is-tucked .activity-panel__list { display: none; }
+.activity-panel__chip[hidden] { display: none; }
+
+.activity-card,
+.activity-panel__chip {
+    background: var(--surface-5);
+    color: var(--text-main);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+}
+.activity-card { min-width: 0; }
+.activity-card--done { border-left-color: var(--ok); }
+.activity-card--warning,
+.activity-card--waiting { border-left-color: var(--warn); }
+.activity-card--failed { border-left-color: var(--danger); }
+.activity-card--cancelled { border-left-color: var(--border-strong); }
+.activity-card.is-flashing { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The title and ✕ on one line; its state and time on the next, under the
+   title, so a long title keeps its width. */
+.activity-card__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--space-1);
+    padding: var(--space-1) var(--space-1) var(--space-1) var(--space-2);
+}
+.activity-card__heading { min-width: 0; margin: 0; font: inherit; }
+.activity-card__meta {
+    grid-column: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    /* Under the title's text, past its icon. */
+    padding-left: calc(var(--space-2) + 16px + var(--space-2));
+}
+.activity-card.is-collapsed .activity-card__meta:empty { display: none; }
+
+button.activity-plain {
+    min-height: 32px;
+    padding: 0 var(--space-2);
+    border: 1px solid transparent;
+    background: transparent;
+    color: inherit;
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+}
+button.activity-plain:hover:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-3);
+    border-color: var(--border-strong);
+}
+button.activity-plain:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
+
+.activity-card__toggle {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    font-weight: 600;
+}
+.activity-card__title { min-width: 0; overflow-wrap: break-word; }
+.activity-card__state { flex: none; color: var(--text-muted); font-size: var(--fs-xs); }
+.activity-card__time,
+.activity-step__time {
+    flex: none;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+}
+button.activity-card__close { flex: none; width: 32px; padding: 0; }
+
+.activity-card__body { padding: 0 var(--space-3) var(--space-2) var(--space-3); }
+.activity-card__body[hidden] { display: none; }
+
+.activity-icon { display: inline-flex; flex: none; line-height: 0; }
+.activity-icon svg { width: 16px; height: 16px; }
+.activity-card--running > .activity-card__head .activity-card__icon,
+.activity-step--running .activity-step__icon { color: var(--accent); }
+.activity-card--running > .activity-card__head .activity-card__icon svg,
+.activity-step--running .activity-step__icon svg { animation: spin .9s linear infinite; }
+.activity-card--done .activity-card__icon,
+.activity-step--done .activity-step__icon { color: var(--ok); }
+.activity-card--warning .activity-card__icon,
+.activity-card--waiting .activity-card__icon,
+.activity-step--warning .activity-step__icon,
+.activity-step--waiting .activity-step__icon { color: var(--warn); }
+.activity-card--failed .activity-card__icon,
+.activity-step--failed .activity-step__icon { color: var(--danger); }
+.activity-card--cancelled .activity-card__icon,
+.activity-step--cancelled .activity-step__icon { color: var(--text-muted); }
+
+.activity-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.activity-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    column-gap: var(--space-2);
+    align-items: baseline;
+    padding: 2px 0;
+}
+.activity-step__icon { align-self: center; grid-row: 1 / span 2; }
+.activity-step__label { min-width: 0; overflow-wrap: anywhere; }
+.activity-step__time { grid-column: 3; grid-row: 1; }
+.activity-step__detail {
+    grid-column: 2 / span 2;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    overflow-wrap: anywhere;
+}
+.activity-step--done .activity-step__label { color: var(--text-muted); }
+
+.activity-card__question { margin-top: var(--space-2); }
+.activity-card__question[hidden] { display: none; }
+.activity-card__question-text { margin: 0 0 var(--space-2); white-space: pre-line; }
+.activity-card__choices,
+.activity-card__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.activity-card__actions { margin-top: var(--space-2); }
+.activity-card__actions[hidden] { display: none; }
+.activity-card__result { margin: var(--space-2) 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.activity-card__result[hidden] { display: none; }
+
+.activity-panel button.activity-panel__chip {
+    padding: 0 var(--space-3);
+    font-weight: 600;
+    justify-self: end;
+    background: var(--surface-5);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--accent);
+}
+
+/* The Activity button, beside the colour-theme switch. */
+button.activity-button {
+    position: absolute;
+    top: -20px;
+    right: 44px;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-3);
+}
+button.activity-button:hover:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-4);
+    border-color: var(--accent-border);
+}
+.activity-button__icon { display: inline-flex; line-height: 0; }
+.activity-button__count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: var(--surface-0);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xxs);
+    line-height: 18px;
+    text-align: center;
+}
+.activity-button__count[hidden] { display: none; }
+
+/* Opened from the Activity button: every action of the page, under a title,
+   on a surface of its own. */
+.activity-panel.is-all {
+    padding: var(--space-3);
+    background: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-overlay);
+}
+.activity-panel__header[hidden] { display: none; }
+.activity-panel__title { margin: 0; font-size: var(--fs-lg); }
+.activity-panel__title:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+.activity-panel__note,
+.activity-panel__empty { margin: 2px 0 0; color: var(--text-muted); font-size: var(--fs-xs); }
+.activity-panel__empty[hidden] { display: none; }
+.activity-card__close[hidden] { display: none; }
+/* A finished action folded in that list is one line: its title, cut short
+   if need be, then when it started and how long it took, then ✕. */
+.activity-panel.is-all .activity-card.is-collapsed .activity-card__head {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.activity-panel.is-all .activity-card.is-collapsed .activity-card__heading { grid-row: 1; grid-column: 1; }
+.activity-panel.is-all .activity-card.is-collapsed .activity-card__meta { grid-row: 1; grid-column: 2; padding-left: 0; }
+.activity-panel.is-all .activity-card.is-collapsed .activity-card__close { grid-row: 1; grid-column: 3; }
+.activity-panel.is-all .activity-card.is-collapsed .activity-card__title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+    .activity-panel {
+        top: auto;
+        bottom: var(--space-2);
+        left: var(--space-2);
+        right: var(--space-2);
+        width: auto;
+        max-height: 50vh;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .activity-card--running > .activity-card__head .activity-card__icon svg,
+    .activity-step--running .activity-step__icon svg { animation: none; }
+}
+
+@media (forced-colors: active) {
+    .activity-card,
+    .activity-panel__chip { border-left-width: 3px; border-left-color: CanvasText; }
+    .activity-card.is-flashing { outline-color: Highlight; }
+    .activity-button__count { forced-color-adjust: none; background: Highlight; color: HighlightText; }
+}
+
+/* A picture a report names that cannot be shown, saying why (missing-pictures.js). */
+.picture-missing { margin: var(--space-2) 0; padding: var(--space-2) var(--space-3); border: 1px dashed var(--border-soft); border-radius: var(--radius-sm); color: var(--text-muted); font-size: var(--fs-sm); }
+
+/* A picture of the flagged element, beside its occurrence. */
+.node-screenshot {
+    margin: 0.5rem 0;
+}
+
+.node-screenshot img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #c4c4c4;
+    background: #fff;
+}
+
+.node-screenshot figcaption {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* The app's Dry run: how each step went, after a run that took every step
+   but the scans. */
+.dry-run-report {
+    margin: 1rem 0;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius-md);
+}
+.dry-run-report h2 { margin-top: 0; }
+.dry-run-verdict { font-weight: 600; }
+.dry-run-verdict.fits { color: var(--ok); }
+.dry-run-verdict.does-not-fit { color: var(--warn); }
+.dry-run-steps { list-style: none; padding: 0; margin: 0 0 0.75rem; }
+.dry-run-steps > li { padding: 0.35rem 0; border-top: 1px solid var(--border-subtle); }
+.dry-run-steps > li:first-child { border-top: 0; }
+.dry-run-status {
+    display: inline-block;
+    min-width: 7.5rem;
+    font-weight: 600;
+}
+.dry-run-status-failed { color: var(--danger); }
+.dry-run-status-failed-optional { color: var(--warn); }
+.dry-run-status-not-run,
+.dry-run-status-off { color: var(--text-muted); }
+.dry-run-number { display: inline-block; min-width: 2.5rem; font-variant-numeric: tabular-nums; }
+.dry-run-reason { color: var(--text-muted); }
+.dry-run-notes { margin: 0.25rem 0 0 10rem; padding: 0; list-style: none; color: var(--warn); }
+@media (max-width: 40rem) {
+    .dry-run-status { min-width: 0; margin-right: 0.5rem; }
+    .dry-run-notes { margin-left: 0; }
+}

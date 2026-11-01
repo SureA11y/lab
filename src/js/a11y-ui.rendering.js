@@ -3,6 +3,7 @@
 /**
  * Rendering helpers for a11y-ui.
  */
+import {occurrencePagesHtml} from './occurrence-pages.js';
 import {generateA11yMetricsContents} from './a11y-metrics-renderer.js';
 import {iconButton, scanTagChipsHtml} from './a11y-ui.utils.js';
 import {buildTagsInputControl} from './tags-input.js';
@@ -11,11 +12,12 @@ import {summarizeTopic, topicBadgeText} from './coverage-topics.js';
 import {isFailureFreeScan} from './scan-failures.js';
 import {optInRulesLabel} from './report-fields.js';
 import {registerLazyBody} from './lazy-dialogs.js';
+import {guideRefHtml} from './procedures.js';
 import {
     normalizeGroupingSpec, isValidGroupingSpecShape, groupIssuesBySpec, NOT_IN_WCAG_GROUP, OTHERS_GROUP
 } from './grouping-spec.js';
 import {formatMarginLimit, formatMarginRoom, formatMarginValue, isNearMiss, scanMargins} from './margins.js';
-import {collectEngineOptions} from './engine-filter.js';
+import {collectEngineOptions} from './report-engines.js';
 
 // The standard a scan checked against, or null for plain WCAG, read the same
 // way from every report, old or new (shared/report-scan.js).
@@ -255,6 +257,44 @@ export function createRenderer({
             .join(' ');
     }
 
+    // The requirements a finding names of any other standard: one from a
+    // pack (RGAA, BITV, or the sample's), as its normativeMappings give them,
+    // grouped by standard and requirement with the versions named. WCAG's and
+    // EN 301 549's have pills of their own; an older report's RGAA criteria
+    // (`rgaa`) too, so its mappings are not shown twice.
+    function otherStandardsOf(f) {
+        const legacyRgaa = Array.isArray(f?.rgaa) && f.rgaa.length > 0;
+        const byKey = new Map();
+        const mappings = Array.isArray(f?.standards?.normativeMappings) ? f.standards.normativeMappings : [];
+        for (const m of mappings) {
+            const standard = typeof m?.standard === 'string' ? m.standard.trim() : '';
+            if (!standard || !m.requirement || standard === 'WCAG' || standard === 'EN 301 549') continue;
+            if (standard === 'RGAA' && legacyRgaa) continue;
+            const requirement = String(m.requirement);
+            const key = standard + '|' + requirement;
+            const entry = byKey.get(key) || {standard, requirement, title: m.title || '', versions: [], wcagSc: []};
+            if (m.version && !entry.versions.includes(String(m.version))) entry.versions.push(String(m.version));
+            for (const sc of Array.isArray(m.wcagSc) ? m.wcagSc : []) {
+                if (!entry.wcagSc.includes(String(sc))) entry.wcagSc.push(String(sc));
+            }
+            byKey.set(key, entry);
+        }
+        const num = (a, b) => a.localeCompare(b, undefined, {numeric: true});
+        return [...byKey.values()].sort((a, b) => num(a.standard, b.standard) || num(a.requirement, b.requirement));
+    }
+
+    // "Sample Standard 3": a pill per requirement, named by its standard as
+    // every pill is; the version only where a finding names the requirement
+    // in more than one.
+    function otherStandardPillsHtml(entries) {
+        return (Array.isArray(entries) ? entries : [])
+            .flatMap((e) => (e.versions.length > 1
+                ? e.versions.map((v) => e.standard + ' ' + e.requirement + ' (' + v + ')')
+                : [e.standard + ' ' + e.requirement]))
+            .map((text) => '<span class="tag-pill">' + escapeHtml(text) + '</span>')
+            .join(' ');
+    }
+
     // Which EN 301 549 clauses a scan's results should name, given the
     // standard the scan checked against:
     //  - an EN 301 549 version: only the clauses that version has, without
@@ -296,6 +336,7 @@ export function createRenderer({
         return [
             groupedTags.map((t) => '<span class="tag-pill">WCAG ' + escapeHtml(t) + '</span>').join(' '),
             en301549PillsHtml(v?.EN),
+            otherStandardPillsHtml(v?.STANDARDS),
             rgaaPillsHtml(v?.RGAA)
         ].filter(Boolean).join(' ');
     }
@@ -410,6 +451,7 @@ export function createRenderer({
             SC: Array.isArray(f?.wcag?.sc) ? [...new Set(f.wcag.sc.map(String).filter(Boolean))] : [],
             EN: en301549ForTarget(en301549ClausesOf(f), targetId),
             RGAA: Array.isArray(f?.rgaa) ? f.rgaa : [],
+            STANDARDS: otherStandardsOf(f),
             engine: f?.provenance?.engine || {},
             reviewHints: {
                 isComposite: (f?.meta?.atomic === false) || checksIds.length > 0 || contributors.length > 0,
@@ -698,22 +740,24 @@ export function createRenderer({
                 const rawHtml = (n.html || '').replace(/\s+/g, ' ').trim();
                 const shortHtml = rawHtml.length > 250 ? rawHtml.slice(0, 247) + '…' : rawHtml;
                 const failure = (n.failureSummary || '').trim();
-                const urls = [...new Set((Array.isArray(n.urls) ? n.urls : []))].map(url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`).join(', ');
+                // Where it was found: under the heading, never in it, short
+                // whatever the addresses are like (occurrence-pages.js).
+                const pages = occurrencePagesHtml(n.urls);
                 const instanceLabel = type === 'fail' ? 'Occurrence' : 'Instance';
                 const inContexts = contextsLabel(n);
 
                 const selectorPart = selector
                     ? '<div class="example-node-header">' +
                     '<h2>' + instanceLabel + ' ' + (nodeIndex + 1) +
-                    (urls?.length ? ' <span>URLs: ' + urls + '</span>' : '') +
                     (inContexts ? ' <span class="node-contexts">' + escapeHtml(inContexts) + '</span>' : '') +
                     (n.lean ? ' ' + leanBadgeHtml(reviewGroupOfNode(n)) : '') + '</h2>' +
+                    pages +
                     '<code hidden="hidden">' + escapeHtml(selector) + '</code>' +
                     '</div>'
                     : '<div class="example-node-header"><h2>Instance ' +
                     (nodeIndex + 1) +
                     (inContexts ? ' <span class="node-contexts">' + escapeHtml(inContexts) + '</span>' : '') +
-                    '</h2><code>(no target selector)</code></div>';
+                    '</h2>' + pages + '<code>(no target selector)</code></div>';
 
                 const htmlPart = shortHtml
                     ? '<div class="example-node-code"><div class="example-node-html"><code>' + escapeHtml(shortHtml) + '</code><button type="button" class="copy-selector-btn" data-selector="' + escapeAttr(selector) + '">Copy selector</button></div></div>'
@@ -915,6 +959,7 @@ export function createRenderer({
                 '<button type="button" class="src-dialog-close" aria-label="Close dialog">Close</button>' +
                 '</div>' +
                 '<div class="src-dialog-body">' +
+                guideRefHtml(issue) +
                 buildReviewHintsBodyHtml(hints) +
                 '</div>' +
                 '<div class="src-dialog-footer">' +
@@ -933,7 +978,9 @@ export function createRenderer({
         // The occurrences are drawn when the dialog is first opened
         // (lazy-dialogs.js): drawn here, for every finding of every scan, they
         // were most of a large report's page.
-        const lazyBodyId = registerLazyBody(() => buildInstancesListHtml(nodes, type));
+        // Its own "How to check" stays as it is; a link into the testing
+        // guide, where the guide has its requirements, comes first.
+        const lazyBodyId = registerLazyBody(() => guideRefHtml(issue) + buildInstancesListHtml(nodes, type));
 
         const instanceLabel = type === 'fail' ? 'occurrence' : 'instance';
         // Each part is kept on one line; a narrow column wraps between them.
@@ -1074,8 +1121,8 @@ export function createRenderer({
     // ---------------------------------------------------------------------
 
     // Whether the results tables have an Engine column: only for a report
-    // more than one engine ran (the more-engines add-on), as with surea11y
-    // alone every row would say the same. Set for the whole report before it
+    // saved with findings of more than one engine, by an earlier lab; with
+    // surea11y alone every row would say the same. Set for the whole report before it
     // is drawn (setReportEngines), so all its tables have the same columns.
     let showEngineColumn = false;
 

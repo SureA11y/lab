@@ -13,8 +13,8 @@
  *   - makeFindingUid, makeOccurrenceUid
  *   - splitWcagTagToRef, deriveWcagLevelFromTags, tagsToStandards
  *
- * An engine's own results are turned into this format by its adapter (for
- * one engine, src/server-side/axe-to-canonical.js).
+ * surea11y's own results are turned into this format by its adapter
+ * (src/server-side/engines/a11y-labs-engine.js).
  */
 
 (function (root, factory) {

@@ -42,6 +42,8 @@ person still has to check.
 
 Every failure shows the element it is about, with its HTML and a
 screenshot of it, and, where a person has to look, how to check it by hand.
+How far to trust what it finds, and what it cannot find:
+[How far to trust it](../README.md#how-far-to-trust-it).
 
 ## 4. A workflow of your own
 

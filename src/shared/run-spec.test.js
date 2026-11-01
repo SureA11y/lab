@@ -131,6 +131,7 @@ describe('buildRunSpec', () => {
             colorScheme: null,
             highContrast: false,
             language: null,
+            acceptUntrustedCerts: false,
             scenarioName: 'Checkout',
         });
     });
@@ -151,8 +152,19 @@ describe('normalizeRunSpec', () => {
             colorScheme: null,
             highContrast: false,
             language: null,
+            acceptUntrustedCerts: false,
             scenarioName: null,
         });
+    });
+
+    test('accepts untrusted certificates only when the spec says so, refusing what is not a setting', () => {
+        assert.equal(normalize(specWith()).spec.acceptUntrustedCerts, false);
+        assert.equal(normalize(specWith({ acceptUntrustedCerts: true })).spec.acceptUntrustedCerts, true);
+        assert.equal(normalize(specWith({ acceptUntrustedCerts: 'on' })).spec.acceptUntrustedCerts, true);
+        assert.equal(normalize(specWith({ acceptUntrustedCerts: false })).spec.acceptUntrustedCerts, false);
+        const { ok, errors } = normalize(specWith({ acceptUntrustedCerts: 'yes' }));
+        assert.equal(ok, false);
+        assert.deepEqual(errors, ['acceptUntrustedCerts "yes" is not a setting: use true or false']);
     });
 
     test('reads how the page is shown as the run starts, refusing what is not a setting', () => {
@@ -339,7 +351,7 @@ describe('normalizeRunSpec', () => {
 
     describe('engines and selectors', () => {
         test('does not read a run-level engine: each scan step names its own', () => {
-            const { ok, spec, warnings } = normalize(specWith({ scanEngine: 'axe' }));
+            const { ok, spec, warnings } = normalize(specWith({ scanEngine: 'engine-b' }));
             assert.equal(ok, true);
             assert.ok(!('scanEngine' in spec));
             assert.deepEqual(warnings, ['"scanEngine" is not read any more: each scan step names its engine (its "engine" field), and a step without one runs with the default engine']);
@@ -560,6 +572,15 @@ describe('uiConfigFromRunSpec', () => {
         assert.equal(config.state['run-language'], '');
         const after = normalize(config).spec;
         assert.deepEqual([after.colorScheme, after.highContrast, after.language], [null, false, null]);
+    });
+
+    test('accepting untrusted certificates opens in the form and reads back, off when the spec says nothing', () => {
+        const on = uiConfigFromRunSpec(specWith({ acceptUntrustedCerts: true }), { viewportPresets: VIEWPORT_PRESETS }).config;
+        assert.equal(on.state['run-untrusted-certs'], 'on');
+        assert.equal(normalize(on).spec.acceptUntrustedCerts, true);
+        const off = uiConfigFromRunSpec(specWith(), { viewportPresets: VIEWPORT_PRESETS }).config;
+        assert.equal(off.state['run-untrusted-certs'], 'off');
+        assert.equal(normalize(off).spec.acceptUntrustedCerts, false);
     });
 });
 

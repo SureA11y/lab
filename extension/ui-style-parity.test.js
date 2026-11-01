@@ -15,13 +15,17 @@ const path = require('node:path');
 const csstree = require('css-tree');
 
 const ROOT = path.resolve(__dirname, '..');
-const APP = path.join(ROOT, 'src', 'css', 'a11y-lab-ui.css');
+const {readAppCss} = require('../src/css/app-styles');
+
+// The app's stylesheet is in parts (src/css/app-styles.js), read as one.
+const APP = 'the app stylesheet';
+const cssOf = (file) => (file === APP ? readAppCss() : fs.readFileSync(file, 'utf8'));
 const EXT = path.join(__dirname, 'ui.css');
 
 function tokens(file, selectors, atContext) {
     const out = new Map();
     const at = [];
-    csstree.walk(csstree.parse(fs.readFileSync(file, 'utf8'), { onParseError() {} }), {
+    csstree.walk(csstree.parse(cssOf(file), { onParseError() {} }), {
         enter(node) {
             if (node.type === 'Atrule') at.push('@' + node.name);
             if (node.type === 'Rule' && at.join('>') === atContext
@@ -41,7 +45,7 @@ function tokens(file, selectors, atContext) {
 function ruleIndex(file) {
     const out = new Map();
     const at = [];
-    csstree.walk(csstree.parse(fs.readFileSync(file, 'utf8'), { onParseError() {} }), {
+    csstree.walk(csstree.parse(cssOf(file), { onParseError() {} }), {
         enter(node) {
             if (node.type === 'Atrule') at.push('@' + node.name + ' ' + (node.prelude ? csstree.generate(node.prelude) : ''));
             if (node.type === 'Rule') {

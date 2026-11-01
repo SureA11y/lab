@@ -14,6 +14,8 @@ In the run workflow and open report tabs, the report's download button:
 | **Download report** (zip) | The whole report: `<name>.html`, `styles/report.css`, `images/`, `<name>.a11y-report.json` and `<name>.a11y-config.json`. Open the HTML in any browser; load the zip in the app (open report, compare). |
 | Download all scans (zip) | The same, with the scans the tag filter hides. |
 | Download as a single file | One `.html` with its styles and pictures inline. Above 50 MB it asks first, as a browser is slow to open a file that large, and offers the zip instead. |
+| Conformance report | An Accessibility Conformance Report in the layout of the VPAT 2.5 (WCAG and EU edition), as one `.html`: a table per WCAG level and the EN 301 549 chapters, drafted from the report. The draft never says "Supports": a failure is "Does Not Support", nothing to apply to is "Not Applicable", and the rest "Not Evaluated" until a person decides ([design](design/conformance-report-design.md)). |
+| Conformance report (Word) | The same report as a `.docx`, for teams that edit and sign it in Word: headings for its parts, a caption before every table, header rows that repeat on every page. |
 
 Each download lists its steps in the activity panel as it goes, with
 Cancel; a single file over 50 MB asks there first (`docs/design/activity-panel.md`).
@@ -89,7 +91,8 @@ the lab. It is strict on what such a reader relies on and open on the rest
 - An occurrence does not repeat itself: `summary` is left out when it is its
   `failureSummary`, and `evidence.engineNode` (an engine's own record of the
   element) holds only what the occurrence does not say, so it is gone for
-  surea11y's findings and keeps an add-on engine's extra detail. Read
+  surea11y's findings and keeps an older report's extra detail from another
+  engine. Read
   `failureSummary`, and `summary` only when there is no `failureSummary`.
 - Each scan says what it was checked against: `profile` (`{ id, label }`,
   e.g. `{ "id": "en301549-v4.1.1", "label": "EN 301 549 V4.1.1" }`, or a WCAG 2.2 level
@@ -125,7 +128,7 @@ removed): in its JSON as `config`, and in its package as
 row, in its folder (`docs/design/workflow-queue-batch-design.md` §6), so Download
 all carries it.
 
-"Load configuration" takes a zip or a report as well as a configuration:
+**Load config** takes a zip or a report as well as a configuration:
 
 - a zip: its `.a11y-config.json` (the one nearest the top); failing that,
   one rebuilt from its `batch.json` (a batch saved before batches kept

@@ -29,6 +29,7 @@ const { summarizePayload } = require('../server-side/run-queue');
 const { buildSummaryMarkdown, engineChangesText } = require('./summary-report');
 const { createStepProgress, summaryLines: stepSummaryLines } = require('./step-progress');
 const { writeExports, likelyFailures, baselineEntriesFor } = require('./export-formats');
+const { readReviewFile, carryReviewOnto, writeConformanceReport } = require('./conformance-export');
 const { countReviewGroups, reviewGroupsText } = require('../shared/review-groups.js');
 const { checkSpec } = require('./check-spec');
 const { resolveSecretRefs, describeMissing } = require('../shared/secret-refs.js');
@@ -66,9 +67,21 @@ Options:
   --url <url>        Override the url in the spec
   --scenario <name>  Override the scenario name in the spec
   --debug-native     Keep raw engine output in the payload
+  --accept-untrusted-certs
+                     Open sites whose certificate the browser does not trust
+                     (a staging server's own, or any site on a network that
+                     inspects HTTPS), as the spec's acceptUntrustedCerts does.
+                     The browser cannot then tell a site from one pretending
+                     to be it: sign in only where you trust the network.
   --format <list>    Also write surea11y's results as sarif, junit and/or
                      earl (comma-separated), into <out>/exports. Can be
                      repeated. Scans run without surea11y are left out.
+                     acr writes the run's conformance report (VPAT 2.5,
+                     WCAG and EN 301 549) there too, as HTML and Word.
+  --review <file>    A report (its JSON, payload.json or package zip) whose
+                     conformance review this run takes on, filling in only
+                     what it has not decided; saved in payload.json. Without
+                     it, a baseline's review is carried on.
   --no-batch         Run a config's workflow once, with its batch left off
   --dry-run          Take every step in a browser but the scans, screenshots
                      and evidence, and say how each went: which failed and
@@ -97,7 +110,8 @@ steps that ran appear in the summary either way.
 Writes payload.json, run.log.jsonl, summary.md, and when compared diff.json
 and comparison.html, the comparison as the app's Compare tab downloads it.
 With --format, one file per scan and format in exports/: <nn>-<scan>.sarif,
-<nn>-<scan>.junit.xml and <nn>-<scan>.earl.jsonld.
+<nn>-<scan>.junit.xml and <nn>-<scan>.earl.jsonld; with acr, one
+conformance-report.html and conformance-report.docx for the run.
 
 Exit codes:
   0  run finished, nothing new
@@ -213,6 +227,11 @@ function printComparison(comparison, baselinePayload, baselineLabel) {
  * screenshots or evidence, then how each went (dry-run-report.js). Nothing is
  * written, so a dry run never becomes the run a baseline compares with.
  */
+// What the command line sets on every run, a batch's rows too.
+function withCliSettings(spec, options) {
+    return options.acceptUntrustedCerts ? { ...spec, acceptUntrustedCerts: true } : spec;
+}
+
 async function runDry(spec, options) {
     const cancel = watchCancel('Cancelling the dry run. Press Ctrl+C again to force exit.');
 
@@ -224,7 +243,7 @@ async function runDry(spec, options) {
     const logs = [];
     let result;
     try {
-        result = await executeWorkflowRun(spec, {
+        result = await executeWorkflowRun(withCliSettings(spec, options), {
             dryRun: true,
             stepsChecked: true,
             isCancelled: cancel.isCancelled,
@@ -515,6 +534,17 @@ async function main(argv) {
         return EXIT_BAD_USAGE;
     }
 
+    // Read once, for every run a batch makes too.
+    if (options.reviewPath && !options.check) {
+        const read = await readReviewFile(path.resolve(options.reviewPath));
+        if (read.error) {
+            console.error(`Error: --review: ${read.error}`);
+            return EXIT_BAD_USAGE;
+        }
+        if (!read.review) console.error(`Note: ${options.reviewPath} has no conformance review to carry on.`);
+        options.review = read.review;
+    }
+
     if (isBatch(raw) && !options.noBatch) {
         return options.check ? reportBatchCheck(raw, options.specPath) : runBatchFile(raw, options);
     }
@@ -633,7 +663,7 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
         console.log(`Running ${finalSpec.scenarioName || finalSpec.url} (${finalSpec.actions.length} actions${stepNote})`);
     }
 
-    const { status, payload, error, coreResults } = await executeWorkflowRun(finalSpec, {
+    const { status, payload, error, coreResults } = await executeWorkflowRun(withCliSettings(finalSpec, options), {
         debugNative: options.debugNative || isDebugMode(),
         keepCoreResults: options.formats.length > 0 || options.failOnLean,
         isCancelled,
@@ -673,6 +703,10 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
     // A piece at a time, as the queue writes its results: a payload past
     // V8's ~512 MB string limit cannot be one string, and a large one
     // pretty-printed was a third larger again.
+    // The conformance review this run takes on, saved in its payload so the
+    // next run carries it on: --review's, else the baseline's.
+    const carried = carryReviewOnto(payload, options.review || (baselinePayload && baselinePayload.conformanceReview) || null);
+
     const payloadPath = path.join(outDir, 'payload.json');
     const bytes = await writeJsonFile(payloadPath, payload);
 
@@ -694,14 +728,26 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
             + (baselinePayload ? `, ${likely.new} new since the baseline` : ''));
     }
 
-    if (options.formats.length) {
+    if (carried) console.log(`Review     ${carried} conformance verdict${carried === 1 ? '' : 's'} carried on from ${options.review ? options.reviewPath : 'the baseline'}`);
+
+    const perScan = options.formats.filter((f) => f !== 'acr');
+    if (perScan.length) {
         try {
-            const { written, known } = writeExports(coreResults, options.formats, outDir, { baselinePayload, failOnLean: options.failOnLean });
+            const { written, known } = writeExports(coreResults, perScan, outDir, { baselinePayload, failOnLean: options.failOnLean });
             if (!written.length) console.error('Note: no scan ran with surea11y, so there was nothing to export.');
             else console.log(`Exports    ${written.length} file${written.length === 1 ? '' : 's'} in ${path.join(outDir, 'exports')}`);
             if (known) console.log(`           ${known} failing instance${known === 1 ? '' : 's'} already in the baseline, not reported as failures in SARIF or JUnit`);
         } catch (e) {
             console.error(`Warning: could not write exports: ${e.message}`);
+        }
+    }
+
+    if (options.formats.includes('acr')) {
+        try {
+            const { written, totals } = await writeConformanceReport(payload, outDir);
+            console.log(`Conformance ${written.length} files in ${path.join(outDir, 'exports')}: ${totals.reviewed} of ${totals.criteria} WCAG criteria reviewed, the rest the automated draft`);
+        } catch (e) {
+            console.error(`Warning: could not write the conformance report: ${e.message}`);
         }
     }
 

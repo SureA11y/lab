@@ -405,8 +405,8 @@ describe('buildCoverageAwareSummary: degenerate input', () => {
 
 /**
  * A run can use several engines at once, and only some of them model their rules
- * as composites over contributing checks - axe-core, pa11y and QualWeb emit
- * atomics only, surea11y emits both. The merged canonical concatenates them, so
+ * as composites over contributing checks - others may emit atomics only,
+ * surea11y emits both. The merged canonical concatenates them, so
  * resolving one layer for the whole set reads every engine through the layer of
  * whichever one emits composites, and drops the rest.
  */
@@ -431,19 +431,19 @@ describe('buildCoverageAwareSummary: several engines in one canonical', () => {
         }), 'surea11y')
     ];
 
-    // axe-core: atomics only, one of them failing.
-    const axeFindings = [
-        withEngine(atomic({ ruleId: 'color-contrast', sc: ['1.4.3'], outcome: 'fail', occurrences: [{}, {}] }), 'axe'),
-        withEngine(atomic({ ruleId: 'aria-valid-attr', sc: ['4.1.2'], outcome: 'pass' }), 'axe')
+    // Another engine: atomics only, one of them failing.
+    const otherFindings = [
+        withEngine(atomic({ ruleId: 'color-contrast', sc: ['1.4.3'], outcome: 'fail', occurrences: [{}, {}] }), 'engine-b'),
+        withEngine(atomic({ ruleId: 'aria-valid-attr', sc: ['4.1.2'], outcome: 'pass' }), 'engine-b')
     ];
 
     test('an engine that emits no composites still counts when another engine does', () => {
         const merged = buildCoverageAwareSummary({
-            canonical: { findings: [...surea11yFindings, ...axeFindings] },
+            canonical: { findings: [...surea11yFindings, ...otherFindings] },
             automationCoverage: coverageOf(['1.1.1', '1.4.3', '4.1.2'])
         });
 
-        // Before the layer was resolved per engine, these were 1 and 1: axe's
+        // Before the layer was resolved per engine, these were 1 and 1: the other engine's
         // findings were read as contributors to surea11y's composites, matched
         // nothing, and vanished.
         assert.equal(merged.coverage.criteriaTouched, 3);
@@ -456,7 +456,7 @@ describe('buildCoverageAwareSummary: several engines in one canonical', () => {
 
     test("a criterion one engine failed is not reported as clean because another engine passed a different one", () => {
         const merged = buildCoverageAwareSummary({
-            canonical: { findings: [...surea11yFindings, ...axeFindings] },
+            canonical: { findings: [...surea11yFindings, ...otherFindings] },
             automationCoverage: coverageOf(['1.1.1', '1.4.3', '4.1.2'])
         });
 
@@ -466,7 +466,7 @@ describe('buildCoverageAwareSummary: several engines in one canonical', () => {
 
     test('the layer reads as mixed when the engines that ran did not agree on one', () => {
         const merged = buildCoverageAwareSummary({
-            canonical: { findings: [...surea11yFindings, ...axeFindings] }
+            canonical: { findings: [...surea11yFindings, ...otherFindings] }
         });
         assert.equal(merged.layer, 'mixed');
     });
@@ -475,8 +475,8 @@ describe('buildCoverageAwareSummary: several engines in one canonical', () => {
         const bothAtomic = buildCoverageAwareSummary({
             canonical: {
                 findings: [
-                    ...axeFindings,
-                    withEngine(atomic({ ruleId: 'html-has-lang', sc: ['3.1.1'] }), 'pa11y')
+                    ...otherFindings,
+                    withEngine(atomic({ ruleId: 'html-has-lang', sc: ['3.1.1'] }), 'engine-c')
                 ]
             }
         });
@@ -485,18 +485,18 @@ describe('buildCoverageAwareSummary: several engines in one canonical', () => {
 
     test('a contributor is looked up among its own engine\'s atomics, not another engine\'s', () => {
         // Both engines carry a rule called `alt-check`, with opposite outcomes.
-        // surea11y's composite must roll up surea11y's, not axe-core's.
-        const collidingAxe = withEngine(
+        // surea11y's composite must roll up surea11y's, not the other engine's.
+        const collidingOther = withEngine(
             atomic({ ruleId: 'alt-check', sc: ['1.1.1'], outcome: 'fail', occurrences: [{}] }),
-            'axe'
+            'engine-b'
         );
 
         const merged = buildCoverageAwareSummary({
-            canonical: { findings: [...surea11yFindings, collidingAxe] },
+            canonical: { findings: [...surea11yFindings, collidingOther] },
             automationCoverage: coverageOf(['1.1.1'])
         });
 
-        // One pass from surea11y's rollup, one fail from axe's own atomic layer.
+        // One pass from surea11y's rollup, one fail from the other engine's own atomic layer.
         assert.equal(scOf(merged, '1.1.1').status, STATUS.PARTIALLY_SUPPORTS);
         assert.equal(scOf(merged, '1.1.1').checks.pass, 1);
         assert.equal(scOf(merged, '1.1.1').checks.fail, 1);
@@ -508,7 +508,7 @@ describe('buildCoverageAwareSummary: several engines in one canonical', () => {
         // findings. Trusting it read one engine's run as the whole.
         const merged = buildCoverageAwareSummary({
             canonical: {
-                findings: [...surea11yFindings, ...axeFindings],
+                findings: [...surea11yFindings, ...otherFindings],
                 findingsByKind: {
                     composite: [surea11yFindings[1]],
                     atomic: [surea11yFindings[0]]
@@ -531,12 +531,70 @@ describe('buildCoverageAwareSummary: several engines in one canonical', () => {
 
     test('an explicit layer still overrides the per-engine resolution', () => {
         const merged = buildCoverageAwareSummary({
-            canonical: { findings: [...surea11yFindings, ...axeFindings] },
+            canonical: { findings: [...surea11yFindings, ...otherFindings] },
             layer: 'atomic',
             automationCoverage: coverageOf(['1.1.1', '1.4.3', '4.1.2'])
         });
         assert.equal(merged.layer, 'atomic');
         // Read as atomics throughout, surea11y's composite no longer rolls up.
         assert.equal(scOf(merged, '1.4.3').status, STATUS.DOES_NOT_SUPPORT);
+    });
+});
+
+describe('buildCoverageAwareSummary: a scan under a standard\'s profile', () => {
+    // Under EN 301 549's profile, or another pack's, a result names the
+    // standard's requirement in place of WCAG's criteria; the criterion it
+    // restates is its mapping's wcagSc.
+    const asClause = (f, clause) => ({
+        ...f,
+        wcag: { sc: [], scNormative: [] },
+        standards: { normativeMappings: f.wcag.sc.map((sc) => ({ standard: 'EN 301 549', version: 'V4.1.1', requirement: clause, wcagSc: [sc] })), informativeReferences: [] },
+    });
+
+    test('counts each result under the WCAG criterion its requirement restates, as a WCAG scan would', () => {
+        const findings = [
+            atomic({ ruleId: 'check-a', sc: ['1.1.1'], outcome: 'fail', occurrences: [{}] }),
+            composite({ ruleId: 'sc-1.1.1', sc: ['1.1.1'], outcome: 'fail', contributors: [{ testId: 'check-a', outcome: 'fail' }], occurrences: [{}] }),
+        ];
+        const wcag = buildCoverageAwareSummary({ canonical: { findings } });
+        const en = buildCoverageAwareSummary({ canonical: { findings: findings.map((f) => asClause(f, '9.1.1.1')) } });
+        assert.equal(scOf(en, '1.1.1').status, scOf(wcag, '1.1.1').status);
+        assert.equal(scOf(en, '1.1.1').status, STATUS.DOES_NOT_SUPPORT || 'doesNotSupport');
+    });
+});
+
+describe('repairStandardScanCoverage: a scan saved before', () => {
+    const { repairStandardScanCoverage } = require('./coverage-summary');
+    const asClause = (f) => ({
+        ...f,
+        wcag: { sc: [], scNormative: [] },
+        standards: { normativeMappings: f.wcag.sc.map((sc) => ({ standard: 'EN 301 549', version: 'V4.1.1', requirement: `9.${sc}`, wcagSc: [sc] })), informativeReferences: [] },
+    });
+    const findings = [
+        atomic({ ruleId: 'check-a', sc: ['1.1.1'], outcome: 'fail', occurrences: [{}] }),
+        composite({ ruleId: 'sc-1.1.1', sc: ['1.1.1'], outcome: 'fail', contributors: [{ testId: 'check-a', outcome: 'fail' }], occurrences: [{}] }),
+    ];
+    const automationCoverage = { criteria: [{ sc: '1.1.1', level: 'A', automation: 'automatic' }, { sc: '2.4.7', level: 'AA', automation: 'automatic' }] };
+    // What a scan under EN 301 549's profile was given before: no criterion checked.
+    const savedBefore = {
+        layer: 'composite',
+        criteria: automationCoverage.criteria.map((c) => ({ ...c, status: 'notEvaluated', checks: { total: 0 }, inScope: true })),
+    };
+
+    test('a scan under a standard\'s profile whose coverage checked nothing is made again from its findings', () => {
+        const scan = { canonical: { findings: findings.map(asClause) }, metrics: { coverageSummary: savedBefore } };
+        const repaired = repairStandardScanCoverage(scan);
+        const fresh = buildCoverageAwareSummary({ canonical: { findings: findings.map(asClause) }, automationCoverage });
+        assert.deepEqual(repaired.criteria, fresh.criteria);
+        assert.equal(scOf(repaired, '1.1.1').status, STATUS.DOES_NOT_SUPPORT);
+    });
+
+    test('any other scan is left as it is', () => {
+        const wcagScan = { canonical: { findings }, metrics: { coverageSummary: savedBefore } };
+        assert.equal(repairStandardScanCoverage(wcagScan), null, 'its findings name WCAG criteria');
+        const good = buildCoverageAwareSummary({ canonical: { findings: findings.map(asClause) }, automationCoverage });
+        assert.equal(repairStandardScanCoverage({ canonical: { findings: findings.map(asClause) }, metrics: { coverageSummary: good } }), null, 'it checked something');
+        assert.equal(repairStandardScanCoverage({ canonical: { findings: findings.map(asClause) }, metrics: {} }), null, 'no coverage saved');
+        assert.equal(repairStandardScanCoverage(null), null);
     });
 });

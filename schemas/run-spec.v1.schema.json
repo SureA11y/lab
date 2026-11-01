@@ -103,6 +103,15 @@
       "minLength": 1,
       "description": "The language the page is shown in as the run starts, as a BCP 47 tag (es-ES, de, pt-BR), or a variable such as {var:lang}, so each batch row can set its own. Left out, the browser's own. Set language changes it; its Run default comes back to this."
     },
+    "acceptUntrustedCerts": {
+      "enum": [
+        true,
+        false,
+        "on",
+        "off"
+      ],
+      "description": "Open sites whose certificate the browser does not trust: a staging server's self-signed one, or any site through a network that inspects HTTPS. Left out, off, and such a site fails the run saying why. The browser cannot then tell a site from one pretending to be it, so a run that signs in should not use it on a network you do not trust. A run that uses it says so in its log and in runDiagnostics.untrustedCertsAccepted."
+    },
     "metadata": {
       "type": "object"
     },
@@ -936,12 +945,8 @@
           "default": false,
           "type": "boolean"
         },
-        "engine": {
-          "description": "The engine that runs this scan. Without one, the scan runs with surea11y, built in. Other engines (axe-core, Alfa, Pa11y, QualWeb) come with the more-engines add-on, and this field shows once one is installed. Each engine offers its own options, and the profiles it cannot check are not available. To check a page with several engines, add a scan for each; put them in a Merged scan to have them reported as one scan.",
-          "type": "string"
-        },
         "profile": {
-          "description": "The profile this scan checks against, WCAG 2.2 AA unless it says otherwise: WCAG 2.2 at Level A, AA or AAA, or a standard, which sets the WCAG version and the level, all of them Level A and AA: EN 301 549 V4.1.1, the EU standard, which is WCAG 2.2, and EN 301 549 V3.2.1, its earlier version, which is WCAG 2.1 and still checks 4.1.1 Parsing. Which ones a scan can choose depends on its engine: surea11y checks every profile, and is the only one to apply a standard in full (the version details such as 4.1.1); the other engines check the WCAG 2.2 profiles and EN 301 549 V4.1.1. Including rule IDs or tags explicitly takes precedence over a standard. Passing the rules does not mean the page meets the standard: many criteria still need a manual check.",
+          "description": "The profile this scan checks against, WCAG 2.2 AA unless it says otherwise: WCAG 2.2 at Level A, AA or AAA, or a standard, which sets the WCAG version and the level, all of them Level A and AA: EN 301 549 V4.1.1, the EU standard, which is WCAG 2.2, and EN 301 549 V3.2.1, its earlier version, which is WCAG 2.1 and still checks 4.1.1 Parsing. surea11y applies a standard in full, version details such as 4.1.1 included. Including rule IDs or tags explicitly takes precedence over a standard. Passing the rules does not mean the page meets the standard: many criteria still need a manual check.",
           "default": "wcag22-aa",
           "type": "string",
           "anyOf": [
@@ -953,6 +958,11 @@
                 "en301549-v4.1.1",
                 "en301549-v3.2.1"
               ]
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(-[a-z0-9.]+)+$",
+              "description": "a profile of an installed standard pack"
             },
             {
               "type": "string",
@@ -1158,7 +1168,7 @@
           "type": "boolean"
         },
         "elementScreenshots": {
-          "description": "Take a picture of each element surea11y flags, with a box around it, shown beside its finding. Other engines take none.",
+          "description": "Take a picture of each element surea11y flags, with a box around it, shown beside its finding.",
           "default": "fail",
           "type": "string",
           "anyOf": [

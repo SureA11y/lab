@@ -11,7 +11,7 @@
 // Shared by both renderers so a pair and a series describe themselves the same
 // way. Pure string builders, no DOM.
 
-import { enginesHTML } from './engine-brand.js';
+import { enginesHTML, howTestedHTML } from './engine-brand.js';
 
 function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => (
@@ -99,7 +99,7 @@ export function mastheadHTML(doc, { titleTag = 'h2', sourcesHref = '' } = {}) {
     ].join('');
     // As a report names the engine that ran it: surea11y as its tag, at full
     // size, on a line of its own, as it stands taller than the text facts.
-    const engines = fact((doc.engines || []).length > 1 ? 'Engines' : 'Engine', enginesHTML(doc.engines));
+    const engines = fact((doc.engines || []).length > 1 ? 'Engines' : 'Engine', enginesHTML(doc.engines) + howTestedHTML(doc.engines));
 
     // The machine-readable half, for the exporter: it reads the rendered DOM
     // rather than the engine's object, so the few values that have to survive
@@ -221,10 +221,12 @@ export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {
            may come from the engine rather than from the pages.</span></p>`
         : '';
 
+    const compared = doc && Array.isArray(doc.standardsCompared) ? doc.standardsCompared : [];
     const criteria = doc && doc.criteriaMismatch
         ? `<p class="doc-warn"><span class="dash-caveat-i" aria-hidden="true">!</span>
-           <span>Some of these reports targeted RGAA and others did not. A scan that targets RGAA is
-           listed by RGAA criterion, the others by WCAG criterion, so their rows do not line up: a
+           <span>These reports were checked against different standards${compared.length > 1 ? ` (${esc(compared.join(', '))})` : ''}.
+           A scan against a standard is listed by that standard's requirements (EN 301 549's clauses,
+           RGAA's criteria), one against WCAG by WCAG criterion, so their rows do not line up: a
            failure can read as fixed in one and new in the other when only the way it is listed changed.</span></p>`
         : '';
 

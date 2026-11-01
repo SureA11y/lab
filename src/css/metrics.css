@@ -1,0 +1,823 @@
+/* The app's styles, part 9 of 14: the metrics, score gauges, live preview, flyout menus and paged dialogs.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* ==========================================================================
+   A11Y METRICS (OPTIONAL BLOCK)
+   ========================================================================== */
+
+.a11y-metrics {
+    background: transparent;
+    margin-top: 10px;
+    color: var(--text-main);
+}
+
+.a11y-scoregrid {
+    display: grid;
+    /* auto-fit so the row fills whatever number of cards it holds; a fixed count
+       left an empty column behind when a score was removed */
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+@media (max-width: 900px) {
+    .a11y-scoregrid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+}
+
+.a11y-cov-gauges .a11y-chip {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* the gauge sits left at a bounded width, with the prose that explains it beside */
+.a11y-cov-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px;
+    align-items: start;
+}
+
+/* the two cards split the gauge column evenly, and drop to one when it narrows */
+.a11y-cov-gauges {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.a11y-cov-explain > :first-child {
+    margin-top: 0;
+}
+
+.a11y-cov-tallies {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 0.88em;
+}
+
+.a11y-cov-tallies li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    max-width: 22em;
+    padding: 2px 0;
+}
+
+.a11y-cov-review {
+    margin: 0 0 6px;
+    font-size: 0.88em;
+    font-weight: 600;
+}
+
+@media (max-width: 900px) {
+    .a11y-cov-layout { grid-template-columns: 1fr; }
+}
+
+.a11y-chip-unevaluated {
+    border-style: dashed;
+    /* Grid rows stretch by default, so a chip holding a sentence instead of a gauge
+       grew to the gauge's height and read as a broken card. It takes its own height
+       and sits at the top of the row. */
+    align-self: start;
+}
+
+.a11y-chip-name {
+    margin: 0 0 6px;
+    font-size: 0.95em;
+}
+
+.a11y-chip-unevaluated-value {
+    margin: 0 0 4px;
+    font-size: 1.1em;
+    font-weight: 600;
+    opacity: 0.7;
+}
+
+.a11y-coverage .a11y-cov-headline {
+    margin: 0 0 10px;
+    font-size: 0.92em;
+}
+
+/* wide table must scroll inside its own box, never the page */
+.a11y-cov-tablewrap {
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+.a11y-cov-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.86em;
+}
+
+.a11y-cov-caption {
+    text-align: left;
+    padding-bottom: 6px;
+    font-size: 0.92em;
+    opacity: 0.8;
+}
+
+.a11y-cov-table th,
+.a11y-cov-table td {
+    text-align: left;
+    padding: 5px 10px 5px 0;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.a11y-cov-table thead th {
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.a11y-cov-table tbody th {
+    font-weight: 600;
+}
+
+.a11y-score-caveat {
+    margin: 8px 0 0;
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.a11y-chip {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    background: var(--surface-base);
+}
+
+.a11y-kpi-label,
+.a11y-row-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+.a11y-chip-value {
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    margin-top: 6px;
+}
+
+.a11y-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 18px;
+    height: 18px;
+
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-pill);
+
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    background: var(--surface-2);
+}
+
+/* The "?" is a <summary>, so it needs the default disclosure marker removed and
+   the pill shape restored. */
+.a11y-help-disclosure { position: relative; display: inline-flex; }
+
+summary.a11y-help {
+    list-style: none;
+    cursor: pointer;
+}
+
+summary.a11y-help::-webkit-details-marker { display: none; }
+
+summary.a11y-help:hover {
+    border-color: var(--accent-border);
+    color: var(--text-main);
+}
+
+summary.a11y-help:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+.a11y-help-disclosure[open] > summary.a11y-help {
+    border-color: var(--accent-border);
+    color: var(--text-main);
+}
+
+/* Floats over the panel instead of widening its row, so opening a help note
+   never reflows the metric grid beside it. */
+.a11y-help-body {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+
+    width: max-content;
+    max-width: min(280px, 60vw);
+    margin: 0;
+    padding: 8px 10px;
+
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--surface-3);
+    box-shadow: var(--shadow-popover);
+
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+    color: var(--text-main);
+    text-align: left;
+    white-space: normal;
+}
+
+.a11y-kpi {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    background: var(--surface-base);
+}
+
+.a11y-kpi-value {
+    font-size: var(--fs-18);
+    font-weight: 700;
+    margin-top: 6px;
+}
+
+.a11y-details {
+    margin-top: 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    background: var(--surface-base);
+}
+
+.a11y-details > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.a11y-details > summary:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-sm);
+}
+
+.a11y-grid3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px 16px;
+    margin: 8px 0 0;
+
+    list-style: none;
+    padding: 0;
+}
+
+@media (max-width: 900px) {
+    .a11y-grid3 { grid-template-columns: 1fr 1fr; }
+}
+
+.a11y-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+}
+
+.a11y-row-value {
+    font-variant-numeric: tabular-nums;
+
+}
+
+.a11y-bullets { margin: 8px 0 0 18px; }
+
+.a11y-banner {
+    padding: 10px 12px;
+    margin: 10px 0;
+    border-left-width: 4px;
+    border-left-style: solid;
+
+    border-radius: var(--radius-sm);
+    line-height: 1.35;
+}
+
+.evidence-mode .a11y-banner,
+.evidence-mode .a11yNarrative,
+.evidence-mode .a11y-metrics,
+.evidence-mode.failures-mode .cantTell,
+.evidence-mode.failures-mode .scan-no-failures {
+    display: none;
+}
+
+/* Accounts for the scans "Failures only" hides; meaningless in the other modes. */
+.failure-free-scans-note {
+    display: none;
+    margin: .25rem 0;
+    color: var(--text-muted);
+}
+
+.evidence-mode.failures-mode .failure-free-scans-note {
+    display: block;
+}
+
+.grouped-results {
+    contain: layout;
+}
+
+.per-scan-report-mode .grouped-results {
+    display: none;
+}
+
+.a11y-banner-title {
+
+    font-size: var(--fs-lg);
+    margin: 0;
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--banner-title-bg);
+}
+
+.a11y-banner-subtitle {
+    margin: 4px 0 0 0;
+}
+
+.a11y-banner-signals {
+    margin-top: 6px;
+}
+
+.a11y-banner .a11y-bullets {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.a11y-banner .a11y-bullets li {
+    margin: 2px 0;
+}
+
+/* States */
+.a11y-banner-warn {
+    background: var(--warn-soft);
+    border-color: var(--warn);
+}
+
+.a11y-banner-good {
+    background: var(--ok-soft);
+    border-color: var(--ok);
+}
+
+.a11y-banner-ok {
+    background: var(--info-soft);
+    border-color: var(--accent);
+}
+
+.a11y-banner-bad {
+    background: var(--danger-soft);
+    border-color: var(--danger);
+}
+
+.a11y-banner-unknown {
+    background: var(--na-soft);
+    border-color: var(--na);
+}
+
+/* Optional border-only variants (keep if used elsewhere) */
+.a11y-band-unknown { border-color: var(--na); }
+.a11y-band-good { border-color: var(--ok); }
+.a11y-band-ok { border-color: var(--accent); }
+.a11y-band-warn { border-color: var(--warn); }
+.a11y-band-bad { border-color: var(--danger); }
+
+/* ==========================================================================
+   SCORE GAUGE
+   ========================================================================== */
+
+.scoreGauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    height: 100%;
+    text-align: center;
+}
+
+.scoreGauge__name {
+    margin: 0;
+    padding-left: 15px;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    position: relative;
+    align-self: flex-start;
+}
+
+.scoreGauge__name::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 8px;
+    height: 8px;
+
+    border-radius: var(--radius-pill);
+    /* --activeColor is defined programmatically in the script */
+    background: var(--activeColor, currentColor);
+}
+
+/* semantic meter kept in DOM, visually hidden */
+.scoreGauge__meter {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Visual: half-dial arc, readout centered under it */
+.scoreGauge__visual {
+    position: relative;
+    margin: 0 auto;
+}
+
+.scoreGauge__readout {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 2px;
+}
+
+.scoreGauge__readout--rating {
+    position: static;
+    flex-direction: row;
+    /* "can't tell" goes under the value when the card is too narrow for both,
+       rather than past the card's edge. */
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
+.scoreGauge__readoutMain {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+}
+
+.scoreGauge__value {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--fs-2xl);
+    letter-spacing: -0.02em;
+    color: var(--text-main);
+    font-variant-numeric: tabular-nums;
+}
+
+.scoreGauge__unit { font-size: var(--fs-lg); color: var(--text-main); }
+
+.scoreGauge__bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+/* The unresolved share of the same denominator — never let the number above
+   stand alone as an unqualified claim. */
+.scoreGauge__unresolved {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--warn);
+    white-space: nowrap;
+}
+
+/* Rating gauge's band name — the colour is the second reading, the word
+   beside the number is the first. */
+.scoreGauge__readout--rating .scoreGauge__status {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Plain qualitative label under a ScoreGauge (not the rating speedometer) */
+.scoreGauge__bottom .scoreGauge__status {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.scoreGauge__help { margin: 0; padding: 0; color: var(--text-muted); font-size: var(--fs-xs); }
+
+/* ==========================================================================
+   LIVE PREVIEW CAROUSEL
+   ========================================================================== */
+
+.carousel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .5rem;
+}
+
+.carousel-title {
+    margin: 0;
+    font-size: var(--fs-lg);
+    font-weight: 600;
+}
+
+.carousel-controls {
+    display: flex;
+    gap: .4rem;
+}
+
+/* Fixed square (44px = --target-min, IconButton's "md" default) — without
+   this the two buttons size themselves off their own glyph (◀ vs ▶ render
+   at slightly different natural widths). Ghost variant: transparent until
+   hovered/focused. */
+.carousel-btn {
+    width: var(--target-min);
+    height: var(--target-min);
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    line-height: 1;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-main);
+}
+
+.carousel-btn:hover:not(:disabled, [aria-disabled="true"]) {
+    background: var(--surface-2);
+}
+
+/* ==========================================================================
+   FLYOUT MENU
+   ========================================================================== */
+
+.flyout-root {
+    position: relative;
+    display: inline-flex;
+}
+
+.flyout-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 50;
+
+    min-width: 220px;
+    padding: 6px;
+    margin-top: 6px;
+
+    background: var(--overlay-panel-bg);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-popover);
+}
+
+.flyout-menu__item {
+    width: 100% !important;
+    box-sizing: border-box;
+    min-height: var(--target-min);
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+
+    padding: 8px 10px !important;
+
+    border: 0;
+    border-radius: var(--radius-sm);
+
+    text-align: left;
+    background: transparent;
+    color: var(--text-muted);
+
+
+    font-size: var(--fs-md);
+
+    box-shadow: none;
+    transition: background-color var(--duration-instant) var(--ease-standard), color var(--duration-instant) var(--ease-standard);
+}
+
+.flyout-menu__item:hover:not(:disabled, [aria-disabled="true"]) {
+    color: var(--text-main) !important;
+    background: var(--overlay-item-hover) !important;
+}
+
+.flyout-menu__item:focus-visible {
+    color: var(--text-main) !important;
+    outline: var(--focus-outline);
+    outline-offset: -2px;
+}
+
+.flyout-menu__item[disabled],
+.flyout-menu__item[aria-disabled="true"] {
+    opacity: .5 !important;
+}
+
+/* ==========================================================================
+   PAGED DIALOG (namespaced, keeps existing .paged-dialog look)
+   ========================================================================== */
+
+.paged-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(2px);
+}
+
+.paged-dialog {
+    box-sizing: border-box; /* was content-box */
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-md);
+
+    max-width: 90vw;
+    max-height: 92vh;
+
+    overflow: hidden;
+    box-shadow: var(--shadow-overlay);
+    background: var(--overlay-panel-bg);
+}
+
+.paged-dialog > div {
+    width: 100%;
+    height: 100%;
+}
+
+/* shell uses the existing .paged-dialog sizing/background */
+.paged-dialog .axd-shell {
+    box-sizing: border-box;
+    position: relative;
+
+    /* This is the key */
+    display: flex;
+    flex-direction: column;
+
+    /* Keep your padding visible on all sides */
+    padding: 38px;
+
+    /* Constrain shell inside the dialog limits */
+    max-width: 90vw;
+    max-height: 92vh;
+}
+
+/* reuse your close button placement idea, but namespaced */
+.paged-dialog .axd-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 38px;
+    line-height: 20px;
+    cursor: pointer;
+    padding: 0;
+    height: 38px;
+    text-align: center;
+    display: inline-block;
+    font-size: 1.3rem;
+}
+
+/* header (title + position) */
+.paged-dialog .axd-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    background: var(--surface-4);
+    padding: 3px 7px;
+    border-radius: var(--radius-sm);
+    max-width: 60%;
+    border-bottom: 1px dashed var(--border-strong);
+    position: absolute;
+    top: 19px;
+    transform: translateY(-50%);
+}
+
+.paged-dialog .axd-title {
+    font-size: var(--fs-md);
+
+    color: var(--text-main);
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.paged-dialog .axd-pos {
+    font-size: var(--fs-sm);
+    white-space: nowrap;
+    color: var(--text-muted);
+}
+
+.paged-dialog .axd-pos:not(:empty) {
+    margin-left: 10px;
+}
+
+/* content host */
+.paged-dialog .axd-body {
+    box-sizing: border-box;
+
+    /* Critical so it can shrink inside the padded shell */
+    min-width: 0;
+    min-height: 0;
+
+    /* Take the available space inside shell */
+    flex: 1 1 auto;
+
+    overflow: auto;
+
+    background: var(--code-bg);
+    border: 1px solid var(--border-soft);
+}
+
+.paged-dialog .axd-body > * {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.paged-dialog .axd-footer {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+    background: var(--surface-4);
+    padding: 0 10px;
+    height: 38px;
+    right: 38px;
+    position: absolute;
+    bottom: 0;
+}
+
+.paged-dialog .axd-footer:empty {
+    padding: 0;
+}
+
+/* nav buttons, middle-left / middle-right */
+.paged-dialog .axd-nav,
+.paged-dialog .axd-nav:active {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 38px;
+    height: 38px;
+
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-4);
+    color: var(--text-main);
+
+    padding: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.paged-dialog .axd-nav--prev { left: 0; }
+.paged-dialog .axd-nav--next { right: 0; }
+
+/* aria-disabled styling (no layout/focus surprises) */
+.paged-dialog .axd-nav[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* Keep visible focus */
+.paged-dialog .axd-nav:focus-visible,
+.paged-dialog .axd-close:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.paged-dialog .sr-only {
+    position: absolute;
+    top: -2000px;
+    left: -2000px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}

@@ -4,11 +4,10 @@
  * Canonical, engine-agnostic accessibility result model + converters.
  *
  * This file keeps server-only helpers (like findingsByOutcome),
- * but uses the shared implementation for CANON_VERSION + fromAxeResults.
+ * and the shared CANON_VERSION.
  */
 
 const { CANON_VERSION } = require('../shared/canonical-shared');
-const { fromAxeResults } = require('./axe-to-canonical');
 
 function findingsByOutcome(scans) {
     const grouped = (Array.isArray(scans) ? scans : []).reduce((acc, scan) => {
@@ -201,6 +200,5 @@ function mergeFindingsByUid(findings, { occurrenceKey = null } = {}) {
 
 module.exports = {
     CANON_VERSION,
-    fromAxeResults,
     findingsByOutcome
 };

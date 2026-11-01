@@ -8,16 +8,11 @@
  * - This module returns the CANONICAL result model.
  * - Swapping engines should not require changes outside engine adapter modules.
  *
- * Engines:
- * - surea11y is built in (./engines). Others come in add-ons: an add-on is a
- *   folder in addons/ with an engines/ folder of its own, and is loaded once
- *   its dependencies are installed (addons/<name>/node_modules). The lab's
- *   own, addons/more-engines, adds axe-core, Alfa, Pa11y and QualWeb.
- *   A11Y_ENGINE_ADDONS=off leaves every add-on out.
- *
- * Engine selection:
- * - Set env A11Y_ENGINE to an id like "surea11y", or an add-on's ("axe").
- * - Default is "surea11y".
+ * The lab runs one engine, surea11y (@surea11y/core) by default. Each engine
+ * is an adapter in ./engines, a file named *-engine.js, found at start. The
+ * engineId of a11y-engine.config.json names the one the lab runs. Adding an
+ * engine is adding its adapter and naming it there: what an adapter must and
+ * may export is in CONTRIBUTING.md, "Adding an engine".
  */
 
 const DEFAULT_ENGINE_NAME = 'surea11y';
@@ -41,7 +36,6 @@ function normalizeEngineKey(v) {
 const fs = require('fs');
 const path = require('path');
 const { annotateEn301549, en301549FromMappings } = require('./canonical/en301549');
-const { levelOnlySelectionNotice } = require('./engines/selection-scope');
 const { selectionFromRunOnly, outcomeCounts, separateBestPractices, scanTargetsFor } = require('./conformance-targets');
 
 function isDumpEnabled() {
@@ -98,53 +92,10 @@ async function dumpResultJson({ result, bundle, engineIds }) {
     }
 }
 
-const ADDONS_DIR = path.join(__dirname, '..', '..', 'addons');
-
-/** The installed add-ons' engine folders: addons/<name>/engines, beside its node_modules. */
-function addonEngineDirs() {
-    const setting = String(process.env.A11Y_ENGINE_ADDONS || '').trim().toLowerCase();
-    if (setting === 'off' || setting === '0' || setting === 'false') return [];
-    let names = [];
-    try {
-        names = fs.readdirSync(ADDONS_DIR, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
-    } catch {
-        return [];
-    }
-    return names
-        .map((name) => path.join(ADDONS_DIR, name))
-        .filter((dir) => fs.existsSync(path.join(dir, 'engines')) && fs.existsSync(path.join(dir, 'node_modules')))
-        .map((dir) => path.join(dir, 'engines'));
-}
-
-/**
- * The add-on that offers the engine `requested`, installed or not, by the
- * engine ids its package.json lists ({ "surea11yLab": { "engines": [...] } }).
- */
-function addonOffering(requested) {
-    const id = normalizeEngineId(requested);
-    if (!id) return null;
-    let names = [];
-    try {
-        names = fs.readdirSync(ADDONS_DIR);
-    } catch {
-        return null;
-    }
-    for (const name of names) {
-        try {
-            const pkg = JSON.parse(fs.readFileSync(path.join(ADDONS_DIR, name, 'package.json'), 'utf8'));
-            const ids = pkg && pkg.surea11yLab && Array.isArray(pkg.surea11yLab.engines) ? pkg.surea11yLab.engines : [];
-            if (ids.includes(id)) return name;
-        } catch {
-            // Not an add-on.
-        }
-    }
-    return null;
-}
-
-/** Every engine module to load: the built-in ones first, then the add-ons'. */
+/** The engine's adapter module, in ./engines. */
 function listEngineCandidateFiles() {
     const out = [];
-    for (const dir of [path.join(__dirname, 'engines'), ...addonEngineDirs()]) {
+    for (const dir of [path.join(__dirname, 'engines')]) {
         let files = [];
         try {
             files = fs.readdirSync(dir);
@@ -217,27 +168,6 @@ function loadEnginesRegistry() {
 // Build once at module load
 const _enginesRegistry = loadEnginesRegistry();
 
-function readEngineIdFromConfigFile() {
-    const candidates = [
-        path.join(process.cwd(), 'a11y-engine.config.json'),
-        path.join(__dirname, 'a11y-engine.config.json'),
-    ];
-
-    for (const p of candidates) {
-        try {
-            if (!fs.existsSync(p)) continue;
-            const raw = fs.readFileSync(p, 'utf-8');
-            const obj = JSON.parse(raw);
-            const v = obj && (obj.engineId || obj.engine || obj.id);
-            if (typeof v === 'string' && v.trim()) return v.trim(); // raw, id OR name
-        } catch {
-            // ignore invalid config
-        }
-    }
-
-    return null;
-}
-
 function readEngineConfigFromConfigFile() {
     // Reads a11y-engine.config.json (if present) and returns a normalized config object:
     // { engineId?, validateCanonical?, engineOptions? }
@@ -253,10 +183,6 @@ function readEngineConfigFromConfigFile() {
             const obj = JSON.parse(raw);
             if (!obj || typeof obj !== 'object') continue;
 
-            const rawEngine = obj.engineId || obj.engine || obj.id || null;
-            const resolved = rawEngine ? resolveEngineBundle(rawEngine) : null;
-            const engineIdCfg = resolved ? resolved.id : null;
-
             const validateCanonical =
                 obj.validateCanonical === true ||
                 obj.validateCanonical === 'true' ||
@@ -264,7 +190,9 @@ function readEngineConfigFromConfigFile() {
 
             const engineOptions = (obj.engineOptions && typeof obj.engineOptions === 'object') ? obj.engineOptions : null;
 
-            return { engineId: engineIdCfg || null, validateCanonical, engineOptions };
+            const engineId = typeof obj.engineId === 'string' && obj.engineId.trim() ? obj.engineId.trim() : null;
+
+            return { engineId, validateCanonical, engineOptions };
         } catch {
             // ignore invalid config
         }
@@ -274,52 +202,10 @@ function readEngineConfigFromConfigFile() {
 }
 
 
-function readEngineIdFromArgv(argv = process.argv) {
-    const args = Array.isArray(argv) ? argv.slice(2) : [];
-    for (let i = 0; i < args.length; i++) {
-        const a = String(args[i] || '');
-
-        // --a11y-engine=mock or --engine=mock
-        const eq = a.indexOf('=');
-        if (eq > 0) {
-            const k = a.slice(0, eq);
-            const v = a.slice(eq + 1);
-            if (k === '--a11y-engine' || k === '--engine') return v;
-        }
-
-        // --a11y-engine mock or --engine mock
-        if (a === '--a11y-engine' || a === '--engine') {
-            const v = args[i + 1];
-            return v;
-        }
-    }
-    return null;
-}
-
+/** The engine the config names (by id or name), else surea11y. */
 function readRequestedEngineId() {
-    // 1) env (allow id OR name)
-    const envRaw = process.env.A11Y_ENGINE;
-    if (envRaw) {
-        const resolved = resolveEngineBundle(envRaw);
-        if (resolved && resolved.id) return resolved.id;
-    }
-
-    // 2) CLI args (allow id OR name)
-    const argvRaw = readEngineIdFromArgv(process.argv);
-    if (argvRaw) {
-        const resolved = resolveEngineBundle(argvRaw);
-        if (resolved && resolved.id) return resolved.id;
-    }
-
-    // 3) config file (allow id OR name)
-    const cfgRaw = readEngineIdFromConfigFile();
-    if (cfgRaw) {
-        const resolved = resolveEngineBundle(cfgRaw);
-        if (resolved && resolved.id) return resolved.id;
-    }
-
-    // 4) default
-    return DEFAULT_ENGINE_NAME;
+    const cfg = readEngineConfigFromConfigFile();
+    return (cfg && cfg.engineId) || DEFAULT_ENGINE_NAME;
 }
 
 function resolveEngineBundle(requestedRaw) {
@@ -346,17 +232,11 @@ function loadEngineAdapterByIdOrName(explicit) {
         version: b.version
     }));
 
-    // An add-on's engine, with the add-on not installed: say how to get it.
-    const addon = addonOffering(requested);
-    if (addon) {
-        throw new Error(`The engine "${requested}" comes with the ${addon} add-on, which is not installed here. Install it with: npm run addon:install -- ${addon}`);
-    }
-
     const hint = known.length
         ? `Known engines: ${known.map(k => `${k.id} (${k.name})`).join(', ')}`
         : 'No engines discovered in ./engines';
 
-    throw new Error(`Failed to resolve accessibility engine "${requested}" by id or name. ${hint}`);
+    throw new Error(`"${requested}" is not an engine the lab has. ${hint}`);
 }
 
 const loaded = loadEngineAdapterByIdOrName(readRequestedEngineId());
@@ -554,18 +434,6 @@ function applyProvenanceToCanonical(canonical, engineMeta) {
     return out;
 }
 
-// An engine that selects by WCAG level only ran a wider selection than a
-// scan of an earlier WCAG version asked for; say so beside its findings.
-function addSelectionScopeNotice(canonical, engineMeta, selection) {
-    const notice = levelOnlySelectionNotice({
-        engineId: engineMeta && engineMeta.id,
-        engineName: engineMeta && engineMeta.name,
-        selection
-    });
-    if (!notice) return;
-    canonical.notices = [...(Array.isArray(canonical.notices) ? canonical.notices : []), notice];
-}
-
 async function ensureInjected(page, engineIdOverride = null) {
     const bundle = getAdapterBundle(engineIdOverride);
     const active = bundle?.mod || adapter;
@@ -640,12 +508,12 @@ async function runOnPage(
 
         // Always apply provenance.
         applyProvenanceToCanonical(result.canonical, engineMeta);
-        // EN 301 549's clauses on an EN 301 549 scan: surea11y's as core
-        // names them, under its profile; for an engine that cannot name them,
-        // those of the version the scan targeted.
-        if (bundle.id === 'surea11y') en301549FromMappings(result.canonical);
+        // EN 301 549's clauses on an EN 301 549 scan: the engine's own, for
+        // one that names them (surea11y, under its profile); for one that
+        // cannot, those of the version the scan targeted.
+        const caps = bundle.mod && bundle.mod.capabilities ? bundle.mod.capabilities : {};
+        if (caps.namesEn301549Clauses) en301549FromMappings(result.canonical);
         else annotateEn301549(result.canonical, { profile: scanSelection && scanSelection.profile });
-        addSelectionScopeNotice(result.canonical, engineMeta, scanSelection);
         separateBestPractices(result.canonical);
     }
 
@@ -655,6 +523,48 @@ async function runOnPage(
     }
 
     return result;
+}
+
+/**
+ * Readies a page before its first navigation, for an adapter that needs to:
+ * surea11y installs core's hooks, which must run before the page's own
+ * scripts. `hooks` is the run's determinism.coreHooks, or undefined for the
+ * adapter's default. Returns what the adapter returns, or [] for none.
+ */
+async function preparePage(page, { hooks } = {}) {
+    if (typeof adapter.preparePage === 'function') return adapter.preparePage(page, { hooks });
+    return [];
+}
+
+/**
+ * The page hooks a setting (A11Y_CORE_HOOKS) asks for, as the adapter reads
+ * it, or undefined for its default (and for an adapter without hooks).
+ */
+function pageHooksFrom(value) {
+    if (typeof adapter.pageHooksFrom === 'function') return adapter.pageHooksFrom(value);
+    return undefined;
+}
+
+/**
+ * The engine's own result in a scan's native output, which the adapter
+ * names: for surea11y, core's result, which the CI exports (SARIF, JUnit,
+ * EARL) and baselines are built from. null for an adapter that keeps none,
+ * whose scans then have nothing to export in those formats.
+ */
+function ownResult(native) {
+    if (typeof adapter.ownResult === 'function') return adapter.ownResult(native) || null;
+    return null;
+}
+
+/**
+ * Whether the engine with this id applies a standard in full (selectsBy
+ * 'standard'), and so says itself which one it applied. false for an
+ * engine the lab doesn't have.
+ */
+function appliesStandard(id) {
+    const bundle = id ? resolveEngineBundle(id) : null;
+    const caps = bundle && bundle.mod && bundle.mod.capabilities ? bundle.mod.capabilities : {};
+    return caps.selectsBy === 'standard';
 }
 
 /**
@@ -751,5 +661,11 @@ module.exports = {
     supportsCapabilities: !!(adapter && adapter.capabilities),
 
     // engine discovery (for UI)
-    listEngines
+    listEngines,
+
+    // optional adapter hooks, with defaults for an adapter without them
+    preparePage,
+    pageHooksFrom,
+    ownResult,
+    appliesStandard
 };

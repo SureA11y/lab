@@ -22,6 +22,11 @@
 // - forEachElement at a concurrency, each worker page in a tab of its own:
 //   a background tab runs no animation frame, so its scans waited out their
 //   stage limit and were lost (19 of 60 kept).
+// - A site whose certificate the browser does not trust (self-signed, or a
+//   network that inspects HTTPS) failed with Chrome's code alone, and no run
+//   could open it: the runner asked to accept it with an option Puppeteer no
+//   longer reads. It is refused, saying why and what to do, unless the run
+//   accepts untrusted certificates, and a run that does says so.
 //
 // The workflow runs end to end (executeWorkflowRun, as the app and the CLI do).
 //
@@ -31,6 +36,11 @@
 const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
+const https = require('node:https');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
 const { executeWorkflowRun } = require('./workflow-run');
 const { closeBrowser } = require('./a11y-runner');
@@ -187,5 +197,42 @@ describe('hostile pages', () => {
         assert.equal(status, 'done');
         assert.equal(payload.scans.length, 2);
         assert.ok(seconds < 60, `took ${seconds} s`);
+    });
+
+    test('a site whose certificate the browser does not trust is refused, saying why, unless the run accepts it', async (t) => {
+        // A certificate no authority signed, made for this test only.
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'self-signed-'));
+        try {
+            execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-subj', '/CN=127.0.0.1',
+                '-keyout', path.join(dir, 'key.pem'), '-out', path.join(dir, 'cert.pem')], { stdio: 'ignore' });
+        } catch {
+            t.skip('openssl is not installed');
+            return;
+        }
+        const secure = https.createServer({ key: fs.readFileSync(path.join(dir, 'key.pem')), cert: fs.readFileSync(path.join(dir, 'cert.pem')) },
+            (req, res) => { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end(page('<p>Self-signed</p>')); });
+        await new Promise((resolve) => secure.listen(0, '127.0.0.1', resolve));
+        try {
+            const spec = {
+                url: `https://127.0.0.1:${secure.address().port}/`,
+                actions: [{ type: 'a11yScan', label: 'self-signed', screenshotView: false }],
+            };
+            const refused = await timedRun(spec);
+            assert.equal(refused.status, 'error');
+            assert.match(refused.payload.errorDetails.message, /ERR_CERT_AUTHORITY_INVALID.*does not trust this site's certificate.*Untrusted certificates to Accept/s);
+            assert.ok(!(refused.payload.runDiagnostics || {}).untrustedCertsAccepted);
+
+            const log = [];
+            const accepted = await timedRun({ ...spec, acceptUntrustedCerts: true }, { progress: (entry) => log.push(entry) });
+            assert.equal(accepted.status, 'done', accepted.payload.errorDetails && accepted.payload.errorDetails.message);
+            assert.equal(accepted.payload.scans.length, 1);
+            assert.ok(accepted.payload.scans[0].canonical, 'the scan has its findings');
+            assert.equal(accepted.payload.runDiagnostics.untrustedCertsAccepted, true);
+            assert.ok(log.some((e) => e.type === 'warn' && /accepts certificates the browser does not trust/.test(e.message)), 'the run says so in its log');
+        } finally {
+            secure.closeAllConnections();
+            await new Promise((resolve) => secure.close(resolve));
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
     });
 });

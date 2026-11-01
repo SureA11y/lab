@@ -343,10 +343,12 @@ function runChart(columns, verdict) {
         const text = marked.has(i)
             ? `<text class="dash-ptlabel" x="${(x(i) + dx).toFixed(1)}" y="${(y(v) - 12).toFixed(1)}" text-anchor="${anchor}">${v}</text>`
             : '';
+        // Not focusable: the chart is one image, whose name gives every
+        // point's value, as the table under it does; a point inside an image
+        // that took focus would be a stop a screen reader can't describe.
         return `${text}<circle class="dash-dot${i === values.length - 1 ? ' dash-dot--last' : ''}"`
-            + ` cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}" tabindex="0" role="img"`
-            + ` data-tip-label="${esc(labels[i])}" data-tip-value="${v}"`
-            + ` aria-label="${esc(labels[i])}: ${v} failures"/>`;
+            + ` cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}"`
+            + ` data-tip-label="${esc(labels[i])}" data-tip-value="${v}"/>`;
     }).join('');
 
     // The regression is flagged where it happened rather than in a caption.
@@ -840,7 +842,7 @@ function ruleGrid(d) {
             <th scope="row" class="dash-rule-col">
                 <span class="dash-sev-dot dash-sev-dot--${row.severity}" aria-hidden="true"></span>
                 <span class="dash-rule-name"${langAttr(words.lang)}>${esc(words.name)}</span>
-                <span class="dash-rule-meta">${SEV_LABEL[row.severity]}${row.wcag ? ` · WCAG ${esc(row.wcag)}` : ''}${esc(rgaaMeta(row.rgaa))}${
+                <span class="dash-rule-meta">${SEV_LABEL[row.severity]}${row.wcag ? ` · WCAG ${esc(row.wcag)}` : ''}${esc(rgaaMeta(row.rgaa))}${esc(standardsMeta(row.standards))}${
     reachWords(row) ? ` · ${esc(reachWords(row))}` : ''}${
     row.age && row.age.runs > 1 ? ` · open ${esc(ageWords(row, unitOf(d)))}` : ''}</span>
                 <span class="dash-rule-id mono">${esc(row.ruleId)}</span>
@@ -1157,6 +1159,16 @@ function rgaaMeta(criteria) {
     return list.length ? ` · RGAA ${list.join(', ')}` : '';
 }
 
+// " · Sample Standard 1, 2": another standard's requirements the reports'
+// findings named, standard by standard. Only scans against that standard's
+// profile carry them.
+function standardsMeta(standards) {
+    return (Array.isArray(standards) ? standards : [])
+        .filter((s) => s && s.standard && Array.isArray(s.requirements) && s.requirements.length)
+        .map((s) => ` · ${s.standard} ${s.requirements.join(', ')}`)
+        .join('');
+}
+
 function conformanceSourceNote(d) {
     const source = d.conformance.source;
     if (source === 'coverage') {
@@ -1252,7 +1264,7 @@ function conformanceGrid(d) {
         return `<tr data-dash-cat="${esc(row.category)}">
             <th scope="row" class="dash-rule-col">
                 <span class="dash-rule-name">${esc(criterionName(row.sc))}</span>
-                <span class="dash-rule-meta">WCAG ${esc(row.sc)}${row.level ? ` · level ${esc(row.level)}` : ''}${esc(en301549Meta(row.en301549))}${esc(rgaaMeta(row.rgaa))}</span>
+                <span class="dash-rule-meta">WCAG ${esc(row.sc)}${row.level ? ` · level ${esc(row.level)}` : ''}${esc(en301549Meta(row.en301549))}${esc(rgaaMeta(row.rgaa))}${esc(standardsMeta(row.standards))}</span>
             </th>${cells}
             <td class="dash-what-col"><span class="dash-cat-chip dash-cat-chip--${cat.tone}">${esc(cat.label)}</span></td>
         </tr>`;

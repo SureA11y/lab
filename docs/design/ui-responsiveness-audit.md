@@ -253,6 +253,14 @@ element screenshots on the server) was measured before and after these changes, 
 machine:
 `BASE=… node audit.js` and `node export-freezes.js`.
 
+**Later.** A report picked on its own now opens at once, without Load
+selected, so the scripts time picking it until it is on screen (`audit.js`:
+"pick file → report on screen", then Load selected pressed again). Run
+twice on the code before and after `a11y-ui.js` was split into modules (30
+October 2026), the report was on screen in about 1.05 s with a 0.32 s
+longest freeze, tab switches had no freeze, a grouping change 0.08 s, and
+scrolling no slow frame: the same, within noise.
+
 | Interaction | Before: first feedback / longest freeze / done | After: first feedback / longest freeze / done |
 |---|---|---|
 | Elements on the page | 726,623 | **19,183** |

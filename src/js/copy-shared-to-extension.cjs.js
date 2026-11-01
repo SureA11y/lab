@@ -33,6 +33,9 @@ const DEST_SCAN_NOTES = path.join(PROJECT_ROOT, 'extension', 'scan-notes.js');
 const SRC_CONFORMANCE_TARGETS = path.join(PROJECT_ROOT, 'src', 'shared', 'conformance-targets.js');
 // What a report's scan checked against, read alike from old and new reports
 const SRC_REPORT_SCAN = path.join(PROJECT_ROOT, 'src', 'shared', 'report-scan.js');
+// Boxes that scroll, reachable by keyboard while they do
+const SRC_SCROLL_REACH = path.join(PROJECT_ROOT, 'src', 'shared', 'scroll-reach.js');
+const DEST_SCROLL_REACH = path.join(PROJECT_ROOT, 'extension', 'scroll-reach.js');
 const DEST_REPORT_SCAN = path.join(PROJECT_ROOT, 'extension', 'report-scan.js');
 const SRC_REPORT_FORMAT = path.join(PROJECT_ROOT, 'src', 'shared', 'report-format.js');
 const DEST_REPORT_FORMAT = path.join(PROJECT_ROOT, 'extension', 'report-format.js');
@@ -230,6 +233,7 @@ globalThis.A11Y_LABS_BROWSER = {
         copyFile(SRC_SCAN_NOTES, DEST_SCAN_NOTES);
         copyFile(SRC_CONFORMANCE_TARGETS, DEST_CONFORMANCE_TARGETS);
         copyFile(SRC_REPORT_SCAN, DEST_REPORT_SCAN);
+        copyFile(SRC_SCROLL_REACH, DEST_SCROLL_REACH);
         copyFile(SRC_REPORT_FORMAT, DEST_REPORT_FORMAT);
 
 

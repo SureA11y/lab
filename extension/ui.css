@@ -60,7 +60,7 @@
     --font-sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    /* Type scale — shared with the app (src/css/a11y-lab-ui.css), so extension
+    /* Type scale — shared with the app (src/css/tokens.css), so extension
        and app text sizes can't drift. rem-based off a 16px root. */
     --fs-xxs: 0.6875rem;  /* 11px */
     --fs-xs: 0.75rem;     /* 12px */
@@ -117,7 +117,7 @@
        this rule. Only concrete leaf tokens are redefined there — the aliases
        below (--panel, --text, --advisory, --focus-outline, …) resolve through
        var() so they re-theme automatically. Values mirror the app's light /
-       dark palettes (src/css/a11y-lab-ui.css). */
+       dark palettes (src/css/tokens.css). */
     color-scheme: light;
     --brand-rgb: 91, 57, 196;
 
@@ -471,7 +471,7 @@ input:focus, textarea:focus, select:focus{
 /* DS Disclosure — inline variant. A button (not <details>/<summary>) whose
    whole row is the control: a leading chevron, then the label. No border, no
    rest background — cheap to skim when collapsed. Matches the app's
-   .legend-toggle (src/css/a11y-lab-ui.css). */
+   .legend-toggle (src/css/custom-steps.css). */
 .legend-toggle{
     display: inline-flex;
     align-items: center;
@@ -1289,7 +1289,8 @@ input:focus, textarea:focus, select:focus{
 .dsp-tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 6px 0 8px; }
 .dsp-seg { display: inline-flex; align-items: center; border: 0; padding: 0; margin: 0; min-width: 0; }
 .dsp-seg legend { float: left; font-size: .8rem; color: var(--text-muted); margin-right: 8px; padding: 0; }
-.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+/* Wraps inside its segment when the line has no room. Mirrors the app. */
+.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: normal; min-width: 0; }
 .dsp-seg label + label { border-left-width: 0; }
 .dsp-seg label:has(input:checked) + label { border-left-color: var(--accent); }
 .dsp-seg label:hover, .dsp-filter-btn:hover { background: var(--na-soft); }

@@ -76,6 +76,12 @@
                 out.type = 'string';
                 if (values && field.otherValues === true) {
                     out.examples = values;
+                } else if (values && field.packValues === true) {
+                    // The values listed, or one an installed standard pack
+                    // adds (a profile such as "rgaa-4.1"), which the run
+                    // checks against the packs it has.
+                    const pack = { type: 'string', pattern: '^[a-z][a-z0-9]*(-[a-z0-9.]+)+$', description: 'a profile of an installed standard pack' };
+                    out.anyOf = tokenAllowed ? [{ enum: values }, pack, VAR_TOKEN] : [{ enum: values }, pack];
                 } else if (values) {
                     out.anyOf = tokenAllowed ? [{ enum: values }, VAR_TOKEN] : [{ enum: values }];
                 }
@@ -285,6 +291,10 @@
                     type: 'string',
                     minLength: 1,
                     description: 'The language the page is shown in as the run starts, as a BCP 47 tag (es-ES, de, pt-BR), or a variable such as {var:lang}, so each batch row can set its own. Left out, the browser\'s own. Set language changes it; its Run default comes back to this.',
+                },
+                acceptUntrustedCerts: {
+                    enum: [true, false, 'on', 'off'],
+                    description: 'Open sites whose certificate the browser does not trust: a staging server\'s self-signed one, or any site through a network that inspects HTTPS. Left out, off, and such a site fails the run saying why. The browser cannot then tell a site from one pretending to be it, so a run that signs in should not use it on a network you do not trust. A run that uses it says so in its log and in runDiagnostics.untrustedCertsAccepted.',
                 },
                 metadata: { type: 'object' },
                 groupScans: { type: 'boolean' },

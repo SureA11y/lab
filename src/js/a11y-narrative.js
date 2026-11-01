@@ -84,7 +84,8 @@ export function renderA11yNarrative({ a11ySummary, domMetrics, metricDefs, seed,
   const inputs = s?.inputs || {};
   const flags = s?.flags || {};
 
-  const axe = inputs.axe || {};
+  // The findings' counts.
+  const counts = inputs.engine || {};
   const controls = inputs.controls || {};
 
   const tm = d?.textMetrics || null;
@@ -112,11 +113,11 @@ export function renderA11yNarrative({ a11ySummary, domMetrics, metricDefs, seed,
     pageStats,
 
 
-    // Axe outcomes
-    violations: num(axe.violations, 0),
-    incomplete: num(axe.incomplete, 0),
-    incompleteLikelyFail: num(axe.incompleteLikelyFail, 0),
-    passes: num(axe.passes, 0),
+    // Findings outcomes
+    violations: num(counts.violations, 0),
+    incomplete: num(counts.incomplete, 0),
+    incompleteLikelyFail: num(counts.incompleteLikelyFail, 0),
+    passes: num(counts.passes, 0),
 
     // Flags and scope signals
     manualReviewNeeded: !!flags.manualReviewNeeded,

@@ -36,6 +36,20 @@ The first public release.
 - **Reports opened by address**: `?report=<url>` and `?compare=<url>`.
 - **Phones and narrow screens**: from 320 pixels wide, each finding is a
   card, which screen readers still read as a table.
+- **Procedures for what no rule evaluates**, in English, in
+  `src/procedures/`: how a person assesses by hand the 51 WCAG 2.2 criteria
+  no surea11y rule evaluates, and EN 301 549's own requirements (chapter 4,
+  9.6, 9.7, chapters 5 to 8 and 10 to 13, and chapter 12), with Table B.2 of
+  V4.1.1 for its clause 4.2 criteria. surea11y and its EN 301 549 pack give
+  procedures only for what their rules evaluate; these complete a manual
+  audit of either standard. The testing guide shows them beside core's and
+  the pack's, so every requirement has its procedures. They are in English,
+  so for now the guide, its saved page and a report's "How to check it by
+  hand" read every procedure in English, and the guide offers no other
+  language.
+  The HTML report saved for each scan leaves out surea11y's "What's left
+  for a person", which lists only what its rules evaluate: the guide and
+  Review conformance give every requirement.
 
 ### The runner and integrations
 
@@ -53,8 +67,6 @@ The first public release.
   comparisons, diffs and the HTTP API, in `schemas/`.
 - **A GitHub Action** (`action.yml`), **a container image** (`Dockerfile`),
   and **the HTTP API** (`docs/http-api.md`, with an OpenAPI description).
-- **More engines as an add-on** (`npm run addon:install -- more-engines`),
-  for comparing engines; surea11y is the one built in.
 - **A browser extension** (`extension/`) to scan the page in front of you
   and send a session to the lab.
 - **Examples** that run against a demo shop, a getting-started guide, and
@@ -74,4 +86,6 @@ The first public release.
 
 `node src/cli/convert-config.js <file or folder>` lists what it would change
 to bring them up to date, and `--write` updates them; the app does the same
-as it loads them. Reports saved before still open, merge and compare.
+as it loads them. surea11y is the lab's one engine: a scan that named
+another runs with surea11y, and the conversion says so. Reports saved before
+still open, merge and compare, with the engines they were scanned with.

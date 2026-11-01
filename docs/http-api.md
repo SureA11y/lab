@@ -42,7 +42,7 @@ curl -s 'localhost:3000/workflow-result?runId=run_k27mle37'
 
 | Call | What it does |
 | --- | --- |
-| `POST /workflow-start` | Starts a run. Body: a run spec's fields (`url`, `actions`, and optionally `customSteps`, `scenarioName`, `viewport`, `colorScheme`, `highContrast`, `language`, `vars`; each scan step sets its own `profile`, `context` and `exclude`), plus `dryRun: true` for a dry run. Answers `{ ok, runId }`, or 400 with `{ error, details }` when the url is not one it can open, there are no actions, or it gives the run `context` or `exclude`, which are each scan step's. At most `A11Y_MAX_RUNS` runs (4) go at once: one started past them waits its turn, `running` all the while, and its log says it is waiting. |
+| `POST /workflow-start` | Starts a run. Body: a run spec's fields (`url`, `actions`, and optionally `customSteps`, `scenarioName`, `viewport`, `colorScheme`, `highContrast`, `language`, `acceptUntrustedCerts`, `vars`; each scan step sets its own `profile`, `context` and `exclude`), plus `dryRun: true` for a dry run. Answers `{ ok, runId }`, or 400 with `{ error, details }` when the url is not one it can open, there are no actions, or it gives the run `context` or `exclude`, which are each scan step's. At most `A11Y_MAX_RUNS` runs (4) go at once: one started past them waits its turn, `running` all the while, and its log says it is waiting. |
 | `GET /workflow-progress?runId=&since=` | The run's log from index `since`: `{ status, nextIndex, logs }`. Pass `nextIndex` back as `since`. |
 | `GET /workflow-result?runId=` | 202 `{ status }` while it runs. Then `{ status, payload }`: `status` is `done`, `cancelled` or `error`, and `payload` the report, which names its page pictures by the links the server serves them at (`/reports/runs/<runId>/images/…`). A run that could not start has `{ status: "error", error: { error, details } }` and no payload; `details` says why (a step that cannot run, a secret not set in the server's environment). A dry run's result also has `dryRun`, the summary `run-workflow.js --dry-run` prints. |
 | `POST /workflow-cancel` | Body `{ runId }`. The run stops at its next step and its result holds what it got so far. A run that has ended is left as it is; the answer gives its status. |
@@ -75,7 +75,7 @@ tool can show one in it, or embed it in a frame:
 
 | Address | Opens |
 | --- | --- |
-| `/?report=<url>` | The report at `<url>` in the open report tab: a report's JSON (`payload.json`, `*.a11y-report.json`) or a report package's zip. |
+| `/?report=<url>` | The report at `<url>` in the open report tab: a report's JSON (`payload.json`, `*.a11y-report.json`), with its pictures from the `images/` folder beside it, or a report package's zip. |
 | `/?compare=<url>&compare=<url>` | Those reports in the Compare tab, in that order; a downloaded comparison's zip, or a queue's, given once. |
 
 `<url>` is fetched by the browser, so it must be one the page may read: on the
@@ -88,10 +88,18 @@ tab; the app is otherwise as it always opens.
 | Call | What it answers |
 | --- | --- |
 | `GET /health` | `{ status: "ok" }`. |
-| `GET /workflows/actions` | The step definitions, with the engines installed filled in: what `schemas/run-spec.v1.schema.json` is generated from. |
-| `GET /api/engines` | The engines installed, and the default. |
-| `GET /api/engine/capabilities?engineId=` | What an engine can check: its options and the profiles it supports. |
-| `GET /api/engine/rules?engineId=` | An engine's rules catalog. |
+| `GET /workflows/actions` | The step definitions: what `schemas/run-spec.v1.schema.json` is generated from. |
+| `GET /api/engine/capabilities` | What surea11y can check: its options and the profiles it supports. |
+| `GET /api/engine/rules` | surea11y's rules catalog. |
+| `GET /api/procedures/list?standard=wcag&version=2.2&levels=A,AA` | A standard's procedures, as the testing guide reads them: `{ available, listing }`, `listing` being what core's `listProcedures` gives. `standard` is `wcag`, `best-practice` or an installed pack's key; `tools`, `automation` and `locale` narrow it as core does. |
+| `GET /api/procedures/languages?standard=wcag&version=2.1` | The languages a standard's procedures can be read in, as core's `procedureLanguages` gives them, its own first: `{ available, languages: [{ locale, complete, missing }] }`, `missing` counting the texts shown in another language; `languages` is `null` for a standard or version core doesn't know, and `{ available: false }` comes from a core that doesn't say. |
+| `GET /api/procedures/index` | What the testing guide has: each WCAG version's criteria and each installed standard's requirements by version, for links into it to land. |
+| `GET /api/procedures/page?…` | The same, as one HTML page to keep (core's `renderProcedures`), downloaded. |
+| `GET /api/standards` | The standards of the installed packs, besides WCAG: `{ standards: [{ key, name, package, versions, profiles: [{ id, label, version, wcagVersion }], listings }] }`, where `listings`, with a core that has test procedures, gives each version's requirements (`id`, `title`, `wcag` for one that restates a WCAG criterion) in the standard's groups ([Standards](configuration.md#standards)). |
+| `GET /api/procedures?ids=1.4.13,2.4.3` | How to check each WCAG criterion by hand, from surea11y core's test procedures: `{ available, locale, procedures: { [id]: procedure } }`, in `&locale=` where the standard is all in it, else in the standard's own language (`locale` says which), from a core that says which languages it has; in `&locale=` where it has the text, from one that doesn't. With `&standard=en301549&version=V4.1.1`, an installed standard's own requirements (`4.2.1`, `12.1`, `5`). `{ available: false }` from a core without procedures, or for a standard with no pack installed. |
+
+`GET /guide` opens the testing guide, with the choices in its address
+(`?standard=en301549&version=V4.1.1&id=4.2.1`).
 
 Everything else the server answers is the app's own (its page, the report
 assets, the manual-scan flow) and may change with it.

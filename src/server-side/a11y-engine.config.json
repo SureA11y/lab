@@ -2,7 +2,6 @@
   "engineId": "surea11y",
   "validateCanonical": true,
   "engineOptions": {
-    "surea11y": {
-    }
+    "surea11y": {}
   }
 }

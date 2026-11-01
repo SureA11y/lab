@@ -58,6 +58,17 @@ export function engineHTML(engine) {
     return esc(engine.version ? `${name} ${engine.version}` : name);
 }
 
+// Where surea11y's accuracy is shown rather than claimed: its results on W3C's
+// ACT test cases, kept current by core.
+export const SUREA11Y_TESTED_URL = 'https://github.com/SureA11y/core#checked-against-the-act-corpus';
+
+/** A link to how surea11y is tested, after the engine line; '' without surea11y. */
+export function howTestedHTML(engines) {
+    const list = Array.isArray(engines) ? engines : [];
+    if (!list.some((e) => e && isSureA11yEngine(e))) return '';
+    return ` · <a href="${SUREA11Y_TESTED_URL}">How surea11y is tested</a>`;
+}
+
 /** Every engine of a list, comma-separated; '' for none. */
 export function enginesHTML(engines) {
     return (Array.isArray(engines) ? engines : []).map(engineHTML).filter(Boolean).join(', ');

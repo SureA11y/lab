@@ -63,11 +63,11 @@ describe('buildViewportFromPreset', () => {
 describe('countPlannedArtifacts', () => {
     test('non-array input returns all-zero counts', () => {
         for (const bad of [null, undefined, 'not-an-array', {}, 42]) {
-            assert.deepEqual(countPlannedArtifacts(bad), {a11yScans: 0, screenshots: 0, evidence: 0, totalArtifacts: 0, axe: 0});
+            assert.deepEqual(countPlannedArtifacts(bad), {a11yScans: 0, screenshots: 0, evidence: 0, totalArtifacts: 0});
         }
     });
 
-    test('sums a11yScan/screenshot/evidenceCapture (variants) at the top level, axe mirrors a11yScans', () => {
+    test('sums a11yScan/screenshot/evidenceCapture (variants) at the top level', () => {
         const out = countPlannedArtifacts([
             {type: 'a11yScan'},
             {type: 'a11yScan'},
@@ -77,7 +77,7 @@ describe('countPlannedArtifacts', () => {
             {type: 'evidenceCapture', variants: 'both'},
             {type: 'evidenceCapture'} // no variants specified -> defaults to "both" (2)
         ]);
-        assert.deepEqual(out, {a11yScans: 2, screenshots: 1, evidence: 1 + 1 + 2 + 2, totalArtifacts: 2 + 1 + 6, axe: 2});
+        assert.deepEqual(out, {a11yScans: 2, screenshots: 1, evidence: 1 + 1 + 2 + 2, totalArtifacts: 2 + 1 + 6});
     });
 
     test('disabled actions are excluded, at any nesting level', () => {
@@ -93,7 +93,7 @@ describe('countPlannedArtifacts', () => {
         const out = countPlannedArtifacts([
             {type: 'group', actions: [{type: 'a11yScan'}, {type: 'screenshot'}]}
         ]);
-        assert.deepEqual(out, {a11yScans: 1, screenshots: 1, evidence: 0, totalArtifacts: 2, axe: 1});
+        assert.deepEqual(out, {a11yScans: 1, screenshots: 1, evidence: 0, totalArtifacts: 2});
     });
 
     test('if takes the worst case (max) of actions vs elseActions per artifact kind, not their sum', () => {
@@ -105,7 +105,7 @@ describe('countPlannedArtifacts', () => {
             elseActions: [{type: 'a11yScan'}, {type: 'a11yScan'}, {type: 'a11yScan'}]
         }]);
         // a11yScans: max(1, 3) = 3; screenshots: max(1, 0) = 1
-        assert.deepEqual(out, {a11yScans: 3, screenshots: 1, evidence: 0, totalArtifacts: 4, axe: 3});
+        assert.deepEqual(out, {a11yScans: 3, screenshots: 1, evidence: 0, totalArtifacts: 4});
     });
 
     test('if with only actions (no elseActions) treats the missing branch as all-zero', () => {
@@ -208,7 +208,7 @@ describe('repeat', () => {
                 times: 3,
                 actions: [{type: 'a11yScan'}, {type: 'screenshot'}]
             }]);
-            assert.deepEqual(out, {a11yScans: 3, screenshots: 3, evidence: 0, totalArtifacts: 6, axe: 3});
+            assert.deepEqual(out, {a11yScans: 3, screenshots: 3, evidence: 0, totalArtifacts: 6});
         });
     });
 
@@ -219,7 +219,7 @@ describe('repeat', () => {
             preActions: [{type: 'screenshot'}],
             actions: [{type: 'a11yScan'}]
         }]);
-        assert.deepEqual(out, {a11yScans: 2, screenshots: 2, evidence: 0, totalArtifacts: 4, axe: 2});
+        assert.deepEqual(out, {a11yScans: 2, screenshots: 2, evidence: 0, totalArtifacts: 4});
     });
 
     test('forEachElement honors an explicit limit as the multiplier', () => {
@@ -243,7 +243,7 @@ describe('repeat', () => {
 
         test('an unresolvable customStepId contributes nothing (no throw)', () => {
             const out = countPlannedArtifacts([{type: 'runCustomStep', customStepId: 'missing'}], {});
-            assert.deepEqual(out, {a11yScans: 0, screenshots: 0, evidence: 0, totalArtifacts: 0, axe: 0});
+            assert.deepEqual(out, {a11yScans: 0, screenshots: 0, evidence: 0, totalArtifacts: 0});
         });
 
         test('a self-recursive custom step counts its own artifacts once and stops recursing (no infinite loop)', () => {
@@ -273,7 +273,7 @@ describe('repeat', () => {
 
     test('an unknown action type without an "actions" array contributes nothing', () => {
         const out = countPlannedArtifacts([{type: 'click', selector: '.btn'}]);
-        assert.deepEqual(out, {a11yScans: 0, screenshots: 0, evidence: 0, totalArtifacts: 0, axe: 0});
+        assert.deepEqual(out, {a11yScans: 0, screenshots: 0, evidence: 0, totalArtifacts: 0});
     });
 });
 
@@ -2469,9 +2469,7 @@ describe('applyActions / _applyActionsImpl (per-action bookkeeping)', () => {
 // (same rationale as the "page-driving actions" block above). This also exercises crawlQueue's
 // private URL/pattern helpers (normalizeUrlCandidate, parsePatternLines/compilePattern/
 // testPattern, applyIncludeExclude, normalizeAndFilterUrls) indirectly, since none of them are
-// exported. Note: sampleUrlList (defined near these helpers) is never actually called by
-// crawlQueue or anything else in this file - it's dead code, so it can't be covered without
-// exporting it purely for tests, which we don't do here.
+// exported.
 describe('crawlQueue', () => {
     async function runCrawl(page, actions, ctx, localVars = Object.create(null)) {
         await applyActions(page, actions, null, 0, ctx, localVars, 0, null);

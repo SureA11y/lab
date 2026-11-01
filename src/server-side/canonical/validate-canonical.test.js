@@ -77,7 +77,7 @@ describe('validateCanonical: per-finding checks', () => {
     test('severity is optional, but must be a valid value when present', () => {
         assert.equal(validateCanonical({ findings: [{ uid: 'a', outcome: 'fail' }] }).ok, true);
         // 'info' must be accepted: canonical-shared.js's normalizeSeverity() can emit it
-        // for axe impacts of "info"/"informational", so it has to be a valid canonical severity.
+        // for engine impacts of "info"/"informational", so it has to be a valid canonical severity.
         for (const severity of ['critical', 'serious', 'moderate', 'minor', 'info', 'unknown']) {
             assert.equal(validateCanonical({ findings: [{ uid: 'a', outcome: 'fail', severity }] }).ok, true, severity);
         }
@@ -219,8 +219,8 @@ describe('validateCanonicalOrThrow', () => {
 
     test('the thrown message includes engine id/version from meta when provided', () => {
         assert.throws(
-            () => validateCanonicalOrThrow({ findings: 'nope' }, { engineId: 'axe', engineVersion: '4.8.0' }),
-            /engine=axe, version=4\.8\.0/
+            () => validateCanonicalOrThrow({ findings: 'nope' }, { engineId: 'engine-b', engineVersion: '4.8.0' }),
+            /engine=engine-b, version=4\.8\.0/
         );
     });
 

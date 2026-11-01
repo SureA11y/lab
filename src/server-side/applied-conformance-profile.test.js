@@ -21,14 +21,14 @@ describe('appliedConformanceProfile', () => {
     test('finds surea11y\'s report in a multi-engine scan whatever the engine order', () => {
         const applied = { id: 'wcag22-aa', label: 'WCAG 2.2 AA' };
         const result = {
-            canonical: canonical(['axe', 'surea11y']),
-            perEngine: [{ canonical: canonical(['axe']) }, { canonical: canonical(['surea11y'], applied) }]
+            canonical: canonical(['engine-b', 'surea11y']),
+            perEngine: [{ canonical: canonical(['engine-b']) }, { canonical: canonical(['surea11y'], applied) }]
         };
         assert.deepEqual(appliedConformanceProfile(result, { requested: 'wcag22-aa' }), applied);
     });
 
     test('other engines get the standard through its tags, so it counts unless the step included rules or tags', () => {
-        const result = { canonical: canonical(['axe']) };
+        const result = { canonical: canonical(['engine-b']) };
         assert.deepEqual(appliedConformanceProfile(result, { requested: 'en301549-v4.1.1' }), { id: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' });
         assert.equal(appliedConformanceProfile(result, { requested: 'en301549-v4.1.1', overridden: true }), null);
         assert.equal(appliedConformanceProfile(result, {}), null);

@@ -15,7 +15,7 @@
 
 const ALLOWED_OUTCOMES = new Set(['fail', 'cantTell', 'pass', 'notApplicable']);
 // Includes 'info', since canonical-shared.js's normalizeSeverity() can emit it
-// for axe impacts of "info"/"informational".
+// for an impact of "info"/"informational", which older reports may hold.
 const ALLOWED_SEVERITIES = new Set(['critical', 'serious', 'moderate', 'minor', 'info', 'unknown']);
 
 function isObject(x) {

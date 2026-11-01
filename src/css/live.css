@@ -1,0 +1,696 @@
+/* The app's styles, part 7 of 14: the collected output, the live stream and the live scan cards.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* ==========================================================================
+   COLLECTED METADATA (collectOutput report panel)
+   ========================================================================== */
+
+.collected-metadata {
+    margin: 0 0 .75rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: .5rem .75rem;
+
+    background: var(--surface-2);
+    border-left: 3px solid var(--log-border);
+}
+
+.collected-metadata h3 {
+    margin: .75rem 0 .35rem;
+    font-size: var(--fs-lg);
+}
+
+.collected-metadata ul {
+    margin: 0 0 .25rem 1rem;
+    padding: 0;
+}
+
+.collected-metadata li {
+    margin: .2rem 0;
+    line-height: 1.5;
+}
+
+.collected-metadata-summary {
+    margin: .3rem 0 0;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+.collected-metadata-more {
+    margin: .2rem 0 .5rem;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.collected-metadata-copy,
+.collected-metadata-jump {
+    padding: .15rem .5rem;
+    font-size: var(--fs-xs);
+    line-height: 1.4;
+}
+
+.collected-metadata-copy { margin: .1rem 0 .4rem; }
+
+.collected-metadata-jump { margin-left: .35rem; }
+
+/* ==========================================================================
+   LIVE STREAM
+   ========================================================================== */
+
+#live-stream { display: none; margin-top: 10px; }
+
+.live-stream-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+}
+
+.stream-card,
+.screenshot-card {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    background: var(--surface-base);
+}
+
+.stream-card .stream-card-title,
+.screenshot-card .stream-caption { margin: 0 0 6px; font-size: var(--fs-md); color: var(--text-main); }
+
+.stream-meta { font-size: var(--fs-sm); color: var(--text-muted); }
+
+.stream-counts {
+    font-size: var(--fs-sm);
+}
+
+.results-container .stream-counts,
+.scan-results-meta .stream-counts {
+    white-space: normal;
+}
+
+/* The line wraps between its counts, never inside one: on a narrow screen
+   with WCAG 1.4.12's text spacing it needs more than one line, and kept on
+   one (it was nowrap) its last count was cut off at the card's edge. */
+.results-container .stream-counts > span,
+.scan-results-meta .stream-counts > span {
+    white-space: nowrap;
+}
+
+/* Each state's count takes its own state colour, same as ResultBadge —
+   colour is per-state here too, not a single flat muted tone. */
+.stream-fail { color: var(--danger); }
+.stream-cantTell { color: var(--warn); }
+.stream-pass { color: var(--ok); }
+
+.stream-preview { text-align: center; }
+
+.stream-preview img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--border-subtle);
+}
+
+.stream-caption { font-size: var(--fs-sm); margin-top: 4px; color: var(--text-muted); }
+
+.stream-card button.screenshot-btn,
+.screenshot-card button.screenshot-btn {
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    box-shadow: none;
+    max-height: 200px;
+    max-width: 100%;
+    display: block;
+    margin: 5px auto 0;
+    overflow: hidden;
+}
+
+.stream-card button.screenshot-btn > *,
+.screenshot-card button.screenshot-btn > * {
+    display: block;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    height: 100%;
+    outline: 1px solid var(--border-subtle);
+}
+
+.stream-card button.screenshot-btn img,
+.screenshot-card button.screenshot-btn img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.stream-card, .scan-url, .screenshot-card {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.scan-url-link {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* ==========================================================================
+   LIVE SCAN TOTALS (floating counter)
+   --------------------------------------------------------------------------
+   A non-dismissable snackbar pinned to the bottom-right while a run streams
+   scans into the live preview. It tallies fail / can't tell / pass and total
+   DOM elements scanned, reusing the same state colours and result glyphs as
+   the live-preview scan cards. It is removed when the run finishes.
+   ========================================================================== */
+/* Wrapper: pinned bottom-right, stacks the (optional) by-tag ledger above the
+   totals card. Transparent itself — the card carries the visible surface — so
+   the ledger appears to grow up out of the panel's top edge. */
+.live-totals {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 60;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+
+    max-width: min(92vw, 360px);
+    color: var(--text-main);
+    font-size: var(--fs-sm);
+}
+
+/* Hidden while another top-level tab is active (kept out of the a11y tree). */
+.live-totals.is-tab-hidden { display: none; }
+
+/* While the card floats over the page, a control that takes focus scrolls
+   clear of it, and the end of the page can scroll out from under it. */
+html:has(.live-totals:not(.live-totals--inline, .is-tab-hidden)) {
+    scroll-padding-bottom: 190px;
+}
+body:has(.live-totals:not(.live-totals--inline, .is-tab-hidden)) {
+    padding-bottom: 190px;
+}
+
+@media (max-width: 600px) {
+    .live-totals { right: 8px; bottom: 8px; max-width: calc(100vw - 16px); }
+}
+
+/* The visible totals card — the surface that used to live on .live-totals. */
+.live-totals-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    width: 100%;
+    padding: 10px 14px;
+
+    --live-totals-bg: var(--surface-overlay); /* the gaps between the step bar's segments */
+    background: var(--surface-overlay);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-popover);
+}
+
+.live-totals-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.live-totals-title {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-muted);
+}
+
+.live-totals-title .live-totals-scans {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-main);
+}
+
+/* Dismiss control: disabled + spinner while the run is in progress, an active
+   ✕ close button once it finishes (toggled by .is-finished on the container).
+   Deliberately smaller than the standard icon buttons and borderless — it's a
+   secondary affordance on a small component. */
+.live-totals-dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    min-height: 18px;
+    padding: 0;
+    flex: none;
+
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    box-shadow: none;
+    cursor: default;
+}
+
+.live-totals.is-finished .live-totals-dismiss {
+    cursor: pointer;
+    color: var(--text-main);
+}
+
+.live-totals.is-finished .live-totals-dismiss:hover {
+    background: var(--surface-hover);
+}
+
+.live-totals-dismiss-close {
+    display: none;
+    font-size: var(--fs-sm);
+    line-height: 1;
+}
+
+.live-totals.is-finished .live-totals-dismiss-spinner { display: none; }
+.live-totals.is-finished .live-totals-dismiss-close { display: inline-flex; }
+
+.live-totals-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+}
+
+.live-totals-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Same per-state colours the stream cards use — colour + glyph + word. */
+.live-totals-fail { color: var(--danger); }
+.live-totals-cantTell { color: var(--warn); }
+.live-totals-pass { color: var(--ok); }
+
+.live-totals-value { font-weight: 700; }
+
+.live-totals-dom {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.live-totals-dom .live-totals-value { color: var(--text-main); }
+
+/* ---- step progress ----------------------------------------------------
+   Sits between the card header and the scan tallies, separated by a hairline
+   so the two readings stay distinct: how far through the workflow we are, and
+   what the scans have found so far. */
+.live-totals-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.live-totals-steps[hidden] { display: none; }
+
+.live-totals-steps-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.live-totals-steps-label {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-muted);
+}
+
+.live-totals-steps-count {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+/* The track: one segment per workflow step (the top-level list), so a step
+   that finishes fills exactly one. Overflow is clipped to the rounded shape;
+   the gaps between segments are drawn over the fill, so they show on both. */
+.live-totals-bar {
+    position: relative;
+    overflow: hidden;
+
+    height: 8px;
+    border-radius: 999px;
+    background: var(--surface-press);
+    box-shadow: inset 0 0 0 1px var(--border-soft);
+}
+
+.live-totals-bar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background: var(--accent);
+    transition: width .35s ease;
+}
+
+.live-totals-bar.is-complete .live-totals-bar-fill { background: var(--ok); }
+
+/* --segments is set from the number of workflow steps. A 2px gap in the
+   card's own colour ends each segment; the layer reaches 2px past the track,
+   so the last gap falls outside it and is clipped. */
+.live-totals-bar.is-segmented::after {
+    content: "";
+    position: absolute;
+    inset: 0 -2px 0 0;
+    background-image: linear-gradient(to right, transparent calc(100% - 2px), var(--live-totals-bg) 0);
+    background-size: calc(100% / var(--segments, 1)) 100%;
+    pointer-events: none;
+}
+
+.live-totals-steps-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.live-totals-steps-note {
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+}
+
+/* "Now: Click "Next" · item 12 of 40": one line, cut short; its title holds
+   the whole text. */
+.live-totals-steps-now {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-main);
+}
+
+.live-totals-steps-now[hidden] { display: none; }
+
+/* ---- disclosures and their detail tables ------------------------------
+   One control, used twice: "by type" under the step bar and "by tag" under
+   the scan tallies. Each sits directly beneath the numbers it breaks down and
+   opens its table in place, so the card grows upward from its fixed bottom
+   edge and the summary the reader was looking at travels with it. */
+.live-totals-disclosure {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+
+    padding: 1px 6px;
+    min-height: 0;
+
+    background: var(--accent-soft);
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    cursor: pointer;
+}
+
+.live-totals-disclosure[hidden] { display: none; }
+
+.live-totals-disclosure:hover {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--text-main);
+}
+
+.live-totals-disclosure:focus-visible {
+    outline: 2px solid var(--accent-ring);
+    outline-offset: 1px;
+}
+
+.live-totals-disclosure-chev { transition: transform .18s ease; }
+
+.live-totals-steps.is-expanded .live-totals-disclosure-chev,
+.live-totals-tags.is-expanded .live-totals-disclosure-chev { transform: rotate(180deg); }
+
+.live-totals-detail {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+}
+
+.live-totals-detail[hidden] { display: none; }
+
+/* The global `th` rule dresses table headers up as sticky, shaded, uppercase
+   column heads. None of that suits a short list inside a 360px card - and the
+   row headers here are action types like "a11yScan" and user-written tags,
+   whose casing carries meaning and must survive. */
+.live-totals-detail th,
+.live-totals-detail td {
+    padding: 3px 0;
+    text-align: right;
+
+    position: static;
+    background: transparent;
+    border-bottom: 0;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: inherit;
+}
+
+/* Column heads keep the micro-caps the rest of the panel uses for labels. */
+.live-totals-detail thead th {
+    padding-top: 6px;
+    font-weight: 600;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.live-totals-detail thead .live-totals-detail-name { text-align: left; }
+
+.live-totals-detail tbody th.live-totals-detail-name {
+    text-align: left;
+    font-weight: 500;
+    color: var(--text-main);
+
+    /* A long name truncates rather than pushing the numbers off the card,
+       which is only 360px wide at most. */
+    max-width: 0;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.live-totals-detail tbody tr + tr th,
+.live-totals-detail tbody tr + tr td {
+    border-top: 1px solid color-mix(in srgb, var(--border-subtle) 45%, transparent);
+}
+
+/* Scoped to beat the `padding: 3px 0` shorthand above, which is one class more
+   specific than a bare .live-totals-detail-num would be. */
+.live-totals-detail .live-totals-detail-num {
+    padding-left: 16px;
+    white-space: nowrap;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+/* The global zebra stripe (tr:nth-child(even) td) bands only the number cells
+   here, since the row header is a th - which reads as a rendering fault rather
+   than as striping. Rows are separated by the hairline above instead. */
+.live-totals-detail tbody tr:nth-child(even) td { background: transparent; }
+
+/* Nothing left of this type: readable, but it should not draw the eye away
+   from the rows that still have work in them. */
+.live-totals-detail .live-totals-detail-num.is-zero { color: var(--text-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+    .live-totals-bar-fill,
+    .live-totals-disclosure-chev { transition: none; }
+}
+
+/* ---- "by tag" block ---------------------------------------------------
+   The mirror image of the step block above: the numbers, then the disclosure
+   that breaks them down, then the table it opens. The hairline separates it
+   from the DOM count the way the step block's separates it from the tallies. */
+.live-totals-tags {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    padding-top: 8px;
+    border-top: 1px solid var(--border-soft);
+}
+
+.live-totals-tags[hidden] { display: none; }
+
+.live-totals-tags-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.live-totals-tags-note {
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+}
+
+/* Tags are unbounded - a run can carry dozens - so the ledger scrolls inside a
+   bounded box rather than stretching the card off the top of the screen. The
+   per-type table needs no such cap: there are only so many action types. */
+.live-totals-tagscroll {
+    max-height: 190px;
+    overflow-y: auto;
+}
+
+.live-totals-tagscroll[hidden] { display: none; }
+
+/* The state columns keep the same colours as the tallies above them. Scoped
+   through .live-totals-detail so they outrank its own number colour, which is
+   what the per-type table wants but this one does not. */
+.live-totals-detail .live-totals-ledger-fail { color: var(--danger); }
+.live-totals-detail .live-totals-ledger-cantTell { color: var(--warn); }
+.live-totals-detail .live-totals-ledger-pass { color: var(--ok); }
+
+.live-totals-ledger-untagged .live-totals-ledger-tag {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* ==================== "View all scans" grid dialog ====================
+   A modal grid of scan cards, identical in look to the live-preview cards but
+   laid out over as many rows as needed. Each card is a link to its result
+   section. The same styles are mirrored in report/report.css so the exported
+   report renders these cards identically. */
+/* Icon-only trigger: a 2x2 grid glyph, squared to the DS sm (36px) floor like
+   the other icon buttons (rename, close). The count lives in the accessible
+   name/title. */
+.all-scans-open-btn {
+    margin-left: .5rem;
+    vertical-align: middle;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+}
+
+.all-scans-open-btn svg { display: block; }
+
+.all-scans-dialog {
+    width: min(1100px, 94vw);
+    max-width: 94vw;
+    max-height: 88vh;
+    padding: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--surface-base);
+    color: var(--text-main);
+    overflow: hidden;
+}
+/* Native <dialog> is display:none until opened; only override that when open
+   so the element stays hidden the rest of the time. */
+.all-scans-dialog[open] { display: flex; flex-direction: column; }
+.all-scans-dialog::backdrop { background: rgba(0, 0, 0, .45); }
+
+.all-scans-dialog-head {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .75rem 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface-base);
+}
+.all-scans-dialog-title { margin: 0; font-size: var(--fs-md); }
+
+.all-scans-grid {
+    display: grid;
+    /* A touch narrower than the live grid so one more card fits per row. */
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+/* The card itself is NOT clickable — it matches the live-preview card exactly
+   (title, coloured counts, "⏱ · DOM" line, scanned-page URL as a real link).
+   Only the screenshot is the link to the scan's result section. */
+.all-scans-card .stream-card-title { color: var(--text-main); }
+.all-scans-card.scan-summary-excluded { opacity: .7; }
+
+/* Clickable, centered screenshot — mirrors the live card's
+   button.screenshot-btn sizing (which only targets <button>). */
+.all-scans-card .screenshot-btn {
+    padding: 0;
+    background: transparent;
+    border: none;
+    max-height: 200px;
+    max-width: 100%;
+    margin: 5px auto 0;
+    overflow: hidden;
+    text-decoration: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+.all-scans-card .screenshot-btn > * {
+    display: block;
+    margin: auto;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    outline: 1px solid var(--border-subtle);
+    transition: outline-color .12s ease;
+}
+.all-scans-card .screenshot-btn img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+/* Hover/focus affordance on the screenshot link. */
+.all-scans-thumb:hover > *,
+.all-scans-thumb:focus-visible > * { outline: 2px solid var(--accent); }
+.all-scans-thumb:focus-visible { outline: none; }
+
+#screenshots {
+    display: grid;
+    gap: 16px;
+    align-items: start;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+@media (max-width: 1100px) {
+    #screenshots { grid-template-columns: repeat(3, minmax(180px, 1fr)); }
+}
+@media (max-width: 860px) {
+    #screenshots { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
+}
+@media (max-width: 560px) {
+    #screenshots { grid-template-columns: 1fr; }
+}

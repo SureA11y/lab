@@ -33,6 +33,30 @@ export function installBackToTop({ bar, button, header, doc = document } = {}) {
         observer.observe(header);
     }
 
+    // The tabs share the bar's line with the button: they shrink, their names
+    // wrapping, and when even that does not fit beside it (a narrow screen
+    // with text spacing) they go on two rows (is-wrapped) rather than run
+    // under it. Measured again whenever the bar or a tab changes size.
+    const tabs = bar.querySelector('.mode-switch');
+    let pending = false;
+    function fitTabs() {
+        pending = false;
+        if (!tabs) return;
+        tabs.classList.remove('is-wrapped');
+        tabs.classList.toggle('is-wrapped', tabs.scrollWidth > tabs.clientWidth + 1);
+    }
+    if (tabs && win && typeof win.ResizeObserver === 'function') {
+        const schedule = () => {
+            if (pending) return;
+            pending = true;
+            (win.requestAnimationFrame || win.setTimeout)(fitTabs);
+        };
+        const resized = new win.ResizeObserver(schedule);
+        resized.observe(bar);
+        tabs.querySelectorAll('[role="tab"]').forEach((tab) => resized.observe(tab));
+    }
+    fitTabs();
+
     button.addEventListener('click', () => {
         win?.scrollTo?.({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
         const tab = bar.querySelector('[role="tab"][aria-selected="true"]');

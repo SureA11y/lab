@@ -654,12 +654,15 @@ Status      <span class="ok">done</span>
 Scenario    Checkout
 Url         https://example.com/checkout
 Run id      run_ddeea58f7a86868c
+Steps       12 of 12
+  by type   a11yScan 4, click 4, screenshot 2, navigate 1, forEachElement 1
 Scans       1
 Failing     2 rules, 9 instances
 Can't tell  1 rules, 1 instances
 Diagnostics 1 console, 0 request failures, 1 bad responses
 Payload     a11y-runs/Checkout/runs/2026-08-17T10-00-00-000Z/payload.json (1833 KB)</code></pre>
                 </div>
+                <p><code>Steps</code> is how much of the workflow actually ran. On a run that stopped early it reads <code>5 of 12 (7 not run)</code>: worth checking before reading the findings, since half a workflow finds half the problems. A <code>forEachElement</code> with no <code>limit</code>, or a <code>crawlQueue</code> with no <code>maxPages</code>, only learns its size as it runs, so the total carries a tilde until it does: <code>5 of ~12 (2 loops never sized)</code>.</p>
                 <p>Add <code>--quiet</code> for the summary without the running commentary.</p>
             </div>
 
@@ -729,9 +732,21 @@ Instances   <span class="hot">4 new</span>, 9 fixed, 0 still failing
   --url &lt;url&gt;        Override the url in the spec
   --scenario &lt;name&gt;  Override the scenario name in the spec
   --debug-native     Keep raw engine output in the payload
+  --accept-untrusted-certs
+                     Open sites whose certificate the browser does not trust
+                     (a staging server's own, or any site on a network that
+                     inspects HTTPS), as the spec's acceptUntrustedCerts does.
+                     The browser cannot then tell a site from one pretending
+                     to be it: sign in only where you trust the network.
   --format &lt;list&gt;    Also write surea11y's results as sarif, junit and/or
                      earl (comma-separated), into &lt;out&gt;/exports. Can be
                      repeated. Scans run without surea11y are left out.
+                     acr writes the run's conformance report (VPAT 2.5,
+                     WCAG and EN 301 549) there too, as HTML and Word.
+  --review &lt;file&gt;    A report (its JSON, payload.json or package zip) whose
+                     conformance review this run takes on, filling in only
+                     what it has not decided; saved in payload.json. Without
+                     it, a baseline's review is carried on.
   --no-batch         Run a config's workflow once, with its batch left off
   --dry-run          Take every step in a browser but the scans, screenshots
                      and evidence, and say how each went: which failed and
@@ -781,16 +796,20 @@ Instances   <span class="hot">4 new</span>, 9 fixed, 0 still failing
     runs/
       2026-08-17T10-00-00-000Z/
         payload.json              <span class="dim">&lt;- the full result</span>
+        images/                   <span class="dim">&lt;- its pictures, which it names by path</span>
         summary.md                <span class="dim">&lt;- the run in prose</span>
         run.log.jsonl             <span class="dim">&lt;- one JSON object per log line</span>
         diff.json                 <span class="dim">&lt;- only when compared</span>
         comparison.html           <span class="dim">&lt;- only when compared: the comparison to read</span>
+        exports/                  <span class="dim">&lt;- only with --format</span>
+          01-cart.junit.xml       <span class="dim">&lt;- one file per scan and format</span>
+          01-cart.sarif
     baselines/
       release-1.0.json            <span class="dim">&lt;- from --promote</span></code></pre>
 
             <p><code>--keep</code> only ever deletes folders inside <code>runs/</code> that contain a <code>payload.json</code>. Promoted baselines live outside <code>runs/</code> and are never pruned.</p>
 
-            <p><code>payload.json</code> is around 1.8 MB because it carries screenshots. That is what lets you load it back into the app’s <strong>compare</strong> tab and see the same comparison on screen.</p>
+            <p><code>payload.json</code> names its screenshots by their path in <code>images/</code> (<code>images/&lt;hash&gt;.jpg</code>), as a report package does, so the run’s folder is one: zip <code>payload.json</code> with <code>images/</code> and the app’s <strong>open report</strong> and <strong>compare</strong> tabs load it with its pictures. Loaded alone, <code>payload.json</code> shows its findings and says each picture is missing.</p>
         </section>
 
         <section id="spec">
@@ -806,14 +825,12 @@ Instances   <span class="hot">4 new</span>, 9 fixed, 0 still failing
   "scenarioName": "Checkout",
 
   "actions": [
-    { "type": "a11yScan", "label": "Cart", "profile": "en301549-v4.1.1" },
+    { "type": "a11yScan", "label": "Cart", "profile": "en301549-v4.1.1", "context": "main", "exclude": ".ads, .cookie-banner" },
     { "type": "click", "selector": "#to-payment" },
-    { "type": "a11yScan", "label": "Payment", "engine": "surea11y" }
+    { "type": "a11yScan", "label": "Payment", "context": "main" }
   ],
 
   "viewport": "desktop-lg",
-  "context": "main",
-  "exclude": ".ads, .cookie-banner",
   "customSteps": []
 }</code></pre>
 
@@ -824,15 +841,21 @@ Instances   <span class="hot">4 new</span>, 9 fixed, 0 still failing
                     </thead>
                     <tbody>
                         <tr><td><code>url</code></td><td>yes</td><td>Where the workflow starts. <code>http</code> or <code>https</code> only</td></tr>
-                        <tr><td><code>actions</code></td><td>yes</td><td>At least one. The same actions the app’s builder produces. Each scan names its engine (<code>"engine": "axe"</code>); one without runs with <code>surea11y</code>. The engines: <code>surea11y</code>, <code>axe</code>, <code>alfa</code>, <code>pa11y</code>, <code>pa11y-htmlcs</code>, <code>qualweb</code> and its variants</td></tr>
+                        <tr><td><code>actions</code></td><td>yes</td><td>At least one. The same actions the app’s builder produces. Every scan runs with <code>surea11y</code></td></tr>
                         <tr><td><code>scenarioName</code></td><td>no</td><td>Names the folder and the reports</td></tr>
                         <tr><td><code>viewport</code></td><td>no</td><td>A preset name, or <code>{"width": 1280, "height": 720}</code></td></tr>
-                        <tr><td><code>context</code></td><td>no</td><td>Only scan the elements these selectors match (<code>main, footer</code>). In the app it is the configuration’s Include selectors. A scan’s own <code>context</code> replaces it</td></tr>
-                        <tr><td><code>exclude</code></td><td>no</td><td>Selectors to leave out, as a string or a list. In the app it is the configuration’s Exclude selectors. A scan’s own <code>exclude</code> adds to it</td></tr>
+                        <tr><td><code>colorScheme</code></td><td>no</td><td><code>light</code> or <code>dark</code>: the color scheme the page is shown in from the first page. Left out, the browser’s own (light). In the app it is the Run settings’ Color scheme. Set color scheme and contrast changes it; its Run default comes back to this</td></tr>
+                        <tr><td><code>highContrast</code></td><td>no</td><td><code>on</code> or <code>off</code>: forced colors (high contrast) from the first page. Left out, off. In the app it is the Run settings’ High contrast</td></tr>
+                        <tr><td><code>acceptUntrustedCerts</code></td><td>no</td><td><code>true</code> to open sites whose certificate the browser does not trust: a staging server’s own, or any site on a network that inspects HTTPS. Left out, such a site fails the run, saying why. The browser cannot then tell a site from one pretending to be it, so sign in only where you trust the network; the run says so in its log and in <code>runDiagnostics.untrustedCertsAccepted</code>. In the app it is the Run settings’ Untrusted certificates; <code>--accept-untrusted-certs</code> sets it for a whole run or batch</td></tr>
+                        <tr><td><code>language</code></td><td>no</td><td>A BCP 47 tag (<code>es-ES</code>, <code>de</code>, <code>pt-BR</code>), or a variable such as <code>{var:lang}</code> so each batch row can set its own: the language the page is shown in from the first page. Left out, the browser’s own. In the app it is the Run settings’ Language. Set language changes it; its Run default comes back to this</td></tr>
                         <tr><td><code>customSteps</code></td><td>no</td><td>Reusable step definitions the actions refer to</td></tr>
                     </tbody>
                 </table>
             </div>
+
+            <p>A run has no Include or Exclude selectors: each scan step’s own <code>context</code> and <code>exclude</code> say what it checks. A spec saved with them for the whole run stops with an error naming them: <code>node src/cli/convert-config.js &lt;file&gt; --write</code> puts them on its scans, as the run applied them.</p>
+
+            <p>A run has no profile either: each scan step’s <code>profile</code> sets what it checks against, <code>wcag22-a</code>, <code>wcag22-aa</code> or <code>wcag22-aaa</code>, or a standard, <code>en301549-v4.1.1</code> or <code>en301549-v3.2.1</code>; without one, <code>wcag22-aa</code>.</p>
 
             <h4>Viewport presets</h4>
             <div class="table-wrap" tabindex="0">
@@ -949,7 +972,7 @@ Result     the workflow does not fit the site as it stands: 2 problems above</co
                 </div>
                 <div>
                     <dt>The numbers differ from the app</dt>
-                    <dd>Check the engine. <code>surea11y</code> and <code>axe</code> report different rule sets. Check the <code>engine</code> of each scan in the spec.</dd>
+                    <dd>Check what the scans check against and how the page is shown: each scan’s <code>profile</code>, and the spec’s <code>viewport</code>, <code>colorScheme</code> and <code>language</code>, against the app’s run.</dd>
                 </div>
             </dl>
         </section>

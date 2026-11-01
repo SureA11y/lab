@@ -196,16 +196,17 @@ metadata entry) was deferred as a fast-follow; only the metadata→log direction
 
 Included automatically in the in-app "Download JSON" export (a side effect of the
 `prepareDataForReport` fix above — both go through the same function). Deliberately
-**not** added to the on-disk per-scan report sidecar (`saveAxeHtmlReport`): that file is
+**not** added to the on-disk per-scan report sidecar (`saveHtmlReport`): that file is
 written once per scan, while `collectedOutputs` is a whole-run aggregate with no clean
 way to partition per scan — bolting it on would just duplicate the same array into every
 scan's file. A flat CSV export of a single key's values was deferred as a fast-follow.
 
 ## 9. Where things live
 
-- Engine: `src/workflow/workflow-engine.js` — `createWorkflowContext`/`createChildContext`
-  (the collector array), `runActionAction`'s `case 'collectOutput'`,
-  `buildConditionConfig`/`evaluateConditionPredicate` (shared with `skipIteration`).
+- Engine: `src/workflow/engine/context.js` — `createWorkflowContext`/`createChildContext`
+  (the collector array), `stepCollectOutput` in `src/workflow/steps/data.js`,
+  `buildConditionConfig`/`evaluateConditionPredicate` in `src/workflow/engine/conditions.js`
+  (shared with `skipIteration`).
 - Runner → payload: `src/server-side/a11y-runner.js` (all three return sites) →
   `src/shared/workflow-payload-builder.js` (`buildWorkflowPayloadBase`) → `server.js`
   (`/workflow-scan`, `/workflow-start`).

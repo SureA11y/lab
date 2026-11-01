@@ -3,13 +3,11 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { findingsByOutcome, CANON_VERSION, fromAxeResults } = require('./a11y-canonical');
+const { findingsByOutcome, CANON_VERSION } = require('./a11y-canonical');
 
 describe('a11y-canonical: re-exports from the shared module', () => {
-    test('CANON_VERSION and fromAxeResults are re-exported and usable', () => {
+    test('CANON_VERSION is re-exported', () => {
         assert.equal(typeof CANON_VERSION, 'string');
-        assert.equal(typeof fromAxeResults, 'function');
-        assert.equal(fromAxeResults({}).version, CANON_VERSION);
     });
 });
 

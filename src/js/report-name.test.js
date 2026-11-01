@@ -2,7 +2,7 @@
 
 // Dep-free tests for the name the report export dialog starts with. The module
 // is ESM-with-`export`; import() it once for the whole suite (same shape as
-// engine-filter.test.js).
+// report-engines.test.js).
 
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');

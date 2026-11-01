@@ -145,19 +145,19 @@ describe('buildAutomationCoverage: catalogs of several engines together', () => 
     // the run's coverage is built from their catalogs concatenated. Each engine's
     // own coverage stays its own catalog's - that is what makes reading a
     // two-engine report as one engine match running that engine alone.
-    const axeLike = [rule({ ruleId: 'contrast', sc: ['1.4.3'] })];
+    const oneLike = [rule({ ruleId: 'contrast', sc: ['1.4.3'] })];
     const otherLike = [rule({ ruleId: 'name-role', sc: ['4.1.2'] })];
 
     test('a criterion either engine reaches is reachable by the pair', () => {
-        const both = buildAutomationCoverage({ rules: axeLike.concat(otherLike) });
+        const both = buildAutomationCoverage({ rules: oneLike.concat(otherLike) });
         assert.equal(scOf(both, '1.4.3').automation, AUTOMATION.AUTOMATIC);
         assert.equal(scOf(both, '4.1.2').automation, AUTOMATION.AUTOMATIC);
     });
 
     test('one engine alone reaches only its own', () => {
-        const axeOnly = buildAutomationCoverage({ rules: axeLike });
-        assert.equal(scOf(axeOnly, '1.4.3').automation, AUTOMATION.AUTOMATIC);
-        assert.equal(scOf(axeOnly, '4.1.2').automation, AUTOMATION.NOT_AUTOMATABLE);
+        const oneOnly = buildAutomationCoverage({ rules: oneLike });
+        assert.equal(scOf(oneOnly, '1.4.3').automation, AUTOMATION.AUTOMATIC);
+        assert.equal(scOf(oneOnly, '4.1.2').automation, AUTOMATION.NOT_AUTOMATABLE);
     });
 
     test('a rule id both engines use collapses to one entry', () => {
@@ -169,8 +169,8 @@ describe('buildAutomationCoverage: catalogs of several engines together', () => 
 
     test('the criteria in scope come from the conformance level, not the catalogs', () => {
         // So the "in scope" denominator is the same however many engines ran.
-        const one = buildAutomationCoverage({ rules: axeLike });
-        const both = buildAutomationCoverage({ rules: axeLike.concat(otherLike) });
+        const one = buildAutomationCoverage({ rules: oneLike });
+        const both = buildAutomationCoverage({ rules: oneLike.concat(otherLike) });
         assert.equal(one.criteria.length, both.criteria.length);
     });
 });

@@ -85,7 +85,7 @@ describe('a11y-labs-engine: normalizeSeverity', () => {
         }
     });
 
-    test('alias spellings are mapped to their canonical equivalent (matching canonical-shared.js / pa11y-engine.js)', () => {
+    test('alias spellings are mapped to their canonical equivalent (matching canonical-shared.js)', () => {
         assert.equal(normalizeSeverity('severe'), 'serious');
         assert.equal(normalizeSeverity('low'), 'minor');
         assert.equal(normalizeSeverity('medium'), 'moderate');
@@ -1152,6 +1152,26 @@ describe('a11y-labs-engine: saveHtmlReport', () => {
         }
     });
 
+    // Core's "What's left for a person" lists only what its rules evaluate;
+    // the lab's guide and Review conformance give every requirement, so the
+    // saved report leaves it out.
+    test("leaves out core's checks left for a person", () => {
+        const { saveHtmlReport } = require('./a11y-labs-engine');
+        const { renderHtmlReport } = require('@surea11y/core/report');
+        const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'labs-report-'));
+        try {
+            const report = saveHtmlReport({ native: coreResult }, { outDir, label: 'Cart' });
+            const html = fs.readFileSync(report.path, 'utf-8');
+            assert.doesNotMatch(html, /manual-checks-heading/);
+            // Where core would have added it, it is there without the option.
+            if (/manual-checks-heading/.test(renderHtmlReport(coreResult, { title: 'Cart' }))) {
+                assert.match(html, /img-alt-present/, 'the rest of the report is there');
+            }
+        } finally {
+            fs.rmSync(outDir, { recursive: true, force: true });
+        }
+    });
+
     test('writes under reports/surea11y by default and returns a /reports URL', () => {
         const { saveHtmlReport } = require('./a11y-labs-engine');
         const { REPORTS_ROOT } = require('../report-paths');
@@ -1180,7 +1200,7 @@ describe('a11y-labs-engine: saveHtmlReport', () => {
         const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'labs-report-'));
         try {
             assert.equal(saveHtmlReport({ native: null }, { outDir }), null);
-            assert.equal(saveHtmlReport({ native: { byEngine: { axe: { checksResults: [] } } } }, { outDir }), null);
+            assert.equal(saveHtmlReport({ native: { byEngine: { 'engine-b': { checksResults: [] } } } }, { outDir }), null);
             assert.deepEqual(fs.readdirSync(outDir), []);
         } finally {
             fs.rmSync(outDir, { recursive: true, force: true });

@@ -1,0 +1,1127 @@
+{
+  "$comment": [
+    "How a person assesses, by hand, the WCAG 2.2 criteria that no rule of @surea11y/core evaluates, in English: core gives procedures only for what its rules can report on.",
+    "Each facet is a test objective with its tools (besides a browser: keyboard, pointer, screen-reader, zoom, contrast-theme, devtools), steps, and what a person sees if it passes and if it fails. {{requirement}} is the requirement it is read as, filled in when shown: WCAG 1.2.3, or EN 301 549 9.1.2.3 for the clause that restates it.",
+    "Moved from SureA11y/core at a758c64 (src/procedures/registry.js and src/i18n/procedures/en.json), where the translations into French, German, Spanish and Japanese remain in its history."
+  ],
+  "standard": "WCAG 2.2",
+  "criteria": [
+    {
+      "id": "1.2.3",
+      "title": "Audio Description or Media Alternative (Prerecorded)",
+      "level": "A",
+      "facets": [
+        {
+          "id": "audio-description-or-alternative",
+          "label": "Prerecorded video with sound has an audio description or a full text alternative",
+          "automation": "manual",
+          "steps": [
+            "Find every prerecorded video with sound on the page and play each with the sound on.",
+            "Note what the picture shows that the sound doesn't say: actions, scene changes, text on screen, who is there.",
+            "Look for an audio description (a version, or a track the player offers, where a voice says what is shown) or a text alternative next to the video that tells the whole story, sound and picture.",
+            "Where there is one, check that it covers what you noted.",
+            "Leave out a video that is itself an alternative for text on the page and is labelled as such, and one whose picture adds nothing the sound doesn't say."
+          ],
+          "passWhen": "Each video whose picture shows something the sound doesn't say has an audio description or a full text alternative that gives it.",
+          "failWhen": "A prerecorded video shows information the sound doesn't give, with neither an audio description nor a full text alternative, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.2.4",
+      "title": "Captions (Live)",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "live-captions",
+          "label": "Live video with sound has captions",
+          "automation": "manual",
+          "steps": [
+            "Find any live video with sound on the page: a stream, a webcast, a live event.",
+            "While it is live, turn on its captions in the player, or look for captions shown with it on the page.",
+            "Watch for a few minutes with the sound on and check that the captions follow the speech and the sounds that matter, with only the short delay live captions need."
+          ],
+          "passWhen": "The page has no live video with sound, or its live video has captions that follow what is said.",
+          "failWhen": "Live video with sound has no captions, or captions that leave out most of what is said, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.2.5",
+      "title": "Audio Description (Prerecorded)",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "audio-description",
+          "label": "Prerecorded video with sound has an audio description",
+          "automation": "manual",
+          "steps": [
+            "Find every prerecorded video with sound on the page and play each with the sound on.",
+            "Note what the picture shows that the sound doesn't say: actions, scene changes, text on screen, who is there.",
+            "Look for an audio description: a track the player offers (an AD or description button, or an audio-language choice), or a described version of the video linked next to it.",
+            "Play it and check that a voice says what you noted, in the pauses of the speech.",
+            "Leave out a video whose picture adds nothing the sound doesn't say: it needs no description."
+          ],
+          "passWhen": "Each video whose picture shows something the sound doesn't say has an audio description that gives it.",
+          "failWhen": "A prerecorded video shows information the sound doesn't give and has no audio description; a text alternative alone isn't enough at this level, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.2.6",
+      "title": "Sign Language (Prerecorded)",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "sign-language",
+          "label": "Prerecorded video with sound has sign language interpretation",
+          "automation": "manual",
+          "steps": [
+            "Find every prerecorded video with sound on the page.",
+            "Play each and look for a sign language interpreter in the picture, or a choice in the player or next to it that shows a signed version.",
+            "Check that the signing covers the whole of what is said and the sounds that matter, and is large enough to follow.",
+            "Leave out a video that is itself an alternative for text on the page and is labelled as such."
+          ],
+          "passWhen": "Every prerecorded video with sound has sign language interpretation of all its speech and important sounds.",
+          "failWhen": "A prerecorded video with sound has no sign language interpretation, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.2.7",
+      "title": "Extended Audio Description (Prerecorded)",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "extended-audio-description",
+          "label": "Where pauses are too short for audio description, the video stops to make room for it",
+          "automation": "manual",
+          "steps": [
+            "Find every prerecorded video with sound whose picture shows information the sound doesn't say.",
+            "Play its audio description, and note where the description can't fit in the pauses of the speech, so that something shown goes undescribed.",
+            "Check that a version is offered where the video pauses to let the description say everything shown."
+          ],
+          "passWhen": "Every video whose pauses are too short for a full description has an extended audio description that stops the video to give it.",
+          "failWhen": "A video's audio description leaves out what is shown because the pauses are too short, and no extended version is offered, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.2.8",
+      "title": "Media Alternative (Prerecorded)",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "media-text-alternative",
+          "label": "Prerecorded video has a full text alternative that gives everything it shows and says",
+          "automation": "manual",
+          "steps": [
+            "Find every prerecorded video on the page, with or without sound.",
+            "Look next to each for a text alternative: a transcript that describes what is shown as well as what is said and heard.",
+            "Watch the video and compare: the text should tell the whole story, including actions, scene changes and text on screen."
+          ],
+          "passWhen": "Every prerecorded video has a full text alternative next to it that gives everything it shows and says.",
+          "failWhen": "A prerecorded video has no text alternative, or one that gives only the speech, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.2.9",
+      "title": "Audio-only (Live)",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "live-audio-alternative",
+          "label": "Live audio-only content has a text alternative, such as live captions or a script",
+          "automation": "manual",
+          "steps": [
+            "Find any live audio without video on the page: a radio stream, a live podcast, an audio conference.",
+            "While it is live, look for a text alternative shown with it: live captions, a live transcript, or the script it follows.",
+            "Check that the text follows what is said and the sounds that matter."
+          ],
+          "passWhen": "The page has no live audio-only content, or it comes with a live text alternative.",
+          "failWhen": "Live audio-only content has no text alternative, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.3.2",
+      "title": "Meaningful Sequence",
+      "level": "A",
+      "facets": [
+        {
+          "id": "reading-order-meaningful",
+          "label": "The order assistive technology reads the content in keeps its meaning, and spaces don't lay out text",
+          "automation": "manual",
+          "tools": [
+            "screen-reader",
+            "devtools"
+          ],
+          "steps": [
+            "Have a screen reader read the whole page from the top, or read the content in the order of the developer tools' Elements pane, and follow along on screen.",
+            "Look first at the places most likely to differ: layouts reordered with CSS (order, flex-direction: row-reverse, grid placement), absolutely positioned content, and content moved with script, such as a dialog added at the end of the page.",
+            "Note where the order read differs from the order you see: columns read across, a caption read far from its image, a step read before the one it follows.",
+            "Where it differs, ask whether the meaning changes: it does if the content only makes sense in the order shown.",
+            "Look for text laid out with spaces or line breaks, such as letters spaced apart in a word or columns made of spaces, and check how a screen reader reads it."
+          ],
+          "passWhen": "Content is read in an order that keeps its meaning, and no text is laid out with spaces in a way that breaks words or columns.",
+          "failWhen": "Content is read in an order that changes its meaning, such as a table's columns read across, or words are spaced out letter by letter, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.3.3",
+      "title": "Sensory Characteristics",
+      "level": "A",
+      "facets": [
+        {
+          "id": "instructions-not-sensory-only",
+          "label": "Instructions don't rely only on shape, colour, size, position, orientation or sound",
+          "automation": "manual",
+          "steps": [
+            "Read every instruction on the page: form help, error messages, and text that tells you where to look or what to press.",
+            "Note each that identifies something only by how it looks, where it is or how it sounds: \"the round button\", \"the menu on the right\", \"the items in green\", \"after the beep\".",
+            "For each, check whether it also names the thing in a way that doesn't depend on seeing or hearing it, such as its label (\"the Search button on the right\")."
+          ],
+          "passWhen": "Every instruction names what it refers to by its label or text, besides any shape, colour, position or sound.",
+          "failWhen": "An instruction identifies something only by its shape, colour, size, position or sound, so someone who can't see or hear it can't follow it, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.3.6",
+      "title": "Identify Purpose",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "purpose-identified",
+          "label": "The purpose of regions, icons and controls is given in the markup, so tools can adapt or replace them",
+          "automation": "manual",
+          "tools": [
+            "devtools"
+          ],
+          "steps": [
+            "Check in the developer tools' Accessibility tree that each region of the page (header, navigation, main content, search, footer) is a landmark.",
+            "For icons and controls with a common purpose (home, search, help, close, next), check that the markup names that purpose: in the element's name, its role, or attributes for that purpose.",
+            "For fields about the user, check that autocomplete gives their purpose."
+          ],
+          "passWhen": "Regions, icons and controls with a common purpose have it in the markup, so tools can show them in a way the user prefers.",
+          "failWhen": "A region, icon or control's purpose is given only by its look, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.4.7",
+      "title": "Low or No Background Audio",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "background-audio-low",
+          "label": "Speech in prerecorded audio has no background sound, or background sound that can be turned off or is 20 dB quieter",
+          "automation": "manual",
+          "steps": [
+            "Find prerecorded audio that is mostly speech: podcasts, narrated videos, interviews.",
+            "Listen for background sound behind the speech: music, noise, effects.",
+            "Where there is some, check whether it can be turned off, or is clearly much quieter than the speech (about four times quieter), except for short occasional sounds.",
+            "Leave out music, singing, sound logos and CAPTCHAs."
+          ],
+          "passWhen": "Speech has no background sound, or it can be turned off, or it is about four times quieter than the speech.",
+          "failWhen": "Background sound behind speech is loud enough to make the speech hard to follow and can't be turned off, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.4.8",
+      "title": "Visual Presentation",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "visual-presentation",
+          "label": "Blocks of text can be given the user's colours, are at most 80 characters wide, not justified, spaced 1.5 lines, and resize to 200% without sideways scrolling",
+          "automation": "manual",
+          "tools": [
+            "zoom",
+            "contrast-theme"
+          ],
+          "steps": [
+            "Find the page's blocks of text: paragraphs of an article, long descriptions.",
+            "Check that a line holds at most about 80 characters (40 for Chinese, Japanese or Korean), and that the text is not justified to both edges.",
+            "Check that line spacing is at least 1.5 within paragraphs, and that the space between paragraphs is at least 1.5 times the line spacing, or that the page offers a setting for it.",
+            "Turn on a high-contrast theme or change the browser's colours, and check that the text takes them, or that the page offers its own colour choice.",
+            "Zoom the text to 200% and check that it can be read without scrolling sideways in a window the full width of the screen."
+          ],
+          "passWhen": "Blocks of text meet each of the five conditions, directly or through a setting the page offers.",
+          "failWhen": "A block of text is wider than 80 characters, justified, tightly spaced, can't take the user's colours, or needs sideways scrolling at 200%, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.4.9",
+      "title": "Images of Text (No Exception)",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "no-images-of-text",
+          "label": "Images of text are used only for decoration or where the look is essential",
+          "automation": "manual",
+          "tools": [
+            "devtools"
+          ],
+          "steps": [
+            "Look for images that contain words, including logos and banners.",
+            "Try to select their words with the pointer, or inspect them, to tell images of text from real text.",
+            "Check that each image of text is pure decoration, or a logo or brand name, or a case where the exact look of the text is essential."
+          ],
+          "passWhen": "Images of text are only decoration, logos, or where their look is essential.",
+          "failWhen": "Words are shown as an image where the look isn't essential, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.4.10",
+      "title": "Reflow",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "reflow-320",
+          "label": "At 320 CSS pixels wide, content needs no scrolling in two directions and nothing is lost",
+          "automation": "manual",
+          "tools": [
+            "devtools",
+            "zoom"
+          ],
+          "steps": [
+            "Set the browser window to 1280 CSS pixels wide and zoom to 400%, which gives a viewport 320 CSS pixels wide. This is closer to what a person who zooms sees than the device toolbar, which can make the page load its mobile version.",
+            "Scroll down through the whole page and check that you never need to scroll sideways to read text or reach a control.",
+            "Check that nothing is cut off, overlaps or is hidden, and that menus, dialogs and forms still work.",
+            "For content that is meant to scroll sideways, such as text written vertically, do the same with the window 256 CSS pixels high and check that you never need to scroll vertically to read it.",
+            "Leave out content that needs two dimensions to be used or understood, such as images, maps, diagrams, video, games, presentations, data tables and interfaces whose toolbars must stay in view. Those parts may scroll in two directions on their own, but the rest of the page must not.",
+            "Note any sticky header, footer or banner that takes up most of the screen at this size and leaves little room to read. It doesn't fail this criterion by itself, but check it under 2.4.11 and record it as a usability issue."
+          ],
+          "passWhen": "At 320 CSS pixels wide the page reads in one column with vertical scrolling only, apart from content that needs two dimensions, and nothing is lost.",
+          "failWhen": "At 320 CSS pixels wide text must be scrolled sideways to be read, or content or controls are cut off or lost, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.4.11",
+      "title": "Non-text Contrast",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "ui-component-contrast",
+          "label": "The parts of a control that show it is there and its state have a contrast of at least 3:1",
+          "automation": "manual",
+          "tools": [
+            "devtools",
+            "keyboard"
+          ],
+          "steps": [
+            "Find the page's controls whose outline or shape you need to see to find them: text fields, check boxes, radio buttons, toggles, buttons without a filled background, sliders.",
+            "Measure the colour of the edge or shape that shows each one against the colour next to it, with the developer tools' colour picker or a colour contrast checker.",
+            "Do the same for what shows each control's state: a check mark, the selected tab, the focus indicator as you press Tab.",
+            "Compare each indicator with the colours next to it, not with the control's other states. A button that changes from one blue to another on hover doesn't need 3:1 between the two blues, but the edge or fill that shows the button is there does need 3:1 against its surroundings, unless its text label alone identifies it.",
+            "Leave out controls the browser draws without the page's styling, disabled controls, and controls whose presence is shown well enough by their text, such as a link or a button that is only text."
+          ],
+          "passWhen": "What shows each control and its state has a contrast of at least 3:1 with what is next to it.",
+          "failWhen": "A field border, a check box, a toggle's state or a focus indicator has less than 3:1 contrast with what is next to it, so people with low vision can't find it or tell its state, which fails {{requirement}}."
+        },
+        {
+          "id": "graphics-contrast",
+          "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
+          "automation": "manual",
+          "tools": [
+            "devtools"
+          ],
+          "steps": [
+            "Find the graphics that carry information: icons without text, charts, diagrams, maps, infographics.",
+            "Note the parts you need to understand each one: an icon's shape, a chart's lines, bars and slices, the arrows in a diagram.",
+            "Measure each part against the colours next to it with a colour contrast checker.",
+            "Leave out a part whose information is also given in text next to it, such as values labelled on a chart, and logos."
+          ],
+          "passWhen": "Every part of a graphic needed to understand it has a contrast of at least 3:1 with what is next to it, or its information is also given as text.",
+          "failWhen": "A part of a graphic needed to understand it, such as a chart's line or an icon, has less than 3:1 contrast, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "1.4.13",
+      "title": "Content on Hover or Focus",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "hover-focus-content-dismissible",
+          "label": "Extra content that appears on hover or focus can be dismissed without moving the pointer or focus",
+          "automation": "manual",
+          "tools": [
+            "pointer",
+            "keyboard"
+          ],
+          "steps": [
+            "Move the pointer slowly over the page, over icons, links, buttons, abbreviations and form fields, and note every tooltip, popup or submenu that appears. Leave out the small tooltip the browser draws for a title attribute: it is exempt.",
+            "Reload the page, press Tab through it and note any such content that appears when an element receives focus.",
+            "Show each one again, by hovering or by focus, and without moving the pointer or focus, press Escape.",
+            "Where Escape doesn't close it, check whether it covers or pushes aside any other content, and whether it only reports an input error, such as a message beside a field.",
+            "Check that Escape closes only the extra content, not a dialog or menu it sits in. Closing both doesn't fail this criterion, but it loses the user's place: record it as a usability issue."
+          ],
+          "passWhen": "Each piece of extra content closes with Escape (or another key the page tells you about) without the pointer or focus moving, or covers and pushes aside nothing, or only reports an input error.",
+          "failWhen": "Extra content covers or pushes aside other content and closes only when the pointer or focus moves, so someone who magnifies the screen can't see what it hides, which fails {{requirement}}."
+        },
+        {
+          "id": "hover-content-hoverable",
+          "label": "The pointer can move onto extra content that appears on hover without it disappearing",
+          "automation": "manual",
+          "tools": [
+            "pointer"
+          ],
+          "steps": [
+            "Move the pointer over the page and note each element that shows extra content when the pointer is over it, such as a tooltip or a submenu. Leave out the small tooltip the browser draws for a title attribute: it is exempt.",
+            "Show each one again, then move the pointer slowly from the element onto the extra content and over all of it.",
+            "Where the content is too long to see at once, scroll it or move over the part that is cut off."
+          ],
+          "passWhen": "The extra content stays while the pointer moves from the element onto it and over all of it.",
+          "failWhen": "The extra content disappears as the pointer moves onto it, so someone who magnifies the screen, and must move the pointer to read it, can't, which fails {{requirement}}."
+        },
+        {
+          "id": "hover-focus-content-persistent",
+          "label": "Extra content that appears on hover or focus stays until it is dismissed, the pointer or focus leaves, or it is no longer true",
+          "automation": "manual",
+          "tools": [
+            "pointer",
+            "keyboard"
+          ],
+          "steps": [
+            "Show each piece of extra content the page has, once by hovering and, where it also appears on focus, once by pressing Tab to its element.",
+            "Keep the pointer and focus where they are and press nothing for at least 30 seconds, watching the content.",
+            "Where the content goes away by itself, check whether what it said is no longer true, such as \"Saving…\" once the saving has finished."
+          ],
+          "passWhen": "The content stays until you move the pointer or focus away or close it, or goes away only once what it says is no longer true.",
+          "failWhen": "The content disappears on a timer while the pointer or focus is still on its element, before you close it, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.1.2",
+      "title": "No Keyboard Trap",
+      "level": "A",
+      "facets": [
+        {
+          "id": "no-keyboard-trap",
+          "label": "Focus can always be moved away from any part of the page with the keyboard",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Reload the page and press Tab through the whole page until focus leaves it for the browser's own controls, then press Shift+Tab all the way back.",
+            "On the way, enter every part that takes focus, including embedded players, maps, editors, frames and dialogs.",
+            "In each, check that Tab, Shift+Tab or Escape moves focus out again.",
+            "Where it takes another key to leave, such as a text editor that uses Tab, check that the page tells you which key before or as you enter."
+          ],
+          "passWhen": "From every part of the page, focus can be moved on with Tab, Shift+Tab or Escape, or with a key the page tells you about.",
+          "failWhen": "Focus gets stuck in a part of the page, such as an embedded player or editor, and no key the page tells you about moves it out, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.1.4",
+      "title": "Character Key Shortcuts",
+      "level": "A",
+      "facets": [
+        {
+          "id": "character-key-shortcuts",
+          "label": "Shortcuts made of a single letter, number or symbol can be turned off or remapped, or work only while their control has focus",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Look in the page's help, settings and menus for keyboard shortcuts, and note those that use a single letter, number or symbol key with no Ctrl, Alt or Cmd.",
+            "With focus on the page outside any field, press a few letter keys, such as j, k, s, ? and /, and note anything they do.",
+            "For each such shortcut, check whether a setting turns it off or lets you change it to use Ctrl, Alt or Cmd, or whether it only works while a particular control has focus."
+          ],
+          "passWhen": "The page has no single-key shortcuts, or each can be turned off or remapped, or works only while its control has focus.",
+          "failWhen": "A single-key shortcut is always active and can't be turned off or remapped, so speech input or a stray key press triggers it, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.2.3",
+      "title": "No Timing",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "no-timing",
+          "label": "Nothing has a time limit, except real-time events and non-interactive media",
+          "automation": "manual",
+          "steps": [
+            "Look for anything with a time limit, as for 2.2.1: sessions that end, forms that expire, content that moves on, tests with a clock.",
+            "Check that none has a limit, even one that can be extended.",
+            "Leave out non-interactive synchronized media, such as a video, and real-time events, such as an auction."
+          ],
+          "passWhen": "Nothing on the page is timed, apart from non-interactive media and real-time events.",
+          "failWhen": "An interaction has a time limit, even an adjustable one, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.2.5",
+      "title": "Re-authenticating",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "reauthentication-keeps-data",
+          "label": "After a session expires, the user can sign in again and continue without losing data",
+          "automation": "manual",
+          "steps": [
+            "Sign in with a test account and start a task that takes several steps, such as a long form.",
+            "Let the session expire, or wait until it does, while the task is half done.",
+            "Sign in again and check that you come back to where you were, with what you had entered."
+          ],
+          "passWhen": "After signing in again, the task continues with nothing lost.",
+          "failWhen": "When a session expires, what the user had entered is lost, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.2.6",
+      "title": "Timeouts",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "timeout-warning",
+          "label": "Users are told how long inactivity may lose their data, unless it is kept for over 20 hours",
+          "automation": "manual",
+          "steps": [
+            "Find the tasks where leaving the page idle could lose what you entered: forms, carts, bookings.",
+            "Check that, at the start of the task, the page says how long it keeps data while you are inactive.",
+            "Leave out data kept for more than 20 hours."
+          ],
+          "passWhen": "The page warns how long inactivity may lose data, or keeps it for more than 20 hours.",
+          "failWhen": "Inactivity can lose the user's data without the page having said how long it allows, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.3.1",
+      "title": "Three Flashes or Below Threshold",
+      "level": "A",
+      "facets": [
+        {
+          "id": "flashing-below-threshold",
+          "label": "Nothing flashes more than three times in any one second, or the flashes are small and dim enough",
+          "automation": "manual",
+          "steps": [
+            "If you are sensitive to flashing light, don't do this test yourself: use an analysis tool, such as the Photosensitive Epilepsy Analysis Tool (PEAT) or a commercial flash analyser, or ask a colleague.",
+            "Look through the page, and play its videos and animations, for anything that flashes: a quick change between light and dark, or to and from saturated red.",
+            "For each, count the flashes in any one second, by watching it slowed down if the player allows.",
+            "Where it flashes more than three times in a second, check whether all the flashing together fits within a rectangle of 341 by 256 pixels when the page is shown at 1024 by 768 pixels (about a tenth of the screen), or whether the change in brightness is too small to count as a flash. Saturated red flashing counts even when the change in brightness is small.",
+            "Don't watch for long anything that flashes fast and large: stop it as soon as you have counted."
+          ],
+          "passWhen": "Nothing flashes more than three times in any one second, or what flashes is small enough and dim enough to stay under the general and red flash thresholds.",
+          "failWhen": "Content flashes more than three times in a second over a large area, which can cause seizures, and fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.3.2",
+      "title": "Three Flashes",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "no-flashing",
+          "label": "Nothing flashes more than three times in any one second",
+          "automation": "manual",
+          "steps": [
+            "Look through the page, and play its videos and animations, for anything that flashes.",
+            "For each, count the flashes in any one second; stop it as soon as you have counted if it flashes fast.",
+            "Unlike 2.3.1, no size or brightness exception applies."
+          ],
+          "passWhen": "Nothing flashes more than three times in any one second.",
+          "failWhen": "Something flashes more than three times in a second, however small, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.3.3",
+      "title": "Animation from Interactions",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "motion-animation-disableable",
+          "label": "Motion caused by interaction can be turned off, unless it is essential",
+          "automation": "manual",
+          "tools": [
+            "devtools"
+          ],
+          "steps": [
+            "Use the page and note motion caused by what you do: parallax when scrolling, zooming or sliding transitions, elements that move as the pointer moves.",
+            "Turn on reduced motion (in the operating system, or in the developer tools' Rendering pane, emulate prefers-reduced-motion: reduce) and reload.",
+            "Check that this motion stops, or that the page offers its own setting to turn it off.",
+            "Leave out motion that is essential to what is shown."
+          ],
+          "passWhen": "Motion caused by interaction stops with reduced motion or a setting on the page, or is essential.",
+          "failWhen": "Motion caused by interaction, such as parallax scrolling, can't be turned off, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.4.5",
+      "title": "Multiple Ways",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "multiple-ways",
+          "label": "There is more than one way to find a page in the site",
+          "automation": "manual",
+          "steps": [
+            "Note how you can reach this page from elsewhere in the site: the main navigation, a search, a site map, a table of contents, links between related pages.",
+            "Check that at least two of these lead to it.",
+            "Leave out a page that is a step in a process, such as the payment step of a checkout, or the result of one."
+          ],
+          "passWhen": "The page can be found in at least two ways, or it is a step in or the result of a process.",
+          "failWhen": "The page can only be reached one way, such as through the navigation alone, with no search, site map or other route, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.4.8",
+      "title": "Location",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "location-shown",
+          "label": "The page shows where it is in the site",
+          "automation": "manual",
+          "steps": [
+            "Look for something that tells you where this page is in the site: a breadcrumb trail, the current item marked in the navigation, a site map with the page highlighted, a step indicator in a process.",
+            "Check that a screen reader user gets the same information, for example through aria-current on the current item of the navigation. This is not part of 2.4.8 itself; where it is missing, record it under 1.3.1."
+          ],
+          "passWhen": "The page shows where it is in the site.",
+          "failWhen": "Nothing tells the user where the page is within the site, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.4.10",
+      "title": "Section Headings",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "section-headings",
+          "label": "Sections of content are organised with headings",
+          "automation": "manual",
+          "tools": [
+            "screen-reader"
+          ],
+          "steps": [
+            "Read through the page and note where the content moves to a new topic or part.",
+            "Check that each such section starts with a heading, marked up as one.",
+            "List the headings with a screen reader and check that they outline the page."
+          ],
+          "passWhen": "Each section of the content starts with a heading.",
+          "failWhen": "Sections of content have no headings, so the page can't be scanned or navigated by them, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.4.11",
+      "title": "Focus Not Obscured (Minimum)",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "focus-not-obscured",
+          "label": "An element that receives focus is not entirely hidden by content the page puts over it",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Note what the page draws over its content: a sticky header or footer, a cookie banner, a chat button, a non-modal dialog.",
+            "Reload the page and press Tab through the whole page, letting the browser scroll as it moves focus.",
+            "At each stop, check that at least part of the focused element can be seen, not covered entirely by what the page draws over it.",
+            "Where something covers it, check whether you can reveal the focused element without moving focus, for example by closing a cookie banner with Escape. Content that the user opened, such as a chat panel, doesn't fail this criterion if it can be dismissed that way.",
+            "Repeat the pass with the page zoomed to 200%, where sticky headers and footers take up more of the screen."
+          ],
+          "passWhen": "Every focused element is at least partly visible, or what covers it can be dismissed without moving focus.",
+          "failWhen": "A focused element is entirely hidden by a sticky header, a banner or other content the page puts over it, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.4.12",
+      "title": "Focus Not Obscured (Enhanced)",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "focus-fully-visible",
+          "label": "No part of an element that receives focus is hidden by content the page puts over it",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Note what the page draws over its content: sticky headers and footers, banners, chat buttons.",
+            "Press Tab through the whole page, scrolling as the browser does.",
+            "At each stop, check that the whole focused element can be seen, not even partly covered."
+          ],
+          "passWhen": "Every focused element is fully visible.",
+          "failWhen": "Part of a focused element is hidden by a sticky header, a banner or other content, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.4.13",
+      "title": "Focus Appearance",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "focus-appearance",
+          "label": "The focus indicator is at least as large as a 2 CSS pixel outline around the element and changes contrast by at least 3:1",
+          "automation": "manual",
+          "tools": [
+            "keyboard",
+            "devtools"
+          ],
+          "steps": [
+            "Press Tab through the page and look at the focus indicator of each kind of control.",
+            "Check that it is at least as large as a 2 CSS pixel thick line around the element's edge, as an outline of 2 pixels is.",
+            "Compare the indicator's pixels with the same pixels unfocused, with a colour contrast checker: the change must be at least 3:1.",
+            "Leave out indicators the browser draws, unstyled, and elements whose look the page doesn't change."
+          ],
+          "passWhen": "Every focus indicator is at least as large as a 2 pixel outline and changes contrast by at least 3:1.",
+          "failWhen": "A focus indicator is too thin or too faint, such as a 1 pixel light grey outline, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.5.1",
+      "title": "Pointer Gestures",
+      "level": "A",
+      "facets": [
+        {
+          "id": "single-pointer-alternative",
+          "label": "What a path or multipoint gesture does can also be done with a single tap or click",
+          "automation": "manual",
+          "tools": [
+            "pointer"
+          ],
+          "steps": [
+            "Find the page's features that use gestures with a path or more than one finger: swiping a carousel, pinching a map to zoom, drawing a pattern, swiping a list item to delete it.",
+            "For each, look for a way to do the same with single taps or clicks: arrows for a carousel, + and - buttons for a map, a delete button.",
+            "Leave out gestures the browser or the device provide themselves, such as pinch zoom of the page, and those where the path is essential, such as a signature."
+          ],
+          "passWhen": "Everything done with a path or multipoint gesture can also be done with single taps or clicks, or the path is essential.",
+          "failWhen": "A feature can only be used with a swipe, a drag along a path or a multi-finger gesture, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.5.2",
+      "title": "Pointer Cancellation",
+      "level": "A",
+      "facets": [
+        {
+          "id": "pointer-cancellation",
+          "label": "Actions run when the pointer is released, not pressed, or can be cancelled or undone",
+          "automation": "manual",
+          "tools": [
+            "pointer"
+          ],
+          "steps": [
+            "For each kind of control on the page (buttons, links, menu items, custom controls), press the mouse button down on it and hold it without releasing.",
+            "Check whether anything happens on the press itself.",
+            "Where nothing happened yet, move the pointer off the control and release, and check that the action is cancelled.",
+            "Where something happens on the press, check that it can be undone, or that it is essential to act on the press, as for a piano key.",
+            "This criterion covers mouse and touch only. What happens when a key is pressed is not part of it."
+          ],
+          "passWhen": "Actions happen on release and can be cancelled by moving off the control, or can be undone, or acting on the press is essential.",
+          "failWhen": "An action happens as soon as the pointer is pressed, with no way to cancel or undo it, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.5.4",
+      "title": "Motion Actuation",
+      "level": "A",
+      "facets": [
+        {
+          "id": "motion-actuation",
+          "label": "What is done by moving the device can also be done with controls, and the motion response can be turned off",
+          "automation": "manual",
+          "steps": [
+            "Find the page's features that respond to moving or tilting the device, or to gestures in front of a camera: shake to undo, tilt to scroll, turn to steer.",
+            "On a phone or tablet, try them, or read the page's help to find them.",
+            "For each, check that a control on the page does the same, and that a setting turns the motion response off so the device can be moved by accident.",
+            "Leave out motion that is essential, such as a step counter."
+          ],
+          "passWhen": "The page uses no device motion, or each motion feature has a control that does the same and can be turned off.",
+          "failWhen": "A feature can only be used by moving the device, or its response to motion can't be turned off, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.5.5",
+      "title": "Target Size (Enhanced)",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "target-size-enhanced",
+          "label": "Pointer targets are at least 44 by 44 CSS pixels",
+          "automation": "manual",
+          "tools": [
+            "devtools"
+          ],
+          "steps": [
+            "Find the page's controls and links you tap or click.",
+            "Read the size of each in the developer tools' box model: check it is at least 44 by 44 CSS pixels.",
+            "Leave out links in a sentence or paragraph, controls the browser draws unstyled, targets with a 44-pixel equivalent on the page, and those whose size is essential."
+          ],
+          "passWhen": "Every target is at least 44 by 44 CSS pixels, or is an exception.",
+          "failWhen": "A target is smaller than 44 by 44 CSS pixels with no exception that applies, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.5.6",
+      "title": "Concurrent Input Mechanisms",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "concurrent-input",
+          "label": "The page doesn't limit the kinds of input that can be used, such as a mouse with a touch screen",
+          "automation": "manual",
+          "tools": [
+            "keyboard",
+            "pointer"
+          ],
+          "steps": [
+            "On a device with a touch screen, use the page with touch, then with a mouse, then with a keyboard, switching between them.",
+            "Check that the page keeps working with each, and doesn't switch off one kind of input because another was used.",
+            "Leave out limits that are essential, or needed for security or to respect the user's settings."
+          ],
+          "passWhen": "Every kind of input works at any time.",
+          "failWhen": "The page stops responding to an input, such as a mouse once touch is detected, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "2.5.7",
+      "title": "Dragging Movements",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "dragging-alternative",
+          "label": "What is done by dragging can also be done with single taps or clicks",
+          "automation": "manual",
+          "tools": [
+            "pointer"
+          ],
+          "steps": [
+            "Find the page's features that use dragging: sliders, lists you reorder, files you drop, items you move between columns, a map you pan.",
+            "For each, look for a way to do the same with single taps or clicks: clicking a point on a slider's track, up and down buttons, a menu to move an item, arrow buttons on a map.",
+            "A keyboard way to do the same doesn't meet this criterion on its own: the alternative must work with a single pointer, by tapping or clicking.",
+            "Leave out dragging that is essential, such as drawing a signature, and dragging that the browser or the system provides without the page changing it, such as scrolling the page."
+          ],
+          "passWhen": "Everything done by dragging can also be done with single taps or clicks, or dragging is essential.",
+          "failWhen": "A feature can only be used by dragging, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.1.3",
+      "title": "Unusual Words",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "unusual-words-defined",
+          "label": "Words used in an unusual way, idioms and jargon have their meaning given",
+          "automation": "manual",
+          "steps": [
+            "Read the page and note idioms, jargon, and words used in an unusual or restricted way.",
+            "For each, check that its meaning is given: in the text, a glossary linked from it, or a definition the page shows."
+          ],
+          "passWhen": "Every unusual word, idiom or piece of jargon has its meaning given.",
+          "failWhen": "A word used in an unusual way, an idiom or jargon has no definition anywhere the user can find, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.1.4",
+      "title": "Abbreviations",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "abbreviations-expanded",
+          "label": "Abbreviations have their expanded form or meaning given",
+          "automation": "manual",
+          "steps": [
+            "Read the page and note every abbreviation and acronym.",
+            "For each, check that its full form or meaning is given: at its first use in the text, in a glossary, or in an <abbr> with a title.",
+            "Don't rely on the title of an abbr element alone: most screen readers don't read it by default, and it can't be seen without a mouse. Prefer the full form in the text at first use."
+          ],
+          "passWhen": "Every abbreviation has its full form or meaning given.",
+          "failWhen": "An abbreviation is used with no full form or meaning anywhere, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.1.5",
+      "title": "Reading Level",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "reading-level",
+          "label": "Text that needs more than lower secondary education to read has a simpler version or supplement",
+          "automation": "manual",
+          "steps": [
+            "Read the page's main text, leaving out names and titles.",
+            "Judge whether a reader with about nine years of schooling could follow it, or measure it with a readability formula for its language.",
+            "Where it is harder, look for a summary, a simpler version, illustrations or audio that help."
+          ],
+          "passWhen": "The text can be read with lower secondary education, or a simpler version or supplement is offered.",
+          "failWhen": "The text needs more than lower secondary education to read and nothing simpler is offered, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.1.6",
+      "title": "Pronunciation",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "pronunciation-given",
+          "label": "Where meaning depends on pronunciation, the pronunciation is given",
+          "automation": "manual",
+          "steps": [
+            "Read the page and note words whose meaning in context depends on how they are said: words spelt the same but said differently, names, words in some languages without their vowel marks.",
+            "For each, check that its pronunciation is given: right after it, in a glossary, with audio, or with the marks that show it."
+          ],
+          "passWhen": "Every word whose meaning depends on its pronunciation has the pronunciation given.",
+          "failWhen": "A word's meaning depends on a pronunciation the page doesn't give, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.2.1",
+      "title": "On Focus",
+      "level": "A",
+      "facets": [
+        {
+          "id": "focus-no-change-of-context",
+          "label": "Moving focus onto an element doesn't change the context by itself",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Reload the page and press Tab through the whole page, without pressing Enter or Space.",
+            "At each stop, check that nothing changes just because the element got focus: no new page or window opens, no form is sent, focus isn't moved elsewhere, and the content doesn't change in a way that changes what the page is."
+          ],
+          "passWhen": "Moving focus never, by itself, opens a page or window, sends a form, moves focus or changes the content's meaning.",
+          "failWhen": "An element changes the context as soon as it gets focus, such as opening a new window or sending a form, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.2.2",
+      "title": "On Input",
+      "level": "A",
+      "facets": [
+        {
+          "id": "input-no-unexpected-change",
+          "label": "Changing a setting doesn't change the context unless the user is told beforehand",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Find every field, check box, radio button and drop-down on the page.",
+            "With the keyboard, change each value: type in it, tick it, or move through a drop-down's options with the arrow keys, without pressing Enter or a button.",
+            "Test drop-downs on Windows too. There, the arrow keys change a closed drop-down's value at once, and each press can trigger a change, whereas on a Mac they first open the list. A drop-down that loads a new page on change fails on Windows even when it seems fine on a Mac.",
+            "Check that changing a value doesn't, by itself, send a form, load another page, open a window or move focus elsewhere.",
+            "Where it does, check that text before the control says it will happen."
+          ],
+          "passWhen": "Changing a value never changes the context by itself, or the page says beforehand that it will.",
+          "failWhen": "Changing a value, such as picking from a drop-down, loads a new page, sends the form or moves focus without warning, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.2.3",
+      "title": "Consistent Navigation",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "navigation-consistent",
+          "label": "Navigation repeated on several pages comes in the same relative order each time",
+          "automation": "manual",
+          "steps": [
+            "Note the blocks of links the page shares with others in the site: main navigation, header and footer links, a sidebar menu, a search.",
+            "Open three or four other pages of the site, of different kinds.",
+            "Check that these blocks, and the links in them, come in the same order relative to each other on every page, even where some pages add or leave out links.",
+            "Leave out changes the user made, such as reordering a menu."
+          ],
+          "passWhen": "Navigation repeated across pages comes in the same relative order on each.",
+          "failWhen": "Repeated navigation changes order from page to page, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.2.4",
+      "title": "Consistent Identification",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "identification-consistent",
+          "label": "Components that do the same thing across pages are identified the same way",
+          "automation": "manual",
+          "tools": [
+            "devtools"
+          ],
+          "steps": [
+            "Note the controls and icons the page shares with others in the site: search, sign in, print, download, cart, share, next and previous.",
+            "Open three or four other pages of the site.",
+            "Check that each control that does the same thing has the same label, icon and text alternative on each page (\"Search\" everywhere, not \"Search\" on one and \"Find\" on another).",
+            "Consistent doesn't mean identical: \"Go to page 2\" and \"Go to page 3\" follow one pattern and pass. Different wording for the same function, such as \"Search\" and \"Find\", fails."
+          ],
+          "passWhen": "Each component that does the same thing across the site is labelled the same way.",
+          "failWhen": "A component that does the same thing is labelled differently on different pages, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.2.6",
+      "title": "Consistent Help",
+      "level": "A",
+      "facets": [
+        {
+          "id": "help-consistent",
+          "label": "Help offered on several pages is in the same relative place each time",
+          "automation": "manual",
+          "steps": [
+            "Find the help the page offers. The criterion covers four kinds: contact details such as a phone number or email address, a way to reach a person such as a contact form or a live chat, a self-help option such as a help page or FAQ, and an automated contact such as a chatbot.",
+            "Open three or four other pages of the site that offer it.",
+            "Check that each kind of help comes in the same order relative to the rest of the page's content on each page, such as always last in the header. Compare pages at the same window size: a responsive layout can move help between sizes, which is fine as long as the order holds at each size."
+          ],
+          "passWhen": "The site offers no help, or each form of help it offers on several pages is in the same relative place on each.",
+          "failWhen": "Help offered on several pages moves from one place to another, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.3.3",
+      "title": "Error Suggestion",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "error-suggestions",
+          "label": "When the page knows how to fix an input error, it says how",
+          "automation": "manual",
+          "steps": [
+            "Send each form with wrong values: a malformed email, a date in the wrong format, a value out of range, a password that breaks the rules.",
+            "For each error, read the message and check whether it says how to fix it, such as the expected format or the allowed range, where the page knows.",
+            "Leave out errors where saying how would put security at risk or defeat the purpose, such as a wrong password or the answer to a test."
+          ],
+          "passWhen": "Every error message says how to fix the input where the page knows how and saying so is safe.",
+          "failWhen": "An error message says only that the input is wrong when the page knows how to fix it, such as \"Invalid date\" without the expected format, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.3.4",
+      "title": "Error Prevention (Legal, Financial, Data)",
+      "level": "AA",
+      "facets": [
+        {
+          "id": "submission-reversible-checked-confirmed",
+          "label": "Submissions with legal or financial effect, or that change stored data, can be reversed, checked or reviewed and confirmed",
+          "automation": "manual",
+          "steps": [
+            "Find the page's forms that make a commitment or change data: orders, payments, bookings, contracts, test answers, deleting or changing an account's data.",
+            "Go through each up to the last step (with test data, stopping before any real commitment).",
+            "Check that at least one of these holds: you can cancel or undo it afterwards; the page checks the input and lets you correct it; or the page shows what you entered and asks you to confirm before it is sent."
+          ],
+          "passWhen": "Each such submission can be reversed, is checked with a chance to correct it, or is reviewed and confirmed before it is final.",
+          "failWhen": "A submission with legal or financial effect, or that changes stored data, is final at once, with no check, review or undo, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.3.5",
+      "title": "Help",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "context-help",
+          "label": "Help for filling in each field is available where it is needed",
+          "automation": "manual",
+          "steps": [
+            "Go through each form on the page and note fields where a user might not know what to enter or how.",
+            "Check that help is available there: instructions next to the field, an example, a help link or button, or a hint shown on focus."
+          ],
+          "passWhen": "Each field that might need it has help available where it is.",
+          "failWhen": "A field that needs explaining has no help available, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.3.6",
+      "title": "Error Prevention (All)",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "all-submissions-reversible-checked-confirmed",
+          "label": "Every submission of information can be reversed, checked or reviewed and confirmed",
+          "automation": "manual",
+          "steps": [
+            "Find every form on the page that sends information, of any kind.",
+            "Go through each up to the last step, with test data.",
+            "Check that each can be undone, is checked with a chance to correct it, or is shown for review and confirmation before it is sent."
+          ],
+          "passWhen": "Every submission can be reversed, is checked, or is reviewed and confirmed.",
+          "failWhen": "A submission is final at once, with no check, review or undo, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.3.7",
+      "title": "Redundant Entry",
+      "level": "A",
+      "facets": [
+        {
+          "id": "redundant-entry",
+          "label": "Information the user already gave in a process is filled in or offered to pick, not asked for again",
+          "automation": "manual",
+          "steps": [
+            "Go through each process on the page that has several steps, such as a checkout, an application or a registration.",
+            "Note each time a step asks for something you already entered in an earlier step, such as an address or a name.",
+            "Check that it is filled in for you, or offered to pick (\"same as delivery address\").",
+            "Leave out re-entry that is essential, such as typing a new password twice, that is needed for security, or that asks again for information which is no longer valid, such as a quantity that has since changed."
+          ],
+          "passWhen": "Nothing entered earlier in a process is asked for again, or it is filled in or offered, or re-entering it is essential.",
+          "failWhen": "A step asks the user to type again information they already gave in the same process, which fails {{requirement}}."
+        }
+      ]
+    },
+    {
+      "id": "3.3.9",
+      "title": "Accessible Authentication (Enhanced)",
+      "level": "AAA",
+      "facets": [
+        {
+          "id": "authentication-no-recognition-test",
+          "label": "Signing in needs no cognitive test, not even recognising objects or the user's own content, unless a way around it is offered",
+          "automation": "manual",
+          "steps": [
+            "Go through each way the site lets you sign in or verify yourself, with a test account.",
+            "Note each step that asks you to remember, transcribe, solve or recognise something, including picking images or your own photos.",
+            "Check that it allows pasting and password managers, or offers another method that needs none of these."
+          ],
+          "passWhen": "No sign-in step needs a cognitive test, or each offers pasting and password managers or another method.",
+          "failWhen": "Signing in requires remembering, transcribing, solving or recognising something with no way around it, which fails {{requirement}}."
+        }
+      ]
+    }
+  ]
+}

@@ -309,8 +309,13 @@ per rule) and a SARIF file (GitHub code scanning). `earl` is there too, for
 tools that read W3C EARL. The files go in `exports/` next to `payload.json`,
 so a CI job can pick them up with a pattern such as `exports/*.junit.xml`.
 
-These files come from surea11y alone; a scan run only with another engine has
-nothing in them. A rule that could not decide shows as a skipped test, and as a
+`acr` adds the run's conformance report, as `exports/conformance-report.html`
+and `.docx`: the automated draft, under the review the run carries on from its
+baseline or from `--review <report>`, so a release's report can be made
+unattended once a person has reviewed the last one
+([Write a conformance report](use-cases/write-a-conformance-report.md)).
+
+A rule that could not decide shows as a skipped test, and as a
 warning in SARIF. Each of those questions carries the steps that answer it
 ("How to check", with what a person sees if it passes and if it fails), so the
 person reading the CI tab knows what to look at.
@@ -367,9 +372,21 @@ node src/cli/run-workflow.js <spec.json> [options]
   --url <url>        Override the url in the spec
   --scenario <name>  Override the scenario name in the spec
   --debug-native     Keep raw engine output in the payload
+  --accept-untrusted-certs
+                     Open sites whose certificate the browser does not trust
+                     (a staging server's own, or any site on a network that
+                     inspects HTTPS), as the spec's acceptUntrustedCerts does.
+                     The browser cannot then tell a site from one pretending
+                     to be it: sign in only where you trust the network.
   --format <list>    Also write surea11y's results as sarif, junit and/or
                      earl (comma-separated), into <out>/exports. Can be
                      repeated. Scans run without surea11y are left out.
+                     acr writes the run's conformance report (VPAT 2.5,
+                     WCAG and EN 301 549) there too, as HTML and Word.
+  --review <file>    A report (its JSON, payload.json or package zip) whose
+                     conformance review this run takes on, filling in only
+                     what it has not decided; saved in payload.json. Without
+                     it, a baseline's review is carried on.
   --no-batch         Run a config's workflow once, with its batch left off
   --dry-run          Take every step in a browser but the scans, screenshots
                      and evidence, and say how each went: which failed and
@@ -462,7 +479,7 @@ size that is not a preset) is reported when it opens.
   "actions": [
     { "type": "a11yScan", "label": "Cart", "profile": "en301549-v4.1.1", "context": "main", "exclude": ".ads, .cookie-banner" },
     { "type": "click", "selector": "#to-payment" },
-    { "type": "a11yScan", "label": "Payment", "engine": "surea11y", "context": "main" }
+    { "type": "a11yScan", "label": "Payment", "context": "main" }
   ],
 
   "viewport": "desktop-lg",
@@ -473,12 +490,13 @@ size that is not a preset) is reported when it opens.
 | Field | Required | Notes |
 | --- | --- | --- |
 | `url` | yes | Where the workflow starts. `http` or `https` only |
-| `actions` | yes | At least one. Same actions the app's builder produces. A scan runs with `surea11y` unless it names another engine (`"engine": "axe"`), which the `more-engines` add-on provides: `axe`, `alfa`, `pa11y`, `pa11y-htmlcs`, `qualweb` and the QualWeb variants |
+| `actions` | yes | At least one. Same actions the app's builder produces. Every scan runs with surea11y |
 | `scenarioName` | no | Names the folder and the reports |
 | `viewport` | no | A preset name, or `{"width": 1280, "height": 720}` |
-| `colorScheme` | no | `light` or `dark`: the color scheme the page is shown in from the first page. Left out, the browser's own (light). In the app it is the configuration's Color scheme. Set color scheme and contrast changes it; its Run default comes back to this |
-| `highContrast` | no | `on` or `off`: forced colors (high contrast) from the first page. Left out, off. In the app it is the configuration's High contrast |
-| `language` | no | A BCP 47 tag (`es-ES`, `de`, `pt-BR`), or a variable such as `{var:lang}` so each batch row can set its own: the language the page is shown in from the first page. Left out, the browser's own. In the app it is the configuration's Language. Set language changes it; its Run default comes back to this |
+| `colorScheme` | no | `light` or `dark`: the color scheme the page is shown in from the first page. Left out, the browser's own (light). In the app it is the Run settings' Color scheme. Set color scheme and contrast changes it; its Run default comes back to this |
+| `highContrast` | no | `on` or `off`: forced colors (high contrast) from the first page. Left out, off. In the app it is the Run settings' High contrast |
+| `acceptUntrustedCerts` | no | `true` to open sites whose certificate the browser does not trust: a staging server's own, or any site on a network that inspects HTTPS. Left out, such a site fails the run, saying why. The browser cannot then tell a site from one pretending to be it, so sign in only where you trust the network; the run says so in its log and in `runDiagnostics.untrustedCertsAccepted`. In the app it is the Run settings' Untrusted certificates; `--accept-untrusted-certs` sets it for a whole run or batch |
+| `language` | no | A BCP 47 tag (`es-ES`, `de`, `pt-BR`), or a variable such as `{var:lang}` so each batch row can set its own: the language the page is shown in from the first page. Left out, the browser's own. In the app it is the Run settings' Language. Set language changes it; its Run default comes back to this |
 | `customSteps` | no | Reusable step definitions the actions refer to |
 
 A run has no Include or Exclude selectors: each scan step's own `context` and
@@ -652,8 +670,9 @@ disappears. Fix the workflow before trusting the numbers.
 **"not promoting a degraded run to a baseline"** — working as intended. Fix the
 run, then promote it.
 
-**The numbers differ from the app** — check the engine. `surea11y` and `axe`
-report different rule sets. Check the `engine` of each scan in the spec.
+**The numbers differ from the app** — check what the scans check against and
+how the page is shown: each scan's `profile`, and the spec's `viewport`,
+`colorScheme` and `language`, against the app's run.
 
 ---
 

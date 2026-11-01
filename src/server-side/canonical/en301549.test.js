@@ -22,7 +22,7 @@ describe('en301549ForFinding', () => {
         assert.deepEqual(en301549ForFinding({}), []);
     });
 
-    test('reads axe-style { ref } entries and prefers the normative list when there is one', () => {
+    test('reads { ref } entries and prefers the normative list when there is one', () => {
         assert.deepEqual(en301549ForFinding({ wcag: { sc: [{ ref: '4.1.2' }] } }).map((c) => c.clause), ['9.4.1.2']);
         assert.deepEqual(en301549ForFinding({ wcag: { sc: ['1.1.1', '2.4.4'], scNormative: ['2.4.4'] } }).map((c) => c.clause), ['9.2.4.4']);
     });

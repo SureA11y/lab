@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Collects DOM / HTML heuristics without using axe.
+ * Collects DOM / HTML heuristics, apart from the scan's findings.
  * Runs inside the page context via page.evaluate().
  */
 

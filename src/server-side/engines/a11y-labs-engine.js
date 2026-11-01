@@ -30,20 +30,14 @@ const { normalizeOccurrenceDetails, shadowHostsOf, contextMatchNotices, collectM
 const core = require('@surea11y/core');
 const { ENGINE_TAG } = core;
 
-// The standards that are not core's own come as packs: EN 301 549
-// (@surea11y/pack-en301549). Every scan is
-// given them, and so is every catalog call, so a rule's title and mappings
-// read here are the ones the scan's results carry. A standard is in play
-// only under its profile (or its tag), so a WCAG scan names
+// The standards that are not core's own come as packs (EN 301 549's,
+// @surea11y/pack-en301549, and any other installed: standard-packs.js).
+// Every scan is given them, and so is every catalog call, so a rule's title
+// and mappings read here are the ones the scan's results carry. A standard
+// is in play only under its profile (or its tag), so a WCAG scan names
 // WCAG alone, and an EN 301 549 scan reports its clauses in place of WCAG's
 // criteria. A pack that is not installed is left out.
-const PACKS = ['@surea11y/pack-en301549'].map((name) => {
-    try {
-        return require(name);
-    } catch {
-        return null;
-    }
-}).filter(Boolean);
+const PACKS = require('../standard-packs').installedPacks();
 
 const withPacks = (opts) => (PACKS.length ? { ...(opts && typeof opts === 'object' ? opts : {}), packs: PACKS } : opts);
 const coreGetChecksCatalog = (opts) => core.getChecksCatalog(withPacks(opts));
@@ -55,7 +49,7 @@ const coreGetCompositeRulesCatalog = (opts) => core.getRulesCatalog(withPacks(op
 const getCheckDefById = (ruleId, opts) => core.getCheckDefById(ruleId, withPacks(opts));
 // The scan itself runs through @surea11y/puppeteer, with core's
 // runa11yCoreInPage (see surea11y-scan.js).
-const { scanPage, captureScreenshots } = require('./surea11y-scan');
+const { scanPage, captureScreenshots, coreHooksFrom, installCoreHooks } = require('./surea11y-scan');
 const { getScanNotes } = require('@surea11y/puppeteer');
 const { elementScreenshotOf } = require('../element-screenshots');
 
@@ -70,7 +64,7 @@ try { ENGINE_VERSION = require('@surea11y/core/package.json').version || null; }
 /**
  * Normalizes severity strings coming from @surea11y/core's rule catalog / check
  * results into the canonical set (critical/serious/moderate/minor/info), the same
- * way canonical-shared.js and pa11y-engine.js do. An unrecognized spelling
+ * way canonical-shared.js does. An unrecognized spelling
  * would otherwise fall through to the generic default weight and could fail
  * canonical validation.
  */
@@ -884,9 +878,9 @@ function resolveRunSelection({ selection, runOnly, wcagLevel, cfg, requestedProf
             effectiveRunOnly.includeRuleIds = filtered;
         }
 
-        // 4) Leave out the rule ids surea11y doesn't have. A scan step's ids
-        //    go to every engine, so an axe-core id is expected here, but core
-        //    throws when no id in an include list names one of its rules.
+        // 4) Leave out the rule ids surea11y doesn't have (a typo, or a step
+        //    written for another engine): core throws when no id in an
+        //    include list names one of its rules.
         const isKnownRuleId = makeKnownRuleIdTest(cfg);
         for (const key of ['includeRuleIds', 'excludeRuleIds']) {
             const list = Array.isArray(effectiveRunOnly[key]) ? effectiveRunOnly[key] : [];
@@ -1666,7 +1660,11 @@ function saveHtmlReport(reportModel, meta = {}) {
     const outPath = path.join(outDir, filename);
 
     const title = (meta && meta.title) ? String(meta.title) : label;
-    const html = renderHtmlReport(result, title ? { title } : {});
+    // Without core's "What's left for a person" (manualChecks): it lists
+    // only what core's rules evaluate, where the lab's testing guide and
+    // Review conformance give every requirement, with the lab's procedures
+    // for the rest (lab-procedures.js). A core before 1.15 ignores it.
+    const html = renderHtmlReport(result, { ...(title ? { title } : {}), manualChecks: false });
 
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(outPath, html, 'utf-8');
@@ -1720,11 +1718,20 @@ module.exports = {
     // report export
     saveHtmlReport,
 
+    // page readiness: core's hooks, before the page's own scripts run
+    preparePage: (page, { hooks } = {}) => installCoreHooks(page, Array.isArray(hooks) ? hooks : undefined),
+    pageHooksFrom: coreHooksFrom,
+
+    // core's own result, for the CI exports and baselines
+    ownResult: coreResultFromNative,
+
     // capability metadata (used by UI to hide unsupported fields)
     capabilities: {
         // The conformance targets it can check (conformance-targets.js):
         // surea11y applies a standard in full (its profile).
         selectsBy: 'standard',
+        // It names EN 301 549's clauses itself (canonical/en301549.js).
+        namesEn301549Clauses: true,
         actions: {
             a11yScan: {
                 label: true,

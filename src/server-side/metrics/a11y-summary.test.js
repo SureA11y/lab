@@ -16,9 +16,9 @@ function finding(outcome, severity, occurrenceCount = 1) {
 describe('buildA11ySummary: empty/default input', () => {
     test('no canonical findings and no domMetrics: nothing was found, so nothing is claimed about confidence', () => {
         const out = buildA11ySummary({ canonical: null, domMetrics: null, textMetrics: null });
-        assert.equal(out.inputs.axe.violations, 0);
-        assert.equal(out.inputs.axe.incomplete, 0);
-        assert.equal(out.inputs.axe.passes, 0);
+        assert.equal(out.inputs.engine.violations, 0);
+        assert.equal(out.inputs.engine.incomplete, 0);
+        assert.equal(out.inputs.engine.passes, 0);
         assert.equal(out.scores.confidence, null);
         assert.equal(out.scores.confidenceSource, 'notMeasured');
         assert.equal(out.scores.confidenceByDom, 94); // 100 - 6 (dom.coverageRatio "warn" penalty)
@@ -37,7 +37,7 @@ describe('buildA11ySummary: empty/default input', () => {
 
     test('canonical.findings missing/non-array is treated as no findings', () => {
         const out = buildA11ySummary({ canonical: {} });
-        assert.equal(out.inputs.axe.violations, 0);
+        assert.equal(out.inputs.engine.violations, 0);
         assert.equal(out.scores.evidence, 100);
     });
 });
@@ -54,9 +54,9 @@ describe('buildA11ySummary: outcome filtering into violations/incomplete/passes'
             ]
         };
         const out = buildA11ySummary({ canonical, domMetrics: { totalElements: 100 } });
-        assert.equal(out.inputs.axe.violations, 2);
-        assert.equal(out.inputs.axe.incomplete, 1);
-        assert.equal(out.inputs.axe.passes, 1);
+        assert.equal(out.inputs.engine.violations, 2);
+        assert.equal(out.inputs.engine.incomplete, 1);
+        assert.equal(out.inputs.engine.passes, 1);
     });
 
     test('incomplete findings mark manualReviewNeeded', () => {
@@ -343,7 +343,7 @@ describe('buildA11ySummary: the headline is normalized by content, not DOM size'
         for (const key of ['evidenceByDom', 'confidenceByDom', 'adjustedByDom']) {
             assert.ok(Number.isFinite(out.scores[key]), `${key} should be reported`);
         }
-        assert.ok(Number.isFinite(out.inputs.risk.axeClamped));
+        assert.ok(Number.isFinite(out.inputs.risk.engineClamped));
         assert.ok(Number.isFinite(out.inputs.risk.contentClamped));
     });
 });
@@ -417,9 +417,9 @@ describe('buildA11ySummary: reliability drives the headline', () => {
 });
 
 /**
- * Engines disagree about whether a check carries a confidence at all: axe-core
- * stamps a flat 1.0 on everything, surea11y maps its own high/medium/low, pa11y
- * and QualWeb report none. A run of several engines therefore mixes findings
+ * Engines disagree about whether a check carries a confidence at all: one may
+ * stamp a flat 1.0 on everything, surea11y maps its own high/medium/low, and
+ * another may report none. A run of several engines therefore mixes findings
  * that carry one with findings that do not, and the mean has to say how much of
  * the evidence it actually speaks for.
  */
@@ -462,8 +462,8 @@ describe('buildA11ySummary: confidence measured over only part of the evidence',
     });
 
     test('one engine\'s full confidence does not speak for another engine\'s unmeasured findings', () => {
-        // axe-core contributes a single finding at 1.0; QualWeb contributes twenty
-        // with no confidence at all. Reporting "engine" at 100 here claimed the
+        // One engine contributes a single finding at 1.0, another twenty with no
+        // confidence at all. Reporting "engine" at 100 here claimed the
         // whole run was certain on the strength of one finding out of twenty-one.
         const out = summarize([...fails(1, 1), ...fails(20, null)]);
         assert.equal(out.scores.confidenceSource, 'partial');
@@ -624,7 +624,7 @@ describe('buildA11ySummary: pages too thin to carry a density', () => {
     test('what was actually found is still reported - only the density is withheld', () => {
         const out = buildA11ySummary({ canonical: twoFailures, domMetrics: thinPage, coverageSummary: coverage });
 
-        assert.equal(out.inputs.axe.violations, 2);
+        assert.equal(out.inputs.engine.violations, 2);
         assert.equal(out.scores.criteriaEvaluated, 20);
         assert.equal(out.scores.criteriaInScope, 55);
     });
@@ -693,7 +693,7 @@ describe('buildA11ySummary: questions that lean fail', () => {
             { outcome: 'fail', severity: 'serious', occurrences: [{ lean: { toward: 'fail' } }] },
         ] };
         const out = buildA11ySummary({ canonical, domMetrics: null, textMetrics: null });
-        assert.equal(out.inputs.axe.incomplete, 2);
-        assert.equal(out.inputs.axe.incompleteLikelyFail, 2);
+        assert.equal(out.inputs.engine.incomplete, 2);
+        assert.equal(out.inputs.engine.incompleteLikelyFail, 2);
     });
 });

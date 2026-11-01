@@ -49,7 +49,7 @@ describe('engine registry', () => {
     });
 
     test('an unknown id is rejected rather than silently defaulted', () => {
-        assert.throws(() => REGISTRY.resolveEngine('pa11y'), /Unsupported extension engine: pa11y/);
+        assert.throws(() => REGISTRY.resolveEngine('other-engine'), /Unsupported extension engine: other-engine/);
     });
 
     test('the extension ships no other engine', () => {
@@ -57,7 +57,8 @@ describe('engine registry', () => {
         const path = require('node:path');
         assert.deepEqual(fs.readdirSync(path.join(__dirname, 'engines')).filter((f) => f.endsWith('.js')), ['a11y-extension-surea11y-engine.js']);
         for (const file of ['manifest.json', 'manifest.firefox.json', 'popup.html', 'panel.html', 'background.js']) {
-            assert.doesNotMatch(fs.readFileSync(path.join(__dirname, file), 'utf8'), /a11y-extension-axe-engine|vendor\/axe\.min\.js/, file);
+            const refs = fs.readFileSync(path.join(__dirname, file), 'utf8').match(/engines\/[\w./-]+\.js/g) || [];
+            assert.deepEqual(refs.filter((ref) => !/^engines\/(a11y-extension-surea11y-engine|vendor\/surea11y[\w.-]*)\.js$/.test(ref)), [], file);
         }
     });
 });
@@ -83,8 +84,8 @@ describe('background dispatch: resolve or report', () => {
     });
 
     test('an unknown engine reports rather than falling back to surea11y', () => {
-        const pick = dispatch('pa11y', {'@surea11y': SUREA11Y});
-        assert.throws(() => pick('ensureInjected'), /Unsupported extension engine: pa11y/);
+        const pick = dispatch('other-engine', {'@surea11y': SUREA11Y});
+        assert.throws(() => pick('ensureInjected'), /Unsupported extension engine: other-engine/);
     });
 
     test('an adapter that failed to load reports rather than scanning with nothing', () => {

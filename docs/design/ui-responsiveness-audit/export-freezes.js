@@ -7,8 +7,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
   await p.addInitScript(() => { window.__long = []; new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__long.push({ s: Math.round(e.startTime), d: Math.round(e.duration) }); }).observe({ type: 'longtask', buffered: true }); });
   await p.goto(process.env.BASE || 'http://127.0.0.1:3000/'); await p.click('#mode-open');
   await p.setInputFiles('#resultsFiles', process.argv[2]);
-  await p.waitForFunction(() => /ready to load/i.test(document.querySelector('#statusReport')?.textContent || ''));
-  await p.click('#report-files-load-btn');
+  // A report picked on its own opens at once.
   await p.waitForFunction(() => /loaded/i.test(document.querySelector('#statusReport')?.textContent || ''), null, { timeout: 120000 });
   await p.waitForTimeout(3000);
   const t0 = await p.evaluate(() => performance.now());

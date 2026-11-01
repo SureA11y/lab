@@ -53,7 +53,6 @@ const { captureScreenshotArtifact } = require('./screenshot-capture.js');
 const { CAPTURE_BUDGET_MS, screenshotOptionsForStep, storeElementScreenshots } = require('./element-screenshots.js');
 const { splitWcagTagToRef } = require('../shared/canonical-shared');
 const { LOCALES } = require('./engines/a11y-labs-engine');
-const { installCoreHooks } = require('./engines/surea11y-scan');
 const { resolveScanSelection, selectionTags, targetLabel, DEFAULT_WCAG_VERSION } = require('./conformance-targets');
 const { checkScanSteps } = require('./scan-step-check');
 const { pushLog, varsForLog } = require('../workflow/engine/log');
@@ -76,16 +75,25 @@ const { interpolateVarTokensLoose } = require('../workflow/engine/vars');
 
 const DEFAULT_SCAN_CSS = `{filter: opacity(.8) blur(5px);}`;
 
-/** @type {import('puppeteer').Browser | null} */
-let browser = null;
+/**
+ * The shared browsers: the one every run uses, which refuses a certificate it
+ * does not trust, and the one a run that accepts untrusted certificates uses
+ * (acceptUntrustedCerts), launched the first time one asks. Whether a browser
+ * accepts them is set when it launches, for all its pages, so runs that differ
+ * on it cannot share one.
+ * @type {{strict: import('puppeteer').Browser | null, untrusted: import('puppeteer').Browser | null}}
+ */
+const browsers = {strict: null, untrusted: null};
 
 
-/** Launches (once) or reuses a single browser instance. */
-async function getBrowser() {
-    if (browser && browser.connected) return browser;
-    browser = await puppeteer.launch({
+/** Launches (once) or reuses the shared browser a run asks for. */
+async function getBrowser({acceptUntrustedCerts = false} = {}) {
+    const key = acceptUntrustedCerts ? 'untrusted' : 'strict';
+    const existing = browsers[key];
+    if (existing && existing.connected) return existing;
+    const browser = await puppeteer.launch({
         headless: 'new',
-        ignoreHTTPSErrors: true,
+        acceptInsecureCerts: !!acceptUntrustedCerts,
         args: [
             // Drop the "navigator.webdriver = true" / automation banner that
             // WAFs fingerprint on.
@@ -99,6 +107,7 @@ async function getBrowser() {
     answerDialogs(browser);
     keepOpenersShown(browser);
 
+    browsers[key] = browser;
     return browser;
 }
 
@@ -144,21 +153,24 @@ function keepOpenersShown(browserRef) {
     });
 }
 
-/** The shared browser's process id, or null while none runs. */
+/** The shared browser's process id (the one every run uses), or null while none runs. */
 function getBrowserPid() {
+    const browser = browsers.strict;
     if (!browser || !browser.connected) return null;
     const proc = typeof browser.process === 'function' ? browser.process() : null;
     return proc && Number.isInteger(proc.pid) ? proc.pid : null;
 }
 
-/** Closes the shared browser, ignoring transient errors. */
+/** Closes the shared browsers, ignoring transient errors. */
 async function closeBrowser() {
-    if (browser) {
+    for (const key of Object.keys(browsers)) {
+        const browser = browsers[key];
+        browsers[key] = null;
+        if (!browser) continue;
         try {
             await browser.close();
         } catch {
         }
-        browser = null;
     }
 }
 
@@ -577,8 +589,8 @@ function automationCoverageForEngines(wcagLevel, engineIds, version = DEFAULT_WC
     // question here needs: whether ANY rule can reach a criterion, not how many.
     const coverage = rules.length ? buildAutomationCoverage({rules, level, version}) : null;
 
-    // Not every adapter exposes a catalog - the QualWeb ones report none - so a union
-    // can silently come down to a subset of the engines that ran. The criteria those
+    // An adapter that exposes no catalog would make a union silently come down
+    // to a subset of the engines that ran. The criteria those
     // engines evaluate still land in the numerator, so leaving this unsaid reports
     // their work against a scope that never included their reach.
     if (coverage && ids.length > 1) {
@@ -625,8 +637,9 @@ const HEAVY_SKIP_SUGGESTIONS = [
 /**
  * The standard a scan was checked against, as { id, label }, or null.
  *
- * When surea11y ran, its own report of the profile it applied decides: it
- * leaves one out when the step's included rules or tags took precedence. In a
+ * When an engine that applies a standard in full ran (surea11y), its own
+ * report of the profile it applied decides: it leaves one out when the
+ * step's included rules or tags took precedence. In a
  * multi-engine scan the merged canonical keeps only the first engine's
  * runOptions, so each engine's own canonical is checked as well. Other engines
  * only get the standard's tags, which explicit includes also replace, so the
@@ -637,27 +650,15 @@ function appliedConformanceProfile(engineResult, { requested = null, overridden 
     if (engineResult && Array.isArray(engineResult.perEngine)) {
         for (const p of engineResult.perEngine) candidates.push(p && p.canonical);
     }
-    let surea11yRan = false;
+    let standardApplier = false;
     for (const c of candidates) {
         const engines = c && Array.isArray(c.engines) ? c.engines : [];
-        if (engines.some((e) => e && e.id === 'surea11y')) surea11yRan = true;
+        if (engines.some((e) => e && a11yEngine.appliesStandard(e.id))) standardApplier = true;
         const cp = c && c.runOptions ? c.runOptions.conformanceProfile : null;
         if (cp && typeof cp === 'object' && cp.id) return { id: String(cp.id), label: String(cp.label || cp.id) };
     }
-    if (!requested || surea11yRan || overridden) return null;
+    if (!requested || standardApplier || overridden) return null;
     return { id: requested, label: targetLabel(requested) };
-}
-
-/**
- * surea11y's own result from a scan's native engine output, or null when
- * surea11y did not take part. A multi-engine scan keeps native output per
- * engine under `byEngine`.
- */
-function surea11yCoreResult(native) {
-    if (!native || typeof native !== 'object') return null;
-    const own = native.byEngine && typeof native.byEngine === 'object' ? native.byEngine.surea11y : native;
-    if (!own || own.engineId !== 'surea11y' || !Array.isArray(own.checksResults)) return null;
-    return own;
 }
 
 function buildHeavySkipExtra({label = null, context = null, profile = null, url = null, estimatedNodes, threshold}) {
@@ -691,8 +692,8 @@ function getSuccessCriteria(tags) {
 /**
  * Open a page according to determinism hints.
  */
-async function openContextAndPage(determinism) {
-    const browserInstance = await getBrowser();
+async function openContextAndPage(determinism, {acceptUntrustedCerts = false} = {}) {
+    const browserInstance = await getBrowser({acceptUntrustedCerts});
 
     let context = null;
     let usedIsolated = false;
@@ -722,9 +723,10 @@ async function openContextAndPage(determinism) {
         } catch {}
     });
 
-    // Core's hooks run before the page's own scripts, so they go in before
-    // the first navigation. Without determinism.coreHooks, every one.
-    await installCoreHooks(page, Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined);
+    // The engine readies the page before the first navigation (surea11y
+    // installs core's hooks, which run before the page's own scripts).
+    // Without determinism.coreHooks, every one.
+    await a11yEngine.preparePage(page, { hooks: Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined });
 
     // User-Agent: an explicit determinism.userAgent wins; otherwise the
     // browser's own, which the stealth plugin, when on, de-headlesses and
@@ -1079,6 +1081,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
         colorScheme = null,
         highContrast = false,
         language = null,
+        // Open sites whose certificate the browser does not trust (a staging
+        // server's own, or any site through a network that inspects HTTPS).
+        acceptUntrustedCerts = false,
         vars,
         progress,
         isCancelled,
@@ -1116,7 +1121,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
         };
     }
 
-    const {context: ctx, page, usedIsolated} = await openContextAndPage(determinism);
+    const {context: ctx, page, usedIsolated} = await openContextAndPage(determinism, {acceptUntrustedCerts});
 
     const hardCancelWatch = hardCancel
         ? startHardCancelWatch({context: ctx, page, usedIsolated, isCancelled, progress})
@@ -1148,9 +1153,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
     } catch {}
     workflowCtx.runId = runId;
     // A worker page the workflow opens itself (crawl or forEachElement
-    // concurrency) gets core's hooks too, before it navigates.
-    workflowCtx.preparePage = (workerPage) => installCoreHooks(
-        workerPage, Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined);
+    // concurrency) is readied the same way, before it navigates.
+    workflowCtx.preparePage = (workerPage) => a11yEngine.preparePage(
+        workerPage, { hooks: Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined });
 
     // Screenshot writer (PNG/JPEG/WEBP) - saves to disk under REPORTS_ROOT/runs/<runId>/...
     // IMPORTANT: opt-in only. By default we do NOT persist non-evidence screenshots.
@@ -1424,7 +1429,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
         // The step's engine; without one, the default engine.
         const scanEngineId = (typeof meta.engine === 'string' && meta.engine.trim()) ? meta.engine.trim() : null;
         const engineOptions = {engineMode: meta.engineMode};
-        // Allow engine-specific options to pass through (QualWeb, Pa11y, custom engines, etc.)
+        // Engine options a step or spec gives pass through to surea11y.
         if (meta.engineOptions && typeof meta.engineOptions === 'object' && !Array.isArray(meta.engineOptions)) {
             Object.assign(engineOptions, meta.engineOptions);
         }
@@ -1478,8 +1483,8 @@ async function runA11yWorkflow(url, tags, options = {}) {
         }
         if (Object.keys(disableMerged).length) engineOptions.rules = disableMerged;
 
-        // The selection's tags, recorded on the scan as before; no engine
-        // selects by them but axe-core, whose adapter builds its own.
+        // The selection's tags, recorded on the scan as before; surea11y
+        // selects by its profile, not by them.
         const tagsForScan = selectionTags(selection);
         const wcagLevel = selection.level;
         // What the scan checks against, as its report records it: the
@@ -1842,7 +1847,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
                 // Internal only, used for explicit report export without leaking native to normal payloads
                 nativeForReport: exportReport ? collectedScans : null,
                 // Internal only: surea11y's raw result, for SARIF/JUnit/EARL export
-                coreResult: keepCoreResults ? surea11yCoreResult(collectedScans) : null,
+                coreResult: keepCoreResults ? a11yEngine.ownResult(collectedScans) : null,
                 canonical,
                 domMetrics,
                 a11ySummary,
@@ -2120,6 +2125,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
 
         if (typeof progress === 'function') {
             try {
+                if (acceptUntrustedCerts) {
+                    progress({time: new Date().toISOString(), type: 'warn', message: 'This run accepts certificates the browser does not trust: it cannot tell a site from one pretending to be it, so type no password you would not give away'});
+                }
                 progress({time: new Date().toISOString(), type: 'info', message: `browsing to ${url}`});
             } catch {
             }

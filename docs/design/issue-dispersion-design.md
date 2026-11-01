@@ -523,7 +523,7 @@ names what is left in the latest report by its scan range and scan names.
 **Export.**
 - `report.min.js` bundles both shared modules, and `report.js` installs the
   interaction layer, so tooltips and the strip work in the downloaded file.
-- The CSS lives in `a11y-lab-ui.css`, inside the compare block so that
+- The CSS lives in `src/css/compare.css`, inside the compare block so that
   `comparison.min.css` carries it, and is repeated in `report.css`. The style
   parity test covers the `dsp` classes.
 - Bundling exposed a latent export bug: `export.js` inserted content with

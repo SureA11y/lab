@@ -1,0 +1,1176 @@
+/* The app's styles, part 12 of 14: the Compare tab, which build:report also copies into the exported comparison.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* compare:start — build:report copies everything between these markers into
+   src/report/comparison.css, so the exported comparison and the app share one
+   source of truth. Keep the block contiguous and at the end of the file. */
+
+/* ============================================================================
+   Compare tab — mockup-based run comparison. Component styles live under
+   .compare-panel / .cmp2 so the mockup class names don't collide with app CSS.
+   Comparison-specific tokens map onto the app's theme-aware tokens; the two
+   side hues (A/B mode) get explicit light/dark values.
+   ============================================================================ */
+.compare-panel {
+    --surface-raised: var(--surface-5);
+    --surface-sunken: var(--surface-2);
+    --good: var(--ok); --good-soft: var(--ok-soft); --good-line: var(--ok);
+    --bad: var(--danger); --bad-soft: var(--danger-soft); --bad-line: var(--danger);
+    --mixed: var(--warn); --mixed-soft: var(--warn-soft);
+    --warn-line: var(--warn);
+    --neutral: var(--text-soft); --neutral-soft: var(--surface-2);
+    --accent-ink: var(--accent);
+    --sev-critical: var(--danger); --sev-serious: var(--danger);
+    --sev-moderate: var(--warn); --sev-minor: var(--text-soft);
+    --shared: var(--warn); --shared-soft: var(--warn-soft);
+    --side-a: #0e7c86; --side-a-soft: #d9eff0;
+    --side-b: #6b46d6; --side-b-soft: #ece5fb;
+    --shadow-card: 0 1px 2px rgba(0,0,0,.05);
+
+    /* Dashboard (three or more reports). The heat ramp is one hue in five steps:
+       the grid encodes magnitude, which is not categorical. Each ink is paired
+       with its step so the printed number stays legible on it. */
+    --heat-0: var(--surface-2);
+    --heat-1: #f4d9d3; --heat-2: #e6ab9d; --heat-3: #cd7260; --heat-4: #a3231a;
+    /* Step 3 takes a dark ink: white on it was 3.4:1. */
+    --heat-1-ink: #63201a; --heat-2-ink: #4d1a13; --heat-3-ink: #3d120c; --heat-4-ink: #ffffff;
+    --flap: #8a4b17; --flap-soft: #fbeadb;
+}
+:root[data-theme="dark"] .compare-panel {
+    --side-a: #4fd1c5; --side-a-soft: #10312f;
+    --side-b: #a488ee; --side-b-soft: #2a2140;
+    --shadow-card: 0 1px 2px rgba(0,0,0,.28);
+    --heat-0: #1e2320;
+    --heat-1: #3a2622; --heat-2: #5e392e; --heat-3: #97503c; --heat-4: #e8735c;
+    --heat-1-ink: #edcac2; --heat-2-ink: #ffdcd4; --heat-3-ink: #ffffff; --heat-4-ink: #23100c;
+    --flap: #e0a15f; --flap-soft: #3a2a18;
+}
+/* clean-css drops nested at-rules and build:report minifies this block, so
+   the auto-dark override stays flat. */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .compare-panel {
+        --side-a: #4fd1c5; --side-a-soft: #10312f;
+        --side-b: #a488ee; --side-b-soft: #2a2140;
+        --shadow-card: 0 1px 2px rgba(0,0,0,.28);
+        --heat-0: #1e2320;
+        --heat-1: #3a2622; --heat-2: #5e392e; --heat-3: #97503c; --heat-4: #e8735c;
+        --heat-1-ink: #edcac2; --heat-2-ink: #ffdcd4; --heat-3-ink: #ffffff; --heat-4-ink: #23100c;
+        --flap: #e0a15f; --flap-soft: #3a2a18;
+    }
+}
+
+body.compare-mode-active #results-container { display: none; }
+
+/* A live card whose image the server no longer keeps (see progress-log.js). */
+.stream-note { margin: var(--space-2) 0 0; font-size: var(--fs-xs); color: var(--text-soft); }
+
+/* A dialog about one queued run (run-dialog.js): watching it live. It keeps
+   the .src-dialog look; header, status and footer stay put while the body
+   scrolls, so Close is always in reach. */
+.run-dialog[open] { display: flex; flex-direction: column; max-height: calc(100dvh - 2rem); }
+.run-dialog .run-dialog-body { flex: 1 1 auto; min-height: 0; max-height: none; padding-right: 1.1rem; }
+.run-dialog-status { margin: 0; padding: var(--space-2) 1.1rem; font-size: var(--fs-sm); color: var(--text-muted); border-bottom: 1px solid var(--border-soft); }
+.run-dialog-status:empty { display: none; }
+.run-dialog-spinner { display: inline-block; vertical-align: -2px; margin-left: .25rem; }
+.run-dialog-status--ok { color: var(--ok); }
+.run-dialog-status--error { color: var(--danger); }
+.run-dialog-footer { justify-content: flex-end; }
+.run-dialog-footer[hidden] { display: none; }
+.watch-dialog { width: min(1100px, 100% - 2rem); max-width: none; }
+
+.watch-view { display: grid; gap: var(--space-4); min-width: 0; }
+/* What the watched run is on (queue design §8.1): its step, then its last scan and pace, then a stall. */
+.watch-now { display: grid; gap: var(--space-1); }
+.watch-now p { margin: 0; overflow-wrap: anywhere; }
+.watch-now-step { font-weight: 600; color: var(--text-main); }
+.watch-now-liveness { font-size: var(--fs-sm); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.watch-now-stall { font-size: var(--fs-sm); color: var(--warn); font-weight: 600; }
+/* Grid items default to min-width: auto, which would let the carousel's track
+   (every card side by side) widen the column past the dialog. */
+.watch-view > * { min-width: 0; }
+.watch-stream { margin-top: 0; }
+/* Log and totals share a row, 70/30, once the dialog is wide enough; the
+   dialog's width decides, not the window's. */
+.run-dialog-body { container-type: inline-size; }
+.watch-row { display: grid; gap: var(--space-4); align-items: start; }
+.watch-row > * { min-width: 0; }
+/* The "Log" line above the log's box has a set height, so the totals can
+   start at that box's top edge, not the label's. */
+.watch-row { --watch-log-head: 1.5rem; }
+@container (min-width: 720px) {
+    .watch-row { grid-template-columns: 7fr 3fr; }
+    .watch-row > .watch-totals { margin-top: calc(var(--watch-log-head) + var(--space-2)); }
+}
+.watch-log-summary { cursor: pointer; font-weight: 600; font-size: var(--fs-sm); line-height: var(--watch-log-head); height: var(--watch-log-head); }
+.watch-log .watch-log-panel { display: block; max-height: 320px; margin-top: var(--space-2); }
+.watch-log-panel:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+
+/* The totals as part of the dialog's content: no fixed corner, no shadow, the
+   container's width. */
+.live-totals--inline { position: static; z-index: auto; max-width: none; align-items: stretch; }
+.live-totals--inline .live-totals-panel { box-shadow: none; background: var(--surface-2); --live-totals-bg: var(--surface-2); }
+
+/* ---- Queue pane ---- */
+/* Like Compare, the queue owns its pane; the shared results area stays hidden. */
+body.queue-mode-active #results-container,
+body.queue-mode-active #screenshots-container { display: none; }
+
+.queue-panel { max-width: 1120px; }
+.queue-controls { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin: var(--space-4) 0; }
+.queue-controls label { margin-bottom: 0; }
+.queue-controls select { width: auto; min-width: 4.5rem; min-height: 36px; }
+.queue-sessions { display: grid; gap: var(--space-6); margin-top: var(--space-4); }
+/* A grid item will not shrink below its content by default; without this a
+   wide table widens the page instead of scrolling inside .queue-table-wrap. */
+.queue-sessions > * { min-width: 0; }
+.queue-session { border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); background: var(--surface-raised); }
+.queue-session--interrupted { border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+.queue-session-title { margin: 0; font-size: var(--fs-lg); }
+/* The heading's disclosure button carries the heading's look. */
+.queue-session-toggle { font-family: inherit; font-size: inherit; font-weight: 600; color: var(--text-main); padding-left: 0; }
+.queue-session-toggle:focus-visible, .queue-name:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+.queue-session-meta { padding-left: var(--space-6); }
+.queue-session-body { padding-top: var(--space-1); }
+.queue-session-meta { margin: var(--space-1) 0 var(--space-3); color: var(--text-muted); }
+/* A finished batch in a line, under its status line. */
+.queue-session-summary { margin: calc(-1 * var(--space-2)) 0 var(--space-3); padding-left: var(--space-6); color: var(--text-muted); }
+/* The running batch's server memory, under its status line; held, it says why with the warning edge. */
+.queue-session-health { margin: calc(-1 * var(--space-2)) 0 var(--space-3); padding-left: var(--space-6); color: var(--text-muted); font-size: var(--fs-sm); }
+.queue-session-health--held { color: var(--text-main); border-left: 3px solid var(--warn); padding-left: calc(var(--space-6) - 3px); }
+.queue-session-actions, .queue-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* A row's actions stay on one line, whatever the width: a second line would
+   make that row taller than the others. */
+.queue-table .queue-actions { flex-wrap: nowrap; white-space: nowrap; }
+/* Row actions as icon buttons: the DS 36px square, as for history undo/redo. */
+.queue-actions .queue-icon-button { width: 36px; height: 36px; min-width: 36px; min-height: 36px; padding: 0; gap: 0; flex: 0 0 auto; justify-content: center; align-items: center; border-radius: var(--radius-sm); }
+.queue-session-actions { margin-bottom: var(--space-3); }
+/* The empty place a waiting row keeps for Watch, one icon button wide. */
+.queue-actions .queue-icon-slot { width: 36px; flex: 0 0 auto; }
+
+/* Links styled as buttons: the same 36px control as a <button>. */
+.queue-panel a.secondary-button {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 36px; font-size: var(--fs-base); line-height: 1.2; text-decoration: none;
+}
+.queue-panel a.secondary-button:hover { border-color: var(--accent-border); color: var(--text-main); background: var(--surface-4); }
+.queue-panel a.secondary-button:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); box-shadow: var(--focus-ring); }
+
+/* position: relative so the visually-hidden run names inside (absolutely
+   positioned) scroll with the table instead of widening the page. */
+.queue-table-wrap { position: relative; overflow-x: auto; }
+.queue-table { width: 100%; border-collapse: collapse; font-size: var(--fs-md); table-layout: fixed; }
+/* Fixed columns: a running row's counts and time grow without moving them.
+   The name takes the rest, at least 11rem: below that the table scrolls
+   inside .queue-table-wrap. */
+.queue-table { min-width: 58.5rem; }
+/* The longest status: "Saving result" and its spinner. */
+.queue-table .queue-col-status { width: 10rem; }
+.queue-table .queue-col-scans { width: 6.5rem; }
+/* "12,345" and its result tile. */
+.queue-table .queue-col-fail, .queue-table .queue-col-pass { width: 6rem; }
+.queue-table .queue-col-canttell { width: 6.5rem; }
+.queue-table .queue-col-duration { width: 6rem; }
+/* A row's actions are at most two 36px icon buttons: 80px with their gap,
+   plus the cell's padding. */
+.queue-table .queue-col-actions { width: 6.5rem; }
+.queue-table th, .queue-table td { text-align: left; vertical-align: top; padding: var(--space-2) var(--space-3); border-top: 1px solid var(--border-soft); }
+.queue-table thead th { border-top: 0; font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .08em; text-transform: uppercase; color: var(--text-soft); }
+.queue-table .queue-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* The per-state colours the live totals and stream cards use. */
+.queue-table .queue-fail { color: var(--danger); }
+.queue-table .queue-cantTell { color: var(--warn); }
+.queue-table .queue-pass { color: var(--ok); }
+.queue-table .queue-num .result-glyph,
+.queue-table .queue-num .queue-glyph-slot { margin-left: 6px; }
+/* The width of a small result tile (.result-glyph--sm), where a cell has none, so the numbers stay in line. */
+.queue-table .queue-num .queue-glyph-slot { display: inline-block; inline-size: 14px; }
+/* Resume: the hidden values interrupted runs need. */
+.queue-values-dialog { width: min(560px, 100% - 2rem); background: var(--surface-1); }
+.queue-values-form { display: grid; gap: var(--space-3); padding-right: 1.1rem; }
+.queue-value-field { display: grid; gap: var(--space-1); }
+.queue-value-field label { font-weight: 600; }
+.queue-values-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* A floor on the name column: on a narrow screen the table scrolls rather
+   than breaking names a letter or two per line. */
+.queue-name { font-weight: 600; min-width: 11rem; overflow-wrap: anywhere; }
+/* The run's name is a row header: undo the column-header look the global th
+   rule gives it, and stripe it with the rest of its row. */
+.queue-table tbody th {
+    position: static; background: transparent; border-bottom: 0;
+    font-size: inherit; text-transform: none; letter-spacing: normal; color: var(--text-main);
+}
+.queue-table tbody tr:nth-child(even) > * { background: var(--surface-0); }
+.queue-table td { border-bottom: 0; }
+.queue-note { display: block; font-weight: 400; font-size: var(--fs-xs); color: var(--text-soft); overflow-wrap: anywhere; }
+.queue-status { white-space: nowrap; }
+.queue-status .queue-note { white-space: normal; }
+/* A running run that has logged nothing for minutes: worth a look, not an error. */
+.queue-stall { display: inline-flex; vertical-align: middle; margin-left: var(--space-1); color: var(--warn); }
+.queue-stall svg { width: 16px; height: 16px; }
+/* "20 before merging" under a run's scan count: it may wrap rather than widen the column. */
+.queue-table .queue-num .queue-note { white-space: normal; }
+.queue-status--done { color: var(--ok); }
+.queue-status--error, .queue-status--interrupted { color: var(--danger); }
+.queue-status--running, .queue-status--cancelling { color: var(--accent); }
+.queue-spinner { display: inline-block; vertical-align: -2px; margin-left: var(--space-2); }
+/* In a batch's status line it sits mid-sentence, so it keeps room on both sides. */
+.queue-session-meta .queue-spinner { margin-right: var(--space-1); }
+
+.compare-actions:empty { display: none; }
+.compare-actions { margin-bottom: var(--space-3); }
+
+/* ---- Compare pane chrome ---- */
+.compare-panel { max-width: 1120px; }
+.compare-controls { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin: var(--space-4) 0; }
+.compare-panel .ctx-label { font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .1em; text-transform: uppercase; color: var(--text-soft); }
+.compare-panel .ctx-seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 3px; gap: 3px; }
+.compare-panel .ctx-opt { font-family: var(--font-sans); font-size: var(--fs-sm); color: var(--text-muted); background: transparent; border: none; padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; }
+/* On = a 2px accent ring, so the state reads by line weight in greyscale, not
+   hue alone. The inset shadow keeps the ring out of the layout, so toggling
+   can't resize the segmented control. */
+.compare-panel .ctx-opt[aria-pressed="true"] { background: var(--surface-5); color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+.compare-panel .ctx-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.compare-panel .ctx-desc { font-size: var(--fs-xs); color: var(--text-soft); }
+.compare-loaders { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
+.compare-loader { display: inline-flex; align-items: center; gap: var(--space-2); }
+
+/* Loaded reports: one chip each, in column order, each removable. */
+.compare-reports { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.compare-reports:empty { display: none; }
+.compare-report { display: inline-flex; align-items: center; gap: var(--space-2); background: var(--surface-5); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 6px 6px 6px 12px; max-width: 100%; }
+.compare-report-n { font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600; color: var(--text-soft); background: var(--surface-2); border-radius: var(--radius-sm); padding: 1px 6px; font-variant-numeric: tabular-nums; }
+.compare-order-note { font-size: var(--fs-xs); color: var(--text-soft); margin: 0 0 var(--space-3); max-width: 90ch; }
+/* A report with no timestamp cannot take part in a date sort. The chip says so
+   in words; the dashed edge repeats it without relying on colour. */
+.compare-report--undated { border-style: dashed; }
+.compare-report-move { display: inline-flex; gap: 2px; }
+.compare-report-arrow { font: inherit; font-size: var(--fs-xs); line-height: 1; color: var(--text-muted); background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 3px 7px; cursor: pointer; }
+.compare-report-arrow:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+.compare-report-arrow:disabled { opacity: .35; cursor: default; }
+.compare-report-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Wraps rather than being cut: with wider text spacing (WCAG 1.4.12) or a
+   long name, the end of the name and the date would be lost. */
+.compare-report-meta { font-size: var(--fs-xs); color: var(--text-soft); max-width: 34ch; min-width: 0; overflow-wrap: anywhere; }
+.compare-report-meta:empty { display: none; }
+.compare-report-x { font: inherit; font-size: var(--fs-md); line-height: 1; color: var(--text-soft); background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm); padding: 2px 7px; cursor: pointer; }
+.compare-report-x:hover { color: var(--danger); background: var(--danger-soft); }
+.compare-report-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* What the comparison calls itself: the report's own metadata line, in the
+   Compare tab. The rows and their edit controls are the shared ones
+   (report-meta-edit.js), so only the spacing and the two states a report's line
+   never has belong here. */
+.compare-doc:not(:empty) { margin: 0 0 var(--space-4); }
+/* The shared label column is sized for a report's labels, the longest of which
+   is "Timestamp". "Description" fills it exactly and ends up touching its own
+   value, so this line asks for a little more room. Same rows, same rule, wider
+   column. */
+.compare-doc .report-meta > li { grid-template-columns: 128px minmax(0, 1fr); }
+/* On a phone the label goes above its value, as on a report. */
+@media (max-width: 520px) {
+    .compare-doc .report-meta > li { grid-template-columns: minmax(0, 1fr); }
+}
+/* A value the reader has not set, and one they did not choose: both are said in
+   the line's own voice rather than left blank, so the row still reads as a
+   statement and still offers its control. */
+.report-meta .meta-unset { color: var(--text-soft); font-style: italic; }
+.report-meta .meta-note { color: var(--text-soft); font-size: var(--fs-sm); }
+
+.cmp2-empty { padding: var(--space-6); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); color: var(--text-muted); text-align: center; background: var(--surface-3); }
+
+/* ---- cmp2 shared ---- */
+.cmp2 { font-size: 15px; }
+.cmp2 h2, .cmp2 h3, .cmp2 h4 { font-family: var(--font-display); margin: 0; letter-spacing: -.01em; }
+.cmp2 .num { font-variant-numeric: tabular-nums; }
+.cmp2-sec { margin-top: var(--space-8); }
+.cmp2 .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.cmp2 .sec-head h3 { font-size: var(--fs-lg); font-weight: 600; }
+.cmp2 .sec-head .layer { font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .1em; text-transform: uppercase; color: var(--text-soft); }
+.cmp2 .panel { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow-card); }
+.cmp2 .split { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1fr); gap: var(--space-4); align-items: stretch; }
+
+/* ---- report chips ---- */
+.cmp2 .reports-row { display: flex; align-items: stretch; gap: var(--space-3); flex-wrap: wrap; }
+.cmp2 .report-chip { flex: 1 1 260px; min-width: 240px; background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 13px 15px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 3px; position: relative; }
+.cmp2 .report-chip .swatch { position: absolute; top: 0; left: 0; bottom: 0; width: 4px; border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
+.cmp2 .report-chip.baseline .swatch, .cmp2 .report-chip.a .swatch { background: var(--side-a); }
+.cmp2 .report-chip.latest .swatch, .cmp2 .report-chip.b .swatch { background: var(--side-b); }
+.cmp2 .report-chip .role { font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .1em; text-transform: uppercase; display: flex; align-items: center; gap: 7px; }
+.cmp2 .report-chip.baseline .role, .cmp2 .report-chip.a .role { color: var(--side-a); }
+.cmp2 .report-chip.latest .role, .cmp2 .report-chip.b .role { color: var(--side-b); }
+.cmp2 .report-chip .tok { width: 16px; height: 16px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 10px; color: #fff; }
+.cmp2 .report-chip.a .tok { background: var(--side-a); } .cmp2 .report-chip.b .tok { background: var(--side-b); }
+.cmp2 .report-chip .file { font-size: var(--fs-sm); font-weight: 600; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; }
+.cmp2 .report-chip .meta { font-size: var(--fs-xs); color: var(--text-soft); }
+.cmp2 .vs { align-self: center; font-family: var(--font-display); font-weight: 600; color: var(--text-soft); font-size: var(--fs-sm); }
+
+/* ---- verdict hero ---- */
+.cmp2 .verdict { margin-top: var(--space-5); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-subtle); background: var(--surface-raised); box-shadow: var(--shadow-card); display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); }
+.cmp2 .verdict .left { padding: 22px 24px; border-right: 1px solid var(--border-soft); }
+.cmp2 .verdict .badge { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .1em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; margin-bottom: 12px; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border-subtle); }
+.cmp2 .verdict .badge--good { background: var(--good-soft); color: var(--good); }
+.cmp2 .verdict .badge--bad { background: var(--bad-soft); color: var(--bad); }
+.cmp2 .verdict .badge--mixed { background: var(--mixed-soft); color: var(--mixed); }
+.cmp2 .verdict h2 { font-size: 26px; line-height: 1.12; font-weight: 600; }
+.cmp2 .verdict h2 .accent--good { color: var(--good); } .cmp2 .verdict h2 .accent--bad { color: var(--bad); } .cmp2 .verdict h2 .accent--neutral { color: var(--text-muted); } .cmp2 .verdict h2 .accent--mixed { color: var(--mixed); }
+.cmp2 .verdict h2 .ca { color: var(--side-a); } .cmp2 .verdict h2 .cb { color: var(--side-b); }
+.cmp2 .verdict .lead { margin-top: 10px; color: var(--text-muted); font-size: 14.5px; max-width: 50ch; }
+.cmp2 .verdict .disclaim { margin-top: 10px; font-size: var(--fs-xs); color: var(--text-soft); font-style: italic; }
+.cmp2 .verdict .right { padding: 20px 22px; display: flex; flex-direction: column; justify-content: center; gap: 8px; background: var(--surface-sunken); }
+.cmp2 .verdict .rtitle { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-soft); text-align: center; }
+.cmp2 .flow-row { display: flex; align-items: center; gap: var(--space-4); }
+.cmp2 .flow-tile { flex: 1; text-align: center; }
+.cmp2 .flow-tile .lab { font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; color: var(--text-soft); }
+.cmp2 .flow-tile .big { font-family: var(--font-display); font-weight: 600; font-size: 32px; line-height: 1; margin-top: 4px; color: var(--text-main); }
+.cmp2 .flow-tile.a .big, .cmp2 .flow-tile.ta .big { color: var(--side-a); }
+.cmp2 .flow-tile.b .big, .cmp2 .flow-tile.tb .big { color: var(--side-b); }
+.cmp2 .flow-tile .cap { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 3px; }
+.cmp2 .flow-tile .flow-sub { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
+.cmp2 .flow-arrow, .cmp2 .flow-mid { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; }
+.cmp2 .flow-arrow { color: var(--good); }
+.cmp2 .flow-arrow--bad { color: var(--bad); } .cmp2 .flow-arrow--neutral { color: var(--text-soft); } .cmp2 .flow-arrow--mixed { color: var(--mixed); }
+.cmp2 .flow-arrow .d, .cmp2 .flow-mid .d { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+.cmp2 .flow-mid .vs2 { font-family: var(--font-mono); font-size: 11px; color: var(--text-soft); }
+.cmp2 .flow-mid .d { color: var(--side-b); }
+.cmp2 .flow-arrow svg { width: 30px; height: 16px; }
+
+/* ---- KPI cards ---- */
+.cmp2 .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.cmp2 .kpis-ab { grid-template-columns: repeat(4, 1fr); }
+.cmp2 .kpi { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 14px 15px 13px; box-shadow: var(--shadow-card); position: relative; overflow: hidden; }
+.cmp2 .kpi .stripe { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--neutral); }
+.cmp2 .kpi.good .stripe { background: var(--good-line); } .cmp2 .kpi.bad .stripe { background: var(--bad-line); }
+.cmp2 .kpi.win-a .stripe { background: var(--side-a); } .cmp2 .kpi.win-b .stripe { background: var(--side-b); } .cmp2 .kpi.win-both .stripe { background: var(--shared); }
+.cmp2 .kpi .name { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-soft); }
+.cmp2 .kpi .vals { display: flex; align-items: baseline; gap: 7px; margin-top: 9px; font-variant-numeric: tabular-nums; }
+.cmp2 .kpi .from { font-size: 15px; color: var(--text-soft); } .cmp2 .kpi .arrow { color: var(--text-soft); font-size: 12px; }
+.cmp2 .kpi .to { font-family: var(--font-display); font-weight: 600; font-size: 26px; line-height: 1; color: var(--text-main); }
+.cmp2 .kpi .pair { display: flex; align-items: baseline; gap: 8px; margin-top: 9px; font-variant-numeric: tabular-nums; }
+.cmp2 .kpi .pair .va { color: var(--side-a); font-family: var(--font-display); font-weight: 600; font-size: 22px; }
+.cmp2 .kpi .pair .vb { color: var(--side-b); font-family: var(--font-display); font-weight: 600; font-size: 22px; }
+.cmp2 .kpi .pair .sep { color: var(--text-soft); }
+.cmp2 .kpi .single { font-family: var(--font-display); font-weight: 600; font-size: 26px; margin-top: 6px; color: var(--text-main); }
+.cmp2 .kpi.win-a .single { color: var(--side-a); } .cmp2 .kpi.win-b .single { color: var(--side-b); }
+.cmp2 .kpi .delta, .cmp2 .kpi .tag { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+.cmp2 .kpi.good .delta { color: var(--good); background: var(--good-soft); } .cmp2 .kpi.bad .delta { color: var(--bad); background: var(--bad-soft); }
+.cmp2 .kpi.neutral .delta { color: var(--neutral); background: var(--neutral-soft); }
+.cmp2 .kpi.win-a .tag { color: var(--side-a); background: var(--side-a-soft); } .cmp2 .kpi.win-b .tag { color: var(--side-b); background: var(--side-b-soft); } .cmp2 .kpi.win-both .tag { color: var(--shared); background: var(--shared-soft); }
+.cmp2 .kpi .unit { font-size: 11px; color: var(--text-soft); font-weight: 500; }
+
+/* ---- dumbbell chart ---- */
+.cmp2 .chart-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.cmp2 .chart-title .t { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); }
+.cmp2 .legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--text-muted); }
+.cmp2 .legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cmp2 .legend .m { width: 11px; height: 11px; border-radius: 50%; }
+/* Both markers are the chart's own ink: the ring is .db-a's stroke, the fill is
+   .db-b's. */
+.cmp2 .legend .m.a { background: var(--surface-raised); border: 2px solid var(--side-a); } .cmp2 .legend .m.b { background: var(--side-b); }
+.cmp2 .dumbbell { width: 100%; height: auto; display: block; }
+.cmp2 .db-track { stroke: var(--border-soft); stroke-width: 1; }
+.cmp2 .db-sev { font-family: var(--font-mono); font-size: 11px; fill: var(--text-muted); }
+.cmp2 .db-axis { font-family: var(--font-mono); font-size: 9.5px; fill: var(--text-soft); }
+.cmp2 .db-conn { stroke-width: 3; stroke-linecap: round; }
+.cmp2 .db-a { fill: var(--surface-raised); stroke: var(--side-a); stroke-width: 2.5; }
+/* B takes the same purple it has on every other mark in the comparison. The
+   row's severity is named on the axis beside it, so the dot does not repeat it. */
+.cmp2 .db-b { fill: var(--side-b); stroke: var(--surface-raised); stroke-width: 1.5; }
+.cmp2 .db-val { font-family: var(--font-display); font-size: 10.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---- narrative ---- */
+.cmp2 .narrative h4 { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 600; margin: 0 0 8px; }
+.cmp2 .narrative p { font-size: var(--fs-sm); color: var(--text-muted); margin: 0 0 10px; line-height: 1.6; }
+.cmp2 .narrative .det { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-soft); letter-spacing: .04em; margin-top: 4px; }
+
+/* ---- finding diff ---- */
+.cmp2 .segbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.cmp2 .seg { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 8px 13px; font-family: inherit; font-size: var(--fs-sm); color: var(--text-muted); }
+.cmp2 .seg:hover { border-color: var(--border-strong); }
+.cmp2 .seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cmp2 .seg .cnt { font-family: var(--font-display); font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
+.cmp2 .seg .swatch { width: 9px; height: 9px; border-radius: 2px; background: var(--neutral); }
+.cmp2 .seg[data-k="resolved"] .swatch, .cmp2 .seg[data-k="aonly"] .swatch { background: var(--good-line); }
+.cmp2 .seg[data-k="new"] .swatch, .cmp2 .seg[data-k="bonly"] .swatch { background: var(--bad-line); }
+.cmp2 .seg[data-k="persistent"] .swatch, .cmp2 .seg[data-k="both"] .swatch { background: var(--warn); }
+.cmp2 .seg[data-k="aonly"] .swatch { background: var(--side-a); } .cmp2 .seg[data-k="bonly"] .swatch { background: var(--side-b); } .cmp2 .seg[data-k="both"] .swatch { background: var(--shared); }
+/* On = a 3px ring: the 1px border plus a 2px inset shadow. Line weight carries
+   the state in greyscale, and the shadow keeps the row from reflowing. */
+.cmp2 .seg[aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); color: var(--text-main); }
+.cmp2 .seg[aria-selected="true"] .cnt { color: var(--accent); }
+.cmp2 .pane { display: none; } .cmp2 .pane.active { display: block; }
+/* The pane is a focusable tabpanel, so it needs its own indicator — the group
+   can be empty, leaving nothing else inside to take focus. */
+.cmp2 .pane:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.cmp2 .diff-table { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-card); }
+.cmp2 .diff-row { border-bottom: 1px solid var(--border-soft); }
+.cmp2 .diff-row:last-child { border-bottom: 0; }
+.cmp2 .diff-summary { display: grid; grid-template-columns: 22px minmax(0,1fr) 96px 170px 26px; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; list-style: none; }
+.cmp2 .diff-summary::-webkit-details-marker { display: none; }
+.cmp2 .diff-summary:hover { background: var(--surface-sunken); }
+.cmp2 .diff-row summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cmp2 .sev-dot { width: 9px; height: 9px; border-radius: 50%; justify-self: center; background: var(--neutral); }
+.cmp2 .sev-dot.sev-critical { background: var(--sev-critical); } .cmp2 .sev-dot.sev-serious { background: var(--sev-serious); } .cmp2 .sev-dot.sev-moderate { background: var(--sev-moderate); } .cmp2 .sev-dot.sev-minor { background: var(--sev-minor); }
+.cmp2 .rule-cell .rule { font-weight: 600; font-size: var(--fs-sm); color: var(--text-main); }
+.cmp2 .rule-cell .rid { font-family: var(--font-mono); font-size: 11px; color: var(--text-soft); }
+.cmp2 .rule-cell .wcag { font-family: var(--font-mono); font-size: 10px; color: var(--accent); background: var(--accent-soft); padding: 1px 5px; border-radius: 3px; margin-left: 6px; }
+.cmp2 .sev-label { font-family: var(--font-mono); font-size: 10.5px; text-transform: capitalize; color: var(--text-muted); }
+.cmp2 .count-move { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.cmp2 .count-move .c-a, .cmp2 .count-move .ca { font-family: var(--font-display); font-weight: 600; }
+.cmp2 .count-move .c-a { color: var(--text-soft); font-size: 13px; } .cmp2 .count-move .c-b { font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--text-main); }
+.cmp2 .count-move .ca { color: var(--side-a); font-size: 14px; } .cmp2 .count-move .cb { color: var(--side-b); font-size: 14px; font-family: var(--font-display); font-weight: 600; }
+.cmp2 .count-move .c-arrow, .cmp2 .count-move .sep { color: var(--text-soft); font-size: 11px; }
+.cmp2 .count-move .chg { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 999px; }
+.cmp2 .chg.down, .cmp2 .chg.a { color: var(--good); background: var(--good-soft); }
+.cmp2 .chg.up { color: var(--bad); background: var(--bad-soft); }
+.cmp2 .chg.same { color: var(--neutral); background: var(--neutral-soft); }
+.cmp2 .chg.a { color: var(--side-a); background: var(--side-a-soft); } .cmp2 .chg.b { color: var(--side-b); background: var(--side-b-soft); } .cmp2 .chg.both { color: var(--shared); background: var(--shared-soft); }
+.cmp2 .caret { justify-self: center; color: var(--text-soft); transition: transform .15s ease; }
+.cmp2 details[open] .caret { transform: rotate(90deg); }
+.cmp2 .occ { padding: 4px 16px 16px 50px; background: var(--surface-sunken); border-top: 1px solid var(--border-soft); }
+.cmp2 .occ-head { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-soft); margin: 12px 0 8px; }
+.cmp2 .occ-item { display: grid; grid-template-columns: 74px minmax(0,1fr); gap: 12px; align-items: start; padding: 8px 0; border-bottom: 1px dashed var(--border-soft); }
+.cmp2 .occ-item:last-child { border-bottom: 0; }
+.cmp2 .occ-tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: .03em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; text-align: center; font-weight: 600; }
+.cmp2 .occ-tag.fixed { color: var(--good); background: var(--good-soft); } .cmp2 .occ-tag.new { color: var(--bad); background: var(--bad-soft); } .cmp2 .occ-tag.still { color: var(--neutral); background: var(--neutral-soft); }
+.cmp2 .occ-tag.aonly { color: var(--side-a); background: var(--side-a-soft); } .cmp2 .occ-tag.bonly { color: var(--side-b); background: var(--side-b-soft); } .cmp2 .occ-tag.both { color: var(--shared); background: var(--shared-soft); }
+.cmp2 .occ-sel { font-family: var(--font-mono); font-size: 12px; color: var(--text-main); word-break: break-all; }
+.cmp2 .occ-where { font-size: 11.5px; color: var(--text-soft); margin-top: 2px; }
+.cmp2 .occ-where .u { color: var(--accent); }
+.cmp2 .diff-empty { font-size: var(--fs-sm); color: var(--text-soft); font-style: italic; padding: var(--space-2) 0; }
+.cmp2 .margin-near { display: inline-block; padding: 0 6px; border-radius: 999px; border: 1px solid var(--warn); color: var(--warn); font-size: .75rem; white-space: nowrap; }
+.cmp2 .margin-chg { white-space: nowrap; }
+.cmp2 .margin-chg--closer, .cmp2 .margin-chg--failsMore { color: var(--danger); font-weight: 600; }
+/* Rule names wrap, so the change column stays in view. */
+.cmp2 table.doc-table.margin-table tbody th { font-weight: 400; min-width: 12rem; max-width: 22rem; white-space: normal; overflow-wrap: anywhere; }
+.cmp2 .margin-chg--further { color: var(--ok); }
+.cmp2 .margin-chg--same, .cmp2 .margin-chg--aonly, .cmp2 .margin-chg--bonly { color: var(--text-soft); }
+/* A and B are symmetric: neither side's room is better, so no colour says so. */
+.cmp2[data-mode="ab"] .margin-chg { color: var(--text-main); font-weight: 400; }
+
+@media (max-width: 860px) {
+    .cmp2 .kpis { grid-template-columns: repeat(2, 1fr); }
+    .cmp2 .verdict { grid-template-columns: 1fr; }
+    .cmp2 .verdict .left { border-right: 0; border-bottom: 1px solid var(--border-soft); }
+    .cmp2 .split { grid-template-columns: 1fr; }
+    .cmp2 .diff-summary { grid-template-columns: 20px minmax(0,1fr) 26px; }
+    .cmp2 .diff-summary .count-move, .cmp2 .diff-summary .sev-label { display: none; }
+}
+
+/* ============================================================================
+   Compare tab — dashboard (three or more reports)
+   ----------------------------------------------------------------------------
+   Everything under .cmp2 .dash-*: `.cmp2` so build:report's extraction picks it
+   up for the exported comparison, `dash-` so none of it collides with app
+   chrome. Built on the tokens above; the only dashboard-specific ones are the
+   heat ramp and the "keeps coming back" hue.
+   ========================================================================== */
+
+/* The global `th` rule uppercases, letter-spaces and sticks every table header.
+   Right for the data tables it was written for, wrong for a problem name, so
+   these tables opt out first and then set their own. */
+.cmp2 table.dash-grid th, .cmp2 .dash-tableview th {
+    position: static; background: transparent; color: inherit;
+    text-transform: none; letter-spacing: normal; font-size: inherit;
+    vertical-align: middle;
+}
+.cmp2 table.dash-grid td, .cmp2 .dash-tableview td { vertical-align: middle; }
+/* No zebra striping: the heat cells carry the row rhythm, and a stripe would
+   run out from under the pinned first column. */
+.cmp2 table.dash-grid tr:nth-child(even) td, .cmp2 .dash-tableview tr:nth-child(even) td { background: transparent; }
+
+.cmp2--dash .sec-head h3 { font-size: var(--fs-lg); }
+.cmp2 .dash-sub { font-size: var(--fs-sm); color: var(--text-muted); margin: -6px 0 14px; max-width: 74ch; }
+/* A second line of framing under the first: the caveat that qualifies a number
+   rather than the sentence that explains it. */
+.cmp2 .dash-sub--fine { font-size: var(--fs-xs); color: var(--text-soft); margin-top: -10px; }
+.cmp2 .dash-panel { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; }
+.cmp2 .dash-split { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: var(--space-3); align-items: stretch; }
+
+/* ---- hero: the answer, before any number ---- */
+.cmp2 .dash-hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--space-6); background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 26px 28px; box-shadow: var(--shadow-card); }
+.cmp2 .dash-status { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .1em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; margin-bottom: 14px; border: 1px solid transparent; }
+.cmp2 .dash-status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.cmp2 .dash-status--good { color: var(--good); background: var(--good-soft); border-color: var(--good); }
+.cmp2 .dash-status--bad { color: var(--bad); background: var(--bad-soft); border-color: var(--bad); }
+.cmp2 .dash-status--neutral { color: var(--warn-line); background: var(--shared-soft); border-color: var(--warn-line); }
+.cmp2 .dash-hero-h { font-size: 25px; line-height: 1.2; font-weight: 500; max-width: 26ch; }
+.cmp2 .dash-hero-h strong { font-weight: 600; color: var(--accent-ink); }
+.cmp2 .dash-hero-lead { margin-top: 12px; color: var(--text-muted); font-size: 14.5px; max-width: 58ch; }
+.cmp2 .dash-caveat { margin-top: 14px; font-size: var(--fs-xs); color: var(--text-muted); display: flex; gap: 10px; background: var(--shared-soft); border-left: 3px solid var(--warn-line); padding: 10px 14px; border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.cmp2 .dash-caveat--info { background: var(--accent-soft); border-left-color: var(--accent); }
+.cmp2 .dash-caveat-i { font-family: var(--font-display); font-weight: 700; color: var(--warn-line); }
+.cmp2 .dash-caveat--info .dash-caveat-i { color: var(--accent); }
+.cmp2 .dash-figures { display: flex; flex-direction: column; gap: 14px; justify-content: center; }
+.cmp2 .dash-figure { border-left: 3px solid var(--border-strong); padding-left: 16px; }
+.cmp2 .dash-figure-label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-soft); display: block; }
+.cmp2 .dash-figure-value { font-family: var(--font-display); font-size: 36px; font-weight: 600; line-height: 1.05; display: block; font-variant-numeric: tabular-nums; }
+.cmp2 .dash-figure-value--text { font-size: 22px; }
+.cmp2 .dash-figure-note { font-size: var(--fs-xs); color: var(--text-soft); display: block; margin-top: 2px; }
+
+/* ---- headline numbers ---- */
+/* Counted, not auto-fitted. The headline row is always six tiles and the
+   principle row always four, so the track count steps through their divisors:
+   6 -> 3 -> 2 and 4 -> 2. auto-fit sizes tracks to the space available, which
+   is right until the space fits five of six and leaves the last tile alone on a
+   line of its own. The variant row is the one case with no fixed count, so it
+   keeps auto-fit. A series splits its headline into two groups, failures
+   (four tiles: 4 -> 2 -> 1) and the score with the open questions (three:
+   3 -> 1), so the questions are never read as more failures. */
+.cmp2 .dash-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+.cmp2 .dash-kpis--principles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cmp2 .dash-kpis--variants { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.cmp2 .dash-kpis--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cmp2 .dash-kpis--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cmp2 .dash-kpi-group + .dash-kpi-group { margin-top: var(--space-5); }
+.cmp2 .dash-kpi-group-h { margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-main); }
+.cmp2 .dash-kpi-group .dash-sub { margin: 2px 0 0; }
+.cmp2 .dash-kpi-group .dash-kpis { margin-top: var(--space-2); }
+.cmp2 .dash-kpi { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 15px 16px 13px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 3px; }
+.cmp2 .dash-kpi-label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-soft); }
+.cmp2 .dash-kpi-value { font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.cmp2 .dash-kpi-delta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cmp2 .dash-kpi-since { font-size: 11px; color: var(--text-soft); }
+.cmp2 .dash-kpi-caption { font-size: var(--fs-xs); color: var(--text-soft); margin-top: 6px; }
+.cmp2 .dash-kpi-badges:empty { display: none; }
+/* A chip in a narrow card wraps rather than running past its edge. */
+.cmp2 .dash-kpi-badges .dash-cat-chip { white-space: normal; display: inline-block; max-width: 100%; }
+/* Every card in a row shares the row's tracks, so a label that wraps to two
+   lines lowers the number, the change, the sparkline and the caption in every
+   card beside it, and they still read across as one line each. Five tracks is
+   the most any card has; a card with fewer leaves the last one empty. */
+@supports (grid-template-rows: subgrid) {
+    .cmp2 .dash-kpi { display: grid; grid-row: span 5; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr); row-gap: 3px; align-items: start; }
+}
+.cmp2 .dash-bar { height: 6px; border-radius: 3px; background: var(--surface-sunken); margin-top: 10px; overflow: hidden; }
+.cmp2 .dash-bar span { display: block; height: 100%; background: var(--heat-3); }
+
+/* Direction pairs colour with a glyph and a word, so it survives greyscale. */
+.cmp2 .dash-delta { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-xs); font-weight: 600; padding: 2px 9px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+.cmp2 .dash-delta--good { color: var(--good); background: var(--good-soft); }
+.cmp2 .dash-delta--bad { color: var(--bad); background: var(--bad-soft); }
+.cmp2 .dash-delta--flat, .cmp2 .dash-delta--none { color: var(--neutral); background: var(--neutral-soft); }
+
+.cmp2 .dash-spark { margin-top: 8px; overflow: visible; }
+.cmp2 .dash-spark-line { fill: none; stroke: var(--text-soft); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cmp2 .dash-spark-area { fill: var(--surface-sunken); }
+.cmp2 .dash-spark-dot { fill: var(--text-main); stroke: var(--surface-raised); stroke-width: 2; }
+.cmp2 .dash-spark--good .dash-spark-line { stroke: var(--good); }
+.cmp2 .dash-spark--good .dash-spark-dot { fill: var(--good); }
+.cmp2 .dash-spark--good .dash-spark-area { fill: var(--good-soft); }
+.cmp2 .dash-spark--bad .dash-spark-line { stroke: var(--bad); }
+.cmp2 .dash-spark--bad .dash-spark-dot { fill: var(--bad); }
+.cmp2 .dash-spark--bad .dash-spark-area { fill: var(--bad-soft); }
+
+/* ---- charts ---- */
+.cmp2 .dash-runchart, .cmp2 .dash-sevchart { width: 100%; height: auto; display: block; overflow: visible; }
+.cmp2 .dash-gridline { stroke: var(--border-soft); stroke-width: 1; }
+.cmp2 .dash-axis { font-family: var(--font-mono); font-size: 10px; fill: var(--text-soft); }
+.cmp2 .dash-area { fill: var(--accent-soft); }
+.cmp2 .dash-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.cmp2 .dash-dot { fill: var(--surface-raised); stroke: var(--accent); stroke-width: 2; cursor: pointer; }
+.cmp2 .dash-dot--last { fill: var(--accent); }
+.cmp2 .dash-dot:hover { stroke-width: 3; }
+/* A label can sit on the trend line: the halo, in the chart's background,
+   keeps the line from crossing its letters. */
+.cmp2 .dash-ptlabel { font-family: var(--font-display); font-size: 12px; font-weight: 600; fill: var(--text-main); paint-order: stroke; stroke: var(--surface-raised); stroke-width: 3px; stroke-linejoin: round; }
+.cmp2 .dash-flag-band { fill: var(--bad-soft); opacity: .55; }
+.cmp2 .dash-flag-text { font-family: var(--font-mono); font-size: 10px; fill: var(--bad); letter-spacing: .04em; }
+.cmp2 .dash-sev--critical { fill: var(--heat-4); }
+.cmp2 .dash-sev--serious { fill: var(--heat-3); }
+.cmp2 .dash-sev--moderate { fill: var(--heat-2); }
+.cmp2 .dash-sev--minor { fill: var(--heat-1); }
+.cmp2 .dash-bar-total { font-family: var(--font-display); font-size: 11.5px; font-weight: 600; fill: var(--text-main); font-variant-numeric: tabular-nums; }
+/* Numbered columns and their key: the numbers match the "Reports compared" list. */
+.cmp2 .dash-axis-n circle { fill: none; stroke: var(--border-strong); }
+/* Boxes that scroll sideways: a named tab stop, and on a narrow screen a line
+   saying so. The 720-wide charts keep a readable width there instead of
+   shrinking until their text is a few pixels tall. */
+.cmp2 .dash-chart-scroll { overflow-x: auto; }
+.cmp2 .dash-chart-scroll:focus-visible, .cmp2 .dash-grid-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cmp2 .dash-scroll-hint { display: none; margin: 6px 0 0; font-size: var(--fs-xs); color: var(--text-soft); }
+@media (max-width: 640px) {
+    .cmp2 .dash-chart-scroll > svg { min-width: 600px; }
+    /* Drawn for the full page width, so it needs its whole canvas to stay legible. */
+    .cmp2 .dash-chart-scroll > .dash-flowchart { min-width: 720px; }
+    .cmp2 .dash-chart-scroll + .dash-scroll-hint { display: block; }
+}
+@media (max-width: 520px) {
+    .cmp2 .dash-grid-scroll + .dash-scroll-hint { display: block; }
+}
+.cmp2 .dash-key-note { color: var(--text-soft); font-style: italic; }
+
+/* One key under both charts of the split, so it spans the two columns. */
+.cmp2 .dash-split-key { grid-column: 1 / -1; padding: 2px 4px 0; }
+.cmp2 .dash-key-title { font-family: var(--font-mono); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-soft); margin: 0; }
+.cmp2 .dash-key { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 3px 14px; font-size: var(--fs-xs); color: var(--text-muted); }
+.cmp2 .dash-key li { display: flex; gap: 6px; align-items: baseline; min-width: 0; overflow-wrap: anywhere; }
+.cmp2 .dash-key-n { flex: none; min-width: 1.6em; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-soft); }
+.cmp2 .dash-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: baseline; margin-top: 10px; font-size: var(--fs-xs); color: var(--text-muted); }
+/* The stacking order is the non-colour way to tell the bands apart. */
+.cmp2 .dash-legend-note { color: var(--text-soft); font-style: italic; }
+.cmp2 .dash-legend span { display: inline-flex; align-items: center; gap: 6px; }
+/* The fills are the heat ramp, whose lower steps sit under 3:1 against the
+   surface - the swatch has nothing printed on it to carry them the way a grid
+   cell does, so the border is what makes it a shape. --sc--review and --sc--ok
+   keep their own, which say more than a neutral would. */
+.cmp2 .dash-sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; border: 1px solid var(--text-soft); }
+.cmp2 .dash-sw.dash-sev--critical { background: var(--heat-4); }
+.cmp2 .dash-sw.dash-sev--serious { background: var(--heat-3); }
+.cmp2 .dash-sw.dash-sev--moderate { background: var(--heat-2); }
+.cmp2 .dash-sw.dash-sev--minor { background: var(--heat-1); }
+
+.cmp2 .dash-read { margin-top: 16px; border-top: 1px solid var(--border-soft); padding-top: 14px; }
+.cmp2-sec > .dash-read { border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface-raised); padding: 18px 20px; margin-top: 0; box-shadow: var(--shadow-card); }
+.cmp2 .dash-read-h { font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--text-soft); margin: 0 0 8px; }
+.cmp2 .dash-read p:not(.dash-read-h) { font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.6; }
+.cmp2 .dash-read p + p { margin-top: 9px; }
+
+/* Every chart has its numbers underneath, so nothing is available only as a picture. */
+.cmp2 .dash-tableview { margin-top: 14px; }
+/* Side by side, the two charts start at the same height, and each panel's
+   table toggle sits on the panel's floor, so the space the severity legend
+   takes on the right is matched by space above the toggle on the left rather
+   than by a chart floating in the middle. */
+.cmp2 .dash-split .dash-panel > .dash-tableview { margin-top: auto; padding-top: 14px; }
+.cmp2 .dash-tableview summary { font-size: var(--fs-xs); color: var(--text-muted); cursor: pointer; }
+.cmp2 .dash-tableview summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cmp2 .dash-table-scroll { overflow-x: auto; margin-top: 10px; }
+.cmp2 .dash-tableview table { border-collapse: collapse; font-size: var(--fs-xs); width: 100%; font-variant-numeric: tabular-nums; }
+.cmp2 .dash-tableview th, .cmp2 .dash-tableview td { text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--border-soft); white-space: nowrap; }
+.cmp2 .dash-tableview th[scope="row"], .cmp2 .dash-tableview thead th:first-child { text-align: left; }
+
+/* ---- what to fix first ---- */
+.cmp2 .dash-fix-list { display: grid; gap: var(--space-3); }
+.cmp2 .dash-fix { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: start; background: var(--surface-raised); border: 1px solid var(--border-subtle); border-left: 4px solid var(--accent); border-radius: var(--radius-lg); padding: 16px 18px; box-shadow: var(--shadow-card); }
+.cmp2 .dash-fix-rank { font-family: var(--font-display); font-size: 28px; font-weight: 600; color: var(--text-soft); line-height: 1; }
+.cmp2 .dash-fix-head { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.cmp2 .dash-fix-h { font-size: var(--fs-18); font-weight: 600; }
+.cmp2 .dash-fix-impact { margin-top: 5px; color: var(--text-muted); max-width: 68ch; }
+.cmp2 .dash-fix-why { margin-top: 8px; font-size: var(--fs-sm); color: var(--text-main); }
+.cmp2 .dash-fix-meta { margin-top: 10px; font-size: var(--fs-xs); color: var(--text-soft); }
+.cmp2 .dash-fix-count { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-md); color: var(--text-main); }
+
+.cmp2 .dash-sev-chip, .cmp2 .dash-cat-chip { font-family: var(--font-mono); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+.cmp2 .dash-sev-chip--critical { color: var(--ok-contrast); background: var(--sev-critical); }
+.cmp2 .dash-sev-chip--serious { color: var(--bad); background: var(--bad-soft); border: 1px solid var(--bad); }
+.cmp2 .dash-sev-chip--moderate { color: var(--warn-line); background: var(--shared-soft); border: 1px solid var(--warn-line); }
+.cmp2 .dash-sev-chip--minor, .cmp2 .dash-sev-chip--unknown { color: var(--text-muted); background: var(--surface-sunken); border: 1px solid var(--border-strong); }
+.cmp2 .dash-cat-chip--good { color: var(--good); background: var(--good-soft); }
+.cmp2 .dash-cat-chip--bad { color: var(--bad); background: var(--bad-soft); }
+.cmp2 .dash-cat-chip--warn { color: var(--warn-line); background: var(--shared-soft); }
+.cmp2 .dash-cat-chip--flap { color: var(--flap); background: var(--flap-soft); }
+.cmp2 .dash-cat-chip--info { color: var(--accent); background: var(--accent-soft); }
+
+/* ---- the evidence grid ---- */
+.cmp2 .dash-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.cmp2 .dash-chip { font: inherit; font-size: var(--fs-sm); background: var(--surface-raised); color: var(--text-muted); border: 1px solid var(--border-subtle); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.cmp2 .dash-chip:hover { border-color: var(--border-strong); }
+.cmp2 .dash-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* On = a 3px ring, so the state reads by line weight in greyscale too. */
+.cmp2 .dash-chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); font-weight: 600; }
+.cmp2 .dash-chip-n { font-family: var(--font-mono); font-size: 11px; }
+
+.cmp2 .dash-grid-scroll { overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface-raised); box-shadow: var(--shadow-card); }
+.cmp2 table.dash-grid { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); }
+.cmp2 table.dash-grid th, .cmp2 table.dash-grid td { border-bottom: 1px solid var(--border-soft); }
+.cmp2 table.dash-grid tbody tr:last-child th, .cmp2 table.dash-grid tbody tr:last-child td { border-bottom: 0; }
+.cmp2 table.dash-grid thead th { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-soft); font-weight: 500; padding: 12px 8px; text-align: center; white-space: nowrap; background: var(--surface-sunken); }
+.cmp2 table.dash-grid thead th.dash-rule-col, .cmp2 table.dash-grid thead th.dash-what-col { text-align: left; }
+/* The first column is pinned so a long series scrolls sideways under it. */
+.cmp2 th.dash-rule-col { text-align: left; font-weight: 400; padding: 11px 16px; min-width: 260px; position: sticky; left: 0; background: var(--surface-raised); z-index: 1; box-shadow: 1px 0 0 var(--border-soft); }
+.cmp2 table.dash-grid thead th.dash-rule-col { position: sticky; left: 0; z-index: 2; background: var(--surface-sunken); }
+.cmp2 .dash-rule-name { display: block; font-weight: 600; font-size: var(--fs-sm); color: var(--text-main); }
+.cmp2 .dash-rule-meta { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.cmp2 .dash-rule-id { display: block; font-size: 10.5px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40ch; }
+.cmp2 .dash-sev-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 7px; vertical-align: 1px; }
+.cmp2 .dash-sev-dot--critical { background: var(--sev-critical); }
+.cmp2 .dash-sev-dot--serious { background: var(--sev-serious); }
+.cmp2 .dash-sev-dot--moderate { background: var(--sev-moderate); }
+.cmp2 .dash-sev-dot--minor, .cmp2 .dash-sev-dot--unknown { background: var(--sev-minor); }
+
+.cmp2 td.dash-cell { text-align: center; padding: 0; min-width: 54px; }
+.cmp2 .dash-grid--wide td.dash-cell { min-width: 34px; }
+.cmp2 .dash-cell-v { display: block; margin: 3px; padding: 9px 4px; border-radius: 5px; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.cmp2 .dash-grid--wide .dash-cell-v { margin: 2px; padding: 8px 2px; font-size: 11.5px; }
+.cmp2 .dash-c0 .dash-cell-v { background: var(--heat-0); color: var(--text-soft); font-weight: 400; }
+.cmp2 .dash-c1 .dash-cell-v { background: var(--heat-1); color: var(--heat-1-ink); }
+.cmp2 .dash-c2 .dash-cell-v { background: var(--heat-2); color: var(--heat-2-ink); }
+.cmp2 .dash-c3 .dash-cell-v { background: var(--heat-3); color: var(--heat-3-ink); }
+.cmp2 .dash-c4 .dash-cell-v { background: var(--heat-4); color: var(--heat-4-ink); }
+.cmp2 td.dash-what-col { padding: 10px 16px; white-space: nowrap; }
+.cmp2 .dash-grid-legend { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; margin-top: 10px; font-size: var(--fs-xs); color: var(--text-muted); }
+.cmp2 .dash-lg { display: inline-flex; align-items: center; gap: 4px; }
+.cmp2 .dash-sw.dash-c0 { background: var(--heat-0); }
+.cmp2 .dash-sw.dash-c1 { background: var(--heat-1); }
+.cmp2 .dash-sw.dash-c2 { background: var(--heat-2); }
+.cmp2 .dash-sw.dash-c3 { background: var(--heat-3); }
+.cmp2 .dash-sw.dash-c4 { background: var(--heat-4); }
+.cmp2 .dash-lg-note { color: var(--text-soft); }
+
+/* ============================================================================
+   The document itself: masthead and provenance
+   ----------------------------------------------------------------------------
+   Both live inside .cmp2, so a downloaded comparison carries its own name, date
+   and list of sources. Shared by the two-report view and the dashboard.
+   ========================================================================== */
+.cmp2 .doc-head { padding-bottom: var(--space-4); margin-bottom: var(--space-5); border-bottom: 1px solid var(--border-soft); }
+.cmp2 .doc-kind { font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .12em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 6px; }
+/* Sized down as it grows: a typed title can be a sentence, and it has to stay a
+   title rather than becoming a paragraph in a large face. */
+.cmp2 .doc-title { font-family: var(--font-display); font-size: clamp(22px, 2.6vw, 30px); font-weight: 600; line-height: 1.15; letter-spacing: -.01em; color: var(--text-main); margin: 0; overflow-wrap: anywhere; }
+.cmp2 .doc-note { margin-top: 8px; font-size: var(--fs-md); color: var(--text-muted); max-width: 72ch; overflow-wrap: anywhere; }
+.cmp2 .doc-facts { display: flex; flex-wrap: wrap; gap: 6px var(--space-5); margin: 14px 0 0; }
+.cmp2 .doc-fact { min-width: 0; }
+.cmp2 .doc-fact dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-soft); }
+.cmp2 .doc-fact dd { margin: 2px 0 0; font-size: var(--fs-sm); color: var(--text-main); overflow-wrap: anywhere; }
+.cmp2 .doc-fact dd a { color: var(--accent); }
+
+/* ---- reports strip: the short answer to "which reports are these?" ---- */
+.cmp2 .doc-reports { margin: 0 0 var(--space-5); }
+.cmp2 .doc-reports-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-2); }
+.cmp2 .doc-reports-title { font-family: var(--font-mono); font-size: var(--fs-xxs); font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--text-soft); margin: 0; }
+.cmp2 .doc-reports-count { margin-left: 4px; color: var(--text-main); }
+.cmp2 .doc-reports-more { font-size: var(--fs-xs); color: var(--accent); white-space: nowrap; }
+.cmp2 .doc-reports-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-2); }
+.cmp2 .doc-report { display: flex; gap: 10px; align-items: flex-start; min-width: 0; background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 8px 10px; }
+.cmp2 .doc-report--warn { border-left: 3px solid var(--warn-line); }
+.cmp2 .doc-report-n { flex: none; min-width: 20px; height: 20px; border-radius: var(--radius-pill); border: 1px solid var(--border-strong); font-family: var(--font-mono); font-size: 10.5px; line-height: 18px; text-align: center; color: var(--text-soft); }
+.cmp2 .doc-report-body { display: flex; flex-direction: column; min-width: 0; }
+.cmp2 .doc-report-name { font-size: var(--fs-sm); font-weight: 600; color: var(--text-main); overflow-wrap: anywhere; }
+.cmp2 .doc-report-meta { font-size: var(--fs-xs); color: var(--text-soft); overflow-wrap: anywhere; }
+.cmp2 .doc-report-flag { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px; }
+/* The engines the reports ran, as a report names its own: surea11y's brand
+   tag (.engine-brand), on its own line under the header's other facts, and
+   in the list of sources beside each report. */
+.cmp2 .doc-facts--engine { margin-top: 10px; }
+.cmp2 .doc-fact .engine-brand,
+.cmp2 .doc-engines .engine-brand { --tag-size: 22px; }
+.cmp2 .doc-engines { display: inline-block; margin-left: 6px; vertical-align: middle; }
+
+/* ---- provenance ---- */
+.cmp2 .doc-source { border-top: 1px solid var(--border-soft); padding-top: var(--space-5); scroll-margin-top: var(--space-6); }
+.cmp2 table.doc-table { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); }
+/* Opting out of the global th treatment, as the dashboard grids do: these are
+   row labels and column names, not the stuck headers that rule was written for. */
+.cmp2 table.doc-table th { position: static; background: transparent; color: inherit; text-transform: none; letter-spacing: normal; font-size: inherit; vertical-align: top; }
+.cmp2 table.doc-table thead th { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-soft); font-weight: 500; text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; }
+.cmp2 table.doc-table td, .cmp2 table.doc-table tbody th { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); text-align: left; vertical-align: top; }
+.cmp2 table.doc-table tbody tr:last-child td, .cmp2 table.doc-table tbody tr:last-child th { border-bottom: 0; }
+.cmp2 table.doc-table tbody tr:nth-child(even) td { background: transparent; }
+.cmp2 table.doc-table tbody th { font-weight: 600; color: var(--text-main); white-space: nowrap; }
+.cmp2 table.doc-table td.num { font-variant-numeric: tabular-nums; }
+.cmp2 .doc-scope { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-soft); word-break: break-all; }
+.cmp2 .doc-tags { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-soft); }
+.cmp2 .doc-warn { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-xs); color: var(--text-muted); background: var(--shared-soft); border-left: 3px solid var(--warn-line); padding: 10px 14px; border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-bottom: var(--space-3); }
+.cmp2 .doc-gen { margin-top: var(--space-3); font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .06em; color: var(--text-soft); }
+
+/* ---- chart tooltip (under the pointer) ---- */
+/* Wraps rather than running off the viewport: the label inside is a report's
+   own name and can be any length. Hidden, it takes no pointer; shown, the
+   pointer can rest on it (WCAG 1.4.13). */
+.cmp2-tip { position: fixed; pointer-events: none; z-index: 40; background: var(--surface-0); color: var(--text-main); border: 1px solid var(--border-strong); font-size: var(--fs-xs); padding: 6px 10px; border-radius: var(--radius-md); box-shadow: var(--shadow-card); opacity: 0; transition: opacity .12s ease; max-width: min(320px, 80vw); overflow-wrap: anywhere; }
+.cmp2-tip.on { opacity: 1; pointer-events: auto; }
+.cmp2-tip b { font-family: var(--font-display); }
+@media (prefers-reduced-motion: reduce) { .cmp2-tip { transition: none; } }
+
+/* ---- can these be compared? ---- */
+/* One card per column, above every chart, because a run that covered less found
+   less, the one failure mode the findings themselves cannot show. */
+.cmp2 .dash-trust { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: var(--space-3); }
+.cmp2 .dash-trust-card { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-left: 4px solid var(--border-strong); border-radius: var(--radius-lg); padding: 13px 15px; box-shadow: var(--shadow-card); }
+.cmp2 .dash-trust-card--ok { border-left-color: var(--good); }
+.cmp2 .dash-trust-card--warn { border-left-color: var(--warn-line); }
+.cmp2 .dash-trust-card--info { border-left-color: var(--accent); }
+/* A scenario name can be a sentence, or a URL with no spaces in it. Both have
+   to stay inside the card rather than spilling over its neighbour. */
+.cmp2 .dash-trust-name { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); color: var(--text-main); margin-bottom: 7px; overflow-wrap: anywhere; }
+.cmp2 .dash-trust-facts { list-style: none; margin: 0; padding: 0; font-size: var(--fs-xs); color: var(--text-muted); display: flex; flex-direction: column; gap: 3px; }
+.cmp2 .dash-trust-facts b { font-family: var(--font-display); font-weight: 600; color: var(--text-main); }
+.cmp2 .dash-trust-dim { color: var(--text-soft); }
+.cmp2 .dash-trust-more { margin-top: var(--space-3); }
+.cmp2 .dash-trust--folded { margin-top: 10px; }
+.cmp2 .dash-trust-flag { margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--border-soft); font-size: var(--fs-xs); color: var(--text-muted); display: flex; gap: 7px; align-items: flex-start; }
+.cmp2 .dash-trust-ok { margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--border-soft); font-size: var(--fs-xs); color: var(--text-soft); }
+
+/* ---- cleared vs introduced ---- */
+/* Diverging from a shared baseline: work done above it, ground lost below. The
+   two directions are the point, so they never share a stack. */
+.cmp2 .dash-flowchart { width: 100%; height: auto; display: block; overflow: visible; }
+.cmp2 .dash-flow-axis { stroke: var(--border-strong); stroke-width: 1.5; }
+.cmp2 .dash-flow-fixed { fill: var(--good); }
+.cmp2 .dash-flow-new { fill: var(--bad); }
+.cmp2 .dash-flow-num { font-family: var(--font-display); font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cmp2 .dash-flow-num--good { fill: var(--good); }
+.cmp2 .dash-flow-num--bad { fill: var(--bad); }
+/* The first column has no step into it. It keeps its band and says why, so the
+   chart shows as many columns as the reader loaded reports. */
+.cmp2 .dash-flow-origin { fill: var(--surface-raised); stroke: var(--text-soft); stroke-width: 2; }
+.cmp2 .dash-flow-origin-t { font-family: var(--font-mono); font-size: 10px; fill: var(--text-soft); letter-spacing: .04em; }
+.cmp2 .dash-flow-totals { display: flex; gap: var(--space-4); flex-wrap: wrap; align-items: baseline; margin-bottom: var(--space-3); }
+.cmp2 .dash-flow-total { font-size: var(--fs-sm); color: var(--text-muted); display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 12px; border-radius: 999px; }
+.cmp2 .dash-flow-total b { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cmp2 .dash-flow-total--good { color: var(--good); background: var(--good-soft); }
+.cmp2 .dash-flow-total--bad { color: var(--bad); background: var(--bad-soft); }
+.cmp2 .dash-flow-note { font-size: var(--fs-xs); color: var(--text-soft); }
+
+/* ---- WCAG, criterion by criterion ---- */
+.cmp2 .dash-conf-grid { margin-top: var(--space-4); }
+/* Status is a word in every cell, never a colour alone: five states that a
+   reader has to be able to tell apart in greyscale and in a print-out. */
+.cmp2 td.dash-sc .dash-cell-v { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; font-weight: 500; }
+.cmp2 .dash-sc--bad .dash-cell-v { background: var(--heat-4); color: var(--heat-4-ink); }
+.cmp2 .dash-sc--part .dash-cell-v { background: var(--heat-2); color: var(--heat-2-ink); }
+.cmp2 .dash-sc--review .dash-cell-v { background: var(--flap-soft); color: var(--flap); box-shadow: inset 0 0 0 1px var(--flap); }
+.cmp2 .dash-sc--ok .dash-cell-v { background: var(--good-soft); color: var(--good); }
+.cmp2 .dash-sc--na .dash-cell-v { background: var(--surface-sunken); color: var(--text-soft); }
+.cmp2 .dash-sc--none .dash-cell-v { background: var(--heat-0); color: var(--text-soft); }
+.cmp2 .dash-sw.dash-sc--bad { background: var(--heat-4); }
+.cmp2 .dash-sw.dash-sc--part { background: var(--heat-2); }
+.cmp2 .dash-sw.dash-sc--review { background: var(--flap-soft); border-color: var(--flap); }
+.cmp2 .dash-sw.dash-sc--ok { background: var(--good-soft); border-color: var(--good); }
+.cmp2 .dash-sw.dash-sc--none { background: var(--heat-0); }
+
+/* ---- how far a problem reaches ---- */
+/* A phrase, not a badge: it qualifies the count beside it rather than competing
+   with the severity chip above. */
+.cmp2 .dash-scope { color: var(--text-muted); }
+.cmp2 .dash-scope--systemic { color: var(--bad); font-weight: 600; }
+.cmp2 .dash-scope--partial { color: var(--warn-line); }
+
+/* ---- the grid as CSV ---- */
+.cmp2 .dash-csv-note { font-size: var(--fs-xs); color: var(--text-soft); margin: 8px 0; }
+.cmp2 .dash-csv-text { max-height: 320px; overflow: auto; background: var(--surface-sunken); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 14px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.7; color: var(--text-muted); white-space: pre; -webkit-user-select: all; user-select: all; }
+
+/* ---- holding up under real data ---- */
+/* Column names come from whatever the reports call themselves, and counts from
+   whatever the site had. Neither is bounded, so every place one is printed has
+   to say what happens when it is long. */
+
+/* Headers wrap rather than clip: names that share a beginning, cut to the same
+   width, become identical headers. The number above the name is the one every
+   chart and the "Reports compared" list use. */
+.cmp2 table.dash-grid thead th.dash-num-col { white-space: normal; text-transform: none; letter-spacing: normal; vertical-align: top; min-width: 7ch; max-width: 14ch; overflow-wrap: anywhere; line-height: 1.3; }
+.cmp2 .dash-col-n { display: block; width: 20px; height: 20px; margin: 0 auto 4px; border-radius: var(--radius-pill); border: 1px solid var(--border-strong); font-size: 10.5px; line-height: 18px; }
+.cmp2 .dash-col-name { display: block; font-family: var(--font-sans); font-size: 11.5px; color: var(--text-muted); }
+.cmp2 .dash-grid--wide thead th.dash-num-col { min-width: 0; }
+/* A word in a status cell needs more room than a two-digit count, so the wide
+   layout narrows the number columns but not these. */
+.cmp2 td.dash-sc, .cmp2 .dash-grid--wide td.dash-sc { min-width: 58px; }
+/* Long words break rather than widening a card past its track. */
+.cmp2 .dash-kpi-label, .cmp2 .dash-kpi-value, .cmp2 .dash-figure-value { overflow-wrap: anywhere; }
+/* A six-figure count would otherwise set the tile's width and push its
+   neighbours out of the row. */
+.cmp2 .dash-kpi-value { font-size: clamp(19px, 2.2vw, 28px); }
+.cmp2 .dash-figure-value { font-size: clamp(24px, 3vw, 36px); }
+/* A report's own name has no length limit. Three lines is enough to recognize
+   one; past that the title attribute has the rest. */
+.cmp2 .dash-figure-value--text { font-size: clamp(17px, 1.7vw, 22px); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.cmp2 .dash-hero-h { overflow-wrap: anywhere; }
+
+@media (max-width: 1000px) {
+    .cmp2 .dash-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cmp2 .dash-kpis--principles, .cmp2 .dash-kpis--four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cmp2 .dash-kpis--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    /* Restated after the row above, which would otherwise take the variant row
+       with it. A variant count is arbitrary, so it cannot be given a divisor and
+       keeps stretching its last line instead. */
+    .cmp2 .dash-kpis--variants { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+    .cmp2 .dash-hero, .cmp2 .dash-split { grid-template-columns: minmax(0, 1fr); }
+    /* Stacked, the severity chart has the whole width, and drawn to it at its
+       own proportions it would be taller than the screen. */
+    .cmp2 .dash-sevchart { max-height: 400px; }
+}
+@media (max-width: 760px) {
+    .cmp2 .dash-kpis, .cmp2 .dash-kpis--four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cmp2 .dash-kpis--three { grid-template-columns: 1fr; }
+    .cmp2 .dash-kpis--variants { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+@media (max-width: 620px) {
+    .cmp2 .dash-kpis, .cmp2 .dash-kpis--principles, .cmp2 .dash-kpis--four { grid-template-columns: 1fr; }
+    .cmp2 .dash-fix { grid-template-columns: 1fr; }
+    .cmp2 .dash-fix-rank { font-size: 20px; }
+    .cmp2 .dash-hero { padding: 20px; }
+}
+
+
+/* Forced colours. Inside the markers so the exported comparison gets it too. */
+@media (forced-colors: active) {
+    /* The segment's "on" state is a ring drawn with an inset shadow, which the
+       OS drops, and a border tone every other border also takes. */
+    .cmp2 .seg[aria-selected="true"] {
+        background: Highlight;
+        color: HighlightText;
+        border-color: Highlight;
+    }
+    .cmp2 .seg[aria-selected="true"] .cnt { color: HighlightText; }
+
+    /* The heat ramp is the reading, not decoration: five steps of one hue, each
+       paired with an ink chosen against it. Flattened to two system colours the
+       grid still lists its numbers but stops showing magnitude, so these keep
+       their own palette while the table around them follows the OS. */
+    .cmp2 .dash-cell-v,
+    .cmp2 .dash-sw {
+        forced-color-adjust: none;
+    }
+
+    /* Marks that carry their meaning as colour and nothing else: the A/B swatch
+       keying the whole comparison, the marks that key refers to, and the
+       severity ramp. Every one is a bare shape, so a forced background paints
+       them Canvas on Canvas and they vanish rather than merely flatten. */
+    .cmp2 .report-chip .swatch,
+    .cmp2 .kpi .stripe,
+    .cmp2 .legend .m,
+    .cmp2 .db-a,
+    .cmp2 .db-b,
+    .cmp2 .db-conn,
+    .cmp2 .seg .swatch,
+    .cmp2 .sev-dot,
+    .cmp2 .dash-sev-dot {
+        forced-color-adjust: none;
+    }
+
+    /* Keeping a palette means keeping whatever contrast it has against an OS
+       background that is unknowable here. A ring in the system ink costs
+       nothing - outline draws outside the box - and holds the shape whatever
+       sits behind it. */
+    .cmp2 .legend .m,
+    .cmp2 .seg .swatch,
+    .cmp2 .dash-sw,
+    .cmp2 .sev-dot,
+    .cmp2 .dash-sev-dot {
+        outline: 1px solid CanvasText;
+    }
+}
+
+/* ============================================================================
+   Where the failures are — issue dispersion (docs/design/issue-dispersion-design.md).
+   Emitted by src/shared/issue-dispersion-view.js in the report view, the
+   exported report and both comparison views. The two data colours (widespread
+   rules, other rules) were validated against the light and dark surfaces for
+   lightness, chroma, colour-blind separation and 3:1 contrast; they are not the
+   pass/fail status colours. Kept identical in report.css.
+   ============================================================================ */
+.dsp, .dsp-tip {
+    --dsp-wide: #5b39c4;
+    --dsp-other: #c25a0c;
+    --dsp-clean: #b9bfba;
+    --dsp-grid: rgba(49, 53, 47, .10);
+    --dsp-axis: rgba(49, 53, 47, .35);
+    --dsp-cursor: #31352f;
+}
+:root[data-theme="dark"] .dsp, :root[data-theme="dark"] .dsp-tip {
+    --dsp-wide: #8f6ee6;
+    --dsp-other: #cc7430;
+    --dsp-clean: #4a534e;
+    --dsp-grid: rgba(199, 210, 203, .09);
+    --dsp-axis: rgba(199, 210, 203, .30);
+    --dsp-cursor: #f7f8f6;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .dsp, :root:not([data-theme="light"]) .dsp-tip {
+        --dsp-wide: #8f6ee6;
+        --dsp-other: #cc7430;
+        --dsp-clean: #4a534e;
+        --dsp-grid: rgba(199, 210, 203, .09);
+        --dsp-axis: rgba(199, 210, 203, .30);
+        --dsp-cursor: #f7f8f6;
+    }
+}
+.dsp p { margin: 0 0 8px; }
+.dsp code { font-family: var(--font-mono, ui-monospace, monospace); font-size: .9em; }
+.dsp-h { font-size: 1rem; margin: 0 0 4px; color: var(--text-main); }
+.dsp-help { font-size: .85rem; color: var(--text-muted); margin: 0 0 8px; }
+.dsp-note { font-size: .85rem; color: var(--text-soft); }
+.dsp-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dsp-block { margin-top: 18px; }
+
+.dsp-verdict { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; margin-top: 10px; }
+.dsp-verdict-badge { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.dsp-verdict-meta { font-size: .8rem; color: var(--text-soft); }
+@media (max-width: 640px) { .dsp-verdict { grid-template-columns: 1fr; } }
+
+.dsp-badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px;
+    font-weight: 600; font-size: .9rem; white-space: nowrap; border: 1px solid transparent;
+}
+.dsp-badge-icon { font-family: var(--font-mono, ui-monospace, monospace); }
+.dsp-badge--widespread { background: var(--accent-soft); color: var(--accent); border-color: var(--border-strong); }
+.dsp-badge--concentrated { background: var(--warn-soft); color: var(--warn); }
+.dsp-badge--scattered { background: var(--danger-soft); color: var(--danger); }
+.dsp-badge--mixed { background: var(--na-soft); color: var(--text-main); border-color: var(--border-strong); }
+.dsp-badge--clean { background: var(--ok-soft); color: var(--ok); }
+.dsp-badge--few { background: var(--na-soft); color: var(--text-muted); }
+
+.dsp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 14px; }
+.dsp-kpi { border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 12px; background: var(--bg-elevated); }
+.dsp-kpi-v { font-size: 1.45rem; font-weight: 600; line-height: 1.15; color: var(--text-main); font-variant-numeric: tabular-nums; }
+.dsp-kpi-l { font-size: .82rem; color: var(--text-muted); }
+.dsp-kpi-s { font-size: .76rem; color: var(--text-soft); }
+
+.dsp-conc { margin-top: 14px; }
+.dsp-conc-head { font-weight: 600; color: var(--text-main); }
+.dsp-conc-row { display: grid; grid-template-columns: 130px 1fr 52px; gap: 10px; align-items: center; margin-bottom: 6px; font-size: .85rem; color: var(--text-muted); }
+.dsp-conc-bar { display: block; height: 12px; background: var(--na-soft); border-radius: 3px; overflow: hidden; }
+.dsp-conc-bar i { display: block; height: 100%; border-radius: 3px 0 0 3px; }
+.dsp-conc-bar--scans i { background: var(--dsp-other); }
+.dsp-conc-bar--elements i { background: var(--dsp-wide); }
+
+.dsp-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .8rem; color: var(--text-muted); margin: 4px 0 8px; }
+.dsp-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.dsp-sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
+.dsp-sw--wide { background: var(--dsp-wide); }
+.dsp-sw--other { background: var(--dsp-other); }
+.dsp-sw--clean { background: var(--dsp-clean); height: 3px; }
+
+.dsp-strip-fig { margin: 0; min-width: 0; }
+.dsp-strip-marks { position: relative; height: 24px; }
+.dsp-strip-fig--compact .dsp-strip-marks { height: 20px; }
+.dsp-strip-marks--2 { height: 40px; }
+.dsp-strip-fig--compact .dsp-strip-marks--2 { height: 36px; }
+.dsp-hot { position: absolute; bottom: 2px; min-width: 6px; height: 8px; border: 1.5px solid var(--text-muted); border-bottom: 0; border-radius: 2px 2px 0 0; }
+.dsp-hot-label { position: absolute; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .72rem; color: var(--text-main); }
+.dsp-strip { position: relative; border-bottom: 1px solid var(--dsp-axis); cursor: crosshair; }
+.dsp-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dsp-strip svg { display: block; width: 100%; }
+.dsp-s-wide { fill: var(--dsp-wide); }
+.dsp-s-other { fill: var(--dsp-other); }
+.dsp-s-clean { fill: var(--dsp-clean); }
+.dsp-s-cursor { fill: none; stroke: var(--dsp-cursor); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.dsp-strip-axis { position: relative; height: 18px; font-size: .72rem; color: var(--text-soft); }
+.dsp-strip-axis span { position: absolute; top: 2px; padding-left: 3px; border-left: 1px solid var(--dsp-axis); }
+.dsp-strip-axis .dsp-axis-end { left: auto; right: 0; border-left: 0; border-right: 1px solid var(--dsp-axis); padding: 0 3px 0 0; }
+.dsp-strip-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 12px; align-items: end; margin-bottom: 6px; }
+.dsp-strip-who { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding-bottom: 20px; font-size: .82rem; color: var(--text-muted); min-width: 0; }
+.dsp-strip-who b { color: var(--text-main); overflow-wrap: anywhere; }
+@media (max-width: 640px) { .dsp-strip-row { grid-template-columns: 1fr; } .dsp-strip-who { padding-bottom: 0; flex-direction: row; flex-wrap: wrap; align-items: center; } }
+
+/* Strip controls: the column height switch and the rule filter above the strips */
+.dsp-tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 6px 0 8px; }
+.dsp-seg { display: inline-flex; align-items: center; border: 0; padding: 0; margin: 0; min-width: 0; }
+.dsp-seg legend { float: left; font-size: .8rem; color: var(--text-muted); margin-right: 8px; padding: 0; }
+/* A label wraps inside its segment when the line has no room (a phone with
+   text spacing), rather than run past the screen's edge. */
+.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: normal; min-width: 0; }
+.dsp-seg label + label { border-left-width: 0; }
+.dsp-seg label:has(input:checked) + label { border-left-color: var(--accent); }
+.dsp-seg label:hover, .dsp-filter-btn:hover { background: var(--na-soft); }
+.dsp-seg label:first-of-type { border-radius: 4px 0 0 4px; }
+.dsp-seg label:last-of-type { border-radius: 0 4px 4px 0; }
+.dsp-seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.dsp-seg label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--text-main); font-weight: 700; }
+.dsp-seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 1; }
+.dsp-filter { position: relative; }
+.dsp-filter-btn { min-height: 0; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); font-weight: 400; line-height: 1.4; border: 1px solid var(--border-strong); border-radius: 4px; background: transparent; color: var(--text-main); cursor: pointer; }
+.dsp-filter-btn[aria-expanded="true"] { border-color: var(--accent); }
+.dsp-chip:hover { border-color: var(--accent); }
+.dsp-filter-caret { font-size: .8em; line-height: 1; }
+.dsp-filter-n { line-height: 1.5; font-family: var(--font-mono, ui-monospace, monospace); font-size: .76rem; padding: 0 7px; border-radius: 999px; background: var(--accent); color: var(--bg-elevated); }
+.dsp-filter-n[hidden] { display: none; }
+.dsp-filter-panel { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: min(420px, calc(100vw - 32px)); padding: 10px 12px 12px; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 8px 28px rgba(4, 21, 14, .18); }
+.dsp-filter-panel[hidden] { display: none; }
+.dsp-filter-find { box-sizing: border-box; width: 100%; font: inherit; font-size: .88rem; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg); color: var(--text-main); }
+.dsp-filter-list { max-height: 300px; overflow-y: auto; margin-top: 8px; }
+.dsp-filter-list fieldset { border: 0; margin: 0 0 6px; padding: 0; min-width: 0; }
+.dsp-filter-list fieldset[hidden] { display: none; }
+.dsp-filter-list legend { padding: 4px 0; font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-soft); }
+.dsp-opt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 3px 4px; border-radius: 4px; font-size: .86rem; cursor: pointer; }
+.dsp-opt[hidden] { display: none; }
+.dsp-opt:hover { background: var(--na-soft); }
+.dsp-opt code { overflow-wrap: anywhere; color: var(--text-main); }
+.dsp-opt-meta { font-size: .76rem; color: var(--text-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dsp-filter-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-subtle); font-size: .8rem; color: var(--text-soft); }
+.dsp-link { min-height: 0; font: inherit; font-size: .82rem; padding: 2px 4px; border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.dsp-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 6px; }
+.dsp-chips[hidden] { display: none; }
+.dsp-chip { min-height: 0; font-family: var(--font-mono, ui-monospace, monospace); font-size: .78rem; font-weight: 400; line-height: 1.4; display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px 2px 9px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--accent-soft); color: var(--text-main); cursor: pointer; }
+.dsp-chip span { font-size: .9rem; line-height: 1; color: var(--text-muted); }
+.dsp-strips-status { font-size: .82rem; color: var(--text-muted); margin: 0 0 4px; }
+/* The hotspots are found over every rule, so they say nothing about a few. */
+.dsp-strips--filtered .dsp-strip-marks { visibility: hidden; }
+@media (forced-colors: active) {
+    .dsp-seg label:has(input:checked) { border: 2px solid Highlight; }
+}
+
+.dsp-map svg, .dsp-line svg { display: block; width: 100%; height: auto; }
+.dsp-map { max-width: 760px; }
+.dsp-line { max-width: 440px; }
+.dsp-grid { stroke: var(--dsp-grid); stroke-width: 1; }
+.dsp-axis { stroke: var(--dsp-axis); stroke-width: 1; }
+.dsp-thr { stroke: var(--dsp-axis); stroke-width: 1; stroke-dasharray: 4 4; }
+.dsp-map text, .dsp-line text { fill: var(--text-soft); font-size: 11px; }
+.dsp-map .dsp-q { fill: var(--text-muted); font-size: 12px; font-weight: 600; }
+.dsp-map .dsp-qs { font-size: 10.5px; }
+.dsp-map .dsp-lbl { fill: var(--text-main); font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; }
+.dsp-map .dsp-ttl { fill: var(--text-muted); font-size: 11.5px; }
+/* A halo in the surface colour keeps a label readable where it crosses a dot,
+   an arrow or a quadrant title. */
+.dsp { --dsp-halo: var(--surface-base, var(--bg-elevated)); }
+.cmp2 .dsp { --dsp-halo: var(--bg); }
+.dsp-map .dsp-lbl, .dsp-map .dsp-q, .dsp-map .dsp-qs { paint-order: stroke; stroke: var(--dsp-halo); stroke-width: 3px; stroke-linejoin: round; }
+.dsp-leader { stroke: var(--dsp-axis); stroke-width: 1; }
+.dsp-dot { stroke: var(--bg-elevated); stroke-width: 2; cursor: default; }
+.dsp-dot--wide { fill: var(--dsp-wide); }
+.dsp-dot--other { fill: var(--dsp-other); }
+.dsp-dot--new { stroke: var(--text-main); stroke-width: 1.5; stroke-dasharray: 2 2; }
+.dsp-ghost { fill: none; stroke: var(--text-soft); stroke-width: 1.5; }
+.dsp-gone { stroke: var(--text-soft); stroke-width: 2; }
+.dsp-hit { fill: transparent; }
+.dsp-arrow { fill: none; stroke-width: 2; }
+.dsp-arrow--contained, .dsp-arrowhead--contained { stroke: var(--ok); fill: var(--ok); }
+.dsp-arrow--contained { fill: none; }
+.dsp-arrow--spread { stroke: var(--danger); }
+.dsp-arrowhead--spread { fill: var(--danger); }
+.dsp-arrow--steady { stroke: var(--text-soft); }
+.dsp-arrowhead--steady { fill: var(--text-soft); }
+.dsp-arrowhead { stroke: none; }
+
+.dsp-line .dsp-ln { fill: none; stroke: var(--dsp-wide); stroke-width: 2; }
+.dsp-line .dsp-pt { fill: var(--dsp-wide); stroke: var(--bg-elevated); stroke-width: 2; }
+/* The halo keeps the line from crossing the label's letters. */
+.dsp-line .dsp-val { fill: var(--text-main); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--bg-elevated); stroke-width: 3px; stroke-linejoin: round; }
+.dsp-spark { vertical-align: middle; }
+.dsp-spark polyline { fill: none; stroke: var(--dsp-wide); stroke-width: 1.5; }
+.dsp-spark circle { fill: var(--dsp-wide); }
+
+.dsp-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 14px; }
+.dsp-cols > .dsp-block { margin-top: 0; }
+.dsp-shift { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.dsp-shift-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-soft); }
+.dsp-shift-arrow { color: var(--text-soft); }
+.dsp-series-badge { display: inline-flex; align-items: center; gap: 4px; }
+.dsp-series-n {
+    display: inline-grid; place-items: center; min-width: 1.4em; height: 1.4em; border-radius: 999px;
+    font-size: .72rem; font-weight: 600; background: var(--na-soft); color: var(--text-main); margin-right: 4px;
+}
+.dsp-series-key { list-style: none; padding: 0; margin: 0 0 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; color: var(--text-muted); }
+
+.dsp-change { font-size: .82rem; white-space: nowrap; }
+.dsp-change--contained, .dsp-change--resolved { color: var(--ok); }
+.dsp-change--spread, .dsp-change--new { color: var(--danger); }
+.dsp-change--steady { color: var(--text-soft); }
+
+.dsp-table { margin-top: 8px; }
+.dsp-table > summary { cursor: pointer; font-size: .85rem; color: var(--accent); }
+.dsp-table-wrap { overflow-x: auto; margin-top: 6px; }
+.dsp-table-wrap--scroll { max-height: 360px; overflow-y: auto; }
+.dsp table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+.dsp th, .dsp td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+.dsp th { font-weight: 600; color: var(--text-muted); }
+.dsp th.dsp-num, .dsp td.dsp-num { text-align: right; }
+.dsp caption { text-align: left; font-size: .8rem; color: var(--text-soft); padding-bottom: 6px; }
+
+.dsp-tip {
+    position: fixed; z-index: 1000; pointer-events: none; max-width: 300px; padding: 8px 10px;
+    background: var(--bg-elevated); color: var(--text-main); border: 1px solid var(--border-strong);
+    border-radius: 4px; box-shadow: 0 4px 14px rgba(4, 21, 14, .26); font-size: .8rem; line-height: 1.4;
+}
+.dsp-tip[hidden] { display: none; }
+.dsp-tip-meta { display: block; color: var(--text-soft); font-size: .75rem; margin-top: 2px; }
+
+@media (forced-colors: active) {
+    .dsp-s-wide, .dsp-dot--wide { fill: CanvasText; }
+    .dsp-s-other, .dsp-dot--other { fill: Highlight; }
+    .dsp-sw--wide, .dsp-conc-bar--elements i { background: CanvasText; forced-color-adjust: none; }
+    .dsp-sw--other, .dsp-conc-bar--scans i { background: Highlight; forced-color-adjust: none; }
+}
+
+/* compare:end */

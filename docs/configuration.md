@@ -18,36 +18,57 @@ Read by the server and the command-line runner alike.
 | `A11Y_ACCEPT_LANGUAGE` | The `Accept-Language` pages are asked for (default `en-US,en;q=0.8`) |
 | `A11Y_ISOLATE_RUNS` | Each scan in a browser context of its own, for reproducible results (default on) |
 | `A11Y_DISABLE_CACHE` | No browser cache while scanning, for reproducible results (default on) |
+| `A11Y_PACKS` | More standard packs for surea11y to load, besides the `@surea11y/pack-*` packages the lab depends on: package names, or paths from the lab's folder, comma-separated ([Standards](#standards)) |
 | `A11Y_CORE_HOOKS` | Which of surea11y's hooks run before a page's own scripts: `internals` (names and roles web components set through `ElementInternals`), `listener` (event listeners added from script, for the keyboard rules) and `liveRegion` (what live regions are given, for the rule about announcements that may be missed). Default all; `none`, or a comma-separated list |
 | `HEAVY_NODE_THRESHOLD` | A page with more elements than this is skipped rather than scanned, and the report says so |
 | `A11Y_REPORTS_ROOT` | Where reports, evidence and element pictures are written (default `reports/`) |
 | `A11Y_QUEUE_DIR` | Where the queue keeps its batches, inside the reports folder (default `batches`) |
 | `A11Y_QUEUE_METRICS` | Each batch writes `metrics.jsonl`, what the server and browser used as it ran (default on) |
 | `A11Y_MAX_RUNS` | How many runs started from the app's Run workflow (or `POST /workflow-start`) go at once; the others wait their turn, and say so in their log (default `4`). The queue has its own setting |
-| `A11Y_ENGINE` | The engine a scan step that names none runs with (default `surea11y`) |
-| `A11Y_ENGINE_ADDONS` | `off` leaves every add-on's engines out, installed or not |
-| `A11Y_VALIDATE_CANONICAL` | Check every scan's result against the lab's result model; for engine development |
-| `A11Y_DEBUG_MODE` | More logging on the server, and each engine's own output kept in the report |
+| `A11Y_VALIDATE_CANONICAL` | Check every scan's result against the lab's result model; for development |
+| `A11Y_DEBUG_MODE` | More logging on the server, and surea11y's own output kept in the report |
 | `A11Y_ECHO_BROWSER_CONSOLE` | Copy the scanned page's console output to the server's (set to `1`) |
-| `A11Y_DUMP_RESULT_JSON`, `A11Y_DUMP_DIR`, `A11Y_DUMP_LOG` | Write every engine's raw result to `a11y-dumps/` (or the folder given), and log where |
+| `A11Y_DUMP_RESULT_JSON`, `A11Y_DUMP_DIR`, `A11Y_DUMP_LOG` | Write surea11y's raw result for every scan to `a11y-dumps/` (or the folder given), and log where |
 
 Variables a workflow reads secrets from (`{"$env": "NAME"}`) are the
 workflow's own: see [the runner's guide](scheduled-scans-guide.md#passwords).
 
-## Engines and add-ons
+## The engine
 
-surea11y is built in, and the only engine installed. Add-ons, in `addons/`,
-bring more:
+The lab scans with surea11y, [`@surea11y/core`](https://github.com/SureA11y/core),
+its one engine. `a11y-engine.config.json`, in the working folder, can set
+options for it (`{ "engineOptions": { "surea11y": { … } } }`) and turn on
+the result model check (`"validateCanonical": true`). Its `engineId` names
+the engine the lab runs, `surea11y` unless another engine's adapter has been
+added ([CONTRIBUTING.md](../CONTRIBUTING.md#adding-an-engine)).
 
-```bash
-npm run addon:list                    # the add-ons, and which are installed
-npm run addon:install -- more-engines # axe-core, Alfa, Pa11y and QualWeb
-npm run addon:remove -- more-engines
-```
+## Standards
 
-Restart the server after either. [Engines](engines.md) explains how an engine
-plugs in; `a11y-engine.config.json`, in the working folder, can set the
-default engine (`{ "engineId": "surea11y" }`) and options for it.
+Besides WCAG, which surea11y has built in, the lab knows the standards of
+the packs installed with it: [EN 301 549](https://github.com/SureA11y/pack-en301549)'s,
+`@surea11y/pack-en301549`, is a dependency. Every `@surea11y/pack-*` package
+in the lab's `package.json`, and any named in `A11Y_PACKS`, is loaded at
+start; one that does not load is left out. What the lab knows of each
+standard comes from the pack, so a further standard needs its pack
+installed, not code of the lab's own:
+
+- its profiles are options of a scan step's **Profile** (EN 301 549's have
+  always been there), and a scan against one names the standard's
+  requirements in its findings: each finding shows them as pills beside
+  WCAG's ("Sample Standard 3"), the criteria table and comparisons list them
+  by the WCAG criterion they correspond to, a grouping of your own can name
+  them, and the scan is counted under the WCAG criteria its requirements
+  correspond to, as a WCAG scan would be. A comparison of reports checked
+  against different standards says so, since their rows do not line up;
+- with a core that has test procedures, its requirements are sections of
+  **Review conformance** and of the **manual review checklist** for a report
+  whose scans used one of its profiles, each with how to check it by hand
+  and drafted from what the scans found; a requirement that restates a WCAG
+  criterion is reviewed as that criterion. The answers are kept in the
+  report with the rest of the review. The conformance report (VPAT) stays
+  WCAG's and EN 301 549's.
+
+`GET /api/standards` lists them ([the server's API](http-api.md#what-the-server-knows)).
 
 ## The command-line runner
 

@@ -1,0 +1,532 @@
+/* The app's styles, part 10 of 14: the rules catalog and the stepper.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* ==========================================================================
+   RULES CATALOG
+   ========================================================================== */
+/* One size while open: filtering the list must not move the dialog's edges
+   or its Apply / Close buttons. */
+.paged-dialog.rules-catalog-dialog {
+    width: min(960px, 90vw);
+    height: min(880px, 92vh);
+}
+
+.paged-dialog.rules-catalog-dialog .axd-shell {
+    height: 100%;
+    /* Room under the list for the absolutely placed footer buttons. */
+    padding-bottom: 48px;
+}
+
+.paged-dialog.rules-catalog-dialog .axd-body {
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+}
+
+.paged-dialog.rules-catalog-dialog .axd-footer {
+    align-items: center;
+    gap: var(--space-2);
+    height: auto;
+    bottom: 6px;
+    padding: 0;
+    background: none;
+}
+
+/* The head stays in view while the list scrolls under it. */
+.rules-catalog__head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+    display: grid;
+    gap: var(--space-2);
+
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-4);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.rules-catalog__summary {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.rules-catalog__summary:empty { display: none; }
+
+.rules-catalog__search { display: grid; }
+
+.rules-catalog__filter {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+
+    border-radius: var(--radius-md);
+    border: 1px solid var(--field-border);
+
+    font: inherit;
+    color: var(--text-main);
+    background: var(--surface-2);
+}
+
+.rules-catalog__filter:focus {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    border-color: var(--accent-border);
+    background: var(--surface-5);
+}
+
+.rules-catalog__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+    min-height: 30px;
+}
+
+.rules-catalog__count,
+.rules-catalog__selected {
+    margin: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+.rules-catalog__selection {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.rules-catalog__selection[hidden] { display: none; }
+
+.rules-catalog__clear {
+    min-height: 30px;
+    font-size: var(--fs-xs);
+}
+
+.rules-catalog__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rules-catalog__item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.rules-catalog.is-select .rules-catalog__item {
+    grid-template-columns: auto minmax(0, 1fr);
+}
+
+.rules-catalog__item:has(.rules-catalog__check:checked) {
+    background: var(--accent-soft);
+}
+
+.rules-catalog__check {
+    width: 16px;
+    height: 16px;
+    margin: 3px 0 0;
+    accent-color: var(--accent);
+}
+
+.rules-catalog__text {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+/* Undo the app's small muted form-label look: this label is the rule's name. */
+.rules-catalog__name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px var(--space-2);
+
+    margin: 0;
+    font-size: var(--fs-md);
+    letter-spacing: normal;
+    color: var(--text-main);
+}
+
+label.rules-catalog__name { cursor: pointer; }
+
+.rules-catalog__id {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.rules-catalog__desc {
+    margin: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-main);
+}
+
+.rules-catalog__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px var(--space-4);
+    margin: 0;
+
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.rules-catalog__facts > div { display: flex; gap: var(--space-1); min-width: 0; }
+.rules-catalog__facts dt { font-weight: 600; }
+.rules-catalog__facts dt::after { content: ":"; }
+.rules-catalog__facts dd { margin: 0; overflow-wrap: anywhere; }
+
+.rules-catalog__link {
+    justify-self: start;
+    font-size: var(--fs-xs);
+}
+
+.rules-catalog__empty {
+    margin: 0;
+    padding: var(--space-6) var(--space-4);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* A step field with a button beside it (the rules catalog). */
+.sb-inline-field-with-btn {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-2);
+}
+
+.sb-inline-field-with-btn > input { flex: 1 1 auto; min-width: 0; }
+
+.sb-catalog-btn {
+    flex: none;
+    white-space: nowrap;
+}
+
+/* Meta block, works with UL+LI */
+.report-meta {
+    margin: 0;
+    padding: 14px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+
+    font-size:  var(--fs-lg);
+
+    list-style: none;
+    display: grid;
+    /* Rows no wider than the block, whatever a value holds: a long date or
+       the engine's tag sized it past a phone's screen with text spacing. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+}
+
+/* Each row becomes a 2-column layout: label | value */
+.report-meta > li {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    align-items: start;
+    gap: 0;
+
+    margin: 0;
+    padding: 0;
+    line-height: 1.5rem;
+}
+
+/* The <strong> label becomes the left column */
+.report-meta > li > strong {
+
+    color: var(--text-main);
+}
+
+/* Make long URLs behave */
+.report-meta a,
+.report-meta code,
+.report-meta .meta-value {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* If URL is plain text, still wrap nicely */
+.report-meta > li {
+    overflow-wrap: anywhere;
+}
+
+/* Optional, make URL look “code-ish” if it’s a link */
+.report-meta a {
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+}
+
+/* --------------------------------------------------------------------
+   Engine brand tag — the surea11y engine value gets the design-system
+   Logo variant="tag" lockup (components/brand): a keyline pill with the
+   mark tile flush-left and the sure/a11y wordmark plus the "core"
+   product word and version (mono, muted, space-separated). Colours flip
+   with the theme via --ok / --ok-contrast, matching the DS surface rules.
+   Proportions derive from --tag-size, per the component.
+   -------------------------------------------------------------------- */
+.engine-brand {
+    --tag-size: 26px;
+
+    display: inline-flex;
+    align-items: stretch;
+    height: var(--tag-size);
+
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+a.engine-brand {
+    text-decoration: none;
+}
+
+.engine-brand__tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--tag-size);
+    flex: none;
+    background: var(--ok);
+}
+
+.engine-brand__tile svg {
+    display: block;
+    width: calc(var(--tag-size) * 0.55);
+    height: calc(var(--tag-size) * 0.55);
+}
+
+.engine-brand__tile svg path {
+    stroke: var(--ok-contrast);
+}
+
+.engine-brand__word {
+    display: flex;
+    align-items: center;
+    padding: 0 calc(var(--tag-size) * 0.35);
+
+    font-family: var(--font-display);
+    font-size: calc(var(--tag-size) * 0.577);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.engine-brand__sure { font-weight: 400; color: var(--text-main); }
+.engine-brand__a11y { font-weight: 700; color: var(--ok); }
+
+.engine-brand__product {
+    /* Flex, so the spaces that keep "surea11y core 1.14.1" readable as text
+       (and its accessible name matching what it shows) take no room. */
+    display: flex;
+    align-items: baseline;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 0.3em;
+}
+
+.engine-brand__version {
+    font-family: var(--font-mono);
+    margin-left: 0.4em;
+}
+
+/* --------------------------------------------------------------------
+   A control that reads as a link — the "(modify)" affordance beside the
+   report timestamp. It edits data rather than navigating, so it stays a
+   <button> and only borrows the look; the base button fills exclude it by
+   name (see the :not() chains in the BUTTONS section). Colour is inherited
+   and the underline carries the affordance on its own, like every other
+   link here (`a, a:visited { color: inherit }`), so it needs no contrast
+   of its own to be seen as one.
+   -------------------------------------------------------------------- */
+.link-button {
+    display: inline;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+    border-radius: 0;
+    background: none;
+
+    font: inherit;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.link-button:hover {
+    text-decoration: none;
+}
+
+/* An author `display` — the base button rule's `inline-flex`, and the `inline`
+   above — beats the UA stylesheet's `[hidden] { display: none }`, so hiding one
+   takes a rule of its own. */
+.link-button[hidden] { display: none !important; }
+
+/* A metadata editor: the field, its two actions, whatever the field cannot say
+   for itself, and the message for a value it could not be read from - all in
+   the flow of the line it corrects. */
+.report-meta-editor {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.report-meta-editor[hidden] { display: none !important; }
+
+/* The text fields size themselves from their `size` attribute. Written as
+   `input.` (not just the class) to beat the base control rule, which sets
+   `width: 100%` from a selector carrying an attribute of its own - the same
+   specificity trick, and reason, as `button.collapse-all-toggle` above. */
+input.report-meta-editor__input {
+    width: auto;
+    max-width: 100%;
+    padding: 0.15rem 0.35rem;
+
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+
+    font: inherit;
+    color: var(--text-main);
+    background: var(--surface-2);
+}
+
+input.report-meta-editor__input:focus {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    border-color: var(--accent-border);
+    background: var(--surface-4);
+}
+
+/* Sized down from the 36px default: these sit inside a line of metadata, not
+   in a toolbar. Still past the 24px minimum target size (WCAG 2.5.8). */
+.report-meta-editor .secondary-button {
+    min-height: 28px;
+    padding: 0 var(--space-3);
+    font-size: var(--fs-sm);
+}
+
+/* What the field cannot say for itself — for the date, which clock it is
+   setting, the line being written in one fixed zone that is not necessarily
+   the reader's own. */
+.report-meta-editor__hint {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+}
+
+/* Kept in the flow even while it is empty, at the cost of one flex gap of dead
+   space: it is a live region, and one that only exists in the accessibility
+   tree from the moment it has something to say is one screen readers can miss. */
+.report-meta-editor__error {
+    color: var(--danger);
+    font-size: var(--fs-sm);
+}
+
+/* Better spacing on narrow screens */
+@media (max-width: 520px) {
+    .report-meta > li {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+    }
+}
+
+/* ==========================================================================
+   Stepper
+   ========================================================================== */
+
+.stepper{
+    background: var(--surface-2);
+    border: 1px solid var(--overlay-panel-bg);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.stepper__nav{
+    position: relative;
+    padding: 26px 22px 22px;
+    background: rgba(255,255,255,.04);
+    border-bottom: 1px solid var(--overlay-panel-bg);
+}
+
+/* thick line behind dots */
+.stepper__line{
+    position:absolute;
+    left: 26px;
+    right: 26px;
+    top: 48px; /* not close to contents */
+    height: 10px;
+    background: rgba(201,206,220,.18);
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+    pointer-events:none;
+}
+
+.stepper__dots{
+    position: relative;
+    display:flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items:center;
+    min-height: 52px;
+}
+
+.stepper__dot{
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-pill);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: var(--stepper-dot-bg);
+    border: 2px solid var(--stepper-dot-border);
+    color: var(--dot);
+
+    letter-spacing: .3px;
+    user-select:none;
+    padding:0;
+}
+
+.stepper__dot[aria-current="action"]{
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 65%, transparent);
+    color: var(--dotActive);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.stepper__dot:disabled{
+    opacity: .45;
+    cursor: default;
+}
+
+.stepper__viewport{
+    position: relative;
+    overflow: hidden; /* no horizontal scroll yet */
+    width: 100%;
+}
+
+.stepper__track{
+    display:flex;
+    will-change: transform;
+    transition: transform 260ms ease;
+}
+
+.stepper__panel{
+    flex: 0 0 100%;
+    padding: 18px;
+    display:flex;
+    justify-content:center;
+    align-items:stretch;
+    background: var(--stepper-panel-bg);
+    width: 200px;
+}

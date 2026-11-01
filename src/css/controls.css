@@ -1,0 +1,835 @@
+/* The app's styles, part 4 of 14: the run status, buttons, split buttons, mode switch and status line.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* ==========================================================================
+   CONFIG COLLAPSE + RUN STATUS
+   ========================================================================== */
+
+/* Configuration is the DS Disclosure panel variant: a bordered card whose
+   heading is read first and whose mechanism sits at the far right. */
+#config-section {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+}
+
+/* The h2 wraps the header button (accessible accordion pattern: heading landmark
+   preserved, whole button clickable). It adds no box of its own. */
+.config-heading {
+    margin: 0;
+    padding: 0;
+    font: inherit;
+}
+
+/* Configuration heading text — the DS panel label, read first. */
+.config-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.3125rem;          /* DS text-lg (21px) */
+    font-weight: 500;
+    letter-spacing: -0.02em;       /* tracking-heading */
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* At phone width the heading wraps rather than be cut off, with the text
+   spacing WCAG 1.4.12 lets a reader apply too. */
+@media (max-width: 600px) {
+    .config-title { white-space: normal; overflow: visible; }
+}
+
+/* Keep the panel readable/pinned while running — the card structure stays. */
+body.is-running #config-section {
+    z-index: 20;
+    background: var(--surface-raised);
+}
+
+body.is-running #config-section .inline-actions {
+    margin-top: 6px;
+}
+
+.config-header{
+    position: relative;
+    margin: 0;
+    /* The heading's toggle takes the row; loading and saving the
+       configuration sit at its end, and wrap under it on a phone. (The page
+       header's column, which header elements get, is not this one's.) */
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+}
+
+.config-header .config-heading {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.config-header .config-actions {
+    margin: 0;
+    padding: var(--space-2) var(--space-5);
+}
+
+/* While a run goes the configuration is folded away, its actions too: loading
+   another configuration then would change the form under the run. */
+body.is-running .config-header .config-actions {
+    display: none;
+}
+
+/* Panel disclosure: the ENTIRE 52px header is the toggle — heading on the left,
+   the "Expand/Collapse" word + chevron at the far right. Clicking anywhere on
+   the row collapses the block (the DS rule that the whole header is the control). */
+.config-header-row {
+    display: flex;
+    /* "Collapse" goes under the heading when the two don't fit on one line
+       (a 320px screen with text spacing). */
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    width: 100%;
+    min-height: 52px;
+    padding: 0 var(--space-5);
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color var(--duration-instant) var(--ease-standard);
+}
+
+.config-header-row:hover:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-hover);
+}
+
+.config-header-row:active:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-press);
+}
+
+.config-header-row:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: calc(var(--focus-outline-offset) * -1);
+    box-shadow: var(--focus-ring);
+}
+
+/* Right-hand affordance: the word plus a chevron pointing down that rotates
+   180° when open. Muted at rest, strong when the header is hovered/focused. */
+.config-toggle-word {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: color var(--duration-instant) var(--ease-standard);
+}
+
+.config-header-row:hover .config-toggle-word,
+.config-header-row:focus-visible .config-toggle-word {
+    color: var(--text-main);
+}
+
+.config-toggle-word::after {
+    content: "";
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    background: currentColor;
+    -webkit-mask: var(--chevron-down) center / 16px 16px no-repeat;
+    mask: var(--chevron-down) center / 16px 16px no-repeat;
+    transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.config-header-row[aria-expanded="true"] .config-toggle-word::after {
+    transform: rotate(180deg);
+}
+
+body.is-running .config-header-row .config-toggle-word {
+    text-decoration: underline;
+}
+
+/* Panel content: inset on all sides, with the header divider showing only while
+   the region is open (the content carries the top border, hidden when closed). */
+#config-content {
+    padding: var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+}
+
+#config-content[hidden] {
+    display: none;
+}
+
+/* Run/Cancel act as the panel's footer — padded like the content, divided from
+   it (and, when the panel is collapsed, sitting just under the header). */
+/* The run's own line (its URL, name and settings) apart from the panels that
+   build its steps: a line across the whole section, as above the run's
+   buttons, with less room around it. */
+#config-content > .config-data {
+    margin: 0 calc(var(--space-5) * -1) var(--space-3);
+    padding: 0 var(--space-5) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+#config-section > .inline-actions {
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+    margin: 0;
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+button {
+    /* DS Button: sm (36px) is the default size across the desktop tool. The
+       height is fixed and shared with icon buttons; vertical padding is 0 and
+       the label is centred by flex. IBM Plex Mono 600 is the UI voice. */
+    min-height: 36px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+
+    cursor: pointer;
+
+    font-family: var(--font-mono);
+    font-size: var(--fs-base);
+    font-weight: 600;
+    line-height: 1.2;
+
+    background: var(--surface-4);
+    color: var(--text-main);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+
+    /* DS: state changes are colour only — never a lift, shrink, or shadow. */
+    transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+    box-shadow: none;
+}
+
+button:hover:not(:disabled, [aria-disabled=true], .screenshot-btn, .legend-toggle, .collapse-all-toggle, .section-end-toggle, .link-button, .dsp-filter-btn, .dsp-chip, .dsp-link, .run-setting-chip) {
+    background: var(--surface-5);
+    border-color: var(--accent-border);
+}
+
+button:active:not(:disabled, [aria-disabled=true], .screenshot-btn, .collapse-all-toggle, .section-end-toggle, .link-button, .dsp-link) {
+    /* Press deepens the surface — colour only, no translate. */
+    background: var(--surface-3);
+    border-color: var(--accent-border);
+}
+
+button:disabled,
+button[aria-disabled=true] {
+    opacity: .42;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Primary buttons, keep your markup but bring reference look */
+button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.custom-steps-item):not(.legend-toggle):not(.config-header-row):not(.step-tree-node):not(.scan-tag-filter__chip):not(.scan-tag-filter__mode-btn):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.run-setting-chip):not(.dsp-link):not(.back-to-top) {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+}
+
+button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.custom-steps-item):not(.legend-toggle):not(.config-header-row):not(.step-tree-node):not(.scan-tag-filter__chip):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.run-setting-chip):not(.dsp-link):not(.back-to-top):hover:not(:disabled, [aria-disabled=true]) {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* The one primary action per view — a true solid fill, not the soft tint above.
+   Height follows the sm (36px) default like every other button. */
+#scan-button {
+    background: var(--ok);
+    border-color: var(--ok);
+    color: var(--ok-contrast);
+    font-weight: 600;
+}
+
+#scan-button:hover:not(:disabled, [aria-disabled=true]) {
+    background: color-mix(in srgb, var(--ok) 88%, black);
+    border-color: color-mix(in srgb, var(--ok) 88%, black);
+}
+
+button:focus-visible,
+.secondary-button:focus-visible,
+.copy-selector-btn:focus-visible,
+.src-dialog-trigger:focus-visible,
+button.src-dialog-close:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+}
+
+/* Secondary buttons */
+.secondary-button {
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+
+    font-family: var(--font-mono);
+    font-weight: 600;
+
+    background: var(--surface-2);
+    color: var(--text-muted);
+
+    box-shadow: none;
+}
+
+.remove.secondary-button { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+
+.secondary-button:hover:not(:disabled, [aria-disabled=true]) {
+    border-color: var(--accent-border);
+    color: var(--text-main);
+    background: var(--surface-4);
+}
+
+.remove.secondary-button:hover:not(:disabled, [aria-disabled=true]) {
+    background-color: var(--danger-soft);
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+}
+
+.remove.secondary-button:focus-visible {
+    background-color: color-mix(in srgb, var(--danger) 16%, transparent);
+    border-color: color-mix(in srgb, var(--danger) 65%, transparent);
+}
+
+/* =========================================================
+   SPLIT BUTTON — DS "recessed compartment" variant
+   One default action (the label) plus a chevron that opens a menu of
+   near-identical format variants. The chevron half sits one step darker
+   than the action at rest and climbs lighter as it's engaged — the only
+   place in the system a control gets lighter under the pointer — so the
+   two targets read apart without a rule drawn between them.
+   ========================================================= */
+.split-button {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.split-button__action,
+.split-button__chevron {
+    box-sizing: border-box;
+    min-height: 36px;
+    border: 1px solid transparent;
+    font-family: var(--font-mono);
+    font-size: var(--fs-base);
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    background: var(--accent-soft);
+    color: var(--text-main);
+    transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+
+.split-button__action {
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    border-right-color: transparent;
+}
+
+.split-button__action:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* The compartment: rest one step darker than the action, climb lighter on
+   hover, darken again while the menu is open (the "press" value). */
+.split-button__chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    padding: 0;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.split-button__chevron:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.split-button__chevron[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.split-button__chevron svg {
+    display: block;
+}
+
+.split-button__action:disabled,
+.split-button__chevron:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+}
+
+.split-button__action:focus-visible,
+.split-button__chevron:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+}
+
+.split-button__menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 20;
+    min-width: 236px;
+    padding: var(--space-1);
+    background: var(--surface-4);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-popover);
+}
+
+.split-button__menu-heading {
+    padding: var(--space-2) var(--space-3) var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.split-button__item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--duration-instant) var(--ease-standard);
+}
+
+.split-button__item:hover:not(:disabled) {
+    background: var(--surface-hover);
+}
+
+.split-button__item:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+}
+
+.split-button__item:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: -2px;
+}
+
+.split-button__item-label {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.split-button__item-desc {
+    font-family: var(--font-sans);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+/* DS IconButton box for icon-only buttons that live OUTSIDE the actions-builder
+   scope — history undo/redo and the custom-step add/paste tiles. Inside
+   #actions-builder / #custom-step-actions-builder the icon-button rules already
+   square these; here we give the same 36px square (the DS sm floor) to the two
+   contexts that had no icon-button rule and were falling back to full text-button
+   width. Scoped to these ids so the intentionally denser nested controls
+   (min-width:30px) are untouched. */
+#history-management .icon-button,
+.history-management .icon-button,
+#custom-step-add-btn,
+#custom-step-paste-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    gap: 0;
+    flex: 0 0 auto;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   MODE SWITCH
+   ========================================================================== */
+
+/* The bar holding the tabs sticks to the top of the window, spanning the
+   page card's padding so content scrolls out of sight beneath it. Once the
+   header is out of view (back-to-top.js) it gets a shadow and the Back to top
+   button at its end, where the colour-theme and Activity buttons were. */
+.mode-bar {
+    --mode-bar-h: 44px;
+    --page-pad-x: 1.75rem; /* .page's side padding */
+    position: sticky;
+    top: 0;
+    z-index: 50;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-2);
+
+    /* The top padding keeps a focused tab's outline in view once stuck. */
+    margin: calc(-1 * var(--space-1)) calc(-1 * var(--page-pad-x)) 0.75rem;
+    padding: var(--space-1) var(--page-pad-x) 0;
+
+    background: var(--surface-1);
+    transition: box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.mode-bar.is-stuck {
+    box-shadow: 0 1px 0 var(--border-subtle), 0 6px 16px -10px rgba(4, 21, 14, .35);
+}
+
+/* Targets of in-page links and focus land below the bar, not under it. */
+html:has(.mode-bar) {
+    scroll-padding-top: calc(var(--mode-bar-h, 44px) + var(--space-3));
+}
+
+.back-to-top {
+    flex: none;
+    align-self: center;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-3);
+    color: var(--text-main);
+    box-shadow: none;
+    cursor: pointer;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition:
+        opacity var(--duration-fast) var(--ease-standard),
+        transform var(--duration-fast) var(--ease-standard),
+        visibility 0s linear var(--duration-fast);
+}
+
+.back-to-top.is-shown {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+        opacity var(--duration-fast) var(--ease-standard),
+        transform var(--duration-fast) var(--ease-standard);
+}
+
+.back-to-top:hover {
+    background: var(--surface-4);
+    border-color: var(--accent-border);
+}
+
+.back-to-top:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+@media (min-width: 900px) {
+    .mode-bar { --page-pad-x: 2.25rem; }
+}
+
+/* At phone width the tabs close up, leaving room for the button, which takes
+   none until it shows. */
+@media (max-width: 600px) {
+    .mode-bar { --page-pad-x: .75rem; }
+    .mode-bar .mode-tab { padding-inline: .5rem; }
+    .back-to-top:not(.is-shown) { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mode-bar,
+    .back-to-top,
+    .back-to-top.is-shown { transition: none; }
+    .back-to-top { transform: none; }
+}
+
+.mode-switch {
+    display: inline-flex;
+    gap: var(--space-1);
+    margin: 0;
+    /* The tabs shrink, their names wrapping, before the back-to-top button
+       is pushed off the screen. */
+    min-width: 0;
+    flex: 0 1 auto;
+
+    border: 0;
+    border-bottom: 1px solid var(--border-strong);
+}
+
+.mode-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    border-radius: 0;
+    padding: .65rem .9rem;
+
+    background: transparent;
+    color: var(--text-muted);
+
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: var(--fs-sm);
+
+    box-shadow: none;
+    transition: color var(--duration-instant) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+}
+
+/* On a narrow screen the tabs take less padding, so with text spacing the
+   four of them and the back-to-top button still fit. */
+@media (max-width: 420px) {
+    .mode-tab {
+        padding: .65rem .5rem;
+    }
+}
+
+/* When even wrapped names do not fit beside the back-to-top button (a narrow
+   screen with text spacing), back-to-top.js wraps the tabs on two rows. */
+.mode-switch.is-wrapped {
+    flex-wrap: wrap;
+}
+
+.mode-tab[aria-selected="true"] {
+    background: transparent;
+    color: var(--text-main);
+    font-weight: 600;
+    box-shadow: none;
+    border-bottom-color: var(--accent);
+}
+
+.mode-tab:hover:not([aria-selected="true"]) {
+    background: transparent;
+    color: var(--text-main);
+}
+
+.mode-tab:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: none;
+}
+
+.tab-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 0px;
+    vertical-align: middle;
+}
+
+/* Only add spacing if the spinner OR badge is visible */
+.tab-indicator:has(.tab-spinner:not([hidden])),
+.tab-indicator:has(.tab-badge:not([hidden])) {
+    margin-left: 8px;
+}
+
+.tab-spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: var(--radius-pill);
+    /* Accent-based, matching the .status.busy spinner, so it stays visible on
+       the transparent tab background in both light and dark themes — a flat
+       white ring vanished on the light surface. */
+    border: 2px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-top-color: color-mix(in srgb, var(--accent) 85%, transparent);
+    /* The queue's spinners are rebuilt on every poll and keep their angle with
+       an animation-delay that assumes this duration (SPIN_MS, run-queue-panel.js). */
+    animation: tabSpin 0.9s linear infinite;
+}
+
+.tab-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xxs);
+    line-height: 18px;
+    color: var(--ok);
+    font-weight: 600;
+}
+
+@keyframes tabSpin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tab-spinner { animation: none; }
+}
+
+.open-results-panel {
+    margin: 0 0 0.75rem;
+    padding: 1rem;
+    text-align: center;
+
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-2);
+}
+
+/* ==========================================================================
+   STATUS
+   ========================================================================== */
+
+.status:not(:empty) {
+    margin-top: .5rem;
+    min-height: 1.2rem;
+
+    font-size: var(--fs-md);
+    color: var(--text-muted);
+}
+
+.status.error { color: var(--danger); }
+.status.ok { color: var(--ok); }
+.status.warning { color: var(--warn); }
+
+.status.busy {
+    color: var(--ok);
+    position: relative;
+    padding-left: 1.25rem;
+}
+
+.status.busy::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+
+    width: .8rem;
+    height: .8rem;
+
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-top-color: color-mix(in srgb, var(--accent) 85%, transparent);
+    animation: spin .9s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Files dragged over a place that loads them (src/js/file-drop.js): the zone
+   under the pointer is outlined, and a tag by the pointer says what a drop
+   does there. */
+.is-drop-target {
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+    background-color: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.drop-tag {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    pointer-events: none;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: var(--surface-0);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    /* Shows as the tag's edge where forced colours drop its background. */
+    border: 1px solid transparent;
+}
+.drop-tag[hidden] { display: none; }
+
+/* An action under way (src/js/busy.js): the control stays where it is, reads
+   as unavailable and shows a spinner beside its label, or in place of its
+   icon. The spinner is the .status.busy one. */
+[data-busy="true"] { cursor: progress; }
+[data-busy="true"]::before {
+    content: "";
+    display: inline-block;
+    flex: none;
+    width: .8rem;
+    height: .8rem;
+    margin-right: var(--space-2);
+    vertical-align: -.1rem;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-top-color: color-mix(in srgb, var(--accent) 85%, transparent);
+    animation: spin .9s linear infinite;
+}
+.icon-button[data-busy="true"] > svg { display: none; }
+.icon-button[data-busy="true"]::before { margin-right: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+    [data-busy="true"]::before { animation-duration: 3s; }
+}
+
+/* A tab was pressed and its results are drawn a frame later (setActiveMode):
+   until then the other tab's results give way to a busy note. */
+#results-container.results-pending > :not(.results-pending-note) { display: none; }
+.results-pending-note { margin: var(--space-4) 0; }
+
+/* A grouping, engine or scan change is being redrawn (updateResults): the
+   results fade and a note stays in view, as a large report takes seconds. */
+#results-container.results-updating { cursor: progress; }
+#results-container.results-updating > #summary,
+#results-container.results-updating > #results { opacity: .5; }
+#results-container.results-updating::after {
+    content: "Updating the results…";
+    position: fixed;
+    top: var(--space-4);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-soft);
+    background: var(--surface-0);
+    color: var(--text);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgb(0 0 0 / .15);
+}
+
+/* A "View details" dialog with a long list, open while its occurrences are
+   drawn (lazy-dialogs.js): placeholder rows the size of an occurrence. */
+.lazy-dialog-loading { margin: 0 0 var(--space-4); }
+.lazy-skeleton { display: grid; gap: var(--space-4); }
+.lazy-skeleton-item { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--border-soft); border-radius: var(--radius-md); }
+.lazy-skeleton-bar { display: block; height: .8rem; border-radius: var(--radius-md); background: var(--border-soft); }
+.lazy-skeleton-bar:nth-child(1) { width: 30%; }
+.lazy-skeleton-bar:nth-child(2) { width: 85%; height: 1.6rem; }
+.lazy-skeleton-bar:nth-child(3) { width: 60%; }
+
+/* A report of hundreds of scans: cards out of view are not laid out until
+   they come near it, which saves seconds when the report opens. Their size is
+   estimated until then and remembered after. Print lays them all out. */
+.scan-results-wrapper {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
+}
+@media print {
+    .scan-results-wrapper { content-visibility: visible; }
+}

@@ -292,11 +292,11 @@ describe('merged scans', () => {
                 },
             });
         };
-        const [merged] = foldMergedScans([run('surea11y', 'surea11y'), run('axe-core', 'axe')], spy);
-        assert.deepEqual(asked, [['AA', ['surea11y', 'axe'], '2.2']]);
-        assert.equal(scoped[0], 'surea11y+axe 2.2 AA');
-        assert.deepEqual(merged.canonical.engines.map((e) => e.id), ['surea11y', 'axe']);
-        assert.deepEqual(Object.keys(merged.byEngineMetrics), ['surea11y', 'axe']);
+        const [merged] = foldMergedScans([run('surea11y', 'surea11y'), run('Engine B', 'engine-b')], spy);
+        assert.deepEqual(asked, [['AA', ['surea11y', 'engine-b'], '2.2']]);
+        assert.equal(scoped[0], 'surea11y+engine-b 2.2 AA');
+        assert.deepEqual(merged.canonical.engines.map((e) => e.id), ['surea11y', 'engine-b']);
+        assert.deepEqual(Object.keys(merged.byEngineMetrics), ['surea11y', 'engine-b']);
     });
 
     test('contexts run by one engine keep the widest context\'s coverage, and no per-engine metrics', () => {
@@ -455,8 +455,8 @@ describe('merged scans', () => {
 
     test('mergeCanonicals keeps every engine once', () => {
         const a = canonical([], { engines: [{ id: 'surea11y' }] });
-        const b = canonical([], { engines: [{ id: 'surea11y' }, { id: 'axe' }] });
-        assert.deepEqual(mergeCanonicals([{ canonical: a, context: 'A' }, { canonical: b, context: 'B' }], 2).engines.map((e) => e.id), ['surea11y', 'axe']);
+        const b = canonical([], { engines: [{ id: 'surea11y' }, { id: 'engine-b' }] });
+        assert.deepEqual(mergeCanonicals([{ canonical: a, context: 'A' }, { canonical: b, context: 'B' }], 2).engines.map((e) => e.id), ['surea11y', 'engine-b']);
     });
 });
 

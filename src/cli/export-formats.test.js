@@ -60,7 +60,7 @@ describe('writeExports', () => {
         const { written, known } = writeExports(
             [
                 { label: 'Home', result: coreResult },
-                { label: 'Axe only', result: null },
+                { label: 'Another engine only', result: null },
                 { label: 'Checkout', result: coreResult }
             ],
             ['sarif', 'junit', 'earl'],

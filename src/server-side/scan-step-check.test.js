@@ -5,11 +5,12 @@ const assert = require('node:assert/strict');
 
 const { scanStepsOf, checkScanSteps } = require('./scan-step-check');
 
-// The engines as the facade describes them; the default one for no id.
+// The engines as the facade describes them; the default one for no id. The
+// two others are made up, to cover the other ways an engine selects rules.
 const ENGINES = {
     surea11y: { id: 'surea11y', name: 'surea11y', selectsBy: 'standard' },
-    axe: { id: 'axe', name: 'axe-core', selectsBy: 'version' },
-    alfa: { id: 'alfa', name: 'Alfa', selectsBy: 'level' },
+    'engine-b': { id: 'engine-b', name: 'Engine B', selectsBy: 'version' },
+    'engine-c': { id: 'engine-c', name: 'Engine C', selectsBy: 'level' },
 };
 function describeEngine(id) {
     const e = ENGINES[id || 'surea11y'];
@@ -33,21 +34,21 @@ describe('checkScanSteps', () => {
     test('passes scans whose engine can check their profile, and those with none', () => {
         assert.doesNotThrow(check([
             { type: 'a11yScan', profile: 'en301549-v3.2.1' },
-            { type: 'a11yScan', engine: 'axe', profile: 'en301549-v4.1.1' },
-            { type: 'a11yScan', engine: 'alfa', profile: 'wcag22-aaa' },
-            { type: 'a11yScan', engine: 'axe', profile: '{var:target}' },
-            { type: 'a11yScan', engine: 'axe' },
+            { type: 'a11yScan', engine: 'engine-b', profile: 'en301549-v4.1.1' },
+            { type: 'a11yScan', engine: 'engine-c', profile: 'wcag22-aaa' },
+            { type: 'a11yScan', engine: 'engine-b', profile: '{var:target}' },
+            { type: 'a11yScan', engine: 'engine-b' },
         ]));
     });
 
     test('fails on a profile the step\'s engine cannot check, naming the scan, the engine and the profile', () => {
-        assert.throws(check([{ type: 'a11yScan', label: 'Home', engine: 'axe', profile: 'en301549-v3.2.1' }]), {
-            message: 'Scan "Home": axe-core cannot check EN 301 549 V3.2.1. Choose another profile, or another engine.',
+        assert.throws(check([{ type: 'a11yScan', label: 'Home', engine: 'engine-b', profile: 'en301549-v3.2.1' }]), {
+            message: 'Scan "Home": Engine B cannot check EN 301 549 V3.2.1. Choose another profile.',
         });
     });
 
     test('a scan without a profile checks WCAG 2.2 AA, which every engine can', () => {
-        assert.doesNotThrow(check([{ type: 'a11yScan', label: 'Home', engine: 'alfa' }, { type: 'a11yScan', engine: 'axe', profile: '' }]));
+        assert.doesNotThrow(check([{ type: 'a11yScan', label: 'Home', engine: 'engine-c' }, { type: 'a11yScan', engine: 'engine-b', profile: '' }]));
     });
 
     test('fails on a bare level or any other value that is not a profile, rather than scan at another level', () => {
@@ -65,8 +66,8 @@ describe('checkScanSteps', () => {
 
     test('names every problem at once', () => {
         assert.throws(check([
-            { type: 'a11yScan', label: 'A', engine: 'axe', profile: 'en301549-v3.2.1' },
-            { type: 'a11yScan', label: 'B', engine: 'alfa', profile: 'en301549-v3.2.1' },
+            { type: 'a11yScan', label: 'A', engine: 'engine-b', profile: 'en301549-v3.2.1' },
+            { type: 'a11yScan', label: 'B', engine: 'engine-c', profile: 'en301549-v3.2.1' },
         ]), (e) => e.message.split('\n').length === 2);
     });
 });

@@ -261,6 +261,53 @@
         return new Map([...bySc].map(([sc, set]) => [sc, [...set].sort(byNumber)]));
     }
 
+    // ---- Other standards' requirements, as the report's findings name them ---
+    //
+    // A standard from a pack (RGAA's, BITV's) names its requirements in a
+    // finding's normativeMappings, each with the WCAG criteria it corresponds
+    // to (wcagSc). As for RGAA above, a criterion row lists the ones named by
+    // findings that failed or could not be decided on it.
+    function standardsBySc(report) {
+        const bySc = new Map(); // sc -> Map(standard -> Set(requirement))
+        for (const scan of asArray(report && report.scans)) {
+            for (const finding of asArray(scan && scan.canonical && scan.canonical.findings)) {
+                const outcome = String((finding && finding.outcome) || '');
+                if (outcome !== 'fail' && outcome !== 'cantTell') continue;
+                const legacyRgaa = asArray(finding.rgaa).length > 0;
+                const own = normativeScOf(finding);
+                for (const m of asArray(finding.standards && finding.standards.normativeMappings)) {
+                    const standard = str(m && m.standard);
+                    if (!standard || !str(m.requirement) || standard === 'WCAG' || standard === 'EN 301 549') continue;
+                    if (standard === 'RGAA' && legacyRgaa) continue;
+                    for (const sc of own.length ? own : asArray(m.wcagSc).map(str).filter(Boolean)) {
+                        const byStd = bySc.get(sc) || new Map();
+                        const set = byStd.get(standard) || new Set();
+                        set.add(str(m.requirement));
+                        byStd.set(standard, set);
+                        bySc.set(sc, byStd);
+                    }
+                }
+            }
+        }
+        return new Map([...bySc].map(([sc, byStd]) => [sc, toStandards(byStd)]));
+    }
+
+    function toStandards(byStd) {
+        return [...byStd].sort(([a], [b]) => a.localeCompare(b))
+            .map(([standard, set]) => ({ standard, requirements: [...set].sort(byNumber) }));
+    }
+
+    function mergeStandards(a, b) {
+        if (!a && !b) return null;
+        const byStd = new Map();
+        for (const e of [...(a || []), ...(b || [])]) {
+            const set = byStd.get(e.standard) || new Set();
+            for (const r of e.requirements) set.add(r);
+            byStd.set(e.standard, set);
+        }
+        return toStandards(byStd);
+    }
+
     function mergeRgaa(a, b) {
         if (!a || !a.length) return b && b.length ? b.slice() : null;
         if (!b || !b.length) return a;
@@ -345,6 +392,7 @@
         const bySc = summaries.length ? fromCoverage(summaries) : fromFindings(report);
         const clauses = en301549BySc(report);
         const rgaa = rgaaBySc(report);
+        const standards = standardsBySc(report);
 
         const criteria = sortCriteria(Array.from(bySc.values()).map((entry) => ({
             ...entry,
@@ -352,6 +400,8 @@
             principle: principleOf(entry.sc),
             en301549: clauses.get(entry.sc) || null,
             rgaa: rgaa.get(entry.sc) || null,
+            // Only where a finding names another standard's requirement.
+            ...(standards.has(entry.sc) ? { standards: standards.get(entry.sc) } : {}),
         })));
 
         const byStatus = Object.fromEntries(STATUS_ORDER.map((s) => [s, 0]));
@@ -405,6 +455,7 @@
                         sc: entry.sc, level: entry.level, principle: entry.principle,
                         en301549: mergeClause(null, entry.en301549),
                         rgaa: mergeRgaa(null, entry.rgaa),
+                        ...(entry.standards ? { standards: mergeStandards(null, entry.standards) } : {}),
                     });
                     order.push(entry.sc);
                 } else {
@@ -412,6 +463,7 @@
                     if (!meta.level && entry.level) meta.level = entry.level;
                     meta.en301549 = mergeClause(meta.en301549, entry.en301549);
                     meta.rgaa = mergeRgaa(meta.rgaa, entry.rgaa);
+                    if (entry.standards) meta.standards = mergeStandards(meta.standards, entry.standards);
                 }
             }
         }

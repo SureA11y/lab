@@ -15,6 +15,11 @@ see what a release fixed and what it broke.
 - **The runner.** The same workflow from the command line, with no window:
   for a nightly run that compares itself with the last one, a check on every
   pull request, or a batch over a list of pages.
+- **Conformance reports.** An Accessibility Conformance Report (VPAT 2.5,
+  WCAG and EN 301 549) as HTML and Word, drafted from the runs and finished
+  by a person in the app, criterion by criterion; the review carries on to
+  the next release. The draft never says "Supports": that is a person's
+  call ([how](docs/use-cases/write-a-conformance-report.md)).
 - **Formats you can build on.** Workflows, reports, comparisons and diffs are
   JSON with published schemas, so other tools can write the workflows and read
   the results: an issue tracker, a dashboard, a script.
@@ -23,15 +28,44 @@ see what a release fixed and what it broke.
 
 ![The lab's compare tab: release 2 of the demo shop against release 1, accessibility improved, 9 failures down to 2](docs/assets/screens/app-compare.png)
 
+<details>
+<summary>Watch a run, its report and a comparison (a 22-second animation)</summary>
+
+![The lab app loads the demo shop's shopping flow and runs it: the log fills, a live preview shows each scan as it finishes, and the run ends with 8 failures in 8 elements across 4 scans. Then a report of the shop's tour, each page's failures and questions with a screenshot, and the comparison of release 2 with release 1: accessibility improved, 9 failures down to 2.](docs/assets/screens/demo.gif)
+
+</details>
+
+[Example reports](docs/gallery/README.md): two reports and a comparison of
+the demo shop, each one file that opens in any browser.
+
 Scans check against WCAG 2.2 (A, AA, AAA) and EN 301 549 (V4.1.1 and
-V3.2.1), with surea11y applying each standard in full. Other
-engines (axe-core, Alfa, Pa11y, QualWeb) are an optional add-on, for comparing
-engines.
+V3.2.1), with surea11y applying each standard in full.
+
+## How far to trust it
+
+What the lab finds, surea11y finds, and surea11y is checked against the
+W3C's own test cases for accessibility rules
+([ACT](https://www.w3.org/WAI/standards-guidelines/act/rules/)). On the 957
+cases of the 60 rules it implements, it flags none that the W3C marks as
+passing or not applying. It misses 18 of the cases the W3C marks as failing,
+most of them judgement calls. Where it cannot decide, it says so ("can't
+tell") and gives the steps to check by hand, rather than guessing.
+
+Those are results on those cases, not a promise for every page. Automated
+checks cover only part of WCAG, so a report with no failures is not a claim
+that a site conforms.
+
+These figures are from 26 October 2026. The current ones are in
+[core's README](https://github.com/SureA11y/core#checked-against-the-act-corpus).
+The [EARL implementation report](https://surea11y.github.io/act-report/act-report.jsonld)
+has the outcome of every case, and
+[ACT_RULE_MAPPING.md](https://github.com/SureA11y/core/blob/main/docs/ACT_RULE_MAPPING.md)
+lists each miss with the reasoning. Every report and comparison links there
+too, beside the engine's name.
 
 ## Quick start
 
-Requires Node.js 22.13 or later, or 24 or later (the more-engines add-on
-needs 22.22.2 or later, or 24.15 or later).
+Requires Node.js 22.13 or later, or 24 or later.
 
 ```bash
 npm ci
@@ -71,7 +105,6 @@ src/shared/          Code the app, the server, the runner and the extension shar
 src/cli/             The command-line runner
 src/report/          The downloadable report and comparison
 extension/           The browser extension
-addons/              Optional add-ons: more-engines
 schemas/             The published JSON Schemas
 examples/            Runnable examples and the demo shop
 docs/                Guides and references; docs/design/ holds the design notes
@@ -90,5 +123,4 @@ Copyright (C) 2026 Jorge Rumoroso. The lab is free software under the GNU
 Affero General Public License, version 3 ([LICENSE](LICENSE)): use it, change
 it and share it, and if you offer a changed version to others over a network,
 offer them its source too. The engine it is built on, `@surea11y/core`, is
-under the Mozilla Public License 2.0. The optional engines add-on installs
-engines under their own licenses ([addons/more-engines](addons/more-engines/README.md)).
+under the Mozilla Public License 2.0.

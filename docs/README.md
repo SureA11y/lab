@@ -9,6 +9,8 @@
   combine in ways no guide covers.
 - [Examples](../examples/README.md): workflows, a demo shop to run them
   against, integration scripts, CI and container files, all runnable.
+- [Example reports](gallery/README.md): two reports and a comparison of the
+  demo shop, as files that open in any browser.
 
 ## Use the app
 
@@ -45,11 +47,8 @@
 
 ## Configure and extend
 
-- [Configuration](configuration.md): environment variables, engine settings
-  and add-ons.
-- [Engines](engines.md): how scan engines plug in, and how to add one in an
-  add-on. [More engines](../addons/more-engines/README.md): the add-on with
-  axe-core, Alfa, Pa11y and QualWeb.
+- [Configuration](configuration.md): environment variables and engine
+  settings.
 
 ## Design notes
 

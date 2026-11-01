@@ -4,7 +4,6 @@ const express = require("express");
 const { runA11yWorkflow, getBrowserPid } = require("./src/server-side/a11y-runner");
 const { REPORTS_ROOT } = require("./src/server-side/report-paths");
 const { ACTION_DEFINITIONS } = require("./src/workflow/action-definitions");
-const { withEngineChoices } = require("./src/server-side/scan-engine-field");
 const a11yEngine = require("./src/server-side/a11y-engine");
 const {
     PAYLOAD,
@@ -25,6 +24,11 @@ const { createRunQueue } = require("./src/server-side/run-queue");
 const { createResourceSampler } = require("./src/server-side/resource-sampler");
 const { registerQueueRoutes, resolveQueueBaseDir } = require("./src/server-side/queue-routes");
 const { createRequestGuard } = require("./src/server-side/request-guard");
+const { proceduresForRequirements, listStandardProcedures, standardLanguages, renderStandardProcedures, guideIndex } = require("./src/server-side/procedures");
+const { installedPacks, installedStandards } = require("./src/server-side/standard-packs");
+// The standard packs load now, so their profiles are scan targets and step
+// options from the first request.
+installedPacks();
 
 // --------------------------- Crash guard (dev) ---------------------------
 
@@ -106,21 +110,13 @@ app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
 });
 
-// ACTION_DEFINITIONS and the engines installed never change at runtime, so the
-// definitions' JSON, with the scan step's engines filled in, is stable for the
-// life of the process - compute it once, on the first request, instead of on
-// every one.
+// ACTION_DEFINITIONS never change at runtime, so their JSON is computed once,
+// on the first request, instead of on every one.
 let actionDefinitionsJson = null;
 
 app.get("/workflows/actions", (_req, res) => {
     if (!actionDefinitionsJson) {
-        let defs = ACTION_DEFINITIONS;
-        try {
-            defs = withEngineChoices(ACTION_DEFINITIONS, a11yEngine);
-        } catch (e) {
-            console.error("Failed to list the scan step's engines:", e);
-        }
-        actionDefinitionsJson = JSON.stringify(defs);
+        actionDefinitionsJson = JSON.stringify(ACTION_DEFINITIONS);
     }
     if (!res.get('Content-Type')) res.set('Content-Type', 'application/json');
     res.send(actionDefinitionsJson);
@@ -145,8 +141,8 @@ app.get("/api/engine/rules", (req, res) => {
     return res.status(501).json({ error: "Rules catalog not available for current engine" });
 });
 
-// The rule ids each selected engine accepts, for the step editor to check
-// a scan step's typed ids against. engineId may list several, comma-separated.
+// The rule ids the lab's engine accepts, for the step editor to check a scan
+// step's typed ids against. Without engineId, the lab's engine, by its id.
 app.get("/api/engine/rule-ids", (req, res) => {
     res.set("Cache-Control", "no-store");
 
@@ -164,25 +160,6 @@ app.get("/api/engine/rule-ids", (req, res) => {
     }
 
     return res.json({ engines: [] });
-});
-
-app.get("/api/engines", (_req, res) => {
-    res.set("Cache-Control", "no-store");
-
-    try {
-        if (a11yEngine && typeof a11yEngine.listEngines === "function") {
-            return res.json(a11yEngine.listEngines());
-        }
-
-        return res.json({
-            engines: [],
-            defaultEngineId: a11yEngine?.engineId ?? null,
-            selectedEngineId: a11yEngine?.engineId ?? null
-        });
-    } catch (e) {
-        console.error("Failed to list available engines:", e);
-        return res.status(500).json({ error: "Failed to list available engines" });
-    }
 });
 
 app.get("/api/engine/capabilities", (req, res) => {
@@ -212,6 +189,86 @@ app.get("/api/engine/capabilities", (req, res) => {
     }
 });
 
+// The testing guide (src/guide.html): a standard's procedures, every
+// requirement in its groups, for a person to read how to test by hand.
+// ?standard=wcag|best-practice|<pack key>&version=&levels=A,AA&tools=&automation=&locale=
+app.get("/api/procedures/list", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json(listStandardProcedures(req.query));
+    } catch (e) {
+        console.error("Failed to list the test procedures:", e);
+        return res.json({ available: false });
+    }
+});
+
+// The languages a standard's procedures can be read in, for the testing
+// guide's language picker: ?standard=&version=, as /api/procedures/list.
+app.get("/api/procedures/languages", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json(standardLanguages(req.query));
+    } catch (e) {
+        console.error("Failed to list the procedures' languages:", e);
+        return res.json({ available: false });
+    }
+});
+
+// What the testing guide has, by standard and version, so a link from a
+// finding into it is drawn only where it lands.
+app.get("/api/procedures/index", (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json(guideIndex());
+    } catch (e) {
+        console.error("Failed to index the test procedures:", e);
+        return res.json({ available: false });
+    }
+});
+
+// The same, as one page to keep or print (core's renderProcedures).
+app.get("/api/procedures/page", (req, res) => {
+    const page = renderStandardProcedures(req.query);
+    if (!page) return res.status(404).json({ error: "No procedures for that standard" });
+    res.set("Content-Type", "text/html; charset=utf-8");
+    res.set("Content-Disposition", `attachment; filename="${page.name}"`);
+    return res.send(page.html);
+});
+
+// The testing guide: a page of its own, beside the app.
+app.get("/guide", (req, res) => {
+    const query = req.originalUrl.indexOf("?");
+    res.redirect("/src/guide.html" + (query >= 0 ? req.originalUrl.slice(query) : ""));
+});
+
+// The standards of the installed packs, besides WCAG: their keys, names,
+// versions and profiles (standard-packs.js).
+app.get("/api/standards", (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json({ standards: installedStandards() });
+    } catch (e) {
+        console.error("Failed to list the installed standards:", e);
+        return res.json({ standards: [] });
+    }
+});
+
+// How a person checks each requirement by hand, from core: ?ids=1.4.13,2.4.3
+// and &locale=fr; EN 301 549's own, with &standard=en301549&version=V4.1.1
+// (ids such as 4.2.1, 12.1 or 5). { available: false } from a core without
+// them.
+app.get("/api/procedures", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json(proceduresForRequirements(req.query.ids, {
+            locale: req.query.locale, standard: req.query.standard, version: req.query.version,
+        }));
+    } catch (e) {
+        console.error("Failed to read the test procedures:", e);
+        return res.json({ available: false });
+    }
+});
+
 // Serve exported reports and screenshots (HTML + images) from disk.
 // This is local-lab oriented. Deny dotfiles and do not auto-index.
 app.use(
@@ -230,7 +287,7 @@ app.use(
 // --------------------------- Core endpoints ---------------------------
 
 app.post("/workflow-scan", async (req, res) => {
-    const { url, tags, actions, scenarioName, viewport, colorScheme, highContrast, language } = req.body || {};
+    const { url, tags, actions, scenarioName, viewport, colorScheme, highContrast, language, acceptUntrustedCerts } = req.body || {};
 
     const debugNative =
         DEBUG_MODE ||
@@ -251,6 +308,7 @@ app.post("/workflow-scan", async (req, res) => {
             colorScheme,
             highContrast,
             language,
+            acceptUntrustedCerts: acceptUntrustedCerts === true || acceptUntrustedCerts === 'on',
             determinism,
             debugNative,
             exportReport: wantReport,
@@ -617,7 +675,7 @@ function newRunId() {
 }
 
 app.post("/workflow-start", async (req, res) => {
-    const { url, actions, customSteps, scenarioName, viewport, colorScheme, highContrast, language, vars } = req.body || {};
+    const { url, actions, customSteps, scenarioName, viewport, colorScheme, highContrast, language, acceptUntrustedCerts, vars } = req.body || {};
     // Dry run: every step but the scans, screenshots and evidence, and what
     // that found as a summary instead of a report (dry-run-summary.js).
     const dryRun = req.body?.dryRun === true;
@@ -670,7 +728,7 @@ app.post("/workflow-start", async (req, res) => {
             let outcome;
             try {
                 outcome = await executeWorkflowRun(
-                    { url, actions, customSteps, viewport, colorScheme, highContrast, language, scenarioName, vars },
+                    { url, actions, customSteps, viewport, colorScheme, highContrast, language, acceptUntrustedCerts: acceptUntrustedCerts === true || acceptUntrustedCerts === 'on', scenarioName, vars },
                     {
                         progress,
                         debugNative,

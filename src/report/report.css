@@ -7,7 +7,7 @@
 
     /* --------------------------------------------------------------------
        Design-system foundations — shared across light & dark.
-       Mirrors src/css/a11y-lab-ui.css so the exported report speaks the
+       Mirrors the app's src/css/tokens.css so the exported report speaks the
        same visual language as the app UI.
        -------------------------------------------------------------------- */
 
@@ -170,7 +170,7 @@
    header toggle (:root[data-theme="dark"]) OR, in Auto mode (no
    data-theme set), when their OS prefers dark. Same token values in
    both places — the media query only changes *when* they apply.
-   Mirrors a11y-lab-ui.css.
+   Mirrors the app's src/css/tokens.css.
    -------------------------------------------------------------------- */
 :root[data-theme="dark"] {
     color-scheme: dark;
@@ -1172,6 +1172,9 @@ button.src-dialog-close {
 
     box-shadow: none;
     cursor: pointer;
+    /* "Close" whole, never broken across lines in a narrow header. */
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 button.src-dialog-close:hover,
@@ -1199,6 +1202,18 @@ button.src-dialog-close:focus-visible {
 
 /* Instance header */
 .example-node-header { margin-bottom: .35rem; }
+
+/* Where an occurrence was found (occurrence-pages.js): a line under its
+   heading, short addresses, the rest of a long list to open. */
+.example-node-header .node-pages { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; margin: .1rem 0 .5rem; font-size: var(--fs-sm); color: var(--text-muted); }
+.example-node-header .node-pages-line { margin: 0; flex: 1 1 18rem; min-width: 0; overflow-wrap: anywhere; }
+.example-node-header .node-pages-label { font-weight: 600; color: var(--text-main); }
+.example-node-header .node-pages .copy-urls-btn { margin: 0; }
+.example-node-header .node-pages-more { flex: 1 1 100%; }
+.example-node-header .node-pages-more summary { cursor: pointer; min-height: 24px; }
+.example-node-header .node-pages-more ul { margin: .25rem 0 0; padding-left: 1.2rem; overflow-wrap: anywhere; }
+/* One to a line, so not links in a sentence: each a 24px target (WCAG 2.5.8). */
+.example-node-header .node-pages-more li a { display: inline-block; min-height: 24px; line-height: 24px; }
 
 .example-node-header h2 span { font-weight: normal; font-size: var(--fs-sm); }
 
@@ -1407,6 +1422,11 @@ a:hover { text-decoration-thickness: 2px; }
 
 .results-container .stream-counts,
 .scan-results-meta .stream-counts {
+    white-space: normal;
+}
+/* Wraps between its counts, never inside one (WCAG 1.4.12). Mirrors the app. */
+.results-container .stream-counts > span,
+.scan-results-meta .stream-counts > span {
     white-space: nowrap;
 }
 .screenshot-card button.screenshot-btn {
@@ -2048,6 +2068,9 @@ a:hover { text-decoration-thickness: 2px; }
 .scoreGauge__readout--rating {
     position: static;
     flex-direction: row;
+    /* "can't tell" goes under the value when the card is too narrow for both,
+       rather than past the card's edge. */
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     width: 100%;
@@ -2306,13 +2329,16 @@ a:hover { text-decoration-thickness: 2px; }
 
     list-style: none;
     display: grid;
+    /* Rows no wider than the block, whatever a value holds: a long date or
+       the engine's tag sized it past a phone's screen with text spacing. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 5px;
 }
 
 /* Each row becomes a 2-column layout: label | value */
 .report-meta > li {
     display: grid;
-    grid-template-columns: 110px 1fr;
+    grid-template-columns: 110px minmax(0, 1fr);
     align-items: start;
     gap: 0;
 
@@ -2350,7 +2376,7 @@ a:hover { text-decoration-thickness: 2px; }
 /* Better spacing on narrow screens */
 @media (max-width: 520px) {
     .report-meta > li {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
         gap: 4px;
     }
 }
@@ -2876,7 +2902,7 @@ a.engine-brand {
 }
 
 /* ==================== "View all scans" grid dialog ====================
-   Mirrors the app's live-preview scan cards (css/a11y-lab-ui.css) so the
+   Mirrors the app's live-preview scan cards (css/live.css) so the
    exported report renders the "View all scans" grid identically. The base
    .stream-* / .result-glyph / ellipsis helpers are only used by these cards in
    the exported document (the live stream itself is never exported). The tokens
@@ -2936,7 +2962,7 @@ a.engine-brand {
 .stream-preview img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border-subtle); }
 
 /* Icon-only trigger: a 2x2 grid glyph, squared to the DS sm (36px) floor like
-   the other icon buttons. Mirrors the app (css/a11y-lab-ui.css). */
+   the other icon buttons. Mirrors the app (src/css/). */
 .all-scans-open-btn {
     margin-left: .5rem;
     vertical-align: middle;
@@ -3271,7 +3297,8 @@ a.engine-brand {
 .dsp-tools { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 6px 0 8px; }
 .dsp-seg { display: inline-flex; align-items: center; border: 0; padding: 0; margin: 0; min-width: 0; }
 .dsp-seg legend { float: left; font-size: .8rem; color: var(--text-muted); margin-right: 8px; padding: 0; }
-.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+/* Wraps inside its segment when the line has no room. Mirrors the app. */
+.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: normal; min-width: 0; }
 .dsp-seg label + label { border-left-width: 0; }
 .dsp-seg label:has(input:checked) + label { border-left-color: var(--accent); }
 .dsp-seg label:hover, .dsp-filter-btn:hover { background: var(--na-soft); }

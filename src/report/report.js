@@ -352,7 +352,8 @@ function viewDetailsDialogButtons() {
             });
 
             dialog.querySelectorAll('.copy-selector-btn').forEach(copyBtn => {
-                const selector = copyBtn.getAttribute('data-selector') || '';
+                // A selector, or what the button holds (Copy URLs).
+                const selector = copyBtn.getAttribute('data-copy') || copyBtn.getAttribute('data-selector') || '';
                 if (selector && navigator.clipboard?.writeText) {
                     copyBtn.addEventListener('click', () => {
                         const text = String(selector || '');
@@ -974,15 +975,36 @@ function initComparisonDashboard() {
     });
 }
 
-// Focus opens the tooltip as well as hover, so the values behind the marks are
-// reachable by keyboard.
+// The tooltip for the chart marks, under the pointer. The values are also in
+// each chart's name and in the tables, for keyboard and screen reader users.
+// As WCAG 1.4.13 asks, Escape dismisses it, and it stays while the pointer
+// moves onto it.
 function initComparisonTooltip(scope) {
     let tip = null;
+    let hideTimer = null;
+
+    function keep() {
+        clearTimeout(hideTimer);
+    }
+
+    function hide() {
+        keep();
+        if (tip) tip.classList.remove('on');
+    }
+
+    // A moment's grace, to cross from the mark to the tooltip.
+    function hideSoon() {
+        keep();
+        hideTimer = setTimeout(hide, 300);
+    }
 
     function show(mark) {
+        keep();
         if (!tip) {
             tip = document.createElement('div');
             tip.className = 'cmp2-tip';
+            tip.addEventListener('mouseenter', keep);
+            tip.addEventListener('mouseleave', hideSoon);
             document.body.append(tip);
         }
 
@@ -1000,17 +1022,14 @@ function initComparisonTooltip(scope) {
         tip.style.top = `${box.top - tip.offsetHeight - 10}px`;
     }
 
-    function hide() {
-        if (tip) tip.classList.remove('on');
-    }
+    scope.addEventListener('mouseover', (event) => {
+        const mark = event.target.closest && event.target.closest('[data-tip-value]');
 
-    [['mouseover', 'mouseout'], ['focusin', 'focusout']].forEach(([open, close]) => {
-        scope.addEventListener(open, (event) => {
-            const mark = event.target.closest && event.target.closest('[data-tip-value]');
-
-            if (mark && scope.contains(mark)) show(mark);
-        });
-        scope.addEventListener(close, hide);
+        if (mark && scope.contains(mark)) show(mark);
+    });
+    scope.addEventListener('mouseout', hideSoon);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && tip && tip.classList.contains('on')) hide();
     });
 }
 
@@ -1048,6 +1067,8 @@ initScanSort();
 if (globalThis.A11Y_ISSUE_DISPERSION_VIEW) globalThis.A11Y_ISSUE_DISPERSION_VIEW.installDispersionInteractions(document);
 initComparisonPanes();
 initComparisonDashboard();
+// Tables that scroll sideways on a narrow screen take focus while they do.
+if (globalThis.A11Y_SCROLL_REACH) globalThis.A11Y_SCROLL_REACH.keepScrollBoxesReachable(document.body);
 viewDetailsDialogButtons();
 createDialogs();
 addVisualizationModeSelector();

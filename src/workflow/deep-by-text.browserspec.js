@@ -29,7 +29,7 @@ let page;
 
 before(async () => {
     try {
-        browser = await puppeteer.launch({ headless: 'new', ignoreHTTPSErrors: true });
+        browser = await puppeteer.launch({ headless: 'new' });
     } catch (e) {
         throw new Error(
             `deep-by-text.browserspec.js requires a working Chrome install (via Puppeteer) and could not launch one.\n` +

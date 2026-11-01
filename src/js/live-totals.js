@@ -101,11 +101,16 @@ export function createLiveTotals(deps = {}) {
     let finished = false;
     let expanded = false;       // is the by-tag ledger open
     let hidden = false;         // hidden because another tab is active
+    let announcerEl = null;     // the status a screen reader hears the tally from
 
     // Group thousands with commas. Locale-independent so tests stay stable.
     function fmt(n) {
         return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
+
+    // Created now when there is somewhere to put it, so it is on the page
+    // well before the first scan's totals reach it.
+    queueMicrotask(() => ensureAnnouncer());
 
     // Trim, drop empties, and de-duplicate a scan's tags case-insensitively,
     // keeping the first-seen casing within the scan. Mirrors the normalisation
@@ -466,24 +471,56 @@ export function createLiveTotals(deps = {}) {
         subpanelEl.hidden = !open;
     }
 
+    /**
+     * The tally as a screen reader hears it, from a status of its own: on the
+     * page, empty, before the first scan, since a live region only announces
+     * what changes in it once it is there. A region added with its text
+     * already in it may be read out by no screen reader at all. It says the
+     * totals in a sentence, rather than reading out the card, with its buttons
+     * and step table, on every scan.
+     */
+    function ensureAnnouncer() {
+        if (announcerEl && announcerEl.isConnected) return false;
+        const mount = doc && (getMount() || doc.body);
+        if (!mount) return false;
+        announcerEl = doc.createElement('p');
+        announcerEl.id = `${idPrefix}-announce`;
+        announcerEl.className = 'visually-hidden';
+        announcerEl.setAttribute('role', 'status');
+        announcerEl.setAttribute('aria-live', 'polite');
+        announcerEl.setAttribute('aria-atomic', 'true');
+        mount.appendChild(announcerEl);
+        return true;
+    }
+
+    function announce(text) {
+        // Quiet while another tab is active, as the hidden card was.
+        if (hidden) return;
+        const fresh = ensureAnnouncer();
+        if (!announcerEl || announcerEl.textContent === text) return;
+        // Just added: give the screen reader a moment to know the region
+        // before it changes.
+        if (fresh) setTimeout(() => { if (announcerEl) announcerEl.textContent = text; }, 150);
+        else announcerEl.textContent = text;
+    }
+
+    function tallyText() {
+        return `${fmt(totals.violations)} fail, ${fmt(totals.incomplete)} can't tell, ${fmt(totals.passes)} pass, `
+            + `${totals.scans} ${totals.scans === 1 ? 'scan' : 'scans'}${finished ? ', run finished' : ''}`;
+    }
+
     function ensureEl() {
         if (el || !doc) return el;
 
         valueEls = {};
 
         // Wrapper: pinned bottom-right, stacks the (optional) by-tag ledger above
-        // the totals card. It carries the status semantics the tests and screen
-        // readers rely on, so it is a div: an aside may not be a status.
+        // the totals card. A labelled region screen-reader users can go to;
+        // what changes in it is announced from the status (ensureAnnouncer).
         el = doc.createElement('div');
         el.id = idPrefix;
         el.className = inline ? 'live-totals live-totals--inline' : 'live-totals';
-        // A polite status region: screen-reader users can find it by its label,
-        // and updates are announced once the reader is idle rather than on every
-        // single scan. aria-atomic re-reads the whole tally, not just the digit
-        // that changed.
-        el.setAttribute('role', 'status');
-        el.setAttribute('aria-live', 'polite');
-        el.setAttribute('aria-atomic', 'true');
+        el.setAttribute('role', 'region');
         el.setAttribute('aria-label', 'Live scan totals');
 
         // The visible totals card.
@@ -624,6 +661,7 @@ export function createLiveTotals(deps = {}) {
         }
         renderLedger();
         applyExpandedState();
+        announce(tallyText());
     }
 
     function detach() {
@@ -743,6 +781,7 @@ export function createLiveTotals(deps = {}) {
             steps = null;
             stepsExpanded = false;
             finished = false;
+            if (announcerEl) announcerEl.textContent = '';
             expanded = false;
             detach();
         },
@@ -756,6 +795,7 @@ export function createLiveTotals(deps = {}) {
             finished = true;
             applyFinishedState();
             renderSteps();
+            if (el) announce(tallyText());
         },
 
         /**

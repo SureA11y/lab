@@ -1,0 +1,733 @@
+/* The app's styles, part 8 of 14: the steps builder and the command palette.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* ==========================================================================
+   STEPS BUILDER
+   ========================================================================== */
+
+:is(#actions-builder, #custom-step-actions-builder) { width: 100%; font-family: var(--sb-font); padding: 0; border: none; }
+
+:is(#actions-builder, #custom-step-actions-builder) legend.actions-builder-header { margin: -20px 0 0 -10px; padding-bottom: 10px; }
+
+/* Only the top-level Workflow legend is collapsible; "Custom step actions" (nested,
+   #custom-step-actions-builder) has no toggle and stays a plain legend. */
+#actions-builder > legend.actions-builder-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* Inline disclosure sits in normal flow; drop the legacy negative offset.
+       Full width so the collapse-all button sits at the row's true right edge. */
+    width: 100%;
+    margin: 0;
+    padding: 0 0 0  3px;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .actions-builder-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sb-gap);
+    justify-content: space-between;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .toolbar,
+:is(#actions-builder, #custom-step-actions-builder) .actions-builder-actions,
+:is(#actions-builder, #custom-step-actions-builder) .load-config {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--sb-gap);
+    margin-bottom: 4px;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .toolbar-favorites {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .line {
+    border-radius: var(--sb-radius);
+    border-color: var(--sb-border-dark) var(--sb-border) var(--sb-border);
+    border-style: solid;
+    border-width: 3px 1px 1px;
+
+    padding: var(--sb-pad);
+    margin-bottom: 8px;
+
+    background: var(--surface-base);
+
+    width: 100%;
+    min-width: 0;
+
+    /* Query container for this step's own field grids (.fields and
+       .runcustomstep-dynamic-inputs below). A nested step's usable width is the
+       panel width minus every ancestor's indent, padding and rail - nothing the
+       viewport knows about - so the grids size their columns against this box
+       instead of @media. */
+    container-type: inline-size;
+
+    /* A workflow of hundreds of steps: steps out of view are not laid out
+       until they come near it, as a long report's cards are not. 1000 steps
+       took 9 s to load and 0.4 s a key typed, laid out whole each time. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 160px;
+}
+
+/* A step clips what it paints, so while its menu is open (and every step
+   around it) it is painted as any box, the menu over what follows. */
+:is(#actions-builder, #custom-step-actions-builder) .line:has(.flyout-menu:not([hidden])) {
+    content-visibility: visible;
+}
+@media print {
+    :is(#actions-builder, #custom-step-actions-builder) .line { content-visibility: visible; }
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper .edit-title { border: transparent; padding: 0; min-width: 24px; min-height: 24px; }
+:is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .line-title-wrapper { opacity: .6; }
+:is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .edit-title { display: none; }
+:is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .line-title { text-decoration: line-through; }
+
+:is(#actions-builder, #custom-step-actions-builder) .line.is-collapsed .fields,
+:is(#actions-builder, #custom-step-actions-builder) .line.is-collapsed .action-arrays-below { display: none; }
+
+:is(#actions-builder, #custom-step-actions-builder) .line-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sb-gap);
+    margin-bottom: 8px;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .line-title { font-size: var(--fs-lg); color: var(--text-main); }
+:is(#actions-builder, #custom-step-actions-builder) .line-title-action-type { font-size: var(--fs-xs); color: var(--text-muted); }
+
+:is(#actions-builder, #custom-step-actions-builder) .line-controls {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+/* Icon-only controls */
+:is(#actions-builder, #custom-step-actions-builder) button.icon-button,
+:is(#actions-builder, #custom-step-actions-builder) button.icon-button.secondary-button,
+:is(#actions-builder, #custom-step-actions-builder) .line-controls button.secondary-button {
+    padding: 6px 8px;
+    min-width: 36px;
+    min-height: 36px;
+    justify-content: center;
+    gap: 0;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .line-controls svg { display: block; }
+:is(#actions-builder, #custom-step-actions-builder) .line-controls .icon-info { transform: scale(1.25); transform-origin: center; }
+
+.horizontal-stepper button.move-up,
+.horizontal-stepper button.move-down {
+    transform: rotate(-90deg);
+}
+
+.horizontal-stepper .actions-subcontainer .line-controls button.move-up,
+.horizontal-stepper .actions-subcontainer button.move-down {
+    transform: rotate(0);
+}
+
+/* Fields (grid)
+   Columns are added as the step's own box gets wider (see container-type on
+   .line), never as the window does. The breakpoints are the exact width each
+   column count needs - N * 180px plus the 16px gaps - so a track is never
+   asked for more room than the step has, and minmax(0, 1fr) keeps the grid
+   from pushing past its parent even below the narrowest breakpoint. */
+:is(#actions-builder, #custom-step-actions-builder) .fields {
+    display: grid;
+    gap: 16px;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 376px) {
+    :is(#actions-builder, #custom-step-actions-builder) .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 572px) {
+    :is(#actions-builder, #custom-step-actions-builder) .fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@container (min-width: 768px) {
+    :is(#actions-builder, #custom-step-actions-builder) .fields { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Default field */
+:is(#actions-builder, #custom-step-actions-builder) .field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-height: 28px;
+    min-width: 0;
+}
+
+/* Labels wrap inside their own column. They used to be nowrap, which let a long
+   one ("Element Selector / Scope Selector") run straight over the next column's
+   label in any grid narrow enough to matter - nested steps, most of all. They
+   read as the step definitions write them, in sentence case: capitalizing
+   every word made "Stage limit (ms)" into "Stage Limit (Ms)". */
+:is(#actions-builder, #custom-step-actions-builder) .field label {
+    font-size: var(--fs-sm);
+    overflow-wrap: break-word;
+    color: var(--text-muted);
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .req-badge { color: var(--danger); }
+
+:is(#actions-builder, #custom-step-actions-builder) .field input[type="text"],
+:is(#actions-builder, #custom-step-actions-builder) .field input[type="password"],
+:is(#actions-builder, #custom-step-actions-builder) .field input[type="number"],
+:is(#actions-builder, #custom-step-actions-builder) select {
+    padding: 4px 8px;
+    height: 28px;
+
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius-sm);
+
+    font-size: var(--sb-fs);
+    box-sizing: border-box;
+
+    width: 100%;
+    background: var(--surface-2);
+    color: var(--text-main);
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .field input[type="number"] { width: 100%; }
+
+/* The tags field (tags-input.js) is one field with the size of the others:
+   the builder's input rule above would give its inner entry a border and a
+   height of its own, a box inside the box. Its chips shrink to fit the
+   line; more of them than fit wrap onto more lines. */
+:is(#actions-builder, #custom-step-actions-builder) .field .tag-input {
+    min-height: 28px;
+    padding: 1px 6px;
+    gap: 4px;
+    border-radius: var(--radius-sm);
+    box-sizing: border-box;
+    font-size: var(--sb-fs);
+}
+:is(#actions-builder, #custom-step-actions-builder) .field .tag-input .tag-input__entry {
+    flex: 1 1 2rem;
+    min-width: 2rem;
+    height: 24px;
+    padding: 0 2px;
+    border: 0;
+    background: transparent;
+}
+/* Its example ("desktop, mobile") only while it has no tags yet. */
+:is(#actions-builder, #custom-step-actions-builder) .field .tag-input:has(.scan-tag) .tag-input__entry::placeholder {
+    color: transparent;
+}
+:is(#actions-builder, #custom-step-actions-builder) .field .tag-input .scan-tag {
+    padding: 1px 5px;
+    line-height: 1.3;
+}
+
+/* A field's button (the rules Catalog) is as tall as the field beside it. */
+:is(#actions-builder, #custom-step-actions-builder) .sb-inline-field-with-btn .sb-catalog-btn {
+    min-height: 0;
+    height: 28px;
+    padding: 0 10px;
+    font-size: var(--sb-fs);
+}
+:is(#actions-builder, #custom-step-actions-builder) .field input[type="checkbox"] { width: 16px; height: 16px; }
+
+:is(#actions-builder, #custom-step-actions-builder) .field input[aria-invalid="true"] { border-color: var(--danger); }
+
+:is(#actions-builder, #custom-step-actions-builder) .error { color: var(--danger); font-size: var(--fs-xxs); margin-top: 2px; }
+:is(#actions-builder, #custom-step-actions-builder) .error[hidden] { display: none !important; }
+
+/* Custom step usage: labeled inputs generated from the selected step's declared inputs.
+   Spans the full width of the outer .fields grid row (same technique as .fields-toggle-row),
+   then lays its own rows out in that same responsive grid instead of stacking them vertically. */
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px 16px;
+    align-items: start;
+}
+
+@container (min-width: 376px) {
+    :is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 572px) {
+    :is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@container (min-width: 768px) {
+    :is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs > label {
+    grid-column: 1 / -1;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-input-row label {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    text-transform: none;
+}
+
+/* Actions/output */
+:is(#actions-builder, #custom-step-actions-builder) .actions {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .apply {
+    padding: 7px 10px;
+    border: 1px solid var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--text-main);
+
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--sb-fs);
+
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .apply:hover:not(:disabled, [aria-disabled=true]) {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .apply:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .output {
+    margin-top: 8px;
+    background: var(--code-bg);
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    white-space: pre-wrap;
+    font-size: var(--fs-sm);
+    color: var(--text-main);
+    border: 1px solid var(--border-soft);
+}
+
+/* Action[] nested editor */
+:is(#actions-builder, #custom-step-actions-builder) .action-array {
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    background: var(--surface-0);
+    min-width: 0;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .action-array__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .action-array__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-sm);
+
+    color: var(--text-main);
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .action-array__controls { display: inline-flex; align-items: center; gap: 6px; }
+
+:is(#actions-builder, #custom-step-actions-builder) .branch-chip {
+    font-size: var(--fs-xxs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 1px 7px;
+    border-radius: var(--radius-sm);
+}
+:is(#actions-builder, #custom-step-actions-builder) .branch-chip--then { background: var(--accent-soft); color: var(--accent); }
+:is(#actions-builder, #custom-step-actions-builder) .branch-chip--else { background: var(--surface-3); color: var(--text-muted); }
+:is(#actions-builder, #custom-step-actions-builder) .branch-chip--default { background: var(--surface-3); color: var(--text-muted); }
+
+:is(#actions-builder, #custom-step-actions-builder) .action-array__summary { color: var(--text-muted); font-size: var(--fs-sm); }
+
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer {
+    /* Each level's own indent is 65% of the level above it, so the running
+       total converges (~29px) instead of growing without bound — a step
+       nested 10 deep shouldn't cost the same real estate as 10 * 10px. */
+    --sb-indent-scale: calc(var(--sb-indent-scale, 1) * 0.65);
+    margin-top: 8px;
+    min-width: 0;
+    padding-left: calc(var(--sb-indent-scale, 1) * 10px);
+    border-left: 2px solid rgba(var(--brand-rgb), .22);
+    transition: border-color .15s ease;
+}
+
+/* Each extra nesting level gets a slightly stronger rail so depth reads
+   as a gradient rather than a single flat line repeated at every level. */
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .actions-subcontainer {
+    border-left-color: rgba(var(--brand-rgb), .38);
+}
+
+/* Tracing: hovering any step lights up the rail of every container that
+   holds it, all the way up to the root, so it's clear what belongs to what. */
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer:has(.line:hover) {
+    border-left-color: var(--accent);
+}
+
+/* Nested steps sit on a slightly different surface than their parent so
+   containment reads as shading, not indentation alone. */
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .line { background: var(--surface-raised); }
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .actions-subcontainer .line { background: var(--surface-overlay); }
+
+/* Nested headers recede a notch per level instead of matching the parent 1:1. */
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .line-title { font-size: var(--fs-md); }
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .actions-subcontainer .line-title { font-size: var(--fs-sm); }
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .line-controls button.icon-button,
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .line-controls button.secondary-button {
+    padding: 4px 6px;
+    min-width: 30px;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .action-array[aria-invalid="true"] .action-array__title { color: var(--danger); }
+
+:is(#actions-builder, #custom-step-actions-builder) .action-array__error {
+    color: var(--danger);
+    font-size: var(--fs-xxs);
+    margin-top: 6px;
+    display: none;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .action-array__error[hidden] { display: none !important; }
+:is(#actions-builder, #custom-step-actions-builder) .action-array[aria-invalid="true"] .action-array__error { display: block; }
+
+/* Nested Action[] fields below a line — same decaying scale as
+   .actions-subcontainer (inherited, not redeclared) so the two wrappers
+   that alternate per nesting level shrink together. */
+:is(#actions-builder, #custom-step-actions-builder) .action-arrays-below {
+    margin-top: 0.65rem;
+    margin-left: calc(var(--sb-indent-scale, 1) * .5rem);
+    padding-left: calc(var(--sb-indent-scale, 1) * 0.75rem);
+
+    display: grid;
+    /* minmax(0, ...): a bare 1fr floors at the track's min-content width, so a
+       wide nested step used to stretch this wrapper past the parent card's
+       border instead of being contained by it. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.85rem;
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .action-arrays-below .action-array { width: 100%; box-sizing: border-box; }
+
+:is(#actions-builder, #custom-step-actions-builder) .sb-input-with-icon {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+/* The eye button beside a password: a square the field's height (28px), its
+   top and bottom edges on the field's, with the field's border. Not the
+   app's 36px icon button, which stood taller than the field. */
+:is(#actions-builder, #custom-step-actions-builder) .sb-input-with-icon__btn {
+    flex: none;
+    box-sizing: border-box;
+    width: 28px;
+    height: 28px;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-2);
+    cursor: pointer;
+    box-shadow: none;
+    border: 1px solid var(--field-border);
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .sb-input-with-icon__btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    background: var(--accent-soft);
+    color: var(--text-main);
+    box-shadow: var(--focus-ring);
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .sb-input-with-icon__btn:hover {
+    border-color: var(--accent);
+    color: var(--text-main);
+    background: var(--accent-soft);
+}
+
+:is(#actions-builder, #custom-step-actions-builder) .sb-input-with-icon__btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Keep custom-step legend compact (main workflow keeps its own spacing). */
+#custom-step-actions-builder legend.actions-builder-header {
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: var(--fs-lg);
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   COMMAND PALETTE
+   ========================================================================== */
+
+.sb-palette .src-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    max-height: min(70vh, 720px);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sb-palette .sb-palette-search {
+    width: 100%;
+    height: 34px;
+    padding: 6px 10px;
+
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius-sm);
+
+    font: inherit;
+    background: var(--surface-2);
+    color: var(--text-main);
+
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.sb-palette .sb-palette-search:focus {
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+.sb-palette .sb-palette-results {
+    overflow: auto;
+    border: 1px solid var(--sb-border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-0);
+
+    padding: 10px;
+    height: 450px;
+}
+
+.sb-palette .sb-palette-listbox {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sb-palette .sb-palette-group-title {
+    grid-column: 1 / -1;
+    margin: 12px 0 2px;
+
+    font-size: var(--fs-sm);
+
+    color: var(--text-muted);
+}
+
+.sb-palette .sb-palette-item { margin: 0; padding: 0; }
+
+.sb-palette .sb-palette-btn {
+    width: 100%;
+    text-align: left;
+    padding: 9px 10px;
+
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-base);
+    color: var(--text-main);
+
+    box-shadow: none;
+    cursor: pointer;
+
+
+    font-size: var(--fs-sm);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.sb-palette .sb-palette-btn:hover {
+    background: var(--surface-4);
+    border-color: rgba(255,255,255,.18);
+}
+
+.sb-palette .sb-palette-item.is-active .sb-palette-btn,
+.sb-palette .sb-palette-item[aria-selected="true"] .sb-palette-btn {
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.sb-palette .sb-palette-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* Info dialog content helpers */
+.sb-action-info__fields {
+    width: 100%;
+    /* The colgroup's widths hold whatever a cell holds. */
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+
+    margin: .5rem 0 .75rem;
+    font-size: var(--fs-sm);
+}
+
+.sb-action-info__fields thead th {
+    text-align: left;
+
+
+    background: var(--surface-2);
+    color: var(--text-muted);
+
+    padding: .5rem .6rem;
+    border-bottom: 1px solid var(--border-soft);
+
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.sb-action-info__fields tbody td {
+    padding: .5rem .6rem;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: top;
+}
+
+.sb-action-info__fields code {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+
+    background: var(--code-bg);
+    padding: .05rem .35rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-soft);
+
+    /* A long example (a selector, some CSS) wraps inside its column. */
+    overflow-wrap: anywhere;
+    color: var(--text-main);
+}
+
+.sb-action-info__fields .sb-action-info__default {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.sb-action-info__examples { margin-top: .5rem; }
+
+.sb-action-info__examples pre {
+    margin: .5rem 0 0;
+    padding: .6rem .75rem;
+
+    border-radius: var(--radius-sm);
+    /* Theme colours: the near-white this text used to be fixed at stood on
+       a light grey in the light theme, at 1.3:1. These give 9:1 (light) and
+       7:1 (dark). */
+    background: var(--code-bg);
+    color: var(--text-main);
+
+    border: 1px solid var(--border-soft);
+    max-height: 360px;
+    overflow: auto;
+}
+
+.sb-action-info__examples code {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    white-space: pre;
+}
+
+/* Utilities */
+.kbd {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+
+    background: var(--code-bg);
+    border: 1px solid var(--border-soft);
+
+    padding: .05rem .35rem;
+    border-radius: var(--radius-lg);
+
+    color: var(--text-main);
+}
+
+.is-advanced[hidden] { display: none !important; }
+.is-conditionally-hidden[hidden] { display: none !important; }
+
+.fields-toggle-row {
+    flex: 0 0 100%;
+    grid-column: 1 / -1;
+    margin: 0;
+    align-self: end;
+}
+
+.fields-toggle {
+    background: transparent;
+    border: 1px dashed var(--border-subtle);
+    color: var(--text-muted);
+    font-weight: 650;
+
+    padding: 0.35rem 0.75rem;
+    text-decoration: underline;
+}
+
+.fields-toggle:hover {
+    background: var(--surface-3);
+    color: var(--text-main);
+}
+
+.fields-toggle:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+}
+
+.fields-toggle-icon {
+    margin-left: 0.5rem;
+    transition: transform 0.15s ease;
+}
+
+.fields-toggle[aria-expanded="true"] .fields-toggle-icon {
+    transform: rotate(180deg);
+}

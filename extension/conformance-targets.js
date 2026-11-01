@@ -10,10 +10,9 @@
  * field (`wcagLevel`) names a target: WCAG 2.2 at Level A, AA or AAA, or a
  * standard, which sets a WCAG version and Level AA. With the step's "Include
  * best-practice rules" it resolves to one selection, { version, level,
- * profile, bestPractices }, which every engine's adapter maps to its own
- * terms: surea11y takes the target (runOnly.wcag) or the standard itself
- * (engineOptions.profile), axe-core the version/level tags, and Alfa, Pa11y
- * and QualWeb the level alone. Steps saved before the targets were one list
+ * profile, bestPractices }, which surea11y's adapter maps to its own terms:
+ * the target (runOnly.wcag) or the standard itself (engineOptions.profile).
+ * Steps saved before the targets were one list
  * may hold a bare level (A, AA, AAA), of the version the run gives.
  *
  * Every standard here is WCAG Level A and AA. What differs is the WCAG
@@ -21,11 +20,10 @@
  * EN 301 549 V3.2.1 is WCAG 2.1 and still has 4.1.1 Parsing, and V4.1.1 is
  * WCAG 2.2.
  *
- * Not every engine can check every target. An engine selects by `standard`
- * (it applies a standard in full: surea11y), by `version` (a WCAG version and
- * level: axe-core) or by `level` (a WCAG level, for every version it covers:
- * Alfa, Pa11y, QualWeb), as its adapter's capabilities.selectsBy says, and
- * each target says what it needs.
+ * An engine selects by `standard` (it applies a standard in full, as
+ * surea11y does), by `version` (a WCAG version and level) or by `level` (a
+ * WCAG level, for every version it covers), as its adapter's
+ * capabilities.selectsBy says, and each target says what it needs.
  */
 
 (function (root, factory) {
@@ -50,8 +48,8 @@
     const BEST_PRACTICE_TAG = 'best-practice';
 
     /**
-     * The version/level tags of a WCAG target, the way axe-core and surea11y
-     * tag their rules: every version up to it, every level up to it.
+     * The version/level tags of a WCAG target, the way surea11y tags its
+     * rules: every version up to it, every level up to it.
      * wcagTags('2.1', 'AA') -> ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
      */
     function wcagTags(version, level) {
@@ -78,7 +76,9 @@
     // surea11y's profile of the same id. EN 301 549 V4.1.1 is WCAG 2.2 AA,
     // which an engine selecting by level comes closest to; EN 301 549 V3.2.1
     // (WCAG 2.1, with 4.1.1 Parsing) needs the standard.
-    const SCAN_TARGETS = Object.freeze({
+    // Not frozen: an installed standard pack adds its profiles at start
+    // (registerStandardProfiles); these entries are never changed.
+    const SCAN_TARGETS = ({
         'wcag22-a': target('WCAG 2.2 A', '2.2', 'A'),
         'wcag22-aa': target('WCAG 2.2 AA', '2.2', 'AA'),
         'wcag22-aaa': target('WCAG 2.2 AAA', '2.2', 'AAA'),
@@ -88,14 +88,43 @@
     const DEFAULT_SCAN_TARGET = 'wcag22-aa';
 
     // The standards: the targets that are also surea11y's profiles.
-    const CONFORMANCE_TARGETS = Object.freeze(Object.fromEntries(
+    const CONFORMANCE_TARGETS = Object.fromEntries(
         Object.entries(SCAN_TARGETS).filter(([, t]) => t.profile)
-    ));
+    );
 
     // The profiles core takes in engineOptions.profile: the standards, and
     // its own WCAG 2.2 AA one, which a caller may still ask for. A scan step's
     // WCAG 2.2 AA target is a WCAG selection, not that profile.
-    const CORE_PROFILES = Object.freeze([...Object.keys(CONFORMANCE_TARGETS), 'wcag22-aa']);
+    const CORE_PROFILES = [...Object.keys(CONFORMANCE_TARGETS), 'wcag22-aa'];
+
+    const PROFILE_ID = /^[a-z][a-z0-9]*(-[a-z0-9.]+)+$/;
+
+    /**
+     * Adds the profiles of installed standard packs (`standards`, as
+     * GET /api/standards lists them) as targets a scan step can take, each
+     * a standard surea11y applies itself: WCAG Level AA of the version its
+     * profile is built on, unless it says another level. A profile already
+     * known keeps its entry, so EN 301 549's are as above. Returns the ids
+     * added.
+     */
+    function registerStandardProfiles(standards) {
+        const added = [];
+        for (const std of Array.isArray(standards) ? standards : []) {
+            for (const p of Array.isArray(std && std.profiles) ? std.profiles : []) {
+                const id = typeof (p && p.id) === 'string' ? p.id.trim().toLowerCase() : '';
+                if (!PROFILE_ID.test(id) || Object.prototype.hasOwnProperty.call(SCAN_TARGETS, id)) continue;
+                const label = typeof p.label === 'string' && p.label.trim() ? p.label.trim() : id;
+                const version = versionOf(p.wcagVersion) || DEFAULT_WCAG_VERSION;
+                const level = levelOf(p.level) || 'AA';
+                const t = target(label, version, level, { profile: true, needs: 'standard' });
+                SCAN_TARGETS[id] = t;
+                CONFORMANCE_TARGETS[id] = t;
+                CORE_PROFILES.push(id);
+                added.push(id);
+            }
+        }
+        return added;
+    }
 
     function profileId(v) {
         const id = typeof v === 'string' ? v.trim().toLowerCase() : '';
@@ -211,7 +240,7 @@
 
     /**
      * The selection of a caller that gives none, from what it gives instead:
-     * WCAG tags in runOnly (`tags`, or axe-core's { type: 'tag', values }), a
+     * WCAG tags in runOnly (`tags`, or { type: 'tag', values }), a
      * level, a standard. Null when none of them names a version, level or
      * standard: the engine then runs as it does without a selection.
      *
@@ -235,7 +264,7 @@
         return runOnlyTags(runOnly).filter((t) => !WCAG_LEVEL_TAG.test(t) && t.toLowerCase() !== BEST_PRACTICE_TAG);
     }
 
-    /** The tags a selection comes to, for engines that select by tags (axe-core). */
+    /** The tags a selection comes to, recorded on a scan. */
     function selectionTags(selection) {
         if (!selection) return [];
         const tags = wcagTags(selection.version, selection.level);
@@ -325,6 +354,7 @@
         separateBestPractices,
         wcagTags,
         targetLabel,
-        profileId
+        profileId,
+        registerStandardProfiles
     };
 }));

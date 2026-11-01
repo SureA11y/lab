@@ -46,7 +46,6 @@ jobs:
 | `baseline` | | `auto`, `@name`, or a path to a `payload.json`. |
 | `args` | | More options for the runner, e.g. `--format sarif --fail-on-lean`. |
 | `fail-on` | `1 2 3 4 130` | The exit codes that fail the step: 1 the run failed, 2 the spec cannot run, 3 new failures (any failure on a first run, with `--fail-on-failures` in `args`), 4 a degraded run, 5 new likely failures (only with `--fail-on-lean`), 130 cancelled. |
-| `addons` | | Add-ons to install, space-separated: `more-engines` for engines besides surea11y. |
 | `node-version` | `24` | The Node.js the lab runs on. |
 
 Outputs: `exit-code`, the runner's, and `out-dir`, where its files are.

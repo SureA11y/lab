@@ -45,7 +45,7 @@ one workflow at a time or many at once from a data list.
 - **Variables.** `{var:name}` tokens are interpolated in navigation URLs,
   labels and typed values (`src/workflow/engine/vars.js:191`), and
   `createWorkflowContext` already accepts starting variables
-  (`src/workflow/workflow-engine.js:1295`). The runner does not pass any yet
+  (`src/workflow/engine/context.js`). The runner does not pass any yet
   (`a11y-runner.js:1370`).
 - **Serving files.** Everything under `reports/` is served at `/reports/...`
   (`server.js:193`), with dotfiles denied and no directory index.

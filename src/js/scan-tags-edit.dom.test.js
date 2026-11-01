@@ -311,7 +311,7 @@ describe('scan renderer — accessibility invariants', () => {
                 findings: [{
                     id: 'image-alt', ruleId: 'image-alt', outcome: 'fail', severity: 'critical',
                     title: 'Images must have alternative text',
-                    provenance: {engine: {name: 'axe-core'}},
+                    provenance: {engine: {name: 'Engine B'}},
                     wcag: {sc: ['1.1.1']},
                     occurrences: [{target: ['img.hero'], html: '<img class="hero">', outcome: 'fail'}]
                 }],
@@ -365,7 +365,7 @@ describe('scan renderer — accessibility invariants', () => {
         const table = resultsEl.querySelector('table');
         assert.deepEqual([...table.querySelectorAll('th')].map((th) => th.textContent),
             ['Status', 'Severity', 'Description', 'Occurrences', 'Engine', 'Criteria']);
-        assert.equal(table.querySelector('td.engine-name').textContent, 'axe-core');
+        assert.equal(table.querySelector('td.engine-name').textContent, 'Engine B');
         const widths = [...table.querySelectorAll('col')].map((c) => parseFloat(c.style.width));
         assert.equal(widths.reduce((a, b) => a + b, 0), 100);
     });

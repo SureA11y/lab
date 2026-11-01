@@ -7,6 +7,8 @@ import {afterPaint} from './busy.js';
 import {getActivity, isCancelError} from './activity.js';
 import {createImageStore, decodeBase64DataUrl, packPayloadImages, storedReportJson} from './report-package.js';
 import {comparisonDescription, comparisonDocumentHtml, reportDocumentHtml} from './viewer-documents.js';
+import {loadProcedures, loadStandards, reportLocale, withoutGuideRefs} from './procedures.js';
+import {buildManualChecklistHTML} from './manual-checklist.js';
 
 async function loadTemplate() {
     const res = await fetch('./report/report-template.html');
@@ -102,9 +104,6 @@ function getReportContent({ includeFilteredOut = false } = {}) {
         '#hide-excluded-scans-btn',
         // The tag filter is a live control, never part of the exported report.
         '.scan-tag-filter',
-        // Same for the engine lens: the export is static and carries whichever
-        // engine was selected, so the control would do nothing there.
-        '.engine-filter',
         // And for the report metadata editors: the name, URL and date they were
         // set to are part of the line, but nothing in a static document can
         // change them.
@@ -185,11 +184,12 @@ function getReportContent({ includeFilteredOut = false } = {}) {
     // The app draws a "View details" dialog's occurrences when it is first
     // opened; the exported report is a static document, so it gets them all,
     // drawn straight into its text.
+    // Links into the testing guide are the lab's: the download stands alone.
     const results = resultsContainer.querySelectorAll('#results *').length > 0
-        ? fillLazyBodiesInHtml(
+        ? withoutGuideRefs(fillLazyBodiesInHtml(
             resultsContainer.innerHTML.replaceAll('()', ''),
             (body) => body.replaceAll('()', '')
-        )
+        ))
         : '';
 
     const screenshotsContainer = document
@@ -446,6 +446,71 @@ function comparisonFileBaseName() {
     const stamp = doc && doc.generatedAt ? doc.generatedAt.slice(0, 10) : '';
     const base = getComparisonNameFromUi() || 'accessibility-comparison';
     return safeBaseName(stamp ? `${base} ${stamp}` : base);
+}
+
+/**
+ * Downloads the Accessibility Conformance Report (VPAT 2.5, WCAG and EU) of a
+ * report `payload` as one HTML file (shared/conformance-report.js): the
+ * automated draft, and whatever a reviewer recorded in it. Returns its name.
+ */
+export async function downloadConformanceReport(payload) {
+    await loadStandards();
+    const model = globalThis.A11Y_CONFORMANCE_REPORT;
+    const view = globalThis.A11Y_CONFORMANCE_REPORT_HTML;
+    if (!model || !view) throw new Error('The conformance report modules are not loaded.');
+    const acr = model.buildConformanceReport(payload);
+    const fileName = `${safeBaseName(getReportNameFromUi() || acr.product.name)} - conformance report.html`;
+    downloadBlob(new Blob([view.conformanceReportHTML(acr)], { type: 'text/html' }), fileName);
+    return fileName;
+}
+
+/**
+ * The same report as a Word document (.docx), for teams that edit and sign
+ * it there (shared/conformance-report-docx.js). Returns its name.
+ */
+export async function downloadConformanceReportDocx(payload) {
+    await loadStandards();
+    const model = globalThis.A11Y_CONFORMANCE_REPORT;
+    const docx = globalThis.A11Y_CONFORMANCE_REPORT_DOCX;
+    if (!model || !docx || !globalThis.JSZip) throw new Error('The conformance report modules are not loaded.');
+    const acr = model.buildConformanceReport(payload);
+    const fileName = `${safeBaseName(getReportNameFromUi() || acr.product.name)} - conformance report.docx`;
+    downloadBlob(await docx.conformanceReportDocx(acr, globalThis.JSZip), fileName);
+    return fileName;
+}
+
+/**
+ * The manual review checklist (manual-checklist.js): what the report leaves
+ * for a person, criterion by criterion, with core's procedures. Returns its
+ * name, or null when the server's core has no procedures.
+ */
+export async function downloadManualChecklist(payload) {
+    await loadStandards();
+    const model = globalThis.A11Y_CONFORMANCE_REPORT;
+    if (!model) throw new Error('The conformance report modules are not loaded.');
+    const acr = model.buildConformanceReport(payload);
+    const ids = acr.tables.filter((t) => /^wcag-/.test(t.id)).flatMap((t) => t.rows.map((r) => r.id));
+    const locale = reportLocale(payload);
+    const procedures = await loadProcedures(ids, locale);
+    if (!procedures) return null;
+    // EN 301 549's own requirements, from its pack, where the server has it.
+    const enIds = acr.tables.filter((t) => ['en-4', 'en-9', 'en-12', 'en-other'].includes(t.id)).flatMap((t) => t.rows.filter((r) => !r.wcag).map((r) => r.id));
+    const enProcedures = await loadProcedures(enIds, locale, { standard: 'en301549', version: acr.target.en301549 });
+    // Any other standard the scans checked against, by standard and version.
+    const standardProcedures = {};
+    for (const t of acr.tables.filter((tb) => tb.standard && tb.standard !== 'wcag' && tb.standard !== 'en301549' && tb.version)) {
+        const loaded = await loadProcedures(t.rows.map((r) => r.id), locale, { standard: t.standard, version: t.version });
+        if (!loaded) continue;
+        standardProcedures[t.standard] = standardProcedures[t.standard] || {};
+        standardProcedures[t.standard][t.version] = { ...(standardProcedures[t.standard][t.version] || {}), ...loaded };
+    }
+    const title = getReportNameFromUi() || acr.product.name;
+    const html = buildManualChecklistHTML({
+        acr, procedures, enProcedures, standardProcedures, review: payload && payload.conformanceReview, levelLabels: model.LEVEL_LABEL, lang: locale, title,
+    });
+    const fileName = `${safeBaseName(title)} - manual review checklist.html`;
+    downloadBlob(new Blob([html], { type: 'text/html' }), fileName);
+    return fileName;
 }
 
 function downloadBlob(blob, fileName) {

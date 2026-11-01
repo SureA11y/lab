@@ -126,12 +126,12 @@ describe('Load config with a configuration in the older format', () => {
         assert.match(message, /Export config saves it in the current format/);
     });
 
-    test('notes a scan whose engine is in the add-on, and keeps it', async () => {
+    test('drops a scan\'s engine, and notes one that was not surea11y', async () => {
         const cfg = oldConfig();
         cfg.state['actions-workflow'] = [{ type: 'a11yScan', engine: 'other-engine', wcagLevel: 'A' }];
         await openFile('old.a11y-config.json', JSON.stringify(cfg));
-        assert.deepEqual(calls.actions[0], { type: 'a11yScan', engine: 'other-engine', profile: 'wcag22-a' });
-        assert.match(lastStatus().message, /Note: step 1: its engine "other-engine" comes with the more-engines add-on now/);
+        assert.deepEqual(calls.actions[0], { type: 'a11yScan', profile: 'wcag22-a' });
+        assert.match(lastStatus().message, /Note: step 1: it named the engine "other-engine", which the lab no longer has: it runs with surea11y now/);
     });
 
     test('a configuration already current loads as before, with nothing said', async () => {

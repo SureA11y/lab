@@ -1,0 +1,897 @@
+/* The app's styles, part 5 of 14: the summary and results, tables and result tiles.
+   index.html links the parts in order (src/css/app-styles.js). */
+
+/* ==========================================================================
+   SUMMARY AND RESULTS
+   ========================================================================== */
+
+.summary {
+    padding: .85rem 1rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+
+    background: var(--info-soft);
+
+    font-size: var(--fs-base);
+}
+
+.summary ul,
+.summary ol {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.scan-summary-controls {
+    display: inline-flex;
+    gap: .25rem;
+    margin-left: .5rem;
+}
+
+.scan-excluded-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 5px;
+
+    padding: .15rem .6rem;
+    border-radius: var(--radius-pill);
+
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+
+    background: var(--warn-soft);
+    color: var(--text-main);
+    border: 1px solid var(--warn);
+}
+
+.scan-excluded-badge[hidden] { display: none !important; }
+
+.scan-name-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+}
+
+.scan-name-text { font-weight: 600; }
+
+.scan-name-input {
+    font: inherit;
+    font-weight: 600;
+    padding: .1rem .3rem;
+}
+
+.scan-header .scan-name-input { font-size: var(--fs-lg); }
+
+.scan-summary-controls .icon-button,
+.scan-header-controls .icon-button {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+}
+
+.scan-summary-controls svg,
+.scan-header-controls svg { display: block; }
+
+.tag-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: .3rem .6rem;
+    border-radius: var(--radius-sm);
+
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-strong);
+
+    white-space: nowrap;
+}
+
+.tag-pill:link,
+.tag-pill:visited { text-decoration: none; }
+
+.tag-pill-warning {
+    background: var(--warn-soft);
+    color: var(--warn);
+    border-color: var(--warn);
+}
+
+/* ---- Scan tags --------------------------------------------------------------
+   User-authored labels attached to a scan. Deliberately styled to read as a
+   different species from the WCAG `.tag-pill` tokens above: sans font (not
+   mono), full pill radius, and a soft fill - i.e. a human label, not a code. */
+.scan-tag {
+    /* DS Tag — a read-only outlined label. Always outlined, never filled
+       (a filled pill is a ResultBadge): transparent, mono, radius-sm. */
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    line-height: 1.4;
+
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+/* Neutral/secondary variant for the synthetic "Untagged" bucket. */
+.scan-tag--none {
+    color: var(--text-muted);
+    background: var(--na-soft);
+    border-color: var(--border-soft);
+    font-style: italic;
+}
+
+.scan-tag__remove {
+    /* Reset the generic form-control button box so it sits inside the chip. */
+    width: auto;
+    min-height: 0;
+    padding: 0 .15rem;
+    margin: 0;
+
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+
+    font-size: var(--fs-sm);
+    line-height: 1;
+    cursor: pointer;
+    border-radius: var(--radius-pill);
+}
+.scan-tag__remove:hover { color: var(--danger); }
+.scan-tag__remove:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: 1px;
+}
+
+/* ---- Tag input --------------------------------------------------------------
+   Chips + free-text entry + a suggestion listbox, styled to read as a single
+   text field. The generic input[type=text] rule is neutralized on the inner
+   entry so only the container carries the field chrome. */
+.tag-input {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem;
+
+    width: 100%;
+    padding: .35rem .45rem;
+
+    border-radius: var(--radius-md);
+    border: 1px solid var(--field-border);
+    background: var(--surface-2);
+
+    transition: border-color var(--duration-fast) var(--ease-standard),
+                box-shadow var(--duration-fast) var(--ease-standard),
+                background-color var(--duration-fast) var(--ease-standard);
+}
+.tag-input:focus-within {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    border-color: var(--accent-border);
+    background: var(--surface-4);
+}
+
+/* chips + entry share the container's flex row */
+.tag-input__chips { display: contents; }
+
+.tag-input__entry.tag-input__entry {
+    flex: 1 1 6rem;
+    width: auto;
+    min-width: 6rem;
+    padding: .15rem .1rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-main);
+    outline: none;
+}
+.tag-input__entry.tag-input__entry:focus {
+    outline: none;
+    border: 0;
+    background: transparent;
+}
+
+/* Inline "+" commit button - only rendered while the entry has text. */
+.tag-input__add {
+    flex: 0 0 auto;
+    align-self: center;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 1.45rem;
+    height: 1.45rem;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    background: var(--surface-2);
+    color: var(--text-muted);
+
+    font-size: var(--fs-lg);
+    line-height: 1;
+    cursor: pointer;
+
+    transition: color var(--duration-fast) var(--ease-standard),
+                border-color var(--duration-fast) var(--ease-standard),
+                background-color var(--duration-fast) var(--ease-standard);
+}
+.tag-input__add:hover {
+    color: var(--accent);
+    border-color: var(--accent-border);
+    background: var(--surface-4);
+}
+.tag-input__add:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: 1px;
+}
+/* The base rule sets display:inline-flex, which would defeat the hidden
+   attribute - restore display:none when hidden. */
+.tag-input__add[hidden] { display: none; }
+
+.tag-input__listbox {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+
+    margin: 0;
+    padding: .25rem;
+    list-style: none;
+
+    max-height: 12rem;
+    overflow-y: auto;
+
+    background: var(--surface-overlay);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-popover);
+}
+.tag-input__option {
+    padding: .3rem .5rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+    color: var(--text-main);
+    cursor: pointer;
+}
+.tag-input__option:hover,
+.tag-input__option.is-active {
+    background: var(--accent-soft);
+    color: var(--text-main);
+}
+
+/* Group of read-only tag chips shown on scan cards and summary rows. */
+.scan-tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .3rem;
+    vertical-align: middle;
+}
+
+/* Lead-in for the chips, mirroring .scan-tag-filter__label. */
+.scan-tags__label {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+/* Chips and their editor share one slot in the scan header; only one shows. */
+.scan-tags-region {
+    display: inline-flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.scan-tags-display[hidden],
+.scan-tags-edit[hidden] { display: none; }
+
+.scan-tags-edit {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .4rem;
+    width: 100%;
+}
+
+/* The tag input is the flexible part; the buttons keep their intrinsic size. */
+.scan-tags-edit .tag-input { flex: 1 1 12rem; }
+
+.scan-tags-edit__save,
+.scan-tags-edit__cancel { flex: 0 0 auto; }
+
+/* ---- Scan tag filter bar ---------------------------------------------------
+   Multi-select (OR) chip toolbar above the results. Chips are aria-pressed
+   toggle buttons reusing the .scan-tag pill look; the pressed state adopts the
+   accent tint. */
+.scan-tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem;
+    margin: .5rem 0 .75rem;
+}
+.scan-tag-filter[hidden] { display: none; }
+
+.scan-tag-filter__label {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin-right: .1rem;
+}
+
+.scan-tag-filter__chip {
+    /* DS TagFilter chip (Tag pressed). Reset the ambient 36px button box and
+       adopt the outlined Tag pill: transparent fill, mono label, radius-sm.
+       Never filled — a filled pill in this system is a ResultBadge. */
+    width: auto;
+    min-height: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 400;
+    line-height: 1.4;
+
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color var(--duration-fast) var(--ease-standard),
+                box-shadow var(--duration-fast) var(--ease-standard),
+                background-color var(--duration-fast) var(--ease-standard);
+}
+.scan-tag-filter__chip:hover {
+    background: var(--surface-hover);
+}
+.scan-tag-filter__chip[aria-pressed="true"] {
+    /* On = a double ring, not a fill. The 1px outline thickens to 3px via an
+       inset accent shadow and the label goes to 700. Line weight + font weight
+       carry the state without relying on hue; the mono face keeps 700 the same
+       advance width as 400 so a chip row can't reflow as it's toggled. */
+    color: var(--text-main);
+    background: transparent;
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 2px var(--accent);
+    font-weight: 700;
+}
+.scan-tag-filter__chip[aria-pressed="true"]:hover {
+    background: var(--surface-hover);
+}
+.scan-tag-filter__chip:focus-visible {
+    /* Focus stays outside the box — a thick inset ring plus an inset focus
+       indicator would read as one thing. */
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+}
+
+/* Any/All combinator - a small segmented control that reads as one unit. Two
+   connected buttons share a single outline; the pressed side lifts to the
+   accent surface. Line/weight carry the on-state so it survives without hue. */
+.scan-tag-filter__mode {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-left: .25rem;
+}
+.scan-tag-filter__mode-label {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.scan-tag-filter__mode-btn {
+    width: auto;
+    min-height: 0;
+    padding: 4px 10px;
+
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 400;
+    line-height: 1.4;
+
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color var(--duration-fast) var(--ease-standard),
+                background-color var(--duration-fast) var(--ease-standard),
+                color var(--duration-fast) var(--ease-standard);
+}
+/* Join the pair into one pill: collapse the shared inner edge. */
+.scan-tag-filter__mode-btn:first-of-type {
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+.scan-tag-filter__mode-btn:last-of-type {
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    border-left-width: 0;
+}
+.scan-tag-filter__mode-btn:hover {
+    background: var(--surface-hover);
+}
+.scan-tag-filter__mode-btn[aria-pressed="true"] {
+    color: var(--text-main);
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    font-weight: 700;
+}
+/* Keep the accent edge continuous where a pressed button meets its neighbour. */
+.scan-tag-filter__mode-btn[aria-pressed="true"] + .scan-tag-filter__mode-btn {
+    border-left-color: var(--accent);
+}
+.scan-tag-filter__mode-btn:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    position: relative; /* lift the ring above the adjacent button's border */
+}
+
+.scan-tag-filter__count {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    margin-left: .25rem;
+}
+
+/* Scan hidden by the tag filter (view lens) - distinct from manual exclude,
+   which only dims the card via .scan-excluded-from-report. */
+.scan-filtered-out { display: none !important; }
+
+.no-results {
+    padding: 1.25rem 1rem .5rem;
+    font-size: var(--fs-base);
+    color: var(--text-muted);
+}
+
+@media (min-width: 900px) {
+    .results { display: flex; flex-direction: column; gap: .75rem; }
+}
+
+.results { font-size: var(--fs-sm); }
+/* Results container visibility */
+.results-container { display: none; font-size: var(--fs-sm); }
+.results-container:not(:empty) { display: block; }
+
+#summary:empty { display: none; }
+#results:empty { display: none; }
+
+.results-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.hide-excluded-scans .scan-summary-excluded,
+.hide-excluded-scans .scan-excluded-from-report {
+    display: none;
+}
+
+#results h3 { border-bottom: 1px solid var(--border-soft); padding-bottom: 5px; margin-bottom: 0; }
+#results img { max-width: 100%; }
+
+/* Meta row */
+.scan-results-meta {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.scan-results-meta .scan-counts {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.scan-results-meta > *:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.scan-results-container { display: flex; flex-direction: row; gap: 10px; }
+
+.scan-header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: .5rem;
+    margin: 20px 0 15px;
+}
+
+.scan-header-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.scan-move-controls {
+    display: inline-flex;
+    gap: .25rem;
+}
+
+/* Screenshot strip */
+.screenshot-preview {
+    width: 250px;
+    position: relative;
+    flex: 0 0 250px;
+}
+
+.scan-results-container .table-results-container { flex: 1 1 auto; min-width: 0; }
+
+/* Narrow, the page's picture goes above its findings, and the findings table
+   scrolls sideways in its own box rather than pushing the page wider. */
+@media (max-width: 760px) {
+    .scan-results-container { flex-direction: column; }
+    .screenshot-preview { flex: none; width: 100%; max-width: 250px; }
+}
+
+@media (max-width: 600px) {
+    .scan-header { grid-template-columns: 1fr; }
+    .scan-header-controls { flex-wrap: wrap; }
+    /* The page's address on a line of its own, above the counts. */
+    .scan-results-meta { flex-direction: column; gap: 2px; }
+    .scan-results-meta .scan-counts { white-space: normal; }
+}
+
+/* A merged scan's screenshots, one per context, each captioned with it. */
+.screenshot-context-figure { margin: 0 0 var(--space-3); }
+.screenshot-context-figure figcaption {
+    margin-top: var(--space-1);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    text-align: center;
+}
+/* The first one keeps the full width; the others share rows of three, each
+   in a box 64px tall that its picture fits inside whatever its shape: a
+   desktop one fills the width, a mobile one the height. They still open full
+   size in the viewer. */
+.screenshot-preview--contexts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    gap: var(--space-3) var(--space-2);
+    margin-bottom: var(--space-3);
+}
+.screenshot-preview--contexts > .screenshot-context-figure { flex: 0 0 100%; margin: 0; }
+.screenshot-preview--contexts > .screenshot-context-figure ~ .screenshot-context-figure {
+    flex: 0 0 calc((100% - 2 * var(--space-2)) / 3);
+    min-width: 0;
+}
+.screenshot-preview--contexts > .screenshot-context-figure ~ .screenshot-context-figure .screenshot-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 64px;
+    max-height: 64px;
+}
+.screenshot-preview--contexts > .screenshot-context-figure ~ .screenshot-context-figure .screenshot-btn > * {
+    max-width: 100%;
+    max-height: 100%;
+}
+.screenshot-preview--contexts > .screenshot-context-figure ~ .screenshot-context-figure figcaption {
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+/* A merged scan says which contexts it was made from, and an occurrence
+   which of them it was found in. */
+.scan-contexts { margin: var(--space-1) 0 var(--space-2); font-size: var(--fs-sm); color: var(--text-muted); }
+.scan-contexts strong { color: var(--text-main); font-weight: 600; }
+.example-node-header h2 span.node-contexts { color: var(--text-muted); }
+.a11y-margins-table .margin-contexts { display: block; margin-top: 2px; color: var(--text-muted); }
+
+.screenshot-btn {
+    border: 1px solid var(--border-subtle);
+    display: inline-block;
+    background: transparent;
+    padding: 0;
+    height: 150px;
+    border-radius: 0;
+}
+
+.screenshot-preview .screenshot-btn {
+    max-height: 200px;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    box-shadow: none;
+    margin: auto;
+    display: block;
+}
+
+.screenshot-preview .screenshot-btn > * {
+    display: block;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    height: 100%;
+    border: 1px solid var(--border-subtle);
+    max-width: 100%;
+}
+
+.screenshot-preview img {
+    display: inline-block;
+}
+
+/* ==========================================================================
+   TABLES
+   ========================================================================== */
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+th, td {
+    padding: .45rem .6rem;
+    vertical-align: top;
+}
+
+th {
+    text-align: left;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border-soft);
+
+    font-size: var(--fs-sm);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-muted);
+
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+td { border-bottom: 1px solid var(--border-soft); }
+tr:nth-child(even) td { background: var(--surface-0); }
+
+.issue-status { white-space: nowrap; }
+
+/* The results tables lay their columns out fixed, so the tables of a
+   report's scans and groups line up one under another whatever each
+   holds (the widths are the colgroup's: a11y-ui.rendering.js). Narrower
+   than this, a table scrolls in its container rather than squeeze. */
+.results-table { table-layout: fixed; min-width: 720px; }
+.results-table td { overflow-wrap: anywhere; }
+/* A review's "likely fails" badge goes under its word when the column is
+   too narrow for both. */
+.results-table .issue-status { flex-wrap: wrap; row-gap: .2rem; }
+
+/* At phone width each finding is a card, not a row of a table wider than
+   the screen: its status and severity on the first line, then what it is,
+   its occurrences and its criteria, each under its column's name
+   (data-label). The header row stays for screen readers only, and the
+   roles in the markup keep the cells a table to them (a table laid out as
+   blocks loses its semantics in some browsers otherwise). The bar that
+   marks a failure, or a review that likely fails, runs down the card. */
+@media (max-width: 600px) {
+    .table-container { max-height: none; overflow: visible; border: 0; border-radius: 0; background: none; }
+    .results-table,
+    .results-table tbody,
+    .results-table tbody td { display: block; }
+    .results-table { min-width: 0; table-layout: auto; }
+    .results-table colgroup { display: none; }
+    .results-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+    .results-table tbody tr {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: baseline;
+        margin: 0 0 var(--space-3);
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+    }
+    .results-table tbody td { border-bottom: 0; padding: .35rem .7rem .35rem calc(.7rem + 6px); }
+    .results-table tbody td:nth-child(n+3) { grid-column: 1 / -1; }
+    .results-table tbody td[data-label="Occurrences"]::before,
+    .results-table tbody td[data-label="Engine"]::before,
+    .results-table tbody td[data-label="Criteria"]::before {
+        content: attr(data-label);
+        content: attr(data-label) / "";
+        display: block;
+        margin-bottom: .15rem;
+        font-size: var(--fs-xs);
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: var(--text-muted);
+    }
+    .table-container tbody tr.fail { background: var(--danger-soft); box-shadow: inset 6px 0 0 var(--danger); }
+    .table-container tbody tr.cantTell.lean-fail { background: var(--warn-soft); box-shadow: inset 6px 0 0 var(--warn); }
+    .table-container tbody tr.fail > td,
+    .table-container tbody tr.cantTell.lean-fail > td { background: transparent; }
+    .table-container tbody tr.fail > td:first-child,
+    .table-container tbody tr.cantTell.lean-fail > td:first-child { box-shadow: none; padding-left: calc(.7rem + 6px); }
+}
+
+/* The OS drops box-shadows: the card's bar is its left border. */
+@media (max-width: 600px) and (forced-colors: active) {
+    .table-container tbody tr.fail,
+    .table-container tbody tr.cantTell { border-left: 4px solid CanvasText; }
+    /* More specific than the rule that draws it on the first cell. */
+    .table-container .results-table tbody tr.fail > td:first-child,
+    .table-container .results-table tbody tr.cantTell > td:first-child { border-left: 0; }
+}
+tr.fail .issue-status { color: var(--danger); }
+tr.cantTell .issue-status { color: var(--warn); }
+
+.impact-critical { color: var(--danger);}
+.impact-serious { color: var(--warn); }
+.impact-moderate { color: var(--warn); }
+.impact-minor { color: var(--text-muted); }
+
+.node-detail { margin-top: .55rem; margin-bottom: .4rem; }
+
+.node-html {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+
+    padding: .3rem .35rem;
+    border-radius: var(--radius-sm);
+
+    background: var(--code-bg-strong);
+    color: var(--text-main);
+
+    overflow-x: auto;
+    border: 1px solid var(--border-soft);
+}
+
+.table-container {
+    max-height: 420px;
+    overflow: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--neutral-300);
+}
+
+/* The container scrolls and clips; a table that clipped too would be the box
+   its header sticks to, so the header would scroll away with the rows. */
+.table-container > table { overflow: visible; }
+
+.table-container table caption {
+    caption-side: top;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border-soft);
+
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* =========================================================
+   RESULT GLYPH TILES — SureA11y "five outcomes"
+   A filled tile with the glyph knocked out, never a bare
+   character. Geometry from the design system's
+   guidelines/result-glyphs.md: radius = size × 0.21875,
+   glyph = size × 0.68, IBM Plex Mono 700. The fill is the
+   state's tone (--ok/--danger/--warn/--advisory/--na) and the
+   glyph is its ink. Colour + glyph + word, never colour alone.
+   ========================================================= */
+.result-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 16px;
+    block-size: 16px;
+    flex: none;
+    border-radius: var(--radius-md);   /* 4px ≈ 16 × 0.21875 */
+    font-family: var(--font-mono);
+    font-size: 11px;                    /* 16 × 0.68 */
+    font-weight: 700;
+    line-height: 1;
+    /* Optically centre the tile on the adjacent text across all font
+       sizes — middle tracks x-height, so it holds at 13px and at display. */
+    vertical-align: middle;
+}
+.result-glyph--sm {                     /* dense table rows / inline lists */
+    inline-size: 14px;
+    block-size: 14px;
+    border-radius: 3px;
+    font-size: 10px;
+}
+.result-glyph--pass     { background: var(--ok);       color: var(--glyph-ink-pass); }
+.result-glyph--fail     { background: var(--danger);   color: var(--glyph-ink-fail); }
+.result-glyph--unknown  { background: var(--warn);     color: var(--glyph-ink-unknown); }
+.result-glyph--advisory { background: var(--advisory); color: var(--glyph-ink-advisory); }
+.result-glyph--na       { background: var(--na);       color: var(--glyph-ink-na); }
+
+/* Marker + word/count wrappers. inline-flex centring tracks the text
+   box, so the tile lines up with the word's optical centre at any size —
+   more reliable than vertical-align, which keys off x-height and rides a
+   touch high next to smaller text. gap replaces the literal space. */
+.issue-status,
+.stream-fail, .stream-cantTell, .stream-pass {
+    display: inline-flex;
+    align-items: center;
+    gap: .35em;
+}
+
+/* Every row carries its state as a 4px left bar, in addition to the
+   status cell's glyph + word — the table must survive greyscale. An inset
+   shadow, as the wider bars above, so the sticky header covers it. */
+.table-container tr.fail td:first-child {
+    box-shadow: inset var(--stroke-accent-bar) 0 0 var(--danger);
+    padding-left: calc(.6rem + var(--stroke-accent-bar));
+}
+
+.table-container tr.cantTell td:first-child {
+    box-shadow: inset var(--stroke-accent-bar) 0 0 var(--warn);
+    padding-left: calc(.6rem + var(--stroke-accent-bar));
+}
+
+/* Small pill action buttons shared */
+.copy-selector-btn,
+.src-dialog-trigger {
+    display: inline-flex;
+    margin-top: .2rem;
+    min-height: 0;              /* inline table micro-pills, not 36px buttons */
+    padding: .15rem .55rem;
+
+    font-size: var(--fs-xs);
+
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-strong);
+
+    background: var(--surface-2);
+    color: var(--text-muted);
+
+    box-shadow: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.copy-selector-btn:hover,
+.src-dialog-trigger:hover {
+    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+    background: var(--accent-soft);
+    color: var(--text-main);
+}

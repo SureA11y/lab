@@ -28,7 +28,6 @@
       {
         "type": "a11yScan",
         "label": "Home",
-        "engine": "surea11y",
         "screenshotView": true,
         "elementScreenshots": "fail",
         "elementScreenshotsMax": 50,
@@ -72,7 +71,6 @@
       {
         "type": "a11yScan",
         "label": "Product list",
-        "engine": "surea11y",
         "context": "main",
         "screenshotView": true,
         "elementScreenshots": "fail",
@@ -142,7 +140,6 @@
       {
         "type": "a11yScan",
         "label": "Product, added to the cart",
-        "engine": "surea11y",
         "context": "main",
         "screenshotView": true,
         "elementScreenshots": "fail",
@@ -177,7 +174,6 @@
       {
         "type": "a11yScan",
         "label": "Cart",
-        "engine": "surea11y",
         "screenshotView": true,
         "elementScreenshots": "fail",
         "elementScreenshotsMax": 50,
@@ -225,7 +221,6 @@
       {
         "type": "a11yScan",
         "label": "Home",
-        "engine": "surea11y",
         "screenshotView": true,
         "elementScreenshots": "fail",
         "elementScreenshotsMax": 50,
@@ -269,7 +264,6 @@
       {
         "type": "a11yScan",
         "label": "Product list",
-        "engine": "surea11y",
         "context": "main",
         "screenshotView": true,
         "elementScreenshots": "fail",
@@ -339,7 +333,6 @@
       {
         "type": "a11yScan",
         "label": "Product, added to the cart",
-        "engine": "surea11y",
         "context": "main",
         "screenshotView": true,
         "elementScreenshots": "fail",
@@ -374,7 +367,6 @@
       {
         "type": "a11yScan",
         "label": "Cart",
-        "engine": "surea11y",
         "screenshotView": true,
         "elementScreenshots": "fail",
         "elementScreenshotsMax": 50,

@@ -39,7 +39,7 @@
         'scores.avgPageAccessibility': {
             name: 'Automated check result',
             help:
-                'Typical result of the automated checks that ran. For a single page, it matches the page result. For a global summary, it is the mean across scanned pages. Automation reaches only part of WCAG, so a high value means few automated findings, not an accessible page.',
+                'Typical result of the automated checks that ran. For a single page, it matches the page result. For a global summary, it is the mean across scanned pages, or, when no page has enough on its own to score, the result of all the pages together. Automation reaches only part of WCAG, so a high value means few automated findings, not an accessible page.',
             caveat: 'Covers only what automation can test, and a check tests just part of what a criterion requires. Read it with the coverage figures.',
             min: 0,
             max: 100,

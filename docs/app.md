@@ -19,12 +19,23 @@ A workflow is the page to start on and the steps to take there. The
 
 - **URL to scan**: the page the workflow starts on.
 - **Scenario name**: what the run is called, in reports and file names.
-- **How the page is shown**, from the first page on: its **Viewport preset**
-  (the window size, from a phone to a wide desktop), **Color scheme** (light
-  or dark), **High contrast** (forced colors, as Windows' contrast themes)
-  and **Language** (one from the list, or any tag or variable with Other…).
-  Steps can change them as the workflow goes; their **Run default** comes
-  back to these.
+- **Run settings**, the button at the end of that line, opens them in a
+  dialog; under the line a chip says what each one is, so what the run will
+  use is seen at a glance (the ones changed from their default stand out, and
+  a chip opens the dialog at its setting):
+  - **How the page is shown**, from the first page on: its **Viewport
+    preset** (the window size, from a phone to a wide desktop), **Color
+    scheme** (light or dark), **High contrast** (forced colors, as Windows'
+    contrast themes) and **Language** (one from the list, or any tag or
+    variable with Other…). Steps can change them as the workflow goes; their
+    **Run default** comes back to these.
+  - **Connection**: **Untrusted certificates**, Refuse unless you choose
+    Accept, for a site whose certificate the browser does not trust (a
+    staging server's own, or any site on a network that inspects HTTPS).
+    Refused, the run fails on it, says why, and offers **Run again, accepting
+    this certificate**. Accepted, the browser cannot tell the site from one
+    pretending to be it, so sign in only where you trust the network; the
+    chip reads as a warning, and the run's log says it accepted them.
 
 What a scan checks, its **Include selectors** and **Exclude selectors** (limit
 it to the parts of the page some CSS selectors match, `main, footer`, or leave
@@ -65,8 +76,9 @@ lists every step and field.
 says which steps would fail, and where: the quick way to see whether a
 workflow still fits a site that has changed.
 
-**Export config** downloads the workflow, with the form as you left it, as a
-`*.a11y-config.json` file. **Load config** opens one, or a run spec written by
+**Export config**, in the Configuration header beside **Load config**,
+downloads the workflow, with the form as you left it, as a `*.a11y-config.json`
+file. **Load config** opens one, or a run spec written by
 hand or by a tool; **Append config** adds one's steps to the workflow you
 have. A link with the workflow in it (`?state=`) opens it in someone else's
 app.
@@ -88,7 +100,8 @@ Scans can be reordered, renamed, left out of the download, and filtered by
 tag. Their findings can be grouped by WCAG principle, by WCAG level, by the
 Accessibility Product Standard's KPIs, or by a grouping of your own, loaded
 as a JSON file: a list of groups, each naming its requirements in WCAG or
-EN 301 549 terms.
+EN 301 549 terms, or those of another installed standard, by its name as its
+findings give it.
 
 ```json
 [
@@ -97,8 +110,9 @@ EN 301 549 terms.
 ]
 ```
 
-A WCAG criterion is matched exactly; an EN 301 549 clause also by its
-number's start (`"9.3"` is every clause under 9.3). A requirement of another
+A WCAG criterion is matched exactly; an EN 301 549 clause, or another
+standard's requirement, also by its number's start (`"9.3"` is every clause
+under 9.3). A requirement of another
 standard also counts as the WCAG criteria it corresponds to, so the WCAG
 groupings group EN 301 549 scans too. An issue no group takes
 goes to "Not in WCAG" when it corresponds to no WCAG criterion, and to
@@ -114,12 +128,85 @@ package. A link can open a report in the app directly:
 `http://127.0.0.1:3000/?report=<url of its JSON or zip>`
 ([how](http-api.md#opening-reports-in-the-app-by-address)).
 
+## A conformance report
+
+**Conformance report**, in the Download menu, gives an Accessibility
+Conformance Report in the layout of the VPAT 2.5 (WCAG and EU edition), as
+one HTML file: a table per WCAG level and the EN 301 549 chapters.
+**Conformance report (Word)** gives the same as a `.docx`, to edit and sign
+in Word. It starts
+as a draft from the report's scans, which never says "Supports": a failure is
+"Does Not Support", nothing to apply to is "Not Applicable", and the rest is
+"Not Evaluated", with what the scans asked a person to check.
+
+**Review conformance**, beside the Download menu, is where a person decides:
+the product's details, and each criterion's conformance level and remarks,
+over the draft. Under each criterion, **How to check it by hand** gives what a
+person checks that automated checks don't decide: the steps, what passing and
+failing look like, and what it takes (a keyboard, a screen reader, zoom), from
+surea11y core's test procedures, where the installed core has them. EN 301
+549's own requirements (chapter 4, chapter 9's 9.6 and, in V4.1.1, 9.7,
+chapter 12 and the other chapters, as the report's version numbers them) have
+theirs too, from the EN 301 549 pack; chapter 9's clauses are the WCAG
+criteria, reviewed once. A report scanned against another installed
+standard's profile has that standard's requirements of its own too, in
+sections by its groups ([Standards](configuration.md#standards)). Each
+check takes a result (Passes, Fails, Doesn't apply), kept in the report with
+the review; once every check of a criterion has one, the dialog suggests its
+level, and **Use it** sets that level, with remarks written from the answers
+where you have written none. The conformance report, in HTML and in Word,
+lists each criterion's answered checks under its remarks, and its evaluation
+methods say how many were answered.
+
+**Manual review checklist**, in the Download menu where the core has the
+procedures, is the same for every criterion of the report's target, and EN
+301 549's own requirements, as a page
+to print or share: what the scans found, what has been recorded so far, and
+each check a person makes, with its steps. What you record is saved in the report as you go, so its
+downloads carry it, and opening the report again brings it back. **Copy the
+review of another report** fills in what this report has not decided yet from
+an earlier one, so a new run keeps the verdicts of the last review.
+
+## The testing guide
+
+**Testing guide**, the book icon in the app's header, opens in a tab of its
+own: how a person checks each requirement of a standard by hand, from
+surea11y core's test procedures, where the installed core has them. Choose
+WCAG (2.2, 2.1 or 2.0, and its levels), EN 301 549 or another installed
+standard, or the best practices, and search it. Each requirement is a card in
+the standard's own groups, with a link to it to copy; each of its checks says
+whether automated checks decide it, decide part of it, or leave it to a
+person, what it needs (a keyboard, a screen reader, zoom…), the steps, and
+what passing and failing look like. A check folds to its title, or all of
+them do (**Collapse all**), to see a requirement at a glance. **Filters**
+narrow the guide to the checks that need a screen reader, say, or to what
+only a person can judge, and add the technical details: the rules behind a
+check, and the questions scans ask about single elements. The contents beside
+it follow where you are. The address keeps what is chosen, so a link opens
+the guide at one requirement (`/guide?standard=wcag&id=1.4.3`). **Save as a
+page** downloads the same, as one page to keep or print; the colour theme is
+the app's. It records nothing: results go in a report's Review conformance.
+
+**The procedures are in English, for now.** The lab's own procedures, for
+what no surea11y rule evaluates (`src/procedures/`), are in English, so no
+standard is complete in another language: the guide reads every standard in
+English and offers no other. A link that asks for one (`&locale=fr`) opens
+the guide in English, and a note under the filters says so. A report's "How
+to check it by hand" is in English too, whatever language its scans ran in.
+
+A finding's **View details** links to the guide too, above its own steps,
+which stay as they are: "The full method, in the testing guide", for each
+criterion or requirement it names that the guide has, in the latest version
+that has it. A downloaded report leaves these links out, since the guide is
+the lab's.
+
 ## Opening saved reports
 
 The **open report** tab opens reports saved before: their JSON, or a
-package's zip. Several are merged into one report, with a choice of which
-scans and screenshots of each to keep. Reports saved by older versions of the
-lab open as they always did.
+package's zip. What you add opens at once; several are merged into one
+report with all their scans, and stay listed, to choose which scans and
+screenshots of each to keep and **Load selected** again. Reports saved by
+older versions of the lab open as they always did.
 
 ## Comparing reports
 
@@ -159,9 +246,3 @@ downloads as one zip and goes to the compare tab in one go. A batch whose
 workflow types a password asks for it once, before it starts.
 
 The same batches run from the command line ([the runner's guide](scheduled-scans-guide.md)).
-
-## More engines
-
-The app scans with surea11y. With the [more-engines](../addons/more-engines/README.md)
-add-on installed, each scan step can run with axe-core, Alfa, Pa11y or
-QualWeb instead, and a Merged scan can put several engines' results together.

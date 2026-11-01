@@ -78,9 +78,22 @@ const FRAME_GRACE_MS = 3000;
  * left to goto. Rejects as goto does: a page that cannot be opened, or a
  * timeout before the page's own document loaded.
  */
+// A site whose certificate the browser does not trust fails with Chrome's code
+// alone (net::ERR_CERT_AUTHORITY_INVALID): say what it means, and how to open
+// the site anyway when the person running the workflow trusts it.
+function explainCertificateError(err) {
+    const msg = String(err && (err.message || err) || '');
+    if (!/net::ERR_CERT_/.test(msg)) return err;
+    const out = new Error(`${msg}. The browser does not trust this site's certificate: the site's own may be broken, `
+        + 'or the network you are on inspects HTTPS. If you trust the site, set Untrusted certificates to Accept '
+        + 'in the run settings (acceptUntrustedCerts in a spec, --accept-untrusted-certs for the runner).');
+    out.cause = err;
+    return out;
+}
+
 async function gotoPage(page, url, { waitUntil = 'load', timeout } = {}) {
     const event = waitUntil === 'domcontentloaded' || waitUntil === 'load' ? waitUntil : null;
-    const navigation = page.goto(url, { waitUntil, timeout });
+    const navigation = page.goto(url, { waitUntil, timeout }).catch((err) => { throw explainCertificateError(err); });
     if (!event || typeof page.once !== 'function') return navigation;
     // Settles later, or never; its outcome is the race's, or nobody's.
     navigation.catch(() => {});

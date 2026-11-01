@@ -718,6 +718,14 @@ describe('multi-report renderer — holding up under awkward data', () => {
         assert.match(html, /Scroll sideways to see all 3 runs →/);
     });
 
+    test('a chart that is one image holds nothing that takes focus', async () => {
+        const { comparisonSeriesHTML } = await load();
+        const html = comparisonSeriesHTML(longNamed());
+        const images = [...html.matchAll(/<svg[^>]*role="img"[^>]*>[\s\S]*?<\/svg>/g)].map((m) => m[0]);
+        assert.ok(images.some((svg) => svg.includes('dash-runchart')), 'the run chart is among them');
+        for (const svg of images) assert.doesNotMatch(svg.slice(svg.indexOf('>') + 1), /tabindex=/);
+    });
+
     test('a rounded percentage never claims problems are gone while they remain', async () => {
         const { comparisonSeriesHTML } = await load();
         const html = comparisonSeriesHTML(diffReportSeries([

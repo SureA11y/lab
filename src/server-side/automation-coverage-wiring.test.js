@@ -7,7 +7,6 @@
 
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
-const { MORE_ENGINES_SKIP } = require('../test-support/more-engines');
 
 const { getAutomationCoverage } = require('./a11y-runner');
 
@@ -48,15 +47,8 @@ describe('runner automation coverage', () => {
         assert.equal(aaa.totals.inScope, 86);
     });
 
-    test('an engine that cannot produce a catalog yields null, never an empty scope', { skip: MORE_ENGINES_SKIP }, async () => {
-        // The axe adapter needs a live page to enumerate rules, so this resolves to
-        // no catalog. Reporting an empty one would mark all of WCAG unreachable.
-        const cov = await getAutomationCoverage('AA', 'axe');
-        assert.equal(cov, null);
-    });
-
     test('a failed engine lookup does not poison the default engine cache', async () => {
-        await getAutomationCoverage('AA', 'axe');
+        await getAutomationCoverage('AA', 'engine-b');
         const cov = await getAutomationCoverage('AA');
         assert.ok(cov && cov.totals.inScope === 55);
     });

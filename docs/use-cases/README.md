@@ -19,6 +19,7 @@ like to hear about it.
 | [Check many pages at once](check-many-pages.md) | Every product page, every page of a sitemap, every country's version |
 | [Check behind a login](check-behind-a-login.md) | What matters is behind an account, and the password must stay out of files |
 | [Check against a standard](check-against-a-standard.md) | You answer to EN 301 549, not only WCAG |
+| [Write a conformance report](write-a-conformance-report.md) | Procurement, a public body or a customer asks for a VPAT or an ACR |
 
 ## Over time
 
@@ -37,7 +38,6 @@ like to hear about it.
 | [Generate workflows](generate-workflows.md) | Workflows should come from somewhere else: a script, a test suite, an AI assistant |
 | [Run the lab as a service](run-it-as-a-service.md) | Other tools, or other teams, should start runs and take reports without the app |
 | [Share results](share-results.md) | A report or a comparison has to reach people who do not run the lab |
-| [Compare engines](compare-engines.md) | You want to see what different engines find on the same pages |
 
 ## Ideas the guides do not cover
 

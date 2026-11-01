@@ -41,7 +41,7 @@
   <header>
     <h1>A11y Summary Metrics Reference</h1>
     <p class="sub">This document explains every index, value, and estimation produced by your metrics pipeline
-      (DOM heuristics, text heuristics, axe-derived signals, and the final accessibility risk indicator), including the exact formulas and rounding rules needed to reproduce the same outputs.</p>
+      (DOM heuristics, text heuristics, signals derived from the scan's findings, and the final accessibility risk indicator), including the exact formulas and rounding rules needed to reproduce the same outputs.</p>
     <nav aria-label="Table of contents">
       <a href="#examples">Examples</a>
       <a href="#glossary">Glossary</a>
@@ -49,7 +49,7 @@
       <a href="#common">Common helper functions</a>
       <a href="#dom">DOM metrics</a>
       <a href="#text">Text metrics</a>
-      <a href="#axe">Axe derived metrics</a>
+      <a href="#findings">Findings-derived metrics</a>
       <a href="#scores">Scores</a>
       <a href="#flags">Flags</a>
       <a href="#portfolio">Portfolio / multi-page summaries</a>
@@ -68,7 +68,7 @@
         <p><strong>What this report is</strong></p>
         <p>
           This output is a compact “health snapshot” of a page, based on three families of signals:
-          (1) what axe can automatically detect, (2) how complex the page looks structurally, and (3) basic patterns about text and controls.
+          (1) what surea11y can automatically detect, (2) how complex the page looks structurally, and (3) basic patterns about text and controls.
           It is designed for dashboards and triage, not for legal or formal conformance claims.
         </p>
         <p>
@@ -113,8 +113,8 @@
             <td class="k"><code>scores.confidence</code></td>
             <td>
               “How much you should trust the automated evidence.”
-              The mean of the confidence each engine reported on its own fail/cantTell findings - not every engine
-              reports one, so this can be <code>null</code> (“not measured”) rather than a guess.
+              The mean of the confidence surea11y reported on its fail/cantTell findings - a finding may carry
+              none, so this can be <code>null</code> (“not measured”) rather than a guess.
             </td>
             <td>
               Read it as “automation reliability”, when it is present. A confidence of 85 means “use the evidence
@@ -173,14 +173,14 @@
       <table>
         <thead><tr><th class="k">Term</th><th>Meaning in this project</th></tr></thead>
         <tbody>
-          <tr><td class="k">Axe</td><td>The axe-core automated accessibility testing engine. It reports rule results such as violations, incomplete, and passes.</td></tr>
-          <tr><td class="k">Violation</td><td>An axe rule that failed, meaning axe detected a likely accessibility problem.</td></tr>
-          <tr><td class="k">Incomplete</td><td>An axe rule that needs manual confirmation. Axe could not determine pass or fail reliably for that situation.</td></tr>
-          <tr><td class="k">Pass</td><td>An axe rule that passed for the scanned content.</td></tr>
+          <tr><td class="k">surea11y</td><td>The lab's accessibility testing engine, <code>@surea11y/core</code>. It reports rule results as fail, can't tell, pass or not applicable.</td></tr>
+          <tr><td class="k">Violation</td><td>A rule that failed (outcome fail), meaning surea11y detected a likely accessibility problem.</td></tr>
+          <tr><td class="k">Incomplete</td><td>A rule that needs a person to confirm (outcome can't tell): surea11y could not determine pass or fail reliably for that situation.</td></tr>
+          <tr><td class="k">Pass</td><td>A rule that passed for the scanned content.</td></tr>
 
           <tr><td class="k">Breadth</td><td>How many distinct rule results contribute to risk, weighted by severity. Each rule counts once even if it matches many nodes.</td></tr>
           <tr><td class="k">Depth</td><td>How widespread findings are across the page, based on how many nodes each rule matched, weighted by severity, with a square-root transform.</td></tr>
-          <tr><td class="k">Node</td><td>In axe results, a “node” is a matched element location for a rule, including HTML snippet and target selectors. Not the same as a DOM Node API type.</td></tr>
+          <tr><td class="k">Node</td><td>An occurrence of a rule's result: one matched element, with its HTML snippet and target selectors. Not the same as a DOM Node API type.</td></tr>
           <tr><td class="k">Impact</td><td>Engine severity label, normalized to one of critical, serious, moderate, minor, info (aliases like “severe”/“medium”/“low” are mapped to these). This pipeline converts it to a numeric weight.</td></tr>
           <tr><td class="k">Impact weight</td><td>Numeric mapping for impact: critical 10, serious 6, moderate 3, minor 1, info 0.5. An impact that doesn't match any of these (including missing/unknown) defaults to 2.</td></tr>
 
@@ -230,13 +230,13 @@
 
       <p><strong>Example A, many kinds, not widespread</strong></p>
       <p class="small">
-        Imagine axe finds 5 different rules failing, each on 1 element. That is high breadth (many rule types),
+        Imagine the scan finds 5 different rules failing, each on 1 element. That is high breadth (many rule types),
         but low depth (not many affected elements).
       </p>
 
       <p><strong>Example B, one kind, very widespread</strong></p>
       <p class="small">
-        Imagine axe finds 1 rule failing, but it matches 400 elements. That is low breadth (one rule type),
+        Imagine the scan finds 1 rule failing, but it matches 400 elements. That is low breadth (one rule type),
         but high depth (widespread impact). This is often a systemic issue.
       </p>
 
@@ -308,20 +308,20 @@ adjusted    = 88.65  => scores.adjusted = 89</code></pre>
 
     <section id="inputs">
       <h2>Inputs and data model</h2>
-      <p><code>buildA11ySummary({ canonical, domMetrics, textMetrics })</code> takes three named inputs. This is an
-        engine-agnostic model: it works the same whether findings came from axe-core, pa11y, or any other engine,
-        because everything is normalized to the shared "canonical findings" shape below before scoring happens.</p>
+      <p><code>buildA11ySummary({ canonical, domMetrics, textMetrics })</code> takes three named inputs. Findings are
+        normalized to the shared "canonical findings" shape below before scoring happens, so a report saved before,
+        with findings from another engine, is scored the same way.</p>
 
       <h3>1) <code>canonical</code></h3>
-      <p class="small">Source: this engine's raw output, already normalized into the canonical findings format used throughout the pipeline (not raw axe-core violations/incomplete/passes).</p>
+      <p class="small">Source: this engine's raw output, already normalized into the canonical findings format used throughout the pipeline (not surea11y's raw results).</p>
       <ul>
         <li><code>canonical.findings</code>, a flat array of finding objects, one per rule result. Each finding has:
           <ul>
             <li><code>outcome</code>: one of <code>"fail"</code>, <code>"cantTell"</code>, <code>"pass"</code>.</li>
-            <li><code>severity</code>: the engine's own severity string (e.g. axe's <code>impact</code>, or an alias
+            <li><code>severity</code>: the engine's own severity string (surea11y's severity, or an alias
               like "severe"/"medium"/"low"), normalized via <code>impactFromSeverity()</code> into
               critical/serious/moderate/minor/info/unknown before scoring.</li>
-            <li><code>occurrences</code>: array of instance matches for this rule (axe calls these "nodes").</li>
+            <li><code>occurrences</code>: array of instance matches for this rule (one per matched element).</li>
           </ul>
         </li>
       </ul>
@@ -543,7 +543,7 @@ sumWeightedInstanceDepth(items) = Σ weightForImpact(item.impact) * sqrt(max(0, 
       </table>
     </section>
 
-    <section id="axe">
+    <section id="findings">
       <div class="callout"><p><strong>In plain English</strong></p><p>This section turns canonical findings into a single “risk” number by combining two ideas: how many different rule types fail (breadth) and how widespread the failures are (depth). Both are weighted by severity, and depth is normalized against how much of the page there was to evaluate. The result is then flipped into an “evidence” score so that higher is better.</p></div>
 
       <h2>Risk and evidence</h2>
@@ -589,16 +589,16 @@ riskContent = clamp(riskContentRaw / riskWeightsSum, 0, 100)</code></pre>
 
       <h3>Superseded: the DOM-normalized model</h3>
       <p class="small">An earlier version of this pipeline normalized depth per 1000 raw DOM nodes instead of per
-        content unit. That model is still computed and returned - as <code>inputs.risk.axeRaw</code>/<code>axeClamped</code>
+        content unit. That model is still computed and returned - as <code>inputs.risk.engineRaw</code>/<code>engineClamped</code>
         and <code>scores.evidenceByDom</code> - purely so a run can be compared against how it used to score. It no
         longer feeds the headline <code>scores.evidence</code> or <code>scores.adjusted</code>.</p>
       <pre><code>violationDepthPer1k  = ( Σ weightForImpact(v.impact) * sqrt(v.nodes.length) / domTotal ) * 1000
 incompleteDepthPer1k = ( Σ weightForImpact(i.impact) * sqrt(i.nodes.length) / domTotal ) * 1000
 
-riskAxeRaw = satScore(violationBreadth, 8) + 0.25 * satScore(incompleteBreadth, 10)
+riskByDomRaw = satScore(violationBreadth, 8) + 0.25 * satScore(incompleteBreadth, 10)
            + satScore(violationDepthPer1k, 35) + 0.2 * satScore(incompleteDepthPer1k, 45)
-riskAxe = clamp(riskAxeRaw / 2.45, 0, 100)
-evidenceByDom = clamp(100 - riskAxe, 0, 100)</code></pre>
+riskByDom = clamp(riskByDomRaw / 2.45, 0, 100)
+evidenceByDom = clamp(100 - riskByDom, 0, 100)</code></pre>
     </section>
 
     <section id="scores">
@@ -613,10 +613,10 @@ withConfidence = verdicts where a numeric confidence (0..1) was reported
 
 confidence      = mean(withConfidence.confidence)   // null if withConfidence is empty
 confidenceCoverage = withConfidence.length / verdicts.length</code></pre>
-      <p class="small">Not every engine reports a per-check confidence: axe-core stamps a flat <code>1.0</code>,
-        surea11y maps its own high/medium/low, and pa11y and QualWeb report none at all. Dropping the ones that
-        report none - rather than defaulting them to some value - keeps the mean from silently describing only a
-        subset of a multi-engine run while reading as though it covered everything. <code>confidenceCoverage</code>
+      <p class="small">surea11y maps its own high/medium/low to a confidence, but a finding may carry none (one
+        from a report saved before, with another engine's). Dropping those - rather than defaulting them to some
+        value - keeps the mean from silently describing only a subset of the findings while reading as though it
+        covered everything. <code>confidenceCoverage</code>
         is what says how much of the evidence <code>confidence</code> actually speaks for.</p>
 
       <h4>Reported confidenceSource</h4>
@@ -626,8 +626,8 @@ confidenceCoverage = withConfidence.length / verdicts.length</code></pre>
   'partial'     otherwise</code></pre>
 
       <h4>Effective confidence, used by the headline</h4>
-      <p class="small">Uncertainty is applied only over the evidence it was actually measured on, so one engine's
-        reported confidence can't speak for another engine's findings in either direction:</p>
+      <p class="small">Uncertainty is applied only over the evidence it was actually measured on, so a confidence
+        reported for some findings can't speak for the others in either direction:</p>
       <pre><code>effectiveConfidence =
   1                                                  if confidence is null (nothing measured)
   1 - (1 - confidence) * clamp(confidenceCoverage, 0, 1)   otherwise</code></pre>

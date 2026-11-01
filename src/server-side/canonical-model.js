@@ -2,8 +2,8 @@ const scan = {
     version: "1.0",
 
     engine: {                // from meta.engine (a11y-engine.js passes this)
-        id: "axe",
-        name: "axe-core",
+        id: "surea11y",      // the adapter's engineId
+        name: "surea11y",
         version: "x.y.z"       // or null
     },
 
@@ -37,13 +37,13 @@ const scan = {
 
     findings: [
         {
-            uid: "fail:color-contrast",  // makeFindingUid(outcome, ruleId)
-            id: "color-contrast",
-            ruleId: "color-contrast",
+            uid: "fail:wcag-1.4.3-contrast-minimum",  // makeFindingUid(outcome, ruleId)
+            id: "wcag-1.4.3-contrast-minimum",
+            ruleId: "wcag-1.4.3-contrast-minimum",
 
-            title: "Elements must have sufficient color contrast", // help or description
-            description: "Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds",
-            helpUrl: "https://dequeuniversity.com/rules/axe/4.8/color-contrast",
+            title: "Contrast: minimum", // help or description
+            description: "Text has a contrast ratio of at least 4.5:1 with its background (3:1 for large text)",
+            helpUrl: "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html",
 
             outcome: "fail",            // fail | cantTell | pass | notApplicable
             severity: "serious",        // minor | moderate | serious | critical | unknown
@@ -53,23 +53,23 @@ const scan = {
                 wcag: [
                     {ref: "1.4.3", level: "AA"}, // derived from tags like wcag143 (best effort)
                 ],
-                tags: ["wcag2aa", "wcag143", "cat.color"],
+                tags: ["wcag2aa", "wcag143"],
                 wcagLevel: "AA"                 // derived from tags
             },
 
             wcag: {
-                // prefers enriched mapping item.SC (array of {ref, level?}), falls back to parsed wcag tags
-                sc: [{ref: "1.4.3", level: "AA"}],
+                // the criteria's numbers, from the engine's mapping or its wcag tags
+                sc: ["1.4.3"],
                 // subset of sc the rule actually enforces; excludes informative references.
                 // Coverage and scoring must read this one to avoid over-attributing criteria.
-                scNormative: [{ref: "1.4.3", level: "AA"}]
+                scNormative: ["1.4.3"]
             },
 
             occurrences: [
                 {
                     uid: "occ:...",          // deterministic hash from ruleId, outcome, pageUrl, target, html
                     pageUrl: "https://example.com/page",
-                    target: [".btn.primary"], // axe node.target normalized to array
+                    target: [".btn.primary"], // the element's selector, as an array
                     html: "<button class=\"btn primary\">Buy</button>",
                     failureSummary: "Fix any of the following...",
                     summary: "Fix any of the following...", // duplicated from failureSummary; a saved report leaves it out
@@ -77,7 +77,7 @@ const scan = {
                     // A saved report keeps only what the engine's record says
                     // beyond the occurrence (report-format.js, compactOccurrence).
                     evidence: {
-                        engineNode: { /* the original axe node object, if available */}
+                        engineNode: { /* the engine's own record of the element, if available */}
                     }
                 }
             ],
@@ -87,7 +87,7 @@ const scan = {
     ],
 
     rules: [],               // passes through native.rules if present
-    raw: null,               // currently set to null inside fromAxeResults
+    raw: null,               // the engine's own output is not kept here
     diagnostics: {
         durationMs: 0,
         estimatedNodes: 0,

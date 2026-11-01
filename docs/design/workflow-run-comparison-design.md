@@ -169,7 +169,7 @@ Modules:
   segmented panes that survive re-render. The run/report results area is hidden
   while Compare is active.
 
-Styling lives under `.cmp2` / `.compare-panel` in `a11y-lab-ui.css`, on the app's
+Styling lives under `.cmp2` / `.compare-panel` in `src/css/compare.css`, on the app's
 theme-aware tokens. The only comparison-specific hues are the A/B side colours
 (teal / violet), with explicit light and dark values; severity inks map to the
 existing danger/warn/soft tokens.
@@ -188,9 +188,9 @@ built from. Both are shared with the N-report view via
 fields; everything else is derived through `describeComparison` in
 `report-identity.js`.
 
-`build:report` extracts the Compare-tab block from `a11y-lab-ui.css` — delimited
+`build:report` extracts the Compare-tab block from `src/css/compare.css` — delimited
 by `/* compare:start */` and `/* compare:end */` — into
-`src/report/comparison.min.css`. The app stylesheet stays the single source of
+`src/report/comparison.min.css`. The app's stylesheet stays the single source of
 truth, which is why the comparison does not follow the report's mirror-into-
 `report.css` convention. `report-style-parity.test.js` guards the markers and
 fails if a `.cmp2` rule drifts outside them.

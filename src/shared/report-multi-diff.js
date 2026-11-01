@@ -477,6 +477,7 @@
             let wcag = '';
             let severity = 'unknown';
             const rgaa = [];
+            let standards = null;
             for (const rules of perColumnRules) {
                 const rule = rules.get(ruleId);
                 if (!rule) continue;
@@ -484,6 +485,7 @@
                 if (!wcag) wcag = rule.wcag;
                 severity = moreSevere(severity, rule.severity);
                 for (const c of (Array.isArray(rule.rgaa) ? rule.rgaa : [])) if (!rgaa.includes(c)) rgaa.push(c);
+                if (rule.standards) standards = diffApi.mergeStandards(standards || [], rule.standards);
             }
             rgaa.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
@@ -496,6 +498,7 @@
 
             const row = {
                 ruleId, title, titleLang, severity, wcag, rgaa,
+                ...(standards ? { standards } : {}),
                 counts, present,
                 total: counts.reduce((a, b) => a + b, 0),
                 columns: present.filter(Boolean).length,

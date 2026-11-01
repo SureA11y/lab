@@ -7,15 +7,15 @@ const CleanCSS = require('clean-css');
 
 const REPORT_DIR = path.join(__dirname, '..', 'report');
 const FONTS_DIR = path.join(__dirname, '..', 'fonts');
-const APP_CSS = path.join(__dirname, '..', 'css', 'a11y-lab-ui.css');
+const APP_CSS = path.join(__dirname, '..', 'css', 'compare.css');
 
 // The exported comparison reuses the app's Compare-tab styles rather than a
-// mirrored copy, so the two can't drift. a11y-lab-ui.css delimits that block.
+// mirrored copy, so the two can't drift. The app's compare.css delimits that block.
 const COMPARE_START = '/* compare:start';
 const COMPARE_END = '/* compare:end */';
 
 /*
- * The self-hosted SureA11y brand faces used by the app UI (src/css/a11y-lab-ui.css).
+ * The self-hosted SureA11y brand faces used by the app UI (src/css/tokens.css).
  * The exported report is a standalone document with no access to the app's font
  * files, so we base64-embed the woff2 as @font-face rules straight into
  * report.min.css. That keeps the export self-contained in BOTH shapes — the
@@ -111,10 +111,12 @@ async function buildReportAssets() {
     }
 
     // Shared modules the exported report runs at runtime, prepended so their
-    // globals (A11Y_SCAN_SORT, A11Y_TOAST) exist before report.js uses them.
+    // globals (A11Y_SCAN_SORT, A11Y_TOAST, A11Y_SCROLL_REACH) exist before
+    // report.js uses them.
     const sharedModules = [
         path.join(__dirname, '..', 'shared', 'scan-sort.js'),
         path.join(__dirname, '..', 'shared', 'toast.js'),
+        path.join(__dirname, '..', 'shared', 'scroll-reach.js'),
         // Order matters: the view module reads the analysis module's global.
         path.join(__dirname, '..', 'shared', 'issue-dispersion.js'),
         path.join(__dirname, '..', 'shared', 'issue-dispersion-view.js')
