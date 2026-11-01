@@ -47,6 +47,9 @@ The first public release.
   so for now the guide, its saved page and a report's "How to check it by
   hand" read every procedure in English, and the guide offers no other
   language.
+  The HTML report saved for each scan leaves out surea11y's "What's left
+  for a person", which lists only what its rules evaluate: the guide and
+  Review conformance give every requirement.
 
 ### The runner and integrations
 

@@ -1660,7 +1660,11 @@ function saveHtmlReport(reportModel, meta = {}) {
     const outPath = path.join(outDir, filename);
 
     const title = (meta && meta.title) ? String(meta.title) : label;
-    const html = renderHtmlReport(result, title ? { title } : {});
+    // Without core's "What's left for a person" (manualChecks): it lists
+    // only what core's rules evaluate, where the lab's testing guide and
+    // Review conformance give every requirement, with the lab's procedures
+    // for the rest (lab-procedures.js). A core before 1.15 ignores it.
+    const html = renderHtmlReport(result, { ...(title ? { title } : {}), manualChecks: false });
 
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(outPath, html, 'utf-8');
