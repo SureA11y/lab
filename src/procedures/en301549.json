@@ -1,0 +1,1490 @@
+{
+  "$comment": [
+    "How a person assesses, by hand, the requirements of EN 301 549 that restate no WCAG criterion and that no rule evaluates, in English: chapter 4, 5 to 8, 9.6, 9.7 (V4.1.1), 9.4.1.1 (void in V4.1.1), 10 to 13 and chapter 12, in V3.2.1 and V4.1.1. The chapter 9 clauses that restate WCAG criteria take those criteria's procedures.",
+    "A value that differs between versions is an object keyed by version ({ \"V3.2.1\": ..., \"V4.1.1\": ... }). In a list of steps, an item that names some versions only is left out of the others.",
+    "versions, on a requirement or a facet, lists the versions it is in; without it, it is in all of them.",
+    "A facet with a template takes its text from templates, filling in {id} and the facet's own fields: {column}, {need}, {clauses} and {example}.",
+    "In V4.1.1, the clauses a related-clauses facet names as examples are those of its clauses that Table B.2 marks P for the criterion, chapter 9 first (en301549-annex-b.json); a chapter 4 criterion relates to the WCAG criteria restated by every chapter 9 clause marked P for it, 9.6 and 9.7 left out. In V3.2.1, the clauses are as listed, and relate to the criteria they restate.",
+    "Moved from SureA11y/pack-en301549 at e228ccf (own-procedures.json, read by own-procedures.js), where the translations into French, German, Spanish and Japanese remain in its history (i18n/standard.<locale>.json)."
+  ],
+  "versions": [
+    "V3.2.1",
+    "V4.1.1"
+  ],
+  "templates": {
+    "related-clauses": {
+      "label": {
+        "V3.2.1": "The chapter 9 clauses that serve {need} are met",
+        "V4.1.1": "The clauses that serve {need} are met"
+      },
+      "automation": "manual",
+      "steps": [
+        {
+          "V3.2.1": "Open Table B.2 in Annex B of the standard and list the chapter 9 clauses it marks P (primary) or S (secondary) in column {column}, for {id}.",
+          "V4.1.1": "Open Annex B of the standard and list the clauses it relates to {id}, both those marked primary and those marked secondary. For a web page most are in chapter 9; add those of the other chapters, 5 to 13, that apply to the product."
+        },
+        "Assess each with its own procedure, or take its result from a review already done: among them are {clauses}.",
+        "Note each clause that fails, and the task it gets in the way of."
+      ],
+      "passWhen": {
+        "V3.2.1": "Every chapter 9 clause that Table B.2 relates to {id} is met, or does not apply.",
+        "V4.1.1": "Every clause that Annex B relates to {id}, as primary or secondary, is met or does not apply. Where one is not met, {id} can still pass if there is clear evidence that the outcome it describes is achieved, for example through the task-based checks of this requirement."
+      },
+      "failWhen": "A clause that serves {need} fails, such as {example}, which fails EN 301 549 {id} as well as that clause."
+    }
+  },
+  "requirements": [
+    {
+      "id": "4.2.1",
+      "title": "Usage without vision",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "template": "related-clauses",
+          "column": "WV",
+          "need": "usage without vision",
+          "clauses": [
+            "9.1.1.1",
+            "9.1.3.1",
+            "9.1.3.2",
+            "9.1.3.3",
+            "9.2.1.1",
+            "9.2.4.3",
+            "9.2.4.4",
+            "9.2.4.6",
+            "9.3.3.1",
+            "9.4.1.2",
+            "9.4.1.3"
+          ],
+          "example": "an image with no text alternative or a control with no name"
+        },
+        {
+          "id": "tasks-without-vision",
+          "label": "Each main task can be completed with a screen reader alone, without looking",
+          "automation": "manual",
+          "tools": [
+            "screen-reader",
+            "keyboard"
+          ],
+          "steps": [
+            "List the main tasks the product offers: finding information, signing in, filling in and sending a form, buying, changing a setting, getting help.",
+            "Start a screen reader, turn the screen off or cover it, and use only the keyboard and what the screen reader says.",
+            "Complete each task from its usual starting point to its end, as a user would.",
+            "Note each point where you could not tell where you were, what something was, what had changed, or what to do next.",
+            "Repeat on a phone with its own screen reader where the product is meant to be used on one."
+          ],
+          "passWhen": "Every main task can be completed from start to end with a screen reader, without looking at the screen.",
+          "failWhen": "A task can not be completed, or only by guessing, without looking at the screen, which fails EN 301 549 4.2.1."
+        },
+        {
+          "id": "no-step-needs-vision",
+          "label": "No step of a task needs sight, even where the page is otherwise accessible",
+          "automation": "manual",
+          "tools": [
+            "screen-reader"
+          ],
+          "steps": [
+            "Look for the steps that rely on seeing: a picture to recognise, a code to read from an image, a position to point at, a colour or a layout to tell apart.",
+            "Look at steps handled by others: a sign-in or identity check, a payment page, a chat window, a map, an embedded player.",
+            "For each, check that a person who cannot see is offered a way through that works with a screen reader, such as an audio or text alternative, without asking for help."
+          ],
+          "passWhen": "Every step that relies on sight has a way through that does not, available to the user in the product itself.",
+          "failWhen": "A step can only be passed by seeing, such as a visual-only check or a third-party page with no alternative, so a person without vision is stopped, which fails EN 301 549 4.2.1."
+        }
+      ]
+    },
+    {
+      "id": "4.2.2",
+      "title": "Usage with limited vision",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "template": "related-clauses",
+          "column": "LV",
+          "need": "usage with limited vision",
+          "clauses": {
+            "V3.2.1": [
+              "9.1.4.3",
+              "9.1.4.4",
+              "9.1.4.10",
+              "9.1.4.11",
+              "9.1.4.12",
+              "9.2.4.7"
+            ],
+            "V4.1.1": [
+              "9.1.4.3",
+              "9.1.4.4",
+              "9.1.4.10",
+              "9.1.4.11",
+              "9.1.4.12",
+              "9.2.4.7",
+              "9.2.4.11"
+            ]
+          },
+          "example": "text that is lost at 200% zoom or a focus indicator that can not be seen"
+        },
+        {
+          "id": "tasks-magnified",
+          "label": "Each main task can be completed with the page enlarged, magnified or in high contrast",
+          "automation": "manual",
+          "tools": [
+            "zoom",
+            "contrast-theme",
+            "keyboard"
+          ],
+          "steps": [
+            "List the main tasks the product offers.",
+            "Complete each with the browser zoomed to 200%, then with the window 320 CSS pixels wide (400% on a 1280 pixel screen).",
+            "Complete them again with the system's screen magnifier at a high magnification, following the focus as you move.",
+            "Complete them again with a high-contrast theme on in the system.",
+            "Note each point where content was cut off, overlapped, disappeared, needed scrolling in two directions to read, or could not be found within the magnified area, such as a message shown far from where you were."
+          ],
+          "passWhen": "Every main task can be completed enlarged, magnified and in high contrast, with nothing lost and every change shown where the user is looking.",
+          "failWhen": "A task can not be completed, or loses content, when the page is enlarged, magnified or in high contrast, which fails EN 301 549 4.2.2."
+        }
+      ]
+    },
+    {
+      "id": "4.2.3",
+      "title": "Usage without perception of colour",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "template": "related-clauses",
+          "column": "WPC",
+          "need": "usage without perception of colour",
+          "clauses": [
+            "9.1.3.3",
+            "9.1.4.1"
+          ],
+          "example": "a required field or an error shown only in red"
+        },
+        {
+          "id": "tasks-without-colour",
+          "label": "Each main task can be completed with the screen in greyscale",
+          "automation": "manual",
+          "tools": [
+            "devtools"
+          ],
+          "steps": [
+            "Turn the screen to greyscale, with the system's colour filters or the developer tools' emulation of vision deficiencies (achromatopsia).",
+            "Complete each main task the product offers.",
+            "Look in particular at status, errors, required fields, selected items, links in text, charts and maps.",
+            "Repeat with the emulation of red-green (deuteranopia, protanopia) and blue-yellow (tritanopia) deficiencies, where colour still carries meaning."
+          ],
+          "passWhen": "Every main task can be completed, and every piece of information understood, without telling colours apart.",
+          "failWhen": "Something a task needs is told only by colour, such as which option is chosen or which line of a chart is which, which fails EN 301 549 4.2.3."
+        }
+      ]
+    },
+    {
+      "id": "4.2.4",
+      "title": "Usage without hearing",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "template": "related-clauses",
+          "column": "WH",
+          "need": "usage without hearing",
+          "clauses": [
+            "9.1.2.1",
+            "9.1.2.2",
+            "9.1.2.4"
+          ],
+          "example": {
+            "V3.2.1": "a video with no captions",
+            "V4.1.1": "a video with no subtitles"
+          }
+        },
+        {
+          "id": "tasks-without-sound",
+          "label": "Each main task can be completed with the sound off",
+          "automation": "manual",
+          "steps": [
+            "Mute the device.",
+            "Complete each main task the product offers.",
+            "Note every piece of information given by sound: alerts and notification sounds, spoken instructions, videos, audio messages, a code read out by phone or an audio check.",
+            {
+              "V3.2.1": "For each, check that the same is given visually or as text, such as captions, a transcript, a visible notification or a text message.",
+              "V4.1.1": "For each, check that the same is given visually or as text, such as subtitles, a transcript, a visible notification or a text message."
+            },
+            "Where a task needs a phone call, check that it can be done another way, such as by text, chat or email."
+          ],
+          "passWhen": "Every main task can be completed with the sound off, and nothing it needs is given by sound alone.",
+          "failWhen": "Something a task needs is given only by sound, such as a spoken code or a video with no text of what is said, which fails EN 301 549 4.2.4."
+        }
+      ]
+    },
+    {
+      "id": "4.2.5",
+      "title": "Usage with limited hearing",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "template": "related-clauses",
+          "column": "LH",
+          "need": "usage with limited hearing",
+          "clauses": [
+            "9.1.2.2",
+            "9.1.2.4",
+            "9.1.4.2"
+          ],
+          "example": "audio that plays over the content with no way to stop it"
+        },
+        {
+          "id": "audio-can-be-heard",
+          "label": "Where the product plays sound, a person with limited hearing can make it out",
+          "automation": "manual",
+          "steps": [
+            "List where the product plays sound: videos, audio, calls, spoken messages, alerts.",
+            "If it plays none, record that 4.2.5 does not apply.",
+            "For each, check that its volume can be raised with the product's controls or the system's, well above the default.",
+            "Check that speech can be heard over background music or noise, or that the background can be turned down or off.",
+            "Check that the sound can be sent to headphones or a hearing device, as the system offers, and is not locked to one output."
+          ],
+          "passWhen": "The product plays no sound, or its sound can be made louder, clearer and sent to the user's own listening device.",
+          "failWhen": "Sound a task needs can not be made loud or clear enough, such as speech under music that can not be turned down, which fails EN 301 549 4.2.5."
+        }
+      ]
+    },
+    {
+      "id": "4.2.6",
+      "title": "Usage with no or limited vocal capability",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "versions": [
+            "V4.1.1"
+          ],
+          "template": "related-clauses",
+          "column": "WVC",
+          "need": "usage with no or limited vocal capability",
+          "clauses": [
+            "9.2.4.6",
+            "9.3.3.8",
+            "5.1.7",
+            "6.4"
+          ],
+          "example": "a function the product only offers by voice, with no other way to reach it"
+        },
+        {
+          "id": "tasks-without-voice",
+          "label": "Each task that takes voice can also be done without speaking",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "List every place the product asks for the user's voice: voice search, a voice assistant, voice commands, a spoken password or voice check, a call to an automated phone line, a recording to send.",
+            "If there is none, record that 4.2.6 does not apply.",
+            "For each, check that the same can be done without speaking, with the keyboard, a pointer or by text, in the product itself.",
+            "Check that the way without speaking is as easy to find and as complete as the spoken one."
+          ],
+          "passWhen": "The product asks for no voice, or everything done by voice can be done as well without speaking.",
+          "failWhen": "A task can only be done by speaking, such as a sign-in by voice check or a support line with no text option, which fails EN 301 549 4.2.6."
+        }
+      ]
+    },
+    {
+      "id": "4.2.7",
+      "title": "Usage with limited manipulation or strength",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "template": "related-clauses",
+          "column": "LMS",
+          "need": "usage with limited manipulation or strength",
+          "clauses": {
+            "V3.2.1": [
+              "9.2.1.1",
+              "9.2.5.1",
+              "9.2.5.2",
+              "9.2.5.4"
+            ],
+            "V4.1.1": [
+              "9.2.1.1",
+              "9.2.5.1",
+              "9.2.5.2",
+              "9.2.5.4",
+              "9.2.5.7",
+              "9.2.5.8"
+            ]
+          },
+          "example": "a control that can only be dragged or a function only reached by a gesture"
+        },
+        {
+          "id": "tasks-with-limited-movement",
+          "label": "Each main task can be completed with the keyboard alone, and with one pointer and simple actions",
+          "automation": "manual",
+          "tools": [
+            "keyboard",
+            "pointer"
+          ],
+          "steps": [
+            "Complete each main task with the keyboard alone, pressing one key at a time.",
+            "Complete each again with a single pointer, clicking or tapping only: no dragging, no gesture with a path, no two fingers, no holding a key while clicking.",
+            "Note each step that needs precise or fast movement: a small target, a control that moves, an action timed to happen within a moment.",
+            "Where speech recognition is available, check that controls can be activated by saying the name they show."
+          ],
+          "passWhen": "Every main task can be completed with the keyboard alone and with simple single-pointer actions, with no step needing precision, speed or strength.",
+          "failWhen": "A task needs a gesture, two actions at once, fine precision or speed, with no simpler way to do it, which fails EN 301 549 4.2.7."
+        }
+      ]
+    },
+    {
+      "id": "4.2.8",
+      "title": "Usage with limited reach",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "versions": [
+            "V4.1.1"
+          ],
+          "template": "related-clauses",
+          "column": "LR",
+          "need": "usage with limited reach",
+          "clauses": [
+            "9.1.3.4",
+            "9.2.1.1",
+            "9.2.5.1",
+            "9.2.5.8",
+            "8.3.2",
+            "8.3.5.1"
+          ],
+          "example": "a target too small to hit or a control a seated user can not reach"
+        },
+        {
+          "id": "elements-within-reach",
+          "label": "Where the product is stationary, free-standing or installed, everything it needs is within reach",
+          "automation": "manual",
+          "steps": [
+            "Check whether the product includes something stationary, free-standing or installed, such as a kiosk, a terminal or a ticket machine. A website or an app on the user's own device is not.",
+            "If it does not, record that 4.2.8 does not apply.",
+            "If it does, check that every control, screen, slot and reader it needs can be reached from a wheelchair and by short and tall users, as chapter 8 (8.3) measures it.",
+            "Check that a task can be completed from a seated position, or from the user's own device where the product offers that."
+          ],
+          "passWhen": "The product includes nothing stationary, or everything a task needs at it is within reach of every user.",
+          "failWhen": "A stationary part of the product has a control, screen or reader out of reach, such as a card reader too high for a wheelchair user, which fails EN 301 549 4.2.8."
+        }
+      ]
+    },
+    {
+      "id": "4.2.9",
+      "title": "Minimize photosensitive seizure triggers",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "template": "related-clauses",
+          "column": "PST",
+          "need": "users with photosensitive seizure triggers",
+          "clauses": [
+            "9.2.3.1"
+          ],
+          "example": "content that flashes more than three times in a second"
+        },
+        {
+          "id": "no-flashing-by-default",
+          "label": {
+            "V3.2.1": "The product offers a mode with no flashing that could trigger a seizure",
+            "V4.1.1": "The product's default mode has no flashing that could trigger a seizure, or audiovisual material warns first"
+          },
+          "automation": "manual",
+          "steps": [
+            "Go through the product looking for anything that flashes, flickers or changes brightness quickly: animations, videos, games, backgrounds, transitions, banners.",
+            "For each, check whether it flashes more than three times in any second over a large part of the screen, or flashes saturated red.",
+            {
+              "V3.2.1": "Where it does, check that the product offers a mode the user can choose in which it does not, and that the mode can be turned on without seeing the flashing first.",
+              "V4.1.1": "Where it does, check that the mode the product starts in does not flash, or, for a video or other audiovisual material, that a warning comes before it plays."
+            }
+          ],
+          "passWhen": {
+            "V3.2.1": "Nothing in the product flashes in a way that could trigger a seizure, or a mode without it is offered first.",
+            "V4.1.1": "Nothing flashes in the default mode, or audiovisual material that does is announced by a warning before it plays."
+          },
+          "failWhen": {
+            "V3.2.1": "Content flashes in a way that could trigger a seizure, with no safe mode the user starts in or can choose first, which fails EN 301 549 4.2.9.",
+            "V4.1.1": "Content flashes in a way that could trigger a seizure in the mode the product starts in, and, for audiovisual material, with no warning before it plays, which fails EN 301 549 4.2.9."
+          }
+        }
+      ]
+    },
+    {
+      "id": "4.2.10",
+      "title": "Usage with limited cognition, language or learning",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "template": "related-clauses",
+          "column": "LC",
+          "need": "usage with limited cognition, language or learning",
+          "clauses": {
+            "V3.2.1": [
+              "9.2.2.1",
+              "9.2.4.6",
+              "9.3.2.3",
+              "9.3.2.4",
+              "9.3.3.1",
+              "9.3.3.2",
+              "9.3.3.3"
+            ],
+            "V4.1.1": [
+              "9.2.2.1",
+              "9.2.4.6",
+              "9.3.2.3",
+              "9.3.2.4",
+              "9.3.3.1",
+              "9.3.3.2",
+              "9.3.3.3",
+              "9.3.3.7",
+              "9.3.3.8"
+            ]
+          },
+          "example": "an error that says nothing about how to fix it"
+        },
+        {
+          "id": "tasks-easy-to-follow",
+          "label": "Each main task is simple to understand, follow and recover from",
+          "automation": "manual",
+          "steps": [
+            "Complete each main task as a first-time user, without the help pages.",
+            "Note where the words are hard to follow: jargon, long sentences, abbreviations not explained, instructions that come after the field they are about.",
+            "Note where the task is hard to follow: no sign of how many steps there are or where you are, a step that changes the page without warning, choices that are not clear.",
+            "Make a mistake on purpose at each step and check that the product says what went wrong and how to fix it, and keeps what was entered.",
+            "Check that no step makes you remember something from an earlier one, solve a puzzle or work against a time limit you can not extend.",
+            "Check that help is easy to find from every step."
+          ],
+          "passWhen": "Every main task is in plain words, shows its steps, explains its errors and can be completed without memory, puzzles or time pressure.",
+          "failWhen": "A task is hard to understand or to recover from, such as a process with unexplained steps that loses what was typed after an error, which fails EN 301 549 4.2.10."
+        }
+      ]
+    },
+    {
+      "id": "4.2.11",
+      "title": "Privacy",
+      "facets": [
+        {
+          "id": "related-clauses",
+          "versions": [
+            "V4.1.1"
+          ],
+          "template": "related-clauses",
+          "column": "PR",
+          "need": "the privacy of users of the accessibility features",
+          "clauses": [
+            "9.3.3.4",
+            "9.3.3.8",
+            "5.1.3.8",
+            "5.1.3.9"
+          ],
+          "example": "a PIN or other masked entry that the product reads aloud"
+        },
+        {
+          "id": "privacy-with-features",
+          "label": "Using the accessibility features keeps the user's privacy as well as not using them",
+          "automation": "manual",
+          "tools": [
+            "screen-reader"
+          ],
+          "steps": [
+            {
+              "V3.2.1": "Look at Table B.2 in Annex B, column P, for the clauses the standard relates to privacy."
+            },
+            "Type a password, a PIN and other masked entries with a screen reader running, and check that it does not read the characters aloud, unless the user chooses so.",
+            "Check that using an accessible alternative, such as an audio check, a text-only mode or a relay service, does not ask for more personal data, or share it more widely, than the standard way.",
+            "Check that the user is not asked to state a disability to get an accessibility feature, unless the feature can not work otherwise.",
+            "Where the product speaks or plays sound, check that the user can listen privately, through headphones."
+          ],
+          "passWhen": "A person who uses the accessibility features is offered the same privacy as anyone else.",
+          "failWhen": "Using an accessibility feature exposes personal information, such as a screen reader speaking a password aloud or an alternative that needs more personal data, which fails EN 301 549 4.2.11."
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Generic requirements",
+      "facets": [
+        {
+          "id": "closed-functionality",
+          "label": "Where part of the product is closed to assistive technology, it is accessible without it",
+          "automation": "manual",
+          "tools": [
+            "screen-reader"
+          ],
+          "steps": [
+            "Check whether any part of the product keeps the user from using their own assistive technology: a kiosk, a locked-down device, a player or app that blocks screen readers or magnifiers.",
+            "A website used in the user's own browser is not closed: if nothing else is, record clause 5.1 as not applicable.",
+            {
+              "V3.2.1": "For each closed part, check that it offers speech output for what it shows, enlarged text, a visual form of what it says aloud, a way to use it without a keyboard or speech where it needs them, as clauses 5.1.3 to 5.1.7 require.",
+              "V4.1.1": "For each closed part, check that it offers speech output for what it shows, with the speech matching what is on screen at the time (5.1.3), enlarged text (5.1.4), a visual form of what it says aloud (5.1.5), a way to use it without a keyboard where it needs one (5.1.6), and without speech where it needs speech (5.1.7)."
+            },
+            {
+              "V4.1.1": "Where a closed part asks for the user's own details, such as a name or card number, check that it says the purpose of each field in speech (5.1.8)."
+            }
+          ],
+          "passWhen": "Nothing in the product is closed to assistive technology, or what is closed is usable without it.",
+          "failWhen": "A closed part of the product can not be used without sight, hearing, speech or fine movement, with no built-in alternative, which fails the clause of EN 301 549 5.1 it falls under."
+        },
+        {
+          "id": "activation-of-features",
+          "label": "Each accessibility feature can be turned on without the ability it makes up for",
+          "automation": "manual",
+          "tools": [
+            "keyboard",
+            "screen-reader"
+          ],
+          "steps": [
+            "List the accessibility features the product documents: a text size or contrast setting, captions, audio description, a reading mode, an accessibility menu.",
+            "If there are none, record clause 5.2 as not applicable.",
+            "For each, turn it on the way a person who needs it would: a screen reader setting with a screen reader, a contrast setting with low vision, captions without hearing, with the keyboard alone."
+          ],
+          "passWhen": "Every documented accessibility feature can be turned on by the people who need it.",
+          "failWhen": "An accessibility feature can only be turned on in a way its users can not manage, such as a screen reader mode reached only by an unlabelled icon, which fails EN 301 549 5.2."
+        },
+        {
+          "id": "biometrics",
+          "label": "No biological characteristic is the only way to identify the user or control the product",
+          "automation": "manual",
+          "steps": [
+            "Look for every use of the body to identify the user or control the product: fingerprint, face, voice, eyes, a gesture.",
+            "If there is none, record clause 5.3 as not applicable.",
+            "For each, check that there is another way that uses no biological characteristic, or a different one, such as a password, a code or a key."
+          ],
+          "passWhen": "The product uses no biological characteristic, or offers another way wherever it does.",
+          "failWhen": "A biological characteristic is the only way to sign in or to use a function, such as face recognition with no other option, which fails EN 301 549 5.3."
+        },
+        {
+          "id": "conversion",
+          "label": "Where the product converts content, it keeps the information given for accessibility",
+          "automation": "manual",
+          "steps": [
+            "Look for every place the product converts content from one format to another: export to PDF or a word-processing file, video transcoding, file import, translation into another format.",
+            "If there is none, record clause 5.4 as not applicable.",
+            {
+              "V3.2.1": "For each, convert content that has headings, text alternatives, table headers, captions or audio description, and check that the result keeps them, where the new format can hold them.",
+              "V4.1.1": "For each, convert content that has headings, text alternatives, table headers, subtitles or audio description, and check that the result keeps them, where the new format can hold them."
+            }
+          ],
+          "passWhen": "The product converts nothing, or keeps the accessibility information through every conversion the new format allows.",
+          "failWhen": "A conversion drops accessibility information the new format could hold, such as an export to PDF that loses the headings and text alternatives, which fails EN 301 549 5.4."
+        },
+        {
+          "id": "keys-and-controls",
+          "label": "Keys, toggles and other controls work for people who can not see them or press them precisely",
+          "automation": "manual",
+          "tools": [
+            "keyboard",
+            "screen-reader"
+          ],
+          "steps": [
+            "List the keys and controls the product provides itself, physical or on screen: a hardware keypad, an on-screen keyboard, toggle keys such as Caps Lock.",
+            "If it provides none of its own, record clauses 5.5 to 5.8 as not applicable.",
+            "Check that the state of each locking or toggle control can be told without seeing it, and also by sight where it is shown (5.6).",
+            {
+              "V3.2.1": "Where a key repeats when held, check that the delay before it repeats can be set to at least 2 seconds, or repeat turned off (5.7)."
+            },
+            {
+              "V3.2.1": "Where a key is pressed twice by accident, check that the time in which a second press is ignored can be set (5.8)."
+            },
+            {
+              "V3.2.1": "For physical operable parts, check that they can be told apart by touch without being activated (5.5).",
+              "V4.1.1": "Where a key repeats when held, repeat can't be turned off, and repeating enters the same character again into a field or document, check that the delay before it repeats can be set to at least 2 seconds, and the repeat rate slowed down to one character every 2 seconds (5.7)."
+            },
+            {
+              "V4.1.1": "Where the product lets the user set a time after a key press during which the same key is not accepted again, check that it can be set up to at least 0.5 seconds (5.8)."
+            },
+            {
+              "V4.1.1": "For operable parts, check that they can be found and told apart by touch without being activated (5.5). On a touch screen, an edge, a corner or a tactile marker can serve as the part that is found by touch."
+            }
+          ],
+          "passWhen": "The product has no keys or controls of its own, or each meets clauses 5.5 to 5.8 as it applies.",
+          "failWhen": "A key or control of the product fails one of clauses 5.5 to 5.8, such as an on-screen Caps Lock whose state a screen reader does not say, which fails the clause of EN 301 549 it falls under."
+        },
+        {
+          "id": "simultaneous-actions",
+          "label": "Nothing needs two actions at the same time, or a way that does not is offered",
+          "automation": "manual",
+          "tools": [
+            "keyboard",
+            "pointer"
+          ],
+          "steps": [
+            "Look for every action that needs two things at once: two keys held together, a key held while clicking, two fingers on the screen, both hands.",
+            "For each, check that the same can be done another way, one action at a time."
+          ],
+          "passWhen": "Everything in the product can be done one action at a time.",
+          "failWhen": "A function needs simultaneous actions, such as a pinch or a key held while clicking, with no way to do it one action at a time, which fails EN 301 549 5.9."
+        },
+        {
+          "id": "authoring-tool",
+          "versions": [
+            "V4.1.1"
+          ],
+          "label": "Where the product is an authoring tool, it supports and guides accessible content",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Check whether the product lets its users make content that others will read: pages, posts, documents, forms, emails, a site. Web-based editors count, such as a content management system or a form builder.",
+            "If it does not, record clause 5.10 as not applicable.",
+            "If it does, create content with it that has a heading, an image, a table, a link and a form field, and check that the tool lets you give each what chapter 9, 10 or 11 needs, depending on what it produces: heading levels, a text alternative, table headers, link text and labels.",
+            "Check that the tool says when something is missing or wrong, and helps fix it (5.10.4).",
+            "Check that templates it offers produce content that meets chapter 9, 10 or 11 (5.10.5), and that converting content to another format keeps the accessibility information the new format can hold (5.10.3)."
+          ],
+          "passWhen": "The product is not an authoring tool, or it lets and helps its users make content that meets chapter 9 or 10, and keeps accessibility information when it converts.",
+          "failWhen": "An authoring tool can not produce accessible content, such as an editor with no way to add a text alternative, or loses accessibility information when it converts, which fails EN 301 549 5.10."
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": {
+        "V3.2.1": "ICT with two-way voice communication",
+        "V4.1.1": "ICT supporting real-time bidirectional communication"
+      },
+      "facets": [
+        {
+          "id": "real-time-communication",
+          "versions": [
+            "V3.2.1"
+          ],
+          "label": "Where the product offers calls or real-time conversation, people who can not hear or speak can take part",
+          "automation": "manual",
+          "tools": [
+            "keyboard",
+            "screen-reader"
+          ],
+          "steps": [
+            "Check whether the product offers voice or video calls, or conversation in real time, such as a call button, a meeting room, or a call to support from the page.",
+            "If it does not, record chapter 6 as not applicable.",
+            "Where it offers voice, check that it also offers real-time text, typed and shown character by character as it is written, at the same time as the voice, and that the two can be told apart (6.2).",
+            "Check that the caller's identity and the status of a call are shown as text as well as by sound (6.3).",
+            "Where it offers video, check that the picture is good enough for sign language and lip reading: its resolution, frame rate and synchronisation with the sound (6.5).",
+            "Check that the call controls work with the keyboard and a screen reader, as chapter 9 requires."
+          ],
+          "passWhen": "The product offers no real-time communication, or it meets each clause of chapter 6 that applies to what it offers.",
+          "failWhen": "The product offers voice calls with no real-time text, or video too poor for sign language, which fails the clause of EN 301 549 chapter 6 it falls under."
+        },
+        {
+          "id": "voice",
+          "versions": [
+            "V4.1.1"
+          ],
+          "label": "Where the product carries voice, the sound is wide enough to understand speech",
+          "automation": "manual",
+          "steps": [
+            "Check whether the product offers voice in real time, such as a call button, a meeting room or a call to support. If it does not, record chapter 6 as not applicable.",
+            "Note the situations the product is used in, as clause 6.0 describes them: a client on its own, a system with its own clients, a system connected to another, a roaming client, and calls to emergency services. Test the rest of chapter 6 in each that applies.",
+            "Ask the supplier for the documentation of the voice quality, and check that the product captures and plays speech from 250 Hz to 7 000 Hz (6.1.2), and documents how its voice works with other systems, from 100 Hz to 7 000 Hz or with ITU-T G.722 (6.1.1)."
+          ],
+          "passWhen": "The product offers no real-time voice, or its voice covers the range the clause sets and its interoperation is documented.",
+          "failWhen": "The voice is narrower than 250 Hz to 7 000 Hz, or how it works with other systems is not documented, which fails the clause of EN 301 549 6.1 it falls under."
+        },
+        {
+          "id": "real-time-text",
+          "versions": [
+            "V4.1.1"
+          ],
+          "label": "Where the product offers voice, it also offers real-time text that works with it",
+          "automation": "manual",
+          "tools": [
+            "keyboard",
+            "screen-reader"
+          ],
+          "steps": [
+            "If the product offers no real-time voice, record clause 6.2 as not applicable. V4.1.1 no longer excuses products where adding real-time text would need a redesign.",
+            "Start a call and check that real-time text is available in the same call, at the same time as voice (6.2.1.1, 6.2.1.2), that one action starts, answers or ends voice and text together (6.2.1.3), and that real-time text can be requested or added to a call already under way, whatever the settings (6.2.9).",
+            "Type at one end and watch the other: each character should appear as it is typed, no later than 500 ms after it is entered (6.2.4). Check that you can erase text you have just typed (6.2.5).",
+            "Check the display: who wrote each part is clear, all active participants are shown, text appears in the order it was written, a sign shows when someone is speaking, and the whole conversation can be read back during the call (6.2.2.1 to 6.2.2.5).",
+            "Check that touch-tone digits can be sent in a way other than typing them as text (6.2.3).",
+            "Check that text can be entered with every input method the platform offers, including a screen reader, an on-screen keyboard and speech input (6.2.8), and that it can show the characters of the user's language and emoji (6.2.7).",
+            "In a call with several people, check that text from three of them at once keeps up (6.2.6).",
+            "Ask the supplier how the product's real-time text works with other systems (6.2.10). ITU-T T.140 with IETF RFC 4103 always meets it."
+          ],
+          "passWhen": "The product offers no real-time voice, or real-time text works alongside voice in every way clause 6.2 sets out.",
+          "failWhen": "The product offers voice without real-time text, or its real-time text is late, can't be added during a call, can't be read back or doesn't work with an input method, which fails the clause of EN 301 549 6.2 it falls under."
+        },
+        {
+          "id": "caller-id",
+          "versions": [
+            "V4.1.1"
+          ],
+          "label": "The caller's identity and the state of a call are given as text, and can be read by assistive technology",
+          "automation": "manual",
+          "tools": [
+            "screen-reader"
+          ],
+          "steps": [
+            "Receive a call, and make one, with a screen reader running.",
+            "Check that the caller's identity and the state of the call (ringing, connected, on hold, ended) are shown as text, not only by sound or an icon, and that the screen reader reads them (6.3)."
+          ],
+          "passWhen": "Caller identity and call state are given as text that assistive technology reads.",
+          "failWhen": "Who is calling, or the state of the call, is given only by sound or a picture, or can't be read by a screen reader, which fails EN 301 549 6.3."
+        },
+        {
+          "id": "video",
+          "versions": [
+            "V4.1.1"
+          ],
+          "label": "Where the product offers video calls, the picture is good enough for sign language and lip reading",
+          "automation": "manual",
+          "steps": [
+            "If the product offers no video in real time, record clause 6.5 as not applicable.",
+            "Ask the supplier for the video specification, and confirm it in a call: at least QVGA resolution, 320 by 240 pixels (6.5.2), and at least 20 frames per second (6.5.3).",
+            "Check that sound and picture stay within 100 ms of each other (6.5.4). Lip movements that visibly lead or lag the voice are a sign that they don't.",
+            "Check that the product shows when there is sound, and which participants are active, including those who are signing (6.5.5, 6.5.6)."
+          ],
+          "passWhen": "The product offers no real-time video, or its video meets the resolution, frame rate and synchronisation the clause sets, and shows who is active.",
+          "failWhen": "The video is smaller than QVGA, runs under 20 frames per second, drifts more than 100 ms from the sound, or doesn't show who is active, which fails the clause of EN 301 549 6.5 it falls under."
+        },
+        {
+          "id": "total-conversation",
+          "versions": [
+            "V4.1.1"
+          ],
+          "label": "Where the product offers voice and video, it offers voice, video and real-time text together",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "If the product does not offer both real-time voice and video, record clause 6.7 as not applicable.",
+            "In a video call, check that real-time text meeting clause 6.2 can be used at the same time as voice and video (6.7.1).",
+            "Ask the supplier how the product's video works with other systems (6.7.2). ITU-T H.264 constrained baseline is the fallback that always meets it."
+          ],
+          "passWhen": "The product offers voice, video and real-time text together in the same call, and documents how its video interoperates.",
+          "failWhen": "A product with voice and video calls offers no real-time text in them, or doesn't document how its video interoperates, which fails the clause of EN 301 549 6.7 it falls under."
+        },
+        {
+          "id": "alternatives-to-voice",
+          "label": "Services the product offers by voice can also be used without hearing or speaking",
+          "automation": "manual",
+          "steps": [
+            "Look for services the product offers by voice: an automated phone line, voice mail, a voice assistant.",
+            "If there are none, record clause 6.4 as not applicable.",
+            "Check that each can also be used without hearing or speaking, such as by text, or that real-time text reaches it.",
+            {
+              "V4.1.1": "Where the product offers services only by video, such as sign language support, the standard recommends a way to use them without seeing or without signing (6.6). It is a recommendation, so record it as advisory."
+            }
+          ],
+          "passWhen": "Every voice-based service can also be used without hearing or speaking.",
+          "failWhen": "A service can only be used by listening and speaking, which fails EN 301 549 6.4."
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "title": "ICT with video capabilities",
+      "facets": [
+        {
+          "id": "subtitles-shown",
+          "label": {
+            "V3.2.1": "Where the product plays video with sound, its player shows the captions the video has, in time",
+            "V4.1.1": "Where the product plays video with sound, its player shows the subtitles the video has, in time"
+          },
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Check whether the product plays video with sound itself, with its own player or one it embeds.",
+            "If it does not, record chapter 7 as not applicable.",
+            {
+              "V3.2.1": "Play a video that has captions and check that the player can show them (7.1.1), in time with what is said (7.1.2)."
+            },
+            {
+              "V3.2.1": "Check that the user can change how the captions look: size, colour, background (7.1.4)."
+            },
+            {
+              "V3.2.1": "Where the video has spoken captions, check that the player can play them (7.1.5)."
+            },
+            {
+              "V3.2.1": "Where the product converts or passes video on, check that the captions are kept (7.1.3).",
+              "V4.1.1": "Play a video that has subtitles and check that the player can show them (7.1.1), and that they appear within 100 ms of their timecode (7.1.2). Subtitles that visibly lag the speech are a sign that they don't."
+            },
+            {
+              "V4.1.1": "Check that the user can change how the subtitles look: size, colour, background (7.1.4)."
+            },
+            {
+              "V4.1.1": "Where the video comes with spoken subtitles, check that the player can play them (7.1.5). The player doesn't have to create them."
+            },
+            {
+              "V4.1.1": "Where the product converts or passes video on, check that the subtitles are kept (7.1.3)."
+            }
+          ],
+          "passWhen": {
+            "V3.2.1": "The product plays no video, or its player shows the captions a video has, in time, as the user wants them.",
+            "V4.1.1": "The product plays no video, or its player shows the subtitles a video has, in time, as the user wants them."
+          },
+          "failWhen": {
+            "V3.2.1": "The player can not show a video's captions, shows them out of time, or gives no way to change how they look, which fails the clause of EN 301 549 7.1 it falls under.",
+            "V4.1.1": "The player can not show a video's subtitles, shows them out of time, or gives no way to change how they look, which fails the clause of EN 301 549 7.1 it falls under."
+          }
+        },
+        {
+          "id": "audio-description-played",
+          "label": "The player plays the audio description a video has, in time",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Play a video that has audio description.",
+            "Check that the player can play it (7.2.1), in time with the picture (7.2.2).",
+            "Where the product converts or passes video on, check that the audio description is kept (7.2.3)."
+          ],
+          "passWhen": "The product plays no video, or its player plays the audio description a video has, in time.",
+          "failWhen": "The player can not play a video's audio description, or plays it out of time, which fails the clause of EN 301 549 7.2 it falls under."
+        },
+        {
+          "id": "user-controls",
+          "label": {
+            "V3.2.1": "Captions and audio description are turned on with the player's main controls",
+            "V4.1.1": "Subtitles and audio description are turned on with the player's main controls"
+          },
+          "automation": "manual",
+          "tools": [
+            "keyboard",
+            "screen-reader"
+          ],
+          "steps": [
+            "Find how the player turns the video's main features on and off: play, volume, full screen.",
+            {
+              "V3.2.1": "Check that captions and audio description are turned on and off at the same level, as easily, not hidden in a settings page.",
+              "V4.1.1": "Check that subtitles, audio description and spoken subtitles can each be turned on and off with a single operation, at the same level as the volume control, not in a settings page."
+            },
+            "Check those controls with the keyboard and a screen reader."
+          ],
+          "passWhen": {
+            "V3.2.1": "Captions and audio description are controlled as easily as play and volume.",
+            "V4.1.1": "Subtitles, audio description and spoken subtitles can each be switched with one operation, at the same level as the volume control."
+          },
+          "failWhen": {
+            "V3.2.1": "Turning captions or audio description on takes more than the player's main controls, such as a setting in another page, which fails EN 301 549 7.3.",
+            "V4.1.1": "Turning subtitles or audio description on takes more than the player's main controls, such as a setting in another page, which fails EN 301 549 7.3."
+          }
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "title": "Hardware",
+      "facets": [
+        {
+          "id": "hardware",
+          "label": "Hardware the product includes meets the clauses of chapter 8",
+          "automation": "manual",
+          "steps": [
+            "Check whether the product includes hardware: a device, a kiosk or terminal, a keypad, a card reader, headphones.",
+            "A website or an app used on the user's own device includes none: if so, record chapter 8 as not applicable.",
+            {
+              "V3.2.1": "For each piece of hardware, assess the clauses of chapter 8 that apply to it: speech output (8.2), the reach and space of stationary ICT (8.3), operable parts (8.4), and the rest the chapter lists.",
+              "V4.1.1": "For each piece of hardware, assess the clauses of chapter 8 that apply to it: speech output (8.2), reach and the position of displays and controls on stationary ICT (8.3), operable parts (8.4), and standard connections, colour and contrast (8.6 to 8.8). For stationary ICT, measure against the first set of dimensions in 8.3 unless the design has a functional reason to use the second set, and say which set you used."
+            }
+          ],
+          "passWhen": "The product includes no hardware, or each piece meets the clauses of chapter 8 that apply.",
+          "failWhen": "Hardware the product includes fails a clause of chapter 8, such as a kiosk with controls out of reach, which fails the clause of EN 301 549 chapter 8 it falls under."
+        }
+      ]
+    },
+    {
+      "id": "9.6",
+      "title": "WCAG conformance requirements",
+      "relatesTo": [
+        "1.4.2",
+        "2.1.2",
+        "2.2.2",
+        "2.3.1"
+      ],
+      "facets": [
+        {
+          "id": "conformance-level",
+          "label": "The page meets every Level A and AA clause of 9.1 to 9.4, or has a conforming alternate version",
+          "automation": "manual",
+          "steps": {
+            "V3.2.1": [
+              "Take the page's result for each clause of 9.1 to 9.4: scan it with the en301549 profile of V3.2.1, and assess by its procedure each clause the scan leaves open.",
+              "Where a clause fails, look for a conforming alternate version, as WCAG 2.1 defines it: a version of the same content and function that meets every clause, reachable from the page by a link or control that itself meets them."
+            ],
+            "V4.1.1": [
+              "Take the page's result for each clause of 9.1 to 9.4: scan it with the en301549 profile of V4.1.1, and assess by its procedure each clause the scan leaves open.",
+              "Where a clause fails, look for a conforming alternate version, as WCAG 2.2 defines it: a version of the same content and function that meets every clause, reachable from the page by a link or control that itself meets them."
+            ]
+          },
+          "passWhen": "The page meets every clause of 9.1 to 9.4, or a conforming alternate version of it does and can be reached from it.",
+          "failWhen": "A clause of 9.1 to 9.4 fails and the page has no conforming alternate version, which fails EN 301 549 9.6 (conformance requirement 1)."
+        },
+        {
+          "id": "full-pages",
+          "label": "The whole page is assessed, with nothing left out",
+          "automation": "manual",
+          "tools": [
+            "devtools"
+          ],
+          "steps": [
+            "List everything the page shows, in each of its states: content from other services, such as a chat window, a map, a video player, adverts, a consent banner, a payment form; menus, dialogs and messages that appear on use.",
+            "Check that each of them was assessed against 9.1 to 9.4, and not excluded because someone else provides it."
+          ],
+          "passWhen": "Every part of the page, whoever provides it, was assessed and meets the clauses.",
+          "failWhen": "A part of the page was left out of the assessment, or fails a clause, such as a third-party chat window, which fails EN 301 549 9.6 (conformance requirement 2)."
+        },
+        {
+          "id": "complete-processes",
+          "label": "Every page of a process the page is part of meets the clauses",
+          "automation": "manual",
+          "steps": [
+            "Find each process the page is a step of: signing up, buying, booking, applying, paying.",
+            "Go through each from its first step to its last, and list every page and state on the way, including confirmation and error pages.",
+            "Check that each of them meets 9.1 to 9.4."
+          ],
+          "passWhen": "Every page of every process the page is part of meets the clauses of 9.1 to 9.4.",
+          "failWhen": "A page of a process fails a clause, such as an inaccessible payment step, so the process can not be completed, which fails EN 301 549 9.6 (conformance requirement 3) for every page of it."
+        },
+        {
+          "id": "accessibility-supported",
+          "label": "The page relies only on ways of using its technologies that assistive technologies support",
+          "automation": "manual",
+          "tools": [
+            "screen-reader",
+            "keyboard"
+          ],
+          "steps": [
+            "Note what the page relies on to meet the clauses: HTML and ARIA, scripts, canvas or SVG, embedded media, plug-ins.",
+            "Use its main functions with a screen reader in two common browser and screen reader pairs, and with the keyboard alone.",
+            "Note any information or function that is only available through something they do not support, and check whether it is also available in a way they do."
+          ],
+          "passWhen": "Every information and function the page relies on works with common assistive technologies, or is also given in a way that does.",
+          "failWhen": "The page relies on a technology, or a way of using it, that assistive technologies do not support, with no supported alternative, which fails EN 301 549 9.6 (conformance requirement 4)."
+        },
+        {
+          "id": "non-interference",
+          "label": "Content the page does not rely on does not get in the way of the rest",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Check all the content of the page, including what it does not rely on to meet the clauses, against 9.1.4.2 (audio control), 9.2.1.2 (no keyboard trap), 9.2.2.2 (pause, stop, hide) and 9.2.3.1 (three flashes).",
+            "Turn off, or use a browser without, each technology the page does not rely on, such as scripts for a part that has an alternative, and check that the rest of the page still meets the clauses."
+          ],
+          "passWhen": "No content on the page traps the keyboard, plays sound that can not be stopped, moves without a way to stop it or flashes, and the rest of the page meets the clauses whatever the technologies it does not rely on do.",
+          "failWhen": "Content on the page, even content the page does not rely on, traps the keyboard, plays sound or moves with no way to stop it, flashes, or keeps the rest of the page from being used, which fails EN 301 549 9.6 (conformance requirement 5)."
+        }
+      ]
+    },
+    {
+      "id": "9.4.1.1",
+      "versions": [
+        "V4.1.1"
+      ],
+      "title": "Parsing",
+      "note": "This clause is void in V4.1.1, because WCAG 2.2 removed success criterion 4.1.1. Don't test or report it. Problems it used to catch, such as duplicate ids that break a name or a relationship, are checked under 1.3.1 and 4.1.2."
+    },
+    {
+      "id": "9.7",
+      "versions": [
+        "V4.1.1"
+      ],
+      "title": "User preferences for web pages",
+      "facets": [
+        {
+          "id": "forced-colours",
+          "label": "The page follows the user's own colours where the browser applies them",
+          "automation": "manual",
+          "tools": [
+            "contrast-theme",
+            "devtools"
+          ],
+          "steps": [
+            "Turn on a high-contrast theme in the operating system, or the browser's own colour setting, and reload the page.",
+            "Forced colours exist on Windows, with a contrast theme, in Chrome, Edge and Firefox. The increased contrast settings of macOS and iOS don't force colours, so a page can't be judged against them here. Firefox can also replace page colours on any system, in its colour settings.",
+            "Check that the page takes the theme's colours, and that text, controls, focus and icons that carry meaning stay visible.",
+            "In the developer tools, look for forced-color-adjust: none in the page's styles, and check that each element it applies to keeps its own colours because they are essential, such as a colour picker or a photograph.",
+            "Check that icons drawn as background images, focus styles drawn with box-shadow, and borders that carry meaning are still visible: they are the parts most often lost in forced colours."
+          ],
+          "passWhen": "The page shows in the user's colours, and keeps its own only where they are essential to it.",
+          "failWhen": "The page keeps its own colours over the user's theme where they are not essential, or stops the theme from applying, which fails EN 301 549 9.7."
+        },
+        {
+          "id": "text-size",
+          "label": "The page follows the user's text size settings",
+          "automation": "manual",
+          "tools": [
+            "zoom",
+            "devtools"
+          ],
+          "steps": [
+            "Set a larger default text size, and a minimum font size, in the browser, and on a phone the system's text size, then reload the page.",
+            "Check that the page's text grows with the setting.",
+            "Where it does not, look in the developer tools for what holds it, such as text-size-adjust: none, or text set in fixed pixels inside a viewport that turns off zoom, and check that it is essential.",
+            "Text set in px doesn't follow the browser's default text size, while text in rem, em or % does. Phones differ too: browsers don't all follow the system's text size for web pages. Record what blocks the setting, and say in the finding whether the page overrides it or the browser doesn't offer it."
+          ],
+          "passWhen": "The page's text follows the user's text size settings.",
+          "failWhen": "The page keeps its text from following the user's text size settings where it is not essential, which fails EN 301 549 9.7."
+        },
+        {
+          "id": "pointer-and-cursor",
+          "label": "The page keeps the user's pointer and text cursor",
+          "automation": "manual",
+          "tools": [
+            "pointer",
+            "devtools"
+          ],
+          "steps": [
+            "Set a larger pointer in the operating system, and a thicker or more visible text cursor where it offers one.",
+            "Move the pointer over the page, and type in its fields.",
+            "Check that the pointer keeps the user's size, and that the text cursor stays visible, where the page draws its own pointer (cursor: url(...)) or hides the cursor (caret-color: transparent).",
+            "Look also for a pointer hidden with cursor: none outside games or full-screen media, and for a custom text cursor that ignores the system's width setting."
+          ],
+          "passWhen": "The pointer and the text cursor keep the user's settings everywhere on the page, but where the page's own is essential.",
+          "failWhen": "The page replaces the user's pointer with a smaller one, or hides the text cursor, where it is not essential, which fails EN 301 549 9.7."
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "title": "Non-web documents",
+      "facets": [
+        {
+          "id": "documents",
+          "label": {
+            "V3.2.1": "Documents the product provides, other than web pages, meet the clauses of chapter 10",
+            "V4.1.1": "Documents the product provides meet the WCAG criteria as clause 10 applies them"
+          },
+          "automation": "manual",
+          "tools": [
+            "screen-reader",
+            "keyboard"
+          ],
+          "steps": {
+            "V3.2.1": [
+              "List the documents the product provides that are not web pages: downloads in PDF, word-processing, spreadsheet, presentation or e-book formats, attachments to messages.",
+              "Leave out a document that is part of a web page, and documentation, which chapter 12 also covers.",
+              "If nothing is left, record chapter 10 as not applicable.",
+              "Open each in a common reader for its format, and assess clauses 10.1 to 10.4, the WCAG criteria applied to documents: text alternatives, headings and tags, reading order, contrast, language, link text, form fields.",
+              "Read each with a screen reader, start to end, and move through it by headings."
+            ],
+            "V4.1.1": [
+              "List the documents the product provides that are not web pages: downloads in PDF, word-processing, spreadsheet, presentation or e-book formats, and attachments to messages.",
+              "Leave out a document that is part of a web page, and documentation, which chapter 12 also covers. If nothing is left, record chapter 10 as not applicable.",
+              "Open each in the reader most of its users have, such as Adobe Acrobat Reader for PDF. Browser PDF viewers expose less of a document's structure to screen readers, so a result there may not hold in Acrobat Reader, or the reverse.",
+              "For a PDF, run a checker such as PAC (PDF Accessibility Checker) against PDF/UA, then check by hand what it can't judge: whether tags match what is shown, the reading order, and the quality of text alternatives. The standard names PDF/UA-1 and PDF/UA-2 as helpful technical references.",
+              "Assess clauses 10.1 to 10.4. Where clause 10 restates a criterion in its own words for documents, follow that wording, not the web one. Focus not obscured (10.2.4.11) applies only to a document that takes keyboard input, such as a form.",
+              "Read each document with a screen reader from start to end, and move through it by headings.",
+              "Where the document has subtitles or audio description, check their position and timing (10.5, 10.6). These are recommendations: record them as advisory.",
+              "Check that the document's security settings don't stop assistive technology from reading it, for example a PDF whose permissions forbid copying content for accessibility."
+            ]
+          },
+          "passWhen": {
+            "V3.2.1": "The product provides no non-web documents, or each meets the clauses of chapter 10 that apply.",
+            "V4.1.1": "The product provides no non-web documents, or each meets the clauses of 10.1 to 10.4 that apply."
+          },
+          "failWhen": {
+            "V3.2.1": "A document the product provides fails a clause of chapter 10, such as an untagged PDF a screen reader reads out of order, which fails the clause of EN 301 549 chapter 10 it falls under.",
+            "V4.1.1": "A document fails a clause of chapter 10, such as an untagged PDF that a screen reader reads out of order, which fails the clause of EN 301 549 chapter 10 it falls under."
+          }
+        },
+        {
+          "id": "sets-of-documents",
+          "versions": [
+            "V4.1.1"
+          ],
+          "label": "Documents that belong to a set are consistent with each other",
+          "automation": "manual",
+          "steps": [
+            "Check whether the documents form a set: a manual split into several files, a series of statements, a group of related forms.",
+            "If not, record 10.3.2.3, 10.3.2.4 and 10.3.2.6 as not applicable.",
+            "Open three or four documents of the set and check that repeated navigation comes in the same relative order (10.3.2.3), that parts with the same function are identified the same way (10.3.2.4), and that help, where offered, is in the same relative place (10.3.2.6)."
+          ],
+          "passWhen": "The documents form no set, or the documents of a set are consistent in navigation, identification and help.",
+          "failWhen": "Documents of one set order their navigation differently, label the same function differently, or move their help, which fails the clause of EN 301 549 10.3.2 it falls under."
+        },
+        {
+          "id": "user-preferences",
+          "versions": [
+            "V4.1.1"
+          ],
+          "label": "The document doesn't block the reader's own display settings",
+          "automation": "manual",
+          "tools": [
+            "contrast-theme",
+            "zoom"
+          ],
+          "steps": [
+            "Open the document in its usual reader and turn on the settings the reader offers for display: replacing the document's colours, a larger text size or zoom, and a reflow or reading mode.",
+            "Check that the document follows each, or that the reader's own limits, not the document, stop it.",
+            "Where the document blocks a setting, check whether that is essential to it, such as a form that must keep an exact layout."
+          ],
+          "passWhen": "The document follows the reader's display settings, or blocks them only where that is essential.",
+          "failWhen": "The document blocks the reader's colour, text size or reflow settings where it is not essential, which fails EN 301 549 10.7."
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "title": {
+        "V3.2.1": "Software",
+        "V4.1.1": "Non-web software"
+      },
+      "facets": [
+        {
+          "id": "non-web-software",
+          "label": {
+            "V3.2.1": "Software the product includes that is not web content meets clauses 11.1 to 11.6",
+            "V4.1.1": "Non-web software the product includes meets clauses 11.1 to 11.7"
+          },
+          "automation": "manual",
+          "steps": [
+            "List how the product reaches its users: in a browser, as a desktop or mobile app, as a browser extension, plug-in, installer or downloadable tool.",
+            {
+              "V3.2.1": "Leave out web pages and what runs in them: chapter 9 assesses those."
+            },
+            {
+              "V3.2.1": "If nothing is left, record clauses 11.1 to 11.5 as not applicable."
+            },
+            {
+              "V3.2.1": "For each piece of software left, assess clauses 11.1 to 11.5 with the WCAG criteria each restates, applied to software as the standard words them, using the platform's own screen reader and keyboard."
+            },
+            {
+              "V3.2.1": "For a platform, check that its documented accessibility features can be controlled by the user (11.6.1).",
+              "V4.1.1": "Leave out web pages, and what runs in them in a browser: chapter 9 assesses those. Keep a web view shown inside an app: it is part of non-web software, and chapter 11 assesses it instead of chapter 9."
+            },
+            {
+              "V4.1.1": "If nothing is left, record chapter 11 as not applicable."
+            },
+            {
+              "V4.1.1": "For each piece of non-web software left, assess clauses 11.1 to 11.5 as the standard words them for software, with the platform's own screen reader and keyboard: VoiceOver on iOS and macOS, TalkBack on Android, Narrator or NVDA on Windows. WCAG2ICT explains how each criterion applies to software."
+            },
+            {
+              "V4.1.1": "Use the platform's inspection tools to see what the software exposes: Accessibility Inspector in Xcode for iOS and macOS, Accessibility Scanner and the layout inspector for Android, Accessibility Insights for Windows. Check that each element gives its name, role, state, value and relationships to the platform's accessibility services (11.5.2.5 to 11.5.2.17)."
+            },
+            {
+              "V4.1.1": "Leave out the clauses that are void for software: 11.3.1.2 language of parts, 11.3.2.3 consistent navigation, 11.3.2.6 consistent help and 11.4.1.1 parsing. Note that 11.2.4.2 now applies: each window or screen needs a title that describes it, where the platform supports one."
+            },
+            {
+              "V4.1.1": "Check that it does not turn off or block the platform's documented accessibility features (11.6.2), and that it follows the user's platform settings for them unless that is essential (11.7): text size, contrast, colour filters, pointer size and the text cursor."
+            },
+            {
+              "V4.1.1": "Where the product makes content, check it under clause 5.10 (authoring tools). Where part of it is closed to assistive technology, check that part under clause 5.1, not here."
+            }
+          ],
+          "passWhen": {
+            "V3.2.1": "The product includes no software besides web content, or each piece it includes meets clauses 11.1 to 11.6.",
+            "V4.1.1": "The product includes no non-web software, or each piece it includes meets clauses 11.1 to 11.7."
+          },
+          "failWhen": {
+            "V3.2.1": "Software the product includes, such as its mobile app, fails a clause of 11.1 to 11.6, which fails the clause of EN 301 549 chapter 11 it falls under.",
+            "V4.1.1": "Non-web software the product includes, such as its mobile app or a web view inside it, fails a clause of 11.1 to 11.7, which fails the clause of EN 301 549 chapter 11 it falls under."
+          }
+        },
+        {
+          "id": "platform-settings",
+          "versions": [
+            "V3.2.1"
+          ],
+          "label": "The product follows the user's settings in the browser and system, and does not disrupt their accessibility features",
+          "automation": "manual",
+          "tools": [
+            "zoom",
+            "contrast-theme",
+            "screen-reader"
+          ],
+          "steps": [
+            "Set a larger default font size in the browser, turn on a high-contrast theme in the system, and set the system to reduce motion.",
+            "Open the product and check that its text, colours and focus indicator follow those settings, unless it offers its own setting that the user has chosen.",
+            "Use the product with the system's magnifier and screen reader running, and check that it does not turn them off, block them or take over their keys."
+          ],
+          "passWhen": "The product follows the browser's and system's font size, colours, contrast and focus settings, and leaves the platform's accessibility features working.",
+          "failWhen": "The product ignores a user setting with no setting of its own to make up for it, or stops an accessibility feature from working, which fails EN 301 549 11.7 or 11.6.2."
+        },
+        {
+          "id": "authoring-tool",
+          "versions": [
+            "V3.2.1"
+          ],
+          "label": "Where the product is an authoring tool, it supports and guides accessible content",
+          "automation": "manual",
+          "tools": [
+            "keyboard"
+          ],
+          "steps": [
+            "Check whether the product lets its users make content that others will read: pages, posts, documents, forms, emails, a site.",
+            "If it does not, record clause 11.8 as not applicable.",
+            "If it does, create content with it that has a heading, an image, a table, a link and a form field, and check that the tool lets you give each what chapter 9 or 10 needs: heading levels, a text alternative, table headers, link text and labels.",
+            "Check that the tool says when something is missing or wrong, and helps fix it (11.8.4).",
+            "Check that templates it offers produce content that meets chapter 9 or 10 (11.8.5), and that converting content to another format keeps the accessibility information the new format can hold (11.8.3)."
+          ],
+          "passWhen": "The product is not an authoring tool, or it lets and helps its users make content that meets chapter 9 or 10, and keeps accessibility information when it converts.",
+          "failWhen": "An authoring tool can not produce accessible content, such as an editor with no way to add a text alternative, or loses accessibility information when it converts, which fails EN 301 549 11.8."
+        }
+      ]
+    },
+    {
+      "id": "12.1.1",
+      "versions": [
+        "V3.2.1"
+      ],
+      "title": "Accessibility and compatibility features",
+      "facets": [
+        {
+          "id": "features-documented",
+          "label": "The product documentation lists the accessibility and compatibility features and explains how to use them",
+          "automation": "manual",
+          "steps": [
+            "Find the documentation that comes with the product, separate or built in: help pages, user guide, accessibility statement.",
+            "List the product's accessibility features: its own, such as a text size setting, a high-contrast mode, keyboard shortcuts, captions or audio description, and the assistive technology it is made to work with, such as screen readers, magnifiers and voice control.",
+            "Check that the documentation lists them, and says how to turn on and use each one.",
+            "Follow the instructions for a few of them and check that they work as described."
+          ],
+          "passWhen": "The documentation lists every accessibility and compatibility feature of the product and says how to use each.",
+          "failWhen": "An accessibility or compatibility feature is not in the documentation, or is named with no word on how to use it, which fails EN 301 549 12.1.1."
+        }
+      ]
+    },
+    {
+      "id": "12.1.2",
+      "versions": [
+        "V3.2.1"
+      ],
+      "title": "Accessible documentation",
+      "facets": [
+        {
+          "id": "documentation-format",
+          "label": "The product documentation is available in at least one electronic format that meets chapter 9 or chapter 10",
+          "automation": "manual",
+          "steps": [
+            "List the documentation that comes with the product: help pages, user guides and manuals, quick-start sheets, release notes, FAQs and the accessibility statement, whether on the web, in the product or as downloads.",
+            "Note the formats each comes in: web pages, PDF, word-processing files, videos, printed material.",
+            "For each, pick the electronic format to assess: one is enough where several are offered, if a user can get it.",
+            "Assess documentation on the web as web pages, against chapter 9: scan it with the en301549 profile of the version, and follow the procedures of the clauses a scan leaves undecided.",
+            "Assess documentation in a document format against chapter 10: a PDF tagged with headings and reading order, images with text alternatives, tables with headers, and text that is text, not a picture of it.",
+            "Check that the accessible format holds everything the other formats do."
+          ],
+          "passWhen": "Each piece of product documentation is available, complete, in a web format that meets chapter 9 or a document format that meets chapter 10.",
+          "failWhen": "A piece of documentation is only in print, or only in formats that fail chapter 9 or 10, such as an untagged PDF or a scanned manual, which fails EN 301 549 12.1.2."
+        }
+      ]
+    },
+    {
+      "id": "12.2.2",
+      "versions": [
+        "V3.2.1"
+      ],
+      "title": "Information on accessibility and compatibility features",
+      "facets": [
+        {
+          "id": "support-knows-features",
+          "label": "The support services can give information on the accessibility and compatibility features the documentation names",
+          "automation": "manual",
+          "steps": [
+            "List the support services the product offers: help desk, chat, email, phone line, training, community forum run by the supplier.",
+            "If it offers none, record that 12.2.2 does not apply.",
+            "Ask each, as a user would, about two or three of the accessibility and compatibility features the documentation names: how to turn one on, whether the product works with a given screen reader.",
+            "Check that the answers are correct and match the documentation."
+          ],
+          "passWhen": "Every support service answers questions about the accessibility and compatibility features in the documentation, correctly.",
+          "failWhen": "A support service can not answer, or answers wrongly, about an accessibility feature the documentation names, which fails EN 301 549 12.2.2."
+        }
+      ]
+    },
+    {
+      "id": "12.2.3",
+      "versions": [
+        "V3.2.1"
+      ],
+      "title": "Effective communication",
+      "facets": [
+        {
+          "id": "support-communicates",
+          "label": "The support services meet the communication needs of people with disabilities, directly or by referral",
+          "automation": "manual",
+          "tools": [
+            "screen-reader",
+            "keyboard"
+          ],
+          "steps": [
+            "List the support services the product offers and the ways each can be reached.",
+            "If it offers none, record that 12.2.3 does not apply.",
+            "Check that a person who can not hear or speak can reach each service without voice, such as by email, text chat, a text relay service or sign language video, directly or through a referral point the service names.",
+            "Check that a person who can not see can reach each, such as through a chat or contact form that works with a screen reader.",
+            "Contact a service in one of these ways, and check that it answers in the same way, within the time it gives other users."
+          ],
+          "passWhen": "Each support service can be reached, and answers, in ways that meet the communication needs of people with disabilities, or refers them to one that does.",
+          "failWhen": "A support service can only be reached in one way that excludes some users, such as by phone only, with no referral, which fails EN 301 549 12.2.3."
+        }
+      ]
+    },
+    {
+      "id": "12.2.4",
+      "versions": [
+        "V3.2.1"
+      ],
+      "title": "Accessible documentation",
+      "facets": [
+        {
+          "id": "support-documentation-format",
+          "label": "Documentation the support services provide is available in at least one electronic format that meets chapter 9 or chapter 10",
+          "automation": "manual",
+          "steps": [
+            "List the documentation the support services provide: answers, guides, articles, training material: help pages, user guides and manuals, quick-start sheets, release notes, FAQs and the accessibility statement, whether on the web, in the product or as downloads.",
+            "Note the formats each comes in: web pages, PDF, word-processing files, videos, printed material.",
+            "For each, pick the electronic format to assess: one is enough where several are offered, if a user can get it.",
+            "Assess documentation on the web as web pages, against chapter 9: scan it with the en301549 profile of the version, and follow the procedures of the clauses a scan leaves undecided.",
+            "Assess documentation in a document format against chapter 10: a PDF tagged with headings and reading order, images with text alternatives, tables with headers, and text that is text, not a picture of it.",
+            "Check that the accessible format holds everything the other formats do."
+          ],
+          "passWhen": "Each piece of support documentation is available, complete, in a web format that meets chapter 9 or a document format that meets chapter 10.",
+          "failWhen": "A piece of support documentation is only in print, or only in formats that fail chapter 9 or 10, which fails EN 301 549 12.2.4."
+        }
+      ]
+    },
+    {
+      "id": "12.1",
+      "versions": [
+        "V4.1.1"
+      ],
+      "title": "Accessible information about products",
+      "facets": [
+        {
+          "id": "information-format",
+          "label": "Information about the product, in digital form, meets chapter 9, 10 or 11, as its format requires",
+          "automation": "manual",
+          "steps": [
+            "List the information the product comes with or is described by, besides its own pages: help pages, user guides and manuals, quick-start sheets, release notes, FAQs and the accessibility statement, whether on the web, in the product or as downloads.",
+            "Note the formats each comes in: web pages, PDF, word-processing files, videos, printed material.",
+            "For each, pick the electronic format to assess: one is enough where several are offered, if a user can get it.",
+            "Assess documentation on the web as web pages, against chapter 9: scan it with the en301549 profile of the version, and follow the procedures of the clauses a scan leaves undecided.",
+            "Assess documentation in a document format against chapter 10: a PDF tagged with headings and reading order, images with text alternatives, tables with headers, and text that is text, not a picture of it.",
+            "Assess information shown inside non-web software, such as a help panel in an app, against chapter 11."
+          ],
+          "passWhen": "All the information about the product that is in digital form meets chapter 9 on the web, chapter 10 as a document, or chapter 11 inside software.",
+          "failWhen": "Information about the product fails the chapter its format falls under, such as a manual in an untagged PDF or a help page that fails a chapter 9 clause, which fails EN 301 549 12.1."
+        }
+      ]
+    },
+    {
+      "id": "12.2",
+      "versions": [
+        "V4.1.1"
+      ],
+      "title": "Accessible information about services",
+      "facets": [
+        {
+          "id": "service-information-format",
+          "label": "Information about the service, support services included, in digital form, meets chapter 9, 10 or 11, as its format requires",
+          "automation": "manual",
+          "steps": [
+            "List the information about the service the product provides or is part of: what it offers, its terms and prices, how to use it, and what its support services give, such as answers, guides and messages.",
+            "If there is no service, record that 12.2 does not apply.",
+            "Note the formats each comes in: web pages, PDF, word-processing files, messages, inside an app.",
+            "Assess it against the chapter its format falls under: chapter 9 on the web, chapter 10 as a document, chapter 11 inside non-web software."
+          ],
+          "passWhen": "All the information about the service that is in digital form meets the chapter its format falls under.",
+          "failWhen": "Information about the service fails the chapter its format falls under, such as terms in an untagged PDF or a support answer sent as a picture of text, which fails EN 301 549 12.2."
+        }
+      ]
+    },
+    {
+      "id": "12.3",
+      "versions": [
+        "V4.1.1"
+      ],
+      "title": "Accessibility and compatibility features",
+      "facets": [
+        {
+          "id": "features-documented",
+          "label": "The documentation says, directly or by a link, what the accessibility features are, how to use them and how to get support for them",
+          "automation": "manual",
+          "steps": [
+            "Find the documentation about using the product, in the product or on the supplier's own web pages.",
+            "List the product's accessibility features: its own, such as a text size setting, a high-contrast mode, keyboard shortcuts, captions or audio description, and the assistive technology it is made to work with, such as screen readers, magnifiers and voice control.",
+            "Check that the documentation lists them, and says how to turn on and use each one.",
+            "Follow the instructions for a few of them and check that they work as described.",
+            "Check that it says how to get support for the accessibility features, or links to a page that does."
+          ],
+          "passWhen": "The documentation, or a page it links to, names the accessibility features, says how to use each, and says how to get support for them.",
+          "failWhen": "The documentation leaves out an accessibility feature, how to use it, or how to get support for it, with no link to where it is said, which fails EN 301 549 12.3."
+        }
+      ]
+    },
+    {
+      "id": "12.4",
+      "versions": [
+        "V4.1.1"
+      ],
+      "title": "Electronic program guides",
+      "facets": [
+        {
+          "id": "epg-information",
+          "label": "Where the product is an electronic programme guide, it says which programmes have subtitles, audio description, spoken subtitles and sign language",
+          "automation": "manual",
+          "steps": [
+            "Check whether the product is, or includes, an electronic programme guide: a schedule or catalogue of television or streamed programmes.",
+            "If it is not, record that 12.4 does not apply.",
+            "For a few programmes, check that the guide gives the availability of subtitles, audio description, spoken subtitles and sign language interpretation."
+          ],
+          "passWhen": "The product is no programme guide, or its guide tells for each programme which of these it has.",
+          "failWhen": "The programme guide gives no information on subtitles, audio description, spoken subtitles or sign language, which fails EN 301 549 12.4."
+        }
+      ]
+    },
+    {
+      "id": "12.5",
+      "versions": [
+        "V4.1.1"
+      ],
+      "title": "Electronic program guide display",
+      "facets": [
+        {
+          "id": "epg-display",
+          "label": "Where the product shows a programme guide, the accessibility of each programme can be told without starting it",
+          "automation": "manual",
+          "tools": [
+            "screen-reader"
+          ],
+          "steps": [
+            "Check whether the product shows an electronic programme guide, and whether the guide holds information on subtitles, audio description, spoken subtitles or sign language.",
+            "If it does not, record that 12.5 does not apply.",
+            "Browse the guide and check that, for each programme, you can tell which of these it has without playing it: as text, icons with a text alternative, or a filter.",
+            "Check the same with a screen reader, while moving through the guide."
+          ],
+          "passWhen": "The product shows no programme guide with this information, or a user can tell from the guide which programmes have each feature without playing them.",
+          "failWhen": "The accessibility features of a programme can only be found by playing it, or are shown in a way a screen reader does not read, which fails EN 301 549 12.5."
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "title": "ICT providing relay or emergency service access",
+      "facets": [
+        {
+          "id": "relay-and-emergency",
+          "label": {
+            "V3.2.1": "Relay services the product provides meet their clauses, and access to relay and emergency services is not blocked",
+            "V4.1.1": "Relay services the product provides meet their clauses, and access to them is not blocked"
+          },
+          "automation": "manual",
+          "steps": [
+            "Check whether the product is a relay service, such as text, sign language, lip-reading, captioned telephony or speech-to-speech relay, or a means of reaching one or of calling emergency services.",
+            "If it is none of these, record chapter 13 as not applicable.",
+            {
+              "V3.2.1": "For a relay service, assess the clauses of 13.1 for its kind, such as real-time text or video good enough for sign language."
+            },
+            {
+              "V3.2.1": "Where the product offers two-way communication meant for use with relay or emergency services, check that it lets calls reach them and come from them, by voice, real-time text or video, as both sides support (13.2, 13.3).",
+              "V4.1.1": "For a relay service, assess 13.1.3: it relays in every form of communication it offers, passes through what it doesn't convert, lets the user join conference calls, and accepts calls started by emergency services."
+            },
+            {
+              "V4.1.1": "Where the product offers communication meant for use with relay services, assess 13.1.2: the user can reach the relay service with the usual numbers or addresses of the person they are calling, the caller's identity is passed on, the user can bring in the relay service on outgoing and incoming calls, and can do so in an emergency call."
+            },
+            {
+              "V4.1.1": "Clause 13.2 is void in V4.1.1, and 13.3 on access to emergency services is informative: it points to clause 6 and to ETSI EN 303 919. Test emergency calling under clause 6."
+            }
+          ],
+          "passWhen": "The product provides no relay or emergency access, or meets each clause of chapter 13 that applies.",
+          "failWhen": "A relay service fails its clause, or the product blocks the use of relay or emergency services, which fails the clause of EN 301 549 chapter 13 it falls under."
+        }
+      ]
+    }
+  ]
+}

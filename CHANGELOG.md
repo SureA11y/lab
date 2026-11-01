@@ -36,6 +36,13 @@ The first public release.
 - **Reports opened by address**: `?report=<url>` and `?compare=<url>`.
 - **Phones and narrow screens**: from 320 pixels wide, each finding is a
   card, which screen readers still read as a table.
+- **Procedures for what no rule evaluates**, in English, in
+  `src/procedures/`: how a person assesses by hand the 51 WCAG 2.2 criteria
+  no surea11y rule evaluates, and EN 301 549's own requirements (chapter 4,
+  9.6, 9.7, chapters 5 to 8 and 10 to 13, and chapter 12), with Table B.2 of
+  V4.1.1 for its clause 4.2 criteria. surea11y and its EN 301 549 pack give
+  procedures only for what their rules evaluate; these complete a manual
+  audit of either standard. The lab does not show them yet.
 
 ### The runner and integrations
 
