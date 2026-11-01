@@ -9,7 +9,7 @@ The testing guide reads a standard's procedures through core, with the lab's add
 - **WCAG criteria** no core rule evaluates: their steps join core's English dictionary, so core reads them as its own, for the criterion and for an EN 301 549 clause that restates it ("which fails EN 301 549 9.1.2.3"). Core takes a facet's tools from its own registry, so the lab adds them, and keeps a list to the tools, automation and rules asked for as core does.
 - **EN 301 549's own requirements**: the pack is given to core with them in its `standard.procedures` (`en301549.js` reads `en301549.json` for each version), in the groups of the standard's chapters (chapter 4, 5 to 13, with 9.6 and 9.7 after chapter 9's principles).
 - **What core or the pack gives comes first.** A WCAG facet core has steps for, and a requirement the pack gives, keep theirs.
-- **In another language**, the lab's text is in English and marked so, and core counts it as missing, so the standard is complete only in English. The guide still offers the other languages, saying how many texts each shows in English ("Français (French), 299 texts in English"). A report, which reads a requirement's procedures only in a language the standard is all in, reads them in English.
+- **In English alone, for now.** The lab's text is in English, so core counts it as missing in every other language. Rather than a page partly in another language, the lab reads every procedure in English (`LANGUAGE` in `src/server-side/procedures.js`): the guide, its saved page and a report's "How to check it by hand", and the guide offers no other language.
 
 A core without its procedures entry (`@surea11y/core/procedures`, 1.15) is used as it is, and the guide shows what it showed before.
 

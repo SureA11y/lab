@@ -17,19 +17,19 @@ test('a core without procedures says so, and the app shows nothing more', () => 
     assert.deepEqual(proceduresForCriteria('1.4.13', { core: null }), { available: false });
 });
 
-test('gives each criterion asked for, once, in the locale', () => {
+test('gives each criterion asked for, once, in English whatever the locale asked', () => {
     const seen = [];
     const out = proceduresForCriteria('1.4.13, 2.4.3,1.4.13', { locale: 'FR', core: fakeCore(seen) });
     assert.equal(out.available, true);
-    assert.equal(out.locale, 'fr');
+    assert.equal(out.locale, 'en');
     assert.deepEqual(Object.keys(out.procedures), ['1.4.13', '2.4.3']);
-    assert.deepEqual(seen, [['1.4.13', 'fr'], ['2.4.3', 'fr']]);
+    assert.deepEqual(seen, [['1.4.13', 'en'], ['2.4.3', 'en']]);
 });
 
 test('leaves out what is not a requirement, and caps how many', () => {
     const many = Array.from({ length: MAX_IDS + 10 }, (_, i) => `${1 + (i % 9)}.${Math.floor(i / 9)}.2`);
     const out = proceduresForCriteria(['1.1.1', 'best-practice', '../x', '9.9.9', ...many], { locale: '<script>', core: fakeCore() });
-    assert.equal(out.locale, 'en', 'a locale that is no tag is English');
+    assert.equal(out.locale, 'en');
     assert.equal(out.procedures['best-practice'], undefined);
     assert.equal(out.procedures['9.9.9'], null, 'one core does not know');
     assert.equal(Object.keys(out.procedures).length, MAX_IDS);
@@ -79,7 +79,7 @@ test('the testing guide lists a standard as core does, with the choices it takes
     const pack = { name: 'pack' };
     const packFor = (k) => (k === 'en301549' ? pack : null);
     assert.deepEqual(listOptions({ standard: 'wcag', version: '2.1', levels: 'A,AA,Z', tools: 'screen-reader,x', automation: 'manual,partial', locale: 'FR' }, { packFor }),
-        { locale: 'fr', tools: ['screen-reader'], automation: ['manual', 'partial'], standard: 'wcag', version: '2.1', levels: ['A', 'AA'] });
+        { locale: 'en', tools: ['screen-reader'], automation: ['manual', 'partial'], standard: 'wcag', version: '2.1', levels: ['A', 'AA'] }, 'in English, whatever the locale asked');
     assert.deepEqual(listOptions({ standard: 'wcag', version: '9.9' }, { packFor }), { locale: 'en', standard: 'wcag' }, 'an unknown version is core\'s default');
     assert.deepEqual(listOptions({ standard: 'best-practice' }, { packFor }), { locale: 'en', standard: 'best-practice' });
     assert.deepEqual(listOptions({ standard: 'en301549', version: 'V4.1.1' }, { packFor }), { locale: 'en', packs: [pack], standard: 'en301549', version: 'V4.1.1' });
@@ -114,16 +114,17 @@ test('a report reads a standard in a language only where it is all in it, else i
     assert.equal(completeLocale('pt', [{ locale: 'fr', complete: true, missing: 0 }]), 'fr', 'a standard written in French reads in French');
     assert.equal(completeLocale('de', null), 'de', 'a core that does not say reads the locale asked for');
 
+    // The lab reads a report's procedures in English alone, for now.
     const seen = [];
-    const out = proceduresForCriteria('1.4.13', { locale: 'de', core: languageCore(seen) });
-    assert.equal(out.locale, 'en');
+    assert.equal(proceduresForCriteria('1.4.13', { locale: 'FR-CA', core: languageCore(seen) }).locale, 'en');
     assert.deepEqual(seen, [['1.4.13', 'en']]);
-    assert.equal(proceduresForCriteria('1.4.13', { locale: 'FR-CA', core: languageCore() }).locale, 'fr');
 });
 
-test('the languages of a standard are core\'s, its own first', () => {
+test('the languages of a standard are English alone, as core gives it', () => {
     const packFor = (key) => (key === 'en301549' ? { standard: { key } } : null);
-    assert.deepEqual(standardLanguages({ standard: 'wcag', version: '2.1' }, { core: languageCore(), packFor }), { available: true, languages: LANGUAGES });
+    assert.deepEqual(standardLanguages({ standard: 'wcag', version: '2.1' }, { core: languageCore(), packFor }), { available: true, languages: [LANGUAGES[0]] });
+    const missing = { procedureLanguages: () => [{ locale: 'fr', complete: true, missing: 0 }] };
+    assert.deepEqual(standardLanguages({ standard: 'wcag' }, { core: missing, packFor }), { available: true, languages: [{ locale: 'en', complete: true, missing: 0 }] }, 'English, where core has the standard in another');
     assert.deepEqual(standardLanguages({ standard: 'nope' }, { core: languageCore(), packFor }), { available: true, languages: null }, 'a standard with no pack');
     assert.deepEqual(standardLanguages({ standard: 'wcag' }, { core: fakeCore(), packFor }), { available: false }, 'a core that does not say');
     const asked = [];

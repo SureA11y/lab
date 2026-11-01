@@ -187,21 +187,12 @@ the guide at one requirement (`/guide?standard=wcag&id=1.4.3`). **Save as a
 page** downloads the same, as one page to keep or print; the colour theme is
 the app's. It records nothing: results go in a report's Review conformance.
 
-**Language of the procedures** reads them in another language, where the
-installed core says which ones the standard has (surea11y core 1.15 and
-later): only those are offered, the standard's own first. A language the
-standard isn't all in says how much isn't ("français (French), 1 text in
-English": WCAG 2.1's own title of 4.1.1, "Parsing"), and a note under the
-filters says the same once it is chosen. A standard without the language
-asked for is shown in its own, and the guide says so; the next standard
-that has it is read in it again. The guide's own words stay English, and
-each part in another language is marked with it, so a screen reader reads
-it in that language. The address keeps the choice (`&locale=fr`), and
-**Save as a page** gives the page in it.
-
-A report's "How to check it by hand" is in the language its scans ran in
-where the standard is all in it, and otherwise in the standard's own
-language, never part in one and part in another.
+**The procedures are in English, for now.** The lab's own procedures, for
+what no surea11y rule evaluates (`src/procedures/`), are in English, so no
+standard is complete in another language: the guide reads every standard in
+English and offers no other. A link that asks for one (`&locale=fr`) opens
+the guide in English, and a note under the filters says so. A report's "How
+to check it by hand" is in English too, whatever language its scans ran in.
 
 A finding's **View details** links to the guide too, above its own steps,
 which stay as they are: "The full method, in the testing guide", for each

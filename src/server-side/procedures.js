@@ -11,9 +11,14 @@
 // { available: false }, and the app shows what it showed before.
 
 const MAX_IDS = 120;
+// The language the lab offers procedures in: English alone, for now. The
+// lab's own procedures (src/procedures/) are in English, so a standard is
+// complete in no other; rather than a page partly in another language, the
+// guide, its page and a report read every procedure in English, and say
+// English is the one language they have. `locale` asked for is ignored.
+const LANGUAGE = 'en';
 // A WCAG criterion (1.4.13), a clause (4.2.1, 12.1) or a chapter (5).
 const REQUIREMENT = /^\d{1,2}(\.\d{1,2}){0,3}$/;
-const LOCALE = /^[a-z]{2,3}(-[a-z0-9]{1,8})*$/i;
 // A standard's version as its pack names it (V4.1.1, 4.1, 2024), and its key.
 const VERSION = /^[A-Za-z0-9][A-Za-z0-9._-]{0,23}$/;
 const STANDARD_KEY = /^[a-z][a-z0-9-]{0,39}$/;
@@ -40,14 +45,14 @@ function labCore() {
 
 /**
  * { available, locale, procedures: { [id]: procedure | null } } for `ids` (a
- * list, or a comma-separated string), in `locale` (English where it lacks a
- * text): WCAG criteria, or with `standard` (an installed pack's key, such as
+ * list, or a comma-separated string), in English (LANGUAGE, whatever `locale`
+ * asks): WCAG criteria, or with `standard` (an installed pack's key, such as
  * 'en301549') and its `version`, that standard's requirements, read with its
  * pack. Ids that are no requirement's are left out. A standard with no
  * installed pack has none: { available: false }.
  */
 function proceduresForRequirements(ids, {
-    locale = 'en', standard = 'wcag', version = '', core = labCore(), packFor = defaultPackFor,
+    standard = 'wcag', version = '', core = labCore(), packFor = defaultPackFor,
 } = {}) {
     if (!core || typeof core.proceduresFor !== 'function') return { available: false };
     const std = String(standard || 'wcag');
@@ -62,10 +67,7 @@ function proceduresForRequirements(ids, {
         .map((id) => String(id).trim())
         .filter((id) => REQUIREMENT.test(id));
     const wanted = [...new Set(list)].slice(0, MAX_IDS);
-    const asked = LOCALE.test(String(locale || '')) ? String(locale).toLowerCase() : 'en';
-    // Never part in one language and part in another: a language the
-    // standard has only in part reads in the standard's own.
-    const tag = completeLocale(asked, languagesOf(core, std === 'wcag' ? {} : options));
+    const tag = LANGUAGE;
     const procedures = {};
     for (const id of wanted) {
         try {
@@ -123,13 +125,12 @@ const pick = (v, known) => [...new Set(String(v || '').split(',').map((x) => x.t
 /**
  * The options core's listProcedures and renderProcedures take, from what the
  * testing guide asks for: `standard` ('wcag', 'best-practice' or an
- * installed pack's key), `version`, `levels`, `tools`, `automation` and
- * `locale`; null for a standard the lab has no pack for.
+ * installed pack's key), `version`, `levels`, `tools` and `automation`, in
+ * English (LANGUAGE); null for a standard the lab has no pack for.
  */
-function listOptions({ standard = 'wcag', version = '', levels = '', tools = '', automation = '', locale = 'en' } = {}, { packFor = defaultPackFor } = {}) {
+function listOptions({ standard = 'wcag', version = '', levels = '', tools = '', automation = '' } = {}, { packFor = defaultPackFor } = {}) {
     const std = String(standard || 'wcag');
-    const tag = LOCALE.test(String(locale || '')) ? String(locale).toLowerCase() : 'en';
-    const out = { locale: tag };
+    const out = { locale: LANGUAGE };
     const t = pick(tools, TOOLS);
     const a = pick(automation, AUTOMATION);
     if (t.length) out.tools = t;
@@ -171,14 +172,18 @@ function listStandardProcedures(query = {}, { core = labCore(), packFor = defaul
  * procedureLanguages gives them, its own first: { available, languages:
  * [{ locale, complete, missing }] }; languages null for a standard or
  * version it doesn't know. { available: false } from a core that doesn't
- * say, which reads the procedures in the locale asked for.
+ * say. The lab reads them in English alone (LANGUAGE), so it lists English
+ * alone.
  */
 function standardLanguages(query = {}, { core = labCore(), packFor = defaultPackFor } = {}) {
     if (!core || typeof core.procedureLanguages !== 'function') return { available: false };
     const options = listOptions(query, { packFor });
     if (!options) return { available: true, languages: null };
     const { standard, version, packs } = options;
-    return { available: true, languages: languagesOf(core, { standard, ...(version ? { version } : {}), ...(packs ? { packs } : {}) }) };
+    const languages = languagesOf(core, { standard, ...(version ? { version } : {}), ...(packs ? { packs } : {}) });
+    // English alone, as the lab reads it (LANGUAGE).
+    const own = languages && languages.find((l) => l.locale === LANGUAGE);
+    return { available: true, languages: languages ? [own || { locale: LANGUAGE, complete: true, missing: 0 }] : null };
 }
 
 /**

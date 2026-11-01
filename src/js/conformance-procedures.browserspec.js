@@ -30,11 +30,12 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const PAGE = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Fixture</title></head>'
     + '<body><main><h1>Fixture</h1><p>Some text.</p></main></body></html>';
 const HAS_PROCEDURES = typeof require('@surea11y/core').proceduresFor === 'function';
-// EN 301 549's own requirements come from its pack, when the pack has them.
-// Whether the EN 301 549 pack gives procedures of its own: any requirement
-// it lists that restates no WCAG criterion.
+// EN 301 549's own requirements come from its pack, or from the lab where no
+// rule evaluates them (src/server-side/lab-procedures.js). Whether the app
+// has procedures for them: any requirement it lists that restates no WCAG
+// criterion.
 const HAS_EN_PROCEDURES = (() => {
-    const core = require('@surea11y/core');
+    const core = require('../server-side/lab-procedures').withLabProcedures(require('@surea11y/core'));
     if (typeof core.listProcedures !== 'function') return false;
     const pack = require('../server-side/standard-packs').packForStandard('en301549');
     const listing = pack && core.listProcedures({ packs: [pack], standard: 'en301549' });

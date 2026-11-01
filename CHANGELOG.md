@@ -43,10 +43,10 @@ The first public release.
   V4.1.1 for its clause 4.2 criteria. surea11y and its EN 301 549 pack give
   procedures only for what their rules evaluate; these complete a manual
   audit of either standard. The testing guide shows them beside core's and
-  the pack's, so every requirement has its procedures. They are in English:
-  in another language, the guide marks them so and says how many texts it
-  shows in English, and a report reads the standard's procedures in
-  English.
+  the pack's, so every requirement has its procedures. They are in English,
+  so for now the guide, its saved page and a report's "How to check it by
+  hand" read every procedure in English, and the guide offers no other
+  language.
 
 ### The runner and integrations
 

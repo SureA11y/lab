@@ -486,7 +486,9 @@ async function start() {
         if (state.version) query.set('version', state.version);
         const body = await getJSON(`/api/procedures/languages?${query.toString()}`);
         const languages = body && body.available && Array.isArray(body.languages) && body.languages.length ? body.languages : null;
-        languageField.hidden = !languages;
+        // One language is no choice: the picker is left out (the lab reads
+        // procedures in English alone, for now).
+        languageField.hidden = !languages || languages.length < 2;
         languageNote.hidden = true;
         languageNote.textContent = '';
         languageSelect.removeAttribute('aria-describedby');
