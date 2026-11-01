@@ -149,34 +149,11 @@ function listStandardProcedures(query = {}, { core = load('@surea11y/core'), pac
     const options = listOptions(query, { packFor });
     if (!options) return { available: true, listing: null };
     try {
-        const listing = core.listProcedures(options) || null;
-        if (listing) markEarlierWcagTitles(listing, options);
-        return { available: true, listing };
+        // Core says the language of each text that isn't the list's locale.
+        return { available: true, listing: core.listProcedures(options) || null };
     } catch {
         return { available: true, listing: null };
     }
-}
-
-// A WCAG title core has no translation of, such as an earlier version's
-// own ("Parsing" for 4.1.1 in WCAG 2.1), stays English in every locale.
-// Core's list doesn't mark it, so it is marked here as core's page marks
-// it: a title that isn't the locale's text for it is English.
-function markEarlierWcagTitles(listing, options) {
-    const locale = String(listing.locale || options.locale || 'en');
-    if (options.standard !== 'wcag' || locale === 'en' || !LOCALE.test(locale)) return;
-    const dict = load(`@surea11y/core/procedures/${locale}`);
-    if (!dict || typeof dict !== 'object') return;
-    const mark = (item, key) => {
-        if (item && item.title && !item.titleLang && dict[key] !== item.title) item.titleLang = 'en';
-    };
-    for (const r of listing.requirements || []) mark(r, `wcag_${r.id}_title`);
-    const walk = (groups) => {
-        for (const g of groups || []) {
-            mark(g, `wcag_${String(g.id).includes('.') ? 'guideline' : 'principle'}_${g.id}`);
-            walk(g.groups);
-        }
-    };
-    walk(listing.groups);
 }
 
 /**

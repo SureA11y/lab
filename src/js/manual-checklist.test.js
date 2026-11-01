@@ -94,6 +94,10 @@ test('a pack\'s facet keeps the language its pack gives it', async () => {
     assert.match(html, /<strong lang="de">Label of own<\/strong>/, 'its label, in the pack\'s language');
     assert.match(html, /<ol class="steps" lang="ja">/, 'its procedure, in the language the pack gives it');
     assert.match(html, /<span class="term">You need:<\/span> <span lang="fr">A keyboard<\/span>/, 'core\'s tools, in the locale read');
+    // A tool core says is in English, read in French, is not marked French.
+    const english = facet('own', 'manual', { tools: [{ id: 'zoom', label: 'Zoom', lang: 'en' }] });
+    const mixed = buildManualChecklistHTML({ acr: ACR, procedures: { '2.1.1': { id: '2.1.1', locale: 'fr', facets: [english] } } });
+    assert.match(mixed, /<span class="term">You need:<\/span> Zoom<\/p>/);
 });
 
 test('the radio groups are named apart and labelled by their check', async () => {

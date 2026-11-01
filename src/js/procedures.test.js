@@ -159,9 +159,9 @@ test('the links are a line of their own, which a download leaves out', async () 
     assert.equal(withoutGuideRefs(`<div>${html}<p>Kept.</p>${html}</div>`), '<div><p>Kept.</p></div>');
 });
 
-test('a procedure keeps the language the server read it in, and says it where it is not the page\'s', async () => {
+test('a procedure keeps the locale core read it in, and says it where it is not the page\'s', async () => {
     const { loadProcedures, buildHowToAssessHTML } = await load();
-    const fetchImpl = async () => ({ ok: true, json: async () => ({ available: true, locale: 'en', procedures: { '1.4.12': PROCEDURE } }) });
+    const fetchImpl = async () => ({ ok: true, json: async () => ({ available: true, locale: 'en', procedures: { '1.4.12': { ...PROCEDURE, locale: 'en' } } }) });
     const loaded = await loadProcedures(['1.4.12'], 'de', { fetchImpl });
     assert.equal(loaded['1.4.12'].locale, 'en', 'German asked, English read: the standard is not all in German');
     assert.doesNotMatch(buildHowToAssessHTML(loaded['1.4.12'], { name: 'acr-x' }), /lang=/, 'English, as the page');
@@ -174,4 +174,21 @@ test('a procedure keeps the language the server read it in, and says it where it
     assert.match(html, /<li lang="fr">Inline style does not force spacing<\/li>/);
     assert.match(html, /<legend><span class="visually-hidden"><span lang="fr">No text is cut off<\/span>: <\/span>Result<\/legend>/);
     assert.match(html, /<label for="acr-x-text-spacing-content-loss-pass">Passes<\/label>/, 'the review\'s own words stay the page\'s');
+});
+
+test('each text core says is in another language than the procedure\'s is marked with it', async () => {
+    const { buildHowToAssessHTML } = await load();
+    // Read in French, with what French lacks in English, as core says.
+    const facets = PROCEDURE.facets.map((f) => (f.id === 'controls-keep-working'
+        ? { ...f, procedureLang: 'en', tools: [{ id: 'keyboard', label: 'Un clavier' }, { id: 'zoom', label: 'Zoom', lang: 'en' }] }
+        : f.id === 'text-spacing-content-loss' ? { ...f, lang: 'en' } : f));
+    const html = buildHowToAssessHTML({ ...PROCEDURE, locale: 'fr', facets }, { name: 'acr-x' });
+    // A label in English, and its procedure with it.
+    assert.match(html, /<strong>No text is cut off<\/strong>/);
+    assert.match(html, /<span class="how-term">Passes:<\/span> Nothing is lost\./);
+    // A label in French, its procedure in English.
+    assert.match(html, /<strong lang="fr">Controls keep working<\/strong>/);
+    assert.match(html, /<span class="how-term">Passes:<\/span> They work\./);
+    // Each tool in its own.
+    assert.match(html, /<span class="how-term">You need:<\/span> <span lang="fr">Un clavier<\/span>, Zoom<\/p>/);
 });

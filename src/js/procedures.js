@@ -43,13 +43,10 @@ export async function loadProcedures(ids, locale = 'en', { standard = 'wcag', ve
             body = null;
         }
         if (!body || !body.available) return null;
-        // Each keeps the language the server read it in, which is the one
-        // asked for only where the standard is all in it.
-        const readIn = typeof body.locale === 'string' && body.locale ? body.locale : '';
-        for (const id of missing) {
-            const p = body.procedures?.[id] || null;
-            cache.set(keyOf(id), p && readIn ? { ...p, locale: readIn } : p);
-        }
+        // Each says the locale core read it in (the one asked for only
+        // where the standard is all in it), and the language of any text in
+        // another.
+        for (const id of missing) cache.set(keyOf(id), body.procedures?.[id] || null);
     }
     const out = {};
     for (const id of wanted) out[id] = cache.get(keyOf(id)) || null;
@@ -123,10 +120,11 @@ function facetHTML(f, { name = null, answer = '', lang = '' } = {}) {
     const labelLang = langAttr(f.lang || lang);
     const textLang = langAttr(f.procedureLang || f.lang || lang);
     const steps = p.steps.filter(isText);
-    const tools = (Array.isArray(f.tools) ? f.tools : []).map((t) => t && t.label).filter(isText);
+    // Each tool's name in its language, where core says it isn't the procedure's locale.
+    const tools = (Array.isArray(f.tools) ? f.tools : []).filter((t) => t && isText(t.label));
     return `<li class="how-facet">`
         + `<p class="how-facet-label"><strong${labelLang}>${esc(f.label)}</strong>${f.automation === 'partial' ? ' <span class="how-facet-note">(automated checks decide part of it)</span>' : ''}</p>`
-        + (tools.length ? `<p class="how-facet-tools"><span class="how-term">You need:</span> ${inLang(lang, tools.join(', '))}</p>` : '')
+        + (tools.length ? `<p class="how-facet-tools"><span class="how-term">You need:</span> ${tools.map((t) => inLang(t.lang || lang, t.label)).join(', ')}</p>` : '')
         + (steps.length ? `<ol class="how-steps"${textLang}>${steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : '')
         + (isText(p.passWhen) ? `<p class="how-when"><span class="how-term">Passes:</span> ${inLang(f.procedureLang || f.lang || lang, p.passWhen)}</p>` : '')
         + (isText(p.failWhen) ? `<p class="how-when"><span class="how-term">Fails:</span> ${inLang(f.procedureLang || f.lang || lang, p.failWhen)}</p>` : '')

@@ -124,7 +124,7 @@ test('the languages of a standard are core\'s, its own first', () => {
     assert.deepEqual(asked, [{ standard: 'en301549', version: 'V4.1.1', packs: [{ standard: { key: 'en301549' } }] }]);
 });
 
-test('with a core that says, each language it gives reads the standard in it, and a WCAG title it has no translation of is marked English', (t) => {
+test('with a core that says, each language it gives reads the standard in it, and core marks a WCAG title it has no translation of as English', (t) => {
     const core = require('@surea11y/core');
     if (typeof core.procedureLanguages !== 'function') return t.skip('the installed core does not say which languages it has');
     for (const version of ['2.0', '2.1', '2.2']) {

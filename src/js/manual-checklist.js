@@ -49,14 +49,14 @@ function checkHTML(f, criterion, answer, lang = '') {
     const labelLang = f.lang || lang;
     const textLang = f.procedureLang || f.lang || lang;
     const name = `c-${safeId(criterion)}-${safeId(f.id)}`;
-    const tools = (Array.isArray(f.tools) ? f.tools : []).map((t) => t && t.label).filter(isText);
+    const tools = (Array.isArray(f.tools) ? f.tools : []).filter((t) => t && isText(t.label));
     const options = ANSWERS.filter(([value]) => value).map(([value, label]) => {
         const id = `${name}-${value}`;
         return `<label for="${esc(id)}"><input type="radio" id="${esc(id)}" name="${esc(name)}" value="${value}"${answer === value ? ' checked' : ''}/>${esc(label)}</label>`;
     }).join('');
     return `<li class="check">`
         + `<p><strong${langAttr(labelLang)}>${esc(f.label)}</strong>${f.automation === 'partial' ? ' (automated checks decide part of it)' : ''}</p>`
-        + (tools.length ? `<p class="meta"><span class="term">You need:</span> ${inLang(lang, tools.join(', '))}</p>` : '')
+        + (tools.length ? `<p class="meta"><span class="term">You need:</span> ${tools.map((t) => inLang(t.lang || lang, t.label)).join(', ')}</p>` : '')
         + `<ol class="steps"${langAttr(textLang)}>${p.steps.filter(isText).map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`
         + (isText(p.passWhen) ? `<p><span class="term">Passes:</span> ${inLang(textLang, p.passWhen)}</p>` : '')
         + (isText(p.failWhen) ? `<p><span class="term">Fails:</span> ${inLang(textLang, p.failWhen)}</p>` : '')

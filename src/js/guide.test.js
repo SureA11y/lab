@@ -153,3 +153,15 @@ test('what core gives is marked with the language it was read in, and a part in 
     assert.match(pack.html, /<span lang="fr">Informations<\/span>/);
     assert.match(pack.html, /<ol class="guide-steps" lang="fr">/, 'a pack\'s own facet in its language');
 });
+
+test('a variant core says is in English, in a guide in another language, is not marked with it', async () => {
+    const { renderGuide, stateFromQuery } = await load();
+    const variants = [
+        { ruleId: 'rule-a', reasonCode: 'CODE_FR', steps: ['Étape.'], passWhen: 'Oui.', failWhen: 'Non.' },
+        { ruleId: 'rule-b', reasonCode: 'CODE_EN', steps: ['Step.'], passWhen: 'Yes.', failWhen: 'No.', lang: 'en' },
+    ];
+    const listing = { ...LISTING, locale: 'fr', requirements: [{ id: '1.1.1', title: 'Contenu non textuel', level: 'A', facets: [facet('alt', 'partial', [], { variants })] }] };
+    const { html } = renderGuide(listing, stateFromQuery('details=1'));
+    assert.match(html, /<code>CODE_FR<\/code> <span lang="fr">Étape\.<\/span><\/li>/);
+    assert.match(html, /<code>CODE_EN<\/code> Step\.<\/li>/);
+});

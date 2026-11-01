@@ -190,7 +190,7 @@ function facetHTML(requirement, f, { details, level, lang }) {
             + (covered.length ? `<p><span class="guide-term">Also assesses</span> ${covered.map((c) => inLang(c.lang || lang, c.label || c.id)).join('; ')}</p>` : '')
             + ((f.variants || []).length
                 ? `<details class="guide-variants"><summary>What scans ask about one element (${f.variants.length})</summary><ul>`
-                    + f.variants.map((v) => `<li><code>${esc(v.ruleId)}</code> <code>${esc(v.reasonCode)}</code> ${inLang(lang, (v.steps || []).join(' '))}</li>`).join('')
+                    + f.variants.map((v) => `<li><code>${esc(v.ruleId)}</code> <code>${esc(v.reasonCode)}</code> ${inLang(v.lang || lang, (v.steps || []).join(' '))}</li>`).join('')
                     + `</ul></details>`
                 : '')
             + `</div>`
