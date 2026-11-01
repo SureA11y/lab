@@ -140,19 +140,31 @@ export function answeredText(procedure, answers) {
 }
 
 /**
+ * What a standard's procedures say of a requirement (a pack's `note`), in
+ * its language: '' where they say nothing.
+ */
+export function procedureNoteHTML(procedure, { className = 'how-note', term = 'how-term' } = {}) {
+    if (!procedure || !isText(procedure.note)) return '';
+    const lang = procedure.noteLang || procedure.locale;
+    return `<p class="${esc(className)}"><span class="${esc(term)}">The standard says:</span> ${inLang(lang, procedure.note.trim())}</p>`;
+}
+
+/**
  * "How to check it by hand", folded: what a person checks for a criterion,
- * step by step, and what automated checks decide in full. With `name`, each
- * check can be answered (Passes, Fails, Doesn't apply), `answers` being those
- * given so far ({ [facet]: 'pass' | 'fail' | 'na' }). '' when the procedure
- * has nothing for a person.
+ * step by step, and what automated checks decide in full, after what the
+ * standard says of it (a void clause, say). With `name`, each check can be
+ * answered (Passes, Fails, Doesn't apply), `answers` being those given so
+ * far ({ [facet]: 'pass' | 'fail' | 'na' }). The note alone where nothing is
+ * for a person; '' where there is neither.
  */
 export function buildHowToAssessHTML(procedure, { name = null, answers = null } = {}) {
     const { forPerson, automatic } = splitFacets(procedure);
-    if (!forPerson.length) return '';
+    const note = procedureNoteHTML(procedure);
+    if (!forPerson.length) return note ? `<div class="how-assess how-assess-note">${note}</div>` : '';
     const n = forPerson.length;
     const answered = name ? answeredText(procedure, answers) : '';
     const lang = procedure && isText(procedure.locale) ? procedure.locale : '';
-    return `<details class="how-assess">`
+    return note + `<details class="how-assess">`
         + `<summary>How to check it by hand (${n} ${n === 1 ? 'check' : 'checks'})`
         + (name ? `<span class="how-answered" data-how-answered>${answered ? ` · ${esc(answered)}` : ''}</span>` : '')
         + `</summary>`

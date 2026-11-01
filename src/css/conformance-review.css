@@ -61,6 +61,8 @@
 .how-assess > summary { cursor: pointer; min-height: 24px; font-size: var(--fs-sm); font-weight: 600; }
 .how-assess > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .how-assess[open] > summary { margin-bottom: var(--space-2); }
+/* What a standard says of a requirement (a void clause, say), above its checks */
+.how-note { margin: 0 0 var(--space-2); font-size: var(--fs-sm); }
 .how-facets { margin: 0 0 var(--space-2); padding-left: 1.5rem; font-size: var(--fs-sm); }
 .how-facet { margin: 0 0 var(--space-3); }
 .how-facet p { margin: 0 0 var(--space-1); }

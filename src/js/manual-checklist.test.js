@@ -140,3 +140,13 @@ test('with EN 301 549\'s procedures, its own requirements follow the WCAG criter
     assert.match(html, /<h3 id="h-en-9-7">9\.7 User preferences for web pages<\/h3>/, 'chapter 9\'s own requirement is');
     assert.match(html, /No procedure for this requirement yet\./, 'the test gives 9.7 none');
 });
+
+test('a requirement its standard only says something of shows that, and asks nothing', async () => {
+    const { buildManualChecklistHTML } = await load();
+    const html = buildManualChecklistHTML({
+        acr: ACR,
+        procedures: { '2.1.1': { id: '2.1.1', locale: 'de', note: 'Dieser Abschnitt ist gegenstandslos.', noteLang: 'de', facets: [] } },
+    });
+    assert.match(html, /<h3 id="h-2-1-1">2\.1\.1 Keyboard \(Level A\)<\/h3><p class="found">[^]*?<p class="note"><span class="term">The standard says:<\/span> <span lang="de">Dieser Abschnitt ist gegenstandslos\.<\/span><\/p><\/section>/);
+    assert.doesNotMatch(html.split('h-2-1-1')[1].split('</section>')[0], /Automated checks decide|No procedure/);
+});

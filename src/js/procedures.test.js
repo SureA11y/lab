@@ -192,3 +192,16 @@ test('each text core says is in another language than the procedure\'s is marked
     // Each tool in its own.
     assert.match(html, /<span class="how-term">You need:<\/span> <span lang="fr">Un clavier<\/span>, Zoom<\/p>/);
 });
+
+test('what the standard says of a requirement is shown in its language, alone where nothing is to check', async () => {
+    const { buildHowToAssessHTML } = await load();
+    const voidClause = { standard: 'EN 301 549', id: '9.4.1.1', title: 'Analyse syntaxique', locale: 'fr', note: 'Cet article est sans objet.', noteLang: 'fr', facets: [] };
+    assert.equal(buildHowToAssessHTML(voidClause),
+        '<div class="how-assess how-assess-note"><p class="how-note"><span class="how-term">The standard says:</span> <span lang="fr">Cet article est sans objet.</span></p></div>');
+    // In English, as the page: nothing to mark. Without a note, nothing at all.
+    assert.match(buildHowToAssessHTML({ ...voidClause, locale: 'en', noteLang: undefined, note: 'Void.' }), /<\/span> Void\.<\/p>/);
+    assert.equal(buildHowToAssessHTML({ ...voidClause, note: undefined }), '');
+    // With checks, above them.
+    const html = buildHowToAssessHTML({ ...PROCEDURE, note: 'Read with 9.1.' });
+    assert.match(html, /^<p class="how-note"><span class="how-term">The standard says:<\/span> Read with 9\.1\.<\/p><details class="how-assess">/);
+});

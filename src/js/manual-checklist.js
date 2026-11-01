@@ -6,7 +6,7 @@
 // page's own words are English; each procedure's text is marked with the
 // language it was read in (WCAG 3.1.2).
 
-import { splitFacets, ANSWERS, resultOf, langAttr, inLang } from './procedures.js';
+import { splitFacets, ANSWERS, resultOf, langAttr, inLang, procedureNoteHTML } from './procedures.js';
 
 function esc(v) {
     return String(v == null ? '' : v)
@@ -26,6 +26,7 @@ h1 { font-size: 1.6rem; margin: 0 0 .5rem; }
 h2 { font-size: 1.3rem; margin: 2.5rem 0 1rem; padding-top: .5rem; border-top: 2px solid var(--line); }
 h3 { font-size: 1.1rem; margin: 2rem 0 .5rem; }
 .meta, .found, .verdict, .automatic { color: var(--muted); margin: 0 0 .5rem; }
+.note { margin: 0 0 .5rem; }
 .term { font-weight: 600; color: var(--text); }
 ol.checks { padding-left: 1.5rem; }
 li.check { margin: 0 0 1.25rem; }
@@ -64,6 +65,10 @@ function checkHTML(f, criterion, answer, lang = '') {
         + `</li>`;
 }
 
+// A requirement its standard only says something of, with nothing to
+// check: a void clause, say.
+const noteOnly = (procedure) => !!procedure && isText(procedure.note) && !(Array.isArray(procedure.facets) && procedure.facets.length);
+
 // A row of the checklist: a WCAG criterion, one of EN 301 549's own
 // requirements (`en`), whose draft is the author's to answer, not the scans',
 // or another standard's (`prefix`, its key), drafted from the scans.
@@ -80,9 +85,10 @@ function criterionHTML(row, procedure, entry, levelLabels, { en = false, prefix 
         + `<h3 id="h-${esc(safeId(key))}">${esc(heading)}</h3>`
         + (found ? `<p class="found"><span class="term">${en ? 'Draft' : 'What the scans found'}:</span> ${esc(found)}</p>` : '')
         + (verdict ? `<p class="verdict"><span class="term">Recorded so far:</span> ${esc(verdict)}${isText(entry.remarks) ? `. ${esc(entry.remarks)}` : ''}</p>` : '')
+        + procedureNoteHTML(procedure, { className: 'note', term: 'term' })
         + (forPerson.length
             ? `<ol class="checks">${forPerson.map((f) => checkHTML(f, key, resultOf(entry && entry.facets, f.id), readIn)).join('')}</ol>`
-            : `<p class="meta">${procedure ? 'Automated checks decide this criterion in full.' : `No procedure for this ${ownStandard ? 'requirement' : 'criterion'} yet${ownStandard ? '' : ': check it against its Understanding document'}.`}</p>`)
+            : noteOnly(procedure) ? '' : `<p class="meta">${procedure ? 'Automated checks decide this criterion in full.' : `No procedure for this ${ownStandard ? 'requirement' : 'criterion'} yet${ownStandard ? '' : ': check it against its Understanding document'}.`}</p>`)
         + (automatic.length ? `<p class="automatic"><span class="term">Automated checks decide:</span> ${automatic.map((f) => inLang(f.lang || readIn, f.label)).join('; ')}.</p>` : '')
         + `</section>`;
 }
