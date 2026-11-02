@@ -8,7 +8,7 @@
 // (directional) and 'ab' (symmetric). Markup is namespaced under `.cmp2` so the
 // mockup class names don't collide with app styles.
 
-import { mastheadHTML, provenanceHTML } from './comparison-document.js';
+import { mastheadHTML, provenanceHTML, sharedProfilesNoteHTML } from './comparison-document.js';
 import { formatMarginLimit, formatMarginRoom, formatMarginValue, isNearMiss } from './margins.js';
 import { failureUnitNote, problemKind } from './failure-units.js';
 
@@ -96,6 +96,7 @@ function verdictHero(d) {
             + `<p class="lead">${esc(v.lead)}</p>`
             + `<p class="disclaim">Standings only — the call between A and B is yours.</p>`
             + `<p class="disclaim">${esc(unitsNote(d))}</p>`
+            + sharedProfilesNoteHTML(d.document)
             + `</div><div class="right">`
             + `<div class="rtitle">Automated accessibility result</div>`
             + `<div class="flow-row">`
@@ -112,6 +113,7 @@ function verdictHero(d) {
         + `<h2>Accessibility <span class="accent accent--${v.tone}">${esc(v.headline)}</span> between these two runs.</h2>`
         + `<p class="lead">${esc(v.lead)}</p>`
         + `<p class="disclaim">${esc(unitsNote(d))}</p>`
+        + sharedProfilesNoteHTML(d.document)
         + `</div><div class="right">`
         + `<div class="flow-row">`
         + `<div class="flow-tile a"><div class="lab">Baseline</div><div class="big num">${d.stats.failuresA}</div>`

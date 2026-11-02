@@ -16,7 +16,7 @@
 // Two framings, matching the engine: 'trend' (ordered runs) and 'matrix'
 // (unordered variants).
 
-import { mastheadHTML, provenanceHTML, reportsStripHTML } from './comparison-document.js';
+import { mastheadHTML, provenanceHTML, reportsStripHTML, sharedProfilesNoteHTML } from './comparison-document.js';
 import { formatMarginLimit, formatMarginRoom, formatMarginValue, isNearMiss } from './margins.js';
 import { failureUnitNote, problemKind, problemOne } from './failure-units.js';
 
@@ -541,6 +541,7 @@ function heroTrend(d) {
             <h2 class="dash-hero-h">${heroChange(first.stats.failures, last.stats.failures, raw, pct, almost, verdict.span)}${verdict.flapping ? `, but ${verdict.flapping === 1 ? 'one problem keeps' : `${verdict.flapping} problems keep`} coming back` : ''}.</h2>
             <p class="dash-hero-lead">${esc(verdict.lead)}</p>
             ${caveat}
+            ${sharedProfilesNoteHTML(d.document)}
         </div>
         <div class="dash-figures">
             <div class="dash-figure">
@@ -599,6 +600,7 @@ function heroMatrix(d) {
             <p class="dash-hero-lead">${esc(verdict.lead)}</p>
             <p class="dash-caveat dash-caveat--info"><span class="dash-caveat-i" aria-hidden="true">i</span>
                 <span>No winner is declared. These are variants of one subject, not candidates competing.</span></p>
+            ${sharedProfilesNoteHTML(d.document)}
         </div>
         <div class="dash-figures">
             <div class="dash-figure">
