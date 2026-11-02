@@ -551,14 +551,16 @@
     // which version it covered.
     function humanDuration(ms) {
         const minutes = ms / 60000;
-        if (minutes < 90) return `${Math.max(1, Math.round(minutes))} minutes`;
+        if (minutes < 90) {
+            const n = Math.max(1, Math.round(minutes));
+            return n === 1 ? 'a minute' : `${n} minutes`;
+        }
 
         const hours = ms / 3600000;
         if (hours < 24) return hours < 1.5 ? 'an hour' : `${Math.round(hours)} hours`;
 
         const days = ms / 86400000;
         if (days < 14) return days < 1.5 ? 'a day' : `${Math.round(days)} days`;
-        if (days < 14) return `${Math.round(days)} days`;
         if (days < 70) {
             const weeks = Math.round(days / 7);
             return weeks === 1 ? 'a week' : `${weeks} weeks`;
@@ -926,6 +928,11 @@
             healthy: columns.every((c) => c.health.ok),
             degraded: columns.filter((c) => !c.health.ok).map((c) => c.index),
             scored: columns.every((c) => c.stats.score != null),
+            // The pages the reports start from, by path (another origin is a
+            // staging copy of the same site). More than one, and the change
+            // across the window is between different subjects, not one
+            // subject over time.
+            subjects: [...new Set(columns.map((c) => (c.identity.scopeUrl ? pagePath(c.identity.scopeUrl) : (c.identity.scenarioName || ''))))],
         };
 
         const target = sharedTarget(columns.map((c) => c.conformance));
