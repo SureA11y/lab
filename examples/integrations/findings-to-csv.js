@@ -7,7 +7,7 @@
  *
  *   node examples/integrations/findings-to-csv.js <payload.json> [--outcome fail|cantTell|pass] > failures.csv
  *
- * Reads a report (schemas/report.v3.schema.json) and nothing else.
+ * Reads a report (schemas/report.v4.schema.json, or report.v3 for an older one) and nothing else.
  */
 
 const fs = require('fs');

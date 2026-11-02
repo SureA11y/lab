@@ -47,7 +47,7 @@ Four files land in a folder:
 | `run.log.jsonl` | A line-by-line record of what the workflow did | Whoever is debugging |
 
 `diff.json` and `payload.json` are described by `schemas/diff.v1.schema.json`
-and `schemas/report.v3.schema.json`, for whatever reads them. Every failing
+and `schemas/report.v4.schema.json`, for whatever reads them. Every failing
 element has an `occurrenceId` that stays the same from run to run, so a
 ticket filed for one can be found again in the next run's files.
 

@@ -485,6 +485,9 @@ export function createReportView(app) {
 
         app.recomputeDerivedReportData(cloned);
 
+        // As version 4 keeps it: one rule catalogue for the scans sharing it.
+        globalThis.A11Y_REPORT_FORMAT?.compactReport(cloned);
+
         return prepareDataForReport(cloned);
     }
 

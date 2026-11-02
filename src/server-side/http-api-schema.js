@@ -100,7 +100,7 @@ function httpApiSchema() {
                             required: ['status'],
                             properties: {
                                 status: { enum: ['done', 'cancelled', 'error'] },
-                                payload: { $ref: 'report.v3.schema.json' },
+                                payload: { $ref: 'report.v4.schema.json' },
                                 error: runError,
                                 dryRun: { type: 'object', description: 'A dry run\'s summary, as run-workflow.js --dry-run prints it.' },
                             },

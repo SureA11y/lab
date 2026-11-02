@@ -1,0 +1,463 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:surea11y-lab:report:v4",
+  "title": "surea11y-lab report",
+  "description": "A run's results: what was scanned, against what, and what was found. The CLI writes one as payload.json, and the app saves one as *.a11y-report.json. Each finding is in its scan only: the findings by outcome across scans are built from the scans. The rule catalogue each scan ran with is kept once, in ruleCatalogs, and named by index from each scan (canonical.rulesCatalog). Reports of versions 1 to 3 still open, read as this version: version 3 kept each scan's catalogue in it (canonical.rules), version 2 also kept the findings by outcome (findings), and version 1 has no reportVersion. Generated from src/shared/report-schemas.js by `npm run build:action-docs`; do not edit the file in schemas/ by hand.",
+  "type": "object",
+  "required": [
+    "reportVersion",
+    "url",
+    "runId",
+    "timestamp",
+    "scans"
+  ],
+  "properties": {
+    "reportVersion": {
+      "const": 4,
+      "description": "The format version."
+    },
+    "url": {
+      "type": "string",
+      "description": "The page the run started on."
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The run's id: the same in every copy of this report."
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "When the run started (ISO 8601)."
+    },
+    "scenarioName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cancelled": {
+      "type": "boolean"
+    },
+    "failed": {
+      "type": "boolean"
+    },
+    "actionResults": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/actionResult"
+      }
+    },
+    "scans": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scan"
+      }
+    },
+    "screenshots": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Scores and page metrics. Open: it grows with the lab."
+    },
+    "runDiagnostics": {
+      "type": "object"
+    },
+    "conformanceReview": {
+      "type": "object",
+      "description": "A reviewer's conformance verdicts over the automated draft (docs/design/conformance-report-design.md): `product` (name, version, description, contact, notes), `reviewer`, `methods`, and per WCAG criterion (`criteria`, by number) or EN 301 549 clause (`clauses`) a `conformance` (supports, partiallySupports, doesNotSupport, notApplicable, notEvaluated) and `remarks`; another installed standard's requirements under `standards`, by the standard's key and version. With `facets`, the checks a person answered by hand: by check, its `result` (pass, fail, na) and `label`, its words.",
+      "properties": {
+        "product": {
+          "type": "object"
+        },
+        "reviewer": {
+          "type": "string"
+        },
+        "methods": {
+          "type": "string"
+        },
+        "criteria": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/conformanceEntry"
+          }
+        },
+        "clauses": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/conformanceEntry"
+          }
+        },
+        "standards": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/conformanceEntry"
+              }
+            }
+          }
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "ruleCatalogs": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "description": "The rule catalogues the scans ran with, each once: a scan names its own by index (canonical.rulesCatalog)."
+    }
+  },
+  "$defs": {
+    "conformanceEntry": {
+      "type": "object",
+      "properties": {
+        "conformance": {
+          "enum": [
+            "supports",
+            "partiallySupports",
+            "doesNotSupport",
+            "notApplicable",
+            "notEvaluated",
+            ""
+          ]
+        },
+        "remarks": {
+          "type": "string"
+        },
+        "facets": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "enum": [
+                      "pass",
+                      "fail",
+                      "na"
+                    ]
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "na"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "actionResult": {
+      "type": "object",
+      "required": [
+        "type",
+        "status"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "type": {
+          "type": "string"
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "durationMs": {
+          "type": "number"
+        }
+      }
+    },
+    "scan": {
+      "type": "object",
+      "required": [
+        "id",
+        "url",
+        "profile",
+        "wcag"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": "string"
+        },
+        "skipped": {
+          "type": "boolean"
+        },
+        "context": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "exclude": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "id",
+                "label"
+              ],
+              "properties": {
+                "id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "label": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What the scan checked against: a standard when one was applied (\"en301549-v4.1.1\"), else its WCAG 2.2 level as a profile (\"wcag22-aa\"). The id is null for a WCAG version no profile names. Null when the report does not say."
+        },
+        "wcag": {
+          "type": "object",
+          "required": [
+            "version",
+            "level"
+          ],
+          "properties": {
+            "version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "level": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "A",
+                    "AA",
+                    "AAA"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "description": "The WCAG version and level the profile came to."
+        },
+        "canonical": {
+          "$ref": "#/$defs/canonical"
+        },
+        "summary": {
+          "type": "object"
+        },
+        "metrics": {
+          "type": "object"
+        }
+      },
+      "description": "One scan: a page, or a part of it, as it stood at one step of the run. A skipped scan has no canonical results."
+    },
+    "canonical": {
+      "type": "object",
+      "required": [
+        "findings"
+      ],
+      "properties": {
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          }
+        },
+        "rulesCatalog": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The index in ruleCatalogs of the rule catalogue this scan ran with."
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "outcome"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        },
+        "ruleId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "fail",
+            "cantTell",
+            "pass",
+            "notApplicable"
+          ]
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "enum": [
+                "critical",
+                "serious",
+                "moderate",
+                "minor",
+                "info",
+                "unknown"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "engineId": {
+          "type": "string"
+        },
+        "helpUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wcag": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "standards": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "occurrences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/occurrence"
+          }
+        },
+        "unlisted": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Elements the rule found and counted, past those it lists in occurrences (surea11y's contrast rules list 50)."
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "uid"
+          ]
+        },
+        {
+          "required": [
+            "id"
+          ]
+        }
+      ],
+      "description": "What one check concluded on a scan, and the elements it concluded it on."
+    },
+    "occurrence": {
+      "type": "object",
+      "required": [
+        "occurrenceId"
+      ],
+      "properties": {
+        "occurrenceId": {
+          "type": "string",
+          "pattern": "^occ_[0-9a-f]{14}$",
+          "description": "The occurrence's id: the same issue on the same element of the same page has the same id in every report, whatever the site's origin. It is a hash of the rule, the page's path and query, and the element's selector, so an element whose selector changes gets a new id."
+        },
+        "pageUrl": {
+          "type": "string"
+        },
+        "target": {
+          "type": "array"
+        },
+        "html": {
+          "type": "string"
+        },
+        "shadowHostSelectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "For an element in a shadow tree: the selectors of the hosts that lead to it from the document, outermost first; its target holds only inside the last one's shadow root."
+        },
+        "frameUrl": {
+          "type": "string",
+          "description": "For an element in one of the page's iframes: the iframe's address."
+        },
+        "frameSelectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "For an element in an iframe: the selectors of the iframe elements that lead to it from the page, outermost first."
+        }
+      },
+      "description": "One element a finding concluded on."
+    }
+  }
+}

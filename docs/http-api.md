@@ -37,7 +37,7 @@ curl -s 'localhost:3000/workflow-progress?runId=run_k27mle37&since=0'
 
 # 3. Take the result: 202 while it runs, 200 once it has finished.
 curl -s 'localhost:3000/workflow-result?runId=run_k27mle37'
-# {"status":"done","payload":{ ...a report, schemas/report.v3.schema.json... }}
+# {"status":"done","payload":{ ...a report, schemas/report.v4.schema.json... }}
 ```
 
 | Call | What it does |

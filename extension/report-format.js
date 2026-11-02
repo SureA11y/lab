@@ -6,6 +6,15 @@
  * The report format's version, and the id every occurrence is known by.
  *
  * reportVersion
+ *   4  the rule catalogue a scan ran with (its canonical `rules`) is kept
+ *      once, in the report's `ruleCatalogs`, and each scan names its own by
+ *      index (`canonical.rulesCatalog`): a 120-scan report was half the same
+ *      catalogue, 171 KB a scan. The engine's raw rollups
+ *      (`canonical.diagnostics.engine.rulesResults`, which the findings
+ *      already hold) are kept only by a debug run. Readers bring a report
+ *      to the in-memory form with every scan's `rules` again
+ *      (expandReport, which upgradeReport makes), and writers keep it
+ *      compact (compactReport).
  *   3  each finding is written once, in its scan: the findings by outcome
  *      (`findings`, `a11yGlobalFindings`) are not saved, as they repeat
  *      every scan's and whoever reads them builds them from the scans; and
@@ -54,7 +63,7 @@
     }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function (reportScan) {
 
-    const REPORT_VERSION = 3;
+    const REPORT_VERSION = 4;
 
     /** The format version a report was saved in: its reportVersion, else 1. */
     function reportVersionOf(report) {
@@ -206,6 +215,7 @@
      */
     function upgradeReport(report) {
         if (!report || typeof report !== 'object') return report;
+        expandReport(report);
         upgradeScans(report.scans);
         delete report.findings;
         delete report.a11yGlobalFindings;
@@ -213,8 +223,69 @@
         return report;
     }
 
+    /**
+     * A report as version 4 keeps it, in place: each scan's rule catalogue
+     * moved to the report's `ruleCatalogs`, once however many scans share it,
+     * and the scan naming it by index; the engine's raw rollups left out
+     * unless `keepEngineDetail` (a debug run). A report already compact is
+     * left as it is.
+     */
+    function compactReport(report, { keepEngineDetail = false } = {}) {
+        if (!report || typeof report !== 'object' || !Array.isArray(report.scans)) return report;
+        const catalogs = Array.isArray(report.ruleCatalogs) ? report.ruleCatalogs : [];
+        const index = new Map();
+        catalogs.forEach((c, i) => index.set(c, i));
+        const byText = new Map();
+        for (const scan of report.scans) {
+            const canonical = scan && scan.canonical;
+            if (!canonical || typeof canonical !== 'object') continue;
+            if (Array.isArray(canonical.rules)) {
+                const rules = canonical.rules;
+                let i = index.get(rules);
+                if (i === undefined) {
+                    const text = JSON.stringify(rules);
+                    i = byText.get(text);
+                    if (i === undefined) {
+                        i = catalogs.length;
+                        catalogs.push(rules);
+                        byText.set(text, i);
+                    }
+                    index.set(rules, i);
+                }
+                canonical.rulesCatalog = i;
+                delete canonical.rules;
+            }
+            const engine = canonical.diagnostics && canonical.diagnostics.engine;
+            if (!keepEngineDetail && engine && typeof engine === 'object') delete engine.rulesResults;
+        }
+        if (catalogs.length) report.ruleCatalogs = catalogs;
+        report.reportVersion = REPORT_VERSION;
+        return report;
+    }
+
+    /**
+     * A version 4 report with every scan's `rules` again, in place, each the
+     * report's catalogue it names (the same object for scans that share one):
+     * the form readers take. A report without catalogues is left as it is.
+     */
+    function expandReport(report) {
+        if (!report || typeof report !== 'object' || !Array.isArray(report.ruleCatalogs)) return report;
+        const catalogs = report.ruleCatalogs;
+        for (const scan of (Array.isArray(report.scans) ? report.scans : [])) {
+            const canonical = scan && scan.canonical;
+            if (!canonical || !Number.isInteger(canonical.rulesCatalog)) continue;
+            const rules = catalogs[canonical.rulesCatalog];
+            if (Array.isArray(rules)) canonical.rules = rules;
+            delete canonical.rulesCatalog;
+        }
+        delete report.ruleCatalogs;
+        return report;
+    }
+
     return {
         REPORT_VERSION,
+        compactReport,
+        expandReport,
         upgradeReport,
         reportVersionOf,
         pagePath,

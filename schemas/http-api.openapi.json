@@ -253,7 +253,7 @@
                       ]
                     },
                     "payload": {
-                      "$ref": "report.v3.schema.json"
+                      "$ref": "report.v4.schema.json"
                     },
                     "error": {
                       "type": "object",

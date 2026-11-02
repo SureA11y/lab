@@ -8,7 +8,7 @@ results as data, in a format that stays stable.
 
 | File | What it holds | Described by |
 | --- | --- | --- |
-| `payload.json` (a run's report) | Every scan, what it checked against, every finding and element, scores | `schemas/report.v3.schema.json` |
+| `payload.json` (a run's report) | Every scan, what it checked against, every finding and element, scores | `schemas/report.v4.schema.json` |
 | `diff.json` (a compared run) | What changed since the baseline | `schemas/diff.v1.schema.json` |
 | `batch.json` (a batch) | Each run of the batch, with its counts | — |
 | `summary.md` | The run in prose, for people | — |
@@ -38,9 +38,10 @@ The report's schema is strict on what a dashboard relies on (the run's
 identity, what each scan checked against, findings and their elements) and
 says which parts may still grow, so a reader written against it keeps
 working. Each finding is in its scan (`scans[].canonical.findings`): a
-report does not repeat them by outcome. Reports of versions 1 and 2 (older
-ones) are read by the lab as version 3; a reader of your own can check
-`reportVersion`.
+report does not repeat them by outcome, and the rule catalogue each scan ran
+with is kept once (`ruleCatalogs`, which each scan names by index in
+`canonical.rulesCatalog`). Reports of versions 1 to 3 (older ones) are read
+by the lab as version 4; a reader of your own can check `reportVersion`.
 
 ## In the lab itself
 
