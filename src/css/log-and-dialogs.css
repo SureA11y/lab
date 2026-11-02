@@ -569,3 +569,9 @@ a:hover { text-decoration-thickness: 2px; }
    dialog (procedures.js guideRefHtml); left out of a downloaded report. */
 .guide-ref { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-left: 3px solid var(--accent); background: var(--surface-2); font-size: var(--fs-sm); }
 .guide-ref-label { font-weight: 600; }
+
+/* The dialog that names a report before it is downloaded (report-name-dialog.js). */
+.report-name-dialog { width: min(480px, 100% - 2rem); background: var(--surface-1); }
+.report-name-form { display: grid; gap: var(--space-2); padding-right: 1.1rem; }
+.report-name-form label { font-weight: 600; }
+.report-name-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }

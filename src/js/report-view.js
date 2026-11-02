@@ -12,6 +12,7 @@ import {openConformanceReview} from './conformance-review.js';
 import {collectScanTags, isTagFilterActive, makeTagFilter} from './scan-tag-filter.js';
 import {canCompareReport} from './report-comparison-controller.js';
 import {pickReportNamePrefill} from './report-name.js';
+import {askReportNameInDialog} from './report-name-dialog.js';
 import {formatReportTimestamp} from './report-timestamp.js';
 import {reportMetaField} from './report-meta-fields.js';
 import {META_FIELD_ATTR, META_VALUE_CLASS, mountReportMetaEditors} from './report-meta-edit.js';
@@ -586,7 +587,7 @@ export function createReportView(app) {
         return getCurrentReportName(payload) ? getScenarioNameForReport(payload) : null;
     }
 
-    function askForReportName(data) {
+    async function askForReportName(data) {
         const mode = app.resultsState.activeMode === 'report' ? 'report' : 'run';
         const stored = getCurrentReportName(data);
         const scenarioName = getScenarioNameForReport(data);
@@ -597,12 +598,13 @@ export function createReportView(app) {
             lastPromptedScenario: app.lastPromptedScenarioByMode[mode]
         });
 
-        const value = window.prompt(
-            'Enter a name for this report.',
-            current
-        );
+        const value = await askReportNameInDialog(document, current);
 
-        if (value === null) return null;
+        if (value === null) {
+            const say = mode === 'report' ? app.setStatusReport : app.setStatusRun;
+            say('Download cancelled.', STATUS.OK);
+            return null;
+        }
 
         // Only a confirmed dialog counts as offered: a cancelled one has to show
         // the new scenario name again next time.
@@ -642,13 +644,13 @@ export function createReportView(app) {
                 includedOnly: true,
                 ignoreTagFilter: includeFilteredOut,
             }),
-            onBeforeAction: () => {
+            onBeforeAction: async () => {
                 const bucket = app.getActiveBucket();
                 const payloadForExport = bucket?.payload || data;
 
                 app.recomputeDerivedReportData(payloadForExport);
 
-                const reportName = askForReportName(payloadForExport);
+                const reportName = await askForReportName(payloadForExport);
                 return reportName !== null;
             },
             // After a run the Configuration panel is collapsed, Export config
