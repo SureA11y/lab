@@ -164,13 +164,6 @@ describe('one list of profiles', () => {
     const { SCAN_TARGETS, DEFAULT_SCAN_TARGET } = require('./conformance-targets.js');
     const PROFILES = Object.entries(SCAN_TARGETS).map(([value, t]) => ({ value, label: t.label }));
 
-    function optionsOf(html, id) {
-        const select = new RegExp(`<select id="${id}"[^>]*>([\\s\\S]*?)<\\/select>`).exec(html);
-        assert.ok(select, `the page has a ${id} select`);
-        return [...select[1].matchAll(/<option value="([^"]+)"[^>]*>([^<]+)<\/option>/g)]
-            .map(([, value, label]) => ({ value, label: label.trim() }));
-    }
-
     test('the run settings have no profile: each scan step chooses its own', () => {
         const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
         assert.doesNotMatch(html, /id="run-profile"/);
@@ -183,9 +176,18 @@ describe('one list of profiles', () => {
         assert.deepEqual(field.options, PROFILES);
     });
 
-    test('the extension offers every profile', () => {
+    test('the extension offers every profile: a WCAG level, or none, and the standards', () => {
+        // As the scan step does: the WCAG levels as radios, WCAG 2.2 AA
+        // chosen, the standards as checkboxes (a pack's are added at start).
         const html = fs.readFileSync(path.join(ROOT, '..', 'extension', 'ui.html'), 'utf8');
-        assert.deepEqual(optionsOf(html, 'profile'), PROFILES);
+        const inputs = (name) => [...html.matchAll(new RegExp(`<input type="(radio|checkbox)" name="${name}" value="([^"]*)"([^>]*)>`, 'g'))]
+            .map(([, , value, rest]) => ({ value, checked: /\bchecked\b/.test(rest) }));
+        const levels = inputs('profileWcag');
+        const standards = inputs('profileStandard');
+        assert.deepEqual([...levels.map((i) => i.value).filter(Boolean), ...standards.map((i) => i.value)],
+            PROFILES.map((p) => p.value));
+        assert.ok(levels.some((i) => i.value === ''), 'and Don\'t check WCAG');
+        assert.deepEqual(levels.filter((i) => i.checked).map((i) => i.value), [DEFAULT_SCAN_TARGET]);
     });
 });
 

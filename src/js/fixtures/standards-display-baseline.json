@@ -2460,7 +2460,7 @@
     ],
     "criteriaMismatch": true,
     "standardsCompared": [
-     "WCAG",
+     "WCAG 2.2 AA",
      "EN 301 549 V4.1.1"
     ],
     "span": {
@@ -2862,7 +2862,7 @@
     ],
     "criteriaMismatch": true,
     "standardsCompared": [
-     "WCAG",
+     "WCAG 2.2 AA",
      "RGAA 4.1.2"
     ],
     "span": {
@@ -6371,7 +6371,7 @@
    ],
    "criteriaMismatch": true,
    "standardsCompared": [
-    "WCAG",
+    "WCAG 2.2 AA",
     "EN 301 549 V4.1.1",
     "RGAA 4.1.2"
    ],
