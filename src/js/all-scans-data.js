@@ -55,7 +55,8 @@ export function scanSortMetrics(scan) {
         const fails = findings.filter((f) => f?.outcome === 'fail');
         if (failures === null) failures = fails.length;
         if (occurrences === null) {
-            occurrences = fails.reduce((n, f) => n + (Array.isArray(f.occurrences) ? f.occurrences.length : 0), 0);
+            // With the elements a rule counted and did not list (unlisted).
+            occurrences = fails.reduce((n, f) => n + (Array.isArray(f.occurrences) ? f.occurrences.length : 0) + (Number(f.unlisted) > 0 ? Number(f.unlisted) : 0), 0);
         }
     }
     return {failures, occurrences};

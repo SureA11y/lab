@@ -96,6 +96,11 @@
         return typeof l === 'string' && l.trim() && l.trim().toLowerCase() !== 'en' ? l.trim() : null;
     }
 
+    /** How many elements a collected rule is on: those listed, and those counted only. */
+    function sizeOf(rule) {
+        return rule ? rule.occ.size + (Number(rule.unlisted) > 0 ? Number(rule.unlisted) : 0) : 0;
+    }
+
     function occKey(o, scanUrl) {
         const url = (o && o.pageUrl) ? o.pageUrl : (scanUrl || '');
         return `${pagePath(url)}##${reportFormat.elementTarget(o)}`;
@@ -142,6 +147,9 @@
                     if (!entry.wcag) entry.wcag = firstWcag(f);
                 }
                 addRgaa(entry.rgaa, f);
+                // Elements the rule counted and did not list (core's contrast
+                // rules list 50): counted with those it listed (sizeOf).
+                if (Number(f.unlisted) > 0) entry.unlisted = (entry.unlisted || 0) + Number(f.unlisted);
                 const others = otherStandardsOf(f);
                 if (others.length) entry.standards = mergeStandards(entry.standards || [], others);
 
@@ -201,13 +209,13 @@
 
     function severityRollup(rules) {
         const out = { critical: 0, serious: 0, moderate: 0, minor: 0, unknown: 0 };
-        for (const r of rules.values()) out[r.severity] += r.occ.size;
+        for (const r of rules.values()) out[r.severity] += sizeOf(r);
         return out;
     }
 
     function totalOcc(rules) {
         let n = 0;
-        for (const r of rules.values()) n += r.occ.size;
+        for (const r of rules.values()) n += sizeOf(r);
         return n;
     }
 
@@ -236,8 +244,8 @@
         for (const id of ids) {
             const a = aRules.get(id);
             const b = bRules.get(id);
-            const aCount = a ? a.occ.size : 0;
-            const bCount = b ? b.occ.size : 0;
+            const aCount = sizeOf(a);
+            const bCount = sizeOf(b);
             const meta = b || a;
 
             let category;
@@ -613,5 +621,6 @@
     // diff does, instead of re-deriving the rule set from the payload.
     // pagePath travels with it so both engines normalize a page URL the same
     // way when they count how far a rule reaches.
-    return { diffReports, collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, pagePath, otherStandardsOf, mergeStandards };
+    return {
+        sizeOf, diffReports, collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, pagePath, otherStandardsOf, mergeStandards };
 }));

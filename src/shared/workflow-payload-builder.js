@@ -422,7 +422,8 @@
             for (const f of findings) {
                 if (!f || f.outcome !== 'fail') continue;
                 const impact = f.severity ? String(f.severity) : 'unknown';
-                const occ = Array.isArray(f.occurrences) ? f.occurrences.length : 0;
+                // With the elements its rule counted and did not list.
+                const occ = reportFormat().occurrenceTotal(f);
                 if (counts[impact] === undefined) counts.unknown += occ;
                 else counts[impact] += occ;
             }

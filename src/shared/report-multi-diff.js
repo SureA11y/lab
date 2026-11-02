@@ -41,7 +41,7 @@
     }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function (diffApi, identityApi, conformanceApi, healthApi) {
 
-    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath } = diffApi;
+    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath, sizeOf } = diffApi;
     const { reportIdentity, compareByTime, describeComparison } = identityApi;
     const { readConformance, conformanceMatrix, sharedTarget, en301549ForTarget } = conformanceApi;
     const { assessRun, describeRunHealth } = healthApi;
@@ -249,8 +249,8 @@
         // is broken".
         const elements = new Set();
         for (const rule of rules.values()) {
-            failures += rule.occ.size;
-            severity[rule.severity] += rule.occ.size;
+            failures += sizeOf(rule);
+            severity[rule.severity] += sizeOf(rule);
             for (const key of rule.occ.keys()) elements.add(key);
         }
 
@@ -259,7 +259,7 @@
         // left out of the picture: a rule that stops failing and starts needing
         // review has moved, not gone.
         let reviewOcc = 0;
-        for (const rule of reviewRules.values()) reviewOcc += rule.occ.size;
+        for (const rule of reviewRules.values()) reviewOcc += sizeOf(rule);
 
         const sc = scores(report);
         const scans = Array.isArray(report && report.scans) ? report.scans : [];
@@ -465,7 +465,7 @@
         for (const ruleId of ids) {
             const counts = perColumnRules.map((rules) => {
                 const rule = rules.get(ruleId);
-                return rule ? rule.occ.size : 0;
+                return sizeOf(rule);
             });
             const present = counts.map((c) => c > 0);
 

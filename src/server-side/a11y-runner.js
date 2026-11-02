@@ -1014,6 +1014,9 @@ function getA11yGlobalFindings(scans) {
             existing.wcag = existing.wcag || {};
             existing.wcag.sc = [...new Set([...scA, ...scB].map(String).filter(Boolean))];
 
+            // Elements a rule counted and did not list, scan by scan.
+            if (Number(f.unlisted) > 0) existing.unlisted = (Number(existing.unlisted) || 0) + Number(f.unlisted);
+
             // Merge occurrences by union
             const seen = seenOf.get(existing);
             const incoming = Array.isArray(f?.occurrences) ? f.occurrences : [];

@@ -458,6 +458,9 @@ export function createRenderer({
             RGAA: Array.isArray(f?.rgaa) ? f.rgaa : [],
             STANDARDS: otherStandardsOf(f),
             engine: f?.provenance?.engine || {},
+            // Elements its rule counted and did not list (core lists 50 for
+            // its contrast rules): counted in the totals, said in the dialog.
+            unlisted: Number(f?.unlisted) > 0 ? Math.floor(Number(f.unlisted)) : 0,
             reviewHints: {
                 isComposite: (f?.meta?.atomic === false) || checksIds.length > 0 || contributors.length > 0,
                 reasonCode: rollup?.reasonCode ? String(rollup.reasonCode) : '',
@@ -992,6 +995,11 @@ export function createRenderer({
         return parts;
     }
 
+    // 1000 as "1,000".
+    function formatCount(n) {
+        return Number(n).toLocaleString('en-US');
+    }
+
     function buildInstancesCellHtmlForIssue({issue, nodes, nodeCount, index, rowIndex, ruleId, impact, type}) {
         if (!nodeCount) {
             const hints = (issue && issue.reviewHints && typeof issue.reviewHints === 'object')
@@ -1063,6 +1071,8 @@ export function createRenderer({
         const lazyBodyId = registerLazyBody(() => guideRefHtml(issue) + buildInstancesListHtml(nodes, type));
 
         const instanceLabel = type === 'fail' ? 'occurrence' : 'instance';
+        const unlisted = Number(issue?.unlisted) > 0 ? Number(issue.unlisted) : 0;
+        const total = nodeCount + unlisted;
         // Each part is kept on one line; a narrow column wraps between them.
         const leaning = type === 'cantTell'
             ? reviewGroupCountsParts(nodes)
@@ -1072,9 +1082,9 @@ export function createRenderer({
 
         return (
             '<div class="instances-meta">' +
-            nodeCount +
+            formatCount(total) +
             ' ' + instanceLabel +
-            (nodeCount === 1 ? '' : 's') +
+            (total === 1 ? '' : 's') +
             (leaning ? '<br><span class="instances-lean">' + leaning + '</span>' : '') +
             '</div>' +
             '<button type="button" class="src-dialog-trigger" data-dialog-id="' +
@@ -1094,19 +1104,19 @@ export function createRenderer({
             '<p class="src-dialog-meta">Impact: ' +
             escapeHtml(impact || 'unknown') +
             ' · ' +
-            nodeCount +
+            formatCount(total) +
             ' ' + instanceLabel +
-            (nodeCount === 1 ? '' : 's') +
+            (total === 1 ? '' : 's') +
             '</p>' +
             '<button type="button" class="src-dialog-close" aria-label="Close dialog">Close</button>' +
             '</div>' +
             '<div class="src-dialog-body" data-lazy-body="' + lazyBodyId + '" data-lazy-count="' + nodeCount + '"></div>' +
             '<div class="src-dialog-footer">' +
             '<span class="src-dialog-meta">' +
-            nodeCount +
-            ' ' + instanceLabel +
-            (nodeCount === 1 ? '' : 's') +
-            ' listed.</span>' +
+            (unlisted
+                ? formatCount(nodeCount) + ' of ' + formatCount(total) + ' ' + instanceLabel + 's listed: the engine lists the first ' + formatCount(nodeCount) + ' a rule finds, and counts every one.'
+                : nodeCount + ' ' + instanceLabel + (nodeCount === 1 ? '' : 's') + ' listed.') +
+            '</span>' +
             '<button type="button" class="src-dialog-close">Close</button>' +
             '</div>' +
             '</dialog>'

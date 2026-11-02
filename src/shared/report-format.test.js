@@ -35,6 +35,12 @@ describe('report-format', () => {
             format.occurrenceId('button-name', plain, 'https://example.com/'));
     });
 
+    test('a finding is on the elements it lists and those its rule counted only', () => {
+        assert.equal(format.occurrenceTotal({ occurrences: [{}, {}], unlisted: 950 }), 952);
+        assert.equal(format.occurrenceTotal({ occurrences: [{}] }), 1);
+        assert.equal(format.occurrenceTotal(null), 0);
+    });
+
     test('an occurrence\'s own page wins over its scan\'s', () => {
         const o = { pageUrl: 'https://example.com/b', target: ['img'] };
         assert.equal(

@@ -121,6 +121,16 @@
         return (h2 >>> 0).toString(16).padStart(8, '0').slice(-6) + (h1 >>> 0).toString(16).padStart(8, '0');
     }
 
+    /**
+     * How many elements a finding is on: those it lists, and those its rule
+     * counted and did not list (`unlisted`: core's contrast rules list 50).
+     */
+    function occurrenceTotal(finding) {
+        const listed = finding && Array.isArray(finding.occurrences) ? finding.occurrences.length : 0;
+        const unlisted = finding && Number(finding.unlisted) > 0 ? Math.floor(Number(finding.unlisted)) : 0;
+        return listed + unlisted;
+    }
+
     /** The id of an occurrence of `ruleId`: "occ_" and 14 hex digits. */
     function occurrenceId(ruleId, occurrence, scanUrl) {
         return `occ_${hash53(occurrenceKey(ruleId, occurrence, scanUrl))}`;
@@ -210,6 +220,7 @@
         pagePath,
         occurrenceKey,
         elementTarget,
+        occurrenceTotal,
         occurrenceId,
         occurrenceIdOf,
         compactOccurrence,

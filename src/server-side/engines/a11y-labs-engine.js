@@ -579,12 +579,15 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
 
         const out = [];
         const seen = new Set();
+        // Elements its checks counted and did not list (their unlisted).
+        let unlisted = 0;
 
         for (const idRaw of checksIds) {
             const id = String(idRaw || '').trim();
             if (!id) continue;
 
             const atomic = atomicByRuleId.get(id);
+            if (atomic && Number(atomic.unlisted) > 0) unlisted += Number(atomic.unlisted);
             if (!atomic || !Array.isArray(atomic.occurrences) || !atomic.occurrences.length) continue;
 
             for (const occ of atomic.occurrences) {
@@ -603,6 +606,8 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
         }
 
         f.occurrences = out;
+        if (unlisted) f.unlisted = unlisted;
+        else delete f.unlisted;
     }
 }
 
@@ -1264,6 +1269,14 @@ async function runOnPage(
                 },
                 occurrences: canonicalOccs
             };
+            // A rule that lists only some of the elements it found (core's
+            // contrast rules list 50): how many it counted and did not list,
+            // so the report's counts and comparisons count them all.
+            const listing = ruleResult.data && ruleResult.data.details;
+            if (listing && listing.truncated === true && Number.isFinite(listing.elementCount) && Number.isFinite(listing.reportedCount)) {
+                const unlisted = Math.max(0, listing.elementCount - listing.reportedCount);
+                if (unlisted) canonicalFinding.unlisted = unlisted;
+            }
             // A best-practice rule tests no WCAG criterion.
             if (canonicalFinding.tags.includes('best-practice')) canonicalFinding.bestPractice = true;
 

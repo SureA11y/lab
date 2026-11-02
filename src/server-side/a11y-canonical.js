@@ -188,6 +188,8 @@ function mergeFindingsByUid(findings, { occurrenceKey = null } = {}) {
 
     function mergeInto(target, incoming) {
         const seen = seenOf.get(target);
+        // Elements a rule counted and did not list, scan by scan.
+        if (Number(incoming.unlisted) > 0) target.unlisted = (Number(target.unlisted) || 0) + Number(incoming.unlisted);
         addUrls(target.url, urlsOf(incoming), seen.urls);
         addOccurrences(target.occurrences, Array.isArray(incoming.occurrences) ? incoming.occurrences : [], seen.occurrences);
     }

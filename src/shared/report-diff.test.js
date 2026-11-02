@@ -74,6 +74,18 @@ describe('diffReports — elements in shadow roots', () => {
     });
 });
 
+describe('diffReports — rules that list only some of their elements', () => {
+    test('the elements a rule counted and did not list are counted on both sides', async () => {
+        const { diffReports } = await load();
+        const capped = (unlisted) => ({ ...finding('contrast', 'serious', Array.from({ length: 50 }, (_, i) => `/${i}`)), unlisted });
+        const A = report({ runId: 'a', timestamp: '2026-01-01T00:00:00Z', findings: [capped(950)] });
+        const B = report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z', findings: [capped(10)] });
+        const row = diffReports(A, B, { mode: 'evolution' }).rows.find((r) => r.ruleId === 'contrast');
+        assert.equal(row.aCount, 1000);
+        assert.equal(row.bCount, 60);
+    });
+});
+
 describe('diffReports — a/b rule classification', () => {
     test('aonly / bonly / both, caller order preserved', async () => {
         const { diffReports } = await load();
