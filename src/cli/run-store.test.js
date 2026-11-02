@@ -339,3 +339,20 @@ describe('batches', () => {
         assert.ok(fs.existsSync(path.join(root, 'Shop', 'batches', 'notes')));
     });
 });
+
+describe('a scenario\'s folder', () => {
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const store = require('./run-store');
+
+    test('has no commas or semicolons; a store that kept one under its older name goes on with it', () => {
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), 'store-'));
+        const spec = { scenarioName: 'Demo shop, every product; v2' };
+        const outDir = store.defaultOutDir(spec, 'stamp', { storeRoot: root });
+        assert.equal(path.basename(path.dirname(path.dirname(outDir))), 'Demo-shop-every-product-v2');
+        fs.mkdirSync(path.join(root, 'Demo-shop,-every-product;-v2'), { recursive: true });
+        const kept = store.defaultOutDir(spec, 'stamp', { storeRoot: root });
+        assert.equal(path.basename(path.dirname(path.dirname(kept))), 'Demo-shop,-every-product;-v2');
+    });
+});

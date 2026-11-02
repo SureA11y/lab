@@ -31,10 +31,13 @@ const BASELINES_DIR = 'baselines';
 const AUTO_BASELINE = 'auto';
 const NAMED_BASELINE_PREFIX = '@';
 
-function safeDirPart(value, fallback) {
+// Commas, semicolons and quotes too: a scenario "Demo shop, every product"
+// was a folder "Demo-shop,-every-product", which a shell or a URL reads
+// apart. `legacy` keeps them, for a store that already has such a folder.
+function safeDirPart(value, fallback, { legacy = false } = {}) {
     const s = String(value || '')
         .replace(/^https?:\/\//, '')
-        .replace(/[/\\?%*:|"<>]/g, '-')
+        .replace(legacy ? /[/\\?%*:|"<>]/g : /[/\\?%*:|"<>,;'`]/g, '-')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '')
@@ -51,7 +54,11 @@ function storeRoot(options) {
 }
 
 function scenarioDir(spec, options) {
-    return path.join(storeRoot(options), scenarioSlug(spec));
+    const dir = path.join(storeRoot(options), scenarioSlug(spec));
+    // A store that already keeps this scenario under its older name goes on
+    // with it, so its runs and baselines are still found.
+    const legacy = path.join(storeRoot(options), safeDirPart((spec && (spec.scenarioName || spec.url)) || '', 'run', { legacy: true }));
+    return legacy !== dir && !fs.existsSync(dir) && fs.existsSync(legacy) ? legacy : dir;
 }
 
 function defaultOutDir(spec, stamp, options) {
