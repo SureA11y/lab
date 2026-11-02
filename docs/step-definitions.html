@@ -686,8 +686,8 @@
                     "type": "number",
                     "required": false,
                     "importance": "secondary",
-                    "alias": "Skip pages with more elements than",
-                    "description": "Skip this scan when the page has more elements than this, rather than wait on a very slow scan. The report says the scan was skipped, and why.",
+                    "alias": "Note pages with more elements than",
+                    "description": "A page with more elements than this (its shadow roots' included) is still scanned in full, and its report notes that it is large and how long the scan took, with how to make it faster: scan the part that matters, or leave out a long list.",
                     "default": 25000,
                     "placeholder": 25000,
                     "example": 40000

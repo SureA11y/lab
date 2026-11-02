@@ -70,6 +70,7 @@ const path = require('path');
 
 const { REPORTS_ROOT } = require('./report-paths');
 const { checkPageReady, readinessNotice } = require('./page-readiness');
+const { largePageNotice } = require('../shared/scan-notes.js');
 const { languageNotice } = require('../shared/scan-notes.js');
 const { pageLanguage, canonicalLanguageTag } = require('../workflow/engine/page-language');
 const { interpolateVarTokensLoose } = require('../workflow/engine/vars');
@@ -618,7 +619,10 @@ function automationCoverageForEngines(wcagLevel, engineIds, version = DEFAULT_WC
     return coverage;
 }
 
-// -------- Heuristic skipping based on DOM size --------
+// -------- Large pages --------
+// A page this large is scanned in full, and its report says it is large: it
+// was skipped, with no result at all, though core scans 80,000 elements in
+// about 15 s.
 
 const HEAVY_NODE_THRESHOLD = Number(process.env.HEAVY_NODE_THRESHOLD) > 0
     ? Number(process.env.HEAVY_NODE_THRESHOLD)
@@ -629,6 +633,9 @@ function resolveThreshold(localCandidate) {
     return Number.isFinite(n) && n > 0 ? n : HEAVY_NODE_THRESHOLD;
 }
 
+// The elements of the scope, open shadow roots included: counted from the
+// document alone, a page built of web components (two hundred nested shadow
+// roots) came to 8.
 async function estimateNodeCount(pageRef, ctxSelector) {
     try {
         return await pageRef.evaluate((sel) => {
@@ -636,17 +643,22 @@ async function estimateNodeCount(pageRef, ctxSelector) {
                 ? document.querySelector(sel)
                 : document.documentElement;
             if (!root) return 0;
-            return root.querySelectorAll('*').length + 1;
+            let count = 0;
+            const pending = [root];
+            while (pending.length) {
+                const node = pending.pop();
+                const all = node.querySelectorAll('*');
+                count += all.length + (node === root ? 1 : 0);
+                for (const el of all) if (el.shadowRoot) pending.push(el.shadowRoot);
+                if (node.shadowRoot && node === root) pending.push(node.shadowRoot);
+            }
+            return count;
         }, ctxSelector || null);
     } catch {
         return 0;
     }
 }
 
-const HEAVY_SKIP_SUGGESTIONS = [
-    'Limit the scan context to a smaller region',
-    'Paginate or chunk the table, list'
-];
 
 /**
  * The standard a scan was checked against, as { id, label }, or null.
@@ -673,23 +685,6 @@ function appliedConformanceProfile(engineResult, { requested = null, overridden 
     }
     if (!requested || standardApplier || overridden) return null;
     return { id: requested, label: targetLabel(requested) };
-}
-
-function buildHeavySkipExtra({label = null, context = null, profile = null, url = null, estimatedNodes, threshold}) {
-    return {
-        label,
-        context,
-        profile,
-        reason: 'DOM too large for a full scan',
-        estimatedNodes,
-        threshold,
-        suggestions: HEAVY_SKIP_SUGGESTIONS,
-        url
-    };
-}
-
-function buildHeavySkipInfo({estimatedNodes, threshold}) {
-    return {reason: 'DOM too large for a full scan', estimatedNodes, threshold};
 }
 
 function getSuccessCriteria(tags) {
@@ -1536,61 +1531,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
             estimateNodeCount(pageRef, contextSelector),
             'estimateNodeCount'
         );
+        // A page past it is scanned in full all the same: its report notes
+        // that it is large, and how long the scan took (largePageNotice).
         const threshold = resolveThreshold(meta.heavyNodeThreshold);
-        if (estimatedNodes >= threshold) {
-            if (typeof progress === 'function') {
-                progress({
-                    time: new Date().toISOString(),
-                    type: 'scan',
-                    message: 'a11yScan skipped',
-                    depth: (workflowCtx && workflowCtx._logCtx && typeof workflowCtx._logCtx.depth === 'number')
-                        ? workflowCtx._logCtx.depth
-                        : 0,
-                    vars: varsForLog(workflowCtx),
-                    extra: {
-                        actionPath: (workflowCtx && workflowCtx._logCtx && typeof workflowCtx._logCtx.actionPath === 'string')
-                            ? workflowCtx._logCtx.actionPath
-                            : undefined,
-                        scanId: (typeof meta.scanId === 'string' && meta.scanId) ? meta.scanId : null,
-                        orderKey: (typeof meta.orderKey === 'string' && meta.orderKey) ? meta.orderKey : null,
-                        ...buildHeavySkipExtra({
-                            label: meta.label || null,
-                            context: contextSelector || null,
-                            profile: requestedFields.profile,
-                            url: currentUrl || null,
-                            estimatedNodes,
-                            threshold
-                        })
-                    }
-                });
-            }
-
-            if (!Array.isArray(workflowCtx.collectedScans)) workflowCtx.collectedScans = [];
-            workflowCtx.collectedScans.push({
-                scanId: (typeof meta.scanId === 'string' && meta.scanId) ? meta.scanId : null,
-                orderKey: (typeof meta.orderKey === 'string' && meta.orderKey) ? meta.orderKey : null,
-                id: (typeof meta.id === 'string' && meta.id.trim()) ? meta.id.trim() : null,
-                label: (typeof meta.label === 'string' && meta.label.trim()) ? meta.label.trim() : null,
-                scanTags: scanTagsArr.length ? scanTagsArr : null,
-                context: contextSelector || null,
-                exclude: excludeSelectorsForScan.length ? excludeSelectorsForScan : null,
-                tags: tagsForScan || null,
-                ...requestedFields,
-                runOnly,
-                url: currentUrl || safeUrl(pageRef) || null,
-                skipped: true,
-                skipInfo: buildHeavySkipInfo({estimatedNodes, threshold}),
-                results: null,
-                canonical: null,
-                domMetrics: null,
-                a11ySummary: null,
-                coverageSummary: null,
-                screenshot: null,
-                extraScreenshots: [],
-                mergedScan: meta.mergedScan || null
-            });
-            return;
-        }
 
         const scanStartedAt = Date.now();
 
@@ -1704,6 +1647,8 @@ async function runA11yWorkflow(url, tags, options = {}) {
                     canonical.diagnostics.durationMs = Date.now() - scanStartedAt;
                     canonical.diagnostics.estimatedNodes = estimatedNodes;
                     canonical.diagnostics.pageReadiness = pageReadiness;
+                    const large = largePageNotice(estimatedNodes, threshold, canonical.diagnostics.durationMs);
+                    if (large) canonical.notices = [...(Array.isArray(canonical.notices) ? canonical.notices : []), large];
                     const notReady = readinessNotice(pageReadiness);
                     if (notReady) canonical.notices = [notReady, ...(Array.isArray(canonical.notices) ? canonical.notices : [])];
 

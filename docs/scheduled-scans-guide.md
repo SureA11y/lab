@@ -659,9 +659,10 @@ To fail such a run when it has failures, add `--fail-on-failures`.
 happened later. The comparison still works, but "new" and "fixed" are the other
 way around from what you probably meant.
 
-**Exit 4, "1 scan skipped"** — a page was too large for the scan's node
-threshold, so it was not scanned. The run reports zero problems for that page,
-which is why it is a failure and not a pass.
+**Exit 4, "1 scan skipped"** — a page could not be scanned: the address gave
+something that is not a web page (a PDF, JSON, an image). The run reports zero
+problems for that page, which is why it is a failure and not a pass. A very
+large page is scanned in full; its report notes that it is large.
 
 **Exit 4, "12 iterations failed"** — a loop over elements broke partway. Common
 causes: the page changed shape mid-run, or a selector matches something that

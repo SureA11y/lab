@@ -125,6 +125,23 @@
     }
 
     /**
+     * A page with more elements than the scan step's threshold (Note pages
+     * with more elements than, 25,000 unless it says), scanned in full: a
+     * note that it is large and how long its scan took, or null.
+     */
+    function largePageNotice(elements, threshold, durationMs) {
+        if (!(elements >= threshold)) return null;
+        const n = (x) => Math.round(x).toLocaleString('en-US');
+        const took = Number.isFinite(durationMs) ? `, which took ${durationMs >= 10000 ? `${Math.round(durationMs / 1000)} s` : `${(durationMs / 1000).toFixed(1)} s`}` : '';
+        return {
+            engineId: null,
+            code: 'large-page',
+            message: `This page has ${n(elements)} elements, more than ${n(threshold)}. It was scanned in full${took}. `
+                + 'To make its scans faster, scan the part that matters (Include selectors), or leave out a long list or table (Exclude selectors).'
+        };
+    }
+
+    /**
      * A scan of a page Set language asked for one language that declares
      * another (its html lang): the site may not have followed the step, so
      * the results may be for other content than the reader expects. Compared
@@ -179,6 +196,7 @@
         shadowHostsOf,
         contextMatchNotices,
         readinessNotice,
+        largePageNotice,
         languageNotice,
         collectMargins,
     };

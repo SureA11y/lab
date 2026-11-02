@@ -20,7 +20,7 @@ Read by the server and the command-line runner alike.
 | `A11Y_DISABLE_CACHE` | No browser cache while scanning, for reproducible results (default on) |
 | `A11Y_PACKS` | More standard packs for surea11y to load, besides the `@surea11y/pack-*` packages the lab depends on: package names, or paths from the lab's folder, comma-separated ([Standards](#standards)) |
 | `A11Y_CORE_HOOKS` | Which of surea11y's hooks run before a page's own scripts: `internals` (names and roles web components set through `ElementInternals`), `listener` (event listeners added from script, for the keyboard rules) and `liveRegion` (what live regions are given, for the rule about announcements that may be missed). Default all; `none`, or a comma-separated list |
-| `HEAVY_NODE_THRESHOLD` | A page with more elements than this is skipped rather than scanned, and the report says so |
+| `HEAVY_NODE_THRESHOLD` | A page with more elements than this (default 25,000, its shadow roots' included) is still scanned in full, and its report notes that it is large and how long the scan took; a scan step's own setting wins |
 | `A11Y_REPORTS_ROOT` | Where reports, evidence, element pictures and the queue's batches are written, and what the server serves at `/reports` (default `reports/`): a path from the lab's folder, or absolute |
 | `A11Y_RUN_FILES_HOURS` | How long a run's pictures and evidence (`reports/runs/`, `reports/evidence/`) stay on disk after it, in hours (default `24`; `0` keeps them for good). A report downloaded as a package carries its own pictures; one open in the app, or saved as JSON alone, shows none once they are gone. The queue's batches stay until deleted |
 | `A11Y_QUEUE_DIR` | Where the queue keeps its batches, inside the reports folder (default `batches`) |
