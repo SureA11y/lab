@@ -457,7 +457,7 @@ async function _applyActionsImpl(page, actions = [], actionResults, startIndex =
             }
         }
 
-        if (!skipPause) await postStepDelay(context);
+        if (!skipPause) await postStepDelay(context, page);
     }
 
     // Emit a single summary at the end of the top-level run
