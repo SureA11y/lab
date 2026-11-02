@@ -39,7 +39,10 @@
  * `max` allows. The binding is handed the result with each check's
  * occurrences cut to them; an element it considered for one check keeps
  * what it got there (its picture, or why there is none) in every other;
- * the rest get `{ skipped: 'rule-limit', max }`.
+ * the rest get `{ skipped: 'rule-limit', max }`. The same for a finding's
+ * picture in the state it was made in (`stateScreenshots`, the text
+ * spacing): it keeps the one its element got in that state for another
+ * check, or is cut with it.
  */
 
 const { A11yCoreBuilder } = require('@surea11y/puppeteer');
@@ -94,15 +97,34 @@ class TimedScreenshotsBuilder extends A11yCoreBuilder {
         };
         await super._captureScreenshots(trimmed, frame, framePath);
         // The same occurrence objects: the pictures are on `result` already.
+        const stateOf = (occ) => {
+            const state = occ && occ.data && occ.data.details && occ.data.details.evidenceState;
+            return typeof state === 'string' && state ? state : null;
+        };
         const pictured = new Map();
+        const picturedInState = new Map();
         for (const check of trimmed.checksResults) {
             for (const occ of (check && check.occurrences) || []) {
                 // What the element got for another check: its picture, or why there is none.
                 if (occ && occ.screenshot && occ.selector) pictured.set(elementOf(occ), occ.screenshot);
+                if (occ && occ.selector && Array.isArray(occ.stateScreenshots)) {
+                    for (const entry of occ.stateScreenshots) {
+                        if (entry && entry.state) picturedInState.set(JSON.stringify([elementOf(occ), entry.state]), entry);
+                    }
+                }
             }
         }
+        // binding-base 1.7.0 and later picture a finding in its state, and
+        // say so in the options it filled in; an older one takes no such
+        // picture, so none is said to be cut.
+        const statesOn = this._screenshots.states === true;
         for (const occ of cut) {
             occ.screenshot = pictured.get(elementOf(occ)) || { skipped: 'rule-limit', max: this._shotPerRule };
+            const state = statesOn ? stateOf(occ) : null;
+            if (state) {
+                occ.stateScreenshots = [picturedInState.get(JSON.stringify([elementOf(occ), state]))
+                    || { state, skipped: 'rule-limit', max: this._shotPerRule }];
+            }
         }
         return result;
     }

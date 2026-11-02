@@ -19,10 +19,12 @@ The first public release.
   AA or AAA, or EN 301 549 (V4.1.1 and V3.2.1), applied in full. A finding
   surea11y cannot decide is a question, with the steps to check it and which
   way its evidence leans, not a pass or a fail.
-- **Reports** with screenshots of the page and of each flagged element,
-  grouped by WCAG principle or level, by your own grouping, or not at all;
-  exported as a report package (report version 3, with an occurrence id on
-  every failing element, the same in every run) or a standalone HTML page.
+- **Reports** with screenshots of the page and of each flagged element (a
+  finding that shows only with the WCAG text spacing applied is pictured
+  with the spacing too, beside the page as it is), grouped by WCAG
+  principle or level, by your own grouping, or not at all; exported as a
+  report package (report version 3, with an occurrence id on every failing
+  element, the same in every run) or a standalone HTML page.
   A report's time reads in the reader's own time zone, named; scans see the
   machine's zone unless `A11Y_TZ` names one.
 - **Comparisons.** Two reports side by side, or up to 24 as a dashboard of

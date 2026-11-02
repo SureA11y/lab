@@ -11,6 +11,12 @@
  * goes anywhere, leaving `{ url, box }` in its place, so no image bytes
  * reach a payload. An occurrence the binding could not picture keeps
  * `{ skipped }`, its reason.
+ *
+ * A finding made in a state the rule put the page in, and took it out of
+ * before the browser painted (surea11y's text spacing), shows only in that
+ * state: the binding pictures its element in it as well, and the engine
+ * puts that on the occurrence as `elementStateScreenshots`, a list of
+ * `{ state, ... }` shaped as `elementScreenshot` is, stored the same way.
  */
 
 const crypto = require('crypto');
@@ -97,10 +103,26 @@ function elementScreenshotOf(screenshot, { max = null } = {}) {
 }
 
 /**
- * Stores every picture in a scan's canonical result and puts its URL in
- * place of its bytes, in place. Occurrences of one element share one
- * picture, which is stored once; so are criteria that copy a check's
- * occurrences.
+ * What a canonical occurrence keeps of the binding's `stateScreenshots`, or
+ * null when it has none: each picture in a state, as elementScreenshotOf()
+ * keeps a picture, with its `state`.
+ */
+function elementStateScreenshotsOf(list, { max = null } = {}) {
+    if (!Array.isArray(list)) return null;
+    const out = [];
+    for (const entry of list) {
+        if (!entry || typeof entry !== 'object' || typeof entry.state !== 'string' || !entry.state) continue;
+        const kept = elementScreenshotOf(entry, { max });
+        if (kept) out.push({ state: entry.state, ...kept });
+    }
+    return out.length ? out : null;
+}
+
+/**
+ * Stores every picture in a scan's canonical result, its pictures in a
+ * state too, and puts its URL in place of its bytes, in place. Occurrences
+ * of one element share one picture, which is stored once; so are criteria
+ * that copy a check's occurrences.
  *
  * @param {object} canonical the scan's canonical result
  * @param {{ save?: (file: { data: Buffer, filename: string, dir: string }) => Promise<{ publicUrl?: string|null }>,
@@ -112,6 +134,7 @@ function elementScreenshotOf(screenshot, { max = null } = {}) {
 async function storeElementScreenshots(canonical, { save = null, dir = 'elements' } = {}) {
     const stored = new Map();
     const pending = [];
+    const pendingStates = [];
     const seen = new Set();
 
     const visit = (node) => {
@@ -125,16 +148,31 @@ async function storeElementScreenshots(canonical, { save = null, dir = 'elements
         if (shot && typeof shot === 'object' && Buffer.isBuffer(shot.buffer)) {
             pending.push(node);
         }
+        if (Array.isArray(node.elementStateScreenshots)
+            && node.elementStateScreenshots.some((e) => e && typeof e === 'object' && Buffer.isBuffer(e.buffer))) {
+            pendingStates.push(node);
+        }
         for (const key of Object.keys(node)) {
-            if (key !== 'elementScreenshot') visit(node[key]);
+            if (key !== 'elementScreenshot' && key !== 'elementStateScreenshots') visit(node[key]);
         }
     };
     visit(canonical);
 
-    for (const occurrence of pending) {
-        const shot = occurrence.elementScreenshot;
+    const storeShared = (shot) => {
         if (!stored.has(shot.buffer)) stored.set(shot.buffer, storeOne(shot, { save, dir }));
-        occurrence.elementScreenshot = await stored.get(shot.buffer);
+        return stored.get(shot.buffer);
+    };
+    for (const occurrence of pending) {
+        occurrence.elementScreenshot = await storeShared(occurrence.elementScreenshot);
+    }
+    // Occurrences of one element share its entries: each is replaced once.
+    const replaced = new Map();
+    for (const occurrence of pendingStates) {
+        occurrence.elementStateScreenshots = await Promise.all(occurrence.elementStateScreenshots.map(async (entry) => {
+            if (!entry || typeof entry !== 'object' || !Buffer.isBuffer(entry.buffer)) return replaced.get(entry) || entry;
+            if (!replaced.has(entry)) replaced.set(entry, { state: entry.state, ...(await storeShared(entry)) });
+            return replaced.get(entry);
+        }));
     }
     return stored.size;
 }
@@ -154,4 +192,4 @@ async function storeOne(shot, { save, dir }) {
     return { url: `data:image/png;base64,${shot.buffer.toString('base64')}`, ...kept };
 }
 
-module.exports = { STEP_OUTCOMES, DEFAULT_MAX, NO_LIMIT, CAPTURE_BUDGET_MS, TIME_LIMIT_ERROR, screenshotOptionsForStep, elementScreenshotOf, storeElementScreenshots };
+module.exports = { STEP_OUTCOMES, DEFAULT_MAX, NO_LIMIT, CAPTURE_BUDGET_MS, TIME_LIMIT_ERROR, screenshotOptionsForStep, elementScreenshotOf, elementStateScreenshotsOf, storeElementScreenshots };

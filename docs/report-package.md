@@ -40,7 +40,9 @@ Each picture is stored once, named by its content (the first 20 hex digits
 of its SHA-256) and its type, so a picture the report shows a hundred times,
 or in its HTML and its JSON, is one file. The JSON names it by its path in
 the package wherever the report held it: a screenshot's `dataUrl` or
-`publicUrl`, an occurrence's `elementScreenshot.url`, and so on, e.g.
+`publicUrl`, an occurrence's `elementScreenshot.url` and, for a finding
+made with the text spacing applied, `elementStateScreenshots[].url`, and so
+on, e.g.
 `"elementScreenshot": { "url": "images/9c04…7b.png" }`.
 
 Packing (`src/js/report-package.js`, `packPayloadImages`) turns into such a

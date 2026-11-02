@@ -78,6 +78,17 @@ function pictureOf(occ, context) {
     return shot.context || !context ? shot : { ...shot, context };
 }
 
+// Its pictures in the state its finding was made in (the text spacing),
+// naming the context as pictureOf() does, or null: they go with the
+// picture of the same context, so the two show the same page.
+function statePicturesOf(occ, context) {
+    const list = occ && occ.elementStateScreenshots;
+    if (!Array.isArray(list) || !list.length) return null;
+    return list.map((shot) => (shot && typeof shot === 'object' && typeof shot.url === 'string' && !shot.context && context
+        ? { ...shot, context }
+        : shot));
+}
+
 function addOccurrence(entry, occ, context, listed, contextsTotal) {
     const key = occurrenceIdentity(occ);
     const seen = entry.occ.get(key);
@@ -86,13 +97,20 @@ function addOccurrence(entry, occ, context, listed, contextsTotal) {
             for (const c of occ.contexts || [context]) if (!seen.contexts.includes(c)) seen.contexts.push(c);
             // A picture from a later context, where the first had none.
             const picture = !pictureOf(seen, null) ? pictureOf(occ, context) : null;
-            if (picture) seen.elementScreenshot = picture;
+            if (picture) {
+                seen.elementScreenshot = picture;
+                const inState = statePicturesOf(occ, context);
+                if (inState) seen.elementStateScreenshots = inState;
+                else delete seen.elementStateScreenshots;
+            }
         }
         return;
     }
     const copy = listed ? { ...occ, contexts: occ.contexts ? [...occ.contexts] : [context], contextsTotal } : { ...occ };
     const picture = listed ? pictureOf(occ, context) : null;
     if (picture) copy.elementScreenshot = picture;
+    const inState = listed ? statePicturesOf(occ, context) : null;
+    if (inState) copy.elementStateScreenshots = inState;
     entry.occ.set(key, copy);
     entry.finding.occurrences.push(copy);
 }

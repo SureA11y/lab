@@ -89,6 +89,26 @@ describe('merged scans', () => {
         assert.deepEqual(merged.canonical.findings[0].occurrences[0].elementScreenshot, { url: '/reports/x.png', box: null, context: 'Dark' });
     });
 
+    test('the pictures in a state go with the picture of the same context', () => {
+        const inState = (name) => [{ state: 'text-spacing', url: `/reports/${name}-spaced.png`, box: null }];
+        const [merged] = foldMergedScans([
+            scan('Light', [finding('fail', 'text-spacing-content-loss', [{ ...occ(), elementScreenshot: { url: '/reports/light.png', box: null }, elementStateScreenshots: inState('light') }])]),
+            scan('Dark', [finding('fail', 'text-spacing-content-loss', [{ ...occ(), elementScreenshot: { url: '/reports/dark.png', box: null }, elementStateScreenshots: inState('dark') }])]),
+        ], deps);
+        const [o] = merged.canonical.findings[0].occurrences;
+        assert.equal(o.elementScreenshot.url, '/reports/light.png');
+        assert.deepEqual(o.elementStateScreenshots, [{ state: 'text-spacing', url: '/reports/light-spaced.png', box: null, context: 'Light' }]);
+
+        // A first context with no picture: the later context's two are taken together.
+        const [later] = foldMergedScans([
+            scan('Light', [finding('fail', 'text-spacing-content-loss', [{ ...occ(), elementScreenshot: { skipped: 'max-reached' }, elementStateScreenshots: [{ state: 'text-spacing', skipped: 'max-reached' }] }])]),
+            scan('Dark', [finding('fail', 'text-spacing-content-loss', [{ ...occ(), elementScreenshot: { url: '/reports/dark.png', box: null }, elementStateScreenshots: inState('dark') }])]),
+        ], deps);
+        const [l] = later.canonical.findings[0].occurrences;
+        assert.equal(l.elementScreenshot.url, '/reports/dark.png');
+        assert.deepEqual(l.elementStateScreenshots, [{ state: 'text-spacing', url: '/reports/dark-spaced.png', box: null, context: 'Dark' }]);
+    });
+
     test('a result measured differently is one occurrence per result, each with its contexts', () => {
         const [merged] = foldMergedScans([
             scan('Light', [finding('fail', 'contrast', [occ({ summary: 'Contrast 2:1', details: { ratio: 2 } })])]),

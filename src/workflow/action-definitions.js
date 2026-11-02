@@ -225,7 +225,7 @@ const ACTION_DEFINITIONS = {
                 type: "string",
                 required: false,
                 alias: "Element screenshots",
-                description: "Take a picture of each element surea11y flags, with a box around it, shown beside its finding.",
+                description: "Take a picture of each element surea11y flags, with a box around it, shown beside its finding. A finding that shows only with the WCAG text spacing applied also gets a picture with the spacing applied, beside the one of the page as it is.",
                 default: "fail",
                 options: [
                     { value: "off", label: "None" },

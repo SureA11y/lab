@@ -3,7 +3,7 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { NO_LIMIT, TIME_LIMIT_ERROR, screenshotOptionsForStep, elementScreenshotOf, storeElementScreenshots } = require('./element-screenshots');
+const { NO_LIMIT, TIME_LIMIT_ERROR, screenshotOptionsForStep, elementScreenshotOf, elementStateScreenshotsOf, storeElementScreenshots } = require('./element-screenshots');
 
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
 
@@ -64,6 +64,47 @@ describe('element-screenshots', () => {
         assert.deepEqual(atomic.occurrences[0].elementScreenshot, { url, box: shot.box });
         assert.deepEqual(composite.occurrences[0].elementScreenshot, { url, box: shot.box });
         assert.deepEqual(atomic.occurrences[1].elementScreenshot, { skipped: 'no-element' });
+        assert.ok(!JSON.stringify(canonical).includes('"buffer"'), 'no image bytes are left in the result');
+    });
+
+    test('a finding made in a state keeps its picture in that state, as a picture is kept, with its state', () => {
+        const box = { x: 16, y: 16, width: 100, height: 30 };
+        assert.deepEqual(elementStateScreenshotsOf([{ state: 'text-spacing', buffer: PNG, box }]), [{ state: 'text-spacing', buffer: PNG, box }]);
+        assert.deepEqual(
+            elementStateScreenshotsOf([
+                { state: 'text-spacing', skipped: 'state-not-applied' },
+                { state: 'text-spacing', skipped: 'capture-failed', error: TIME_LIMIT_ERROR },
+                { state: 'text-spacing', skipped: 'max-reached' },
+                { skipped: 'zero-size' },
+                null,
+            ], { max: 20 }),
+            [
+                { state: 'text-spacing', skipped: 'state-not-applied' },
+                { state: 'text-spacing', skipped: 'time-limit' },
+                { state: 'text-spacing', skipped: 'max-reached', max: 20 },
+            ]
+        );
+        for (const none of [undefined, null, [], [{ buffer: PNG }], 'x']) assert.equal(elementStateScreenshotsOf(none), null);
+    });
+
+    test('stores the pictures in a state beside the others, each once, with no bytes left', async () => {
+        const other = Buffer.from('89504e470d0a1a0a0000000d49484453', 'hex');
+        const entry = { state: 'text-spacing', buffer: other, box: { x: 4, y: 4, width: 100, height: 30 } };
+        const clipped = { elementScreenshot: { buffer: PNG, box: null }, elementStateScreenshots: [entry] };
+        const overlaps = { elementScreenshot: { buffer: PNG, box: null }, elementStateScreenshots: [entry, { state: 'zoom', skipped: 'state-unavailable' }] };
+        const canonical = { findings: [{ occurrences: [clipped, overlaps] }] };
+        const saved = [];
+        const count = await storeElementScreenshots(canonical, {
+            save: async (file) => { saved.push(file.filename); return { publicUrl: `/reports/evidence/run/${file.dir}/${file.filename}` }; },
+            dir: 'elements-s1',
+        });
+        assert.equal(count, 2);
+        assert.equal(saved.length, 2);
+        const stateUrl = clipped.elementStateScreenshots[0].url;
+        assert.match(stateUrl, /^\/reports\/evidence\/run\/elements-s1\/element-[0-9a-f]{12}\.png$/);
+        assert.notEqual(stateUrl, clipped.elementScreenshot.url);
+        assert.deepEqual(clipped.elementStateScreenshots, [{ state: 'text-spacing', url: stateUrl, box: entry.box }]);
+        assert.deepEqual(overlaps.elementStateScreenshots, [{ state: 'text-spacing', url: stateUrl, box: entry.box }, { state: 'zoom', skipped: 'state-unavailable' }]);
         assert.ok(!JSON.stringify(canonical).includes('"buffer"'), 'no image bytes are left in the result');
     });
 
