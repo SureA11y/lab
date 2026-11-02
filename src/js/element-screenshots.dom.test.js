@@ -157,7 +157,7 @@ describe('element screenshots', () => {
         ]);
         assert.deepEqual(figures.map((f) => f.querySelector('figcaption').textContent), [
             'As the page shows it.',
-            'With the WCAG text spacing applied (line height 1.5, letter spacing 0.12em, word spacing 0.16em, 2em after paragraphs), where the finding shows. Only part of the element fits in the picture.'
+            'With the WCAG text spacing applied, where the finding shows. Only part of the element fits in the picture.'
         ]);
         // The state is in the pictures; it is not listed again as something measured.
         const measured = resultsEl.querySelector('.node-measured').textContent;

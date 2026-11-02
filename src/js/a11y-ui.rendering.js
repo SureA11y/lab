@@ -679,7 +679,7 @@ export function createRenderer({
     const STATE_LABELS = {
         'text-spacing': {
             name: 'the WCAG text spacing',
-            caption: 'With the WCAG text spacing applied (line height 1.5, letter spacing 0.12em, word spacing 0.16em, 2em after paragraphs), where the finding shows.',
+            caption: 'With the WCAG text spacing applied, where the finding shows.',
             alt: 'with the WCAG text spacing applied'
         }
     };
