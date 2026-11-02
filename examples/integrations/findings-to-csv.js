@@ -31,7 +31,7 @@ function rows(report, outcome = 'fail') {
                     run: report.runId,
                     timestamp: report.timestamp,
                     scan: scan.label || scan.id,
-                    profile: scan.profile ? scan.profile.label : '',
+                    profile: (Array.isArray(scan.profiles) && scan.profiles.length > 1 ? scan.profiles : (scan.profile ? [scan.profile] : [])).map((p) => p.label).join(' + '),
                     page: o.pageUrl || scan.url,
                     rule: f.ruleId || f.id,
                     title: f.title,

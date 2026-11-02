@@ -41,7 +41,7 @@ const { captureScreenshotArtifact } = require('./screenshot-capture.js');
 const { CAPTURE_BUDGET_MS, screenshotOptionsForStep, storeElementScreenshots } = require('./element-screenshots.js');
 const { splitWcagTagToRef } = require('../shared/canonical-shared');
 const { LOCALES } = require('./engines/a11y-labs-engine');
-const { resolveScanSelection, selectionTags, targetLabel, DEFAULT_WCAG_VERSION } = require('./conformance-targets');
+const { resolveScanSelection, selectionTags, targetLabel, scanTargetProblems, DEFAULT_WCAG_VERSION } = require('./conformance-targets');
 const { checkScanSteps } = require('./scan-step-check');
 const { pushLog, varsForLog } = require('../workflow/engine/log');
 const { scanProfileFields } = require('../shared/report-scan.js');
@@ -682,6 +682,21 @@ function appliedConformanceProfile(engineResult, { requested = null, overridden 
     }
     if (!requested || standardApplier || overridden) return null;
     return { id: requested, label: targetLabel(requested) };
+}
+
+/**
+ * A scan of several profiles, as its report records it: { profiles }, those
+ * that ran, in order, and { profilesNotRun }, those that did not and why, from
+ * the engine's canonical (runOptions.conformanceProfiles, .profilesNotRun).
+ * {} for a scan of one.
+ */
+function appliedProfilesOf(engineResult) {
+    const c = engineResult && engineResult.canonical;
+    const ro = c && c.runOptions ? c.runOptions : null;
+    const out = {};
+    if (ro && Array.isArray(ro.conformanceProfiles) && ro.conformanceProfiles.length > 1) out.profiles = ro.conformanceProfiles;
+    if (ro && Array.isArray(ro.profilesNotRun) && ro.profilesNotRun.length) out.profilesNotRun = ro.profilesNotRun;
+    return out;
 }
 
 function getSuccessCriteria(tags) {
@@ -1450,12 +1465,21 @@ async function runA11yWorkflow(url, tags, options = {}) {
         // best-practice option.
         // Every engine's adapter maps it to its own terms; surea11y takes a
         // standard as it is.
+        // A profile a variable gave is known only now: one that is not a
+        // profile, or two WCAG levels, stops the scan rather than quietly
+        // checking WCAG 2.2 AA instead (checkScanSteps checked the others).
+        const profileProblems = meta.profile != null ? scanTargetProblems(meta.profile) : [];
+        if (profileProblems.length) {
+            throw new Error(`The scan's profile: ${profileProblems.join('; ')}.`);
+        }
         const selection = resolveScanSelection({
             profile: meta.profile || null,
             includeBestPractice: meta.includeBestPractice === true,
             tags: meta.tags != null ? meta.tags : tags
         });
-        if (selection.profile) engineOptions.profile = selection.profile;
+        // Several profiles: core scans every one, the WCAG level among them.
+        if (Array.isArray(selection.profiles)) engineOptions.profile = selection.profiles.slice();
+        else if (selection.profile) engineOptions.profile = selection.profile;
         // Also surea11y only: the language its findings are written in.
         const requestedLocale = typeof meta.locale === 'string' ? meta.locale.trim().toLowerCase() : '';
         if (requestedLocale && Object.prototype.hasOwnProperty.call(LOCALES, requestedLocale)) {
@@ -1512,6 +1536,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
             standard: selection.profile ? { id: selection.profile, label: targetLabel(selection.profile) } : null,
             version: selection.version,
             level: selection.level,
+            profiles: Array.isArray(selection.profiles)
+                ? selection.profiles.map((id) => ({ id, label: targetLabel(id) }))
+                : null,
         });
         // The step's own rule ids and rule tags, on top of the selection.
         const runOnly = {includeRuleIds: [], excludeRuleIds: []};
@@ -1872,6 +1899,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
                     }),
                     version: selection.version,
                     level: selection.level,
+                    ...appliedProfilesOf(engineResult),
                 }),
                 runOnly,
                 url: finalUrl,
@@ -2093,6 +2121,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
                 tags: ax.tags || null,
                 profile: ax.profile || null,
                 wcag: ax.wcag || null,
+                // A scan of several profiles: every one, and any that did not run.
+                ...(Array.isArray(ax.profiles) && ax.profiles.length > 1 ? { profiles: ax.profiles } : {}),
+                ...(Array.isArray(ax.profilesNotRun) && ax.profilesNotRun.length ? { profilesNotRun: ax.profilesNotRun } : {}),
                 runOnly,
                 url: ax.url || null,
                 skipped: !!ax.skipped,

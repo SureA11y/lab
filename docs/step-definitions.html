@@ -552,11 +552,11 @@
                     "example": "desktop, checkout"
                 },
                 "profile": {
-                    "type": "string",
+                    "type": "string|string[]",
                     "required": false,
                     "importance": "primary",
                     "alias": "Profile",
-                    "description": "The profile this scan checks against, WCAG 2.2 AA unless it says otherwise: WCAG 2.2 at Level A, AA or AAA, or a standard, which sets the WCAG version and the level, all of them Level A and AA: EN 301 549 V4.1.1, the EU standard, which is WCAG 2.2, and EN 301 549 V3.2.1, its earlier version, which is WCAG 2.1 and still checks 4.1.1 Parsing. surea11y applies a standard in full, version details such as 4.1.1 included. Including rule IDs or tags explicitly takes precedence over a standard. Passing the rules does not mean the page meets the standard: many criteria still need a manual check.",
+                    "description": "What this scan checks against, WCAG 2.2 AA unless it says otherwise: WCAG 2.2 at Level A, AA or AAA, or a standard, which sets the WCAG version and the level, all of them Level A and AA: EN 301 549 V4.1.1, the EU standard, which is WCAG 2.2, and EN 301 549 V3.2.1, its earlier version, which is WCAG 2.1 and still checks 4.1.1 Parsing. surea11y applies a standard in full, version details such as 4.1.1 included. A list checks against several at once, such as [\"wcag22-aa\", \"wai-aria-1.2\"]: one WCAG level at most, since each includes the ones below it, and any standards. Each one judges the page as a scan of it alone would, and a finding that fails any of them fails the scan; a finding says what each one makes of it. A variable may hold one profile or several separated by commas. Including rule IDs or tags explicitly takes precedence over a standard. Passing the rules does not mean the page meets the standard: many criteria still need a manual check.",
                     "default": "wcag22-aa",
                     "options": [
                         {

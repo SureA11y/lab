@@ -107,6 +107,18 @@
                 out.items = { type: 'string' };
                 return out;
             case 'string|string[]':
+                if (values && field.packValues === true) {
+                    // One value, or a list of them (a scan's profiles): each
+                    // one listed, or one an installed standard pack adds. A
+                    // variable holds one, or several separated by commas.
+                    const pack = { type: 'string', pattern: '^[a-z][a-z0-9]*(-[a-z0-9.]+)+$', description: 'a profile of an installed standard pack' };
+                    const one = { anyOf: [{ enum: values }, pack] };
+                    out.anyOf = [
+                        ...(tokenAllowed ? [one, VAR_TOKEN] : [one]),
+                        { type: 'array', minItems: 1, items: one },
+                    ];
+                    return out;
+                }
                 out.type = ['string', 'array'];
                 out.items = { type: 'string' };
                 return out;

@@ -25,6 +25,40 @@ Each scan step sets its own **Profile** (a spec's scan step, its
 same page can check it against several: `examples/specs/standards.spec.json`
 does that.
 
+### Several profiles in one scan
+
+One scan can also check against several at once: a WCAG level and any
+standards, such as WCAG 2.2 AA with WAI-ARIA 1.2. In the step, choose the
+level under **WCAG 2.2** (or **Don’t check WCAG**) and tick the
+**Standards**; in a spec, give a list:
+
+```json
+{ "type": "a11yScan", "label": "Home", "profile": ["wcag22-aa", "wai-aria-1.2"] }
+```
+
+- **One WCAG level at most.** Each level includes the ones below it, so
+  `["wcag22-a", "wcag22-aa"]` is refused before the run starts.
+- **Each profile judges the page as a scan of it alone would.** The report
+  lists each one's requirements: WCAG's criteria and WAI-ARIA's own. An
+  unnamed `role="grid"` stays a question under WCAG 4.1.2 and is a failure
+  of WAI-ARIA's name requirement.
+- **A failure under any of them fails the scan.** Its counts and score read
+  every profile's requirements together.
+- **EN 301 549 restates WCAG Level A and AA.** Beside a WCAG level, it checks
+  those criteria again, under its clauses' names. The step says so.
+- **A profile that didn't run** (its pack didn't load, say) is named under
+  the scan's header and in a notice; the others still ran. A report keeps
+  every profile in the scan's `profiles` and the missing ones in
+  `profilesNotRun` ([the report package](../report-package.md)).
+- **From a variable.** A variable can hold one profile, or several separated
+  by commas (`wcag22-aa,wai-aria-1.2`). Each one is checked when the scan
+  comes, and a scan whose variable names something that is no profile stops
+  with an error rather than checking WCAG 2.2 AA instead.
+
+Reports of scans checked against different profiles say so when compared,
+since their rows don't line up; the same profiles in another order are the
+same.
+
 ## What automated checks can and cannot say
 
 A scan decides what can be decided from the page: a missing text alternative,

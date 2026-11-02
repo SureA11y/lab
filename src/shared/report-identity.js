@@ -76,11 +76,15 @@
         const out = [];
         for (const s of scans) {
             const canon = s && s.canonical && s.canonical.runOptions && s.canonical.runOptions.conformanceProfile;
-            const id = str(reportScan.scanStandardId(s)) || (canon && !/^wcag/i.test(str(canon.id) || '') ? str(canon.id) : '');
-            if (!id) continue;
-            const profile = s && s.profile && typeof s.profile === 'object' ? s.profile : null;
-            const label = str(profile && profile.id === id ? profile.label : '') || str(canon && canon.id === id ? canon.label : '') || id;
-            if (!out.includes(label)) out.push(label);
+            // Every standard a scan of several profiles checked against.
+            const own = reportScan.scanStandardIds(s).map(str).filter(Boolean);
+            const ids = own.length ? own : (canon && !/^wcag/i.test(str(canon.id) || '') ? [str(canon.id)] : []);
+            const named = reportScan.scanProfiles(s);
+            for (const id of ids) {
+                const entry = named.find((p) => p.id === id);
+                const label = str(entry ? entry.label : '') || str(canon && canon.id === id ? canon.label : '') || id;
+                if (!out.includes(label)) out.push(label);
+            }
         }
         return out.sort();
     }

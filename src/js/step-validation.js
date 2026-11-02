@@ -30,6 +30,18 @@ export function createStepValidation(builder) {
             const required = fieldEl.dataset.required === "true";
             const enumJson = fieldEl.dataset.enum || null;
             const allowed = enumJson ? JSON.parse(enumJson) : null;
+            if (fieldEl.dataset.widget === "profiles" && fieldEl._profilesWidget) {
+                const widget = fieldEl._profilesWidget;
+                builder.setError(widget.el, null);
+                const problem = widget.validate({required});
+                if (problem) {
+                    builder.setError(widget.el, problem.message);
+                    note(problem.el || widget.el);
+                    ok = false;
+                }
+                return;
+            }
+
             const control = fieldEl.querySelector("input, select, textarea");
             if (!control) return;
 

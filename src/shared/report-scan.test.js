@@ -64,3 +64,29 @@ describe('scanProfileFields', () => {
         assert.deepEqual(scanWcag(fields), fields.wcag);
     });
 });
+
+test('a scan of several profiles: every one, named together, the first standard as its profile', () => {
+    const rs = require('./report-scan.js');
+    const fields = rs.scanProfileFields({
+        version: '2.2', level: 'AAA',
+        profiles: [{ id: 'wcag22-aaa', label: 'WCAG 2.2 AAA' }, { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' }, { id: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' }],
+        profilesNotRun: [{ id: 'demo-1.0', label: 'Demo 1.0', reason: 'pack-skipped' }],
+    });
+    assert.deepEqual(fields.profile, { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' });
+    assert.deepEqual(fields.wcag, { version: '2.2', level: 'AAA' });
+    assert.equal(rs.scanProfilesLabel(fields), 'WCAG 2.2 AAA + WAI-ARIA 1.2 + EN 301 549 V4.1.1');
+    assert.deepEqual(rs.scanStandardIds(fields), ['wai-aria-1.2', 'en301549-v4.1.1']);
+    assert.deepEqual(rs.scanProfilesNotRun(fields), [{ id: 'demo-1.0', label: 'Demo 1.0', reason: 'pack-skipped' }]);
+    assert.deepEqual(rs.scanFields(fields), fields, 'kept as it was');
+
+    // A scan of one records neither list, as before.
+    const one = rs.scanProfileFields({ standard: { id: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' }, version: '2.2', level: 'AA' });
+    assert.deepEqual(Object.keys(one), ['profile', 'wcag']);
+    assert.deepEqual(rs.scanProfiles(one), [{ id: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' }]);
+    assert.equal(rs.scanProfilesLabel({ wcag: { version: '2.2', level: 'A' } }), 'WCAG 2.2 A');
+
+    // The same profiles in another order are the same.
+    const other = { ...fields, profiles: fields.profiles.slice().reverse() };
+    assert.equal(rs.sameProfiles(fields, other), true);
+    assert.equal(rs.sameProfiles(fields, one), false);
+});

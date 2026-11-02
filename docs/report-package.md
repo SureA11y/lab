@@ -99,6 +99,14 @@ the lab. It is strict on what such a reader relies on and open on the rest
 - Each scan says what it was checked against: `profile` (`{ id, label }`,
   e.g. `{ "id": "en301549-v4.1.1", "label": "EN 301 549 V4.1.1" }`, or a WCAG 2.2 level
   as `wcag22-aa`) and `wcag` (`{ version, level }`, what that came to).
+  A scan of several profiles at once also has `profiles`, every one in the
+  order they ran, its WCAG level first (`[{ "id": "wcag22-aa", … }, { "id":
+  "wai-aria-1.2", … }]`), with `profile` the first standard among them; and
+  `profilesNotRun` (`[{ id, label, reason }]`) when some did not run. Each
+  of its rule findings (`findingsSource` `atomic` or `both`) has `verdicts`,
+  what each profile makes of it (`{ "wcag22-aa": "cantTell", "wai-aria-1.2":
+  "fail" }`), its `outcome` being the worst, and `checkOutcome`, the rule's
+  own. A scan of one profile has none of these.
 - Each occurrence has an `occurrenceId` (`occ_` and 14 hex digits): the same
   issue on the same element of the same page has the same id in every
   report, whatever the site's origin, so a staging run and a live one name it

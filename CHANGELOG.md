@@ -62,6 +62,20 @@ The first public release.
   for a person", which lists only what its rules evaluate: the guide and
   Review conformance give every requirement.
 
+- **Several profiles in one scan**: a scan step can check against one WCAG
+  level and any standards at once, such as WCAG 2.2 AA with WAI-ARIA 1.2.
+  The step's Profile is a choice of WCAG level (or none) and a checkbox per
+  standard; a spec gives a list, `"profile": ["wcag22-aa", "wai-aria-1.2"]`,
+  and a variable can hold several separated by commas. Each profile judges
+  the page as a scan of it alone would, and a failure under any of them
+  fails the scan. Scans, the run summary and the report name every profile
+  ("WCAG 2.2 AA + WAI-ARIA 1.2"), a report keeps them in the scan's
+  `profiles` (and any that did not run in `profilesNotRun`), and a rule
+  finding says what each one makes of it. A single profile saves and scans
+  as before. Needs surea11y core 1.15.
+- **The conformance report** (VPAT) follows the WCAG level and the EN 301 549
+  version the scans were checked against. It used to give WCAG 2.2 AA and
+  EN 301 549 V4.1.1 unless told otherwise.
 - **WAI-ARIA 1.2 as a profile**, with its pack `@surea11y/pack-wai-aria`
   installed or named in `A11Y_PACKS`: a scan against it reports one result
   per author requirement, and a finding that WCAG only asks about (an

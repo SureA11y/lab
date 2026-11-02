@@ -683,6 +683,10 @@ td { border-bottom: 1px solid var(--border-soft); }
 tr:nth-child(even) td { background: var(--surface-0); }
 
 .issue-status { white-space: nowrap; }
+/* A scan of several profiles: each one's verdict on the finding, under its
+   status, in the text color: the status above already carries the color. */
+.issue-verdicts { list-style: none; margin: .25rem 0 0; padding: 0; font-size: var(--fs-xs); color: var(--text-muted); }
+.issue-verdict { white-space: nowrap; }
 
 /* The results tables lay their columns out fixed, so the tables of a
    report's scans and groups line up one under another whatever each

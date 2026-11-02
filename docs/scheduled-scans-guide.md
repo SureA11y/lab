@@ -507,7 +507,9 @@ scan's, its `context` on each scan that has none).
 
 A run has no profile: each scan step's `profile` sets what it checks against,
 `wcag22-a`, `wcag22-aa` or `wcag22-aaa`, or a standard, `en301549-v4.1.1` or
-`en301549-v3.2.1`; without one, `wcag22-aa`. A spec saved with a run profile
+`en301549-v3.2.1`; without one, `wcag22-aa`. A list checks against several
+at once, one WCAG level at most: `["wcag22-aa", "en301549-v4.1.1"]`
+([several profiles in one scan](use-cases/check-against-a-standard.md#several-profiles-in-one-scan)). A spec saved with a run profile
 stops with an error naming it: `node src/cli/convert-config.js <file> --write`
 puts it on the scans that have none.
 

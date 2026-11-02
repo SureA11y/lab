@@ -115,3 +115,22 @@ describe('compareByTime / assignBaselineAndCurrent', () => {
         assert.equal(out.current.runId, 'y');
     });
 });
+
+test('reports of scans of several profiles compare when they checked the same ones, in any order', () => {
+    const { describeComparison } = require('./report-identity.js');
+    const aa = { id: 'wcag22-aa', label: 'WCAG 2.2 AA' };
+    const en = { id: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' };
+    const demo = { id: 'demo-1.0', label: 'Demo 1.0' };
+    const report = (profiles, runId) => ({
+        runId, timestamp: '2026-11-02T10:00:00Z', url: 'https://example.com/',
+        scans: [{ id: 's1', url: 'https://example.com/', profile: profiles.find((p) => p !== aa) || aa,
+            ...(profiles.length > 1 ? { profiles } : {}), wcag: { version: '2.2', level: 'AA' }, canonical: { findings: [] } }],
+    });
+    const same = describeComparison([report([aa, en, demo], 'a'), report([aa, demo, en], 'b')]);
+    assert.equal(same.criteriaMismatch, false);
+    assert.deepEqual(same.standardsCompared, ['Demo 1.0 and EN 301 549 V4.1.1']);
+
+    const fewer = describeComparison([report([aa, en, demo], 'a'), report([aa, en], 'b')]);
+    assert.equal(fewer.criteriaMismatch, true, 'a standard more is a different comparison');
+    assert.equal(describeComparison([report([aa, en], 'a'), report([aa], 'b')]).criteriaMismatch, true);
+});

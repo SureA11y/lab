@@ -45,7 +45,9 @@ the whole run opens with them on each of its scans, as the run applied them.
 
 What a scan checks against, its **profile**, is each scan step's choice:
 WCAG 2.2 at Level A, AA or AAA, or EN 301 549 (V4.1.1 or V3.2.1), WCAG 2.2 AA
-unless it says otherwise. A scan's pictures are its screenshots; for a PNG
+unless it says otherwise. A scan can check against several at once: one WCAG
+level and any of the standards, such as WCAG 2.2 AA with WAI-ARIA 1.2
+([Check against a standard](use-cases/check-against-a-standard.md#several-profiles-in-one-scan)). A scan's pictures are its screenshots; for a PNG
 and an MHTML copy of the page at a point of the workflow, add a **Save
 evidence** step there.
 

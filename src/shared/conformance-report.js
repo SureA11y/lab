@@ -206,13 +206,42 @@
         };
     }
 
+    const TARGET_LEVELS = ['A', 'AA', 'AAA'];
+    const EN301549_PROFILE = /^en301549-v(\d+\.\d+\.\d+)$/i;
+
+    // The WCAG version and level the report's scans came to (each scan's
+    // `wcag`, or the fields an older report kept), the highest level of
+    // them, and the EN 301 549 version a scan checked against, if one did.
+    function scannedTarget(report) {
+        let version = null;
+        let level = null;
+        let en301549 = null;
+        for (const s of asArray(report && report.scans)) {
+            if (!s || s.skipped || s.skipInfo || s.includedInReport === false) continue;
+            const w = s.wcag && typeof s.wcag === 'object' ? s.wcag : { version: s.wcagVersion, level: s.wcagLevel };
+            const l = str(w.level).toUpperCase();
+            if (TARGET_LEVELS.includes(l) && (!level || TARGET_LEVELS.indexOf(l) > TARGET_LEVELS.indexOf(level))) {
+                level = l;
+                version = str(w.version) || version;
+            } else if (!version && str(w.version)) {
+                version = str(w.version);
+            }
+            const ids = [s.profile, ...asArray(s.profiles)].map((p) => str(p && typeof p === 'object' ? p.id : p));
+            const en = ids.map((id) => EN301549_PROFILE.exec(id || '')).find(Boolean);
+            if (en && !en301549) en301549 = `V${en[1]}`;
+        }
+        return { version, level, en301549 };
+    }
+
     function targetOf(report, review, options) {
         const given = (options && options.target) || (review && review.target) || {};
-        const fromReport = reportConformance && reportConformance.readConformance
-            ? (reportConformance.readConformance(report).target || null) : null;
-        const wcagVersion = str(given.wcagVersion) || str(fromReport && fromReport.version) || '2.2';
-        const level = (str(given.level) || str(fromReport && fromReport.level) || 'AA').toUpperCase();
-        const en301549 = str(given.en301549) || (wcagVersion === '2.1' || wcagVersion === '2.0' ? 'V3.2.1' : 'V4.1.1');
+        // What the scans checked against, unless the options or the review
+        // say otherwise.
+        const fromReport = scannedTarget(report);
+        const wcagVersion = str(given.wcagVersion) || fromReport.version || '2.2';
+        const level = (str(given.level) || fromReport.level || 'AA').toUpperCase();
+        const en301549 = str(given.en301549) || fromReport.en301549
+            || (wcagVersion === '2.1' || wcagVersion === '2.0' ? 'V3.2.1' : 'V4.1.1');
         return { wcagVersion, level, en301549 };
     }
 
@@ -330,7 +359,11 @@
         const out = [];
         const used = new Set(asArray(report && report.scans)
             .filter((sc) => sc && sc.includedInReport !== false)
-            .map((sc) => str(sc.profile && (sc.profile.id || sc.profile)) || str(sc.canonical && sc.canonical.runOptions && sc.canonical.runOptions.engineOptions && sc.canonical.runOptions.engineOptions.profile))
+            // Every profile of a scan of several.
+            .flatMap((sc) => [
+                str(sc.profile && (sc.profile.id || sc.profile)) || str(sc.canonical && sc.canonical.runOptions && sc.canonical.runOptions.engineOptions && sc.canonical.runOptions.engineOptions.profile),
+                ...asArray(sc.profiles).map((p) => str(p && p.id)),
+            ])
             .filter(Boolean));
         for (const std of STANDARDS.values()) {
             if (std.key === 'en301549') continue;

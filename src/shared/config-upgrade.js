@@ -106,10 +106,23 @@
                 }
             }
             if (retiredProfile(s.profile)) set({ profile: retiredProfile(s.profile) }, retiredMessage(s.profile, retiredProfile(s.profile)));
+            // A list of profiles (a scan of several at once): each retired
+            // one becomes its replacement, once.
+            if (Array.isArray(s.profile) && s.profile.some(retiredProfile)) {
+                const list = [];
+                for (const p of s.profile) {
+                    const to = retiredProfile(p) || p;
+                    if (!list.includes(to)) list.push(to);
+                }
+                const from = s.profile.find(retiredProfile);
+                set({ profile: list }, retiredMessage(from, retiredProfile(from)));
+            }
             // A run has no profile any more: a scan that had none of its own
             // ("" was "the run's profile") names the run's, unless that was
             // the default, which a scan without a profile checks anyway.
-            const own = typeof s.profile === 'string' ? s.profile.trim() : '';
+            const own = typeof s.profile === 'string'
+                ? s.profile.trim()
+                : (Array.isArray(s.profile) && s.profile.length ? s.profile : '');
             if (!own && run.profile) set({ profile: run.profile }, `profile ${show(run.profile)}, the run's`);
             else if (!own && 'profile' in s) set({ profile: undefined }, `profile ${show(s.profile)} (the run's) dropped: WCAG 2.2 AA, as before`);
             if ('evidenceVariant' in s) {

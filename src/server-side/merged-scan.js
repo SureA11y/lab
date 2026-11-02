@@ -17,7 +17,7 @@
  * is tested, without a browser.
  */
 
-const { scanWcag } = require('../shared/report-scan.js');
+const { scanWcag, scanProfiles, scanProfilesLabel } = require('../shared/report-scan.js');
 
 const LISTED_OUTCOMES = new Set(['fail', 'cantTell']);
 
@@ -354,9 +354,14 @@ function showSetting(value) {
 function differenceNotices(entries, names) {
     const out = [];
     for (const [field, lead] of SHARED_SETTINGS) {
-        const values = entries.map((e) => stableStringify(e[field] ?? null));
+        // Profiles compare as a set, every one a context checked against, in
+        // whatever order; the others as they are.
+        const read = field === 'profile'
+            ? (e) => (e.profile ? scanProfiles(e).map((p) => p.id || p.label).sort() : null)
+            : (e) => e[field] ?? null;
+        const values = entries.map((e) => stableStringify(read(e)));
         if (new Set(values).size < 2) continue;
-        const shown = entries.map((e, i) => `${names[i]}: ${showSetting(e[field])}`);
+        const shown = entries.map((e, i) => `${names[i]}: ${field === 'profile' && e.profile ? scanProfilesLabel(e) : showSetting(e[field])}`);
         out.push({
             code: 'merged-contexts-differ',
             field,
@@ -799,6 +804,8 @@ function pickSettings(e) {
         exclude: e.exclude || null,
         tags: e.tags || null,
         profile: e.profile || null,
+        ...(Array.isArray(e.profiles) && e.profiles.length > 1 ? { profiles: e.profiles } : {}),
+        ...(Array.isArray(e.profilesNotRun) && e.profilesNotRun.length ? { profilesNotRun: e.profilesNotRun } : {}),
         wcag: e.wcag || null,
         runOnly: e.runOnly || null,
         url: e.url || null,
