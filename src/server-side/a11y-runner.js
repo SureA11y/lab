@@ -70,7 +70,7 @@ const path = require('path');
 
 const { REPORTS_ROOT } = require('./report-paths');
 const { checkPageReady, readinessNotice } = require('./page-readiness');
-const { largePageNotice } = require('../shared/scan-notes.js');
+const { largePageNotice, httpErrorNotice } = require('../shared/scan-notes.js');
 const { languageNotice } = require('../shared/scan-notes.js');
 const { pageLanguage, canonicalLanguageTag } = require('../workflow/engine/page-language');
 const { interpolateVarTokensLoose } = require('../workflow/engine/vars');
@@ -395,6 +395,15 @@ function attachDocResponseProbe(page, diag, progress) {
             const contentType = h['content-type'] || '';
             const contentDisposition = h['content-disposition'] || '';
             const contentLength = h['content-length'] || '';
+
+            // The page's own document, as its server answered it: a scan
+            // says when that was an error (httpErrorNotice).
+            try {
+                if (req.frame && req.frame() === page.mainFrame() && req.isNavigationRequest()) {
+                    page.__a11yDocumentResponse = { url, status, statusText: res.statusText ? res.statusText() : '' };
+                }
+            } catch {
+            }
 
             // Flag "not HTML" or "download-like" documents (even if 200)
             const looksHtml = /text\/html/i.test(String(contentType));
@@ -1527,6 +1536,66 @@ async function runA11yWorkflow(url, tags, options = {}) {
             runOnly.excludeRuleIds = [...new Set([...(runOnly.excludeRuleIds || []), ...excludeRuleIdsArr])];
         }
 
+        // What the address gave: a PDF, JSON or an image is not a web page,
+        // and was scanned as the browser's own viewer of it, with findings
+        // about that viewer. It is skipped, and the report says why.
+        const documentType = await withTimeout(
+            pageRef.evaluate(() => document.contentType || ''),
+            'documentType'
+        ).catch(() => '');
+        if (documentType && !/^(text\/html|application\/xhtml\+xml)$/i.test(documentType)) {
+            const skipInfo = {
+                reason: `Not a web page: the address gave ${documentType}, which the browser shows in a viewer of its own`,
+                contentType: documentType,
+            };
+            if (typeof progress === 'function') {
+                progress({
+                    time: new Date().toISOString(),
+                    type: 'scan',
+                    message: `a11yScan skipped: ${skipInfo.reason}`,
+                    depth: (workflowCtx && workflowCtx._logCtx && typeof workflowCtx._logCtx.depth === 'number')
+                        ? workflowCtx._logCtx.depth
+                        : 0,
+                    vars: varsForLog(workflowCtx),
+                    extra: {
+                        actionPath: (workflowCtx && workflowCtx._logCtx && typeof workflowCtx._logCtx.actionPath === 'string')
+                            ? workflowCtx._logCtx.actionPath
+                            : undefined,
+                        scanId: (typeof meta.scanId === 'string' && meta.scanId) ? meta.scanId : null,
+                        orderKey: (typeof meta.orderKey === 'string' && meta.orderKey) ? meta.orderKey : null,
+                        label: meta.label || null,
+                        url: currentUrl || null,
+                        ...skipInfo,
+                    }
+                });
+            }
+            if (!Array.isArray(workflowCtx.collectedScans)) workflowCtx.collectedScans = [];
+            workflowCtx.collectedScans.push({
+                scanId: (typeof meta.scanId === 'string' && meta.scanId) ? meta.scanId : null,
+                orderKey: (typeof meta.orderKey === 'string' && meta.orderKey) ? meta.orderKey : null,
+                id: (typeof meta.id === 'string' && meta.id.trim()) ? meta.id.trim() : null,
+                label: (typeof meta.label === 'string' && meta.label.trim()) ? meta.label.trim() : null,
+                scanTags: scanTagsArr.length ? scanTagsArr : null,
+                context: contextSelector || null,
+                exclude: excludeSelectorsForScan.length ? excludeSelectorsForScan : null,
+                tags: tagsForScan || null,
+                ...requestedFields,
+                runOnly,
+                url: currentUrl || safeUrl(pageRef) || null,
+                skipped: true,
+                skipInfo,
+                results: null,
+                canonical: null,
+                domMetrics: null,
+                a11ySummary: null,
+                coverageSummary: null,
+                screenshot: null,
+                extraScreenshots: [],
+                mergedScan: meta.mergedScan || null
+            });
+            return;
+        }
+
         const estimatedNodes = await withTimeout(
             estimateNodeCount(pageRef, contextSelector),
             'estimateNodeCount'
@@ -1647,6 +1716,8 @@ async function runA11yWorkflow(url, tags, options = {}) {
                     canonical.diagnostics.durationMs = Date.now() - scanStartedAt;
                     canonical.diagnostics.estimatedNodes = estimatedNodes;
                     canonical.diagnostics.pageReadiness = pageReadiness;
+                    const httpError = httpErrorNotice(pageRef.__a11yDocumentResponse, currentUrl || safeUrl(pageRef));
+                    if (httpError) canonical.notices = [httpError, ...(Array.isArray(canonical.notices) ? canonical.notices : [])];
                     const large = largePageNotice(estimatedNodes, threshold, canonical.diagnostics.durationMs);
                     if (large) canonical.notices = [...(Array.isArray(canonical.notices) ? canonical.notices : []), large];
                     const notReady = readinessNotice(pageReadiness);

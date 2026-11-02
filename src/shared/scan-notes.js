@@ -125,6 +125,26 @@
     }
 
     /**
+     * A page its server answered with an error (HTTP 4xx or 5xx), scanned as
+     * it came: the report says so, as an error page was taken for the page
+     * meant. `response` is { url, status, statusText } of the page's own
+     * document; it counts only when it is the page scanned (same address,
+     * its #fragment aside). null otherwise.
+     */
+    function httpErrorNotice(response, pageUrl) {
+        if (!response || !(response.status >= 400)) return null;
+        const bare = (u) => String(u || '').split('#')[0];
+        if (pageUrl && bare(response.url) !== bare(pageUrl)) return null;
+        const text = response.statusText ? ` (${response.statusText})` : '';
+        return {
+            engineId: null,
+            code: 'http-error',
+            message: `The server answered HTTP ${response.status}${text} for this page: what was scanned is the page it sent with that error, `
+                + 'which may not be the page meant. Error pages need to be accessible too; if this one was not expected, check the address and that the site was up.'
+        };
+    }
+
+    /**
      * A page with more elements than the scan step's threshold (Note pages
      * with more elements than, 25,000 unless it says), scanned in full: a
      * note that it is large and how long its scan took, or null.
@@ -197,6 +217,7 @@
         contextMatchNotices,
         readinessNotice,
         largePageNotice,
+        httpErrorNotice,
         languageNotice,
         collectMargins,
     };
