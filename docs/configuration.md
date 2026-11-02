@@ -12,7 +12,7 @@ Read by the server and the command-line runner alike.
 | `PORT`, `HOST` | Where the server listens (default `127.0.0.1:3000`). The server has no login: see [SECURITY.md](../SECURITY.md) before listening beyond this machine |
 | `A11Y_ALLOWED_HOSTS` | Host names, besides `localhost`, IP addresses and `HOST`, the server answers to: the name a reverse proxy or your network gives it, comma-separated; `*` for any. A request by another name is refused, so that a web page cannot reach the server through a name it points at this machine |
 | `A11Y_ALLOWED_ORIGINS` | Web pages, besides the lab's own and the browser extension, that may call the server from a browser, as origins (`https://dashboard.example.com`), comma-separated. Calls from other pages are refused; calls with no page behind them (curl, scripts) are not affected |
-| `A11Y_STEALTH` | `1` gives the browser a desktop Chrome's fingerprint (no "Headless" in its user agent, matching client hints), for a site of your own whose bot filter refuses headless Chrome. Off by default: the browser says what it is |
+| `A11Y_STEALTH` | `1` gives the browser a desktop Chrome's fingerprint (no "Headless" in its user agent, matching client hints, `navigator.webdriver` false, a desktop Chrome's plugins and `window.chrome`), for a site of your own whose bot filter refuses headless Chrome. Off by default: the browser says what it is |
 | `PUPPETEER_EXECUTABLE_PATH` | The browser to scan with, instead of the one installed with the lab |
 | `A11Y_TZ` | The time zone pages see while scanned (default: the machine's own). Set it, for instance `Europe/Madrid`, for results that don't change with where the run happens |
 | `A11Y_ACCEPT_LANGUAGE` | The `Accept-Language` pages are asked for (default `en-US,en;q=0.8`) |
@@ -20,13 +20,15 @@ Read by the server and the command-line runner alike.
 | `A11Y_DISABLE_CACHE` | No browser cache while scanning, for reproducible results (default on) |
 | `A11Y_PACKS` | More standard packs for surea11y to load, besides the `@surea11y/pack-*` packages the lab depends on: package names, or paths from the lab's folder, comma-separated ([Standards](#standards)) |
 | `A11Y_CORE_HOOKS` | Which of surea11y's hooks run before a page's own scripts: `internals` (names and roles web components set through `ElementInternals`), `listener` (event listeners added from script, for the keyboard rules) and `liveRegion` (what live regions are given, for the rule about announcements that may be missed). Default all; `none`, or a comma-separated list |
-| `HEAVY_NODE_THRESHOLD` | A page with more elements than this is skipped rather than scanned, and the report says so |
-| `A11Y_REPORTS_ROOT` | Where reports, evidence and element pictures are written (default `reports/`) |
+| `HEAVY_NODE_THRESHOLD` | A page with more elements than this (default 25,000, its shadow roots' included) is still scanned in full, and its report notes that it is large and how long the scan took; a scan step's own setting wins |
+| `A11Y_REPORTS_ROOT` | Where reports, evidence, element pictures and the queue's batches are written, and what the server serves at `/reports` (default `reports/`): a path from the lab's folder, or absolute |
+| `A11Y_RUN_FILES_HOURS` | How long a run's pictures and evidence (`reports/runs/`, `reports/evidence/`) stay on disk after it, in hours (default `24`; `0` keeps them for good). A report downloaded as a package carries its own pictures; one open in the app, or saved as JSON alone, shows none once they are gone. The queue's batches stay until deleted |
 | `A11Y_QUEUE_DIR` | Where the queue keeps its batches, inside the reports folder (default `batches`) |
 | `A11Y_QUEUE_METRICS` | Each batch writes `metrics.jsonl`, what the server and browser used as it ran (default on) |
 | `A11Y_MAX_RUNS` | How many runs started from the app's Run workflow (or `POST /workflow-start`) go at once; the others wait their turn, and say so in their log (default `4`). The queue has its own setting |
+| `A11Y_MAX_WAITING` | How many of those runs may wait their turn (default `50`); past them, a run is refused with 429 Too Many Requests, to try again later |
 | `A11Y_VALIDATE_CANONICAL` | Check every scan's result against the lab's result model; for development |
-| `A11Y_DEBUG_MODE` | More logging on the server, and surea11y's own output kept in the report |
+| `A11Y_DEBUG_MODE` | More logging on the server, and surea11y's own output kept in the report, with the time each of its rules took (`perfStats.ruleTimings`), to find what makes a scan slow |
 | `A11Y_ECHO_BROWSER_CONSOLE` | Copy the scanned page's console output to the server's (set to `1`) |
 | `A11Y_DUMP_RESULT_JSON`, `A11Y_DUMP_DIR`, `A11Y_DUMP_LOG` | Write surea11y's raw result for every scan to `a11y-dumps/` (or the folder given), and log where |
 

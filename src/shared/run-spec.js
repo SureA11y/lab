@@ -280,6 +280,9 @@
         return [];
     }
 
+    // The widest or tallest viewport a run takes, in CSS px.
+    const MAX_VIEWPORT_SIDE = 10000;
+
     function normalizeViewport(raw, buildViewportFromPreset, errors, warnings) {
         if (raw == null || raw === '') return null;
 
@@ -297,6 +300,12 @@
             const height = Number(raw.height);
             if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
                 errors.push('viewport must have positive numeric width and height');
+                return null;
+            }
+            // Past these the browser draws nothing it can picture: a page
+            // 100,000 px wide was taken and scanned as if it were a screen.
+            if (width > MAX_VIEWPORT_SIDE || height > MAX_VIEWPORT_SIDE) {
+                errors.push(`viewport ${width}×${height} is larger than a browser window can be: at most ${MAX_VIEWPORT_SIDE} px a side`);
                 return null;
             }
             return { width, height };

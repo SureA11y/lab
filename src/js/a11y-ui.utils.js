@@ -264,7 +264,9 @@ export function createSplitButton({
 
     actionBtn.addEventListener('click', async () => {
         if (!onAction || pressedWhileBusy()) return;
-        if (guard && guard() === false) return;
+        // A guard may ask something first (a name for the report) and
+        // answer later.
+        if (guard && (await guard()) === false) return;
 
         setBusy(true);
         try {
@@ -279,7 +281,7 @@ export function createSplitButton({
             closeMenu();
             if (!item.onSelect) return;
             if (pressedWhileBusy()) return;
-            if (item.guard && item.guard() === false) return;
+            if (item.guard && (await item.guard()) === false) return;
 
             setBusy(true);
             try {

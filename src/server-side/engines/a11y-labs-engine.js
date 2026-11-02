@@ -23,6 +23,7 @@ const { CANON_VERSION } = require('../a11y-canonical'); // for consistency
 const { REPORTS_ROOT } = require('../report-paths');
 const { profileId, targetLabel, CONFORMANCE_TARGETS, selectionFromRunOnly, tagsBesideSelection, splitOutcomeCounts } = require('../conformance-targets');
 const { toSafeId } = require('../shared-utils');
+const { elementTarget } = require('../../shared/report-format.js');
 const { renderHtmlReport } = require('@surea11y/core/report');
 const { normalizeOccurrenceDetails, shadowHostsOf, contextMatchNotices, collectMargins: collectResultMargins } = require('../../shared/scan-notes.js');
 
@@ -49,7 +50,7 @@ const coreGetCompositeRulesCatalog = (opts) => core.getRulesCatalog(withPacks(op
 const getCheckDefById = (ruleId, opts) => core.getCheckDefById(ruleId, withPacks(opts));
 // The scan itself runs through @surea11y/puppeteer, with core's
 // runa11yCoreInPage (see surea11y-scan.js).
-const { scanPage, captureScreenshots, coreHooksFrom, installCoreHooks } = require('./surea11y-scan');
+const { scanPage, scanFrames, mergeFrameResults, captureScreenshots, coreHooksFrom, installCoreHooks } = require('./surea11y-scan');
 const { getScanNotes } = require('@surea11y/puppeteer');
 const { elementScreenshotOf, elementStateScreenshotsOf } = require('../element-screenshots');
 
@@ -559,7 +560,7 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
 
     function occKey(occ) {
         const pageUrl = (occ && occ.pageUrl) ? String(occ.pageUrl) : '';
-        const target0 = (occ && Array.isArray(occ.target) && occ.target[0]) ? String(occ.target[0]) : '';
+        const target0 = elementTarget(occ && Array.isArray(occ.target) ? { ...occ, target: occ.target.slice(0, 1) } : occ);
         const html = (occ && occ.html) ? String(occ.html) : '';
         const atomicCheckId = (occ && occ.atomicCheckId) ? String(occ.atomicCheckId) : '';
         // include atomicCheckId so we do NOT dedupe across different contributing checks
@@ -578,12 +579,15 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
 
         const out = [];
         const seen = new Set();
+        // Elements its checks counted and did not list (their unlisted).
+        let unlisted = 0;
 
         for (const idRaw of checksIds) {
             const id = String(idRaw || '').trim();
             if (!id) continue;
 
             const atomic = atomicByRuleId.get(id);
+            if (atomic && Number(atomic.unlisted) > 0) unlisted += Number(atomic.unlisted);
             if (!atomic || !Array.isArray(atomic.occurrences) || !atomic.occurrences.length) continue;
 
             for (const occ of atomic.occurrences) {
@@ -602,6 +606,8 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
         }
 
         f.occurrences = out;
+        if (unlisted) f.unlisted = unlisted;
+        else delete f.unlisted;
     }
 }
 
@@ -964,7 +970,10 @@ async function runOnPage(
         postProcess,
         // The binding's .screenshots() options (element-screenshots.js), or
         // null for no pictures of the flagged elements.
-        elementScreenshots = null
+        elementScreenshots = null,
+        // Whether the page's iframes are scanned too, their findings with
+        // the page's (the step's Scan iframes too, on unless it says).
+        frames = true
     } = {}
 ) {
     // Basic page metadata
@@ -1009,6 +1018,9 @@ async function runOnPage(
     } = resolveRunSelection({ selection, runOnly, wcagLevel, cfg, requestedProfile });
     applyTargetToOptions(cfg, { wcagVersion: targetVersion, wcagLevel: targetLevel });
 
+    // What the scan ran with, the fallback's when it replaces the first.
+    let scannedCfg = cfg;
+    let scannedRunOnly = runOnlyForCore;
     let engineOutput = noKnownRuleIncluded
         ? { url: pageUrl || null, title: pageTitle || null, checksResults: [], rulesResults: [] }
         : await scanPage(page, {
@@ -1034,11 +1046,13 @@ async function runOnPage(
         && CONFORMANCE_TARGETS[requestedProfile]) {
         const fallbackCfg = { ...cfg };
         delete fallbackCfg.profile;
+        scannedCfg = fallbackCfg;
+        scannedRunOnly = { ...(runOnlyForCore || {}), tags: CONFORMANCE_TARGETS[requestedProfile].tags.slice() };
         engineOutput = await scanPage(page, {
             pageUrl,
             contextSelector: ctxSelector,
             engineOptions: fallbackCfg,
-            runOnly: { ...(runOnlyForCore || {}), tags: CONFORMANCE_TARGETS[requestedProfile].tags.slice() },
+            runOnly: scannedRunOnly,
             packs: PACKS
         });
         notices.push({
@@ -1052,6 +1066,30 @@ async function runOnPage(
     // first scan's would be thrown away with it when the fallback replaces it.
     if (elementScreenshots && !noKnownRuleIncluded) {
         engineOutput = await captureScreenshots(page, engineOutput, elementScreenshots);
+    }
+    // The page's iframes, each scanned whole, their findings with the
+    // page's: an iframe's content was never checked, and the report did not
+    // say so. After the pictures, which are the top page's.
+    const subFrames = typeof page.frames === 'function' ? page.frames().length - 1 : 0;
+    if (frames && subFrames > 0 && !noKnownRuleIncluded) {
+        const frameResults = await scanFrames(page, { engineOptions: scannedCfg, runOnly: scannedRunOnly, packs: PACKS });
+        mergeFrameResults(engineOutput, frameResults);
+        engineOutput.frames = frameResults.map((f) => ({ url: f.url || null, frameSelectors: f.frameSelectors || null, ...(f.error ? { error: f.error } : {}) }));
+        const missed = frameResults.filter((f) => f.error);
+        if (missed.length) {
+            notices.push({
+                engineId: ENGINE_ID,
+                code: 'frames-not-scanned',
+                message: `${missed.length} of the page's ${frameResults.length} iframes could not be scanned, so their content is not in these results: `
+                    + missed.slice(0, 5).map((f) => `${f.url || 'an iframe'} (${f.error})`).join('; ') + (missed.length > 5 ? '; …' : '') + '.'
+            });
+        }
+    } else if (!frames && subFrames > 0) {
+        notices.push({
+            engineId: ENGINE_ID,
+            code: 'frames-off',
+            message: `This page has ${subFrames} ${subFrames === 1 ? 'iframe' : 'iframes'}, and this scan left ${subFrames === 1 ? 'it' : 'them'} out (Scan iframes too is off): what ${subFrames === 1 ? 'it shows' : 'they show'} is not in these results.`
+        });
     }
     if (noKnownRuleIncluded) {
         notices.push({
@@ -1093,6 +1131,8 @@ async function runOnPage(
         // `native` is a complete core result that @surea11y/core's SARIF,
         // JUnit, EARL and HTML renderers accept as it is.
         engine: engineOutput && engineOutput.engine ? engineOutput.engine : null,
+        // Core's counters and, with profileRules, each rule's time (a debug run).
+        ...(engineOutput && engineOutput.perfStats ? { perfStats: engineOutput.perfStats } : {}),
         url: engineOutput && engineOutput.url ? engineOutput.url : (pageUrl || null),
         title: engineOutput && engineOutput.title ? engineOutput.title : (pageTitle || null),
         timestamp: engineOutput && engineOutput.timestamp ? engineOutput.timestamp : new Date().toISOString(),
@@ -1171,6 +1211,10 @@ async function runOnPage(
                     ...(howToCheck ? { howToCheck } : {}),
                     ...(details ? { details } : {}),
                     ...(shadowHostSelectors ? { shadowHostSelectors } : {}),
+                    // An element in one of the page's iframes: the frame's
+                    // address, and the iframes that lead to it from the page.
+                    ...(occ && occ.frameUrl ? { frameUrl: String(occ.frameUrl) } : {}),
+                    ...(occ && Array.isArray(occ.frameSelectors) && occ.frameSelectors.length ? { frameSelectors: occ.frameSelectors.map(String) } : {}),
                     ...(elementScreenshot ? { elementScreenshot } : {}),
                     ...(elementStateScreenshots ? { elementStateScreenshots } : {}),
                     evidence: {
@@ -1227,6 +1271,14 @@ async function runOnPage(
                 },
                 occurrences: canonicalOccs
             };
+            // A rule that lists only some of the elements it found (core's
+            // contrast rules list 50): how many it counted and did not list,
+            // so the report's counts and comparisons count them all.
+            const listing = ruleResult.data && ruleResult.data.details;
+            if (listing && listing.truncated === true && Number.isFinite(listing.elementCount) && Number.isFinite(listing.reportedCount)) {
+                const unlisted = Math.max(0, listing.elementCount - listing.reportedCount);
+                if (unlisted) canonicalFinding.unlisted = unlisted;
+            }
             // A best-practice rule tests no WCAG criterion.
             if (canonicalFinding.tags.includes('best-practice')) canonicalFinding.bestPractice = true;
 
@@ -1516,6 +1568,9 @@ async function runOnPage(
             // colour scheme, whether fonts and images were still loading, and
             // how many animations it held still.
             environment: (engineOutput && engineOutput.engine && engineOutput.engine.environment) || null,
+            // The page's iframes and whether each was scanned: { url,
+            // frameSelectors, error? }; null when it has none or they were left out.
+            frames: (engineOutput && Array.isArray(engineOutput.frames)) ? engineOutput.frames : null,
             engine: {
                 compositeCatalogCount,
                 rulesResults: (engineOutput && Array.isArray(engineOutput.rulesResults)) ? engineOutput.rulesResults : []

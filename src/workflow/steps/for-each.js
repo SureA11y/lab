@@ -135,7 +135,7 @@ async function stepForEachElement(page, action, ctx, _localVars, depth, actionPa
                 if (err && err._wfSkipIteration) {
                     // Important: do not advance processed here, iterSetupActions happens before selecting an element
                     pushLog(ctx, 'info', `Iteration skipped (iterSetupActions) (${processed}/${staticTotal ?? '?'})`);
-                    await postStepDelay(ctx);
+                    await postStepDelay(ctx, page);
                     continue;
                 }
                 throw err;
@@ -279,7 +279,7 @@ async function stepForEachElement(page, action, ctx, _localVars, depth, actionPa
                 await clearScopeAttr(page, scopeId).catch(() => {});
                 processed += 1;
                 if (limit && processed >= limit) break;
-                await postStepDelay(ctx);
+                await postStepDelay(ctx, page);
                 continue;
             }
 
@@ -338,7 +338,7 @@ async function stepForEachElement(page, action, ctx, _localVars, depth, actionPa
                         if (limit && processed >= limit) break;
 
                         pushLog(ctx, 'info', `Iteration skipped (preActions) (${processed}/${staticTotal ?? '?'})`);
-                        await postStepDelay(ctx);
+                        await postStepDelay(ctx, page);
                         continue;
                     }
                     throw err;
@@ -355,7 +355,7 @@ async function stepForEachElement(page, action, ctx, _localVars, depth, actionPa
                     if (limit && processed >= limit) break;
 
                     pushLog(ctx, 'info', `Iteration skipped (${processed}/${staticTotal ?? '?'})`);
-                    await postStepDelay(ctx);
+                    await postStepDelay(ctx, page);
                     continue;
                 }
 
@@ -378,7 +378,7 @@ async function stepForEachElement(page, action, ctx, _localVars, depth, actionPa
 
             processed += 1;
             if (limit && processed >= limit) break;
-            await postStepDelay(ctx);
+            await postStepDelay(ctx, page);
 
         } catch (err) {
             if (err && err._wfCancelled) throw err;
@@ -386,7 +386,7 @@ async function stepForEachElement(page, action, ctx, _localVars, depth, actionPa
             if (err && err._wfSkipIteration) {
                 processed += 1;
                 if (limit && processed >= limit) break;
-                await postStepDelay(ctx);
+                await postStepDelay(ctx, page);
                 continue;
             }
 
@@ -422,7 +422,7 @@ async function stepForEachElement(page, action, ctx, _localVars, depth, actionPa
 
             processed += 1;
             if (limit && processed >= limit) break;
-            await postStepDelay(ctx);
+            await postStepDelay(ctx, page);
             continue;
 
         } finally {
@@ -635,7 +635,7 @@ async function runForEachElementIterationOnPage({
                 if (err && err._wfSkipIteration) {
                     await clearScopeAttr(page, scopeId);
                     pushLog(ctx, 'info', `Iteration skipped (preActions) (${iterationIndex + 1}/${iterationTotal ?? '?'})`);
-                    await postStepDelay(ctx);
+                    await postStepDelay(ctx, page);
                     return {skipped: true};
                 }
                 throw err;
@@ -774,7 +774,7 @@ async function runForEachElementIterationOnPage({
                     }
                     await clearScopeAttr(page, scopeId);
                     pushLog(ctx, 'info', `Iteration skipped (actions) (${iterationIndex + 1}/${iterationTotal ?? '?'})`);
-                    await postStepDelay(ctx);
+                    await postStepDelay(ctx, page);
                     return {skipped: true};
                 }
                 throw err;
@@ -810,7 +810,7 @@ async function runForEachElementIterationOnPage({
         }
 
         await clearScopeAttr(page, scopeId);
-        await postStepDelay(ctx);
+        await postStepDelay(ctx, page);
 
         return {skipped: false};
     } catch (err) {
@@ -968,7 +968,7 @@ async function runForEachElementConcurrent({
                 } catch (err) {
                     if (err && err._wfSkipIteration) {
                         pushLog(parentCtx, 'info', `Iteration skipped (iterSetupActions) (${myIndex + 1}/${total})`, {depth});
-                        await postStepDelay(parentCtx);
+                        await postStepDelay(parentCtx, w.page);
                         continue;
                     }
                     throw err;

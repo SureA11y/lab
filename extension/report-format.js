@@ -6,6 +6,15 @@
  * The report format's version, and the id every occurrence is known by.
  *
  * reportVersion
+ *   4  the rule catalogue a scan ran with (its canonical `rules`) is kept
+ *      once, in the report's `ruleCatalogs`, and each scan names its own by
+ *      index (`canonical.rulesCatalog`): a 120-scan report was half the same
+ *      catalogue, 171 KB a scan. The engine's raw rollups
+ *      (`canonical.diagnostics.engine.rulesResults`, which the findings
+ *      already hold) are kept only by a debug run. Readers bring a report
+ *      to the in-memory form with every scan's `rules` again
+ *      (expandReport, which upgradeReport makes), and writers keep it
+ *      compact (compactReport).
  *   3  each finding is written once, in its scan: the findings by outcome
  *      (`findings`, `a11yGlobalFindings`) are not saved, as they repeat
  *      every scan's and whoever reads them builds them from the scans; and
@@ -22,6 +31,14 @@
  *   which is what comparisons already matched occurrences on. The page's
  *   origin is left out, so a run on a staging copy compares with one on the
  *   live site.
+ *
+ *   An element in an iframe is named by the iframes that lead to it as well.
+ *
+ *   An element inside shadow roots is named by its hosts' selectors and its
+ *   own, which holds only inside the last host's shadow root (elementTarget):
+ *   by its own selector alone, a thousand buttons, each in a shadow root of
+ *   its own, were one occurrence. An element outside shadow DOM keeps the id
+ *   it had.
  *
  *   Known limit: the target is a selector, so an element whose selector
  *   changes (a renamed class, a reordered list) gets a new id, and reads as
@@ -46,7 +63,7 @@
     }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function (reportScan) {
 
-    const REPORT_VERSION = 3;
+    const REPORT_VERSION = 4;
 
     /** The format version a report was saved in: its reportVersion, else 1. */
     function reportVersionOf(report) {
@@ -80,8 +97,23 @@
     function occurrenceKey(ruleId, occurrence, scanUrl) {
         const o = occurrence && typeof occurrence === 'object' ? occurrence : {};
         const url = o.pageUrl ? o.pageUrl : (scanUrl || '');
-        const target = Array.isArray(o.target) ? o.target.join('||') : '';
-        return `${ruleId || ''}##${pagePath(url)}##${target}`;
+        return `${ruleId || ''}##${pagePath(url)}##${elementTarget(o)}`;
+    }
+
+    /**
+     * Which element an occurrence is on, as text: its target, after the
+     * selectors of the shadow hosts it is inside, if any (`>>>` between
+     * them). Its target alone holds only inside the last host's shadow root,
+     * so it repeats in every root of the same component.
+     */
+    function elementTarget(occurrence) {
+        const o = occurrence && typeof occurrence === 'object' ? occurrence : {};
+        const target = Array.isArray(o.target) ? o.target.join('||') : (typeof o.target === 'string' ? o.target : '');
+        const hosts = Array.isArray(o.shadowHostSelectors) ? o.shadowHostSelectors.filter((h) => typeof h === 'string' && h) : [];
+        const own = hosts.length ? `${hosts.join(' >>> ')} >>> ${target}` : target;
+        // In an iframe: the iframes that lead to it come first (|>| between).
+        const frames = Array.isArray(o.frameSelectors) ? o.frameSelectors.filter((f) => typeof f === 'string' && f) : [];
+        return frames.length ? `${frames.join(' |>| ')} |>| ${own}` : own;
     }
 
     // cyrb53: a fast 53-bit string hash, the same in Node and the browser.
@@ -96,6 +128,16 @@
         h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
         h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
         return (h2 >>> 0).toString(16).padStart(8, '0').slice(-6) + (h1 >>> 0).toString(16).padStart(8, '0');
+    }
+
+    /**
+     * How many elements a finding is on: those it lists, and those its rule
+     * counted and did not list (`unlisted`: core's contrast rules list 50).
+     */
+    function occurrenceTotal(finding) {
+        const listed = finding && Array.isArray(finding.occurrences) ? finding.occurrences.length : 0;
+        const unlisted = finding && Number(finding.unlisted) > 0 ? Math.floor(Number(finding.unlisted)) : 0;
+        return listed + unlisted;
     }
 
     /** The id of an occurrence of `ruleId`: "occ_" and 14 hex digits. */
@@ -173,6 +215,7 @@
      */
     function upgradeReport(report) {
         if (!report || typeof report !== 'object') return report;
+        expandReport(report);
         upgradeScans(report.scans);
         delete report.findings;
         delete report.a11yGlobalFindings;
@@ -180,12 +223,75 @@
         return report;
     }
 
+    /**
+     * A report as version 4 keeps it, in place: each scan's rule catalogue
+     * moved to the report's `ruleCatalogs`, once however many scans share it,
+     * and the scan naming it by index; the engine's raw rollups left out
+     * unless `keepEngineDetail` (a debug run). A report already compact is
+     * left as it is.
+     */
+    function compactReport(report, { keepEngineDetail = false } = {}) {
+        if (!report || typeof report !== 'object' || !Array.isArray(report.scans)) return report;
+        const catalogs = Array.isArray(report.ruleCatalogs) ? report.ruleCatalogs : [];
+        const index = new Map();
+        catalogs.forEach((c, i) => index.set(c, i));
+        const byText = new Map();
+        for (const scan of report.scans) {
+            const canonical = scan && scan.canonical;
+            if (!canonical || typeof canonical !== 'object') continue;
+            if (Array.isArray(canonical.rules)) {
+                const rules = canonical.rules;
+                let i = index.get(rules);
+                if (i === undefined) {
+                    const text = JSON.stringify(rules);
+                    i = byText.get(text);
+                    if (i === undefined) {
+                        i = catalogs.length;
+                        catalogs.push(rules);
+                        byText.set(text, i);
+                    }
+                    index.set(rules, i);
+                }
+                canonical.rulesCatalog = i;
+                delete canonical.rules;
+            }
+            const engine = canonical.diagnostics && canonical.diagnostics.engine;
+            if (!keepEngineDetail && engine && typeof engine === 'object') delete engine.rulesResults;
+        }
+        if (catalogs.length) report.ruleCatalogs = catalogs;
+        report.reportVersion = REPORT_VERSION;
+        return report;
+    }
+
+    /**
+     * A version 4 report with every scan's `rules` again, in place, each the
+     * report's catalogue it names (the same object for scans that share one):
+     * the form readers take. A report without catalogues is left as it is.
+     */
+    function expandReport(report) {
+        if (!report || typeof report !== 'object' || !Array.isArray(report.ruleCatalogs)) return report;
+        const catalogs = report.ruleCatalogs;
+        for (const scan of (Array.isArray(report.scans) ? report.scans : [])) {
+            const canonical = scan && scan.canonical;
+            if (!canonical || !Number.isInteger(canonical.rulesCatalog)) continue;
+            const rules = catalogs[canonical.rulesCatalog];
+            if (Array.isArray(rules)) canonical.rules = rules;
+            delete canonical.rulesCatalog;
+        }
+        delete report.ruleCatalogs;
+        return report;
+    }
+
     return {
         REPORT_VERSION,
+        compactReport,
+        expandReport,
         upgradeReport,
         reportVersionOf,
         pagePath,
         occurrenceKey,
+        elementTarget,
+        occurrenceTotal,
         occurrenceId,
         occurrenceIdOf,
         compactOccurrence,

@@ -68,6 +68,13 @@
                     },
                     "runId": {
                       "type": "string"
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "What the run's check found worth saying but not refusing, such as an unknown field ignored."
                     }
                   }
                 }
@@ -75,7 +82,38 @@
             }
           },
           "400": {
-            "description": "A url it cannot open, or no actions",
+            "description": "A run that cannot work as asked: the run's fields, its steps, its scans' profiles and selectors, a navigate step's address, a secret not set in the server's environment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "string"
+                    },
+                    "problems": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Every run slot (A11Y_MAX_RUNS) and every place to wait (A11Y_MAX_WAITING) taken: try again after Retry-After seconds",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -198,7 +236,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Finished: done, cancelled or error. A run that could not start has an error and no payload.",
+            "description": "Finished: done, cancelled or error. A failed run's error says why, beside the payload of what it got before it failed, or alone when it failed before its first scan. A run cancelled while it waited its turn has no payload.",
             "content": {
               "application/json": {
                 "schema": {
@@ -215,7 +253,7 @@
                       ]
                     },
                     "payload": {
-                      "$ref": "report.v3.schema.json"
+                      "$ref": "report.v4.schema.json"
                     },
                     "error": {
                       "type": "object",
@@ -224,6 +262,12 @@
                           "type": "string"
                         },
                         "details": {
+                          "type": "string"
+                        },
+                        "actionPath": {
+                          "type": "string"
+                        },
+                        "actionType": {
                           "type": "string"
                         }
                       }
@@ -328,7 +372,7 @@
     },
     "/queue": {
       "get": {
-        "summary": "The queue and its recent batches, with links to their results",
+        "summary": "The queue and its recent batches, each in summary: counts, stats, scans, the slowest run, the runs going now and the last to finish, and itemsUrl, where its runs are",
         "responses": {
           "200": {
             "description": "The queue",
@@ -336,6 +380,100 @@
               "application/json": {
                 "schema": {
                   "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/queue/sessions/{sessionId}/items": {
+      "get": {
+        "summary": "A batch's runs, a page at a time, in the order they were queued",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            },
+            "description": "100 unless given; at most 500."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Only runs with these statuses, comma-separated (waiting, running, done, failed, error, cancelled, interrupted)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such batch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }

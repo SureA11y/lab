@@ -278,6 +278,8 @@ function scanCounts(entry) {
  *                                     screenshots; removed with their session.
  * @param {Function} opts.executeRun   (spec, hooks) => { status, payload, error }
  * @param {Function} [opts.validateUrl] Throws on a URL the server will not open.
+ * @param {Function} [opts.checkRun] `(spec) -> [problem]`: why a run cannot work as
+ *   asked, as /workflow-start refuses one; none when it can.
  * @param {object} [opts.resourceSampler] `{ sample(), host() }` (resource-sampler.js):
  *                                     sampled every few seconds while a batch runs,
  *                                     for the governor and metrics.jsonl.
@@ -290,6 +292,7 @@ function createRunQueue({
     reportsRoot = null,
     executeRun,
     validateUrl = () => {},
+    checkRun = () => [],
     now = Date.now,
     keepSessions = KEEP_SESSIONS,
     maxConcurrency = MAX_CONCURRENCY,
@@ -780,6 +783,10 @@ function createRunQueue({
             const varErrors = [];
             const vars = normalizeVars(spec.vars, varErrors);
             if (varErrors.length) throw queueError(400, `${where}${varErrors[0]}`);
+            const problems = checkRun(spec) || [];
+            if (problems.length) {
+                throw queueError(400, `${where}The workflow cannot run: ${problems.length === 1 ? problems[0] : `${problems.length} problems: ${problems.join('; ')}`}`);
+            }
             if (Object.keys(vars).length) spec.vars = vars;
             else delete spec.vars;
             const row = Number.isInteger(raw.row) && raw.row > 0 ? raw.row : null;
@@ -1041,7 +1048,20 @@ function createRunQueue({
         return view;
     }
 
-    function sessionView(s, { live }) {
+    // The runs of a batch that finished last, for the app to say so: a
+    // summary carries these and the runs going now, not every run.
+    const RECENT_ITEMS = 20;
+    // At most this many runs to a page of GET /queue/sessions/:id/items.
+    const MAX_ITEMS_PAGE = 500;
+
+    /**
+     * A batch as GET /queue gives it: its counts, stats and what the app
+     * says of it (scans, the slowest run, whether it has results), the runs
+     * going now and the last to finish, but not every run, which comes a page
+     * at a time (getItems): a batch of 5,000 runs made the queue 1.9 MB, read
+     * every second and a half while it ran.
+     */
+    function sessionView(s, { live, withItems = true }) {
         const items = s.items.map((i) => itemView(i, { live }));
         const counts = { total: items.length };
         for (const i of items) counts[i.status] = (counts[i.status] || 0) + 1;
@@ -1061,7 +1081,53 @@ function createRunQueue({
             // their contexts into one (§8.3).
             ...(live ? batchPace(items) : {}),
             stats: s.stats || null,
-            items,
+            ...itemsSummary(items),
+            ...(withItems ? { items } : {}),
+        };
+    }
+
+    function itemsSummary(items) {
+        const scans = items.reduce((n, i) => n + (Number.isFinite(i.scansRun) ? i.scansRun : (Number.isFinite(i.scans) ? i.scans : 0)), 0);
+        // Runs that went to their end: a batch cancelled before any did has
+        // no slowest run, where it named one cancelled a second in.
+        const timed = items.filter((i) => Number.isFinite(i.durationMs) && i.status !== 'cancelled' && i.status !== 'interrupted');
+        const slowest = timed.length > 1 ? timed.reduce((a, b) => (b.durationMs > a.durationMs ? b : a)) : null;
+        const finished = items.filter((i) => i.finishedAt && i.status !== 'running' && i.status !== 'cancelling' && i.status !== 'waiting');
+        finished.sort((a, b) => Date.parse(b.finishedAt) - Date.parse(a.finishedAt));
+        return {
+            scans,
+            slowest: slowest ? { id: slowest.id, name: slowest.name, durationMs: slowest.durationMs } : null,
+            hasResults: items.some((i) => !!i.file),
+            active: items.filter((i) => i.status === 'running' || i.status === 'cancelling'),
+            recent: finished.slice(0, RECENT_ITEMS).map((i) => ({ id: i.id, name: i.name, status: i.status })),
+        };
+    }
+
+    /**
+     * A page of a batch's runs, in the order they were queued, optionally only
+     * those with a status. -> { sessionId, total, offset, limit, items }
+     */
+    function getItems(id, { offset = 0, limit = 100, status = null } = {}) {
+        let source = null;
+        let live = false;
+        if (session && session.id === id) {
+            source = session;
+            live = true;
+        } else {
+            const dir = files.sessionDirFor(baseDir, id);
+            source = dir ? files.readManifest(dir) : null;
+        }
+        if (!source) throw queueError(404, 'No such session');
+        const from = Math.max(0, Math.floor(Number(offset)) || 0);
+        const size = Math.min(MAX_ITEMS_PAGE, Math.max(1, Math.floor(Number(limit)) || 100));
+        const wanted = status ? new Set(String(status).split(',').map((x) => x.trim()).filter(Boolean)) : null;
+        const all = source.items.filter((i) => !wanted || wanted.has(i.status));
+        return {
+            sessionId: id,
+            total: all.length,
+            offset: from,
+            limit: size,
+            items: all.slice(from, from + size).map((i) => itemView(i, { live })),
         };
     }
 
@@ -1089,14 +1155,14 @@ function createRunQueue({
     }
 
     /** The running session, if any, then the most recent ones on disk. */
-    function getState({ limit = RECENT_SESSIONS } = {}) {
+    function getState({ limit = RECENT_SESSIONS, items = true } = {}) {
         const sessions = [];
-        if (session) sessions.push(sessionView(session, { live: true }));
+        if (session) sessions.push(sessionView(session, { live: true, withItems: items }));
         for (const id of files.listSessionIds(baseDir)) {
             if (sessions.length >= limit) break;
             if (session && id === session.id) continue;
             const manifest = files.readManifest(files.sessionDirFor(baseDir, id));
-            if (manifest) sessions.push(sessionView(manifest, { live: false }));
+            if (manifest) sessions.push(sessionView(manifest, { live: false, withItems: items }));
         }
         const { hold, resources } = session ? governor.view() : { hold: null, resources: null };
         return { concurrency, maxConcurrency, hold, resources, sessions };
@@ -1161,6 +1227,7 @@ function createRunQueue({
         deleteSession,
         getItemProgress,
         getState,
+        getItems,
         sessionDir,
     };
 }

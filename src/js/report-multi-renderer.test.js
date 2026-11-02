@@ -738,6 +738,44 @@ describe('multi-report renderer — holding up under awkward data', () => {
         assert.ok(!/>100% lower/.test(html), '100% lower would say the problems are gone');
     });
 
+    test('from no failures, the headline says how many there are now, not a percentage', async () => {
+        const { comparisonSeriesHTML } = await load();
+        const html = comparisonSeriesHTML(diffReportSeries([
+            report({ runId: 'a', timestamp: '2026-01-01T00:00:00Z', findings: [] }),
+            report({ runId: 'b', timestamp: '2026-01-01T00:01:00Z', findings: [finding('r', 'serious', 2, '1.4.3')] }),
+            report({ runId: 'c', timestamp: '2026-01-01T00:01:00Z', findings: [finding('r', 'serious', 2, '1.4.3')] }),
+        ], { mode: 'trend' }));
+        assert.match(html, /<strong>2 accessibility failures<\/strong>, where a minute ago there were none/);
+        assert.doesNotMatch(html, /0% lower/);
+        assert.doesNotMatch(html, /1 minutes/);
+    });
+
+    test('with as many failures as at the start, the headline says they are the same', async () => {
+        const { comparisonSeriesHTML } = await load();
+        const html = comparisonSeriesHTML(diffReportSeries([
+            report({ runId: 'a', timestamp: '2026-01-01T00:00:00Z', findings: [finding('r', 'serious', 3, '1.4.3')] }),
+            report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z', findings: [finding('r', 'serious', 1, '1.4.3')] }),
+            report({ runId: 'c', timestamp: '2026-03-01T00:00:00Z', findings: [finding('r', 'serious', 3, '1.4.3')] }),
+        ], { mode: 'trend' }));
+        assert.match(html, /Accessibility failures are <strong>the same<\/strong> as/);
+    });
+
+    test('reports that start from different pages are said to be different subjects', async () => {
+        const { comparisonSeriesHTML } = await load();
+        const at = (o, url) => ({ ...report(o), url });
+        const html = comparisonSeriesHTML(diffReportSeries([
+            at({ runId: 'a', timestamp: '2026-01-01T00:00:00Z' }, 'https://x/cart'),
+            at({ runId: 'b', timestamp: '2026-02-01T00:00:00Z' }, 'https://x/login'),
+            at({ runId: 'c', timestamp: '2026-03-01T00:00:00Z' }, 'https://staging.x/login'),
+        ], { mode: 'trend' }));
+        assert.match(html, /start from 2 different pages/);
+        const same = comparisonSeriesHTML(diffReportSeries([
+            at({ runId: 'a', timestamp: '2026-01-01T00:00:00Z' }, 'https://x/login'),
+            at({ runId: 'b', timestamp: '2026-02-01T00:00:00Z' }, 'https://staging.x/login'),
+        ], { mode: 'trend' }));
+        assert.doesNotMatch(same, /different pages/);
+    });
+
     test('a non-zero band is never drawn as nothing beside a huge one', async () => {
         const { comparisonSeriesHTML } = await load();
         const html = comparisonSeriesHTML(diffReportSeries([

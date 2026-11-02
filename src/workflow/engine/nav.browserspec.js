@@ -51,7 +51,7 @@ before(async () => {
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
     base = `http://127.0.0.1:${server.address().port}/`;
     try {
-        browser = await puppeteer.launch({ headless: 'new' });
+        browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     } catch (e) {
         throw new Error(
             'nav.browserspec.js requires a working Chrome install (via Puppeteer) and could not launch one.\n'

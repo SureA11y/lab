@@ -6,7 +6,7 @@
     "AI agents"
   ],
   "purpose": "Generate valid run specs (the workflow files the headless runner takes and other tools exchange) and app configuration files, including custom steps.",
-  "generatedAt": "2026-11-02T08:56:25.876Z",
+  "generatedAt": "2026-11-02T14:45:50.301Z",
   "sourceOfTruth": {
     "actionDefinitionsFile": "src/workflow/action-definitions.js",
     "workflowEngineFile": "src/workflow/workflow-engine.js",
@@ -314,11 +314,18 @@
           "description": "Before scanning, wait up to this long for the page to finish loading: the load event, web fonts and images (not lazy ones). If it has not finished by then, the scan runs anyway and its report says what was still loading. 0 checks without waiting.",
           "default": 3000
         },
+        "frames": {
+          "type": "boolean",
+          "required": false,
+          "label": "Scan iframes too",
+          "description": "Scan the content of the page's iframes as well, each whole, and report what they show with the page: an element in an iframe names the iframe it is in. Off, the report says how many iframes were left out.",
+          "default": true
+        },
         "heavyNodeThreshold": {
           "type": "number",
           "required": false,
-          "label": "Skip pages with more elements than",
-          "description": "Skip this scan when the page has more elements than this, rather than wait on a very slow scan. The report says the scan was skipped, and why.",
+          "label": "Note pages with more elements than",
+          "description": "A page with more elements than this (its shadow roots' included) is still scanned in full, and its report notes that it is large and how long the scan took, with how to make it faster: scan the part that matters, or leave out a long list.",
           "default": 25000
         },
         "waitForSelector": {

@@ -32,6 +32,9 @@ async function createCrawlWorkerTarget(page, ctx, {isolation, inheritViewport} =
         const browser = page.browser();
         const workerContext = await browser.createBrowserContext();
         const workerPage = await workerContext.newPage();
+        // A11Y_STEALTH: the worker presents itself as the run's page does.
+        const stealth = require('../../server-side/stealth');
+        if (stealth.stealthOn()) await stealth.stealthPageNow(workerPage);
         await prepareWorkerPage(ctx, workerPage);
 
         if (ctx?._visionDeficiency) {

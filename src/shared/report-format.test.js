@@ -22,6 +22,25 @@ describe('report-format', () => {
         assert.notEqual(format.occurrenceId('image-alt', { target: ['img'] }, 'https://example.com/a?x=1'), id);
     });
 
+    test('an element in a shadow root is named by its hosts too; one outside keeps its id', () => {
+        const inRoot = (host) => ({ target: ['button:not(* > *)'], shadowHostSelectors: [host] });
+        const a = format.occurrenceId('button-name', inRoot('#m > div:nth-of-type(2)'), 'https://example.com/');
+        const b = format.occurrenceId('button-name', inRoot('#m > div:nth-of-type(4)'), 'https://example.com/');
+        assert.notEqual(a, b);
+        assert.equal(format.elementTarget(inRoot('#a')), '#a >>> button:not(* > *)');
+        const plain = { target: ['main > button'] };
+        assert.equal(format.elementTarget(plain), 'main > button');
+        assert.equal(
+            format.occurrenceId('button-name', { ...plain, shadowHostSelectors: [] }, 'https://example.com/'),
+            format.occurrenceId('button-name', plain, 'https://example.com/'));
+    });
+
+    test('a finding is on the elements it lists and those its rule counted only', () => {
+        assert.equal(format.occurrenceTotal({ occurrences: [{}, {}], unlisted: 950 }), 952);
+        assert.equal(format.occurrenceTotal({ occurrences: [{}] }), 1);
+        assert.equal(format.occurrenceTotal(null), 0);
+    });
+
     test('an occurrence\'s own page wins over its scan\'s', () => {
         const o = { pageUrl: 'https://example.com/b', target: ['img'] };
         assert.equal(
@@ -86,7 +105,7 @@ describe('report-format', () => {
         assert.deepEqual(format.compactOccurrence(none), { target: [] });
     });
 
-    test('upgradeReport brings a version 2 report to 3: its findings by outcome go, its occurrences are compacted', () => {
+    test('upgradeReport brings a version 2 report to the current one: its findings by outcome go, its occurrences are compacted', () => {
         const page = 'https://example.com/';
         const occurrence = () => ({ pageUrl: page, target: ['img'], failureSummary: 'No alt.', summary: 'No alt.', evidence: { engineNode: { pageUrl: page, target: ['img'] } } });
         const report = {
@@ -96,10 +115,44 @@ describe('report-format', () => {
             a11yGlobalFindings: { fail: [] },
         };
         format.upgradeReport(report);
-        assert.equal(report.reportVersion, 3);
+        assert.equal(report.reportVersion, format.REPORT_VERSION);
         assert.equal('findings' in report || 'a11yGlobalFindings' in report, false);
         const [o] = report.scans[0].canonical.findings[0].occurrences;
         assert.deepEqual(Object.keys(o).sort(), ['failureSummary', 'occurrenceId', 'pageUrl', 'target']);
+    });
+});
+
+describe('report version 4: the rule catalogue once', () => {
+    const rule = (id) => ({ ruleId: id, title: `${id} title`, tags: ['wcag2a'] });
+    const scan = (rules, extra = {}) => ({ url: 'https://example.com/', canonical: { findings: [], rules, diagnostics: { engine: { rulesResults: [{ ruleId: 'x' }] } } }, ...extra });
+
+    test('scans that ran with the same catalogue share one, named by index; the raw rollups go unless kept', () => {
+        const report = { reportVersion: 3, scans: [scan([rule('a'), rule('b')]), scan([rule('a'), rule('b')]), scan([rule('a')])] };
+        format.compactReport(report);
+        assert.equal(report.reportVersion, 4);
+        assert.equal(report.ruleCatalogs.length, 2);
+        assert.deepEqual(report.scans.map((s) => s.canonical.rulesCatalog), [0, 0, 1]);
+        assert.ok(report.scans.every((s) => !('rules' in s.canonical) && !('rulesResults' in s.canonical.diagnostics.engine)));
+
+        const debug = { scans: [scan([rule('a')])] };
+        format.compactReport(debug, { keepEngineDetail: true });
+        assert.deepEqual(debug.scans[0].canonical.diagnostics.engine.rulesResults, [{ ruleId: 'x' }]);
+    });
+
+    test('read back, every scan has its catalogue again, as one object for the scans sharing it', () => {
+        const report = JSON.parse(JSON.stringify(format.compactReport({ scans: [scan([rule('a')]), scan([rule('a')])] })));
+        format.upgradeReport(report);
+        assert.equal('ruleCatalogs' in report, false);
+        assert.deepEqual(report.scans[0].canonical.rules, [rule('a')]);
+        assert.equal(report.scans[0].canonical.rules, report.scans[1].canonical.rules);
+        assert.equal('rulesCatalog' in report.scans[0].canonical, false);
+    });
+
+    test('compacting a report read back gives the same report', () => {
+        const saved = format.compactReport({ scans: [scan([rule('a')]), scan([rule('b')])] });
+        const again = format.compactReport(format.upgradeReport(JSON.parse(JSON.stringify(saved))));
+        assert.deepEqual(again.ruleCatalogs, saved.ruleCatalogs);
+        assert.deepEqual(again.scans.map((s) => s.canonical.rulesCatalog), [0, 1]);
     });
 });
 

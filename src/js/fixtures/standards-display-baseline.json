@@ -6261,7 +6261,10 @@
    "comparable": true,
    "healthy": true,
    "degraded": [],
-   "scored": false
+   "scored": false,
+   "subjects": [
+    "/products.html"
+   ]
   },
   "verdict": {
    "mode": "trend",

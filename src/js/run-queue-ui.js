@@ -132,8 +132,24 @@ export function createRunQueueUi(app) {
             (task) => sendQueueSessionToCompareAs(session, task));
     }
 
+    /**
+     * Every run of a batch: GET /queue gives each in summary, its runs come
+     * from its itemsUrl a page at a time. A batch given with its runs has them.
+     */
+    async function allQueuedItems(session) {
+        if (!session.itemsUrl) return session.items || [];
+        const out = [];
+        for (let offset = 0; ; offset += 500) {
+            const page = await fetchJson(`${session.itemsUrl}?offset=${offset}&limit=500`);
+            out.push(...(page.items || []));
+            if (!page.items || !page.items.length || out.length >= page.total) return out;
+        }
+    }
+
     async function sendQueueSessionToCompareAs(session, task) {
-        const withFiles = session.items.filter((i) => i.fileUrl);
+        const reading = task.step('Reading the batch’s runs');
+        const withFiles = (await allQueuedItems(session)).filter((i) => i.fileUrl);
+        reading.done();
 
         if (!await app.compareTab.replaceLoadedComparison(task, 'with this batch’s runs')) {
             const message = 'Not sent; the reports already in Compare stay.';

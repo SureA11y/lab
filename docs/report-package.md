@@ -79,7 +79,7 @@ in the app, and downloads from there as a whole package.
 ## What the JSON says
 
 The report's JSON (`*.a11y-report.json`, and a CLI run's `payload.json`) is
-described by `schemas/report.v3.schema.json`, so something outside the lab (a
+described by `schemas/report.v4.schema.json` (`schemas/report.v3.schema.json` for one saved before version 4), so something outside the lab (a
 dashboard, a script, a tool that files tickets) can read it without reading
 the lab. It is strict on what such a reader relies on and open on the rest
 (metrics, diagnostics, engine detail), which grows with the lab.
@@ -108,17 +108,25 @@ the lab. It is strict on what such a reader relies on and open on the rest
   whose selector changes (a renamed class) gets a new id, and reads as one
   issue fixed and another new.
 
+A version 3 report kept each scan's rule catalogue in the scan
+(`canonical.rules`), the same one again in every scan: half of a long run's
+report. Version 4 keeps each catalogue once, in `ruleCatalogs`, which each
+scan names by index (`canonical.rulesCatalog`), and the engine's raw rollups
+(`canonical.diagnostics.engine.rulesResults`, which the findings hold) only
+in a debug run. The app opens a version 3 report as it is, and saves it as
+version 4.
+
 A version 1 report recorded `wcagLevel`, `wcagVersion` and
-`conformanceProfile` instead, and no ids. The app opens it as version 3
+`conformanceProfile` instead, and no ids. The app opens it as version 4
 (`src/shared/report-format.js`, `upgradeReport`), giving its occurrences the
 ids they would have had, so it shows, merges and compares like a new one; a
-report merged from it, or saved again, is version 3. A version 2 report
+report merged from it, or saved again, is version 4. A version 2 report
 opens the same way: its `findings` are dropped (the scans hold them) and its
 occurrences lose what they repeat (`upgradeReport`).
 
 The other files the lab writes for other software have schemas beside it:
 `schemas/comparison.v1.schema.json` for a comparison zip's `comparison.json`,
-and `schemas/diff.v1.schema.json` for a CLI run's `diff.json`. All three are
+and `schemas/diff.v1.schema.json` for a CLI run's `diff.json`. All of them are
 generated from `src/shared/report-schemas.js` by `npm run build:action-docs`.
 
 ## The configuration it ran

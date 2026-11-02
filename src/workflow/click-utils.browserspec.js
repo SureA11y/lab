@@ -33,7 +33,7 @@ let page;
 
 before(async () => {
     try {
-        browser = await puppeteer.launch({ headless: 'new' });
+        browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     } catch (e) {
         throw new Error(
             `click-utils.browserspec.js requires a working Chrome install (via Puppeteer) and could not launch one.\n` +

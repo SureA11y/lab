@@ -710,8 +710,15 @@
         // Build a portfolio canonical model by merging findings across scans.
         const byKey = new Map();
 
+        // The element, as report-format.js's elementTarget names it: its
+        // target after the selectors of any shadow hosts it is inside, as its
+        // target alone repeats in every shadow root of the same component.
         function occRest(occ) {
-            const target = Array.isArray(occ && occ.target) ? occ.target.join('||') : '';
+            const own = Array.isArray(occ && occ.target) ? occ.target.join('||') : '';
+            const hosts = Array.isArray(occ && occ.shadowHostSelectors) ? occ.shadowHostSelectors.filter(Boolean) : [];
+            const inRoots = hosts.length ? `${hosts.join(' >>> ')} >>> ${own}` : own;
+            const frames = Array.isArray(occ && occ.frameSelectors) ? occ.frameSelectors.filter(Boolean) : [];
+            const target = frames.length ? `${frames.join(' |>| ')} |>| ${inRoots}` : inRoots;
             const html = occ && occ.html ? String(occ.html) : '';
             const failure = occ && occ.failureSummary ? String(occ.failureSummary) : '';
             return target + '##' + html + '##' + failure;

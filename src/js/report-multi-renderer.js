@@ -482,6 +482,35 @@ function chartTable(headers, rows) {
 
 // ---------- hero ----------
 
+/**
+ * Reports that start from different pages are different subjects: the change
+ * from the first to the last is between them, not of one site over time.
+ */
+function subjectsNote(d) {
+    const subjects = d.gate.subjects || [];
+    if (subjects.length < 2) return '';
+    const unit = unitOf(d);
+    return `<p class="dash-caveat"><span class="dash-caveat-i" aria-hidden="true">!</span>`
+        + `<span>These ${esc(unit.many)} start from ${subjects.length} different pages, so the change from the first to the last `
+        + `is between different pages, not of one page over time. To see them side by side, compare them as variants.</span></p>`;
+}
+
+/**
+ * The headline's change, from the first column's failures to the last's. A
+ * percentage needs failures to start from: from none, it says how many there
+ * are now; with as many as before, that they are the same.
+ */
+function heroChange(from, to, raw, pct, almost, span) {
+    const ago = `${esc(span)} ago`;
+    if (from === 0) {
+        return to === 0
+            ? `<strong>No accessibility failures</strong>, as ${ago}`
+            : `<strong>${to} accessibility ${to === 1 ? 'failure' : 'failures'}</strong>, where ${ago} there were none`;
+    }
+    if (from === to) return `Accessibility failures are <strong>the same</strong> as ${ago}`;
+    return `Accessibility failures are <strong>${almost ? 'over ' : ''}${pct}% ${raw < 0 ? 'lower' : 'higher'}</strong> than ${ago}`;
+}
+
 function heroTrend(d) {
     const columns = d.columns;
     const verdict = d.verdict;
@@ -499,17 +528,17 @@ function heroTrend(d) {
     const pct = (Math.abs(raw) >= 100 && !cleared) ? 99 : Math.abs(raw);
     const almost = Math.abs(raw) >= 100 && !cleared;
 
-    const caveat = d.gate.comparable ? '' : `<p class="dash-caveat"><span class="dash-caveat-i" aria-hidden="true">!</span>`
+    const caveat = (d.gate.comparable ? '' : `<p class="dash-caveat"><span class="dash-caveat-i" aria-hidden="true">!</span>`
         + `<span>${esc(workloadNote(d))} `
-        + `Counts include the difference, so read the direction from the problems below, not from the totals.</span></p>`;
+        + `Counts include the difference, so read the direction from the problems below, not from the totals.</span></p>`)
+        + subjectsNote(d);
 
     const best = columns[verdict.bestIndex];
 
     return `<section class="dash-hero">
         <div class="dash-hero-main">
             <p class="dash-status dash-status--${verdict.tone}"><span class="dash-status-dot" aria-hidden="true"></span>${tone}</p>
-            <h2 class="dash-hero-h">Accessibility failures are <strong>${almost ? 'over ' : ''}${pct}% ${raw <= 0 ? 'lower' : 'higher'}</strong>
-                than ${esc(verdict.span)} ago${verdict.flapping ? `, but ${verdict.flapping === 1 ? 'one problem keeps' : `${verdict.flapping} problems keep`} coming back` : ''}.</h2>
+            <h2 class="dash-hero-h">${heroChange(first.stats.failures, last.stats.failures, raw, pct, almost, verdict.span)}${verdict.flapping ? `, but ${verdict.flapping === 1 ? 'one problem keeps' : `${verdict.flapping} problems keep`} coming back` : ''}.</h2>
             <p class="dash-hero-lead">${esc(verdict.lead)}</p>
             ${caveat}
         </div>

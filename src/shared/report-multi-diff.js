@@ -41,7 +41,7 @@
     }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function (diffApi, identityApi, conformanceApi, healthApi) {
 
-    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath } = diffApi;
+    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath, sizeOf } = diffApi;
     const { reportIdentity, compareByTime, describeComparison } = identityApi;
     const { readConformance, conformanceMatrix, sharedTarget, en301549ForTarget } = conformanceApi;
     const { assessRun, describeRunHealth } = healthApi;
@@ -249,8 +249,8 @@
         // is broken".
         const elements = new Set();
         for (const rule of rules.values()) {
-            failures += rule.occ.size;
-            severity[rule.severity] += rule.occ.size;
+            failures += sizeOf(rule);
+            severity[rule.severity] += sizeOf(rule);
             for (const key of rule.occ.keys()) elements.add(key);
         }
 
@@ -259,7 +259,7 @@
         // left out of the picture: a rule that stops failing and starts needing
         // review has moved, not gone.
         let reviewOcc = 0;
-        for (const rule of reviewRules.values()) reviewOcc += rule.occ.size;
+        for (const rule of reviewRules.values()) reviewOcc += sizeOf(rule);
 
         const sc = scores(report);
         const scans = Array.isArray(report && report.scans) ? report.scans : [];
@@ -465,7 +465,7 @@
         for (const ruleId of ids) {
             const counts = perColumnRules.map((rules) => {
                 const rule = rules.get(ruleId);
-                return rule ? rule.occ.size : 0;
+                return sizeOf(rule);
             });
             const present = counts.map((c) => c > 0);
 
@@ -551,14 +551,16 @@
     // which version it covered.
     function humanDuration(ms) {
         const minutes = ms / 60000;
-        if (minutes < 90) return `${Math.max(1, Math.round(minutes))} minutes`;
+        if (minutes < 90) {
+            const n = Math.max(1, Math.round(minutes));
+            return n === 1 ? 'a minute' : `${n} minutes`;
+        }
 
         const hours = ms / 3600000;
         if (hours < 24) return hours < 1.5 ? 'an hour' : `${Math.round(hours)} hours`;
 
         const days = ms / 86400000;
         if (days < 14) return days < 1.5 ? 'a day' : `${Math.round(days)} days`;
-        if (days < 14) return `${Math.round(days)} days`;
         if (days < 70) {
             const weeks = Math.round(days / 7);
             return weeks === 1 ? 'a week' : `${weeks} weeks`;
@@ -926,6 +928,11 @@
             healthy: columns.every((c) => c.health.ok),
             degraded: columns.filter((c) => !c.health.ok).map((c) => c.index),
             scored: columns.every((c) => c.stats.score != null),
+            // The pages the reports start from, by path (another origin is a
+            // staging copy of the same site). More than one, and the change
+            // across the window is between different subjects, not one
+            // subject over time.
+            subjects: [...new Set(columns.map((c) => (c.identity.scopeUrl ? pagePath(c.identity.scopeUrl) : (c.identity.scenarioName || ''))))],
         };
 
         const target = sharedTarget(columns.map((c) => c.conformance));

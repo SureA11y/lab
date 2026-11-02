@@ -7,7 +7,8 @@
  * outside the app: a dashboard, a script, a CI step, a tool that files
  * tickets. `npm run build:action-docs` writes them to schemas/:
  *
- *   report.v3.schema.json      a report (payload.json, *.a11y-report.json)
+ *   report.v4.schema.json      a report (payload.json, *.a11y-report.json)
+ *   report.v3.schema.json      a report saved before version 4
  *   comparison.v1.schema.json  comparison.json, in a downloaded comparison
  *   diff.v1.schema.json        diff.json, from a run with a baseline
  *
@@ -46,16 +47,25 @@
     const count = { type: 'integer', minimum: 0 };
     const open = (properties, required = []) => ({ type: 'object', required, properties });
 
-    function reportSchema() {
-        return {
+    /**
+     * The report schema, of `version` 4 (the current one) or 3. Version 4
+     * keeps the rule catalogue once, in ruleCatalogs, each scan naming its
+     * own by index; it also lists a finding's unlisted elements and where an
+     * occurrence is (its shadow hosts and iframes).
+     */
+    function reportSchema(version = 4) {
+        const v4 = version >= 4;
+        const schema = {
             $schema: SCHEMA,
-            $id: 'urn:surea11y-lab:report:v3',
+            $id: `urn:surea11y-lab:report:v${v4 ? 4 : 3}`,
             title: 'surea11y-lab report',
-            description: 'A run\'s results: what was scanned, against what, and what was found. The CLI writes one as payload.json, and the app saves one as *.a11y-report.json. Each finding is in its scan only: the findings by outcome across scans are built from the scans. Reports with no reportVersion are version 1, and version 2 also kept those findings by outcome (findings): the app still opens both, reading them as this version. ' + GENERATED,
+            description: v4
+                ? 'A run\'s results: what was scanned, against what, and what was found. The CLI writes one as payload.json, and the app saves one as *.a11y-report.json. Each finding is in its scan only: the findings by outcome across scans are built from the scans. The rule catalogue each scan ran with is kept once, in ruleCatalogs, and named by index from each scan (canonical.rulesCatalog). Reports of versions 1 to 3 still open, read as this version: version 3 kept each scan\'s catalogue in it (canonical.rules), version 2 also kept the findings by outcome (findings), and version 1 has no reportVersion. ' + GENERATED
+                : 'A run\'s results: what was scanned, against what, and what was found. The CLI writes one as payload.json, and the app saves one as *.a11y-report.json. Each finding is in its scan only: the findings by outcome across scans are built from the scans. Reports with no reportVersion are version 1, and version 2 also kept those findings by outcome (findings): the app still opens both, reading them as this version. ' + GENERATED,
             type: 'object',
             required: ['reportVersion', 'url', 'runId', 'timestamp', 'scans'],
             properties: {
-                reportVersion: { const: 3, description: 'The format version.' },
+                reportVersion: { const: v4 ? 4 : 3, description: 'The format version.' },
                 url: { ...text, description: 'The page the run started on.' },
                 runId: { ...text, minLength: 1, description: 'The run\'s id: the same in every copy of this report.' },
                 timestamp: { ...text, description: 'When the run started (ISO 8601).' },
@@ -178,6 +188,21 @@
                 },
             },
         };
+        if (v4) {
+            schema.properties.ruleCatalogs = {
+                type: 'array',
+                items: { type: 'array', items: { type: 'object' } },
+                description: 'The rule catalogues the scans ran with, each once: a scan names its own by index (canonical.rulesCatalog).',
+            };
+            schema.$defs.canonical.properties.rulesCatalog = { ...count, description: 'The index in ruleCatalogs of the rule catalogue this scan ran with.' };
+            schema.$defs.finding.properties.unlisted = { ...count, description: 'Elements the rule found and counted, past those it lists in occurrences (surea11y\'s contrast rules list 50).' };
+            Object.assign(schema.$defs.occurrence.properties, {
+                shadowHostSelectors: { type: 'array', items: text, description: 'For an element in a shadow tree: the selectors of the hosts that lead to it from the document, outermost first; its target holds only inside the last one\'s shadow root.' },
+                frameUrl: { ...text, description: 'For an element in one of the page\'s iframes: the iframe\'s address.' },
+                frameSelectors: { type: 'array', items: text, description: 'For an element in an iframe: the selectors of the iframe elements that lead to it from the page, outermost first.' },
+            });
+        }
+        return schema;
     }
 
     function comparisonSchema() {
@@ -275,7 +300,8 @@
     /** The published schemas, by the file each is written to in schemas/. */
     function publishedSchemas() {
         return {
-            'report.v3.schema.json': reportSchema(),
+            'report.v4.schema.json': reportSchema(4),
+            'report.v3.schema.json': reportSchema(3),
             'comparison.v1.schema.json': comparisonSchema(),
             'diff.v1.schema.json': diffSchema(),
         };

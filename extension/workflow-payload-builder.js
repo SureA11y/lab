@@ -104,6 +104,10 @@
             const screenshots = [];
 
             const list = Array.isArray(importObjs) ? importObjs : [];
+            // Each report's scans with their own rule catalogue again
+            // (version 4 names it by index in its own report), so scans of
+            // several reports can sit in one.
+            for (const obj of list) reportFormat().expandReport(obj);
 
             for (let srcIndex = 0; srcIndex < list.length; srcIndex += 1) {
                 const obj = list[srcIndex];
@@ -422,7 +426,8 @@
             for (const f of findings) {
                 if (!f || f.outcome !== 'fail') continue;
                 const impact = f.severity ? String(f.severity) : 'unknown';
-                const occ = Array.isArray(f.occurrences) ? f.occurrences.length : 0;
+                // With the elements its rule counted and did not list.
+                const occ = reportFormat().occurrenceTotal(f);
                 if (counts[impact] === undefined) counts.unknown += occ;
                 else counts[impact] += occ;
             }
@@ -637,7 +642,7 @@
             // The current format, also for the scans of older reports opened
             // or merged into this one. Each finding is written once, in its
             // scan: the findings by outcome are built from the scans by
-            // whoever reads them (report-format.js, version 3).
+            // whoever reads them (report-format.js, since version 3).
             reportFormat().upgradeReport(payload);
 
             const { domMetrics, a11ySummary } = buildGlobalSummary({
@@ -661,6 +666,13 @@
 
             payload.scans = sortByOrderKey(payload.scans || []);
             payload.screenshots = sortByOrderKey(payload.screenshots || []);
+
+            // As version 4 keeps it: one rule catalogue for the scans that
+            // share it; the engine's raw rollups only in a debug run, whose
+            // scans carry the engine's native output too.
+            reportFormat().compactReport(payload, {
+                keepEngineDetail: payload.scans.some((scan) => scan && scan.native),
+            });
 
             return payload;
         }

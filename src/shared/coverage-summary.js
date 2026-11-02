@@ -216,7 +216,7 @@
             const rollup = (comp.evidence && comp.evidence.rollup) ? comp.evidence.rollup : {};
             const contributors = asArray(rollup.contributors);
             const refs = scRefsOf(comp);
-            const occurrences = asArray(comp.occurrences).length;
+            const occurrences = asArray(comp.occurrences).length + (Number(comp.unlisted) > 0 ? Number(comp.unlisted) : 0);
 
             for (const sc of refs) {
                 if (!criteria.has(sc)) criteria.set(sc, buildCriterionEntry(sc));
@@ -242,7 +242,7 @@
                             const conf = Number(atomic.confidence);
                             if (Number.isFinite(conf)) confidences.push(conf);
                         }
-                        entry.occurrenceCount += asArray(atomic.occurrences).length;
+                        entry.occurrenceCount += asArray(atomic.occurrences).length + (Number(atomic.unlisted) > 0 ? Number(atomic.unlisted) : 0);
                     }
 
                     if (outcome === 'cantTell') {
@@ -270,7 +270,7 @@
         for (const f of atomics) {
             const refs = scRefsOf(f);
             const outcome = String(f.outcome || '').trim();
-            const occurrences = asArray(f.occurrences).length;
+            const occurrences = asArray(f.occurrences).length + (Number(f.unlisted) > 0 ? Number(f.unlisted) : 0);
 
             for (const sc of refs) {
                 if (!criteria.has(sc)) criteria.set(sc, buildCriterionEntry(sc));

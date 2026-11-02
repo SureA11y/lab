@@ -47,7 +47,7 @@ Four files land in a folder:
 | `run.log.jsonl` | A line-by-line record of what the workflow did | Whoever is debugging |
 
 `diff.json` and `payload.json` are described by `schemas/diff.v1.schema.json`
-and `schemas/report.v3.schema.json`, for whatever reads them. Every failing
+and `schemas/report.v4.schema.json`, for whatever reads them. Every failing
 element has an `occurrenceId` that stays the same from run to run, so a
 ticket filed for one can be found again in the next run's files.
 
@@ -659,9 +659,10 @@ To fail such a run when it has failures, add `--fail-on-failures`.
 happened later. The comparison still works, but "new" and "fixed" are the other
 way around from what you probably meant.
 
-**Exit 4, "1 scan skipped"** — a page was too large for the scan's node
-threshold, so it was not scanned. The run reports zero problems for that page,
-which is why it is a failure and not a pass.
+**Exit 4, "1 scan skipped"** — a page could not be scanned: the address gave
+something that is not a web page (a PDF, JSON, an image). The run reports zero
+problems for that page, which is why it is a failure and not a pass. A very
+large page is scanned in full; its report notes that it is large.
 
 **Exit 4, "12 iterations failed"** — a loop over elements broke partway. Common
 causes: the page changed shape mid-run, or a selector matches something that

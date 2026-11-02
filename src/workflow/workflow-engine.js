@@ -18,6 +18,7 @@ const {applyRunConditions, resolveZoomFactor, applyZoomToViewport} = require('./
 const {summarizeIterationFailures} = require('./engine/iteration-failures');
 const {normalizeCustomStepsById} = require('./engine/custom-steps');
 const {postStepDelay} = require('./engine/post-step-delay');
+const {explainBrowserGone} = require('./engine/browser-gone');
 const {normalizeEvidenceVariants} = require('./engine/step-helpers');
 const {createWorkflowContext} = require('./engine/context');
 
@@ -400,13 +401,15 @@ async function _applyActionsImpl(page, actions = [], actionResults, startIndex =
                 stepEvent: 'action-end'
             });
             skipPause = NO_PAUSE_AFTER_TYPES.has(action.type);
-        } catch (err) {
+        } catch (caught) {
 
-            if (err && err._wfCancelled) {
+            if (caught && caught._wfCancelled) {
                 // Do NOT log as failure
-                throw err;
+                throw caught;
             }
 
+            // A browser that went away says so, not "detached Frame".
+            const err = explainBrowserGone(caught, page);
             const msg = err && err.message ? err.message : String(err);
             // The step that failed, which may be nested in this one: the
             // innermost step's catch runs first and sets it.
@@ -438,7 +441,8 @@ async function _applyActionsImpl(page, actions = [], actionResults, startIndex =
                 try { context._partialOut = snapshotPartialOut(context, actionResults || []); } catch {}
             }
 
-            if (!isOptional) {
+            // Without a browser no later step can run, optional or not.
+            if (!isOptional || (err && err.browserGone)) {
                 try {
                     err._wfFailed = true;
                     err._wfPartialOut = snapshotPartialOut(context, actionResults, {
@@ -453,7 +457,7 @@ async function _applyActionsImpl(page, actions = [], actionResults, startIndex =
             }
         }
 
-        if (!skipPause) await postStepDelay(context);
+        if (!skipPause) await postStepDelay(context, page);
     }
 
     // Emit a single summary at the end of the top-level run

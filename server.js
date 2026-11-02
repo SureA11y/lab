@@ -1,15 +1,13 @@
 const path = require("path");
 const express = require("express");
 
-const { runA11yWorkflow, getBrowserPid } = require("./src/server-side/a11y-runner");
+const { getBrowserPid } = require("./src/server-side/a11y-runner");
 const { REPORTS_ROOT } = require("./src/server-side/report-paths");
 const { ACTION_DEFINITIONS } = require("./src/workflow/action-definitions");
 const a11yEngine = require("./src/server-side/a11y-engine");
 const {
     PAYLOAD,
     envFlag,
-    resolveDeterminism,
-    hasEvidenceCaptureAction,
     validateUrlOrThrow,
     executeWorkflowRun
 } = require("./src/server-side/workflow-run");
@@ -17,13 +15,15 @@ const { summarizeDryRun } = require("./src/server-side/dry-run-summary");
 const { startRunSweeper } = require("./src/server-side/run-sweep");
 const { requestCancel } = require("./src/server-side/run-cancel");
 const { createRunResultStore, sendWithPayloadFile } = require("./src/server-side/run-results");
-const { createRunGate, maxRunsFrom } = require("./src/server-side/run-gate");
+const { createRunGate, maxRunsFrom, maxWaitingFrom } = require("./src/server-side/run-gate");
 const { createBatchImages, packResultImages } = require("./src/server-side/batch-package");
 const { createProgressLog } = require("./src/server-side/progress-log");
 const { createRunQueue } = require("./src/server-side/run-queue");
 const { createResourceSampler } = require("./src/server-side/resource-sampler");
 const { registerQueueRoutes, resolveQueueBaseDir } = require("./src/server-side/queue-routes");
 const { createRequestGuard } = require("./src/server-side/request-guard");
+const { checkRunRequest, refusal } = require("./src/server-side/run-request-check");
+const { retentionHoursFrom, startRunFilesRetention } = require("./src/server-side/run-files-retention");
 const { proceduresForRequirements, listStandardProcedures, standardLanguages, renderStandardProcedures, guideIndex } = require("./src/server-side/procedures");
 const { installedPacks, installedStandards } = require("./src/server-side/standard-packs");
 // The standard packs load now, so their profiles are scan targets and step
@@ -71,6 +71,8 @@ const DEBUG_MODE = envFlag("A11Y_DEBUG_MODE", false);
 
 // --------------------------- App init ---------------------------
 const app = express();
+// Which server this is is nobody's business.
+app.disable("x-powered-by");
 
 // Only the lab's own pages, the extension and A11Y_ALLOWED_ORIGINS may call it
 // from a browser, and only by a loopback name, an address or
@@ -80,6 +82,9 @@ app.use(createRequestGuard({
     allowedHosts: process.env.A11Y_ALLOWED_HOSTS,
     allowedOrigins: process.env.A11Y_ALLOWED_ORIGINS,
 }).middleware);
+
+// What it sends compressed, to a client that accepts gzip (gzip.js).
+app.use(require("./src/server-side/gzip").gzip());
 
 // Large: /workflow-import takes a whole report, its screenshots included.
 app.use(express.json({ limit: '200mb' }));
@@ -286,98 +291,14 @@ app.use(
 
 // --------------------------- Core endpoints ---------------------------
 
-app.post("/workflow-scan", async (req, res) => {
-    const { url, tags, actions, scenarioName, viewport, colorScheme, highContrast, language, acceptUntrustedCerts } = req.body || {};
-
-    const debugNative =
-        DEBUG_MODE ||
-        req.query?.debugNative === '1' ||
-        req.query?.debugNative === 'true';
-    const wantReport = hasEvidenceCaptureAction(actions);
-    const runScope = runScopeProblem(req.body);
-    if (runScope) return res.status(400).json(runScope);
-
-    try {
-        validateUrlOrThrow(url);
-
-        const determinism = resolveDeterminism();
-
-        const out = await runA11yWorkflow(url, tags, {
-            actions,
-            viewport,
-            colorScheme,
-            highContrast,
-            language,
-            acceptUntrustedCerts: acceptUntrustedCerts === true || acceptUntrustedCerts === 'on',
-            determinism,
-            debugNative,
-            exportReport: wantReport,
-            reportsSubdir: wantReport ? scenarioName : null
-        });
-
-        const payload = PAYLOAD.buildWorkflowPayloadBase({
-            url,
-            scenarioName,
-            actions,
-            actionResults: out.actionResults,
-            scans: out.scans,
-            workflowScreenshots: out.screenshots,
-            runDiagnostics: out.runDiagnostics,
-            collectedOutputs: out.collectedOutputs,
-            cancelled: !!out.cancelled,
-            debugNative,
-            includeScanScreenshots: true,
-        });
-
-        // Keep report export behavior here (side effects, disk writes)
-        for (let i = 0; i < (out.scans || []).length; i += 1) {
-            const scan = out.scans[i];
-            const scanPayload = payload.scans[i];
-            if (!scan || !scanPayload) continue;
-
-            const isSkipped = !!scan.skipped || !!scan.skipInfo;
-
-            if (!isSkipped && wantReport) {
-                try {
-                    const saveFn = a11yEngine && typeof a11yEngine.saveHtmlReport === 'function'
-                        ? a11yEngine.saveHtmlReport
-                        : null;
-
-                    if (saveFn) {
-                        const report = await saveFn({
-                            runOnly: scan.runOnly || null,
-                            canonical: scan.canonical || null,
-                            native: scan.results || scan.nativeForReport || null
-                        }, {
-                            url: scan.url || url,
-                            label: scan.label || null,
-                            actions,
-                            scenarioName,
-                            screenshot: scan.screenshot || null,
-                        });
-
-                        scanPayload.report = report;
-
-                        const childScenarioName = scenarioName
-                            ? `${scenarioName} / ${scan.label || scan.id}`
-                            : (scan.label || scan.id);
-
-                        scanPayload.screenshots = PAYLOAD.stitchScreenshots(scan, report);
-                    }
-                } catch (reportError) {
-                    console.error("Failed to save HTML report for workflow scan", scan.id, reportError);
-                }
-            }
-        }
-
-        PAYLOAD.finalizeWorkflowPayload(payload);
-        res.json(payload);
-    } catch (error) {
-        console.error("Workflow scan failed:", error);
-        const message = error && error.message ? error.message : "Workflow scan failed";
-        const statusCode = /Invalid url|Missing url/i.test(message) ? 400 : 500;
-        res.status(statusCode).json({ error: "Workflow scan failed", details: message });
-    }
+// The synchronous scan this server once had, which ran outside the run limit
+// (A11Y_MAX_RUNS): every call opened a browser page at once. /workflow-start
+// and /workflow-result do the same through the limit.
+app.post("/workflow-scan", (_req, res) => {
+    res.status(410).json({
+        error: "This call is gone",
+        details: "POST /workflow-start with the same body, then GET /workflow-result?runId=… until it answers 200 (docs/http-api.md).",
+    });
 });
 
 
@@ -625,7 +546,8 @@ const ManualRuns = new Map();
 // idle hours.
 const EXTENSION_SESSION_TTL_MS = 4 * 60 * 60 * 1000;
 // How many /workflow-start runs go at once (A11Y_MAX_RUNS, default 4).
-const runGate = createRunGate(maxRunsFrom(process.env.A11Y_MAX_RUNS));
+// How many more may wait their turn (A11Y_MAX_WAITING, default 50).
+const runGate = createRunGate(maxRunsFrom(process.env.A11Y_MAX_RUNS), maxWaitingFrom(process.env.A11Y_MAX_WAITING));
 
 // Each finished run's result, in a file until the run is swept.
 const runResults = createRunResultStore();
@@ -684,15 +606,21 @@ app.post("/workflow-start", async (req, res) => {
         req.query?.debugNative === '1' ||
         req.query?.debugNative === 'true';
 
-    if (!Array.isArray(actions) || actions.length === 0) {
-        return res
-            .status(400)
-            .json({ error: "No actions to run", details: "Define at least one action (e.g., a11yScan)." });
-    }
     const runScope = runScopeProblem(req.body);
     if (runScope) return res.status(400).json(runScope);
+    // Everything that can be told before a browser opens: a run that cannot
+    // work is refused here, with every reason, not accepted and failed.
+    const checked = checkRunRequest(req.body, { validateUrl: validateUrlOrThrow });
+    if (!checked.ok) return res.status(400).json(refusal(checked.errors));
+    // Every slot taken and every place to wait too: refused, to try later.
+    if (runGate.full) {
+        res.set("Retry-After", "30");
+        return res.status(429).json({
+            error: "Too many runs",
+            details: `${runGate.active} runs are going and ${runGate.waiting} waiting, the most this server takes (A11Y_MAX_RUNS, A11Y_MAX_WAITING). Try again in a while.`,
+        });
+    }
     try {
-        validateUrlOrThrow(url);
 
         const runId = newRunId();
         const abortController = new AbortController();
@@ -718,13 +646,22 @@ app.post("/workflow-start", async (req, res) => {
             };
 
             // Its turn first: at most runGate.max runs go at once. One
-            // cancelled while it waited ends at once when its turn comes.
-            await runGate.enter((active) => progress({
+            // cancelled while it waits leaves its place at once, with no
+            // page opened and nothing to show.
+            const entered = await runGate.enter((active) => progress({
                 time: new Date().toISOString(),
                 type: "info",
                 message: `Waiting for a free slot: ${active} runs are going, and at most ${runGate.max} go at once`,
                 depth: 0,
-            }));
+            }), abortController.signal);
+            if (!entered) {
+                const sink = Runs.get(runId);
+                if (!sink) return;
+                sink.status = "cancelled";
+                sink.result = null;
+                sink.log.push({ time: new Date().toISOString(), type: "info", message: "Workflow cancelled before it started", depth: 0 });
+                return;
+            }
             let outcome;
             try {
                 outcome = await executeWorkflowRun(
@@ -771,6 +708,16 @@ app.post("/workflow-start", async (req, res) => {
 
             // To a file, once: the result waits there to be fetched, off the
             // heap (run-results.js). One that cannot be written stays here.
+            // Why it failed, said by the result itself as well as by the log.
+            if (status === "error") {
+                const why = payload.errorDetails || {};
+                sink.error = {
+                    error: "Workflow failed",
+                    details: String(why.message || "Workflow failed"),
+                    ...(why.actionPath ? { actionPath: why.actionPath } : {}),
+                    ...(why.actionType ? { actionType: why.actionType } : {}),
+                };
+            }
             const kept = await runResults.keep(runId, payload);
             if (kept) sink.resultFile = kept.file;
             sink.result = kept ? null : payload;
@@ -791,7 +738,7 @@ app.post("/workflow-start", async (req, res) => {
             }
         })();
 
-        res.json({ ok: true, runId });
+        res.json({ ok: true, runId, ...(checked.warnings.length ? { warnings: checked.warnings } : {}) });
     } catch (error) {
         const message = error && error.message ? error.message : "Workflow start failed";
         const statusCode = /Invalid url|Missing url|Unsupported protocol/i.test(message) ? 400 : 500;
@@ -835,7 +782,7 @@ app.get("/workflow-result", (req, res) => {
         return res.status(202).json({ status: run.status });
     }
 
-    const head = { status: run.status, ...(run.dryRun ? { dryRun: run.dryRun } : {}) };
+    const head = { status: run.status, ...(run.error ? { error: run.error } : {}), ...(run.dryRun ? { dryRun: run.dryRun } : {}) };
     // The run's result, finished when the run ended: sent from its file.
     if (run.resultFile) return sendWithPayloadFile(res, head, run.resultFile);
 
@@ -852,12 +799,27 @@ app.get("/workflow-result", (req, res) => {
 // reports/<A11Y_QUEUE_DIR, default batches>/<session start time>/ as it
 // finishes. See docs/design/workflow-queue-batch-design.md.
 
+// A batch's runs share their steps and differ in their url and variables:
+// the check, about a millisecond a run, is made once per workflow and kept.
+const queuedRunChecks = new Map();
+function checkQueuedRun(spec) {
+    const key = JSON.stringify({ ...spec, url: "", vars: null, scenarioName: null });
+    let problems = queuedRunChecks.get(key);
+    if (!problems) {
+        problems = checkRunRequest({ ...spec, url: "http://localhost/" }).errors;
+        if (queuedRunChecks.size > 200) queuedRunChecks.clear();
+        queuedRunChecks.set(key, problems);
+    }
+    return problems;
+}
+
 const QUEUE_DIR = resolveQueueBaseDir(REPORTS_ROOT, process.env.A11Y_QUEUE_DIR);
 const runQueue = createRunQueue({
     baseDir: QUEUE_DIR,
     reportsRoot: REPORTS_ROOT,
     executeRun: (spec, hooks) => executeWorkflowRun(spec, { ...hooks, debugNative: DEBUG_MODE }),
     validateUrl: validateUrlOrThrow,
+    checkRun: checkQueuedRun,
     // Sampled while a batch runs, for the governor that holds the next run
     // while memory is high (§5.2) and each session's metrics.jsonl (§5.1);
     // A11Y_QUEUE_METRICS=0 turns the file off, not the governor.
@@ -879,6 +841,38 @@ app.get("/", (req, res) => {
 });
 
 // --------------------------- Start ---------------------------
+
+// Every error answers in JSON, as every call does: a body that is not JSON,
+// one too large, or anything the server did not expect. Never the framework's
+// HTML page, which showed the error's stack and the server's paths.
+app.use((err, req, res, next) => {
+    if (res.headersSent) return next(err);
+    const type = err && err.type;
+    if (type === "entity.parse.failed") {
+        return res.status(400).json({ error: "The request body is not JSON", details: String(err.message || "") });
+    }
+    if (type === "entity.too.large") {
+        return res.status(413).json({ error: "The request body is too large", details: `At most ${err.limit} bytes.` });
+    }
+    const status = Number(err && (err.status || err.statusCode));
+    if (status >= 400 && status < 500) {
+        return res.status(status).json({ error: err.expose === false ? "Bad request" : String(err.message || "Bad request") });
+    }
+    console.error(`${req.method} ${req.originalUrl}:`, err);
+    res.status(500).json({ error: "The server could not handle this request", details: "Its log says why." });
+});
+
+// The report's built styles and script, which every downloaded report carries:
+// built now if they are missing (report-assets.js).
+{
+    const assets = require('./src/server-side/report-assets').ensureReportAssets();
+    if (assets.built) console.log('Built the report\'s styles and script (src/report).');
+    if (assets.missing.length) console.warn(`The report's ${assets.missing.join(', ')} could not be built, so Download report will fail: ${assets.error}`);
+}
+
+// A run's pictures and evidence on disk, deleted A11Y_RUN_FILES_HOURS after
+// it (default 24; 0 keeps them).
+startRunFilesRetention(REPORTS_ROOT, retentionHoursFrom(process.env.A11Y_RUN_FILES_HOURS), { log: (m) => console.log(m) });
 
 app.listen(PORT, HOST, () => {
     console.log(`Accessibility lab server listening on http://${HOST}:${PORT}`);

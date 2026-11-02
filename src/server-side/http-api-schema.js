@@ -13,6 +13,10 @@
 
 const json = (schema) => ({ 'application/json': { schema } });
 const error = { type: 'object', properties: { error: { type: 'string' }, details: { type: 'string' } } };
+// A run refused before it starts: every reason, one each, in problems.
+const refusal = { type: 'object', properties: { error: { type: 'string' }, details: { type: 'string' }, problems: { type: 'array', items: { type: 'string' } } } };
+// Why a run failed: the step that failed, where it was one.
+const runError = { type: 'object', properties: { error: { type: 'string' }, details: { type: 'string' }, actionPath: { type: 'string' }, actionType: { type: 'string' } } };
 const runId = { name: 'runId', in: 'query', required: true, schema: { type: 'string' } };
 const since = { name: 'since', in: 'query', required: false, schema: { type: 'integer', minimum: 0 }, description: 'The log index to start from: the last answer\'s nextIndex.' };
 const pathParam = (name) => ({ name, in: 'path', required: true, schema: { type: 'string' } });
@@ -65,8 +69,17 @@ function httpApiSchema() {
                     summary: 'Start a run',
                     requestBody: { required: true, content: json(runRequest) },
                     responses: {
-                        ...ok('Started', { type: 'object', required: ['ok', 'runId'], properties: { ok: { const: true }, runId: { type: 'string' } } }),
-                        400: { description: 'A url it cannot open, or no actions', content: json(error) },
+                        ...ok('Started', { type: 'object', required: ['ok', 'runId'], properties: {
+                            ok: { const: true },
+                            runId: { type: 'string' },
+                            warnings: { type: 'array', items: { type: 'string' }, description: 'What the run\'s check found worth saying but not refusing, such as an unknown field ignored.' },
+                        } }),
+                        400: { description: 'A run that cannot work as asked: the run\'s fields, its steps, its scans\' profiles and selectors, a navigate step\'s address, a secret not set in the server\'s environment', content: json(refusal) },
+                        429: {
+                            description: 'Every run slot (A11Y_MAX_RUNS) and every place to wait (A11Y_MAX_WAITING) taken: try again after Retry-After seconds',
+                            headers: { 'Retry-After': { schema: { type: 'integer' } } },
+                            content: json(error),
+                        },
                     },
                 },
             },
@@ -82,13 +95,13 @@ function httpApiSchema() {
                     summary: 'A run\'s result',
                     parameters: [runId],
                     responses: {
-                        ...ok('Finished: done, cancelled or error. A run that could not start has an error and no payload.', {
+                        ...ok('Finished: done, cancelled or error. A failed run\'s error says why, beside the payload of what it got before it failed, or alone when it failed before its first scan. A run cancelled while it waited its turn has no payload.', {
                             type: 'object',
                             required: ['status'],
                             properties: {
                                 status: { enum: ['done', 'cancelled', 'error'] },
-                                payload: { $ref: 'report.v3.schema.json' },
-                                error: error,
+                                payload: { $ref: 'report.v4.schema.json' },
+                                error: runError,
                                 dryRun: { type: 'object', description: 'A dry run\'s summary, as run-workflow.js --dry-run prints it.' },
                             },
                         }),
@@ -104,7 +117,22 @@ function httpApiSchema() {
                     responses: { ...ok('Cancelling'), 404: { description: 'Unknown runId', content: json(error) } },
                 },
             },
-            '/queue': { get: { summary: 'The queue and its recent batches, with links to their results', responses: ok('The queue') } },
+            '/queue': { get: { summary: 'The queue and its recent batches, each in summary: counts, stats, scans, the slowest run, the runs going now and the last to finish, and itemsUrl, where its runs are', responses: ok('The queue') } },
+            '/queue/sessions/{sessionId}/items': {
+                get: {
+                    summary: 'A batch\'s runs, a page at a time, in the order they were queued',
+                    parameters: [
+                        pathParam('sessionId'),
+                        { name: 'offset', in: 'query', required: false, schema: { type: 'integer', minimum: 0 } },
+                        { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 500 }, description: '100 unless given; at most 500.' },
+                        { name: 'status', in: 'query', required: false, schema: { type: 'string' }, description: 'Only runs with these statuses, comma-separated (waiting, running, done, failed, error, cancelled, interrupted).' },
+                    ],
+                    responses: {
+                        ...ok('The page', { type: 'object', properties: { sessionId: { type: 'string' }, total: { type: 'integer' }, offset: { type: 'integer' }, limit: { type: 'integer' }, items: { type: 'array', items: { type: 'object' } } } }),
+                        404: { description: 'No such batch', content: json(error) },
+                    },
+                },
+            },
             '/queue/items': {
                 post: {
                     summary: 'Queue a batch',

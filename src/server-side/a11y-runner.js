@@ -10,24 +10,12 @@
  */
 
 // The browser presents itself as what it is, headless Chrome, unless
-// A11Y_STEALTH=1: then puppeteer-extra's stealth plugin gives it a desktop
-// Chrome's fingerprint (UA without "Headless" and matching Sec-CH-UA client
-// hints, navigator.webdriver, WebGL, plugins...), for a site of your own
-// whose bot filter refuses plain headless Chrome. Plain puppeteer when it is
-// off, or when the plugin is not installed.
-let puppeteer = null;
-if (['1', 'true', 'yes', 'on'].includes(String(process.env.A11Y_STEALTH || '').trim().toLowerCase())) {
-    try {
-        puppeteer = require('puppeteer-extra');
-        const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-        puppeteer.use(StealthPlugin());
-    } catch {
-        console.warn('[a11y-runner] A11Y_STEALTH is set, but puppeteer-extra-plugin-stealth could not be loaded: running without it.');
-        puppeteer = null;
-    }
-}
-if (!puppeteer) puppeteer = require('puppeteer');
+// A11Y_STEALTH=1: then it presents itself as a desktop Chrome (stealth.js),
+// for a site of your own whose bot filter refuses plain headless Chrome.
+const puppeteer = require('puppeteer');
+const { stealthOn, applyStealth, stealthPageNow } = require('./stealth');
 const a11yEngine = require('./a11y-engine');
+const { elementTarget } = require('../shared/report-format.js');
 const {
     applyActions,
     createWorkflowContext,
@@ -69,6 +57,7 @@ const path = require('path');
 
 const { REPORTS_ROOT } = require('./report-paths');
 const { checkPageReady, readinessNotice } = require('./page-readiness');
+const { largePageNotice, httpErrorNotice } = require('../shared/scan-notes.js');
 const { languageNotice } = require('../shared/scan-notes.js');
 const { pageLanguage, canonicalLanguageTag } = require('../workflow/engine/page-language');
 const { interpolateVarTokensLoose } = require('../workflow/engine/vars');
@@ -86,29 +75,43 @@ const DEFAULT_SCAN_CSS = `{filter: opacity(.8) blur(5px);}`;
 const browsers = {strict: null, untrusted: null};
 
 
+// The launch under way, per browser: runs that start together, before the
+// first browser is up, wait for that one rather than each launching its own.
+// Twelve browsers were found running for four runs, all but one never closed.
+const launching = {strict: null, untrusted: null};
+
 /** Launches (once) or reuses the shared browser a run asks for. */
 async function getBrowser({acceptUntrustedCerts = false} = {}) {
     const key = acceptUntrustedCerts ? 'untrusted' : 'strict';
     const existing = browsers[key];
     if (existing && existing.connected) return existing;
-    const browser = await puppeteer.launch({
-        headless: 'new',
-        acceptInsecureCerts: !!acceptUntrustedCerts,
-        args: [
-            // Drop the "navigator.webdriver = true" / automation banner that
-            // WAFs fingerprint on.
-            '--disable-blink-features=AutomationControlled',
-            // Sandbox is unavailable in most CI/container runtimes; without
-            // these the launch itself fails there.
-            '--no-sandbox',
-            '--disable-setuid-sandbox'
-        ]
-    });
-    answerDialogs(browser);
-    keepOpenersShown(browser);
+    if (launching[key]) return launching[key];
+    launching[key] = (async () => {
+        const browser = await puppeteer.launch({
+            headless: 'new',
+            acceptInsecureCerts: !!acceptUntrustedCerts,
+            args: [
+                // Drop the "navigator.webdriver = true" / automation banner that
+                // WAFs fingerprint on.
+                '--disable-blink-features=AutomationControlled',
+                // Sandbox is unavailable in most CI/container runtimes; without
+                // these the launch itself fails there.
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ]
+        });
+        answerDialogs(browser);
+        keepOpenersShown(browser);
+        if (stealthOn()) await applyStealth(browser);
 
-    browsers[key] = browser;
-    return browser;
+        browsers[key] = browser;
+        return browser;
+    })();
+    try {
+        return await launching[key];
+    } finally {
+        launching[key] = null;
+    }
 }
 
 /**
@@ -381,6 +384,15 @@ function attachDocResponseProbe(page, diag, progress) {
             const contentDisposition = h['content-disposition'] || '';
             const contentLength = h['content-length'] || '';
 
+            // The page's own document, as its server answered it: a scan
+            // says when that was an error (httpErrorNotice).
+            try {
+                if (req.frame && req.frame() === page.mainFrame() && req.isNavigationRequest()) {
+                    page.__a11yDocumentResponse = { url, status, statusText: res.statusText ? res.statusText() : '' };
+                }
+            } catch {
+            }
+
             // Flag "not HTML" or "download-like" documents (even if 200)
             const looksHtml = /text\/html/i.test(String(contentType));
             const looksDownload = /attachment/i.test(String(contentDisposition)) || /octet-stream/i.test(String(contentType));
@@ -604,7 +616,10 @@ function automationCoverageForEngines(wcagLevel, engineIds, version = DEFAULT_WC
     return coverage;
 }
 
-// -------- Heuristic skipping based on DOM size --------
+// -------- Large pages --------
+// A page this large is scanned in full, and its report says it is large: it
+// was skipped, with no result at all, though core scans 80,000 elements in
+// about 15 s.
 
 const HEAVY_NODE_THRESHOLD = Number(process.env.HEAVY_NODE_THRESHOLD) > 0
     ? Number(process.env.HEAVY_NODE_THRESHOLD)
@@ -615,6 +630,9 @@ function resolveThreshold(localCandidate) {
     return Number.isFinite(n) && n > 0 ? n : HEAVY_NODE_THRESHOLD;
 }
 
+// The elements of the scope, open shadow roots included: counted from the
+// document alone, a page built of web components (two hundred nested shadow
+// roots) came to 8.
 async function estimateNodeCount(pageRef, ctxSelector) {
     try {
         return await pageRef.evaluate((sel) => {
@@ -622,17 +640,22 @@ async function estimateNodeCount(pageRef, ctxSelector) {
                 ? document.querySelector(sel)
                 : document.documentElement;
             if (!root) return 0;
-            return root.querySelectorAll('*').length + 1;
+            let count = 0;
+            const pending = [root];
+            while (pending.length) {
+                const node = pending.pop();
+                const all = node.querySelectorAll('*');
+                count += all.length + (node === root ? 1 : 0);
+                for (const el of all) if (el.shadowRoot) pending.push(el.shadowRoot);
+                if (node.shadowRoot && node === root) pending.push(node.shadowRoot);
+            }
+            return count;
         }, ctxSelector || null);
     } catch {
         return 0;
     }
 }
 
-const HEAVY_SKIP_SUGGESTIONS = [
-    'Limit the scan context to a smaller region',
-    'Paginate or chunk the table, list'
-];
 
 /**
  * The standard a scan was checked against, as { id, label }, or null.
@@ -659,23 +682,6 @@ function appliedConformanceProfile(engineResult, { requested = null, overridden 
     }
     if (!requested || standardApplier || overridden) return null;
     return { id: requested, label: targetLabel(requested) };
-}
-
-function buildHeavySkipExtra({label = null, context = null, profile = null, url = null, estimatedNodes, threshold}) {
-    return {
-        label,
-        context,
-        profile,
-        reason: 'DOM too large for a full scan',
-        estimatedNodes,
-        threshold,
-        suggestions: HEAVY_SKIP_SUGGESTIONS,
-        url
-    };
-}
-
-function buildHeavySkipInfo({estimatedNodes, threshold}) {
-    return {reason: 'DOM too large for a full scan', estimatedNodes, threshold};
 }
 
 function getSuccessCriteria(tags) {
@@ -714,6 +720,9 @@ async function openContextAndPage(determinism, {acceptUntrustedCerts = false} = 
     }
 
     const page = await context.newPage();
+    // Its identity before its first request (the browser's own hook for
+    // new pages runs alongside, and a first navigation could beat it).
+    if (stealthOn()) await stealthPageNow(page);
 
     await page.evaluateOnNewDocument(() => {
         try {
@@ -729,8 +738,8 @@ async function openContextAndPage(determinism, {acceptUntrustedCerts = false} = 
     await a11yEngine.preparePage(page, { hooks: Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined });
 
     // User-Agent: an explicit determinism.userAgent wins; otherwise the
-    // browser's own, which the stealth plugin, when on, de-headlesses and
-    // keeps consistent with its Sec-CH-UA client hints.
+    // browser's own, which A11Y_STEALTH, when on, de-headlesses and keeps
+    // consistent with its Sec-CH-UA client hints (stealth.js).
     const effectiveUserAgent =
         (determinism?.userAgent && String(determinism.userAgent).trim())
             ? String(determinism.userAgent).trim()
@@ -750,8 +759,8 @@ async function openContextAndPage(determinism, {acceptUntrustedCerts = false} = 
     // would corrupt sub-resource requests (a stylesheet would go out as
     // Sec-Fetch-Dest: document, Accept: text/html) and the server would refuse
     // or mis-serve them - CSS/JS never load. Headless Chrome already emits the
-    // correct per-resource Sec-Fetch/Accept headers on its own, and the stealth
-    // plugin keeps the Sec-CH-UA client hints consistent with the real browser.
+    // correct per-resource Sec-Fetch/Accept headers on its own, and A11Y_STEALTH
+    // keeps the Sec-CH-UA client hints consistent with the real browser.
     try {
         await page.setExtraHTTPHeaders({
             'Accept-Language': (determinism?.acceptLanguage ? String(determinism.acceptLanguage) : 'en-US,en;q=0.9,es;q=0.8')
@@ -945,7 +954,7 @@ function getA11yGlobalFindings(scans) {
 
     function occKey(occ) {
         const url = occ && occ.pageUrl ? String(occ.pageUrl) : '';
-        const target = Array.isArray(occ && occ.target) ? occ.target.join('||') : '';
+        const target = elementTarget(occ);
         const html = occ && occ.html ? String(occ.html) : '';
         const failure = occ && occ.failureSummary ? String(occ.failureSummary) : '';
         return url + '##' + target + '##' + html + '##' + failure;
@@ -996,6 +1005,9 @@ function getA11yGlobalFindings(scans) {
             existing.wcag = existing.wcag || {};
             existing.wcag.sc = [...new Set([...scA, ...scB].map(String).filter(Boolean))];
 
+            // Elements a rule counted and did not list, scan by scan.
+            if (Number(f.unlisted) > 0) existing.unlisted = (Number(existing.unlisted) || 0) + Number(f.unlisted);
+
             // Merge occurrences by union
             const seen = seenOf.get(existing);
             const incoming = Array.isArray(f?.occurrences) ? f.occurrences : [];
@@ -1037,8 +1049,8 @@ function safeDirPart(v) {
 }
 
 function resolveReportsRootWithSubdir(reportsSubdir) {
-    const env = String(process.env.A11Y_REPORTS_ROOT || '').trim();
-    const baseRoot = env ? env : path.join(process.cwd(), 'reports');
+    // The one reports folder (report-paths.js): the server serves it.
+    const baseRoot = REPORTS_ROOT;
 
     const sub = safeDirPart(reportsSubdir);
     return sub ? path.join(baseRoot, sub) : baseRoot;
@@ -1451,8 +1463,15 @@ async function runA11yWorkflow(url, tags, options = {}) {
         }
 
         engineOptions.findingsSource = meta.findingsSource || 'composite';
+        // A debug run (A11Y_DEBUG_MODE) times each rule: surea11y's perfStats,
+        // with the time each rule took (profileRules), kept with its native
+        // output, to find what makes a scan slow.
+        if (['1', 'true', 'yes', 'on'].includes(String(process.env.A11Y_DEBUG_MODE || '').trim().toLowerCase())
+            && engineOptions.perfStats === undefined) {
+            engineOptions.perfStats = true;
+            engineOptions.profileRules = true;
+        }
         if (Array.isArray(meta.resultTypes) && meta.resultTypes.length) engineOptions.resultTypes = meta.resultTypes;
-        if (meta.iframes === true) engineOptions.iframes = true;
 
         function normalizeList(v) {
             if (!v) return [];
@@ -1518,17 +1537,23 @@ async function runA11yWorkflow(url, tags, options = {}) {
             runOnly.excludeRuleIds = [...new Set([...(runOnly.excludeRuleIds || []), ...excludeRuleIdsArr])];
         }
 
-        const estimatedNodes = await withTimeout(
-            estimateNodeCount(pageRef, contextSelector),
-            'estimateNodeCount'
-        );
-        const threshold = resolveThreshold(meta.heavyNodeThreshold);
-        if (estimatedNodes >= threshold) {
+        // What the address gave: a PDF, JSON or an image is not a web page,
+        // and was scanned as the browser's own viewer of it, with findings
+        // about that viewer. It is skipped, and the report says why.
+        const documentType = await withTimeout(
+            pageRef.evaluate(() => document.contentType || ''),
+            'documentType'
+        ).catch(() => '');
+        if (documentType && !/^(text\/html|application\/xhtml\+xml)$/i.test(documentType)) {
+            const skipInfo = {
+                reason: `Not a web page: the address gave ${documentType}, which the browser shows in a viewer of its own`,
+                contentType: documentType,
+            };
             if (typeof progress === 'function') {
                 progress({
                     time: new Date().toISOString(),
                     type: 'scan',
-                    message: 'a11yScan skipped',
+                    message: `a11yScan skipped: ${skipInfo.reason}`,
                     depth: (workflowCtx && workflowCtx._logCtx && typeof workflowCtx._logCtx.depth === 'number')
                         ? workflowCtx._logCtx.depth
                         : 0,
@@ -1539,18 +1564,12 @@ async function runA11yWorkflow(url, tags, options = {}) {
                             : undefined,
                         scanId: (typeof meta.scanId === 'string' && meta.scanId) ? meta.scanId : null,
                         orderKey: (typeof meta.orderKey === 'string' && meta.orderKey) ? meta.orderKey : null,
-                        ...buildHeavySkipExtra({
-                            label: meta.label || null,
-                            context: contextSelector || null,
-                            profile: requestedFields.profile,
-                            url: currentUrl || null,
-                            estimatedNodes,
-                            threshold
-                        })
+                        label: meta.label || null,
+                        url: currentUrl || null,
+                        ...skipInfo,
                     }
                 });
             }
-
             if (!Array.isArray(workflowCtx.collectedScans)) workflowCtx.collectedScans = [];
             workflowCtx.collectedScans.push({
                 scanId: (typeof meta.scanId === 'string' && meta.scanId) ? meta.scanId : null,
@@ -1565,7 +1584,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
                 runOnly,
                 url: currentUrl || safeUrl(pageRef) || null,
                 skipped: true,
-                skipInfo: buildHeavySkipInfo({estimatedNodes, threshold}),
+                skipInfo,
                 results: null,
                 canonical: null,
                 domMetrics: null,
@@ -1577,6 +1596,14 @@ async function runA11yWorkflow(url, tags, options = {}) {
             });
             return;
         }
+
+        const estimatedNodes = await withTimeout(
+            estimateNodeCount(pageRef, contextSelector),
+            'estimateNodeCount'
+        );
+        // A page past it is scanned in full all the same: its report notes
+        // that it is large, and how long the scan took (largePageNotice).
+        const threshold = resolveThreshold(meta.heavyNodeThreshold);
 
         const scanStartedAt = Date.now();
 
@@ -1629,7 +1656,8 @@ async function runA11yWorkflow(url, tags, options = {}) {
                         postProcess: {getSuccessCriteria},
                         elementScreenshots: shotOptions
                             ? { ...shotOptions, budgetMs: CAPTURE_BUDGET_MS, signal: shotAbort.signal }
-                            : null
+                            : null,
+                        frames: meta.frames !== false
                     }, scanEngineId),
                     new Promise((_, reject) => {
                         engineTimer = setTimeout(() => {
@@ -1690,6 +1718,10 @@ async function runA11yWorkflow(url, tags, options = {}) {
                     canonical.diagnostics.durationMs = Date.now() - scanStartedAt;
                     canonical.diagnostics.estimatedNodes = estimatedNodes;
                     canonical.diagnostics.pageReadiness = pageReadiness;
+                    const httpError = httpErrorNotice(pageRef.__a11yDocumentResponse, currentUrl || safeUrl(pageRef));
+                    if (httpError) canonical.notices = [httpError, ...(Array.isArray(canonical.notices) ? canonical.notices : [])];
+                    const large = largePageNotice(estimatedNodes, threshold, canonical.diagnostics.durationMs);
+                    if (large) canonical.notices = [...(Array.isArray(canonical.notices) ? canonical.notices : []), large];
                     const notReady = readinessNotice(pageReadiness);
                     if (notReady) canonical.notices = [notReady, ...(Array.isArray(canonical.notices) ? canonical.notices : [])];
 
@@ -1976,7 +2008,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
             profile: s.profile || null,
             includeBestPractice: s.includeBestPractice === true,
             resultTypes: s.resultTypes || null,
-            iframes: s.iframes === true,
+            // Scan iframes too: on unless the step turns it off (the older
+            // iframes field, which only ever turned it on, reads the same).
+            frames: s.frames !== false && s.iframes !== false,
             disableRule: s.disableRule || null,
             disableRules: s.disableRules || null,
             heavyNodeThreshold: s.heavyNodeThreshold || null,
@@ -2232,6 +2266,7 @@ module.exports = {
     runA11yWorkflow,
     closeBrowser,
     getBrowserPid,
+    getBrowser,
     answerDialogs,
     endedByCancel,
     gotoWithFallback,

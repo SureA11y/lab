@@ -667,7 +667,7 @@ async function stepHoverOut(page, action, ctx) {
         pushLog(ctx, 'warning', `hoverOut failed: ${String(e && e.message || e)}`);
     }
 
-    await postStepDelay(ctx);
+    await postStepDelay(ctx, page);
 }
 
 async function stepFocus(page, action, _ctx, _localVars, _depth, _actionPathPrefix, selector, timeout) {

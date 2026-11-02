@@ -135,11 +135,18 @@ const ACTION_DEFINITIONS = {
                 example: 5000,
                 step: 500
             },
+            frames: {
+                type: "boolean",
+                required: false,
+                alias: "Scan iframes too",
+                description: "Scan the content of the page's iframes as well, each whole, and report what they show with the page: an element in an iframe names the iframe it is in. Off, the report says how many iframes were left out.",
+                default: true
+            },
             heavyNodeThreshold: {
                 type: "number",
                 required: false,
-                alias: "Skip pages with more elements than",
-                description: "Skip this scan when the page has more elements than this, rather than wait on a very slow scan. The report says the scan was skipped, and why.",
+                alias: "Note pages with more elements than",
+                description: "A page with more elements than this (its shadow roots' included) is still scanned in full, and its report notes that it is large and how long the scan took, with how to make it faster: scan the part that matters, or leave out a long list.",
                 placeholder: 25000,
                 default: 25000,
                 example: 40000,
@@ -260,6 +267,7 @@ const ACTION_DEFINITIONS = {
                 "context",
                 "exclude",
                 "screenshotView",
+                "frames",
                 "elementScreenshots",
                 "elementScreenshotsMax",
                 "elementScreenshotsPerRule",

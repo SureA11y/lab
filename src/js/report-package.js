@@ -17,7 +17,7 @@
 export const IMAGES_DIR = 'images/';
 
 // What the app builds from a report's scans to show it, and a report does not
-// keep (report-format.js, version 3): every scan's findings again.
+// keep (report-format.js, since version 3): every scan's findings again.
 const DERIVED_KEYS = ['findings', 'a11yGlobalFindings'];
 
 /** A report as its JSON file holds it: without what is built from its scans. */

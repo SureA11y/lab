@@ -211,8 +211,12 @@ async function loadAsset(path) {
     const res = await fetch(path);
 
     if (!res.ok) {
+        // A missing .min. file is one the server could not build: say how.
+        const unbuilt = res.status === 404 && /\.min\./.test(path)
+            ? ' The report\'s styles and script are not built on the server: run npm run build:report there, then try again.'
+            : '';
         throw new Error(
-            `Could not load asset "${path}": ${res.status} ${res.statusText}`
+            `Could not load asset "${path}": ${res.status} ${res.statusText}.${unbuilt}`
         );
     }
 
