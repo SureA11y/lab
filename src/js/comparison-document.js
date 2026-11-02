@@ -174,6 +174,24 @@ export function reportsStripHTML(rows, { sourcesHref = '' } = {}) {
     </section>`;
 }
 
+/**
+ * Reports checked against different profiles, compared on those they share
+ * (shared-profiles.js): what the comparison compared on, and what it left
+ * out, said under its headline, where a reader weighs the numbers. '' when
+ * the reports checked the same profiles.
+ */
+export function sharedProfilesNoteHTML(doc) {
+    const basis = doc && doc.profiles && Array.isArray(doc.profiles.comparedOn) && doc.profiles.comparedOn.length
+        ? doc.profiles : null;
+    if (!basis) return '';
+    const leftOut = Array.isArray(basis.leftOut) ? basis.leftOut : [];
+    return `<p class="dash-caveat dash-caveat--info"><span class="dash-caveat-i" aria-hidden="true">i</span>
+        <span>${esc(`Compared on ${basis.comparedOn.map((p) => p.label).join(' + ')}, which every report checked.`)}${
+            leftOut.length
+                ? ` ${esc(`Left out, as not every report checked it: ${leftOut.map((p) => p.label).join(', ')}.`)} Each report's own score is left out too, since it was made from everything that report checked.`
+                : ''}</span></p>`;
+}
+
 export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {}) {
     if (!Array.isArray(rows) || !rows.length) return '';
 
@@ -231,17 +249,6 @@ export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {
            in one and new in the other when only what was checked changed.</span></p>`
         : '';
 
-    // Reports checked against different profiles, compared on those they
-    // share (shared-profiles.js).
-    const basis = doc && doc.profiles && Array.isArray(doc.profiles.comparedOn) && doc.profiles.comparedOn.length
-        ? doc.profiles : null;
-    const shared = basis
-        ? `<p class="doc-note"><span>${esc(`Compared on ${basis.comparedOn.map((p) => p.label).join(' + ')}, which every report checked.`)}${
-            basis.leftOut && basis.leftOut.length
-                ? ` ${esc(`Left out, as not every report checked it: ${basis.leftOut.map((p) => p.label).join(', ')}.`)} Each report's own score is left out too, since it was made from everything that report checked.`
-                : ''}</span></p>`
-        : '';
-
     return `<section class="cmp2-sec doc-source"${id ? ` id="${esc(id)}"` : ''}>
         <div class="sec-head"><h3>What went into this comparison</h3><span class="layer">provenance</span></div>
         <p class="dash-sub">Every report this page was built from, in column order. Kept with the
@@ -250,7 +257,6 @@ export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {
         ${mixed}
         ${optIn}
         ${engines}
-        ${shared}
         ${criteria}
         <div class="dash-table-scroll">
             <table class="doc-table">

@@ -359,13 +359,16 @@ describe('comparison document: reports checked against different standards', () 
 });
 
 describe('comparison document: reports compared on the profiles they share', () => {
-    test('says what they were compared on, and what was left out', async () => {
-        const { provenanceHTML } = await load();
+    test('says under the headline what they were compared on, and what was left out', async () => {
+        const { sharedProfilesNoteHTML, provenanceHTML } = await load();
         const d = { ...doc([report({ runId: 'a' }), report({ runId: 'b' })]),
             profiles: { comparedOn: [{ id: 'wcag22-aa', label: 'WCAG 2.2 AA' }], leftOut: [{ id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' }] } };
-        const html = provenanceHTML([{ label: 'A', name: 'x' }], d);
+        const html = sharedProfilesNoteHTML(d);
         assert.match(html, /Compared on WCAG 2\.2 AA, which every report checked\. Left out, as not every report checked it: WAI-ARIA 1\.2\./);
         assert.match(html, /own score is left out too/);
-        assert.doesNotMatch(provenanceHTML([{ label: 'A', name: 'x' }], doc([report({ runId: 'a' }), report({ runId: 'b' })])), /Compared on/);
+        assert.match(html, /dash-caveat--info/);
+        // Said once, there, not again in what went into the comparison.
+        assert.doesNotMatch(provenanceHTML([{ label: 'A', name: 'x' }], d), /Compared on/);
+        assert.equal(sharedProfilesNoteHTML(doc([report({ runId: 'a' }), report({ runId: 'b' })])), '');
     });
 });
