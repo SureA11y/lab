@@ -73,6 +73,10 @@ The first public release.
   `profiles` (and any that did not run in `profilesNotRun`), and a rule
   finding says what each one makes of it. A single profile saves and scans
   as before. Needs surea11y core 1.15.
+- **Comparing reports checked against different WCAG levels** says so, as
+  it does for different standards: Level AAA has criteria AA doesn't, so
+  their rows don't line up. A comparison names what each report was checked
+  against as its scans do ("WCAG 2.2 AA + WAI-ARIA 1.2").
 - **The conformance report** (VPAT) follows the WCAG level and the EN 301 549
   version the scans were checked against. It used to give WCAG 2.2 AA and
   EN 301 549 V4.1.1 unless told otherwise.

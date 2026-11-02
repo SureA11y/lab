@@ -339,7 +339,7 @@ describe('comparison document: reports checked against different standards', () 
         const { provenanceHTML } = await load();
         const d = doc([targeting({ runId: 'a' }, 'rgaa-4.1.2'), targeting({ runId: 'b' }, null)]);
         assert.equal(d.criteriaMismatch, true);
-        assert.match(provenanceHTML([{ label: 'A', name: 'x' }], d), /checked against different standards \(rgaa-4\.1\.2, WCAG\)/);
+        assert.match(provenanceHTML([{ label: 'A', name: 'x' }], d), /checked against different standards or WCAG levels \(rgaa-4\.1\.2, WCAG\)/);
     });
 
     test('warns for EN 301 549 or any pack\'s standard against WCAG, or against another standard', () => {

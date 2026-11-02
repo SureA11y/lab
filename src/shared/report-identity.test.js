@@ -128,9 +128,32 @@ test('reports of scans of several profiles compare when they checked the same on
     });
     const same = describeComparison([report([aa, en, demo], 'a'), report([aa, demo, en], 'b')]);
     assert.equal(same.criteriaMismatch, false);
-    assert.deepEqual(same.standardsCompared, ['Demo 1.0 and EN 301 549 V4.1.1']);
+    assert.deepEqual(same.standardsCompared, ['WCAG 2.2 AA + Demo 1.0 + EN 301 549 V4.1.1']);
 
     const fewer = describeComparison([report([aa, en, demo], 'a'), report([aa, en], 'b')]);
     assert.equal(fewer.criteriaMismatch, true, 'a standard more is a different comparison');
     assert.equal(describeComparison([report([aa, en], 'a'), report([aa], 'b')]).criteriaMismatch, true);
+});
+
+test('reports checked against different WCAG levels do not compare row for row', () => {
+    const { describeComparison } = require('./report-identity.js');
+    const aria = { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' };
+    const report = (level, runId, { profiles = true } = {}) => {
+        const wcag = { id: `wcag22-${level.toLowerCase()}`, label: `WCAG 2.2 ${level}` };
+        return {
+            runId, timestamp: '2026-11-02T10:00:00Z', url: 'https://example.com/',
+            scans: [{ id: 's1', url: 'https://example.com/', profile: profiles ? aria : wcag,
+                ...(profiles ? { profiles: [wcag, aria] } : {}), wcag: { version: '2.2', level }, canonical: { findings: [] } }],
+        };
+    };
+    const aaVsAaa = describeComparison([report('AA', 'a'), report('AAA', 'b')]);
+    assert.equal(aaVsAaa.criteriaMismatch, true, 'AAA has criteria AA does not');
+    assert.deepEqual(aaVsAaa.standardsCompared, ['WCAG 2.2 AA + WAI-ARIA 1.2', 'WCAG 2.2 AAA + WAI-ARIA 1.2']);
+    // WCAG alone, at two levels.
+    assert.equal(describeComparison([report('A', 'a', { profiles: false }), report('AA', 'b', { profiles: false })]).criteriaMismatch, true);
+    // The same level compares, and a report that does not say its level
+    // differs from none.
+    assert.equal(describeComparison([report('AA', 'a'), report('AA', 'b')]).criteriaMismatch, false);
+    const unknown = { runId: 'c', timestamp: '2026-11-02T10:00:00Z', url: 'https://example.com/', scans: [{ id: 's1', canonical: { findings: [] } }] };
+    assert.equal(describeComparison([report('AA', 'a', { profiles: false }), unknown]).criteriaMismatch, false);
 });

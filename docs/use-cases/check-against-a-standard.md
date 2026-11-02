@@ -56,8 +56,9 @@ level under **WCAG 2.2** (or **Don’t check WCAG**) and tick the
   with an error rather than checking WCAG 2.2 AA instead.
 
 Reports of scans checked against different profiles say so when compared,
-since their rows don't line up; the same profiles in another order are the
-same.
+since their rows don't line up: different standards, or different WCAG
+levels (Level AAA has criteria AA doesn't). The same profiles in another
+order are the same.
 
 ## What automated checks can and cannot say
 

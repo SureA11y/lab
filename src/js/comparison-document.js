@@ -224,10 +224,11 @@ export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {
     const compared = doc && Array.isArray(doc.standardsCompared) ? doc.standardsCompared : [];
     const criteria = doc && doc.criteriaMismatch
         ? `<p class="doc-warn"><span class="dash-caveat-i" aria-hidden="true">!</span>
-           <span>These reports were checked against different standards${compared.length > 1 ? ` (${esc(compared.join(', '))})` : ''}.
+           <span>These reports were checked against different standards or WCAG levels${compared.length > 1 ? ` (${esc(compared.join(', '))})` : ''}.
            A scan against a standard is listed by that standard's requirements (EN 301 549's clauses,
-           RGAA's criteria), one against WCAG by WCAG criterion, so their rows do not line up: a
-           failure can read as fixed in one and new in the other when only the way it is listed changed.</span></p>`
+           RGAA's criteria), one against WCAG by WCAG criterion, and a higher WCAG level checks
+           criteria a lower one leaves out, so their rows do not line up: a failure can read as fixed
+           in one and new in the other when only what was checked changed.</span></p>`
         : '';
 
     return `<section class="cmp2-sec doc-source"${id ? ` id="${esc(id)}"` : ''}>
