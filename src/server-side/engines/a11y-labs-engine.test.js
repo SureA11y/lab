@@ -1278,6 +1278,52 @@ describe('a11y-labs-engine: runOnPage - conformance profile', () => {
         assert.ok(shots.length >= 1 && shots.every((shot) => Buffer.isBuffer(shot.buffer)));
     });
 
+    // binding-base 1.7.0 and core 1.15.0 picture a finding in the state it
+    // was made in; skipped with older ones.
+    const takesStatePictures = (() => {
+        try {
+            return require('@surea11y/binding-base').SCREENSHOT_DEFAULTS.states === true
+                && typeof require('@surea11y/core').evidenceState === 'function';
+        } catch {
+            return false;
+        }
+    })();
+
+    test('a finding made in a state carries its element pictured in it, beside the page as it is', { skip: !takesStatePictures && 'needs @surea11y/binding-base 1.7.0 and @surea11y/core 1.15.0' }, async () => {
+        const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
+        const view = {
+            rect: { x: 10, y: 10, width: 40, height: 20 }, viewport: { x: 0, y: 0, width: 800, height: 600 },
+            window: { width: 800, height: 600 }, scroll: { x: 0, y: 0 }, devicePixelRatio: 1,
+        };
+        const page = fakePage(async (_fn, first) => {
+            if (first && typeof first === 'object' && first.op) {
+                if (first.op === 'frame-key') return { key: 'top' };
+                if (first.op === 'target') return view;
+                if (first.op === 'apply') return { applied: true, via: 'style' };
+                return {};
+            }
+            return {
+                engine: {},
+                rulesResults: [],
+                checksResults: [{
+                    ruleId: 'text-spacing-content-loss',
+                    outcome: 'fail',
+                    occurrences: [{ selector: '#a', summary: 'Cut off.', data: { details: { reasonCode: 'TEXT_CLIPPED', evidenceState: 'text-spacing' } } }],
+                }],
+            };
+        }, { screenshot: async () => PNG });
+
+        const { canonical, native } = await runOnPage(page, { elementScreenshots: { outcomes: ['fail'], padding: 16, max: 50 } });
+        const occ = canonical.findings.flatMap((f) => f.occurrences || []).find((o) => o.elementStateScreenshots);
+        assert.ok(occ, 'the occurrence carries its picture in the state');
+        assert.ok(Buffer.isBuffer(occ.elementScreenshot.buffer));
+        assert.equal(occ.elementStateScreenshots.length, 1);
+        assert.equal(occ.elementStateScreenshots[0].state, 'text-spacing');
+        assert.ok(Buffer.isBuffer(occ.elementStateScreenshots[0].buffer));
+        // Core's own result keeps no bytes.
+        assert.ok(!JSON.stringify(native || {}).includes('stateScreenshots'));
+    });
+
     test('does not scan again when the step\'s own includes override the standard', async () => {
         const calls = [];
         const page = fakePage(async (...args) => { calls.push(args); return { engine: {}, checksResults: [], rulesResults: [] }; });

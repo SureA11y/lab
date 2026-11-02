@@ -125,6 +125,8 @@ describe('surea11y-scan', () => {
                     page.ops.push(first.op + (first.selector ? ' ' + first.selector : ''));
                     if (first.op === 'frame-key') return { key: 'top' };
                     if (first.op === 'target') return view;
+                    // core's evidenceState: the state applies.
+                    if (first.op === 'apply') return { applied: true, via: 'style' };
                     return {};
                 },
             });
@@ -207,6 +209,48 @@ describe('surea11y-scan', () => {
             assert.deepEqual(links[1], { skipped: 'rule-limit', max: 1 });
             assert.deepEqual(title, [{ skipped: 'no-element' }], 'page-level: nothing to picture, and no limit used');
             assert.deepEqual(region, [undefined, undefined], 'outcomes not pictured are left alone');
+        });
+
+        // binding-base 1.7.0 and core 1.15.0 picture a finding in the state
+        // it was made in; skipped with older ones.
+        const takesStatePictures = (() => {
+            try {
+                return require('@surea11y/binding-base').SCREENSHOT_DEFAULTS.states === true
+                    && typeof require('@surea11y/core').evidenceState === 'function';
+            } catch {
+                return false;
+            }
+        })();
+
+        test('perRule cuts a finding\'s picture in its state with it, or shares the one its element got', { skip: !takesStatePictures && 'needs @surea11y/binding-base 1.7.0 and @surea11y/core 1.15.0' }, async () => {
+            const spaced = (selector) => ({ selector, data: { details: { reasonCode: 'TEXT_CLIPPED', evidenceState: 'text-spacing' } } });
+            const result = {
+                url: 'https://example.test/',
+                rulesResults: [],
+                checksResults: [
+                    { ruleId: 'text-spacing-content-loss', outcome: 'fail', occurrences: [spaced('#a'), spaced('#b')] },
+                    { ruleId: 'img-alt-present', outcome: 'fail', occurrences: [{ selector: '#b' }] },
+                    { ruleId: 'text-spacing-content-loss-again', outcome: 'fail', occurrences: [spaced('#a')] },
+                ],
+            };
+            const page = shootingPage();
+            await captureScreenshots(page, result, { outcomes: ['fail'], padding: 16, perRule: 1 });
+
+            const [spacing, imgs, again] = result.checksResults.map((c) => c.occurrences);
+            assert.ok(Buffer.isBuffer(spacing[0].screenshot.buffer));
+            assert.equal(spacing[0].stateScreenshots[0].state, 'text-spacing');
+            assert.ok(Buffer.isBuffer(spacing[0].stateScreenshots[0].buffer), 'pictured in the state too');
+            // #b, cut here, shows the picture taken for img-alt-present, which
+            // pictured it as the page is: in the state, it was cut.
+            assert.equal(spacing[1].screenshot, imgs[0].screenshot);
+            assert.deepEqual(spacing[1].stateScreenshots, [{ state: 'text-spacing', skipped: 'rule-limit', max: 1 }]);
+            assert.ok(!('stateScreenshots' in imgs[0]));
+            // #a, pictured in the state for the first check, shares it.
+            assert.equal(again[0].stateScreenshots[0], spacing[0].stateScreenshots[0]);
+            assert.deepEqual(page.ops.filter((op) => op === 'apply'), ['apply'], 'the state is applied once, for #a');
+            // Its release follows its picture: apply, target, (capture), release, release.
+            const at = page.ops.indexOf('apply');
+            assert.deepEqual(page.ops.slice(at, at + 4), ['apply', 'target #a', 'release', 'release']);
         });
 
         test('budgetMs and signal are the lab\'s: the binding is not handed them', async () => {

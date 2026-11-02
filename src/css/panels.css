@@ -316,6 +316,23 @@ button.activity-button:hover:not(:disabled, [aria-disabled=true]) {
     margin-top: 0.25rem;
 }
 
+/* A finding made in a state (the text spacing): the element as the page
+   shows it and, beside it, in that state; one under the other when narrow. */
+.node-screenshots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-start;
+    margin: 0.5rem 0;
+}
+
+.node-screenshots > .node-screenshot,
+.node-screenshots > .node-screenshot-none {
+    flex: 1 1 16rem;
+    min-width: 0;
+    margin: 0;
+}
+
 /* The app's Dry run: how each step went, after a run that took every step
    but the scans. */
 .dry-run-report {

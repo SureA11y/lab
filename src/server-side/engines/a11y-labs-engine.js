@@ -51,7 +51,7 @@ const getCheckDefById = (ruleId, opts) => core.getCheckDefById(ruleId, withPacks
 // runa11yCoreInPage (see surea11y-scan.js).
 const { scanPage, captureScreenshots, coreHooksFrom, installCoreHooks } = require('./surea11y-scan');
 const { getScanNotes } = require('@surea11y/puppeteer');
-const { elementScreenshotOf } = require('../element-screenshots');
+const { elementScreenshotOf, elementStateScreenshotsOf } = require('../element-screenshots');
 
 const ENGINE_ID = 'surea11y';
 const ENGINE_NAME = 'surea11y';
@@ -1154,6 +1154,10 @@ async function runOnPage(
                 // debug output read, stays as core gave it, with no bytes.
                 const elementScreenshot = elementScreenshotOf(occ && occ.screenshot, { max: elementScreenshots ? elementScreenshots.max : null });
                 if (occ && typeof occ === 'object' && 'screenshot' in occ) delete occ.screenshot;
+                // And, for a finding made in a state the rule put the page in
+                // (the text spacing), its element pictured in that state.
+                const elementStateScreenshots = elementStateScreenshotsOf(occ && occ.stateScreenshots, { max: elementScreenshots ? elementScreenshots.max : null });
+                if (occ && typeof occ === 'object' && 'stateScreenshots' in occ) delete occ.stateScreenshots;
                 return {
                     pageUrl: pageUrlFinal,
                     target: selector ? [selector] : [],
@@ -1168,6 +1172,7 @@ async function runOnPage(
                     ...(details ? { details } : {}),
                     ...(shadowHostSelectors ? { shadowHostSelectors } : {}),
                     ...(elementScreenshot ? { elementScreenshot } : {}),
+                    ...(elementStateScreenshots ? { elementStateScreenshots } : {}),
                     evidence: {
                         engineNode: {
                             url: pageUrlFinal ? [pageUrlFinal] : [],

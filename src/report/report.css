@@ -588,6 +588,8 @@ html.no-theme-transition * {
 .node-screenshot { margin: .5rem 0; }
 .node-screenshot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border-strong); background: #fff; }
 .node-screenshot figcaption { font-size: var(--fs-sm); margin-top: .25rem; }
+.node-screenshots { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-start; margin: .5rem 0; }
+.node-screenshots > .node-screenshot, .node-screenshots > .node-screenshot-none { flex: 1 1 16rem; min-width: 0; margin: 0; }
 
 /* Notes that qualify some results, below them and collapsed. */
 .scan-notices-after ul { margin: .3rem 0 0; padding-left: 1.2rem; }

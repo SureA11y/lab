@@ -138,6 +138,60 @@ describe('element screenshots', () => {
         );
     });
 
+    test('a finding made in a state shows the element as the page shows it and, beside it, in that state', () => {
+        const plain = '/reports/evidence/run/elements-s1/element-aaaaaaaaaaaa.png';
+        const spaced = '/reports/evidence/run/elements-s1/element-bbbbbbbbbbbb.png';
+        render([{
+            ...occurrence('#t', {url: plain, box: null}),
+            html: '<div class="clip">Text</div>',
+            details: {reasonCode: 'TEXT_CLIPPED', evidenceState: 'text-spacing', text: 'Text'},
+            elementStateScreenshots: [{state: 'text-spacing', url: spaced, box: null, cropped: true}]
+        }]);
+        const pair = resultsEl.querySelector('.node-screenshots');
+        assert.ok(pair, 'the two pictures are grouped');
+        const figures = Array.from(pair.querySelectorAll('.node-screenshot'));
+        assert.deepEqual(figures.map((f) => f.querySelector('img').getAttribute('src')), [plain, spaced]);
+        assert.deepEqual(figures.map((f) => f.querySelector('img').getAttribute('alt')), [
+            'Occurrence 1: the flagged div element as the page shows it, with a box drawn around it',
+            'Occurrence 1: the flagged div element with the WCAG text spacing applied, with a box drawn around it'
+        ]);
+        assert.deepEqual(figures.map((f) => f.querySelector('figcaption').textContent), [
+            'As the page shows it.',
+            'With the WCAG text spacing applied (line height 1.5, letter spacing 0.12em, word spacing 0.16em, 2em after paragraphs), where the finding shows. Only part of the element fits in the picture.'
+        ]);
+        // The state is in the pictures; it is not listed again as something measured.
+        const measured = resultsEl.querySelector('.node-measured').textContent;
+        assert.ok(measured.includes('Reason code'));
+        assert.ok(!/evidence state/i.test(measured));
+    });
+
+    test('says why there is no picture in the state, or of the page as it is, beside the other', () => {
+        const url = '/reports/evidence/run/elements-s1/element-aaaaaaaaaaaa.png';
+        render([
+            {...occurrence('#u', {url, box: null}), elementStateScreenshots: [{state: 'text-spacing', skipped: 'state-not-applied'}]},
+            {...occurrence('#v', {skipped: 'zero-size'}), elementStateScreenshots: [{state: 'text-spacing', url, box: null}]},
+            {...occurrence('#w', {url, box: null}), elementStateScreenshots: [{state: 'text-spacing', skipped: 'state-unavailable'}]},
+            {...occurrence('#x', {url, box: null}), elementStateScreenshots: [{state: 'text-spacing', skipped: 'rule-limit', max: 2}]},
+            {...occurrence('#y', {url, box: null}), elementStateScreenshots: [{state: 'zoom', url, box: null}]}
+        ]);
+        const nodes = Array.from(resultsEl.querySelectorAll('.example-node'));
+        const text = (node) => Array.from(node.querySelectorAll('.node-screenshot-none')).map((el) => el.textContent);
+        assert.deepEqual(text(nodes[0]), ['No picture with the WCAG text spacing: the page kept it from being applied.']);
+        assert.equal(nodes[0].querySelectorAll('.node-screenshot img').length, 1);
+        assert.deepEqual(text(nodes[1]), ['No picture of the page as it is: the element has no width or height.']);
+        assert.equal(nodes[1].querySelector('.node-screenshot figcaption').textContent.startsWith('With the WCAG text spacing applied'), true);
+        assert.deepEqual(text(nodes[2]), ["No picture with the WCAG text spacing: this version of surea11y can't apply it."]);
+        assert.deepEqual(text(nodes[3]), ['No picture with the WCAG text spacing: this rule reached its limit of 2 pictures.']);
+        // A state this version of the lab doesn't know is named as it is.
+        assert.equal(nodes[4].querySelectorAll('.node-screenshot figcaption')[1].textContent, 'In the state "zoom" the rule put the page in, where the finding shows.');
+    });
+
+    test('a picture in a state from anywhere else is not shown', () => {
+        render([{...occurrence('#z', {url: '/reports/evidence/run/a.png', box: null}), elementStateScreenshots: [{state: 'text-spacing', url: 'javascript:alert(1)'}, {url: '/reports/x.png'}]}]);
+        assert.equal(resultsEl.querySelector('.node-screenshots'), null);
+        assert.equal(resultsEl.querySelectorAll('.node-screenshot img').length, 1);
+    });
+
     test('shows nothing for a scan taken without pictures, and no picture from anywhere else', () => {
         render([occurrence('#e', null), occurrence('#f', {url: 'https://elsewhere.example/x.png'}), occurrence('#g', {url: 'javascript:alert(1)'})]);
         assert.equal(resultsEl.querySelectorAll('.node-screenshot, .node-screenshot-none').length, 0);

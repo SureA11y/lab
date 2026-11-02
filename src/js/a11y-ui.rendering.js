@@ -432,6 +432,9 @@ export function createRenderer({
                 details: occ?.details && typeof occ.details === 'object' ? occ.details : null,
                 shadowHostSelectors: Array.isArray(occ?.shadowHostSelectors) ? occ.shadowHostSelectors : null,
                 elementScreenshot: elementScreenshotOf(occ),
+                // Its element pictured in the state the finding was made in
+                // (the text spacing), beside the page as it is.
+                elementStateScreenshots: elementStateScreenshotsOf(occ),
                 // A merged scan's occurrence: the contexts it occurs in, of how many.
                 ...(Array.isArray(occ?.contexts) && occ.contexts.length
                     ? {contexts: occ.contexts.map(String), contextsTotal: Number(occ.contextsTotal) || occ.contexts.length}
@@ -639,7 +642,10 @@ export function createRenderer({
             out += '<div class="node-detail node-shadow"><strong>Inside the shadow DOM of:</strong> ' +
                 hosts.map((h) => '<code>' + escapeHtml(String(h)) + '</code>').join(' › ') + '</div>';
         }
-        const entries = n?.details && typeof n.details === 'object' ? Object.entries(n.details) : [];
+        // evidenceState names the state of the second picture, which says it.
+        const entries = n?.details && typeof n.details === 'object'
+            ? Object.entries(n.details).filter(([k]) => k !== 'evidenceState')
+            : [];
         if (entries.length) {
             out += '<div class="node-detail node-measured"><strong>What the engine found:</strong><dl class="node-details-list">' +
                 entries.map(([k, v]) => '<div><dt>' + escapeHtml(detailLabel(k)) + '</dt><dd>' + escapeHtml(detailValue(v)) + '</dd></div>').join('') +
@@ -660,10 +666,46 @@ export function createRenderer({
         'capture-failed': 'the picture could not be taken.',
         'store-failed': 'the picture was taken but could not be saved.',
         'time-limit': 'the scan ran out of time for pictures.',
+        // A picture in a state (the text spacing).
+        'state-not-applied': 'the page kept it from being applied.',
+        'state-unavailable': 'this version of surea11y can\'t apply it.',
         // A report's JSON taken out of the zip that holds its pictures
         // (report-package.js).
         'not-included': 'it is not included with this copy of the report.'
     };
+
+    // The states a finding can be pictured in: what the second picture
+    // shows, in its caption and its text alternative.
+    const STATE_LABELS = {
+        'text-spacing': {
+            name: 'the WCAG text spacing',
+            caption: 'With the WCAG text spacing applied (line height 1.5, letter spacing 0.12em, word spacing 0.16em, 2em after paragraphs), where the finding shows.',
+            alt: 'with the WCAG text spacing applied'
+        }
+    };
+    function stateLabelOf(state) {
+        return STATE_LABELS[state] || {
+            name: 'the state "' + state + '"',
+            caption: 'In the state "' + state + '" the rule put the page in, where the finding shows.',
+            alt: 'in the state "' + state + '"'
+        };
+    }
+
+    // The pictures of the flagged element in the state its finding was made
+    // in, each as elementScreenshotOf() gives one, with its state; null for
+    // none.
+    function elementStateScreenshotsOf(occ) {
+        const list = occ && typeof occ === 'object' ? occ.elementStateScreenshots : null;
+        if (!Array.isArray(list)) return null;
+        const out = list
+            .filter((e) => e && typeof e === 'object' && typeof e.state === 'string' && e.state)
+            .map((e) => {
+                const shot = elementScreenshotOf({elementScreenshot: e});
+                return shot ? {state: e.state, ...shot} : null;
+            })
+            .filter(Boolean);
+        return out.length ? out : null;
+    }
 
     // The picture of the flagged element, from a stored file, a data URL or a
     // loaded report package's picture (blob:), or why there is none.
@@ -697,31 +739,60 @@ export function createRenderer({
         return m ? m[1].toLowerCase() : '';
     }
 
-    // `name` is the occurrence's heading ("Occurrence 2"), so each picture's
-    // text alternative says which occurrence it belongs to.
-    function buildElementScreenshotHtml(n, name = '') {
-        const shot = n?.elementScreenshot;
-        if (!shot) return '';
-        if (shot.url) {
-            // Which context the picture shows, when the occurrence is in more than one.
-            const inContext = shot.context && Array.isArray(n.contexts) && n.contexts.length > 1
-                ? 'Pictured in ' + shot.context + '.'
-                : '';
-            const caption = [inContext, shot.cropped ? 'Only part of the element fits in the picture.' : ''].filter(Boolean).join(' ');
-            const tag = elementTagOf(n.html);
-            const alt = (name ? name + ': the' : 'The') + ' flagged ' + (tag ? tag + ' element' : 'element') + ', with a box drawn around it';
-            return '<figure class="node-screenshot">' +
-                '<img src="' + escapeAttr(shot.url) + '" alt="' + escapeAttr(alt) + '" loading="lazy">' +
-                (caption ? '<figcaption>' + escapeHtml(caption) + '</figcaption>' : '') +
-                '</figure>';
-        }
+    // Why there is no picture, as a sentence.
+    function screenshotSkipText(shot) {
         const why = shot.skipped === 'max-reached' && shot.max
             ? `the scan reached its limit of ${shot.max} pictures.`
             : shot.skipped === 'rule-limit' && shot.max
                 ? `this rule reached its limit of ${shot.max} ${shot.max === 1 ? 'picture' : 'pictures'}.`
                 : (SCREENSHOT_SKIP_LABELS[shot.skipped] || shot.skipped);
         const detail = shot.error ? ' (' + shot.error.replace(/\.$/, '') + ')' : '';
-        return '<div class="node-detail node-screenshot-none"><strong>No picture:</strong> ' + escapeHtml(detail ? why.replace(/\.$/, '') + detail + '.' : why) + '</div>';
+        return detail ? why.replace(/\.$/, '') + detail + '.' : why;
+    }
+
+    // One picture as a figure: `alt` its text alternative, `lead` a sentence
+    // the caption starts with.
+    function screenshotFigureHtml(n, shot, alt, lead = '') {
+        // Which context the picture shows, when the occurrence is in more than one.
+        const inContext = shot.context && Array.isArray(n.contexts) && n.contexts.length > 1
+            ? 'Pictured in ' + shot.context + '.'
+            : '';
+        const caption = [lead, inContext, shot.cropped ? 'Only part of the element fits in the picture.' : ''].filter(Boolean).join(' ');
+        return '<figure class="node-screenshot">' +
+            '<img src="' + escapeAttr(shot.url) + '" alt="' + escapeAttr(alt) + '" loading="lazy">' +
+            (caption ? '<figcaption>' + escapeHtml(caption) + '</figcaption>' : '') +
+            '</figure>';
+    }
+
+    // `name` is the occurrence's heading ("Occurrence 2"), so each picture's
+    // text alternative says which occurrence it belongs to. A finding made in
+    // a state (the text spacing) shows its element as the page shows it and,
+    // beside it, in that state, where the finding shows.
+    function buildElementScreenshotHtml(n, name = '') {
+        const shot = n?.elementScreenshot;
+        const inStates = Array.isArray(n?.elementStateScreenshots) ? n.elementStateScreenshots : [];
+        if (!shot && !inStates.length) return '';
+        const tag = elementTagOf(n.html);
+        const element = (name ? name + ': the' : 'The') + ' flagged ' + (tag ? tag + ' element' : 'element');
+        if (!inStates.length) {
+            if (shot.url) return screenshotFigureHtml(n, shot, element + ', with a box drawn around it');
+            return '<div class="node-detail node-screenshot-none"><strong>No picture:</strong> ' + escapeHtml(screenshotSkipText(shot)) + '</div>';
+        }
+        const parts = [];
+        if (shot && shot.url) {
+            parts.push(screenshotFigureHtml(n, shot, element + ' as the page shows it, with a box drawn around it', 'As the page shows it.'));
+        } else if (shot) {
+            parts.push('<div class="node-detail node-screenshot-none"><strong>No picture of the page as it is:</strong> ' + escapeHtml(screenshotSkipText(shot)) + '</div>');
+        }
+        for (const inState of inStates) {
+            const label = stateLabelOf(inState.state);
+            if (inState.url) {
+                parts.push(screenshotFigureHtml(n, inState, element + ' ' + label.alt + ', with a box drawn around it', label.caption));
+            } else {
+                parts.push('<div class="node-detail node-screenshot-none"><strong>No picture with ' + escapeHtml(label.name) + ':</strong> ' + escapeHtml(screenshotSkipText(inState)) + '</div>');
+            }
+        }
+        return '<div class="node-screenshots">' + parts.join('') + '</div>';
     }
 
     function buildInstancesListHtml(nodes, type = 'fail') {
