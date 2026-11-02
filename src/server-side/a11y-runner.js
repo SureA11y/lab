@@ -87,29 +87,42 @@ const DEFAULT_SCAN_CSS = `{filter: opacity(.8) blur(5px);}`;
 const browsers = {strict: null, untrusted: null};
 
 
+// The launch under way, per browser: runs that start together, before the
+// first browser is up, wait for that one rather than each launching its own.
+// Twelve browsers were found running for four runs, all but one never closed.
+const launching = {strict: null, untrusted: null};
+
 /** Launches (once) or reuses the shared browser a run asks for. */
 async function getBrowser({acceptUntrustedCerts = false} = {}) {
     const key = acceptUntrustedCerts ? 'untrusted' : 'strict';
     const existing = browsers[key];
     if (existing && existing.connected) return existing;
-    const browser = await puppeteer.launch({
-        headless: 'new',
-        acceptInsecureCerts: !!acceptUntrustedCerts,
-        args: [
-            // Drop the "navigator.webdriver = true" / automation banner that
-            // WAFs fingerprint on.
-            '--disable-blink-features=AutomationControlled',
-            // Sandbox is unavailable in most CI/container runtimes; without
-            // these the launch itself fails there.
-            '--no-sandbox',
-            '--disable-setuid-sandbox'
-        ]
-    });
-    answerDialogs(browser);
-    keepOpenersShown(browser);
+    if (launching[key]) return launching[key];
+    launching[key] = (async () => {
+        const browser = await puppeteer.launch({
+            headless: 'new',
+            acceptInsecureCerts: !!acceptUntrustedCerts,
+            args: [
+                // Drop the "navigator.webdriver = true" / automation banner that
+                // WAFs fingerprint on.
+                '--disable-blink-features=AutomationControlled',
+                // Sandbox is unavailable in most CI/container runtimes; without
+                // these the launch itself fails there.
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ]
+        });
+        answerDialogs(browser);
+        keepOpenersShown(browser);
 
-    browsers[key] = browser;
-    return browser;
+        browsers[key] = browser;
+        return browser;
+    })();
+    try {
+        return await launching[key];
+    } finally {
+        launching[key] = null;
+    }
 }
 
 /**
@@ -2233,6 +2246,7 @@ module.exports = {
     runA11yWorkflow,
     closeBrowser,
     getBrowserPid,
+    getBrowser,
     answerDialogs,
     endedByCancel,
     gotoWithFallback,
