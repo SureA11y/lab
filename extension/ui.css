@@ -459,6 +459,21 @@ input:focus, textarea:focus, select:focus{
     outline-offset: var(--focus-outline-offset);
 }
 
+/* The scan's profiles (main.js): a WCAG level, as radios, and the
+   standards, as checkboxes, side by side while there is room, across the
+   whole row. */
+.profiles{ grid-column: 1 / -1; margin: 0; padding: 0; border: 0; min-width: 0; }
+.profiles > legend{ padding: 0; margin-bottom: var(--space-1); }
+.profiles-groups{ display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); }
+.profiles-group{ margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.profiles-group > legend{ padding: 0; margin-bottom: 2px; font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
+.profiles-option{ display: flex; align-items: center; gap: var(--space-2); min-height: 24px; font-size: var(--fs-sm); }
+.profiles-option input{ margin: 0; padding: 0; width: 16px; height: 16px; accent-color: var(--accent); }
+.profiles-option input:focus-visible{ outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+.profiles-note{ margin: var(--space-2) 0 0; padding: var(--space-1) var(--space-2); border-left: 4px solid var(--warn); background: var(--warn-soft); font-size: var(--fs-xs); }
+.profiles-note[hidden]{ display: none; }
+.profiles-summary{ margin: var(--space-2) 0 0; font-size: var(--fs-xs); color: var(--muted); }
+
 .field-compact{ min-width: 92px; }
 .select-compact{ padding-left: 10px; padding-right: 10px; }
 

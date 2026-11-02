@@ -32,3 +32,8 @@ Thumbs.db
 
 # Built by npm run build:extension
 /dist/
+
+# Built by build:extension-shared from the packs installed (see
+# src/js/copy-shared-to-extension.cjs.js)
+/extension/engines/vendor/surea11y-packs.js
+/extension/engines/vendor/standards.json

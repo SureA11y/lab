@@ -108,7 +108,10 @@ The first public release.
   refused with 429; every answer is JSON, compressed for a client that
   takes gzip. A run's pictures stay on disk `A11Y_RUN_FILES_HOURS` (24).
 - **A browser extension** (`extension/`) to scan the page in front of you
-  and send a session to the lab.
+  and send a session to the lab. Its Profile is the scan step's: one WCAG
+  2.2 level and any standards at once. Its build (`npm run build:extension`)
+  takes in the packs installed, so their standards (WAI-ARIA 1.2, with
+  `@surea11y/pack-wai-aria`) are offered there too.
 - **Examples** that run against a demo shop, a getting-started guide, and
   use-case guides.
 

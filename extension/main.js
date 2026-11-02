@@ -195,7 +195,7 @@ function initUi() {
     const statusEl = document.getElementById('status');
     const runIdEl = document.getElementById('runId');
     const labelInput = document.getElementById('label');
-    const profileSelect = document.getElementById('profile');
+    const profileField = document.getElementById('profile');
     const includeBestPracticeInput = document.getElementById('includeBestPractice');
     const contextInput = document.getElementById('context');
     const excludeInput = document.getElementById('exclude');
@@ -1000,14 +1000,99 @@ function initUi() {
         }
     }
 
-    // The profile picker holds the lab's profiles (WCAG 2.2 at a level, or a
-    // standard), and the best-practice option sits beside it, as in the lab's
-    // scan step. Both
-    // resolve to the scan's selection ({ version, level, profile,
-    // bestPractices }) the way the lab resolves them
-    // (shared/conformance-targets.js), and each engine maps it to its own terms.
+    // The profiles a scan checks against, as the lab's scan step offers
+    // them: one WCAG 2.2 level, or none, and any standards, core's own and
+    // those of the packs the extension was built with
+    // (engines/vendor/standards.json, from build:extension-shared). With the
+    // best-practice option beside them, they resolve to the scan's selection
+    // ({ version, level, profile, profiles?, bestPractices }) the way the lab
+    // resolves them (shared/conformance-targets.js).
+    const RESTATES_WCAG = new Set(['en301549-v4.1.1', 'en301549-v3.2.1']);
+    // The packs the extension was built with, by name, which a scan of one of
+    // their profiles names to core.
+    let builtPackNames = [];
+
+    const wcagRadios = () => Array.from(profileField ? profileField.querySelectorAll('input[name="profileWcag"]') : []);
+    const standardBoxes = () => Array.from(profileField ? profileField.querySelectorAll('input[name="profileStandard"]') : []);
+    const targetLabelOf = (id) => globalThis.A11Y_CONFORMANCE_TARGETS?.targetLabel(id) || id;
+
+    /** The profiles chosen, the WCAG level first: ['wcag22-aa', 'wai-aria-1.2']. */
+    function selectedProfiles() {
+        const radio = wcagRadios().find((r) => r.checked);
+        const wcag = radio && radio.value ? [radio.value] : [];
+        return [...wcag, ...standardBoxes().filter((b) => b.checked).map((b) => b.value)];
+    }
+
+    /** Chooses profiles: one id, a list, or ids separated by commas. */
+    function setSelectedProfiles(value) {
+        const targets = globalThis.A11Y_CONFORMANCE_TARGETS;
+        const ids = targets ? targets.profileList(value) : [];
+        const wcag = ids.find((id) => targets.isWcagTarget(id)) || '';
+        for (const r of wcagRadios()) r.checked = r.value === wcag;
+        for (const b of standardBoxes()) b.checked = ids.includes(b.value);
+        syncProfileSummary();
+    }
+
+    function syncProfileSummary() {
+        const ids = selectedProfiles();
+        const summary = document.getElementById('profileSummary');
+        if (summary) {
+            summary.textContent = ids.length
+                ? `This scan checks: ${ids.map(targetLabelOf).join(' + ')}`
+                : 'Nothing chosen: the scan checks WCAG 2.2 AA.';
+        }
+        const note = document.getElementById('profileOverlap');
+        const wcag = ids.find((id) => globalThis.A11Y_CONFORMANCE_TARGETS?.isWcagTarget(id));
+        const restated = wcag ? ids.filter((id) => RESTATES_WCAG.has(id)) : [];
+        if (note) {
+            note.hidden = !restated.length;
+            note.textContent = restated.length
+                ? `${restated.map(targetLabelOf).join(' and ')} restate${restated.length === 1 ? 's' : ''} WCAG Level A and AA: beside ${targetLabelOf(wcag)} the scan checks those criteria again, under the standard’s name.`
+                : '';
+        }
+    }
+
+    /**
+     * The standards of the packs the extension was built with, offered beside
+     * core's own. A build without packs has none.
+     */
+    async function loadBuiltStandards() {
+        let built = null;
+        try {
+            const url = api.runtime && typeof api.runtime.getURL === 'function'
+                ? api.runtime.getURL('engines/vendor/standards.json')
+                : 'engines/vendor/standards.json';
+            const res = await fetch(url);
+            built = res.ok ? await res.json() : null;
+        } catch {
+            built = null;
+        }
+        if (!built || !Array.isArray(built.standards)) return;
+        builtPackNames = Array.isArray(built.packs) ? built.packs.filter((n) => typeof n === 'string' && n) : [];
+        const targets = globalThis.A11Y_CONFORMANCE_TARGETS;
+        if (targets) targets.registerStandardProfiles(built.standards);
+        const group = document.getElementById('profileStandards');
+        if (!group) return;
+        for (const std of built.standards) {
+            for (const p of Array.isArray(std && std.profiles) ? std.profiles : []) {
+                if (!p || typeof p.id !== 'string' || standardBoxes().some((b) => b.value === p.id)) continue;
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.name = 'profileStandard';
+                input.value = p.id;
+                const label = document.createElement('label');
+                label.className = 'profiles-option';
+                label.append(input, ' ', String(p.label || p.id));
+                group.append(label);
+            }
+        }
+    }
+
     function getSelectedTarget() {
-        const raw = String(profileSelect?.value || 'wcag22-aa').trim();
+        const ids = selectedProfiles();
+        // What the session keeps and a scan step would save: one id as it
+        // always was, several as a list.
+        const raw = ids.length > 1 ? ids : (ids[0] || 'wcag22-aa');
         const targets = globalThis.A11Y_CONFORMANCE_TARGETS;
         const selection = targets.resolveScanSelection({
             profile: raw,
@@ -1019,6 +1104,10 @@ function initUi() {
             level: selection.level,
             profile: selection.profile,
             label: selection.profile ? targets.targetLabel(selection.profile) : null,
+            // A scan of several: every one, named.
+            profiles: Array.isArray(selection.profiles)
+                ? selection.profiles.map((id) => ({ id, label: targets.targetLabel(id) || id }))
+                : null,
             tags: targets.selectionTags(selection)
         };
     }
@@ -1027,11 +1116,11 @@ function initUi() {
     const RESULTS_LANGUAGE = 'en';
 
     async function loadProfile() {
+        await loadBuiltStandards();
         const data = await sessionGet(['profile', 'includeBestPractice']);
-        const saved = data && typeof data.profile === 'string' ? data.profile : null;
-        if (saved && profileSelect && Array.from(profileSelect.options).some((o) => o.value === saved)) {
-            profileSelect.value = saved;
-        }
+        const saved = data && (typeof data.profile === 'string' || Array.isArray(data.profile)) ? data.profile : null;
+        if (saved) setSelectedProfiles(saved);
+        else syncProfileSummary();
         if (includeBestPracticeInput && data && typeof data.includeBestPractice === 'boolean') {
             includeBestPracticeInput.checked = data.includeBestPractice;
         }
@@ -1073,7 +1162,8 @@ function initUi() {
         } catch {}
     }
 
-    profileSelect?.addEventListener('change', async () => {
+    profileField?.addEventListener('change', async () => {
+        syncProfileSummary();
         try {
             await sessionSet({ profile: getSelectedTarget().raw });
         } catch {}
@@ -1226,6 +1316,8 @@ function initUi() {
                     selection,
                     contextSelector,
                     excludeSelectors,
+                    // The packs this build has, which a pack's profile needs.
+                    packs: builtPackNames,
                     engineOptions: { locale: RESULTS_LANGUAGE }
                 }
             });
@@ -1342,6 +1434,9 @@ function initUi() {
                     standard: target.profile ? { id: target.profile, label: target.label } : null,
                     version: selection.version,
                     level: wcagLevel,
+                    // A scan of several: those that ran, and those that did not.
+                    profiles: (canonical && canonical.runOptions && canonical.runOptions.conformanceProfiles) || null,
+                    profilesNotRun: (canonical && canonical.runOptions && canonical.runOptions.profilesNotRun) || null,
                 }),
                 runOnly: null,
 
@@ -1561,8 +1656,8 @@ function initUi() {
                 const label = scan.label ? String(scan.label) : '';
                 const url = scan.url ? String(scan.url) : '';
                 const scanId = scan.scanId ? String(scan.scanId) : (scan.id ? String(scan.id) : '');
-                const profile = globalThis.A11Y_REPORT_SCAN?.scanProfile(scan);
-                const targetLabel = profile && profile.label ? String(profile.label) : '';
+                // Every profile it checked against: "WCAG 2.2 AA + WAI-ARIA 1.2".
+                const targetLabel = String(globalThis.A11Y_REPORT_SCAN?.scanProfilesLabel(scan) || '');
 
                 header.textContent =
                     `Scan ${i + 1}/${scans.length}`
