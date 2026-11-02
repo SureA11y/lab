@@ -162,7 +162,7 @@ export function describeSummary(session) {
     if (scans) parts.push(Number.isFinite(span) && span >= 0 ? `${plural(scans, 'scan')} in ${formatDuration(span)}`.replace(String(scans), formatCount(scans)) : plural(scans, 'scan'));
     let slowest = session.slowest !== undefined ? session.slowest : null;
     if (session.slowest === undefined) {
-        const timed = items.filter((i) => Number.isFinite(i.durationMs));
+        const timed = items.filter((i) => Number.isFinite(i.durationMs) && i.status !== 'cancelled' && i.status !== 'interrupted');
         if (timed.length > 1) slowest = timed.reduce((a, b) => (b.durationMs > a.durationMs ? b : a));
     }
     // A batch cancelled before any run went has none to name.

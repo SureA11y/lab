@@ -1088,7 +1088,9 @@ function createRunQueue({
 
     function itemsSummary(items) {
         const scans = items.reduce((n, i) => n + (Number.isFinite(i.scansRun) ? i.scansRun : (Number.isFinite(i.scans) ? i.scans : 0)), 0);
-        const timed = items.filter((i) => Number.isFinite(i.durationMs));
+        // Runs that went to their end: a batch cancelled before any did has
+        // no slowest run, where it named one cancelled a second in.
+        const timed = items.filter((i) => Number.isFinite(i.durationMs) && i.status !== 'cancelled' && i.status !== 'interrupted');
         const slowest = timed.length > 1 ? timed.reduce((a, b) => (b.durationMs > a.durationMs ? b : a)) : null;
         const finished = items.filter((i) => i.finishedAt && i.status !== 'running' && i.status !== 'cancelling' && i.status !== 'waiting');
         finished.sort((a, b) => Date.parse(b.finishedAt) - Date.parse(a.finishedAt));
