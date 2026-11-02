@@ -530,7 +530,13 @@ function toCompositeCanonicalFinding(cr, {
                 contributors: contributorsFinal.map(x => ({
                     testId: String(x && x.testId ? x.testId : '').trim(),
                     outcome: String(x && x.outcome ? x.outcome : '').trim(),
-                    ...(x && x.notSelected === true ? { notSelected: true } : {})
+                    ...(x && x.notSelected === true ? { notSelected: true } : {}),
+                    // A standard's rollup that judges the rule by its
+                    // findings' reason codes (core 1.15): what it made of
+                    // each finding, in the rule's order.
+                    ...(x && Array.isArray(x.findingOutcomes)
+                        ? { findingOutcomes: x.findingOutcomes.map((o) => (o === 'fail' || o === 'cantTell' ? o : null)) }
+                        : {})
                 })).filter(x => x.testId)
             }
         },
@@ -590,12 +596,31 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
             if (atomic && Number(atomic.unlisted) > 0) unlisted += Number(atomic.unlisted);
             if (!atomic || !Array.isArray(atomic.occurrences) || !atomic.occurrences.length) continue;
 
-            for (const occ of atomic.occurrences) {
+            // A standard that judges the rule by its findings' reason codes
+            // says what each one is under it: a WCAG question it is certain
+            // of is a failure here, and one it doesn't count is left out.
+            const contributor = (Array.isArray(rollup.contributors) ? rollup.contributors : [])
+                .find((c) => c && c.testId === id);
+            const verdicts = contributor && Array.isArray(contributor.findingOutcomes)
+                && contributor.findingOutcomes.length === atomic.occurrences.length
+                ? contributor.findingOutcomes
+                : null;
+
+            for (const [i, occ] of atomic.occurrences.entries()) {
+                const verdict = verdicts ? verdicts[i] : undefined;
+                if (verdicts && !verdict) continue;
+                if (verdict && f.outcome && verdict !== f.outcome) continue;
                 const occ2 = Object.assign({}, occ, {
                     outcome: f.outcome || undefined,
                     atomicCheckId: atomic.ruleId || undefined,
                     sourceAtomicRules: atomic.ruleId ? [String(atomic.ruleId)] : []
                 });
+                if (verdict === 'fail' && occ2.occurrenceOutcome !== 'fail') {
+                    occ2.occurrenceOutcome = 'fail';
+                    delete occ2.uncertainty;
+                    delete occ2.lean;
+                    delete occ2.howToCheck;
+                }
 
                 const k = occKey(occ2);
                 if (seen.has(k)) continue;

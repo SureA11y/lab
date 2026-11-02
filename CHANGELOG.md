@@ -62,6 +62,13 @@ The first public release.
   for a person", which lists only what its rules evaluate: the guide and
   Review conformance give every requirement.
 
+- **WAI-ARIA 1.2 as a profile**, with its pack `@surea11y/pack-wai-aria`
+  installed or named in `A11Y_PACKS`: a scan against it reports one result
+  per author requirement, and a finding that WCAG only asks about (an
+  unnamed `role="grid"`) fails there. Wherever a standard judges a rule
+  finding by finding, by its reason code, a requirement's row shows each
+  finding as the standard judges it, not by the rule's WCAG outcome.
+
 ### The runner and integrations
 
 - **`src/cli/run-workflow.js`** runs a workflow, a configuration or a batch

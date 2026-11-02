@@ -916,6 +916,46 @@ describe('a11y-labs-engine: runOnPage - findingsSource filtering', () => {
         assert.equal(byRuleId['wcag-inapplicable-composite'], 'notApplicable');
     });
 
+    test("a standard's rollup that judges a rule by reason code gives each finding the standard's verdict", async () => {
+        const { runOnPage } = require('./a11y-labs-engine');
+        // An unnamed grid is a WCAG question that WAI-ARIA fails; a finding
+        // of a code the standard doesn't count is left out of its rollup.
+        const page = fakePage(async () => ({
+            checksResults: [{
+                ruleId: 'aria-role-name-present',
+                outcome: 'cantTell',
+                severity: 'serious',
+                occurrences: [
+                    { selector: '#grid', html: '<div role="grid" id="grid">', occurrenceOutcome: 'cantTell', uncertainty: { code: 'spec-only' } },
+                    { selector: '#x', html: '<x-el id="x">', occurrenceOutcome: 'cantTell' }
+                ]
+            }],
+            rulesResults: [{
+                ruleId: 'wai-aria-1.2-name-required',
+                outcome: 'fail',
+                severity: 'serious',
+                data: {
+                    details: {
+                        checksIds: ['aria-role-name-present'],
+                        contributors: [{
+                            testId: 'aria-role-name-present',
+                            outcome: 'fail',
+                            byReasonCode: true,
+                            checkOutcome: 'cantTell',
+                            findingOutcomes: ['fail', null]
+                        }]
+                    }
+                }
+            }]
+        }));
+
+        const { canonical } = await runOnPage(page, { engineOptions: { findingsSource: 'composite' } });
+        const rollup = canonical.findings.find((f) => f.ruleId === 'wai-aria-1.2-name-required');
+        assert.equal(rollup.outcome, 'fail');
+        assert.deepEqual(rollup.occurrences.map((o) => [o.target[0], o.occurrenceOutcome]), [['#grid', 'fail']]);
+        assert.equal(rollup.occurrences[0].uncertainty, undefined);
+    });
+
     test('a composite with mixed pass and notApplicable contributors splits into separate pass/notApplicable findings, same as fail/cantTell', async () => {
         const { runOnPage } = require('./a11y-labs-engine');
         const page = fakePage(async () => ({
