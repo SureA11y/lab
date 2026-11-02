@@ -10,23 +10,10 @@
  */
 
 // The browser presents itself as what it is, headless Chrome, unless
-// A11Y_STEALTH=1: then puppeteer-extra's stealth plugin gives it a desktop
-// Chrome's fingerprint (UA without "Headless" and matching Sec-CH-UA client
-// hints, navigator.webdriver, WebGL, plugins...), for a site of your own
-// whose bot filter refuses plain headless Chrome. Plain puppeteer when it is
-// off, or when the plugin is not installed.
-let puppeteer = null;
-if (['1', 'true', 'yes', 'on'].includes(String(process.env.A11Y_STEALTH || '').trim().toLowerCase())) {
-    try {
-        puppeteer = require('puppeteer-extra');
-        const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-        puppeteer.use(StealthPlugin());
-    } catch {
-        console.warn('[a11y-runner] A11Y_STEALTH is set, but puppeteer-extra-plugin-stealth could not be loaded: running without it.');
-        puppeteer = null;
-    }
-}
-if (!puppeteer) puppeteer = require('puppeteer');
+// A11Y_STEALTH=1: then it presents itself as a desktop Chrome (stealth.js),
+// for a site of your own whose bot filter refuses plain headless Chrome.
+const puppeteer = require('puppeteer');
+const { stealthOn, applyStealth, stealthPageNow } = require('./stealth');
 const a11yEngine = require('./a11y-engine');
 const { elementTarget } = require('../shared/report-format.js');
 const {
@@ -115,6 +102,7 @@ async function getBrowser({acceptUntrustedCerts = false} = {}) {
         });
         answerDialogs(browser);
         keepOpenersShown(browser);
+        if (stealthOn()) await applyStealth(browser);
 
         browsers[key] = browser;
         return browser;
@@ -732,6 +720,9 @@ async function openContextAndPage(determinism, {acceptUntrustedCerts = false} = 
     }
 
     const page = await context.newPage();
+    // Its identity before its first request (the browser's own hook for
+    // new pages runs alongside, and a first navigation could beat it).
+    if (stealthOn()) await stealthPageNow(page);
 
     await page.evaluateOnNewDocument(() => {
         try {
@@ -747,8 +738,8 @@ async function openContextAndPage(determinism, {acceptUntrustedCerts = false} = 
     await a11yEngine.preparePage(page, { hooks: Array.isArray(determinism?.coreHooks) ? determinism.coreHooks : undefined });
 
     // User-Agent: an explicit determinism.userAgent wins; otherwise the
-    // browser's own, which the stealth plugin, when on, de-headlesses and
-    // keeps consistent with its Sec-CH-UA client hints.
+    // browser's own, which A11Y_STEALTH, when on, de-headlesses and keeps
+    // consistent with its Sec-CH-UA client hints (stealth.js).
     const effectiveUserAgent =
         (determinism?.userAgent && String(determinism.userAgent).trim())
             ? String(determinism.userAgent).trim()
@@ -768,8 +759,8 @@ async function openContextAndPage(determinism, {acceptUntrustedCerts = false} = 
     // would corrupt sub-resource requests (a stylesheet would go out as
     // Sec-Fetch-Dest: document, Accept: text/html) and the server would refuse
     // or mis-serve them - CSS/JS never load. Headless Chrome already emits the
-    // correct per-resource Sec-Fetch/Accept headers on its own, and the stealth
-    // plugin keeps the Sec-CH-UA client hints consistent with the real browser.
+    // correct per-resource Sec-Fetch/Accept headers on its own, and A11Y_STEALTH
+    // keeps the Sec-CH-UA client hints consistent with the real browser.
     try {
         await page.setExtraHTTPHeaders({
             'Accept-Language': (determinism?.acceptLanguage ? String(determinism.acceptLanguage) : 'en-US,en;q=0.9,es;q=0.8')

@@ -6,14 +6,14 @@
  * reads it.
  *
  *  - The Accept-Language request header, for a site that picks its language
- *    on the server. The stealth plugin sets it with the user agent
+ *    on the server. A11Y_STEALTH sets it with the user agent
  *    (Network.setUserAgentOverride), which wins over an extra header, so it
  *    is set the same way. That call replaces the whole user agent, so the
  *    one the page already presents is repeated with its client hints
  *    (Sec-CH-UA, navigator.userAgentData): without them a bot filter sees a
  *    browser that contradicts itself.
  *  - navigator.language and navigator.languages, for a site that picks it in
- *    its scripts: the stealth plugin patches them in the page, so they are
+ *    its scripts: A11Y_STEALTH may patch them in the page, so they are
  *    patched again, after it, before the page's own scripts run.
  *  - The locale dates and numbers are written in (Intl, toLocaleString).
  *
@@ -107,8 +107,8 @@ async function stateFor(page) {
         scriptId: null,
         tag: null,
         defaults: own.languages.length ? own.languages : ['en-US', 'en'],
-        // Whether the page started with an override of its own (the stealth
-        // plugin's, determinism.userAgent): without one, the language it
+        // Whether the page started with an override of its own (A11Y_STEALTH's,
+        // determinism.userAgent): without one, the language it
         // started in came from the browser and the run's Accept-Language
         // header, and clearing ours is what puts both back.
         overridden: own.userAgent !== browserUserAgent,

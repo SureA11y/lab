@@ -12,7 +12,7 @@ Read by the server and the command-line runner alike.
 | `PORT`, `HOST` | Where the server listens (default `127.0.0.1:3000`). The server has no login: see [SECURITY.md](../SECURITY.md) before listening beyond this machine |
 | `A11Y_ALLOWED_HOSTS` | Host names, besides `localhost`, IP addresses and `HOST`, the server answers to: the name a reverse proxy or your network gives it, comma-separated; `*` for any. A request by another name is refused, so that a web page cannot reach the server through a name it points at this machine |
 | `A11Y_ALLOWED_ORIGINS` | Web pages, besides the lab's own and the browser extension, that may call the server from a browser, as origins (`https://dashboard.example.com`), comma-separated. Calls from other pages are refused; calls with no page behind them (curl, scripts) are not affected |
-| `A11Y_STEALTH` | `1` gives the browser a desktop Chrome's fingerprint (no "Headless" in its user agent, matching client hints), for a site of your own whose bot filter refuses headless Chrome. Off by default: the browser says what it is |
+| `A11Y_STEALTH` | `1` gives the browser a desktop Chrome's fingerprint (no "Headless" in its user agent, matching client hints, `navigator.webdriver` false, a desktop Chrome's plugins and `window.chrome`), for a site of your own whose bot filter refuses headless Chrome. Off by default: the browser says what it is |
 | `PUPPETEER_EXECUTABLE_PATH` | The browser to scan with, instead of the one installed with the lab |
 | `A11Y_TZ` | The time zone pages see while scanned (default: the machine's own). Set it, for instance `Europe/Madrid`, for results that don't change with where the run happens |
 | `A11Y_ACCEPT_LANGUAGE` | The `Accept-Language` pages are asked for (default `en-US,en;q=0.8`) |

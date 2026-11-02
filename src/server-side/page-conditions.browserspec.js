@@ -175,7 +175,7 @@ describe('page conditions persist until changed', () => {
         const states = payload.collectedOutputs.find((o) => o.key === 'states').value.split(' | ');
         const start = states[0];
         // The run's own Accept-Language (A11Y_ACCEPT_LANGUAGE), or with
-        // A11Y_STEALTH=1 the stealth plugin's, which overrides it.
+        // A11Y_STEALTH=1 its desktop identity (stealth.js), which overrides it.
         assert.match(start, /^header=en-US,en;q=0\.[89] nav=en-US navs=en-US(,en)? num=1,234\.5$/, 'as the run starts');
         const german = 'header=de-DE,de;q=0.9 nav=de-DE navs=de-DE,de num=1.234,5';
         assert.equal(states[1], german, 'set inside an If, the open page reloaded');
