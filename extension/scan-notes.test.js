@@ -32,7 +32,7 @@ function pageWith(html) {
         const run = dom.window.eval(`(${details.func.toString()})`);
         return [await run(...details.args)];
     };
-    return {execInTab};
+    return {execInTab, page: dom.window};
 }
 
 const PAGE = '<!doctype html><html lang="en"><body style="background:#fff;color:#000">'
@@ -40,10 +40,13 @@ const PAGE = '<!doctype html><html lang="en"><body style="background:#fff;color:
 
 describe('extension surea11y adapter: notes, margins and details', () => {
     test('names the core release, checks readiness, and keeps margins', async () => {
-        const {execInTab} = pageWith(PAGE);
+        const {execInTab, page} = pageWith(PAGE);
         // jsdom never loads the image, so the page is not ready.
         const native = await SUREA11Y.runInTab(1, {pageReadyTimeoutMs: 0}, {execInTab});
-        assert.equal(native.engineVersion, require('@surea11y/core/package.json').version);
+        // The release of the bundle that ran, whichever core is installed
+        // beside it (the bundle is rebuilt from it by build:extension-shared).
+        assert.ok(native.engineVersion);
+        assert.equal(native.engineVersion, page.A11Y_LABS_BROWSER.version);
         assert.equal(native.pageReadiness.ready, false);
         assert.equal(native.pageReadiness.pending.images, 1);
 
@@ -176,4 +179,12 @@ describe('extension surea11y adapter: the scan\'s selection', () => {
         assert.equal(native.engine.profile, 'en301549-v3.2.1');
         assert.equal(native.wcagTarget, null);
     });
+});
+
+test('a page with frames says the extension did not scan them', async () => {
+    const {execInTab} = pageWith('<!doctype html><html lang="en"><body><main><h1>T</h1><iframe title="x" srcdoc="<img src=a.png>"></iframe></main></body></html>');
+    const native = await SUREA11Y.runInTab(1, {pageReadyTimeoutMs: 0}, {execInTab});
+    const canonical = SUREA11Y.canonicalize(native, {});
+    const notice = canonical.notices.find((n) => n.code === 'frames-not-scanned');
+    assert.match(notice.message, /This page has 1 frame \(iframe\), which the extension does not scan/);
 });

@@ -354,3 +354,17 @@ test('the target is what the scans checked against, unless the options say other
     // The options still win.
     assert.equal(buildConformanceReport(withScans([{ wcag: { version: '2.2', level: 'AAA' } }]), { target: { level: 'A' } }).target.level, 'A');
 });
+
+test('the target does not depend on the order of the scans, and a WAI-ARIA scan says nothing of WCAG', () => {
+    const withScans = (scans) => ({ ...report, scans: scans.map((s) => ({ ...report.scans[0], ...s })) });
+    const en3 = { wcag: { version: '2.1', level: 'AA' }, profile: { id: 'en301549-v3.2.1', label: 'EN 301 549 V3.2.1' } };
+    const aa = { wcag: { version: '2.2', level: 'AA' }, profile: { id: 'wcag22-aa', label: 'WCAG 2.2 AA' } };
+    const en4 = { wcag: { version: '2.2', level: 'AA' }, profile: { id: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' } };
+    assert.deepEqual(buildConformanceReport(withScans([en3, aa])).target, buildConformanceReport(withScans([aa, en3])).target);
+    assert.deepEqual(buildConformanceReport(withScans([en3, aa])).target, { wcagVersion: '2.2', level: 'AA', en301549: 'V3.2.1' });
+    // Both EN 301 549 versions: the one that restates the WCAG version.
+    assert.equal(buildConformanceReport(withScans([en3, en4])).target.en301549, 'V4.1.1');
+    // A scan of WAI-ARIA alone, recorded at WCAG AAA by mistake or not, is no WCAG level.
+    const aria = { wcag: { version: '2.2', level: 'AAA' }, profile: { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' } };
+    assert.equal(buildConformanceReport(withScans([aa, aria])).target.level, 'AA');
+});

@@ -820,12 +820,16 @@ const NOT_RUN_REASONS = {
 
 /** A notice for each profile a scan of several did not run. */
 function profilesNotRunNotices(engineOutput) {
-    return profilesNotRunOf(engineOutput).map((p) => ({
-        engineId: ENGINE_ID,
-        code: 'profile-not-run',
-        profile: p.id,
-        message: (NOT_RUN_REASONS[p.reason] || ((label) => `The scan did not check against ${label}.`))(p.label),
-    }));
+    // A WCAG level the step's own rules overrode still judges them: only the
+    // standards did not run.
+    return profilesNotRunOf(engineOutput)
+        .filter((p) => !(p.reason === 'overridden-by-selection' && /^wcag22-a{1,3}$/.test(p.id)))
+        .map((p) => ({
+            engineId: ENGINE_ID,
+            code: 'profile-not-run',
+            profile: p.id,
+            message: (NOT_RUN_REASONS[p.reason] || ((label) => `The scan did not check against ${label}.`))(p.label),
+        }));
 }
 
 /**

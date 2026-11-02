@@ -19,14 +19,14 @@ const { createBatchImages, packResultImages } = require('../server-side/batch-pa
 const { REPORTS_ROOT } = require('../server-side/report-paths');
 const { assessRun, describeRunHealth } = require('../shared/run-health.js');
 const { parseCliArgs, applyOverrides } = require('./run-spec');
-const { EXIT, loadBaselinePayload, compareToBaseline, decideExit, diffDocument } = require('./baseline');
+const { EXIT, loadBaselinePayload, compareToBaseline, comparableSummary, decideExit, diffDocument } = require('./baseline');
 const {
     defaultOutDir, resolveBaselineTarget, promoteBaseline, pruneRuns,
     defaultBatchDir, batchRunDirName, findPreviousBatchRun, pruneBatches, baselineFilePath, BATCH_MANIFEST,
 } = require('./run-store');
 const { isBatch, checkBatch } = require('./batch-spec');
 const { summarizePayload } = require('../server-side/run-queue');
-const { buildSummaryMarkdown, engineChangesText } = require('./summary-report');
+const { buildSummaryMarkdown, engineChangesText, profilesText } = require('./summary-report');
 const { createStepProgress, summaryLines: stepSummaryLines } = require('./step-progress');
 const { writeExports, likelyFailures, baselineEntriesFor } = require('./export-formats');
 const { readReviewFile, carryReviewOnto, writeConformanceReport } = require('./conformance-export');
@@ -214,6 +214,8 @@ function printComparison(comparison, baselinePayload, baselineLabel) {
     }
     const engines = engineChangesText(comparison.engineChanges);
     if (engines) lines.push(`Warning     ${engines}`);
+    const profiles = profilesText(comparison.profiles);
+    if (profiles) lines.push(`${profiles.warning ? 'Warning' : 'Note'}${profiles.warning ? '    ' : '       '} ${profiles.text}`);
 
     for (const rule of summary.newRules) {
         lines.push(`  new       ${rule.ruleId} (${rule.severity}) ${rule.occurrences} instance${rule.occurrences === 1 ? '' : 's'}`);
@@ -686,6 +688,9 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
         'utf8'
     );
 
+    // An error.json an earlier run left in this folder is not this run's.
+    if (payload) fs.rmSync(path.join(outDir, 'error.json'), { force: true });
+
     if (!payload) {
         fs.writeFileSync(path.join(outDir, 'error.json'), JSON.stringify(error, null, 2), 'utf8');
         console.error(`\nError: ${error.details}`);
@@ -809,7 +814,7 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
     }
 
     return {
-        exitCode: decideExit({ status, health, summary: comparison ? comparison.summary : null, likely, failing }),
+        exitCode: decideExit({ status, health, summary: comparableSummary(comparison), likely, failing }),
         status,
         payload,
         health,

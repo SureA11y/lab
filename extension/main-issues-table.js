@@ -151,7 +151,7 @@
         const rowsFor = (outcome) => mergeCompositeIssueRows(list
             .flatMap((finding) => splitFindingByOccurrenceOutcome(finding))
             .filter((f) => f && f.outcome === outcome)
-            .map((f) => findingToIssueRow(f, url, (globalThis.A11Y_REPORT_SCAN?.scanStandardId(scan) ?? null))));
+            .map((f) => findingToIssueRow(f, url, (globalThis.A11Y_REPORT_SCAN?.scanListingStandardId(scan) ?? null))));
         const fail = rowsFor('fail');
         const cantTell = rowsFor('cantTell');
         if (!fail.length && !cantTell.length) return '';
@@ -985,8 +985,9 @@
         const pass = (passCanonical !== null) ? passCanonical : (s.passesCount ?? 0);
 
         const bits = [];
-        const profile = globalThis.A11Y_REPORT_SCAN?.scanProfile(scan);
-        if (profile?.label) bits.push(String(profile.label));
+        // Every profile it checked against: "WCAG 2.2 AA + WAI-ARIA 1.2".
+        const profilesLabel = globalThis.A11Y_REPORT_SCAN?.scanProfilesLabel(scan);
+        if (profilesLabel) bits.push(String(profilesLabel));
         if (scan?.context) bits.push('Context: ' + scan.context);
         const prefix = bits.length ? (escapeHtml(bits.join(' · ')) + ': ') : '';
 
@@ -1093,8 +1094,8 @@
         const url = scan?.url || scan?.canonical?.page?.url || '';
         const label = scan?.label || scan?.id || 'Scan';
 
-        const fail = mergeCompositeIssueRows(getFindingsByOutcome(scan, 'fail').map(f => findingToIssueRow(f, url, (globalThis.A11Y_REPORT_SCAN?.scanStandardId(scan) ?? null))));
-        const cantTell = mergeCompositeIssueRows(getFindingsByOutcome(scan, 'cantTell').map(f => findingToIssueRow(f, url, (globalThis.A11Y_REPORT_SCAN?.scanStandardId(scan) ?? null))));
+        const fail = mergeCompositeIssueRows(getFindingsByOutcome(scan, 'fail').map(f => findingToIssueRow(f, url, (globalThis.A11Y_REPORT_SCAN?.scanListingStandardId(scan) ?? null))));
+        const cantTell = mergeCompositeIssueRows(getFindingsByOutcome(scan, 'cantTell').map(f => findingToIssueRow(f, url, (globalThis.A11Y_REPORT_SCAN?.scanListingStandardId(scan) ?? null))));
 
         const bestPractices = buildBestPracticesSectionHtml(scan, { url, label, enableDialogs: options.enableDialogs !== false });
         const hasRequirements = getFindings(scan).length > 0;

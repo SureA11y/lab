@@ -330,7 +330,7 @@
         const ids = new Set();
         for (const scan of asArray(report && report.scans)) {
             if (!scan || scan.skipped || scan.skipInfo) continue;
-            ids.add(str(reportScan.scanStandardId(scan)));
+            ids.add(str(reportScan.scanListingStandardId(scan)));
         }
         if (ids.size > 1) return 'mixed';
         return ids.size ? [...ids][0] : null;

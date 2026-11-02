@@ -66,7 +66,8 @@ async function buildComparisonHtml(baselinePayload, currentPayload, { title = ''
         order: 'given',
         document: { title, note: '', generatedAt },
     });
-    const [first, second] = d.swapped ? [currentPayload, baselinePayload] : [baselinePayload, currentPayload];
+    // As compared: read on the profiles they share.
+    const [first, second] = d.compared || (d.swapped ? [currentPayload, baselinePayload] : [baselinePayload, currentPayload]);
     const analyses = [first, second].map((r) => dispersion.analyseDispersion(Array.isArray(r && r.scans) ? r.scans : []));
     const spread = analyses.some((a) => a.rulesFailing > 0) ? dispersion.compareDispersion(analyses[0], analyses[1]) : null;
 

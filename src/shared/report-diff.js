@@ -616,7 +616,7 @@
 
         if (shared.basis && shared.basis.comparedOn.length) doc.profiles = shared.basis;
 
-        return {
+        const result = {
             mode,
             // True when evolution ordering put the second argument first, so a
             // caller holding the reports knows which one is the baseline.
@@ -634,6 +634,11 @@
             // has margins (other engines, or an older surea11y).
             margins: diffMargins(a, b),
         };
+        // The two reports as compared (read on their shared profiles), in
+        // the result's order, for a view that reads them further (where the
+        // failures are). Not enumerable: the CLI writes the result to disk.
+        Object.defineProperty(result, 'compared', { value: [a, b], enumerable: false });
+        return result;
     }
 
     // collectFailingRules is exported so the N-way series engine

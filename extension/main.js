@@ -1026,7 +1026,12 @@ function initUi() {
     /** Chooses profiles: one id, a list, or ids separated by commas. */
     function setSelectedProfiles(value) {
         const targets = globalThis.A11Y_CONFORMANCE_TARGETS;
-        const ids = targets ? targets.profileList(value) : [];
+        const offered = (id) => targets.isWcagTarget(id) || standardBoxes().some((b) => b.value === id);
+        // What this panel offers of it: a saved profile it doesn't have (a
+        // pack of another build) is left out, and nothing left is the
+        // default, WCAG 2.2 AA, as a scan with no profile checks.
+        let ids = targets ? targets.profileList(value).filter(offered) : [];
+        if (!ids.length) ids = ['wcag22-aa'];
         const wcag = ids.find((id) => targets.isWcagTarget(id)) || '';
         for (const r of wcagRadios()) r.checked = r.value === wcag;
         for (const b of standardBoxes()) b.checked = ids.includes(b.value);
@@ -1039,7 +1044,7 @@ function initUi() {
         if (summary) {
             summary.textContent = ids.length
                 ? `This scan checks: ${ids.map(targetLabelOf).join(' + ')}`
-                : 'Nothing chosen: the scan checks WCAG 2.2 AA.';
+                : 'Choose a WCAG level or a standard.';
         }
         const note = document.getElementById('profileOverlap');
         const wcag = ids.find((id) => globalThis.A11Y_CONFORMANCE_TARGETS?.isWcagTarget(id));
@@ -1086,6 +1091,20 @@ function initUi() {
                 group.append(label);
             }
         }
+    }
+
+    // The standard core applied (canonical.runOptions.conformanceProfile, a
+    // WCAG level being none), or, for a scan of several, the first standard
+    // among those that ran. null when none ran.
+    function appliedStandard(canonical, target) {
+        const ro = canonical && canonical.runOptions ? canonical.runOptions : {};
+        const isWcag = (id) => globalThis.A11Y_CONFORMANCE_TARGETS?.isWcagTarget(id);
+        const ran = Array.isArray(ro.conformanceProfiles) ? ro.conformanceProfiles : (ro.conformanceProfile ? [ro.conformanceProfile] : []);
+        const std = ran.find((p) => p && p.id && !isWcag(p.id));
+        if (std) return { id: std.id, label: std.label || targetLabelOf(std.id) };
+        // An engine of another kind, which names no profile, applied what was asked.
+        if (!('conformanceProfile' in ro) && target.profile) return { id: target.profile, label: target.label };
+        return null;
     }
 
     function getSelectedTarget() {
@@ -1242,7 +1261,7 @@ function initUi() {
         setStatus('Starting session...');
         const r = await postJson('/manual-start', { scenarioName: null, tags: null });
 
-        sessionState = 'started';sessionState = 'started';
+        sessionState = 'started';
         sessionScanCount = 0;
         lastResultPayload = null;
         lastResultFileName = null;
@@ -1258,6 +1277,12 @@ function initUi() {
 
     async function runScanFromUi() {
         out.textContent = '';
+        // "Don't check WCAG" and no standard: nothing to check against, and
+        // the scan would check WCAG 2.2 AA after all.
+        if (!selectedProfiles().length) {
+            setStatus('Choose a WCAG level or a standard to check against.');
+            return;
+        }
         setStatus('Running accessibility scan...');
 
         let didAutoInjectCustomCss = false;
@@ -1427,11 +1452,13 @@ function initUi() {
 
                 label,
                 context: contextSelector || null,
-                exclude: Array.isArray(excludeSelectors) ? excludeSelectors : null,
+                exclude: Array.isArray(excludeSelectors) && excludeSelectors.length ? excludeSelectors : null,
                 tags: tagsArr.length ? tagsArr : null,
                 // What it checked against, as the lab's reports record it.
+                // What core applied, not what was asked: a profile whose pack
+                // did not load did not run, and isn't what the scan checked.
                 ...globalThis.A11Y_REPORT_SCAN.scanProfileFields({
-                    standard: target.profile ? { id: target.profile, label: target.label } : null,
+                    standard: appliedStandard(canonical, target),
                     version: selection.version,
                     level: wcagLevel,
                     // A scan of several: those that ran, and those that did not.

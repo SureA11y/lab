@@ -695,7 +695,12 @@ function appliedProfilesOf(engineResult) {
     const ro = c && c.runOptions ? c.runOptions : null;
     const out = {};
     if (ro && Array.isArray(ro.conformanceProfiles) && ro.conformanceProfiles.length > 1) out.profiles = ro.conformanceProfiles;
-    if (ro && Array.isArray(ro.profilesNotRun) && ro.profilesNotRun.length) out.profilesNotRun = ro.profilesNotRun;
+    // The step's own rules chose what ran: its WCAG level still judges them
+    // (the scan says so as its profile), so only the standards did not run.
+    const notRun = ro && Array.isArray(ro.profilesNotRun)
+        ? ro.profilesNotRun.filter((p) => !(p && p.reason === 'overridden-by-selection' && /^wcag22-a{1,3}$/.test(p.id || '')))
+        : [];
+    if (notRun.length) out.profilesNotRun = notRun;
     return out;
 }
 
@@ -1468,6 +1473,14 @@ async function runA11yWorkflow(url, tags, options = {}) {
         // A profile a variable gave is known only now: one that is not a
         // profile, or two WCAG levels, stops the scan rather than quietly
         // checking WCAG 2.2 AA instead (checkScanSteps checked the others).
+        // A variable still in it is one no one set (vars.js keeps it there).
+        const unsetVars = [...new Set((Array.isArray(meta.profile) ? meta.profile : [meta.profile])
+            .flatMap((v) => (typeof v === 'string' ? v.match(/\{var:[^}]+\}/g) || [] : [])))];
+        if (unsetVars.length) {
+            // Named without its braces, which a log line would fill in again.
+            const names = unsetVars.map((t) => `"${t.slice(5, -1)}"`);
+            throw new Error(`The scan's profile comes from the variable${names.length === 1 ? '' : 's'} ${names.join(', ')}, which ${names.length === 1 ? 'is' : 'are'} not set, so it names no profile. Set ${names.length === 1 ? 'it' : 'them'}, or choose the profile in the step.`);
+        }
         const profileProblems = meta.profile != null ? scanTargetProblems(meta.profile) : [];
         if (profileProblems.length) {
             throw new Error(`The scan's profile: ${profileProblems.join('; ')}.`);

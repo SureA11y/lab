@@ -220,10 +220,21 @@
           ]
         },
         "exclude": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The parts of the page the scan left out: CSS selectors, as a list or as text separated by commas."
         },
         "profile": {
           "anyOf": [

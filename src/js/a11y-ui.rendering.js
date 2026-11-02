@@ -21,7 +21,8 @@ import {collectEngineOptions} from './report-engines.js';
 
 // The standard a scan checked against, or null for plain WCAG, read the same
 // way from every report, old or new (shared/report-scan.js).
-const standardIdOf = (scan) => globalThis.A11Y_REPORT_SCAN?.scanStandardId(scan) ?? null;
+// The standard a scan's findings are listed by (EN 301 549's clauses).
+const standardIdOf = (scan) => globalThis.A11Y_REPORT_SCAN?.scanListingStandardId(scan) ?? null;
 
 // Active grouping spec, can be replaced by uploaded JSON via setIssueGroupingSpec.
 // If null, grouping is disabled.

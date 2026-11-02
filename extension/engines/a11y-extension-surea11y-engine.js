@@ -134,22 +134,35 @@
 
         if (alreadyThere) {
             console.log('[surea11y adapter] runtime already present in page');
-            return;
-        }
-
-        try {
-            await injectFile(tabId, DEFAULT_VENDOR_FILE);
-        } catch (e) {
-            console.error('[surea11y adapter] vendor injection failed', {
-                file: DEFAULT_VENDOR_FILE,
-                message: String(e && e.message ? e.message : e),
-                error: e
-            });
-            throw e;
+        } else {
+            try {
+                await injectFile(tabId, DEFAULT_VENDOR_FILE);
+            } catch (e) {
+                console.error('[surea11y adapter] vendor injection failed', {
+                    file: DEFAULT_VENDOR_FILE,
+                    message: String(e && e.message ? e.message : e),
+                    error: e
+                });
+                throw e;
+            }
         }
         // The installed packs, registered in the page after the engine
-        // (build:extension-shared writes the script). A build without packs
-        // has none, and scans with core's own profiles.
+        // (build:extension-shared writes the script), also when the engine
+        // was already there: a page scanned before the extension was rebuilt
+        // keeps its engine and has none of this build's packs. A build
+        // without packs has none, and scans with core's own profiles.
+        const [registered] = await execInTab(tabId, {
+            func: () => {
+                try {
+                    const registry = globalThis[Symbol.for('surea11y.packs')];
+                    return !!registry && Object.keys(registry).length > 0;
+                } catch {
+                    return false;
+                }
+            },
+            args: []
+        }).catch(() => [false]);
+        if (registered) return;
         try {
             await injectFile(tabId, PACKS_VENDOR_FILE);
         } catch {
@@ -224,6 +237,7 @@
         // best-practices add to it. Its WCAG tags are kept aside in case this
         // core release lacks the profile.
         let profileFallbackTags = null;
+        let listFallbackRunOnly = null;
         const hasIncludes = effectiveRunOnly && Array.isArray(effectiveRunOnly.includeRuleIds) && effectiveRunOnly.includeRuleIds.length > 0;
         if (typeof engineOptions.profile === 'string' && engineOptions.profile.trim() && effectiveRunOnly && !hasIncludes) {
             const std = targets && targets.CONFORMANCE_TARGETS[engineOptions.profile.trim().toLowerCase()];
@@ -232,7 +246,10 @@
             effectiveRunOnly.wcag = null;
         } else if (Array.isArray(engineOptions.profile) && engineOptions.profile.length && effectiveRunOnly && !hasIncludes) {
             // A scan of several profiles names each one that did not run
-            // (engine.profilesNotRun) rather than scanning again.
+            // (engine.profilesNotRun) rather than scanning again. A core that
+            // scans one profile at a time ignores the list: the page then
+            // scans again at the WCAG target (listFallbackRunOnly), and says so.
+            listFallbackRunOnly = { ...effectiveRunOnly };
             effectiveRunOnly.tags = [];
             effectiveRunOnly.wcag = null;
         }
@@ -303,6 +320,14 @@
                 // profile and, with no tags left, runs every rule. Scan again
                 // with the standard's WCAG tags, and say so.
                 let profileUnavailable = null;
+                // A core that scans one profile at a time ignored the list.
+                let profilesUnsupported = null;
+                if (Array.isArray(cfg.profile) && payload.listFallbackRunOnly
+                    && !(engineOutput.engine && Array.isArray(engineOutput.engine.profiles))) {
+                    profilesUnsupported = cfg.profile.slice();
+                    delete cfg.profile;
+                    engineOutput = runner(pageUrl || null, payload.contextSelector || null, cfg, payload.listFallbackRunOnly) || {};
+                }
                 const appliedProfile = engineOutput.engine && engineOutput.engine.profile;
                 if (cfg.profile && appliedProfile !== cfg.profile && Array.isArray(payload.profileFallbackTags)) {
                     profileUnavailable = cfg.profile;
@@ -331,8 +356,21 @@
                     contextMatch: engineOutput.contextMatch || null,
                     pageReadiness,
                     profileUnavailable,
+                    profilesUnsupported,
                     // The WCAG target core selected rules by, or null.
-                    wcagTarget: (!cfg.profile && payload.runOnly && payload.runOnly.wcag) || null,
+                    wcagTarget: (!cfg.profile && ((profilesUnsupported && payload.listFallbackRunOnly.wcag)
+                        || (payload.runOnly && payload.runOnly.wcag))) || null,
+                    // The page's frames, which the extension does not scan:
+                    // the scan says so rather than read as the whole page.
+                    frameCount: (() => {
+                        try {
+                            return document.querySelectorAll('iframe, frame').length;
+                        } catch {
+                            return 0;
+                        }
+                    })(),
+                    // The packs core did not run, and why (another core's, say).
+                    skippedPacks: Array.isArray(engineOutput.skippedPacks) ? engineOutput.skippedPacks : null,
                     excludeSelectors: normalizeStringListLocal(cfg.excludeSelectors),
                     checksResults: Array.isArray(engineOutput.checksResults) ? engineOutput.checksResults : [],
                     rulesResults: Array.isArray(engineOutput.rulesResults) ? engineOutput.rulesResults : [],
@@ -348,6 +386,7 @@
                 engineOptions,
                 runOnly: effectiveRunOnly,
                 profileFallbackTags,
+                listFallbackRunOnly,
                 pageReadyTimeoutMs: Number.isFinite(opts.pageReadyTimeoutMs) && opts.pageReadyTimeoutMs >= 0
                     ? opts.pageReadyTimeoutMs
                     : DEFAULT_PAGE_READY_TIMEOUT_MS
@@ -952,6 +991,22 @@
             if (readiness) notices.push(readiness);
             notices.push(...notes.contextMatchNotices(native && native.contextMatch, contextSelector, ENGINE_ID));
         }
+        if (native && Number(native.frameCount) > 0) {
+            const n = Number(native.frameCount);
+            notices.push({
+                engineId: ENGINE_ID,
+                code: 'frames-not-scanned',
+                message: `This page has ${n} frame${n === 1 ? '' : 's'} (iframe), which the extension does not scan: their content is not in these results. The lab's scan step scans them.`
+            });
+        }
+        if (native && Array.isArray(native.profilesUnsupported) && native.profilesUnsupported.length) {
+            const names = native.profilesUnsupported.map(profileLabel);
+            notices.push({
+                engineId: ENGINE_ID,
+                code: 'profiles-unsupported',
+                message: `This surea11y release scans one profile at a time, so it checked the scan's WCAG target alone, not ${names.join(' + ')}. Rebuild the extension with a newer one.`
+            });
+        }
         for (const p of profilesNotRunOf(native)) {
             notices.push({
                 engineId: ENGINE_ID,
@@ -963,10 +1018,15 @@
         if (native && native.profileUnavailable) {
             const targets = root.A11Y_CONFORMANCE_TARGETS;
             const name = (targets && targets.targetLabel(native.profileUnavailable)) || native.profileUnavailable;
+            // Its pack did not load (prepared for another core, say), or
+            // this core has no such profile.
+            const skipped = Array.isArray(native.skippedPacks) ? native.skippedPacks.filter((p) => p && p.name) : [];
             notices.push({
                 engineId: ENGINE_ID,
                 code: 'profile-unavailable',
-                message: `This surea11y release has no ${name} profile, so it checked the standard's `
+                message: (skipped.length
+                    ? `${name}'s pack did not load (${skipped.map((p) => `${p.name}: ${p.reason}`).join('; ')}), so it checked the standard's `
+                    : `This surea11y release has no ${name} profile, so it checked the standard's `)
                     + 'WCAG criteria only: none of the rules or criteria the standard adds were run.'
             });
         }

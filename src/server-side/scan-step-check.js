@@ -20,9 +20,11 @@ function profileProblem(value, described) {
     if (!list || list.some((v) => typeof v !== 'string')) {
         return `its profile must be a profile's id, or a list of them, not ${JSON.stringify(value)}.`;
     }
-    if (list.some((v) => typeof v === 'string' && v.includes('{'))) return null;
-    if (!profileList(value).length) return null;
-    const problems = scanTargetProblems(value);
+    // A {var:...} token is known only at runtime: the runner checks it then.
+    // The rest is checked now.
+    const known = list.filter((v) => !/\{var:[^}]+\}/.test(v));
+    if (!profileList(known).length) return null;
+    const problems = scanTargetProblems(known);
     if (problems.length) {
         return `${problems.join("; ")}. Choose one of ${Object.keys(SCAN_TARGETS).join(", ")}.`;
     }

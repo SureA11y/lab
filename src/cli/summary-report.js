@@ -115,6 +115,34 @@ function engineChangesText(changes) {
         + ', so some differences may come from the engine rather than the pages';
 }
 
+/**
+ * What the baseline and this run were checked against, when that differs:
+ * { text, warning } or null. Compared on the profiles they share, it says
+ * which and what it left out; sharing none, that their rows don't line up
+ * and the new instances were not counted.
+ */
+function profilesText(profiles) {
+    if (!profiles) return null;
+    const basis = profiles.basis;
+    if (basis && Array.isArray(basis.comparedOn) && basis.comparedOn.length) {
+        const left = Array.isArray(basis.leftOut) ? basis.leftOut.map((p) => p.label) : [];
+        return {
+            warning: false,
+            text: `compared on ${basis.comparedOn.map((p) => p.label).join(' + ')}, which both checked`
+                + (left.length ? `; left out, as only one checked it: ${left.join(', ')}` : ''),
+        };
+    }
+    if (profiles.mismatch) {
+        const named = Array.isArray(profiles.compared) && profiles.compared.length > 1 ? ` (${profiles.compared.join(', ')})` : '';
+        return {
+            warning: true,
+            text: `the baseline and this run were checked against different standards or WCAG levels${named}, `
+                + 'which share none: their rows don\'t line up, so new instances are not counted against the baseline',
+        };
+    }
+    return null;
+}
+
 function comparisonSection(comparison, baselineLabel) {
     if (!comparison) {
         return ['', '## Compared to', '', 'No baseline was given, so nothing is being compared.'];
@@ -141,6 +169,8 @@ function comparisonSection(comparison, baselineLabel) {
 
     const engines = engineChangesText(comparison.engineChanges);
     if (engines) out.push(`- ${engines.charAt(0).toUpperCase()}${engines.slice(1)}`);
+    const profiles = profilesText(comparison.profiles);
+    if (profiles) out.push(`- ${profiles.text.charAt(0).toUpperCase()}${profiles.text.slice(1)}`);
 
     const optIn = comparison.optInRules;
     if (optIn && optIn.baseline.join(',') !== optIn.current.join(',')) {
@@ -164,7 +194,9 @@ function comparisonSection(comparison, baselineLabel) {
  * same inputs always produce the same text.
  */
 function buildSummaryMarkdown({ payload, status, health, comparison, baselineLabel, outDir, steps, likely = null, failing = null }) {
-    const outcome = outcomeOf({ status, health, summary: comparison ? comparison.summary : null, likely, failing });
+    // A comparison whose two share no profile is judged as no comparison.
+    const comparable = comparison && !(comparison.profiles && comparison.profiles.mismatch) ? comparison.summary : null;
+    const outcome = outcomeOf({ status, health, summary: comparable, likely, failing });
     const title = payload?.scenarioName || payload?.url || 'Workflow run';
 
     const lines = [
@@ -191,4 +223,4 @@ function buildSummaryMarkdown({ payload, status, health, comparison, baselineLab
     return lines.join('\n');
 }
 
-module.exports = { buildSummaryMarkdown, outcomeOf, engineChangesText };
+module.exports = { buildSummaryMarkdown, outcomeOf, engineChangesText, profilesText };

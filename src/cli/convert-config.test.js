@@ -20,6 +20,8 @@ describe('convertDocument', () => {
         ], { profile: 'en301549-v4.1.1' }));
         assert.deepEqual(doc.actions.map((s) => s.profile), [['wcag22-aa', 'en301549-v4.1.1'], ['wcag22-aa', 'en301549-v3.2.1']]);
         assert.ok(changes.some((c) => /profile "section508" → "wcag22-aa"/.test(c)));
+        // Beside another WCAG level, the one it already names stays.
+        assert.deepEqual(steps(spec([{ type: 'a11yScan', profile: ['section508', 'wcag22-aaa'] }]))[0].profile, ['wcag22-aaa']);
     });
 
     test('a scan\'s bare level or target becomes its profile, a separate standard winning as it did', () => {

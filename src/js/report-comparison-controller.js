@@ -193,7 +193,9 @@ export function createComparisonController({ setHTML, onState } = {}) {
             order: orderBy(),
             document: documentFor(),
         });
-        const [first, second] = d.swapped ? [b.report, a.report] : [a.report, b.report];
+        // Where the failures are, in the reports as compared: read on the
+        // profiles they share, like the rest of the comparison.
+        const [first, second] = d.compared || (d.swapped ? [b.report, a.report] : [a.report, b.report]);
         return comparisonDiffHTML(d, { dispersion: pairDispersion(first, second) });
     }
 
@@ -210,7 +212,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
         const source = series.ordering && Array.isArray(series.ordering.source)
             ? series.ordering.source : list.map((_, i) => i);
         return comparisonSeriesHTML(series, {
-            dispersion: seriesDispersion(source.map((i) => list[i].report)),
+            dispersion: seriesDispersion(series.compared || source.map((i) => list[i].report)),
         });
     }
 
