@@ -25,6 +25,7 @@ Read by the server and the command-line runner alike.
 | `A11Y_QUEUE_DIR` | Where the queue keeps its batches, inside the reports folder (default `batches`) |
 | `A11Y_QUEUE_METRICS` | Each batch writes `metrics.jsonl`, what the server and browser used as it ran (default on) |
 | `A11Y_MAX_RUNS` | How many runs started from the app's Run workflow (or `POST /workflow-start`) go at once; the others wait their turn, and say so in their log (default `4`). The queue has its own setting |
+| `A11Y_MAX_WAITING` | How many of those runs may wait their turn (default `50`); past them, a run is refused with 429 Too Many Requests, to try again later |
 | `A11Y_VALIDATE_CANONICAL` | Check every scan's result against the lab's result model; for development |
 | `A11Y_DEBUG_MODE` | More logging on the server, and surea11y's own output kept in the report |
 | `A11Y_ECHO_BROWSER_CONSOLE` | Copy the scanned page's console output to the server's (set to `1`) |

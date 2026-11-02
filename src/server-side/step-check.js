@@ -15,6 +15,44 @@ const { buildRunSpecSchema, buildAppConfigSchema, buildBatchSpecSchema, checkSpe
 const { checkAgainstSchema } = require('../shared/json-schema-check.js');
 const { checkScanSteps } = require('./scan-step-check');
 const { describeEngine } = require('./a11y-engine');
+const { selectorSyntaxProblem } = require('../shared/selector-syntax.js');
+
+/**
+ * Every selector field (a field its definition marks cssSelector: a scan's
+ * Include and Exclude) whose text no browser could parse, and every navigate
+ * step to an address a run may not open, in `list` and the steps it holds.
+ * -> ["$.actions[2].context ..."]
+ */
+function stepFieldProblems(list, path) {
+    const out = [];
+    (Array.isArray(list) ? list : []).forEach((step, i) => {
+        if (!step || typeof step !== 'object') return;
+        const here = `${path}[${i}]`;
+        const fields = (ACTION_DEFINITIONS[step.type] && ACTION_DEFINITIONS[step.type].fields) || {};
+        // A navigate step's page: a web address the run may open, as the
+        // run's own url (a relative one is read against the page).
+        if (step.type === 'navigate' && typeof step.url === 'string' && !step.url.includes('{')) {
+            const scheme = /^\s*([a-z][a-z0-9+.-]*):/i.exec(step.url);
+            if (scheme && !/^https?$/i.test(scheme[1])) {
+                out.push(`${here}.url "${step.url}" is not a web address a run may open: only http and https`);
+            }
+        }
+        for (const [name, def] of Object.entries(fields)) {
+            if (!def || !def.cssSelector) continue;
+            const values = Array.isArray(step[name]) ? step[name] : [step[name]];
+            for (const value of values) {
+                const problem = selectorSyntaxProblem(value);
+                if (problem) out.push(`${here}.${name} "${value}" is not a CSS selector a browser can read: ${problem}`);
+            }
+        }
+        for (const [key, value] of Object.entries(step)) {
+            if (Array.isArray(value) && value.some((v) => v && typeof v === 'object' && !Array.isArray(v))) {
+                out.push(...stepFieldProblems(value, `${here}.${key}`));
+            }
+        }
+    });
+    return out;
+}
 
 // checkScanSteps owns a scan's profile: a value outside the list stops the run,
 // so it reports it as an error, and the schema's warning would say it twice.
@@ -201,6 +239,8 @@ function checkWorkflowSteps({ actions, customSteps, wording = 'paths' } = {}) {
     if (tooDeep.length) return { errors: tooDeep, warnings: [] };
     const steps = checkSpecActions(doc, { schema: runSpecSchema(), checkAgainstSchema });
     const errors = steps.errors.slice();
+    errors.push(...stepFieldProblems(doc.actions, '$.actions'));
+    doc.customSteps.forEach((c, i) => errors.push(...stepFieldProblems(c && c.actions, `$.customSteps[${i}].actions`)));
     const warnings = steps.warnings.filter((w) => !OWNED_BY_SCAN_CHECK.test(w));
     if (wording === 'steps') {
         const context = { actions: doc.actions, customSteps: doc.customSteps };

@@ -278,6 +278,8 @@ function scanCounts(entry) {
  *                                     screenshots; removed with their session.
  * @param {Function} opts.executeRun   (spec, hooks) => { status, payload, error }
  * @param {Function} [opts.validateUrl] Throws on a URL the server will not open.
+ * @param {Function} [opts.checkRun] `(spec) -> [problem]`: why a run cannot work as
+ *   asked, as /workflow-start refuses one; none when it can.
  * @param {object} [opts.resourceSampler] `{ sample(), host() }` (resource-sampler.js):
  *                                     sampled every few seconds while a batch runs,
  *                                     for the governor and metrics.jsonl.
@@ -290,6 +292,7 @@ function createRunQueue({
     reportsRoot = null,
     executeRun,
     validateUrl = () => {},
+    checkRun = () => [],
     now = Date.now,
     keepSessions = KEEP_SESSIONS,
     maxConcurrency = MAX_CONCURRENCY,
@@ -780,6 +783,10 @@ function createRunQueue({
             const varErrors = [];
             const vars = normalizeVars(spec.vars, varErrors);
             if (varErrors.length) throw queueError(400, `${where}${varErrors[0]}`);
+            const problems = checkRun(spec) || [];
+            if (problems.length) {
+                throw queueError(400, `${where}The workflow cannot run: ${problems.length === 1 ? problems[0] : `${problems.length} problems: ${problems.join('; ')}`}`);
+            }
             if (Object.keys(vars).length) spec.vars = vars;
             else delete spec.vars;
             const row = Number.isInteger(raw.row) && raw.row > 0 ? raw.row : null;
