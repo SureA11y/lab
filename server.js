@@ -23,6 +23,7 @@ const { createResourceSampler } = require("./src/server-side/resource-sampler");
 const { registerQueueRoutes, resolveQueueBaseDir } = require("./src/server-side/queue-routes");
 const { createRequestGuard } = require("./src/server-side/request-guard");
 const { checkRunRequest, refusal } = require("./src/server-side/run-request-check");
+const { retentionHoursFrom, startRunFilesRetention } = require("./src/server-side/run-files-retention");
 const { proceduresForRequirements, listStandardProcedures, standardLanguages, renderStandardProcedures, guideIndex } = require("./src/server-side/procedures");
 const { installedPacks, installedStandards } = require("./src/server-side/standard-packs");
 // The standard packs load now, so their profiles are scan targets and step
@@ -865,6 +866,10 @@ app.use((err, req, res, next) => {
     if (assets.built) console.log('Built the report\'s styles and script (src/report).');
     if (assets.missing.length) console.warn(`The report's ${assets.missing.join(', ')} could not be built, so Download report will fail: ${assets.error}`);
 }
+
+// A run's pictures and evidence on disk, deleted A11Y_RUN_FILES_HOURS after
+// it (default 24; 0 keeps them).
+startRunFilesRetention(REPORTS_ROOT, retentionHoursFrom(process.env.A11Y_RUN_FILES_HOURS), { log: (m) => console.log(m) });
 
 app.listen(PORT, HOST, () => {
     console.log(`Accessibility lab server listening on http://${HOST}:${PORT}`);
