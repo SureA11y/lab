@@ -52,7 +52,9 @@ async function captureFullPagePuppeteer(page, { type = 'png', quality = 80 } = {
 // unbroken text) never finished, and a clip past JPEG's 65,535 pixels came
 // back empty. Past these, the capture keeps the page's top left.
 const MAX_CAPTURE_WIDTH = 8192;
-const MAX_CAPTURE_HEIGHT = 32000;
+// 12,000 px is about thirteen screens: a page as tall as the old 32,000 took
+// 12.5 s to picture, where its scan took 1.6 s.
+const MAX_CAPTURE_HEIGHT = 12000;
 const MAX_CAPTURE_PIXELS = 64000000;
 
 /** The clip a full-page capture takes: the page's size, within the limits above. */

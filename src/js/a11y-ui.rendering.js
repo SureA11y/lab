@@ -1980,7 +1980,7 @@ export function createRenderer({
         if (Array.isArray(scan?.screenshots) && scan.screenshots.some((shot) => shot && shot.clipped === true)) {
             const clipped = document.createElement('p');
             clipped.className = 'hint screenshot-clipped';
-            clipped.textContent = 'The picture shows only the top of the page: the page is larger than a picture can be. The scan checked all of it.';
+            clipped.textContent = 'The picture shows only the top of the page: pages are pictured down to 12,000 px (about thirteen screens), and this one is taller. The scan checked all of it.';
             screenshotsContainer.appendChild(clipped);
         }
 
