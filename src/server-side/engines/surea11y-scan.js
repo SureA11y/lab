@@ -283,4 +283,146 @@ async function installCoreHooks(page, hooks = Object.keys(CORE_HOOKS)) {
     return installed;
 }
 
-module.exports = { scanPage, captureScreenshots, applySelection, CORE_HOOKS, coreHooksFrom, installCoreHooks };
+// ---- frames ----
+
+// How many sub-frames are scanned at once, as the binding's frames(true) does.
+const FRAME_CONCURRENCY = 4;
+// At most this many sub-frames are scanned; the rest are named as not scanned.
+const MAX_FRAMES = 100;
+
+/** Maps `items` through async `fn`, at most `limit` at a time, keeping their order. */
+async function mapInBatches(items, limit, fn) {
+    const out = new Array(items.length);
+    let next = 0;
+    const worker = async () => {
+        while (next < items.length) {
+            const i = next;
+            next += 1;
+            out[i] = await fn(items[i]);
+        }
+    };
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+    return out;
+}
+
+/**
+ * The selectors of the iframe elements that lead from the top document to
+ * `frame`, outermost first: one per level, each as it reads in its own
+ * document. An occurrence in the frame carries them (frameSelectors), so the
+ * same element in two frames of one page is two elements.
+ */
+async function frameSelectorsOf(frame) {
+    const chain = [];
+    for (let f = frame; f && f.parentFrame && f.parentFrame(); f = f.parentFrame()) {
+        const handle = await f.frameElement();
+        if (!handle) return null;
+        const selector = await handle.evaluate((el) => {
+            const parts = [];
+            for (let node = el; node && node.nodeType === 1 && node !== node.ownerDocument.documentElement; node = node.parentElement) {
+                if (node.id && node.ownerDocument.querySelectorAll(`#${CSS.escape(node.id)}`).length === 1) {
+                    parts.unshift(`#${CSS.escape(node.id)}`);
+                    break;
+                }
+                let i = 1;
+                for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) if (sib.localName === node.localName) i += 1;
+                parts.unshift(`${node.localName}:nth-of-type(${i})`);
+            }
+            return parts.join(' > ');
+        });
+        await handle.dispose().catch(() => {});
+        chain.unshift(selector);
+    }
+    return chain;
+}
+
+/**
+ * Core's native result for each sub-frame of `page`, scanned whole (the
+ * scan's Include selectors are the top document's), a few at a time:
+ * [{ url, frameSelectors, result }] or [{ url, error }] for a frame that
+ * could not be scanned (detached, sandboxed, timed out). Element pictures
+ * are the top page's only: the lab pictures the page it shows.
+ */
+async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = [], signal = null } = {}) {
+    const main = page.mainFrame();
+    const frames = page.frames().filter((f) => f !== main && !(typeof f.detached === 'boolean' && f.detached));
+    const scanned = frames.slice(0, MAX_FRAMES);
+    const results = await mapInBatches(scanned, FRAME_CONCURRENCY, async (frame) => {
+        const url = typeof frame.url === 'function' ? frame.url() : null;
+        if (signal && signal.aborted) return { url, error: 'the scan was given up on' };
+        try {
+            const frameSelectors = await frameSelectorsOf(frame);
+            const builder = new A11yCoreBuilder({ page: frame, url: url || undefined });
+            builder.options(engineOptions);
+            if (Array.isArray(packs) && packs.length) builder.withPacks(packs);
+            applySelection(builder, runOnly);
+            builder.logger(() => {});
+            return { url, frameSelectors, result: await builder.analyze() };
+        } catch (e) {
+            return { url, error: String((e && e.message) || e) };
+        }
+    });
+    for (const frame of frames.slice(MAX_FRAMES)) {
+        results.push({ url: typeof frame.url === 'function' ? frame.url() : null, error: `more than ${MAX_FRAMES} frames on the page` });
+    }
+    return results;
+}
+
+const OUTCOME_RANK = { fail: 4, failed: 4, cantTell: 3, pass: 2, passed: 2, notApplicable: 1, inapplicable: 1 };
+
+/** The worse of two outcomes: a rule fails on the page if it fails in any of its frames. */
+function worseOutcome(a, b) {
+    return (OUTCOME_RANK[b] || 0) > (OUTCOME_RANK[a] || 0) ? b : a;
+}
+
+/**
+ * The top document's result with each scanned frame's findings in it: per
+ * rule (checksResults and rulesResults alike), the frame's occurrences added,
+ * each naming its frame (frameUrl, frameSelectors), and the rule's outcome
+ * the worse of the two. A rule's counts of a capped list (contrast's
+ * elementCount and reportedCount) are added up. Changes `top` in place.
+ */
+function mergeFrameResults(top, frameResults) {
+    if (!top || typeof top !== 'object') return top;
+    for (const f of frameResults || []) {
+        if (!f || !f.result) continue;
+        for (const key of ['checksResults', 'rulesResults']) {
+            const into = Array.isArray(top[key]) ? top[key] : (top[key] = []);
+            const byId = new Map(into.map((r) => [r && r.ruleId, r]));
+            for (const r of f.result[key] || []) {
+                if (!r || !r.ruleId) continue;
+                const occurrences = (Array.isArray(r.occurrences) ? r.occurrences : [])
+                    .map((o) => ({ ...o, frameUrl: f.url, frameSelectors: f.frameSelectors || null }));
+                const held = byId.get(r.ruleId);
+                if (!held) {
+                    const copy = { ...r, occurrences };
+                    into.push(copy);
+                    byId.set(r.ruleId, copy);
+                    continue;
+                }
+                held.occurrences = [...(Array.isArray(held.occurrences) ? held.occurrences : []), ...occurrences];
+                held.outcome = worseOutcome(held.outcome, r.outcome);
+                if (held.outcomeNormalized || r.outcomeNormalized) held.outcomeNormalized = worseOutcome(held.outcomeNormalized, r.outcomeNormalized);
+                const a = held.data && held.data.details;
+                const b = r.data && r.data.details;
+                // A rollup's checks, each with the worse of its outcomes: the
+                // lab reads a WCAG criterion's outcome from them.
+                if (a && b && Array.isArray(a.contributors) && Array.isArray(b.contributors)) {
+                    const contributors = a.contributors.map((c) => ({ ...c }));
+                    const byTest = new Map(contributors.map((c) => [c && c.testId, c]));
+                    for (const c of b.contributors) {
+                        const mine = c && byTest.get(c.testId);
+                        if (mine) mine.outcome = worseOutcome(mine.outcome, c.outcome);
+                        else if (c) contributors.push({ ...c });
+                    }
+                    held.data = { ...held.data, details: { ...a, contributors } };
+                }
+                if (a && b && Number.isFinite(a.elementCount) && Number.isFinite(b.elementCount)) {
+                    held.data = { ...held.data, details: { ...a, elementCount: a.elementCount + b.elementCount, reportedCount: (a.reportedCount || 0) + (b.reportedCount || 0), truncated: !!(a.truncated || b.truncated) } };
+                }
+            }
+        }
+    }
+    return top;
+}
+
+module.exports = { scanPage, scanFrames, mergeFrameResults, captureScreenshots, applySelection, CORE_HOOKS, coreHooksFrom, installCoreHooks };

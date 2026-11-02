@@ -716,7 +716,9 @@
         function occRest(occ) {
             const own = Array.isArray(occ && occ.target) ? occ.target.join('||') : '';
             const hosts = Array.isArray(occ && occ.shadowHostSelectors) ? occ.shadowHostSelectors.filter(Boolean) : [];
-            const target = hosts.length ? `${hosts.join(' >>> ')} >>> ${own}` : own;
+            const inRoots = hosts.length ? `${hosts.join(' >>> ')} >>> ${own}` : own;
+            const frames = Array.isArray(occ && occ.frameSelectors) ? occ.frameSelectors.filter(Boolean) : [];
+            const target = frames.length ? `${frames.join(' |>| ')} |>| ${inRoots}` : inRoots;
             const html = occ && occ.html ? String(occ.html) : '';
             const failure = occ && occ.failureSummary ? String(occ.failureSummary) : '';
             return target + '##' + html + '##' + failure;

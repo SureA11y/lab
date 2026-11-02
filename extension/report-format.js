@@ -23,6 +23,8 @@
  *   origin is left out, so a run on a staging copy compares with one on the
  *   live site.
  *
+ *   An element in an iframe is named by the iframes that lead to it as well.
+ *
  *   An element inside shadow roots is named by its hosts' selectors and its
  *   own, which holds only inside the last host's shadow root (elementTarget):
  *   by its own selector alone, a thousand buttons, each in a shadow root of
@@ -99,7 +101,10 @@
         const o = occurrence && typeof occurrence === 'object' ? occurrence : {};
         const target = Array.isArray(o.target) ? o.target.join('||') : (typeof o.target === 'string' ? o.target : '');
         const hosts = Array.isArray(o.shadowHostSelectors) ? o.shadowHostSelectors.filter((h) => typeof h === 'string' && h) : [];
-        return hosts.length ? `${hosts.join(' >>> ')} >>> ${target}` : target;
+        const own = hosts.length ? `${hosts.join(' >>> ')} >>> ${target}` : target;
+        // In an iframe: the iframes that lead to it come first (|>| between).
+        const frames = Array.isArray(o.frameSelectors) ? o.frameSelectors.filter((f) => typeof f === 'string' && f) : [];
+        return frames.length ? `${frames.join(' |>| ')} |>| ${own}` : own;
     }
 
     // cyrb53: a fast 53-bit string hash, the same in Node and the browser.

@@ -431,6 +431,8 @@ export function createRenderer({
                 howToCheck: occ?.howToCheck && Array.isArray(occ.howToCheck.steps) ? occ.howToCheck : null,
                 details: occ?.details && typeof occ.details === 'object' ? occ.details : null,
                 shadowHostSelectors: Array.isArray(occ?.shadowHostSelectors) ? occ.shadowHostSelectors : null,
+                frameUrl: typeof occ?.frameUrl === 'string' ? occ.frameUrl : null,
+                frameSelectors: Array.isArray(occ?.frameSelectors) ? occ.frameSelectors : null,
                 elementScreenshot: elementScreenshotOf(occ),
                 // Its element pictured in the state the finding was made in
                 // (the text spacing), beside the page as it is.
@@ -637,6 +639,13 @@ export function createRenderer({
     // its selector only holds inside its own shadow root.
     function buildOccurrenceDetailsHtml(n) {
         let out = '';
+        // An element in one of the page's iframes: which, and its address.
+        const frames = Array.isArray(n?.frameSelectors) ? n.frameSelectors.filter(Boolean) : [];
+        if (frames.length || n?.frameUrl) {
+            out += '<div class="node-detail node-frame"><strong>Inside the iframe:</strong> ' +
+                frames.map((f) => '<code>' + escapeHtml(String(f)) + '</code>').join(' › ') +
+                (n.frameUrl ? ' <span class="node-frame-url">(' + escapeHtml(String(n.frameUrl)) + ')</span>' : '') + '</div>';
+        }
         const hosts = Array.isArray(n?.shadowHostSelectors) ? n.shadowHostSelectors.filter(Boolean) : [];
         if (hosts.length) {
             out += '<div class="node-detail node-shadow"><strong>Inside the shadow DOM of:</strong> ' +

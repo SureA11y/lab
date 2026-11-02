@@ -1470,7 +1470,6 @@ async function runA11yWorkflow(url, tags, options = {}) {
 
         engineOptions.findingsSource = meta.findingsSource || 'composite';
         if (Array.isArray(meta.resultTypes) && meta.resultTypes.length) engineOptions.resultTypes = meta.resultTypes;
-        if (meta.iframes === true) engineOptions.iframes = true;
 
         function normalizeList(v) {
             if (!v) return [];
@@ -1655,7 +1654,8 @@ async function runA11yWorkflow(url, tags, options = {}) {
                         postProcess: {getSuccessCriteria},
                         elementScreenshots: shotOptions
                             ? { ...shotOptions, budgetMs: CAPTURE_BUDGET_MS, signal: shotAbort.signal }
-                            : null
+                            : null,
+                        frames: meta.frames !== false
                     }, scanEngineId),
                     new Promise((_, reject) => {
                         engineTimer = setTimeout(() => {
@@ -2006,7 +2006,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
             profile: s.profile || null,
             includeBestPractice: s.includeBestPractice === true,
             resultTypes: s.resultTypes || null,
-            iframes: s.iframes === true,
+            // Scan iframes too: on unless the step turns it off (the older
+            // iframes field, which only ever turned it on, reads the same).
+            frames: s.frames !== false && s.iframes !== false,
             disableRule: s.disableRule || null,
             disableRules: s.disableRules || null,
             heavyNodeThreshold: s.heavyNodeThreshold || null,

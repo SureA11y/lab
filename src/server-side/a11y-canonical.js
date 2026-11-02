@@ -65,9 +65,10 @@ function namedOccurrenceKey(o) {
         if (typeof o.key === 'string') return `key:${o.key}`;
         // A selector holds only inside the shadow root it was written for, so
         // the hosts it is inside are part of its name.
-        const hosts = Array.isArray(o.shadowHostSelectors) && o.shadowHostSelectors.length
-            ? `${o.shadowHostSelectors.join(' >>> ')} >>> `
-            : '';
+        const hosts = (Array.isArray(o.frameSelectors) && o.frameSelectors.length ? `${o.frameSelectors.join(' |>| ')} |>| ` : '')
+            + (Array.isArray(o.shadowHostSelectors) && o.shadowHostSelectors.length
+                ? `${o.shadowHostSelectors.join(' >>> ')} >>> `
+                : '');
         if (typeof o.selector === 'string' && typeof o.html === 'string') return `sel+html:${hosts}${o.selector}::${o.html}`;
         if (typeof o.selector === 'string') return `sel:${hosts}${o.selector}`;
     }
@@ -81,7 +82,8 @@ function namedOccurrenceKey(o) {
  */
 function occurrenceShape(o) {
     const page = o && typeof o.pageUrl === 'string' ? o.pageUrl : '';
-    const hosts = o && Array.isArray(o.shadowHostSelectors) ? o.shadowHostSelectors.join('\u0002') : '';
+    const hosts = (o && Array.isArray(o.shadowHostSelectors) ? o.shadowHostSelectors.join('\u0002') : '')
+        + (o && Array.isArray(o.frameSelectors) ? `\u0004${o.frameSelectors.join('\u0002')}` : '');
     const target = (o && Array.isArray(o.target) ? o.target.join('\u0001') : '') + (hosts ? `\u0003${hosts}` : '');
     const html = o && typeof o.html === 'string' ? o.html : '';
     return `${page}\u0000${target}\u0000${html}`;

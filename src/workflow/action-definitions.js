@@ -135,6 +135,13 @@ const ACTION_DEFINITIONS = {
                 example: 5000,
                 step: 500
             },
+            frames: {
+                type: "boolean",
+                required: false,
+                alias: "Scan iframes too",
+                description: "Scan the content of the page's iframes as well, each whole, and report what they show with the page: an element in an iframe names the iframe it is in. Off, the report says how many iframes were left out.",
+                default: true
+            },
             heavyNodeThreshold: {
                 type: "number",
                 required: false,
@@ -260,6 +267,7 @@ const ACTION_DEFINITIONS = {
                 "context",
                 "exclude",
                 "screenshotView",
+                "frames",
                 "elementScreenshots",
                 "elementScreenshotsMax",
                 "elementScreenshotsPerRule",

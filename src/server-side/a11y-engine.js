@@ -465,7 +465,7 @@ function saveHtmlReport(reportModel, meta = {}, engineIdOverride = null) {
  */
 async function runOnPage(
     page,
-    { selection, runOnly, wcagLevel, contextSelector, excludeSelectors, engineOptions, postProcess, elementScreenshots = null } = {},
+    { selection, runOnly, wcagLevel, contextSelector, excludeSelectors, engineOptions, postProcess, elementScreenshots = null, frames = true } = {},
     engineIdOverride = null
 ) {
     const engineIds = normalizeEngineIdList(engineIdOverride);
@@ -493,7 +493,9 @@ async function runOnPage(
         postProcess,
         // Pictures of flagged elements: only an engine that takes them
         // (surea11y, through its binding) reads it.
-        elementScreenshots
+        elementScreenshots,
+        // The page's iframes scanned too: an engine that cannot leaves it.
+        frames
     });
 
     await dumpResultJson({ result, bundle, engineIds });

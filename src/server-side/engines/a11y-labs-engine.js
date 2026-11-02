@@ -50,7 +50,7 @@ const coreGetCompositeRulesCatalog = (opts) => core.getRulesCatalog(withPacks(op
 const getCheckDefById = (ruleId, opts) => core.getCheckDefById(ruleId, withPacks(opts));
 // The scan itself runs through @surea11y/puppeteer, with core's
 // runa11yCoreInPage (see surea11y-scan.js).
-const { scanPage, captureScreenshots, coreHooksFrom, installCoreHooks } = require('./surea11y-scan');
+const { scanPage, scanFrames, mergeFrameResults, captureScreenshots, coreHooksFrom, installCoreHooks } = require('./surea11y-scan');
 const { getScanNotes } = require('@surea11y/puppeteer');
 const { elementScreenshotOf, elementStateScreenshotsOf } = require('../element-screenshots');
 
@@ -965,7 +965,10 @@ async function runOnPage(
         postProcess,
         // The binding's .screenshots() options (element-screenshots.js), or
         // null for no pictures of the flagged elements.
-        elementScreenshots = null
+        elementScreenshots = null,
+        // Whether the page's iframes are scanned too, their findings with
+        // the page's (the step's Scan iframes too, on unless it says).
+        frames = true
     } = {}
 ) {
     // Basic page metadata
@@ -1010,6 +1013,9 @@ async function runOnPage(
     } = resolveRunSelection({ selection, runOnly, wcagLevel, cfg, requestedProfile });
     applyTargetToOptions(cfg, { wcagVersion: targetVersion, wcagLevel: targetLevel });
 
+    // What the scan ran with, the fallback's when it replaces the first.
+    let scannedCfg = cfg;
+    let scannedRunOnly = runOnlyForCore;
     let engineOutput = noKnownRuleIncluded
         ? { url: pageUrl || null, title: pageTitle || null, checksResults: [], rulesResults: [] }
         : await scanPage(page, {
@@ -1035,11 +1041,13 @@ async function runOnPage(
         && CONFORMANCE_TARGETS[requestedProfile]) {
         const fallbackCfg = { ...cfg };
         delete fallbackCfg.profile;
+        scannedCfg = fallbackCfg;
+        scannedRunOnly = { ...(runOnlyForCore || {}), tags: CONFORMANCE_TARGETS[requestedProfile].tags.slice() };
         engineOutput = await scanPage(page, {
             pageUrl,
             contextSelector: ctxSelector,
             engineOptions: fallbackCfg,
-            runOnly: { ...(runOnlyForCore || {}), tags: CONFORMANCE_TARGETS[requestedProfile].tags.slice() },
+            runOnly: scannedRunOnly,
             packs: PACKS
         });
         notices.push({
@@ -1053,6 +1061,30 @@ async function runOnPage(
     // first scan's would be thrown away with it when the fallback replaces it.
     if (elementScreenshots && !noKnownRuleIncluded) {
         engineOutput = await captureScreenshots(page, engineOutput, elementScreenshots);
+    }
+    // The page's iframes, each scanned whole, their findings with the
+    // page's: an iframe's content was never checked, and the report did not
+    // say so. After the pictures, which are the top page's.
+    const subFrames = typeof page.frames === 'function' ? page.frames().length - 1 : 0;
+    if (frames && subFrames > 0 && !noKnownRuleIncluded) {
+        const frameResults = await scanFrames(page, { engineOptions: scannedCfg, runOnly: scannedRunOnly, packs: PACKS });
+        mergeFrameResults(engineOutput, frameResults);
+        engineOutput.frames = frameResults.map((f) => ({ url: f.url || null, frameSelectors: f.frameSelectors || null, ...(f.error ? { error: f.error } : {}) }));
+        const missed = frameResults.filter((f) => f.error);
+        if (missed.length) {
+            notices.push({
+                engineId: ENGINE_ID,
+                code: 'frames-not-scanned',
+                message: `${missed.length} of the page's ${frameResults.length} iframes could not be scanned, so their content is not in these results: `
+                    + missed.slice(0, 5).map((f) => `${f.url || 'an iframe'} (${f.error})`).join('; ') + (missed.length > 5 ? '; …' : '') + '.'
+            });
+        }
+    } else if (!frames && subFrames > 0) {
+        notices.push({
+            engineId: ENGINE_ID,
+            code: 'frames-off',
+            message: `This page has ${subFrames} ${subFrames === 1 ? 'iframe' : 'iframes'}, and this scan left ${subFrames === 1 ? 'it' : 'them'} out (Scan iframes too is off): what ${subFrames === 1 ? 'it shows' : 'they show'} is not in these results.`
+        });
     }
     if (noKnownRuleIncluded) {
         notices.push({
@@ -1172,6 +1204,10 @@ async function runOnPage(
                     ...(howToCheck ? { howToCheck } : {}),
                     ...(details ? { details } : {}),
                     ...(shadowHostSelectors ? { shadowHostSelectors } : {}),
+                    // An element in one of the page's iframes: the frame's
+                    // address, and the iframes that lead to it from the page.
+                    ...(occ && occ.frameUrl ? { frameUrl: String(occ.frameUrl) } : {}),
+                    ...(occ && Array.isArray(occ.frameSelectors) && occ.frameSelectors.length ? { frameSelectors: occ.frameSelectors.map(String) } : {}),
                     ...(elementScreenshot ? { elementScreenshot } : {}),
                     ...(elementStateScreenshots ? { elementStateScreenshots } : {}),
                     evidence: {
@@ -1517,6 +1553,9 @@ async function runOnPage(
             // colour scheme, whether fonts and images were still loading, and
             // how many animations it held still.
             environment: (engineOutput && engineOutput.engine && engineOutput.engine.environment) || null,
+            // The page's iframes and whether each was scanned: { url,
+            // frameSelectors, error? }; null when it has none or they were left out.
+            frames: (engineOutput && Array.isArray(engineOutput.frames)) ? engineOutput.frames : null,
             engine: {
                 compositeCatalogCount,
                 rulesResults: (engineOutput && Array.isArray(engineOutput.rulesResults)) ? engineOutput.rulesResults : []
