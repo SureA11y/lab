@@ -118,8 +118,10 @@ test('a workflow runs and ends with its summary', async () => {
     const { page, errors } = await openApp();
     await page.$eval('#url-input', (el, url) => { el.value = url; el.dispatchEvent(new Event('input', { bubbles: true })); }, siteUrl);
     await page.click('#scan-button');
-    await page.waitForFunction(() => /^(Finished|Workflow failed)/.test(document.querySelector('#statusRun').textContent.trim()), { timeout: 120000 });
-    assert.match(await statusOf(page, '#statusRun'), /^Finished/);
+    // "Finished" comes when the run ends; "Finished: …" once its results
+    // are fetched and drawn, which is the summary this test is about.
+    await page.waitForFunction(() => /^(Finished:|Workflow failed)/.test(document.querySelector('#statusRun').textContent.trim()), { timeout: 120000 });
+    assert.match(await statusOf(page, '#statusRun'), /^Finished:/);
     assert.ok((await page.$$('#results .scan-results-wrapper')).length >= 1, 'its scan is drawn');
     assert.deepEqual(errors, []);
     await page.close();
