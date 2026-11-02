@@ -61,7 +61,8 @@ every result on disk under `reports/batches/<start time>/`, with `batch.json`.
 | Call | What it does |
 | --- | --- |
 | `POST /queue/items` | Queues a batch: `{ name, items: [{ run, row?, config? }] }`, each `run` a run spec's fields as for `/workflow-start`. 409 while another batch runs. |
-| `GET /queue` | The queue: `{ concurrency, maxConcurrency, hold, resources, sessions }`; each session (a batch) has its `items`, their `status`, counts and links: `manifestUrl` (its `batch.json`), `zipUrl` (every result as a report package), and per item `fileUrl` and `zipUrl`. |
+| `GET /queue` | The queue: `{ concurrency, maxConcurrency, hold, resources, sessions }`; each session (a batch) in summary: its `counts` by status, `stats`, `scans`, its `slowest` run, whether it `hasResults`, the runs going now (`active`), the last to finish (`recent`), and links: `manifestUrl` (its `batch.json`), `zipUrl` (every result as a report package) and `itemsUrl`, where its runs are. |
+| `GET /queue/sessions/{sessionId}/items?offset=&limit=&status=` | A batch's runs, a page at a time (100 unless `limit` says, at most 500), in the order they were queued, `status` keeping only those with the statuses given (comma-separated): `{ total, offset, limit, items }`, each with its `status`, figures, `fileUrl` and `zipUrl`. |
 | `GET /queue/items/{itemId}/progress?since=` | A running item's log, as `/workflow-progress`. |
 | `POST /queue/items/{itemId}/cancel`, `POST /queue/cancel` | Cancels one run, or the whole batch. |
 | `POST /queue/settings` | `{ concurrency }`: how many runs at once. |

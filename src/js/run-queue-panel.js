@@ -151,16 +151,22 @@ export function describeHealth({ hold = null, resources = null } = {}) {
  * run back for memory twice". '' when there is nothing to say.
  */
 export function describeSummary(session) {
+    // The server says it of the whole batch (scans, slowest); a batch given
+    // with its runs is read from them.
     const items = Array.isArray(session.items) ? session.items : [];
     const parts = [];
-    const scans = items.reduce((n, i) => n + (Number.isFinite(i.scansRun) ? i.scansRun : (Number.isFinite(i.scans) ? i.scans : 0)), 0);
+    const scans = Number.isFinite(session.scans)
+        ? session.scans
+        : items.reduce((n, i) => n + (Number.isFinite(i.scansRun) ? i.scansRun : (Number.isFinite(i.scans) ? i.scans : 0)), 0);
     const span = Date.parse(session.finishedAt) - Date.parse(session.startedAt);
     if (scans) parts.push(Number.isFinite(span) && span >= 0 ? `${plural(scans, 'scan')} in ${formatDuration(span)}`.replace(String(scans), formatCount(scans)) : plural(scans, 'scan'));
-    const timed = items.filter((i) => Number.isFinite(i.durationMs));
-    if (timed.length > 1) {
-        const slowest = timed.reduce((a, b) => (b.durationMs > a.durationMs ? b : a));
-        parts.push(`slowest: ${slowest.name} (${formatDuration(slowest.durationMs)})`);
+    let slowest = session.slowest !== undefined ? session.slowest : null;
+    if (session.slowest === undefined) {
+        const timed = items.filter((i) => Number.isFinite(i.durationMs));
+        if (timed.length > 1) slowest = timed.reduce((a, b) => (b.durationMs > a.durationMs ? b : a));
     }
+    // A batch cancelled before any run went has none to name.
+    if (slowest && slowest.durationMs > 0) parts.push(`slowest: ${slowest.name} (${formatDuration(slowest.durationMs)})`);
     const stats = session.stats || {};
     if (Number.isFinite(stats.peakHeapPct)) {
         const limit = Number.isFinite(stats.heapLimitMb) ? ` of its ${formatMb(stats.heapLimitMb)} limit` : '';
@@ -561,6 +567,33 @@ const WAIT_FOR_BATCH = 'Available once this batch finishes: until then it would 
 const QUEUE_BUSY = 'Another batch is running. Resume this one once it has finished.';
 const SENDING_TO_COMPARE = 'This batch is being sent to Compare. Delete it once that is done.';
 
+// How many of a batch's runs the app asks for at a time.
+export const ITEMS_PAGE = 100;
+
+/**
+ * Below a batch's runs: that they are loading, or how many are not shown yet
+ * with a button for the next page. Null when every run is shown.
+ */
+function itemsFooterRow(doc, session) {
+    const shown = (session.items || []).length;
+    const total = Number.isFinite(session.itemsTotal) ? session.itemsTotal : shown;
+    if (session.itemsLoading && !shown) {
+        return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '8', text: 'Loading the runs…' }));
+    }
+    if (shown >= total) return null;
+    const next = Math.min(ITEMS_PAGE, total - shown);
+    return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '8' }, [
+        el(doc, 'span', { className: 'queue-note', text: `Showing ${formatCount(shown)} of ${formatCount(total)} runs. ` }),
+        el(doc, 'button', {
+            type: 'button',
+            className: 'secondary-button',
+            'data-queue-action': 'more',
+            'data-session-id': session.id,
+            'data-focus-key': `more:${session.id}`,
+        }, `Show ${formatCount(next)} more`),
+    ]));
+}
+
 function sessionSection(doc, session, { expanded = true, queueBusy = false, health = null, compareBlocked = null, sendingToCompare = null } = {}) {
     const headingId = `queue-session-${session.id}`;
     const bodyId = `queue-session-body-${session.id}`;
@@ -586,7 +619,7 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
             download: session.zipName || `queue-${session.id}.zip`,
             'data-focus-key': `zip:${session.id}`,
         }, 'Download all (zip)'),
-        running || session.items.some((i) => i.fileUrl) ? el(doc, 'button', {
+        running || session.hasResults || (session.items || []).some((i) => i.fileUrl) ? el(doc, 'button', {
             type: 'button',
             className: 'secondary-button',
             'aria-disabled': compareWhy ? 'true' : null,
@@ -633,7 +666,10 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
             el(doc, 'th', { scope: 'col', className: 'queue-num', text: 'Duration' }),
             el(doc, 'th', { scope: 'col', text: 'Actions' }),
         ])),
-        el(doc, 'tbody', {}, session.items.map((item) => itemRow(doc, session, item))),
+        el(doc, 'tbody', {}, [
+            ...(session.items || []).map((item) => itemRow(doc, session, item)),
+            itemsFooterRow(doc, session),
+        ]),
     ]);
 
     return el(doc, 'section', {
@@ -687,11 +723,17 @@ export function renderQueueSessions(doc, state, { isExpanded = () => true, compa
 /** What to announce between two states: runs that have just finished. */
 export function describeChanges(prev, next) {
     if (!prev) return [];
+    // A batch's runs as the queue gives them in summary (the ones going and
+    // the last to finish), or all of them where it gives them.
+    const known = (s) => [...(s.active || []), ...(s.recent || []), ...(s.items || [])];
     const before = new Map();
-    for (const s of prev.sessions || []) for (const i of s.items || []) before.set(i.id, i.status);
+    for (const s of prev.sessions || []) for (const i of known(s)) if (!before.has(i.id)) before.set(i.id, i.status);
     const out = [];
+    const said = new Set();
     for (const s of next.sessions || []) {
-        for (const i of s.items || []) {
+        for (const i of known(s)) {
+            if (said.has(i.id)) continue;
+            said.add(i.id);
             const was = before.get(i.id);
             if (was && was !== i.status && TERMINAL.has(i.status) && i.status !== 'interrupted') {
                 out.push(`${i.name}: ${(STATUS_LABELS[i.status] || i.status).toLowerCase()}`);
@@ -951,6 +993,50 @@ export function createRunQueuePanel({
         if (!doc.hidden) refresh();
     });
 
+    // A batch's runs, as far as they have been read: GET /queue gives each
+    // batch in summary, and an open batch's runs come from its itemsUrl a
+    // page at a time. session id -> { items, total, limit, key, loading }
+    const pages = new Map();
+
+    /** Reads the runs of an open batch, as many as it shows, when they may have changed. */
+    async function loadItems(session, { force = false } = {}) {
+        // A batch the server gave with its runs (or without an itemsUrl) has none to read.
+        if (!session || !session.itemsUrl || (Array.isArray(session.items) && !session.itemsPaged)) return;
+        const page = pages.get(session.id) || { items: [], total: session.counts?.total || 0, limit: ITEMS_PAGE, key: null };
+        // A finished batch's runs no longer change: read again only when
+        // asked for more, or when its counts moved (a resume).
+        const key = JSON.stringify(session.counts || {});
+        if (!force && session.state !== 'running' && page.key === key) return;
+        page.loading = true;
+        pages.set(session.id, page);
+        try {
+            const res = await fetchImpl(`${session.itemsUrl}?offset=0&limit=${page.limit}`, { method: 'GET' });
+            if (!res.ok) throw new Error(`The server answered ${res.status}`);
+            const body = await res.json();
+            page.items = Array.isArray(body.items) ? body.items : [];
+            page.total = Number.isFinite(body.total) ? body.total : page.items.length;
+            page.key = key;
+        } finally {
+            page.loading = false;
+        }
+    }
+
+    /** The queue as the server gave it, each open batch with the runs read so far. */
+    function withPages(queueState) {
+        for (const s of queueState.sessions || []) {
+            if (Array.isArray(s.items) && !s.itemsPaged) continue;
+            s.itemsPaged = true;
+            const page = pages.get(s.id);
+            s.items = page ? page.items : [];
+            s.itemsTotal = page ? page.total : (s.counts?.total || 0);
+            s.itemsLoading = expanded.has(s.id) && (!page || page.loading || page.key === null);
+        }
+        for (const id of pages.keys()) {
+            if (!(queueState.sessions || []).some((s) => s.id === id)) pages.delete(id);
+        }
+        return queueState;
+    }
+
     async function refresh() {
         if (inFlight) return inFlight;
         inFlight = (async () => {
@@ -958,6 +1044,13 @@ export function createRunQueuePanel({
                 const res = await fetchImpl('/queue', { method: 'GET' });
                 if (!res.ok) throw new Error(`The server answered ${res.status}`);
                 const next = await res.json();
+                for (const s of next.sessions || []) {
+                    if (s.state === 'running' && !collapsedByUser.has(s.id)) expanded.add(s.id);
+                }
+                await Promise.all((next.sessions || [])
+                    .filter((s) => expanded.has(s.id))
+                    .map((s) => loadItems(s).catch(() => {})));
+                withPages(next);
                 const changes = describeChanges(state, next);
                 const json = JSON.stringify(next);
                 state = next;
@@ -1000,7 +1093,7 @@ export function createRunQueuePanel({
 
     function findItem(itemId) {
         for (const session of state?.sessions || []) {
-            const item = session.items.find((i) => i.id === itemId);
+            const item = [...(session.items || []), ...(session.active || [])].find((i) => i.id === itemId);
             if (item) return { session, item };
         }
         return {};
@@ -1052,6 +1145,18 @@ export function createRunQueuePanel({
             }[action];
             if (busyText) setStatus(busyText, 'busy');
             track(({ open: onOpen, load: onLoadWorkflow, watch: onWatch })[action](item, session), busyText);
+        } else if (action === 'more') {
+            const session = state?.sessions.find((s) => s.id === sessionId);
+            const page = pages.get(sessionId);
+            if (!session || !page) return;
+            page.limit += ITEMS_PAGE;
+            setStatus('Loading more runs…', 'busy');
+            track(loadItems(session, { force: true }).then(() => {
+                withPages(state);
+                lastJson = JSON.stringify(state);
+                render();
+                setStatus(`Showing ${formatCount(page.items.length)} of ${formatCount(page.total)} runs.`);
+            }), null);
         } else if (action === 'blocked') {
             setStatus(button.getAttribute('data-blocked-reason') || 'Not available right now.', 'error');
         } else if (action === 'toggle') {
@@ -1061,6 +1166,17 @@ export function createRunQueuePanel({
             } else {
                 expanded.add(sessionId);
                 collapsedByUser.delete(sessionId);
+                // Its runs are read now it is open, and shown once read.
+                const session = state?.sessions.find((s) => s.id === sessionId);
+                if (session && session.itemsUrl && !pages.get(sessionId)?.key) {
+                    withPages(state);
+                    loadItems(session, { force: true }).catch(() => {}).then(() => {
+                        if (!state) return;
+                        withPages(state);
+                        lastJson = JSON.stringify(state);
+                        render();
+                    });
+                }
             }
             render();
             // Some browsers (Safari) do not focus a clicked button; the
@@ -1218,7 +1334,9 @@ export function createRunQueuePanel({
     /** How many runs are going right now, in the running batch. */
     function runningNow() {
         const live = state?.sessions.find((s) => s.state === 'running');
-        return live ? live.items.filter((i) => i.status === 'running' || i.status === 'cancelling').length : 0;
+        if (!live) return 0;
+        const going = Array.isArray(live.active) ? live.active : (live.items || []);
+        return going.filter((i) => i.status === 'running' || i.status === 'cancelling').length;
     }
 
     concurrencySelect?.addEventListener('change', () => {

@@ -117,7 +117,22 @@ function httpApiSchema() {
                     responses: { ...ok('Cancelling'), 404: { description: 'Unknown runId', content: json(error) } },
                 },
             },
-            '/queue': { get: { summary: 'The queue and its recent batches, with links to their results', responses: ok('The queue') } },
+            '/queue': { get: { summary: 'The queue and its recent batches, each in summary: counts, stats, scans, the slowest run, the runs going now and the last to finish, and itemsUrl, where its runs are', responses: ok('The queue') } },
+            '/queue/sessions/{sessionId}/items': {
+                get: {
+                    summary: 'A batch\'s runs, a page at a time, in the order they were queued',
+                    parameters: [
+                        pathParam('sessionId'),
+                        { name: 'offset', in: 'query', required: false, schema: { type: 'integer', minimum: 0 } },
+                        { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 500 }, description: '100 unless given; at most 500.' },
+                        { name: 'status', in: 'query', required: false, schema: { type: 'string' }, description: 'Only runs with these statuses, comma-separated (waiting, running, done, failed, error, cancelled, interrupted).' },
+                    ],
+                    responses: {
+                        ...ok('The page', { type: 'object', properties: { sessionId: { type: 'string' }, total: { type: 'integer' }, offset: { type: 'integer' }, limit: { type: 'integer' }, items: { type: 'array', items: { type: 'object' } } } }),
+                        404: { description: 'No such batch', content: json(error) },
+                    },
+                },
+            },
             '/queue/items': {
                 post: {
                     summary: 'Queue a batch',

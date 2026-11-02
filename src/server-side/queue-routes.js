@@ -50,17 +50,21 @@ function zipNameFor(id, name) {
 function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = console.error } = {}) {
     const publicBase = publicBaseFor(reportsRoot, baseDir);
 
+    function itemLinks(sessionId, item) {
+        item.fileUrl = item.file ? `${publicBase}/${sessionId}/${encodeURIComponent(item.file)}` : null;
+        // Its own package: its result and the pictures it names.
+        item.zipUrl = item.file ? `/queue/sessions/${sessionId}/items/${encodeURIComponent(item.id)}/download.zip` : null;
+        item.zipName = item.file ? `${files.fileStem(item.name)}.zip` : null;
+        return item;
+    }
+
     function withLinks(state) {
         for (const s of state.sessions) {
             s.manifestUrl = `${publicBase}/${s.id}/batch.json`;
             s.zipUrl = `/queue/sessions/${s.id}/download.zip`;
             s.zipName = zipNameFor(s.id, s.name);
-            for (const item of s.items) {
-                item.fileUrl = item.file ? `${publicBase}/${s.id}/${encodeURIComponent(item.file)}` : null;
-                // Its own package: its result and the pictures it names.
-                item.zipUrl = item.file ? `/queue/sessions/${s.id}/items/${encodeURIComponent(item.id)}/download.zip` : null;
-                item.zipName = item.file ? `${files.fileStem(item.name)}.zip` : null;
-            }
+            s.itemsUrl = `/queue/sessions/${s.id}/items`;
+            for (const item of s.active || []) itemLinks(s.id, item);
         }
         return state;
     }
@@ -75,7 +79,19 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
         }
     }
 
-    app.get('/queue', (_req, res) => respond(res, () => withLinks(queue.getState())));
+    // Each batch in summary: its runs come from its itemsUrl, a page at a time.
+    app.get('/queue', (_req, res) => respond(res, () => withLinks(queue.getState({ items: false }))));
+
+    // A batch's runs, a page at a time: ?offset=0&limit=100&status=failed,error.
+    app.get('/queue/sessions/:sessionId/items', (req, res) => respond(res, () => {
+        const page = queue.getItems(req.params.sessionId, {
+            offset: req.query && req.query.offset,
+            limit: req.query && req.query.limit,
+            status: req.query && req.query.status,
+        });
+        for (const item of page.items) itemLinks(page.sessionId, item);
+        return page;
+    }));
 
     app.post('/queue/items', (req, res) => respond(res, () => queue.addItems(
         req.body && req.body.items,

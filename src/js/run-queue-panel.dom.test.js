@@ -1298,3 +1298,45 @@ describe('run queue panel: noticing a batch started elsewhere', () => {
     });
 });
 
+
+// GET /queue gives each batch in summary; its runs come from itemsUrl a page
+// at a time, once it is open.
+describe('run queue panel: a batch\'s runs, a page at a time', () => {
+    function pagedServer(total) {
+        const all = Array.from({length: total}, (_, i) => baseItem({id: `i${i}`, name: `Run ${i}`, file: `Run-${i}.json`}));
+        const summary = {...session({finishedAt: '2026-10-12T15:00:00.000Z'}, []), items: undefined, counts: {total, done: total},
+            itemsUrl: '/queue/sessions/2026-10-12T14-03-27/items', scans: total * 4, hasResults: true,
+            slowest: {id: 'i3', name: 'Run 3', durationMs: 90000}, active: [], recent: []};
+        delete summary.items;
+        const asked = [];
+        const fetchImpl = async (url) => {
+            if (url.startsWith('/queue/sessions/')) {
+                const q = new URL(url, 'http://x').searchParams;
+                const offset = Number(q.get('offset')), limit = Number(q.get('limit'));
+                asked.push(limit);
+                return {ok: true, status: 200, json: async () => ({total, offset, limit, items: all.slice(offset, offset + limit)})};
+            }
+            return {ok: true, status: 200, json: async () => ({concurrency: 1, maxConcurrency: 4, sessions: [JSON.parse(JSON.stringify(summary))]})};
+        };
+        return {fetchImpl, asked};
+    }
+
+    test('a closed batch reads none of its runs; opened, it shows the first page and offers the next', async () => {
+        const server = pagedServer(250);
+        const p = mod.createRunQueuePanel({listEl: document.getElementById('list'), statusEl: document.getElementById('status'), fetchImpl: server.fetchImpl, pollMs: 60000});
+        await p.refresh();
+        assert.deepEqual(server.asked, []);
+        assert.match(document.querySelector('.queue-session-summary').textContent, /1,000 scans in .* · slowest: Run 3 \(1m 30s\)/);
+
+        document.querySelector('[data-queue-action="toggle"]').click();
+        await until(() => document.querySelectorAll('.queue-table tbody tr[data-item-id], .queue-table tbody th').length >= 100, 'the first page');
+        assert.equal(document.querySelectorAll('.queue-table tbody tr:not(.queue-items-more)').length, 100);
+        assert.match(document.querySelector('.queue-items-more').textContent, /Showing 100 of 250 runs\. Show 100 more/);
+
+        document.querySelector('[data-queue-action="more"]').click();
+        await until(() => document.querySelectorAll('.queue-table tbody tr:not(.queue-items-more)').length === 200, 'the second page');
+        assert.match(document.querySelector('.queue-items-more').textContent, /Show 50 more/);
+        assert.deepEqual(server.asked, [100, 200]);
+        assert.match(document.getElementById('status').textContent, /Showing 200 of 250 runs/);
+    });
+});

@@ -64,6 +64,12 @@ async function waitForState(check) {
     }
 }
 
+// A batch's runs, from the paged endpoint GET /queue gives in itemsUrl.
+async function itemsOf(sessionId, query = '') {
+    return (await api('GET', `/queue/sessions/${sessionId}/items${query}`)).body;
+}
+const runningNamed = (name) => (s) => (s.sessions[0].active || []).some((i) => i.name === name);
+
 const run = (name) => ({ run: { url: 'https://example.com/', scenarioName: name, actions: [{ type: 'a11yScan' }] } });
 
 describe('queue routes', () => {
@@ -81,11 +87,16 @@ describe('queue routes', () => {
         assert.equal(state.sessions[0].manifestUrl, `/reports/batches/${sessionId}/batch.json`);
 
         pending.shift()({ status: 'done', payload: { scans: [{}], findings: { fail: [], cantTell: [] } } });
-        await waitForState((s) => s.sessions[0].items[1].status === 'running');
+        await waitForState(runningNamed('Product v2.4'));
         pending.shift()({ status: 'done', payload: { scans: [{}, {}], findings: { fail: [], cantTell: [] } } });
         state = await waitForState((s) => s.sessions[0].state === 'finished');
+        assert.equal(state.sessions[0].items, undefined, 'the queue gives each batch in summary');
+        assert.equal(state.sessions[0].itemsUrl, `/queue/sessions/${sessionId}/items`);
+        assert.equal(state.sessions[0].hasResults, true);
+        assert.equal(state.sessions[0].scans, 3);
+        assert.deepEqual(state.sessions[0].recent.map((i) => [i.name, i.status]).sort(), [['Product v2.3', 'done'], ['Product v2.4', 'done']]);
 
-        const [first, second] = state.sessions[0].items;
+        const [first, second] = (await itemsOf(sessionId)).items;
         assert.equal(first.fileUrl, `/reports/batches/${sessionId}/Product-v2.3.json`);
         const saved = await api('GET', second.fileUrl);
         assert.equal(saved.status, 200);
@@ -97,6 +108,21 @@ describe('queue routes', () => {
         assert.match(zip.headers.get('content-disposition'), new RegExp(`"Product-queue-${sessionId}\\.zip"`));
         const entries = Object.keys((await JSZip.loadAsync(zip.body)).files).sort();
         assert.deepEqual(entries, ['Product-v2.3.json', 'Product-v2.4.json', 'batch.json']);
+    });
+
+    test('a batch\'s runs come a page at a time, by status if asked', async () => {
+        const added = await api('POST', '/queue/items', { items: ['a', 'b', 'c', 'd', 'e'].map(run), name: 'Paged' });
+        const id = added.body.sessionId;
+        const first = await itemsOf(id, '?offset=0&limit=2');
+        assert.deepEqual([first.total, first.offset, first.limit], [5, 0, 2]);
+        assert.deepEqual(first.items.map((i) => i.name), ['a', 'b']);
+        assert.deepEqual((await itemsOf(id, '?offset=4&limit=2')).items.map((i) => i.name), ['e']);
+        const waiting = await itemsOf(id, '?status=waiting');
+        assert.deepEqual(waiting.items.map((i) => i.name), ['b', 'c', 'd', 'e']);
+        assert.equal((await api('GET', '/queue/sessions/2020-01-01T00-00-00/items')).status, 404);
+        await api('POST', '/queue/cancel');
+        pending.shift()({ status: 'cancelled', payload: null });
+        await waitForState((s) => s.sessions[0].state !== 'running');
     });
 
     test('a running run\'s progress can be read, with its file\'s URL once saved', async () => {
@@ -118,10 +144,10 @@ describe('queue routes', () => {
         const shot = (byte) => ({ scans: [{ screenshots: [{ name: 'Main', dataUrl: `data:image/jpeg;base64,${Buffer.from([0xff, 0xd8, byte, 0xff, 0xd9]).toString('base64')}` }] }], findings: { fail: [], cantTell: [] } });
         const added = await api('POST', '/queue/items', { items: [run('Home'), run('Cart')], name: 'Shop' });
         pending.shift()({ status: 'done', payload: shot(1) });
-        await waitForState((s) => s.sessions[0].items[1].status === 'running');
+        await waitForState(runningNamed('Cart'));
         pending.shift()({ status: 'done', payload: shot(2) });
         const state = await waitForState((s) => s.sessions[0].state === 'finished');
-        const session = state.sessions.find((x) => x.id === added.body.sessionId);
+        const session = { ...state.sessions.find((x) => x.id === added.body.sessionId), items: (await itemsOf(added.body.sessionId)).items };
 
         const all = await JSZip.loadAsync((await api('GET', session.zipUrl)).body);
         const images = Object.keys(all.files).filter((n) => n.startsWith('images/') && !all.files[n].dir);
@@ -145,7 +171,7 @@ describe('queue routes', () => {
         const added = await api('POST', '/queue/items', { items: [{ ...run('Home'), config: runConfig('Home') }], name: 'Shop', config: batchConfig });
         pending.shift()({ status: 'done', payload: { scans: [{}], findings: { fail: [], cantTell: [] } } });
         const state = await waitForState((s) => s.sessions.find((x) => x.id === added.body.sessionId)?.state === 'finished');
-        const session = state.sessions.find((x) => x.id === added.body.sessionId);
+        const session = { ...state.sessions.find((x) => x.id === added.body.sessionId), items: (await itemsOf(added.body.sessionId)).items };
 
         const dir = path.join(baseDir, session.id);
         const saved = JSON.parse(fs.readFileSync(path.join(dir, 'Shop.a11y-config.json'), 'utf8'));
