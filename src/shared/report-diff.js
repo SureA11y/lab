@@ -21,14 +21,26 @@
 
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) {
-        module.exports = factory(require('./report-identity.js'), require('./report-format.js'));
+        module.exports = factory(require('./report-identity.js'), require('./report-format.js'), () => require('./shared-profiles.js'));
     } else {
         if (!root.A11Y_REPORT_IDENTITY || !root.A11Y_REPORT_FORMAT) {
             throw new Error('report-diff.js: load report-identity.js and report-format.js before this file');
         }
-        root.A11Y_REPORT_DIFF = factory(root.A11Y_REPORT_IDENTITY, root.A11Y_REPORT_FORMAT);
+        // shared-profiles.js is read when a comparison runs, so it may load
+        // after this file.
+        root.A11Y_REPORT_DIFF = factory(root.A11Y_REPORT_IDENTITY, root.A11Y_REPORT_FORMAT, () => root.A11Y_SHARED_PROFILES);
     }
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (identity, reportFormat) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (identity, reportFormat, sharedProfilesOf) {
+
+    /**
+     * The reports read on the profiles they share (shared-profiles.js):
+     * { reports, basis }, the reports as they are when they checked the same
+     * profiles, or share none.
+     */
+    function compareOnShared(reports) {
+        const api = sharedProfilesOf && sharedProfilesOf();
+        return api ? api.compareOnShared(reports) : { reports, basis: null };
+    }
 
     const { reportIdentity, assignBaselineAndCurrent, describeComparison } = identity;
 
@@ -553,6 +565,12 @@
             a = ord.baseline;
             b = ord.current;
         }
+        const swapped = a !== reportA;
+        // Reports checked against different profiles are compared on those
+        // they share: WCAG 2.2 AA + WAI-ARIA 1.2 beside WCAG 2.2 AA alone is
+        // compared on WCAG 2.2 AA.
+        const shared = compareOnShared([a, b]);
+        [a, b] = shared.reports;
 
         const identityA = reportIdentity(a);
         const identityB = reportIdentity(b);
@@ -596,11 +614,13 @@
             ordered: mode !== 'ab' && order !== 'given',
         });
 
+        if (shared.basis && shared.basis.comparedOn.length) doc.profiles = shared.basis;
+
         return {
             mode,
             // True when evolution ordering put the second argument first, so a
             // caller holding the reports knows which one is the baseline.
-            swapped: a !== reportA,
+            swapped,
             document: doc,
             identityA,
             identityB,
@@ -622,5 +642,5 @@
     // pagePath travels with it so both engines normalize a page URL the same
     // way when they count how far a rule reaches.
     return {
-        sizeOf, diffReports, collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, pagePath, otherStandardsOf, mergeStandards };
+        sizeOf, diffReports, collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, pagePath, otherStandardsOf, mergeStandards, compareOnShared };
 }));
