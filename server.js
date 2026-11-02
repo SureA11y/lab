@@ -83,6 +83,9 @@ app.use(createRequestGuard({
     allowedOrigins: process.env.A11Y_ALLOWED_ORIGINS,
 }).middleware);
 
+// What it sends compressed, to a client that accepts gzip (gzip.js).
+app.use(require("./src/server-side/gzip").gzip());
+
 // Large: /workflow-import takes a whole report, its screenshots included.
 app.use(express.json({ limit: '200mb' }));
 
