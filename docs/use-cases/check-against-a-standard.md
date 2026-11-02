@@ -55,9 +55,22 @@ level under **WCAG 2.2** (or **Don’t check WCAG**) and tick the
   comes, and a scan whose variable names something that is no profile stops
   with an error rather than checking WCAG 2.2 AA instead.
 
-Reports of scans checked against different profiles say so when compared,
-since their rows don't line up; the same profiles in another order are the
-same.
+Reports of scans checked against different profiles are compared on the
+profiles they all share, and the comparison says which, and what it left
+out:
+
+- WCAG 2.2 AA + WAI-ARIA 1.2 beside WCAG 2.2 AA alone is compared on WCAG
+  2.2 AA: WAI-ARIA's requirements are left out, and a rule finding counts as
+  WCAG judges it.
+- WCAG levels nest, so a WCAG 2.2 AAA report beside an AA one is read at AA,
+  its AAA criteria left out.
+- Each report's own score is left out, since it was made from everything
+  that report checked.
+
+Reports that share no profile (EN 301 549 alone beside WAI-ARIA alone) are
+compared as they are, and the comparison says they were checked against
+different things, since their rows don't line up. The same profiles in
+another order are the same.
 
 ## What automated checks can and cannot say
 

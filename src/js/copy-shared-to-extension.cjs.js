@@ -57,6 +57,12 @@ const DEST_A11Y_LABS_BROWSER = path.join(PROJECT_ROOT, 'extension', 'engines' , 
 // English one, since the extension scans in English.
 const SRC_HOW_TO_CHECK = path.join(PROJECT_ROOT, 'node_modules', '@surea11y', 'core', 'src', 'how-to-check-core.js');
 const DEST_HOW_TO_CHECK = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'surea11y-how-to-check.min.js');
+// The installed packs, for the extension: a script that registers them in a
+// page after the bundle, and their standards, which the panel offers as
+// profiles. Built from the packs installed here (server-side/standard-packs.js:
+// the lab's dependencies and A11Y_PACKS), so they are not kept in git.
+const DEST_PACKS_SCRIPT = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'surea11y-packs.js');
+const DEST_STANDARDS = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'standards.json');
 const SRC_REVIEW_EN = path.join(PROJECT_ROOT, 'node_modules', '@surea11y', 'core', 'src', 'i18n', 'review', 'en.json');
 const DEST_REVIEW_EN = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'review', 'en.json');
 
@@ -222,6 +228,34 @@ globalThis.A11Y_LABS_BROWSER = {
 };
 `;
 
+/**
+ * The packs' script and standards, from the packs installed here, with the
+ * core the bundle is built from: a page running another core refuses a pack
+ * script. Without packs, neither file, and the extension offers core's own
+ * profiles.
+ */
+function writePacks() {
+    const { loadPacks, describeStandard } = require('../server-side/standard-packs.js');
+    const { names, packs } = loadPacks();
+    for (const file of [DEST_PACKS_SCRIPT, DEST_STANDARDS]) fs.rmSync(file, { force: true });
+    if (!packs.length) {
+        console.log('✔ No packs installed: the extension offers core\'s own profiles');
+        return;
+    }
+    const { packScript } = require('@surea11y/core/pack');
+    fs.mkdirSync(path.dirname(DEST_PACKS_SCRIPT), { recursive: true });
+    fs.writeFileSync(DEST_PACKS_SCRIPT, packScript(packs), 'utf8');
+    // The names a scan gives core (engineOptions.packs): each pack's name
+    // and version, as the script registers them.
+    const packNames = packs
+        .filter((p) => p && typeof p.name === 'string' && p.name)
+        .map((p) => (p.version ? `${p.name}@${p.version}` : p.name));
+    const standards = packs.map(describeStandard).filter(Boolean)
+        .map((s) => ({ key: s.key, name: s.name, package: s.package, versions: s.versions, profiles: s.profiles }));
+    fs.writeFileSync(DEST_STANDARDS, JSON.stringify({ packs: packNames, standards }, null, 1) + '\n', 'utf8');
+    console.log(`✔ Wrote the packs for the extension: ${names.join(', ')}`);
+}
+
 (async () => {
     try {
         copyFile(SRC_CANONICAL, DEST_CANONICAL);
@@ -258,6 +292,8 @@ globalThis.A11Y_LABS_BROWSER = {
             bundleLabel: 'surea11y how-to-check'
         });
         copyFile(SRC_REVIEW_EN, DEST_REVIEW_EN);
+
+        writePacks();
 
     } catch (err) {
         console.error('✖ Failed to sync files to extension');

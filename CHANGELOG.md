@@ -73,6 +73,15 @@ The first public release.
   `profiles` (and any that did not run in `profilesNotRun`), and a rule
   finding says what each one makes of it. A single profile saves and scans
   as before. Needs surea11y core 1.15.
+- **Reports checked against different profiles are compared on those they
+  share**, in the Compare tab, the dashboard, and the runner's comparisons:
+  WCAG 2.2 AA + WAI-ARIA 1.2 beside WCAG 2.2 AA alone is compared on WCAG
+  2.2 AA, and a WCAG 2.2 AAA report beside an AA one is read at AA. The
+  comparison says what it compared on and what it left out, and leaves out
+  each report's own score. Reports that share no profile are compared as
+  before, and the comparison says they were checked against different
+  standards or WCAG levels, as it now does for levels too, naming what each
+  was checked against as its scans do ("WCAG 2.2 AA + WAI-ARIA 1.2").
 - **The conformance report** (VPAT) follows the WCAG level and the EN 301 549
   version the scans were checked against. It used to give WCAG 2.2 AA and
   EN 301 549 V4.1.1 unless told otherwise.
@@ -104,7 +113,10 @@ The first public release.
   refused with 429; every answer is JSON, compressed for a client that
   takes gzip. A run's pictures stay on disk `A11Y_RUN_FILES_HOURS` (24).
 - **A browser extension** (`extension/`) to scan the page in front of you
-  and send a session to the lab.
+  and send a session to the lab. Its Profile is the scan step's: one WCAG
+  2.2 level and any standards at once. Its build (`npm run build:extension`)
+  takes in the packs installed, so their standards (WAI-ARIA 1.2, with
+  `@surea11y/pack-wai-aria`) are offered there too.
 - **Examples** that run against a demo shop, a getting-started guide, and
   use-case guides.
 

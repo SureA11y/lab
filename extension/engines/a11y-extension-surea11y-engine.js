@@ -6,6 +6,7 @@
     const ENGINE_VERSION = null;
     const DEFAULT_LOCALE = 'en';
     const DEFAULT_VENDOR_FILE = 'engines/vendor/surea11y.browser.min.js';
+    const PACKS_VENDOR_FILE = 'engines/vendor/surea11y-packs.js';
     // As the lab's scan step: how long to wait for the page to finish loading.
     const DEFAULT_PAGE_READY_TIMEOUT_MS = 3000;
 
@@ -146,6 +147,14 @@
             });
             throw e;
         }
+        // The installed packs, registered in the page after the engine
+        // (build:extension-shared writes the script). A build without packs
+        // has none, and scans with core's own profiles.
+        try {
+            await injectFile(tabId, PACKS_VENDOR_FILE);
+        } catch {
+            // No packs in this build.
+        }
     }
 
     async function runInTab(tabId, options = {}, helpers = {}) {
@@ -190,7 +199,9 @@
             effectiveRunOnly.tags = targets.tagsBesideSelection({ tags: effectiveRunOnly.tags });
             effectiveRunOnly.wcag = { version: selection.version, level: selection.level };
             effectiveRunOnly.bestPractices = selection.bestPractices === true;
-            if (selection.profile) engineOptions.profile = selection.profile;
+            // Several profiles: core scans every one, the WCAG level among them.
+            if (Array.isArray(selection.profiles) && selection.profiles.length > 1) engineOptions.profile = selection.profiles.slice();
+            else if (selection.profile) engineOptions.profile = selection.profile;
         } else if (effectiveRunOnly && effectiveRunOnly.wcag && ['A', 'AA', 'AAA'].includes(scanLevel)) {
             // A caller's own runOnly.wcag, the scan's level setting its level.
             effectiveRunOnly.wcag = { ...effectiveRunOnly.wcag, level: scanLevel };
@@ -219,7 +230,17 @@
             profileFallbackTags = std ? std.tags.slice() : [];
             effectiveRunOnly.tags = [];
             effectiveRunOnly.wcag = null;
+        } else if (Array.isArray(engineOptions.profile) && engineOptions.profile.length && effectiveRunOnly && !hasIncludes) {
+            // A scan of several profiles names each one that did not run
+            // (engine.profilesNotRun) rather than scanning again.
+            effectiveRunOnly.tags = [];
+            effectiveRunOnly.wcag = null;
         }
+        // The packs the extension was built with (engines/vendor/
+        // surea11y-packs.js, injected with the bundle), by name: a pack's
+        // profile needs its pack in the scan.
+        const packNames = normalizeStringList(opts.packs);
+        if (packNames.length) engineOptions.packs = packNames;
 
         const [result] = await execInTab(tabId, {
             func: async (payload) => {
@@ -507,6 +528,35 @@
 
     // `ruleOutcome` is the tier of an occurrence that names none of its own,
     // as the server adapter reads it.
+    const VERDICT_RANK = { notApplicable: 0, pass: 1, cantTell: 2, fail: 3 };
+
+    /** A result's or element's verdict per profile, { [profile]: outcome }, or null. */
+    function verdictsOf(x) {
+        const v = x && x.verdicts;
+        if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+        const out = {};
+        for (const [id, outcome] of Object.entries(v)) {
+            if (Object.prototype.hasOwnProperty.call(VERDICT_RANK, outcome)) out[String(id)] = outcome;
+        }
+        return Object.keys(out).length ? out : null;
+    }
+
+    /**
+     * The worst of an element's verdicts under some profiles, as an
+     * occurrence's outcome, or null: what a rollup's own profiles make of it,
+     * not the worst of every profile's, as the lab's server adapter reads it.
+     */
+    function ownVerdict(verdicts, profiles) {
+        if (!verdicts || !Array.isArray(profiles) || !profiles.length) return null;
+        let worst = null;
+        for (const p of profiles) {
+            const v = verdicts[p];
+            if (VERDICT_RANK[v] === undefined) continue;
+            if (!worst || VERDICT_RANK[v] > VERDICT_RANK[worst]) worst = v;
+        }
+        return worst === 'fail' || worst === 'cantTell' || worst === 'pass' ? worst : null;
+    }
+
     function makeAtomicOccurrence(native, occ, fallbackTitle, ruleId, ruleOutcome) {
         const selector = occ && occ.selector ? String(occ.selector) : null;
         const htmlSnippet = occ && occ.html ? String(occ.html) : '';
@@ -535,6 +585,8 @@
             ...(howToCheck ? { howToCheck } : {}),
             ...(details ? { details } : {}),
             ...(shadowHostSelectors ? { shadowHostSelectors } : {}),
+            // A scan of several profiles: what each makes of this element.
+            ...(verdictsOf(occ) ? { verdicts: verdictsOf(occ) } : {}),
             evidence: {
                 engineNode: {
                     pageUrl,
@@ -590,6 +642,8 @@
             evidence: {
                 rollup: {
                     reasonCode: details.reasonCode || null,
+                    // A scan of several profiles: those that gave this rollup.
+                    ...(Array.isArray(cr && cr.profiles) && cr.profiles.length ? { profiles: cr.profiles.map(String) } : {}),
                     checksIds,
                     contributors: contributors
                         .map((x) => ({
@@ -630,6 +684,11 @@
                         atomicCheckId: atomic.ruleId || undefined,
                         sourceAtomicRules: atomic.ruleId ? [String(atomic.ruleId)] : []
                     });
+                    // A scan of several profiles: the element as this
+                    // rollup's own profiles judge it.
+                    const own = ownVerdict(occ.verdicts, finding.evidence.rollup.profiles);
+                    if (own === 'fail' || own === 'cantTell') occ2.occurrenceOutcome = own;
+                    else if (own === 'pass') delete occ2.occurrenceOutcome;
                     const key = occKey(occ2);
                     if (seen.has(key)) continue;
                     seen.add(key);
@@ -639,6 +698,33 @@
             finding.occurrences = out;
         }
     }
+
+    function profileLabel(id) {
+        const targets = root.A11Y_CONFORMANCE_TARGETS;
+        return (targets && targets.targetLabel(id)) || id;
+    }
+
+    /** The profiles a scan of several ran, [{ id, label }], or null for a scan of one. */
+    function appliedProfiles(native) {
+        const list = native && native.engine && Array.isArray(native.engine.profiles)
+            ? native.engine.profiles.filter((id) => typeof id === 'string' && id)
+            : [];
+        return list.length > 1 ? list.map((id) => ({ id, label: profileLabel(id) })) : null;
+    }
+
+    /** The profiles a scan of several did not run, [{ id, label, reason }]. */
+    function profilesNotRunOf(native) {
+        const raw = native && native.engine && Array.isArray(native.engine.profilesNotRun) ? native.engine.profilesNotRun : [];
+        return raw
+            .filter((p) => p && typeof p.profile === 'string')
+            .map((p) => ({ id: p.profile, label: profileLabel(p.profile), reason: typeof p.reason === 'string' ? p.reason : null }));
+    }
+
+    const NOT_RUN_REASONS = {
+        'unknown-profile': (label) => `This surea11y release has no ${label} profile, so the scan did not check against it.`,
+        'pack-skipped': (label) => `${label}'s pack did not load, so the scan did not check against it.`,
+        'overridden-by-selection': (label) => `The scan's own rules or tags chose what ran, so it did not check against ${label}.`
+    };
 
     function appliedConformanceProfile(native) {
         const id = native && native.engine && typeof native.engine.profile === 'string' ? native.engine.profile : null;
@@ -739,6 +825,12 @@
                 occurrences: canonicalOccs,
                 meta: { atomic: true }
             };
+            // A scan of several profiles: each one's verdict, and the rule's own.
+            const verdicts = verdictsOf(ruleResult);
+            if (verdicts) {
+                canonicalFinding.verdicts = verdicts;
+                if (VERDICT_RANK[ruleResult.checkOutcome] !== undefined) canonicalFinding.checkOutcome = ruleResult.checkOutcome;
+            }
             // As the lab's server adapter: a best-practice rule tests no WCAG criterion.
             if (canonicalFinding.tags.includes('best-practice')) canonicalFinding.bestPractice = true;
 
@@ -860,6 +952,14 @@
             if (readiness) notices.push(readiness);
             notices.push(...notes.contextMatchNotices(native && native.contextMatch, contextSelector, ENGINE_ID));
         }
+        for (const p of profilesNotRunOf(native)) {
+            notices.push({
+                engineId: ENGINE_ID,
+                code: 'profile-not-run',
+                profile: p.id,
+                message: (NOT_RUN_REASONS[p.reason] || ((label) => `The scan did not check against ${label}.`))(p.label)
+            });
+        }
         if (native && native.profileUnavailable) {
             const targets = root.A11Y_CONFORMANCE_TARGETS;
             const name = (targets && targets.targetLabel(native.profileUnavailable)) || native.profileUnavailable;
@@ -901,7 +1001,11 @@
                     : {},
                 // The standard core applied, as the lab's server adapter
                 // records it; null when it applied none.
-                conformanceProfile: appliedConformanceProfile(native)
+                conformanceProfile: appliedConformanceProfile(native),
+                // A scan of several profiles: those that ran, and those that
+                // did not and why, as the lab's server adapter records them.
+                ...(appliedProfiles(native) ? { conformanceProfiles: appliedProfiles(native) } : {}),
+                ...(profilesNotRunOf(native).length ? { profilesNotRun: profilesNotRunOf(native) } : {})
             },
             notices,
             margins,

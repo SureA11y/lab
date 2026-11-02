@@ -89,6 +89,26 @@
         return out.sort();
     }
 
+    /**
+     * The WCAG levels a report's scans were checked against, named ("WCAG
+     * 2.2 AA"), once each and sorted: a scan's WCAG level among its
+     * profiles, or a scan of WCAG alone. A scan of a standard alone has none:
+     * the standard names its own rows. [] when the report does not say.
+     */
+    function reportWcagLevels(report) {
+        const scans = report && Array.isArray(report.scans) ? report.scans : [];
+        const out = [];
+        for (const s of scans) {
+            if (!s || s.skipped || s.skipInfo) continue;
+            for (const p of reportScan.scanProfiles(s)) {
+                const label = str(p && p.label);
+                const wcag = p && (p.id ? reportScan.WCAG_PROFILE.test(p.id) : /^WCAG /.test(label || ''));
+                if (wcag && label && !out.includes(label)) out.push(label);
+            }
+        }
+        return out.sort();
+    }
+
     function reportTargetsRgaa(report) {
         const scans = report && Array.isArray(report.scans) ? report.scans : [];
         return scans.some((s) => {
@@ -263,6 +283,7 @@
     } = {}) {
         const list = Array.isArray(reports) ? reports.filter(Boolean) : [];
         const identities = list.map(reportIdentity);
+        const wcagLevels = list.map(reportWcagLevels);
         const counted = unit || { one: 'run', many: 'runs' };
 
         const stamps = identities.map((identity) => identity.timestamp).filter(Boolean);
@@ -312,14 +333,21 @@
             // Every engine and release the reports ran, once each: what the
             // comparison names as its engine, as a report names its own.
             engines: identitiesEngines(identities),
-            // Whether the reports were checked against different standards: a
-            // scan against a standard (EN 301 549, RGAA, another pack's) is
-            // listed by that standard's requirements, one against WCAG by WCAG
-            // criterion, so their rule and criterion rows never line up.
-            criteriaMismatch: new Set(identities.map((identity) => (identity.listedBy || []).join('|'))).size > 1,
-            // What each was checked against, once each: "WCAG" for a report
-            // checked against WCAG alone.
-            standardsCompared: [...new Set(identities.map((identity) => ((identity.listedBy || []).length ? identity.listedBy.join(' and ') : 'WCAG')))],
+            // Whether the reports were checked against different standards or
+            // WCAG levels: a scan against a standard (EN 301 549, RGAA,
+            // another pack's) is listed by that standard's requirements, one
+            // against WCAG by WCAG criterion, and Level AAA has criteria AA
+            // does not, so their rule and criterion rows never line up. A
+            // report that does not say its level differs from none.
+            criteriaMismatch: new Set(identities.map((identity) => (identity.listedBy || []).join('|'))).size > 1
+                || new Set(wcagLevels.filter((l) => l.length).map((l) => l.join('|'))).size > 1,
+            // What each was checked against, once each, named as its scans
+            // are: "WCAG 2.2 AA + WAI-ARIA 1.2", or "WCAG" for a report that
+            // does not say its level.
+            standardsCompared: [...new Set(identities.map((identity, i) => {
+                const parts = [...wcagLevels[i], ...(identity.listedBy || [])];
+                return parts.length ? parts.join(' + ') : 'WCAG';
+            }))],
             span,
             summary,
         };

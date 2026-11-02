@@ -224,10 +224,22 @@ export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {
     const compared = doc && Array.isArray(doc.standardsCompared) ? doc.standardsCompared : [];
     const criteria = doc && doc.criteriaMismatch
         ? `<p class="doc-warn"><span class="dash-caveat-i" aria-hidden="true">!</span>
-           <span>These reports were checked against different standards${compared.length > 1 ? ` (${esc(compared.join(', '))})` : ''}.
+           <span>These reports were checked against different standards or WCAG levels${compared.length > 1 ? ` (${esc(compared.join(', '))})` : ''}.
            A scan against a standard is listed by that standard's requirements (EN 301 549's clauses,
-           RGAA's criteria), one against WCAG by WCAG criterion, so their rows do not line up: a
-           failure can read as fixed in one and new in the other when only the way it is listed changed.</span></p>`
+           RGAA's criteria), one against WCAG by WCAG criterion, and a higher WCAG level checks
+           criteria a lower one leaves out, so their rows do not line up: a failure can read as fixed
+           in one and new in the other when only what was checked changed.</span></p>`
+        : '';
+
+    // Reports checked against different profiles, compared on those they
+    // share (shared-profiles.js).
+    const basis = doc && doc.profiles && Array.isArray(doc.profiles.comparedOn) && doc.profiles.comparedOn.length
+        ? doc.profiles : null;
+    const shared = basis
+        ? `<p class="doc-note"><span>${esc(`Compared on ${basis.comparedOn.map((p) => p.label).join(' + ')}, which every report checked.`)}${
+            basis.leftOut && basis.leftOut.length
+                ? ` ${esc(`Left out, as not every report checked it: ${basis.leftOut.map((p) => p.label).join(', ')}.`)} Each report's own score is left out too, since it was made from everything that report checked.`
+                : ''}</span></p>`
         : '';
 
     return `<section class="cmp2-sec doc-source"${id ? ` id="${esc(id)}"` : ''}>
@@ -238,6 +250,7 @@ export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {
         ${mixed}
         ${optIn}
         ${engines}
+        ${shared}
         ${criteria}
         <div class="dash-table-scroll">
             <table class="doc-table">

@@ -41,7 +41,7 @@
     }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function (diffApi, identityApi, conformanceApi, healthApi) {
 
-    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath, sizeOf } = diffApi;
+    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath, sizeOf, compareOnShared } = diffApi;
     const { reportIdentity, compareByTime, describeComparison } = identityApi;
     const { readConformance, conformanceMatrix, sharedTarget, en301549ForTarget } = conformanceApi;
     const { assessRun, describeRunHealth } = healthApi;
@@ -891,7 +891,11 @@
         const orderedPairs = orderBy === 'time'
             ? tagged.slice().sort((x, y) => compareByTime(x.report, y.report))
             : tagged.slice();
-        const ordered = orderedPairs.map((pair) => pair.report);
+        // Reports checked against different profiles are compared on those
+        // they all share (shared-profiles.js), each column read as if checked
+        // against them alone.
+        const shared = compareOnShared(orderedPairs.map((pair) => pair.report));
+        const ordered = shared.reports;
 
         const perColumnRules = ordered.map((r) => collectFailingRules(r));
         // The same ingest again for the checks that concluded nothing. Cheap
@@ -971,6 +975,7 @@
             framing: mode === 'matrix' ? 'matrix' : (orderBy === 'time' ? 'trend' : 'versions'),
             ordered: orderBy === 'time',
         });
+        if (shared.basis && shared.basis.comparedOn.length) doc.profiles = shared.basis;
 
         return {
             mode, columns, rows, groups, gate, verdict, document: doc,
