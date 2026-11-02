@@ -33,9 +33,12 @@ export function createStepValidation(builder) {
             if (fieldEl.dataset.widget === "profiles" && fieldEl._profilesWidget) {
                 const widget = fieldEl._profilesWidget;
                 builder.setError(widget.el, null);
+                widget.el.removeAttribute("aria-invalid");
                 const problem = widget.validate({required});
                 if (problem) {
                     builder.setError(widget.el, problem.message);
+                    // On the group itself, which its error describes.
+                    widget.el.setAttribute("aria-invalid", "true");
                     note(problem.el || widget.el);
                     ok = false;
                 }

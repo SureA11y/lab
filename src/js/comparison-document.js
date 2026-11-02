@@ -175,21 +175,35 @@ export function reportsStripHTML(rows, { sourcesHref = '' } = {}) {
 }
 
 /**
- * Reports checked against different profiles, compared on those they share
- * (shared-profiles.js): what the comparison compared on, and what it left
- * out, said under its headline, where a reader weighs the numbers. '' when
- * the reports checked the same profiles.
+ * What a comparison of reports checked against different profiles is
+ * about, said under its headline, where a reader weighs the numbers: what it
+ * compared on and left out, when they share some profiles
+ * (shared-profiles.js), or that they share none and their rows don't line
+ * up. '' when the reports checked the same profiles.
  */
 export function sharedProfilesNoteHTML(doc) {
     const basis = doc && doc.profiles && Array.isArray(doc.profiles.comparedOn) && doc.profiles.comparedOn.length
         ? doc.profiles : null;
-    if (!basis) return '';
-    const leftOut = Array.isArray(basis.leftOut) ? basis.leftOut : [];
-    return `<p class="dash-caveat dash-caveat--info"><span class="dash-caveat-i" aria-hidden="true">i</span>
+    if (basis) {
+        const leftOut = Array.isArray(basis.leftOut) ? basis.leftOut : [];
+        return `<p class="dash-caveat dash-caveat--info"><span class="dash-caveat-i" aria-hidden="true">i</span>
         <span>${esc(`Compared on ${basis.comparedOn.map((p) => p.label).join(' + ')}, which every report checked.`)}${
             leftOut.length
                 ? ` ${esc(`Left out, as not every report checked it: ${leftOut.map((p) => p.label).join(', ')}.`)} Each report's own score is left out too, since it was made from everything that report checked.`
                 : ''}</span></p>`;
+    }
+    // Reports that share no profile, compared as they are: said as plainly,
+    // since the numbers above are about what was checked as much as the pages.
+    if (doc && doc.criteriaMismatch) {
+        const compared = Array.isArray(doc.standardsCompared) ? doc.standardsCompared : [];
+        return `<p class="dash-caveat"><span class="dash-caveat-i" aria-hidden="true">!</span>
+        <span>These reports were checked against different standards or WCAG levels${compared.length > 1 ? ` (${esc(compared.join(', '))})` : ''}, which share none.
+           A scan against a standard is listed by that standard's requirements (EN 301 549's clauses,
+           RGAA's criteria), one against WCAG by WCAG criterion, and a higher WCAG level checks
+           criteria a lower one leaves out, so their rows do not line up: a failure can read as fixed
+           in one and new in the other when only what was checked changed.</span></p>`;
+    }
+    return '';
 }
 
 export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {}) {
@@ -239,16 +253,6 @@ export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {
            may come from the engine rather than from the pages.</span></p>`
         : '';
 
-    const compared = doc && Array.isArray(doc.standardsCompared) ? doc.standardsCompared : [];
-    const criteria = doc && doc.criteriaMismatch
-        ? `<p class="doc-warn"><span class="dash-caveat-i" aria-hidden="true">!</span>
-           <span>These reports were checked against different standards or WCAG levels${compared.length > 1 ? ` (${esc(compared.join(', '))})` : ''}.
-           A scan against a standard is listed by that standard's requirements (EN 301 549's clauses,
-           RGAA's criteria), one against WCAG by WCAG criterion, and a higher WCAG level checks
-           criteria a lower one leaves out, so their rows do not line up: a failure can read as fixed
-           in one and new in the other when only what was checked changed.</span></p>`
-        : '';
-
     return `<section class="cmp2-sec doc-source"${id ? ` id="${esc(id)}"` : ''}>
         <div class="sec-head"><h3>What went into this comparison</h3><span class="layer">provenance</span></div>
         <p class="dash-sub">Every report this page was built from, in column order. Kept with the
@@ -257,7 +261,6 @@ export function provenanceHTML(rows, doc, { columnTerm = 'Column', id = '' } = {
         ${mixed}
         ${optIn}
         ${engines}
-        ${criteria}
         <div class="dash-table-scroll">
             <table class="doc-table">
                 <thead><tr>

@@ -147,7 +147,9 @@
      * checkScanSteps to name.
      */
     function profileList(v) {
-        const raw = Array.isArray(v) ? v : (typeof v === 'string' ? v.split(',') : []);
+        // A list's items may hold several too: a variable filled in.
+        const raw = (Array.isArray(v) ? v : [v])
+            .flatMap((item) => (typeof item === 'string' ? item.split(',') : []));
         const out = [];
         for (const item of raw) {
             const id = typeof item === 'string' ? item.trim().toLowerCase() : '';
@@ -180,8 +182,8 @@
         const list = profileList(v);
         const problems = [];
         // Named as given ("AA", not "aa"), once each.
-        const raw = Array.isArray(v) ? v : (typeof v === 'string' ? v.split(',') : []);
-        const named = [...new Set(raw.filter((x) => typeof x === 'string').map((x) => x.trim()).filter(Boolean))];
+        const raw = (Array.isArray(v) ? v : [v]).flatMap((x) => (typeof x === 'string' ? x.split(',') : []));
+        const named = [...new Set(raw.map((x) => x.trim()).filter(Boolean))];
         for (const id of named) {
             if (!scanTargetId(id)) problems.push(`"${id}" is not a profile`);
         }

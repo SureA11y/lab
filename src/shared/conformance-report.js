@@ -209,27 +209,34 @@
     const TARGET_LEVELS = ['A', 'AA', 'AAA'];
     const EN301549_PROFILE = /^en301549-v(\d+\.\d+\.\d+)$/i;
 
-    // The WCAG version and level the report's scans came to (each scan's
-    // `wcag`, or the fields an older report kept), the highest level of
-    // them, and the EN 301 549 version a scan checked against, if one did.
+    // The WCAG version and level the report's scans were checked against,
+    // the highest of each, whatever order the scans ran in, and the EN 301
+    // 549 version a scan checked against: the one that restates that WCAG
+    // version when scans checked both, else the first. A scan of a standard
+    // that is no WCAG (WAI-ARIA alone) says nothing of WCAG's level.
     function scannedTarget(report) {
+        const VERSIONS = ['2.0', '2.1', '2.2'];
         let version = null;
         let level = null;
-        let en301549 = null;
+        const ens = [];
         for (const s of asArray(report && report.scans)) {
             if (!s || s.skipped || s.skipInfo || s.includedInReport === false) continue;
+            const ids = [s.profile, ...asArray(s.profiles)]
+                .map((p) => str(p && typeof p === 'object' ? p.id : p)).filter(Boolean);
+            for (const id of ids) {
+                const en = EN301549_PROFILE.exec(id);
+                if (en && !ens.includes(`V${en[1]}`)) ens.push(`V${en[1]}`);
+            }
+            const checksWcag = !ids.length || ids.some((id) => /^wcag/i.test(id) || EN301549_PROFILE.test(id));
+            if (!checksWcag) continue;
             const w = s.wcag && typeof s.wcag === 'object' ? s.wcag : { version: s.wcagVersion, level: s.wcagLevel };
             const l = str(w.level).toUpperCase();
-            if (TARGET_LEVELS.includes(l) && (!level || TARGET_LEVELS.indexOf(l) > TARGET_LEVELS.indexOf(level))) {
-                level = l;
-                version = str(w.version) || version;
-            } else if (!version && str(w.version)) {
-                version = str(w.version);
-            }
-            const ids = [s.profile, ...asArray(s.profiles)].map((p) => str(p && typeof p === 'object' ? p.id : p));
-            const en = ids.map((id) => EN301549_PROFILE.exec(id || '')).find(Boolean);
-            if (en && !en301549) en301549 = `V${en[1]}`;
+            if (TARGET_LEVELS.includes(l) && (!level || TARGET_LEVELS.indexOf(l) > TARGET_LEVELS.indexOf(level))) level = l;
+            const v = str(w.version);
+            if (VERSIONS.includes(v) && (!version || VERSIONS.indexOf(v) > VERSIONS.indexOf(version))) version = v;
         }
+        const restating = version === '2.1' || version === '2.0' ? 'V3.2.1' : 'V4.1.1';
+        const en301549 = ens.includes(restating) ? restating : (ens[0] || null);
         return { version, level, en301549 };
     }
 

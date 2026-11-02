@@ -977,7 +977,7 @@
         });
         if (shared.basis && shared.basis.comparedOn.length) doc.profiles = shared.basis;
 
-        return {
+        const result = {
             mode, columns, rows, groups, gate, verdict, document: doc,
             // What decided the column order, so the view can state it, and
             // where each column came from in the list given (indices), so a
@@ -1018,6 +1018,11 @@
                 ? matrixNarrative(columns, rows, verdict, nameRule)
                 : trendNarrative(columns, rows, verdict, gate, nameRule, counted, { review }),
         };
+        // The reports as compared (read on their shared profiles), in column
+        // order, for a view that reads them further. Not enumerable: the CLI
+        // writes the result to disk.
+        Object.defineProperty(result, 'compared', { value: ordered, enumerable: false });
+        return result;
     }
 
     /**

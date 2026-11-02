@@ -265,3 +265,40 @@ describe('compareToBaseline engine releases', () => {
         assert.deepEqual(compareToBaseline(withEngine(BASELINE, '1.14.0'), withEngine(CURRENT, '1.14.0')).engineChanges, []);
     });
 });
+
+describe('a baseline checked against other profiles', () => {
+    const { compareToBaseline, comparableSummary, decideExit, EXIT } = require('./baseline');
+    const { profilesText } = require('./summary-report');
+    const run = (runId, timestamp, profile, findings) => ({
+        runId, timestamp, url: 'https://example.com/',
+        scans: [{ id: 'scan-1', url: 'https://example.com/', profile, wcag: { version: '2.2', level: 'AA' },
+            canonical: { findings } }],
+    });
+    const fail = (ruleId, target) => ({ ruleId, outcome: 'fail', severity: 'serious', meta: { atomic: false },
+        evidence: { rollup: { checksIds: [] } }, occurrences: [{ target: [target], pageUrl: 'https://example.com/' }] });
+
+    test('sharing none: said, and its new instances fail nothing', () => {
+        const baseline = run('a', '2026-11-01T10:00:00Z', { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' }, [fail('wai-aria-1.2-name-required', '#g')]);
+        const current = run('b', '2026-11-02T10:00:00Z', { id: 'wcag22-aa', label: 'WCAG 2.2 AA' }, [fail('wcag-1.1.1-non-text-content', '#i')]);
+        const c = compareToBaseline(baseline, current);
+        assert.equal(c.profiles.mismatch, true);
+        assert.equal(c.summary.occurrences.new, 1);
+        assert.equal(comparableSummary(c), null);
+        assert.equal(decideExit({ status: 'done', health: null, summary: comparableSummary(c) }), EXIT.OK);
+        const text = profilesText(c.profiles);
+        assert.equal(text.warning, true);
+        assert.match(text.text, /different standards or WCAG levels \(WAI-ARIA 1\.2, WCAG 2\.2 AA\).*not counted/);
+    });
+
+    test('sharing some: compared on them, and said', () => {
+        const aa = { id: 'wcag22-aa', label: 'WCAG 2.2 AA' };
+        const aria = { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' };
+        const baseline = run('a', '2026-11-01T10:00:00Z', aa, [fail('wcag-1.1.1-non-text-content', '#i')]);
+        const current = run('b', '2026-11-02T10:00:00Z', aria, [fail('wcag-1.1.1-non-text-content', '#i')]);
+        current.scans[0].profiles = [aa, aria];
+        const c = compareToBaseline(baseline, current);
+        assert.equal(c.profiles.mismatch, false);
+        assert.deepEqual(profilesText(c.profiles), { warning: false, text: 'compared on WCAG 2.2 AA, which both checked; left out, as only one checked it: WAI-ARIA 1.2' });
+        assert.equal(comparableSummary(c), c.summary);
+    });
+});

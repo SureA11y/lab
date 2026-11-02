@@ -336,10 +336,12 @@ describe('comparison document: reports checked against different standards', () 
     const targeting = (o, id) => ({ ...report(o), scans: [{ id: 's', conformanceProfile: id ? { id } : null, canonical: { findings: [] } }] });
 
     test('warns when some reports targeted RGAA and others did not', async () => {
-        const { provenanceHTML } = await load();
+        const { sharedProfilesNoteHTML, provenanceHTML } = await load();
         const d = doc([targeting({ runId: 'a' }, 'rgaa-4.1.2'), targeting({ runId: 'b' }, null)]);
         assert.equal(d.criteriaMismatch, true);
-        assert.match(provenanceHTML([{ label: 'A', name: 'x' }], d), /checked against different standards or WCAG levels \(rgaa-4\.1\.2, WCAG\)/);
+        // Under the headline, once.
+        assert.match(sharedProfilesNoteHTML(d), /checked against different standards or WCAG levels \(rgaa-4\.1\.2, WCAG\), which share none/);
+        assert.doesNotMatch(provenanceHTML([{ label: 'A', name: 'x' }], d), /different standards/);
     });
 
     test('warns for EN 301 549 or any pack\'s standard against WCAG, or against another standard', () => {

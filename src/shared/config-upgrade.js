@@ -110,7 +110,11 @@
             // one becomes its replacement, once.
             if (Array.isArray(s.profile) && s.profile.some(retiredProfile)) {
                 const list = [];
+                // Its replacement is a WCAG level: a list naming one already
+                // keeps that one, as one level is all a scan checks.
+                const hasLevel = s.profile.some((p) => !retiredProfile(p) && /^wcag22-a{1,3}$/i.test(String(p).trim()));
                 for (const p of s.profile) {
+                    if (retiredProfile(p) && hasLevel) continue;
                     const to = retiredProfile(p) || p;
                     if (!list.includes(to)) list.push(to);
                 }

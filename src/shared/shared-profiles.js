@@ -75,12 +75,11 @@
     }
 
     /**
-     * The profiles every scan of every report shares, and what each report
-     * checked beyond them: { wcag, standards: [{ id, label }], leftOut:
-     * [{ id, label }], same } or null when a scan's profiles can't be read.
+     * The profiles some scans share, and what they checked beyond them:
+     * { wcag, standards: [{ id, label }], leftOut: [{ id, label }], same }, or
+     * null when a scan's profiles can't be read.
      */
-    function sharedProfiles(reports) {
-        const scans = reports.flatMap(analyzedScans);
+    function sharedProfiles(scans) {
         if (!scans.length) return null;
         const each = scans.map(profilesOfScan);
         if (each.some((p) => !p.known)) return null;
@@ -109,6 +108,14 @@
             && p.standards.size === each[0].standards.size
             && [...p.standards.keys()].every((id) => each[0].standards.has(id)));
         return { wcag, standards, leftOut, same };
+    }
+
+    // What matches a scan across reports: its id (a workflow's scans are
+    // numbered the same in each run of it), else its label and page.
+    function scanKey(scan) {
+        const id = typeof scan.id === 'string' && scan.id.trim() ? scan.id.trim() : '';
+        if (id) return `id:${id}`;
+        return `at:${scan.label || ''}|${scan.url || ''}`;
     }
 
     // The WCAG levels of a finding's criteria; [] when it names none.
@@ -181,11 +188,22 @@
         return out;
     }
 
+    // A criterion's WCAG level: the entry's own, else WCAG's for its number
+    // (core leaves some entries without one).
+    function levelOfCriterion(entry) {
+        if (entry && LEVELS.includes(entry.level)) return entry.level;
+        const crit = wcagCriteriaOf();
+        const c = entry && entry.sc && crit && crit.criterionBySc ? crit.criterionBySc(String(entry.sc)) : null;
+        return c && LEVELS.includes(c.level) ? c.level : null;
+    }
+
     // A coverage summary's criteria up to the shared level.
     function narrowCoverage(summary, level) {
         if (!summary || typeof summary !== 'object' || !level) return summary;
-        const criteria = asArray(summary.criteria).filter((c) => !c || !LEVELS.includes(c.level)
-            || LEVELS.indexOf(c.level) <= LEVELS.indexOf(level));
+        const criteria = asArray(summary.criteria).filter((c) => {
+            const l = levelOfCriterion(c);
+            return !l || LEVELS.indexOf(l) <= LEVELS.indexOf(level);
+        });
         return { ...summary, criteria };
     }
 
@@ -220,9 +238,20 @@
         return out;
     }
 
-    function narrowReport(report, shared) {
+    function narrowReport(report, plans) {
         if (!report || typeof report !== 'object') return report;
-        const out = { ...report, scans: asArray(report.scans).map((s) => narrowScan(s, shared)) };
+        let narrowed = false;
+        const scans = asArray(report.scans).map((s) => {
+            const shared = s && !s.skipped && !s.skipInfo ? plans.get(scanKey(s)) : null;
+            if (!shared) return s;
+            narrowed = true;
+            return narrowScan(s, shared);
+        });
+        if (!narrowed) return report;
+        const levels = [...plans.values()].map((p) => p.wcag).filter(Boolean);
+        const level = levels.length ? LEVELS[Math.min(...levels.map((l) => LEVELS.indexOf(l)))] : null;
+        const shared = { wcag: level };
+        const out = { ...report, scans };
         // Its score and summary were made from everything it checked.
         if (report.metrics && report.metrics.a11ySummary) {
             const { scores: _scores, coverageSummary, ...rest } = report.metrics.a11ySummary;
@@ -235,26 +264,56 @@
         return out;
     }
 
+    function pushOnce(list, entries) {
+        for (const e of entries) if (!list.some((x) => x.id === e.id)) list.push(e);
+    }
+
     /**
-     * The reports read on the profiles they share.
-     * -> { reports, basis }: `basis` null when they all checked the same
-     *    profiles, or can't be read (the reports come back as they are);
-     *    { comparedOn: [], leftOut } when they share none (also as they
-     *    are); else { comparedOn: [{ id, label }], leftOut: [{ id, label }] }
-     *    with the reports narrowed.
+     * The reports read on the profiles they share, scan by scan: a scan is
+     * read beside the scans of the same id in the other reports, on the
+     * profiles they share. A report whose own scans check different profiles
+     * compares in full with another like it.
+     * -> { reports, basis }: `basis` null when every matched scan checked the
+     *    same profiles in every report, or can't be read (the reports come
+     *    back as they are); else { comparedOn: [{ id, label }], leftOut:
+     *    [{ id, label }] }, the profiles kept and left out over the scans read
+     *    so, with the reports narrowed. comparedOn is [] when the scans that
+     *    differ share none (those are left as they are).
      */
     function compareOnShared(reports) {
         const list = asArray(reports);
-        const shared = sharedProfiles(list.filter(Boolean));
-        if (!shared || shared.same) return { reports: list, basis: null };
-        const comparedOn = [
-            ...(shared.wcag ? [{ id: wcagId(shared.wcag), label: wcagLabel(shared.wcag) }] : []),
-            ...shared.standards,
-        ];
-        if (!comparedOn.length) return { reports: list, basis: { comparedOn, leftOut: shared.leftOut } };
+        // Each scan by its key, in each report.
+        const byKey = new Map();
+        list.forEach((report, r) => {
+            for (const scan of analyzedScans(report)) {
+                const key = scanKey(scan);
+                if (!byKey.has(key)) byKey.set(key, new Map());
+                const inReport = byKey.get(key);
+                if (!inReport.has(r)) inReport.set(r, scan);
+            }
+        });
+        const plans = new Map();
+        const comparedOn = [];
+        const leftOut = [];
+        let sharesNone = false;
+        for (const [key, inReport] of byKey) {
+            // A scan only some reports have is compared as it is.
+            if (inReport.size < list.length) continue;
+            const shared = sharedProfiles([...inReport.values()]);
+            if (!shared || shared.same) continue;
+            const on = [
+                ...(shared.wcag ? [{ id: wcagId(shared.wcag), label: wcagLabel(shared.wcag) }] : []),
+                ...shared.standards,
+            ];
+            if (!on.length) { sharesNone = true; continue; }
+            plans.set(key, shared);
+            pushOnce(comparedOn, on);
+            pushOnce(leftOut, shared.leftOut);
+        }
+        if (!plans.size) return { reports: list, basis: sharesNone ? { comparedOn: [], leftOut: [] } : null };
         return {
-            reports: list.map((r) => narrowReport(r, shared)),
-            basis: { comparedOn, leftOut: shared.leftOut },
+            reports: list.map((r) => narrowReport(r, plans)),
+            basis: { comparedOn, leftOut },
         };
     }
 

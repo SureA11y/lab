@@ -117,3 +117,40 @@ describe('the comparisons read reports on their shared profiles', () => {
         assert.equal(s.document.criteriaMismatch, false);
     });
 });
+
+describe('compareOnShared, scan by scan', () => {
+    test('a report whose scans check different profiles compares in full with one like it', () => {
+        const two = (runId) => ({
+            runId, timestamp: `2026-11-0${runId === 'a' ? 1 : 2}T10:00:00Z`, url: 'https://example.com/',
+            scans: [
+                { id: 'scan-1', url: 'https://example.com/', profile: ARIA, profiles: [AA, ARIA], wcag: { version: '2.2', level: 'AA' },
+                    canonical: { findings: [row('wcag-1.1.1-x', '1.1.1', 'fail', ['wcag22-aa']), row('wai-aria-1.2-name-required', null, 'fail', ['wai-aria-1.2'])] } },
+                { id: 'scan-2', url: 'https://example.com/', profile: ARIA, wcag: { version: '2.2', level: 'AA' },
+                    canonical: { findings: [row('wai-aria-1.2-name-required', null, 'fail')] } },
+            ],
+        });
+        const { reports, basis } = compareOnShared([two('a'), two('b')]);
+        assert.equal(basis, null);
+        assert.equal(reports[0].scans[0].canonical.findings.length, 2);
+    });
+
+    test('only the scans that differ are narrowed', () => {
+        const a = report('a', [AA, ARIA], [row('wcag-1.1.1-x', '1.1.1', 'fail', ['wcag22-aa']), row('wai-aria-1.2-name-required', null, 'fail', ['wai-aria-1.2'])]);
+        a.scans.push({ id: 's2', url: 'https://example.com/', profile: ARIA, wcag: { version: '2.2', level: 'AA' },
+            canonical: { findings: [row('wai-aria-1.2-name-required', null, 'fail')] } });
+        const b = report('b', [AA], [row('wcag-1.1.1-x', '1.1.1', 'fail')]);
+        b.scans.push({ ...a.scans[1] });
+        const { reports, basis } = compareOnShared([a, b]);
+        assert.deepEqual(basis, { comparedOn: [AA], leftOut: [ARIA] });
+        assert.deepEqual(reports[0].scans[0].canonical.findings.map((f) => f.ruleId), ['wcag-1.1.1-x']);
+        assert.deepEqual(reports[0].scans[1].canonical.findings.map((f) => f.ruleId), ['wai-aria-1.2-name-required'], 'the WAI-ARIA scan both had, in full');
+    });
+
+    test('a coverage criterion core left without a level is read at WCAG\'s', () => {
+        const a = report('a', [AAA], []);
+        a.scans[0].metrics = { coverageSummary: { criteria: [{ sc: '1.4.3', level: null }, { sc: '1.4.6', level: null }, { sc: '2.1.3', level: null }] } };
+        const b = report('b', [AA], []);
+        const { reports } = compareOnShared([a, b]);
+        assert.deepEqual(reports[0].scans[0].metrics.coverageSummary.criteria.map((c) => c.sc), ['1.4.3']);
+    });
+});

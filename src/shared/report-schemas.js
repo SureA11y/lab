@@ -131,7 +131,10 @@
                         url: text,
                         skipped: { type: 'boolean' },
                         context: textOrNull,
-                        exclude: textOrNull,
+                        exclude: {
+                            anyOf: [text, { type: 'array', items: text }, { type: 'null' }],
+                            description: 'The parts of the page the scan left out: CSS selectors, as a list or as text separated by commas.',
+                        },
                         profile: {
                             anyOf: [
                                 open({ id: textOrNull, label: text }, ['id', 'label']),

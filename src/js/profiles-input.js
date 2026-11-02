@@ -27,15 +27,19 @@ export function isProfileToken(value) {
  * { wcag, standards, token }. A string may name several separated by commas.
  */
 export function splitProfiles(value, {wcagIds = []} = {}) {
-    if (isProfileToken(value)) return {wcag: NO_WCAG, standards: [], token: value.trim()};
+    if (isProfileToken(value)) return {wcag: NO_WCAG, standards: [], token: value.trim(), extraLevels: []};
     const raw = Array.isArray(value) ? value : (typeof value === "string" ? value.split(",") : []);
+    const items = raw.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean);
+    // A list with a variable in it is one value to fill in, as the run
+    // reads it: its items separated by commas.
+    if (items.some(isProfileToken)) return {wcag: NO_WCAG, standards: [], token: items.join(","), extraLevels: []};
+    // Each id once, matched without case; one no choice has is kept as given.
     const ids = [];
-    for (const item of raw) {
-        const id = typeof item === "string" ? item.trim().toLowerCase() : "";
-        if (id && !ids.includes(id)) ids.push(id);
+    for (const item of items) {
+        if (!ids.some((id) => id.toLowerCase() === item.toLowerCase())) ids.push(item);
     }
-    const isWcag = (id) => wcagIds.includes(id) || WCAG_ID.test(id);
-    const levels = ids.filter(isWcag);
+    const isWcag = (id) => wcagIds.includes(id.toLowerCase()) || WCAG_ID.test(id.toLowerCase());
+    const levels = ids.filter(isWcag).map((id) => id.toLowerCase());
     return {wcag: levels[0] || NO_WCAG, standards: ids.filter((id) => !isWcag(id)), token: "", extraLevels: levels.slice(1)};
 }
 
@@ -84,11 +88,25 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         boxes.push(input);
         standardSet.append(createEl("label", {className: "profiles-input__option"}, [input, " ", c.label]));
     }
-    // A saved step may name a standard whose pack is not installed here.
+    // A saved step may name a standard whose pack is not installed here: it
+    // is a checkbox of its own, ticked, so it can be kept or taken off.
     const missingNote = createEl("small", {className: "profiles-input__help"}, "");
     missingNote.hidden = true;
-    standardSet.append(createEl("small", {className: "profiles-input__help"}, "From the installed packs."), missingNote);
+    const packsNote = createEl("small", {className: "profiles-input__help"}, "From the installed packs.");
+    standardSet.append(packsNote, missingNote);
     groups.append(wcagSet, standardSet);
+    const unknownBoxes = [];
+    function unknownBox(id) {
+        const input = createEl("input", {type: "checkbox", value: id});
+        input.checked = true;
+        const label = createEl("label", {className: "profiles-input__option"}, [input, " ", `${id} (no installed pack has it)`]);
+        standardSet.insertBefore(label, packsNote);
+        unknownBoxes.push(input);
+        return input;
+    }
+    // A step saved with two WCAG levels keeps the first; this says so.
+    const levelsNote = createEl("p", {className: "profiles-input__note"}, "");
+    levelsNote.hidden = true;
 
     const tokenToggle = createEl("input", {type: "checkbox", className: "profiles-input__token-toggle"});
     const tokenInput = createEl("input", {type: "text", className: "select-token-input", placeholder: "e.g. {var:profile}"});
@@ -106,17 +124,14 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
     const summary = createEl("p", {className: "profiles-input__summary"}, "");
     summary.setAttribute("aria-live", "polite");
 
-    root.append(groups, tokenRow, overlap, summary);
-
-    // Ids a saved step names that are not choices here, kept as they are.
-    let unknown = [];
+    root.append(levelsNote, groups, tokenRow, overlap, summary);
 
     function current() {
         if (tokenToggle.checked) return {wcag: NO_WCAG, standards: [], token: tokenInput.value.trim() || ""};
         const radio = radios.find((r) => r.checked);
         return {
             wcag: radio ? radio.value : NO_WCAG,
-            standards: [...boxes.filter((b) => b.checked).map((b) => b.value), ...unknown],
+            standards: [...boxes, ...unknownBoxes].filter((b) => b.checked).map((b) => b.value),
             token: "",
         };
     }
@@ -140,22 +155,36 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         overlap.textContent = restated.length
             ? `${restated.map(labelOf).join(" and ")} restate${restated.length === 1 ? "s" : ""} WCAG Level A and AA: beside ${labelOf(value.wcag)} the scan checks those criteria again, under the standard’s name.`
             : "";
-        missingNote.hidden = !unknown.length;
-        missingNote.textContent = unknown.length
-            ? `Also ${unknown.join(", ")}, which no installed pack has: the run will say so.`
+        const missing = unknownBoxes.filter((b) => b.checked).map((b) => b.value);
+        missingNote.hidden = !missing.length;
+        missingNote.textContent = missing.length
+            ? `No installed pack has ${missing.join(", ")}: the run stops, saying so, unless its pack is installed or it is taken off.`
             : "";
     }
 
     function setValue(value) {
-        const parts = splitProfiles(value, {wcagIds: wcagChoices.map((c) => c.value)});
+        let parts = splitProfiles(value, {wcagIds: wcagChoices.map((c) => c.value)});
+        // Nothing named is what a step without a profile checks: the default.
+        if (!parts.token && !parts.wcag && !parts.standards.length) {
+            parts = splitProfiles(defaultValue, {wcagIds: wcagChoices.map((c) => c.value)});
+        }
         tokenToggle.checked = !!parts.token;
         tokenInput.value = parts.token;
-        // A level this lab has not got (none today) is kept as unknown.
-        const wcag = radios.some((r) => r.value === parts.wcag) ? parts.wcag : NO_WCAG;
-        radios.forEach((r) => { r.checked = r.value === wcag; });
-        boxes.forEach((b) => { b.checked = parts.standards.includes(b.value); });
-        unknown = parts.standards.filter((id) => !boxes.some((b) => b.value === id))
-            .concat(parts.wcag && wcag !== parts.wcag ? [parts.wcag] : [], parts.extraLevels || []);
+        radios.forEach((r) => { r.checked = r.value === parts.wcag; });
+        if (!radios.some((r) => r.checked)) radios.find((r) => r.value === NO_WCAG).checked = true;
+        const named = (b) => parts.standards.some((id) => id.toLowerCase() === b.value);
+        boxes.forEach((b) => { b.checked = named(b); });
+        for (const box of unknownBoxes.splice(0)) box.closest("label").remove();
+        for (const id of parts.standards) {
+            if (!boxes.some((b) => b.value === id.toLowerCase())) unknownBox(id);
+        }
+        // Two WCAG levels: each includes the ones below it, so the step keeps
+        // the first, and says which it left out.
+        const extra = (parts.extraLevels || []).filter((id) => id !== parts.wcag);
+        levelsNote.hidden = !extra.length;
+        levelsNote.textContent = extra.length
+            ? `This step named more than one WCAG level (${[parts.wcag, ...extra].map(labelOf).join(", ")}). A scan checks one, since each includes the ones below it: ${labelOf(parts.wcag)} is chosen, as the first. Choose the one you want.`
+            : "";
         sync();
     }
 
@@ -171,14 +200,21 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
             if (!isProfileToken(value.token)) return {message: "Use a variable token like {var:profile}", el: tokenInput};
             return null;
         }
+        const chosen = radios.find((r) => r.checked) || radios[0];
         const levels = [value.wcag, ...value.standards.filter((id) => WCAG_ID.test(id))].filter(Boolean);
-        if (levels.length > 1) return {message: "Choose one WCAG level: each includes the ones below it", el: radios[0]};
-        if (required && !value.wcag && !value.standards.length) return {message: "Choose a WCAG level or a standard", el: radios[0]};
+        if (levels.length > 1) return {message: "Choose one WCAG level: each includes the ones below it", el: chosen};
+        // "Don't check WCAG" with no standard would save no profile, and the
+        // scan would check WCAG 2.2 AA after all.
+        if (!value.wcag && !value.standards.length) {
+            return {message: required ? "Choose a WCAG level or a standard" : "Choose a standard, or a WCAG level: with neither, the scan checks WCAG 2.2 AA", el: chosen};
+        }
         return null;
     }
 
     root.addEventListener("change", (e) => {
         if (e.target === tokenToggle && tokenToggle.checked) tokenInput.focus();
+        // A level chosen settles which of several the step named.
+        if (e.target && e.target.name === radioName) levelsNote.hidden = true;
         sync();
         emit();
     });

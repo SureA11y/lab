@@ -134,6 +134,21 @@
     }
 
     /**
+     * The standard a scan's findings are listed by, for its EN 301 549
+     * clauses: EN 301 549's version when the scan checked it; none (null)
+     * when it checked a WCAG level beside other standards, so the clauses
+     * show as cross-references as in a WCAG scan; else its one standard.
+     * A scan of WCAG 2.2 AA + WAI-ARIA 1.2 is not a WAI-ARIA scan to them.
+     */
+    function scanListingStandardId(scan) {
+        const ids = scanStandardIds(scan);
+        const en = ids.find((id) => /^en301549-/i.test(id));
+        if (en) return en;
+        if (scanProfiles(scan).some((p) => p.id && WCAG_PROFILE.test(p.id))) return null;
+        return ids[0] || null;
+    }
+
+    /**
      * Whether two scans checked against the same profiles, in whatever
      * order: the same standards, and the same WCAG level.
      */
@@ -201,6 +216,7 @@
         scanProfile,
         scanStandardId,
         scanStandardIds,
+        scanListingStandardId,
         scanProfiles,
         scanProfilesNotRun,
         scanProfilesLabel,

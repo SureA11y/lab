@@ -108,7 +108,27 @@ function compareToBaseline(baselinePayload, currentPayload) {
         // versions }]): a release can add rules, change what a rule finds or
         // how it names an element, so some differences come from the engine.
         engineChanges: (diff && diff.document && Array.isArray(diff.document.engineChanges)) ? diff.document.engineChanges : [],
+        // What the two were checked against. `basis`: the profiles they were
+        // compared on and those left out, when they checked different ones
+        // and share some (shared-profiles.js). `mismatch`: they share none,
+        // so their rows don't line up; `compared` names what each checked.
+        profiles: {
+            basis: (diff && diff.document && diff.document.profiles) || null,
+            mismatch: !!(diff && diff.document && diff.document.criteriaMismatch),
+            compared: (diff && diff.document && Array.isArray(diff.document.standardsCompared)) ? diff.document.standardsCompared : [],
+        },
     };
+}
+
+/**
+ * The comparison's summary, for an exit code or an outcome: null when the
+ * two were checked against things that share nothing, whose new instances
+ * are what was checked rather than the pages (the run is then judged as one
+ * with no baseline).
+ */
+function comparableSummary(comparison) {
+    if (!comparison) return null;
+    return comparison.profiles && comparison.profiles.mismatch ? null : comparison.summary;
 }
 
 const EXIT = {
@@ -155,5 +175,6 @@ module.exports = {
     loadBaselinePayload,
     summarizeDiff,
     compareToBaseline,
+    comparableSummary,
     decideExit,
 };

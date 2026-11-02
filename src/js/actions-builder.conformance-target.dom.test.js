@@ -88,8 +88,8 @@ describe('the profile field', () => {
         choose(boxes(actionsEl).find((b) => b.value === 'en301549-v4.1.1'));
         assert.deepEqual(saved(builder), ['wcag22-aaa', 'en301549-v4.1.1']);
         // EN 301 549 restates WCAG A and AA: beside a WCAG level, it says so.
-        const note = field(actionsEl).querySelector('.profiles-input__note');
-        assert.equal(note.hidden, false);
+        const note = field(actionsEl).querySelector('.profiles-input__note:not([hidden])');
+        assert.ok(note);
         assert.match(note.textContent, /EN 301 549 V4\.1\.1 restates WCAG Level A and AA/);
         assert.match(field(actionsEl).querySelector('.profiles-input__summary').textContent, /WCAG 2\.2 AAA \+ EN 301 549 V4\.1\.1/);
 
@@ -102,7 +102,7 @@ describe('the profile field', () => {
         const { builder, actionsEl } = newBuilder([{ type: 'a11yScan', profile: ['wcag22-aa', 'demo-1.0'] }]);
         assert.deepEqual(saved(builder), ['wcag22-aa', 'demo-1.0']);
         const notes = Array.from(field(actionsEl).querySelectorAll('.profiles-input__help')).map((n) => n.hidden ? '' : n.textContent).join(' ');
-        assert.match(notes, /Also demo-1\.0, which no installed pack has/);
+        assert.match(notes, /No installed pack has demo-1\.0/);
     });
 
     test('a variable holds the profiles: one, or several separated by commas', () => {
@@ -120,10 +120,45 @@ describe('the profile field', () => {
         assert.match(field(actionsEl).querySelector('.error').textContent, /variable token like \{var:profile\}/);
     });
 
-    test('nothing chosen saves no profile: the scan checks WCAG 2.2 AA', () => {
+    test('"Don’t check WCAG" with no standard is refused: it would check WCAG 2.2 AA', () => {
         const { builder, actionsEl } = newBuilder([{ type: 'a11yScan', label: 'Home' }]);
         choose(radios(actionsEl).find((r) => r.value === ''));
-        assert.equal('profile' in builder.getValue({ validate: false }).value[0], false);
         assert.match(field(actionsEl).querySelector('.profiles-input__summary').textContent, /Choose a WCAG level or a standard/);
+        const result = builder.getValue({ validate: true });
+        assert.equal(result.ok, false);
+        assert.match(field(actionsEl).querySelector('.error').textContent, /with neither, the scan checks WCAG 2\.2 AA/);
+        assert.equal(field(actionsEl).querySelector('fieldset.profiles-input').getAttribute('aria-invalid'), 'true');
+        // A step saved with no profile, or an empty one, shows what it checks.
+        for (const profile of [undefined, '', []]) {
+            const again = newBuilder([{ type: 'a11yScan', ...(profile === undefined ? {} : { profile }) }]);
+            assert.equal(radios(again.actionsEl).find((r) => r.checked).value, 'wcag22-aa', JSON.stringify(profile));
+        }
+    });
+
+    test('a step saved with two WCAG levels keeps the first, says so, and can be put right', () => {
+        const { builder, actionsEl } = newBuilder([{ type: 'a11yScan', profile: ['wcag22-aa', 'wcag22-aaa'] }]);
+        assert.equal(radios(actionsEl).find((r) => r.checked).value, 'wcag22-aa');
+        const note = Array.from(field(actionsEl).querySelectorAll('.profiles-input__note')).find((n) => !n.hidden);
+        assert.match(note.textContent, /more than one WCAG level \(WCAG 2\.2 AA, WCAG 2\.2 AAA\)/);
+        assert.deepEqual(saved(builder), 'wcag22-aa');
+        choose(radios(actionsEl).find((r) => r.value === 'wcag22-aaa'));
+        assert.deepEqual(saved(builder), 'wcag22-aaa');
+        assert.equal(builder.getValue({ validate: true }).ok, true);
+    });
+
+    test('a standard no installed pack has can be taken off, and keeps its case', () => {
+        const { builder, actionsEl } = newBuilder([{ type: 'a11yScan', profile: ['wcag22-aa', 'RGAA-4.1'] }]);
+        const box = boxes(actionsEl).find((b) => b.value === 'RGAA-4.1');
+        assert.ok(box && box.checked);
+        assert.match(labelOf(box), /RGAA-4\.1 \(no installed pack has it\)/);
+        assert.deepEqual(saved(builder), ['wcag22-aa', 'RGAA-4.1']);
+        choose(box, false);
+        assert.deepEqual(saved(builder), 'wcag22-aa');
+    });
+
+    test('a list with a variable in it is one value to fill in', () => {
+        const { builder, actionsEl } = newBuilder([{ type: 'a11yScan', profile: ['{var:q}', 'wcag22-aaa'] }]);
+        assert.equal(field(actionsEl).querySelector('.profiles-input__token-toggle').checked, true);
+        assert.equal(saved(builder), '{var:q},wcag22-aaa');
     });
 });

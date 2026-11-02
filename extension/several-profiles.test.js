@@ -116,3 +116,44 @@ describe('extension surea11y adapter: several profiles at once', () => {
         assert.equal(rule.checkOutcome, 'cantTell');
     });
 });
+
+describe('extension surea11y adapter: a core that scans one profile at a time', () => {
+    test('a list is scanned at its WCAG target alone, and said', async (t) => {
+        if (await scansSeveral()) return t.skip('this bundle\'s core scans several profiles at once');
+        const {native, canonical} = await scan(['wcag22-aa', 'en301549-v4.1.1']);
+        assert.deepEqual(native.profilesUnsupported, ['wcag22-aa', 'en301549-v4.1.1']);
+        assert.deepEqual(native.wcagTarget, {version: '2.2', level: 'AA'});
+        const notice = canonical.notices.find((n) => n.code === 'profiles-unsupported');
+        assert.match(notice.message, /scans one profile at a time, so it checked the scan's WCAG target alone, not WCAG 2\.2 AA \+ EN 301 549 V4\.1\.1/);
+        // Not every rule, as a list the core ignored would give: what the
+        // WCAG target selects.
+        const target = await scan('wcag22-aa');
+        assert.equal(canonical.findings.length, target.canonical.findings.length);
+    });
+});
+
+describe('extension surea11y adapter: injecting the packs', () => {
+    // A page whose state the probes read: whether the engine and packs are in it.
+    const fakeTab = ({engine, packs}) => {
+        const injected = [];
+        let call = 0;
+        const execInTab = async () => [call++ === 0 ? engine : packs];
+        const injectFile = async (_tabId, file) => { injected.push(file); };
+        return {injected, helpers: {execInTab, injectFile}};
+    };
+
+    test('a page that has the engine but none of the packs gets the packs', async () => {
+        const tab = fakeTab({engine: true, packs: false});
+        await SUREA11Y.ensureInjected(1, tab.helpers);
+        assert.deepEqual(tab.injected, ['engines/vendor/surea11y-packs.js']);
+    });
+
+    test('a page with neither gets both; one with both, nothing', async () => {
+        const empty = fakeTab({engine: false, packs: false});
+        await SUREA11Y.ensureInjected(1, empty.helpers);
+        assert.deepEqual(empty.injected, ['engines/vendor/surea11y.browser.min.js', 'engines/vendor/surea11y-packs.js']);
+        const full = fakeTab({engine: true, packs: true});
+        await SUREA11Y.ensureInjected(1, full.helpers);
+        assert.deepEqual(full.injected, []);
+    });
+});
