@@ -1051,8 +1051,8 @@ function safeDirPart(v) {
 }
 
 function resolveReportsRootWithSubdir(reportsSubdir) {
-    const env = String(process.env.A11Y_REPORTS_ROOT || '').trim();
-    const baseRoot = env ? env : path.join(process.cwd(), 'reports');
+    // The one reports folder (report-paths.js): the server serves it.
+    const baseRoot = REPORTS_ROOT;
 
     const sub = safeDirPart(reportsSubdir);
     return sub ? path.join(baseRoot, sub) : baseRoot;
