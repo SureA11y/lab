@@ -880,6 +880,14 @@ app.get("/", (req, res) => {
 
 // --------------------------- Start ---------------------------
 
+// The report's built styles and script, which every downloaded report carries:
+// built now if they are missing (report-assets.js).
+{
+    const assets = require('./src/server-side/report-assets').ensureReportAssets();
+    if (assets.built) console.log('Built the report\'s styles and script (src/report).');
+    if (assets.missing.length) console.warn(`The report's ${assets.missing.join(', ')} could not be built, so Download report will fail: ${assets.error}`);
+}
+
 app.listen(PORT, HOST, () => {
     console.log(`Accessibility lab server listening on http://${HOST}:${PORT}`);
 });

@@ -38,8 +38,9 @@ async function esm(file) {
     }
 }
 
-/** The built assets the document needs, or null when one is missing. */
+/** The built assets the document needs, built first if missing, or null when one is still missing. */
 function readAssets() {
+    require('../server-side/report-assets').ensureReportAssets();
     const files = ASSETS.map((name) => path.join(REPORT_DIR, name));
     if (!files.every((file) => fs.existsSync(file))) return null;
     const [template, css, comparisonCss, js] = files.map((file) => fs.readFileSync(file, 'utf8'));
