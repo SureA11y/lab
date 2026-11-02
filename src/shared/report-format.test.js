@@ -22,6 +22,19 @@ describe('report-format', () => {
         assert.notEqual(format.occurrenceId('image-alt', { target: ['img'] }, 'https://example.com/a?x=1'), id);
     });
 
+    test('an element in a shadow root is named by its hosts too; one outside keeps its id', () => {
+        const inRoot = (host) => ({ target: ['button:not(* > *)'], shadowHostSelectors: [host] });
+        const a = format.occurrenceId('button-name', inRoot('#m > div:nth-of-type(2)'), 'https://example.com/');
+        const b = format.occurrenceId('button-name', inRoot('#m > div:nth-of-type(4)'), 'https://example.com/');
+        assert.notEqual(a, b);
+        assert.equal(format.elementTarget(inRoot('#a')), '#a >>> button:not(* > *)');
+        const plain = { target: ['main > button'] };
+        assert.equal(format.elementTarget(plain), 'main > button');
+        assert.equal(
+            format.occurrenceId('button-name', { ...plain, shadowHostSelectors: [] }, 'https://example.com/'),
+            format.occurrenceId('button-name', plain, 'https://example.com/'));
+    });
+
     test('an occurrence\'s own page wins over its scan\'s', () => {
         const o = { pageUrl: 'https://example.com/b', target: ['img'] };
         assert.equal(

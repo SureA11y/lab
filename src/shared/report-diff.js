@@ -98,8 +98,7 @@
 
     function occKey(o, scanUrl) {
         const url = (o && o.pageUrl) ? o.pageUrl : (scanUrl || '');
-        const target = Array.isArray(o && o.target) ? o.target.join('||') : '';
-        return `${pagePath(url)}##${target}`;
+        return `${pagePath(url)}##${reportFormat.elementTarget(o)}`;
     }
 
     // Merge a report's findings of one outcome by rule id across all its scans.

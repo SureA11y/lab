@@ -23,6 +23,12 @@
  *   origin is left out, so a run on a staging copy compares with one on the
  *   live site.
  *
+ *   An element inside shadow roots is named by its hosts' selectors and its
+ *   own, which holds only inside the last host's shadow root (elementTarget):
+ *   by its own selector alone, a thousand buttons, each in a shadow root of
+ *   its own, were one occurrence. An element outside shadow DOM keeps the id
+ *   it had.
+ *
  *   Known limit: the target is a selector, so an element whose selector
  *   changes (a renamed class, a reordered list) gets a new id, and reads as
  *   one issue fixed and another new.
@@ -80,8 +86,20 @@
     function occurrenceKey(ruleId, occurrence, scanUrl) {
         const o = occurrence && typeof occurrence === 'object' ? occurrence : {};
         const url = o.pageUrl ? o.pageUrl : (scanUrl || '');
-        const target = Array.isArray(o.target) ? o.target.join('||') : '';
-        return `${ruleId || ''}##${pagePath(url)}##${target}`;
+        return `${ruleId || ''}##${pagePath(url)}##${elementTarget(o)}`;
+    }
+
+    /**
+     * Which element an occurrence is on, as text: its target, after the
+     * selectors of the shadow hosts it is inside, if any (`>>>` between
+     * them). Its target alone holds only inside the last host's shadow root,
+     * so it repeats in every root of the same component.
+     */
+    function elementTarget(occurrence) {
+        const o = occurrence && typeof occurrence === 'object' ? occurrence : {};
+        const target = Array.isArray(o.target) ? o.target.join('||') : (typeof o.target === 'string' ? o.target : '');
+        const hosts = Array.isArray(o.shadowHostSelectors) ? o.shadowHostSelectors.filter((h) => typeof h === 'string' && h) : [];
+        return hosts.length ? `${hosts.join(' >>> ')} >>> ${target}` : target;
     }
 
     // cyrb53: a fast 53-bit string hash, the same in Node and the browser.
@@ -186,6 +204,7 @@
         reportVersionOf,
         pagePath,
         occurrenceKey,
+        elementTarget,
         occurrenceId,
         occurrenceIdOf,
         compactOccurrence,

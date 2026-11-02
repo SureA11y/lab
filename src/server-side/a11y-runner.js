@@ -28,6 +28,7 @@ if (['1', 'true', 'yes', 'on'].includes(String(process.env.A11Y_STEALTH || '').t
 }
 if (!puppeteer) puppeteer = require('puppeteer');
 const a11yEngine = require('./a11y-engine');
+const { elementTarget } = require('../shared/report-format.js');
 const {
     applyActions,
     createWorkflowContext,
@@ -945,7 +946,7 @@ function getA11yGlobalFindings(scans) {
 
     function occKey(occ) {
         const url = occ && occ.pageUrl ? String(occ.pageUrl) : '';
-        const target = Array.isArray(occ && occ.target) ? occ.target.join('||') : '';
+        const target = elementTarget(occ);
         const html = occ && occ.html ? String(occ.html) : '';
         const failure = occ && occ.failureSummary ? String(occ.failureSummary) : '';
         return url + '##' + target + '##' + html + '##' + failure;

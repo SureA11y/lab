@@ -23,6 +23,7 @@ const { CANON_VERSION } = require('../a11y-canonical'); // for consistency
 const { REPORTS_ROOT } = require('../report-paths');
 const { profileId, targetLabel, CONFORMANCE_TARGETS, selectionFromRunOnly, tagsBesideSelection, splitOutcomeCounts } = require('../conformance-targets');
 const { toSafeId } = require('../shared-utils');
+const { elementTarget } = require('../../shared/report-format.js');
 const { renderHtmlReport } = require('@surea11y/core/report');
 const { normalizeOccurrenceDetails, shadowHostsOf, contextMatchNotices, collectMargins: collectResultMargins } = require('../../shared/scan-notes.js');
 
@@ -559,7 +560,7 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
 
     function occKey(occ) {
         const pageUrl = (occ && occ.pageUrl) ? String(occ.pageUrl) : '';
-        const target0 = (occ && Array.isArray(occ.target) && occ.target[0]) ? String(occ.target[0]) : '';
+        const target0 = elementTarget(occ && Array.isArray(occ.target) ? { ...occ, target: occ.target.slice(0, 1) } : occ);
         const html = (occ && occ.html) ? String(occ.html) : '';
         const atomicCheckId = (occ && occ.atomicCheckId) ? String(occ.atomicCheckId) : '';
         // include atomicCheckId so we do NOT dedupe across different contributing checks

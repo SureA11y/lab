@@ -56,6 +56,24 @@ describe('diffReports — evolution rule classification', () => {
     });
 });
 
+describe('diffReports — elements in shadow roots', () => {
+    test('the same selector in two shadow roots is two elements', async () => {
+        const { diffReports } = await load();
+        const inRoots = (n) => ({
+            ruleId: 'button-name', id: 'button-name', title: 't', severity: 'serious', outcome: 'fail',
+            wcag: { sc: [{ ref: '4.1.2', level: 'A' }] },
+            occurrences: Array.from({ length: n }, (_, i) => ({
+                pageUrl: 'https://x/', target: ['button:not(* > *)'], shadowHostSelectors: [`#m > div:nth-of-type(${i + 1})`],
+            })),
+        });
+        const A = report({ runId: 'a', timestamp: '2026-01-01T00:00:00Z', findings: [inRoots(5)] });
+        const B = report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z', findings: [inRoots(3)] });
+        const row = diffReports(A, B, { mode: 'evolution' }).rows.find((r) => r.ruleId === 'button-name');
+        assert.equal(row.aCount, 5);
+        assert.equal(row.bCount, 3);
+    });
+});
+
 describe('diffReports — a/b rule classification', () => {
     test('aonly / bonly / both, caller order preserved', async () => {
         const { diffReports } = await load();

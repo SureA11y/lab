@@ -125,3 +125,28 @@ describe('buildGlobalSummary', () => {
         assert.equal(reach(scans), 2, 'the a.test one once, the b.test one once, and the bare one on b.test is it');
     });
 });
+
+// A selector inside a shadow root holds only there: the same one in each
+// shadow root of a component is a different element each time. By the
+// selector alone, a thousand buttons in a thousand shadow roots were one.
+describe('elements in shadow roots', () => {
+    const inRoot = (i, extra = {}) => occ('button:not(* > *)', { pageUrl: 'https://a.test/', shadowHostSelectors: [`#m > div:nth-of-type(${i})`], ...extra });
+    const scans = [scan('https://a.test/', [fail('r', [inRoot(1), inRoot(2), inRoot(3), inRoot(2)])])];
+
+    test('getA11yGlobalFindings keeps one occurrence per shadow root', () => {
+        assert.equal(getA11yGlobalFindings(scans).fail[0].occurrences.length, 3);
+    });
+
+    test('findingsByOutcome tells them apart by their hosts, with or without a selector', () => {
+        const withSelector = scans.map((s) => ({ ...s, canonical: { findings: s.canonical.findings.map((f) => ({
+            ...f, occurrences: f.occurrences.map((o) => ({ ...o, selector: 'button:not(* > *)' })),
+        })) } }));
+        assert.equal(findingsByOutcome(scans).fail[0].occurrences.length, 3);
+        assert.equal(findingsByOutcome(withSelector).fail[0].occurrences.length, 3);
+    });
+
+    test('buildGlobalSummary counts each as an element of its own', () => {
+        const summary = buildGlobalSummary({ scans, options: {} });
+        assert.equal(summary.a11ySummary.occurrences.reach[0].occurrences, 3);
+    });
+});
