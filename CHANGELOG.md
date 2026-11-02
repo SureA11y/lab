@@ -30,9 +30,18 @@ The first public release.
 - **Comparisons.** Two reports side by side, or up to 24 as a dashboard of
   what was fixed and what appeared at each step, how long each problem has
   been open, and whether each run covered enough to be compared.
+- **What a scan covers.** A page's iframes are scanned with it (each
+  element names the iframe it is in; a step's Scan iframes too turns it
+  off), and so is every element in a shadow root, each counted as its own.
+  A large page is scanned in full and its report says it is large; an
+  address that gives a PDF, JSON or an image is skipped, saying so; a page
+  its server answered with an error is scanned with a notice of the status.
+  A rule that lists only some of the elements it found (surea11y's contrast
+  rules list 50) has all of them counted.
 - **Batches and a run queue**: one workflow once per row of a list (one per
   page, per environment, per release), up to four at once, each result
-  saved as it finishes.
+  saved as it finishes; a batch of thousands of runs opens a page of them
+  at a time.
 - **Passwords from the environment** (`{"$env": "NAME"}`), so workflows that
   log in can be saved, shared and run unattended with no password in them.
 - **Reports opened by address**: `?report=<url>` and `?compare=<url>`.
@@ -69,6 +78,10 @@ The first public release.
   comparisons, diffs and the HTTP API, in `schemas/`.
 - **A GitHub Action** (`action.yml`), **a container image** (`Dockerfile`),
   and **the HTTP API** (`docs/http-api.md`, with an OpenAPI description).
+  A run that cannot work is refused before it starts, with every reason;
+  past `A11Y_MAX_RUNS` running and `A11Y_MAX_WAITING` waiting, a run is
+  refused with 429; every answer is JSON, compressed for a client that
+  takes gzip. A run's pictures stay on disk `A11Y_RUN_FILES_HOURS` (24).
 - **A browser extension** (`extension/`) to scan the page in front of you
   and send a session to the lab.
 - **Examples** that run against a demo shop, a getting-started guide, and
@@ -82,7 +95,7 @@ The first public release.
   open in the same browser cannot use it. See `SECURITY.md`.
 - The browser presents itself as headless Chrome; `A11Y_STEALTH=1` gives it
   a desktop Chrome's fingerprint, for a site of your own whose bot filter
-  refuses headless Chrome.
+  refuses headless Chrome, with no dependency of its own.
 
 ### For workflows saved by an earlier, unreleased copy of the lab
 
