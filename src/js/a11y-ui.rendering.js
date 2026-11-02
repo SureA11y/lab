@@ -457,6 +457,8 @@ export function createRenderer({
             EN: en301549ForTarget(en301549ClausesOf(f), targetId),
             RGAA: Array.isArray(f?.rgaa) ? f.rgaa : [],
             STANDARDS: otherStandardsOf(f),
+            // A scan of several profiles: what each one makes of the finding.
+            verdicts: f?.verdicts && typeof f.verdicts === 'object' && !Array.isArray(f.verdicts) ? f.verdicts : null,
             engine: f?.provenance?.engine || {},
             // Elements its rule counted and did not list (core lists 50 for
             // its contrast rules): counted in the totals, said in the dialog.
@@ -1123,6 +1125,21 @@ export function createRenderer({
         );
     }
 
+    // What each profile of a scan of several makes of a finding, under its
+    // status: "WCAG 2.2 AA: Review", "WAI-ARIA 1.2: Fail". A finding that
+    // fails one and is a question for another is both, and says so.
+    const VERDICT_WORDS = {fail: 'Fail', cantTell: 'Review', pass: 'Pass', notApplicable: 'Not applicable'};
+
+    function verdictsHtml(issue) {
+        const entries = Object.entries(issue?.verdicts || {}).filter(([, v]) => VERDICT_WORDS[v]);
+        if (!entries.length) return '';
+        const name = (id) => globalThis.A11Y_CONFORMANCE_TARGETS?.targetLabel?.(id) || id;
+        return '<ul class="issue-verdicts" aria-label="By profile">' +
+            entries.map(([id, v]) => '<li class="issue-verdict issue-verdict--' + escapeAttr(v) + '">' +
+                escapeHtml(name(id)) + ': ' + escapeHtml(VERDICT_WORDS[v]) + '</li>').join('') +
+            '</ul>';
+    }
+
     function buildIssueRowHtml(issue, {index, rowIndex, type}) {
         const impactClass = issue?.impact ? 'impact-' + issue.impact : '';
         const nodes = Array.isArray(issue?.nodes) ? issue.nodes : [];
@@ -1141,6 +1158,7 @@ export function createRenderer({
 
         const groupedTagsHtml = buildGroupedTagsHtml(issue);
         const helpLink = buildHelpLinkHtml(issue);
+        const verdicts = verdictsHtml(issue);
 
         const instancesCell = buildInstancesCellHtmlForIssue({
             issue,
@@ -1164,7 +1182,7 @@ export function createRenderer({
             '<tr role="row" class="' + rowClass + '">' +
             '<td role="cell" data-label="Status"><span class="issue-status">' +
             status +
-            '</span></td>' +
+            '</span>' + verdicts + '</td>' +
             '<td role="cell" data-label="Severity" class="' +
             impactClass +
             '">' +
@@ -1822,8 +1840,11 @@ export function createRenderer({
         meta.className = 'stream-counts';
 
         const bits = [];
-        const profile = globalThis.A11Y_REPORT_SCAN?.scanProfile(scan);
-        if (profile?.label) bits.push(String(profile.label));
+        // Every profile it checked against: "WCAG 2.2 AA + WAI-ARIA 1.2".
+        const profilesLabel = globalThis.A11Y_REPORT_SCAN?.scanProfilesLabel(scan);
+        if (profilesLabel) bits.push(String(profilesLabel));
+        const notRun = globalThis.A11Y_REPORT_SCAN?.scanProfilesNotRun(scan) || [];
+        if (notRun.length) bits.push(`Not checked: ${notRun.map((p) => p.label).join(', ')}`);
         const optIn = optInRulesLabel(scan);
         if (optIn) bits.push(`Plus ${optIn}`);
         if (scan?.context) bits.push(`Context: ${scan.context}`);

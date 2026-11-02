@@ -86,6 +86,8 @@
         'en301549-v3.2.1': target('EN 301 549 V3.2.1', '2.1', 'AA', { profile: true, needs: 'standard' })
     });
     const DEFAULT_SCAN_TARGET = 'wcag22-aa';
+    // The targets that are WCAG levels, not standards: a scan names one.
+    const WCAG_TARGETS = ['wcag22-a', 'wcag22-aa', 'wcag22-aaa'];
 
     // The standards: the targets that are also surea11y's profiles.
     const CONFORMANCE_TARGETS = Object.fromEntries(
@@ -93,9 +95,11 @@
     );
 
     // The profiles core takes in engineOptions.profile: the standards, and
-    // its own WCAG 2.2 AA one, which a caller may still ask for. A scan step's
-    // WCAG 2.2 AA target is a WCAG selection, not that profile.
-    const CORE_PROFILES = [...Object.keys(CONFORMANCE_TARGETS), 'wcag22-aa'];
+    // its own WCAG 2.2 ones, which a caller may still ask for. A scan step's
+    // WCAG target alone is a WCAG selection (runOnly.wcag), not that profile;
+    // beside a standard it is the profile, since a scan of several profiles
+    // names each one.
+    const CORE_PROFILES = [...Object.keys(CONFORMANCE_TARGETS), 'wcag22-a', 'wcag22-aa', 'wcag22-aaa'];
 
     const PROFILE_ID = /^[a-z][a-z0-9]*(-[a-z0-9.]+)+$/;
 
@@ -136,16 +140,71 @@
         return Object.prototype.hasOwnProperty.call(SCAN_TARGETS, id) ? id : null;
     }
 
+    /**
+     * The profiles a scan step names: one id, a list of them, or a string of
+     * them separated by commas (what a variable holds), each trimmed and
+     * lowercased, once each, in the order given. Unknown ids are kept, for
+     * checkScanSteps to name.
+     */
+    function profileList(v) {
+        const raw = Array.isArray(v) ? v : (typeof v === 'string' ? v.split(',') : []);
+        const out = [];
+        for (const item of raw) {
+            const id = typeof item === 'string' ? item.trim().toLowerCase() : '';
+            if (id && !out.includes(id)) out.push(id);
+        }
+        return out;
+    }
+
+    /** Whether a target is a WCAG level (WCAG 2.2 A, AA or AAA), not a standard. */
+    function isWcagTarget(id) {
+        return WCAG_TARGETS.includes(scanTargetId(id));
+    }
+
+    /**
+     * The known targets of a scan step's profiles, its WCAG level first, then
+     * the standards in the order given: the order core scans them in, and the
+     * first is the scan's lead profile (core's engine.profile).
+     */
+    function scanTargetIds(v) {
+        const ids = profileList(v).map(scanTargetId).filter(Boolean);
+        return [...ids.filter(isWcagTarget), ...ids.filter((id) => !isWcagTarget(id))];
+    }
+
+    /**
+     * What is wrong with a scan step's profiles, as messages: an id that is no
+     * target, or two WCAG levels (each level includes the ones below it, so a
+     * scan names one). [] when nothing is.
+     */
+    function scanTargetProblems(v) {
+        const list = profileList(v);
+        const problems = [];
+        // Named as given ("AA", not "aa"), once each.
+        const raw = Array.isArray(v) ? v : (typeof v === 'string' ? v.split(',') : []);
+        const named = [...new Set(raw.filter((x) => typeof x === 'string').map((x) => x.trim()).filter(Boolean))];
+        for (const id of named) {
+            if (!scanTargetId(id)) problems.push(`"${id}" is not a profile`);
+        }
+        const levels = list.filter(isWcagTarget);
+        if (levels.length > 1) {
+            problems.push(`${levels.map((id) => SCAN_TARGETS[id].label).join(' and ')} are two WCAG levels: `
+                + 'each level includes the ones below it, so choose one');
+        }
+        return problems;
+    }
+
     function selectsByOf(v) {
         return SELECTS_BY.includes(v) ? v : DEFAULT_SELECTS_BY;
     }
 
     /** Whether an engine that selects by `selectsBy` can check a target. */
     function targetSupported(targetValue, selectsBy) {
-        const id = scanTargetId(targetValue);
+        const ids = scanTargetIds(targetValue);
         // No target: the scan takes the run's level, which every engine selects by.
-        if (!id) return true;
-        return SELECTS_BY.indexOf(selectsByOf(selectsBy)) >= SELECTS_BY.indexOf(SCAN_TARGETS[id].needs);
+        if (!ids.length) return true;
+        // Several profiles at once: an engine that applies standards in full.
+        const needs = ids.length > 1 ? 'standard' : SCAN_TARGETS[ids[0]].needs;
+        return SELECTS_BY.indexOf(selectsByOf(selectsBy)) >= SELECTS_BY.indexOf(needs);
     }
 
     /** The ids of the targets an engine that selects by `selectsBy` can check. */
@@ -164,19 +223,25 @@
     }
 
     /**
-     * Reads a profile: a scan step's own, or the run's for a step without
-     * one. Anything that is not a profile id is none (checkScanSteps stops a
-     * run whose step gives something else).
+     * Reads a scan step's profile, or its profiles. Anything that is not a
+     * profile id is none (checkScanSteps stops a run whose step gives
+     * something else).
      *
-     * @returns {{ level: 'A'|'AA'|'AAA'|null, version: string|null, profile: string|null }}
+     * One profile reads as it always has. Several also give `profiles`, every
+     * one in the order core scans them (scanTargetIds), which an engine hands
+     * core as one scan of them all: the WCAG version and level are then the
+     * WCAG profile's, or else the first standard's, and `profile` is the
+     * first standard, or null.
+     *
+     * @returns {{ level: 'A'|'AA'|'AAA'|null, version: string|null, profile: string|null, profiles?: string[] }}
      */
     function resolveScanTarget({ profile } = {}) {
-        const id = scanTargetId(profile);
-        if (id) {
-            const t = SCAN_TARGETS[id];
-            return { level: t.level, version: t.version, profile: t.profile ? id : null };
-        }
-        return { level: null, version: null, profile: null };
+        const ids = scanTargetIds(profile);
+        if (!ids.length) return { level: null, version: null, profile: null };
+        const t = SCAN_TARGETS[ids[0]];
+        if (ids.length === 1) return { level: t.level, version: t.version, profile: t.profile ? ids[0] : null };
+        const standard = ids.find((id) => !isWcagTarget(id)) || null;
+        return { level: t.level, version: t.version, profile: standard, profiles: ids };
     }
 
     /**
@@ -223,12 +288,14 @@
         const fromTags = selectionFromTags(tags);
         const target = resolveScanTarget({ profile });
         const bestPractices = includeBestPractice === true || fromTags.bestPractices;
-        return {
+        const selection = {
             version: target.version || versionOf(version) || fromTags.version || DEFAULT_WCAG_VERSION,
             level: target.level || fromTags.level || DEFAULT_WCAG_LEVEL,
             profile: target.profile,
             bestPractices
         };
+        if (target.profiles) selection.profiles = target.profiles;
+        return selection;
     }
 
     function runOnlyTags(runOnly) {
@@ -250,10 +317,12 @@
     function selectionFromRunOnly({ runOnly, wcagLevel, profile } = {}) {
         const tags = runOnlyTags(runOnly);
         const level = levelOf(wcagLevel);
-        if (!selectionFromTags(tags).level && !level && !profileId(profile)) return null;
-        const selection = resolveScanSelection({ tags, profile: profileId(profile) });
+        // A profile, or a list of them, as core takes in engineOptions.profile.
+        const profiles = profileList(profile).filter((id) => profileId(id));
+        if (!selectionFromTags(tags).level && !level && !profiles.length) return null;
+        const selection = resolveScanSelection({ tags, profile: profiles.length ? profiles : null });
         // A profile sets its own level; otherwise the level given beats the tags'.
-        return level && !profileId(profile) ? { ...selection, level } : selection;
+        return level && !profiles.length ? { ...selection, level } : selection;
     }
 
     /**
@@ -318,9 +387,10 @@
         return canonical;
     }
 
-    /** "WCAG 2.1 AA", or the standard's name. */
+    /** "WCAG 2.1 AA", the standard's name, or "WCAG 2.2 AA + WAI-ARIA 1.2". */
     function selectionLabel(selection) {
         if (!selection) return null;
+        if (Array.isArray(selection.profiles) && selection.profiles.length > 1) return profilesLabel(selection.profiles);
         if (selection.profile && SCAN_TARGETS[selection.profile]) return SCAN_TARGETS[selection.profile].label;
         return `WCAG ${selection.version} ${selection.level}`;
     }
@@ -328,6 +398,11 @@
     function targetLabel(profile) {
         const target = SCAN_TARGETS[profile];
         return target ? target.label : null;
+    }
+
+    /** The profiles' names joined: "WCAG 2.2 AA + WAI-ARIA 1.2". */
+    function profilesLabel(ids) {
+        return profileList(ids).map((id) => targetLabel(id) || id).join(' + ');
     }
 
     return {
@@ -354,6 +429,11 @@
         separateBestPractices,
         wcagTags,
         targetLabel,
+        profilesLabel,
+        profileList,
+        isWcagTarget,
+        scanTargetIds,
+        scanTargetProblems,
         profileId,
         registerStandardProfiles
     };

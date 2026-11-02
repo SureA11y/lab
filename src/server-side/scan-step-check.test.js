@@ -71,3 +71,24 @@ describe('checkScanSteps', () => {
         ]), (e) => e.message.split('\n').length === 2);
     });
 });
+
+describe('checkScanSteps with several profiles', () => {
+    const describeEngine = () => ({ id: 'surea11y', name: 'surea11y', selectsBy: 'standard' });
+    const check = (actions) => () => checkScanSteps(actions, [], describeEngine);
+
+    test('takes a list of profiles, one WCAG level and any standards', () => {
+        assert.doesNotThrow(check([{ type: 'a11yScan', profile: ['wcag22-aaa', 'en301549-v4.1.1'] }]));
+        assert.doesNotThrow(check([{ type: 'a11yScan', profile: ['en301549-v3.2.1'] }]));
+    });
+
+    test('fails on two WCAG levels, or a list naming something that is not a profile', () => {
+        assert.throws(check([{ type: 'a11yScan', label: 'Home', profile: ['wcag22-a', 'wcag22-aa'] }]),
+            /Scan "Home": WCAG 2\.2 A and WCAG 2\.2 AA are two WCAG levels/);
+        assert.throws(check([{ type: 'a11yScan', profile: ['wcag22-aa', 'nope'] }]), /"nope" is not a profile/);
+    });
+
+    test('leaves a variable for the run to check', () => {
+        assert.doesNotThrow(check([{ type: 'a11yScan', profile: '{var:profiles}' }]));
+        assert.doesNotThrow(check([{ type: 'a11yScan', profile: ['wcag22-aa', '{var:standard}'] }]));
+    });
+});

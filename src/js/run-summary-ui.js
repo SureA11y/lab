@@ -86,8 +86,8 @@ export function createRunSummaryUi(app) {
                 (perScanNodes > 0 ? ' in ' + perScanNodes + ' element' + (perScanNodes === 1 ? '' : 's') : '')) +
             '</a>' +
             (isSkipped ? ''
-                : globalThis.A11Y_REPORT_SCAN?.scanProfile(scan)?.label
-                    ? ' <small>(' + escapeHtml(globalThis.A11Y_REPORT_SCAN.scanProfile(scan).label) + ')</small>' : '') +
+                : globalThis.A11Y_REPORT_SCAN?.scanProfilesLabel(scan)
+                    ? ' <small>(' + escapeHtml(globalThis.A11Y_REPORT_SCAN.scanProfilesLabel(scan)) + ')</small>' : '') +
             (!isSkipped && optInRulesLabel(scan) ? ' <small>(plus ' + escapeHtml(optInRulesLabel(scan)) + ')</small>' : '') +
             // A note can explain a count, such as no failures on a scope
             // that matched nothing, so the list points to it.

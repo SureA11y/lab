@@ -13,6 +13,15 @@ const spec = (actions, extra = {}) => ({ type: 'a11y-run-spec', specVersion: 1, 
 const steps = (doc) => convertDocument(doc).doc.actions;
 
 describe('convertDocument', () => {
+    test('a scan\'s list of profiles is its own: kept, with a retired profile replaced once', () => {
+        const { doc, changes } = convertDocument(spec([
+            { type: 'a11yScan', profile: ['wcag22-aa', 'en301549-v4.1.1'] },
+            { type: 'a11yScan', profile: ['section508', 'wcag22-aa', 'en301549-v3.2.1'] },
+        ], { profile: 'en301549-v4.1.1' }));
+        assert.deepEqual(doc.actions.map((s) => s.profile), [['wcag22-aa', 'en301549-v4.1.1'], ['wcag22-aa', 'en301549-v3.2.1']]);
+        assert.ok(changes.some((c) => /profile "section508" → "wcag22-aa"/.test(c)));
+    });
+
     test('a scan\'s bare level or target becomes its profile, a separate standard winning as it did', () => {
         assert.deepEqual(steps(spec([
             { type: 'a11yScan', wcagLevel: 'AA' },

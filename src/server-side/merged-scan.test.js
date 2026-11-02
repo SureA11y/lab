@@ -278,6 +278,24 @@ describe('merged scans', () => {
         assert.equal(merged.url, 'https://example.com/product', 'the first context\'s settings');
     });
 
+    test('contexts checked against the same profiles in another order are not said to differ', () => {
+        const aa = { id: 'wcag22-aa', label: 'WCAG 2.2 AA' };
+        const en = { id: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' };
+        const [same] = foldMergedScans([
+            scan('Desktop', [], { fields: { profile: en, profiles: [aa, en] } }),
+            scan('Mobile', [], { fields: { profile: en, profiles: [en, aa] } }),
+        ], deps);
+        assert.deepEqual(same.canonical.notices.map((n) => n.field), []);
+        assert.deepEqual(same.profiles, [aa, en], 'the first context\'s, kept');
+
+        const [differ] = foldMergedScans([
+            scan('Desktop', [], { fields: { profile: en, profiles: [aa, en] } }),
+            scan('Mobile', [], { fields: { profile: en } }),
+        ], deps);
+        assert.match(differ.canonical.notices.find((n) => n.field === 'profile').message,
+            /Desktop: WCAG 2\.2 AA \+ EN 301 549 V4\.1\.1; Mobile: EN 301 549 V4\.1\.1/);
+    });
+
     test('contexts that ran different rules: no note, the rules they ran together, the widest scope for coverage', () => {
         const scoped = [];
         const spy = { ...deps, buildCoverageAwareSummary: (x) => { scoped.push(x.automationCoverage); return {}; } };

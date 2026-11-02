@@ -37,6 +37,12 @@ export function createStepValues(builder) {
             const control = fieldEl.querySelector("input, select, textarea");
             if (!name || !control) return;
 
+            if (fieldEl.dataset.widget === "profiles" && fieldEl._profilesWidget) {
+                const value = fieldEl._profilesWidget.getValue();
+                if ((Array.isArray(value) ? value.length : value !== "") || required) obj[name] = value;
+                return;
+            }
+
             if (fieldEl.dataset.widget === "tags" && fieldEl._tagsWidget) {
                 const tags = fieldEl._tagsWidget.getTags();
                 if (tags.length || required) obj[name] = tags;
@@ -139,6 +145,11 @@ export function createStepValues(builder) {
     }
 
     function setFieldValue(fieldEl, value) {
+        if (fieldEl.dataset.widget === "profiles" && fieldEl._profilesWidget) {
+            fieldEl._profilesWidget.setValue(value);
+            return;
+        }
+
         if (fieldEl.dataset.widget === "tags" && fieldEl._tagsWidget) {
             const arr = Array.isArray(value)
                 ? value

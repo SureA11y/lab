@@ -5,6 +5,7 @@
 
 import {createEl, iconButton, svgIcon} from './a11y-ui.utils.js';
 import {buildTagsInputControl} from './tags-input.js';
+import {buildProfilesControl} from './profiles-input.js';
 import {SELECT_TOKEN_SENTINEL, SHORTCUTS, clipboardAction, registerPasteButton} from './actions-builder.module.js';
 
 /**
@@ -81,7 +82,21 @@ export function createStepFields(builder) {
 
         let controlEl;
 
-        if (fieldDef.widget === "tags") {
+        if (fieldDef.widget === "profiles") {
+            // A fieldset of its own, named by its legend: no label above it.
+            wrapper.dataset.widget = "profiles";
+            const widget = buildProfilesControl({
+                fieldId,
+                labelText,
+                choices: choices || [],
+                defaultValue: fieldDef.default,
+                errorId: errorEl.id,
+                onChange: () => builder.scheduleHistoryPush("field:profiles"),
+            });
+            wrapper._profilesWidget = widget;
+            wrapper.append(widget.el, errorEl);
+            return wrapper;
+        } else if (fieldDef.widget === "tags") {
             wrapper.dataset.widget = "tags";
             const widget = buildTagsInputControl({
                 fieldId,

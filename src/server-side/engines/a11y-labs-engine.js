@@ -526,6 +526,9 @@ function toCompositeCanonicalFinding(cr, {
         evidence: {
             rollup: {
                 reasonCode: details.reasonCode || null,
+                // A scan of several profiles: those that gave this rollup,
+                // whose verdicts on its elements are its own.
+                ...(Array.isArray(cr && cr.profiles) && cr.profiles.length ? { profiles: cr.profiles.map(String) } : {}),
                 checksIds: checksIdsFinal,
                 contributors: contributorsFinal.map(x => ({
                     testId: String(x && x.testId ? x.testId : '').trim(),
@@ -550,6 +553,24 @@ function toCompositeCanonicalFinding(cr, {
             return m;
         })()
     };
+}
+
+const VERDICT_RANK = { notApplicable: 0, pass: 1, cantTell: 2, fail: 3 };
+
+/**
+ * The worst of an element's verdicts under some profiles ({ [profile]:
+ * outcome }), as an occurrence's outcome (fail, cantTell or pass), or null
+ * when they say nothing of it.
+ */
+function ownVerdict(verdicts, profiles) {
+    if (!verdicts || typeof verdicts !== 'object' || !Array.isArray(profiles) || !profiles.length) return null;
+    let worst = null;
+    for (const p of profiles) {
+        const v = verdicts[p];
+        if (VERDICT_RANK[v] === undefined) continue;
+        if (!worst || VERDICT_RANK[v] > VERDICT_RANK[worst]) worst = v;
+    }
+    return worst === 'fail' || worst === 'cantTell' || worst === 'pass' ? worst : null;
 }
 
 function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicFindings) {
@@ -615,6 +636,12 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
                     atomicCheckId: atomic.ruleId || undefined,
                     sourceAtomicRules: atomic.ruleId ? [String(atomic.ruleId)] : []
                 });
+                // A scan of several profiles: the element is what this
+                // rollup's own profiles make of it, not the worst of every
+                // profile's. A WCAG criterion keeps asking about an element
+                // WAI-ARIA fails.
+                const own = ownVerdict(occ.verdicts, rollup.profiles);
+                if (own && own !== occ2.occurrenceOutcome) occ2.occurrenceOutcome = own;
                 if (verdict === 'fail' && occ2.occurrenceOutcome !== 'fail') {
                     occ2.occurrenceOutcome = 'fail';
                     delete occ2.uncertainty;
@@ -735,15 +762,78 @@ function resolveSelection({ selection, runOnly, wcagLevel, profile }) {
     return selectionFromRunOnly({ runOnly, wcagLevel, profile });
 }
 
-/** The engine options with the selection's standard, as core's profile. */
+/**
+ * The engine options with the selection's standard, as core's profile, or
+ * its profiles, every one of them, for a scan of several at once.
+ */
 function withSelectionProfile(engineOptions, selection) {
-    if (!selection || !selection.profile) return engineOptions;
-    return { ...(engineOptions && typeof engineOptions === 'object' ? engineOptions : {}), profile: selection.profile };
+    const several = selection && Array.isArray(selection.profiles) && selection.profiles.length > 1;
+    if (!selection || (!selection.profile && !several)) return engineOptions;
+    return {
+        ...(engineOptions && typeof engineOptions === 'object' ? engineOptions : {}),
+        profile: several ? selection.profiles.slice() : selection.profile,
+    };
+}
+
+const OUTCOMES_KNOWN = new Set(['fail', 'cantTell', 'pass', 'notApplicable']);
+
+/** A result's or element's verdict per profile, { [profile]: outcome }, or null. */
+function verdictsOf(x) {
+    const v = x && x.verdicts;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const out = {};
+    for (const [id, outcome] of Object.entries(v)) {
+        if (OUTCOMES_KNOWN.has(outcome)) out[String(id)] = outcome;
+    }
+    return Object.keys(out).length ? out : null;
+}
+
+/**
+ * The profiles a scan of several ran, as { id, label }, in order (core's
+ * engine.profiles), or null for a scan of one.
+ */
+function appliedProfiles(engineOutput) {
+    const list = engineOutput && engineOutput.engine && Array.isArray(engineOutput.engine.profiles)
+        ? engineOutput.engine.profiles.map(profileId).filter(Boolean)
+        : [];
+    return list.length > 1 ? list.map((id) => ({ id, label: targetLabel(id) || id })) : null;
+}
+
+/** The profiles a scan of several did not run, as { id, label, reason }. */
+function profilesNotRunOf(engineOutput) {
+    const raw = engineOutput && engineOutput.engine && Array.isArray(engineOutput.engine.profilesNotRun)
+        ? engineOutput.engine.profilesNotRun
+        : [];
+    return raw
+        .filter((p) => p && typeof p.profile === 'string')
+        .map((p) => {
+            const id = p.profile.trim().toLowerCase();
+            return { id, label: targetLabel(id) || id, reason: typeof p.reason === 'string' ? p.reason : null };
+        });
+}
+
+const NOT_RUN_REASONS = {
+    'unknown-profile': (label) => `This surea11y release has no ${label} profile, so the scan did not check against it.`,
+    'pack-skipped': (label) => `${label}'s pack did not load, so the scan did not check against it.`,
+    'overridden-by-selection': (label) => `The step's own rules or tags chose what ran, so the scan did not check against ${label}.`,
+};
+
+/** A notice for each profile a scan of several did not run. */
+function profilesNotRunNotices(engineOutput) {
+    return profilesNotRunOf(engineOutput).map((p) => ({
+        engineId: ENGINE_ID,
+        code: 'profile-not-run',
+        profile: p.id,
+        message: (NOT_RUN_REASONS[p.reason] || ((label) => `The scan did not check against ${label}.`))(p.label),
+    }));
 }
 
 /**
  * The engine options a scan runs with: the locale defaulted, the
- * conformance target and opt-in rules normalized. -> { cfg, requestedProfile }
+ * conformance target and opt-in rules normalized.
+ * -> { cfg, requestedProfile, requestedProfiles }: requestedProfile the one
+ *    profile, or the first of several; requestedProfiles all of them when
+ *    there are several, else null.
  */
 function normalizeScanConfig(engineOptions) {
     const cfg = (engineOptions && typeof engineOptions === 'object') ? { ...engineOptions } : {};
@@ -756,13 +846,21 @@ function normalizeScanConfig(engineOptions) {
     // profile when nothing in runOnly includes rules, so the level-derived
     // `tags` are dropped here. Explicit rule ids or include tags still win,
     // and core then reports no profile, which is what the scan records.
-    const requestedProfile = profileId(cfg.profile);
-    if (requestedProfile) cfg.profile = requestedProfile;
+    // A list of profiles is a scan of all of them at once, in that order.
+    const list = [];
+    for (const p of Array.isArray(cfg.profile) ? cfg.profile : [cfg.profile]) {
+        const id = profileId(p);
+        if (id && !list.includes(id)) list.push(id);
+    }
+    const requestedProfile = list[0] || null;
+    const requestedProfiles = list.length > 1 ? list : null;
+    if (requestedProfiles) cfg.profile = requestedProfiles;
+    else if (requestedProfile) cfg.profile = requestedProfile;
     else delete cfg.profile;
 
     // Rules core keeps off stay off (see isOptInRule).
     delete cfg.optInRules;
-    return { cfg, requestedProfile };
+    return { cfg, requestedProfile, requestedProfiles };
 }
 
 /**
@@ -1017,7 +1115,7 @@ async function runOnPage(
         : [];
 
     // Merge excludeSelectors into engineOptions.excludeSelectors (engine reads it from engineOptions)
-    const { cfg, requestedProfile } = normalizeScanConfig(withSelectionProfile(engineOptions, selection));
+    const { cfg, requestedProfile, requestedProfiles } = normalizeScanConfig(withSelectionProfile(engineOptions, selection));
 
     const findingsSource = (cfg && typeof cfg.findingsSource === 'string')
         ? cfg.findingsSource.trim().toLowerCase()
@@ -1067,7 +1165,7 @@ async function runOnPage(
         (Array.isArray(runOnlyForCore.includeRuleIds) && runOnlyForCore.includeRuleIds.length > 0)
         || (Array.isArray(effectiveRunOnly?.includeTags) && effectiveRunOnly.includeTags.length > 0));
     const appliedProfileId = profileId(engineOutput && engineOutput.engine ? engineOutput.engine.profile : null);
-    if (requestedProfile && !noKnownRuleIncluded && !explicitInclude && appliedProfileId !== requestedProfile
+    if (requestedProfile && !requestedProfiles && !noKnownRuleIncluded && !explicitInclude && appliedProfileId !== requestedProfile
         && CONFORMANCE_TARGETS[requestedProfile]) {
         const fallbackCfg = { ...cfg };
         delete fallbackCfg.profile;
@@ -1087,6 +1185,9 @@ async function runOnPage(
                 + 'WCAG criteria only: none of the rules or criteria the standard adds were run.'
         });
     }
+    // A scan of several profiles names each one that did not run, and why;
+    // the others ran as asked.
+    if (requestedProfiles) notices.push(...profilesNotRunNotices(engineOutput));
     // Pictures of the flagged elements, once, of the scan that stays: the
     // first scan's would be thrown away with it when the fallback replaces it.
     if (elementScreenshots && !noKnownRuleIncluded) {
@@ -1242,6 +1343,9 @@ async function runOnPage(
                     ...(occ && Array.isArray(occ.frameSelectors) && occ.frameSelectors.length ? { frameSelectors: occ.frameSelectors.map(String) } : {}),
                     ...(elementScreenshot ? { elementScreenshot } : {}),
                     ...(elementStateScreenshots ? { elementStateScreenshots } : {}),
+                    // A scan of several profiles: what each one makes of
+                    // this element, { [profile]: outcome }.
+                    ...(verdictsOf(occ) ? { verdicts: verdictsOf(occ) } : {}),
                     evidence: {
                         engineNode: {
                             url: pageUrlFinal ? [pageUrlFinal] : [],
@@ -1296,6 +1400,15 @@ async function runOnPage(
                 },
                 occurrences: canonicalOccs
             };
+            // A scan of several profiles: what each one makes of the rule's
+            // findings ({ [profile]: outcome }), the worst of which is its
+            // outcome, and the rule's own outcome before a standard judged its
+            // findings (checkOutcome), which its WCAG criteria read.
+            const verdicts = verdictsOf(ruleResult);
+            if (verdicts) {
+                canonicalFinding.verdicts = verdicts;
+                if (OUTCOMES_KNOWN.has(ruleResult.checkOutcome)) canonicalFinding.checkOutcome = ruleResult.checkOutcome;
+            }
             // A rule that lists only some of the elements it found (core's
             // contrast rules list 50): how many it counted and did not list,
             // so the report's counts and comparisons count them all.
@@ -1576,6 +1689,11 @@ async function runOnPage(
             wcagVersion: (engineOutput && engineOutput.engine && engineOutput.engine.wcagVersion) || null,
             locale: engineOutput && engineOutput.engine && engineOutput.engine.locale ? engineOutput.engine.locale : null,
             conformanceProfile: appliedProfile ? { id: appliedProfile, label: targetLabel(appliedProfile) } : null,
+            // A scan of several profiles: those that ran, in order, and those
+            // that did not, with why ('unknown-profile', 'pack-skipped',
+            // 'overridden-by-selection'). Absent for a scan of one.
+            ...(appliedProfiles(engineOutput) ? { conformanceProfiles: appliedProfiles(engineOutput) } : {}),
+            ...(requestedProfiles ? { profilesNotRun: profilesNotRunOf(engineOutput) } : {}),
             // The rule ids the step named that surea11y has none of.
             unknownRuleIds: (unknownRuleIds.include.length || unknownRuleIds.exclude.length) ? unknownRuleIds : null
         },

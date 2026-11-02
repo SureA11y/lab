@@ -11,6 +11,10 @@ export const SCAN_FIELDS = Object.freeze([
     // the WCAG version and level that came to.
     'profile',
     'wcag',
+    // A scan of several profiles at once: every one it checked against, and
+    // those asked for that did not run.
+    'profiles',
+    'profilesNotRun',
     // The same, as reports saved before recorded it, which report-scan.js
     // still reads.
     'wcagLevel',
@@ -57,7 +61,12 @@ export const FINDING_FIELDS = Object.freeze([
     'rgaa',
     // A criterion only some of whose checks the scan ran: how many were not
     // selected, of how many.
-    'partlyChecked'
+    'partlyChecked',
+    // A scan of several profiles: what each one makes of the finding
+    // ({ [profile]: outcome }), and the rule's own outcome before a standard
+    // judged its findings, which its WCAG criteria read.
+    'verdicts',
+    'checkOutcome'
 ]);
 
 // The parts of a scan's canonical result the report view reads.

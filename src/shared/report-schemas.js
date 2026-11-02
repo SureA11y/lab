@@ -146,6 +146,16 @@
                             }, ['version', 'level']),
                             description: 'The WCAG version and level the profile came to.',
                         },
+                        profiles: {
+                            type: 'array',
+                            items: open({ id: text, label: text }, ['id', 'label']),
+                            description: 'A scan of several profiles at once: every one it checked against, in the order they ran, the WCAG level first. `profile` is then the first standard among them. Absent for a scan of one.',
+                        },
+                        profilesNotRun: {
+                            type: 'array',
+                            items: open({ id: text, label: text, reason: textOrNull }, ['id', 'label']),
+                            description: 'A scan of several profiles: those asked for that did not run, and why ("unknown-profile", "pack-skipped", "overridden-by-selection").',
+                        },
                         canonical: { $ref: '#/$defs/canonical' },
                         summary: { type: 'object' },
                         metrics: { type: 'object' },
@@ -168,6 +178,15 @@
                         helpUrl: textOrNull,
                         wcag: { type: ['object', 'null'] },
                         standards: { type: ['object', 'null'] },
+                        verdicts: {
+                            type: 'object',
+                            additionalProperties: { enum: OUTCOMES },
+                            description: 'A scan of several profiles: what each one makes of the finding, by profile id. Its outcome is the worst of them.',
+                        },
+                        checkOutcome: {
+                            enum: OUTCOMES,
+                            description: 'A scan of several profiles: the rule\'s own outcome, before a standard judged its findings by reason code. Its WCAG criteria read this one.',
+                        },
                         occurrences: { type: 'array', items: { $ref: '#/$defs/occurrence' } },
                     }, ['outcome']),
                     anyOf: [{ required: ['uid'] }, { required: ['id'] }],

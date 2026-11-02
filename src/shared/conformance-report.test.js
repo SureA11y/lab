@@ -341,3 +341,16 @@ test('a report scanned under a standard\'s profile is drafted from the criteria 
     assert.equal(rowOf(acr, 'wcag-a', '1.1.1').remarks, 'Automated checks found 2 failing elements, on Home.');
     assert.match(rowOf(acr, 'wcag-aa', '2.4.7').remarks, /need a person to confirm this on Home/);
 });
+
+test('the target is what the scans checked against, unless the options say otherwise', () => {
+    const withScans = (scans) => ({ ...report, scans: scans.map((s) => ({ ...report.scans[0], ...s })) });
+    // A WCAG 2.2 AAA scan beside a WAI-ARIA one: a WCAG 2.2 AAA report.
+    const aaa = buildConformanceReport(withScans([{ wcag: { version: '2.2', level: 'AAA' }, profile: { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' },
+        profiles: [{ id: 'wcag22-aaa', label: 'WCAG 2.2 AAA' }, { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' }] }]));
+    assert.deepEqual(aaa.target, { wcagVersion: '2.2', level: 'AAA', en301549: 'V4.1.1' });
+    // EN 301 549 V3.2.1, among the profiles: its version, WCAG 2.1.
+    const en = buildConformanceReport(withScans([{ wcag: { version: '2.1', level: 'AA' }, profile: { id: 'en301549-v3.2.1', label: 'EN 301 549 V3.2.1' } }]));
+    assert.deepEqual(en.target, { wcagVersion: '2.1', level: 'AA', en301549: 'V3.2.1' });
+    // The options still win.
+    assert.equal(buildConformanceReport(withScans([{ wcag: { version: '2.2', level: 'AAA' } }]), { target: { level: 'A' } }).target.level, 'A');
+});

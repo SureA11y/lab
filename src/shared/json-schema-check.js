@@ -188,10 +188,15 @@
             // A list of allowed values with a token as the way out reads as a
             // value problem, which callers may treat more leniently than a
             // value of the wrong kind.
-            const onlyValues = schema.anyOf.every((b) => {
+            // A list of such values (a scan's profiles) reads the same.
+            const valuesOnly = (b) => {
                 const r = resolve(b, root);
-                return isPlainObject(r) && (Array.isArray(r.enum) || typeof r.pattern === 'string');
-            });
+                if (!isPlainObject(r)) return false;
+                if (Array.isArray(r.enum) || typeof r.pattern === 'string') return true;
+                if (Array.isArray(r.anyOf)) return r.anyOf.every(valuesOnly);
+                return r.type === 'array' && isPlainObject(r.items) && valuesOnly(r.items);
+            };
+            const onlyValues = schema.anyOf.every(valuesOnly);
             problems.push({
                 path,
                 keyword: onlyValues ? 'enum' : 'anyOf',

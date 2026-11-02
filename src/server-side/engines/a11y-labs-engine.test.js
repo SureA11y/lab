@@ -956,6 +956,69 @@ describe('a11y-labs-engine: runOnPage - findingsSource filtering', () => {
         assert.equal(rollup.occurrences[0].uncertainty, undefined);
     });
 
+    test('a scan of several profiles: each rollup reads its own profiles\' verdicts on an element, and the rule keeps them all', async () => {
+        const { runOnPage } = require('./a11y-labs-engine');
+        // Core's merged result: the element fails a standard and is a WCAG
+        // question, so its outcome is the worst; each rollup says whose it is.
+        const page = fakePage(async () => ({
+            engine: { profile: 'wcag22-aa', profiles: ['wcag22-aa', 'en301549-v4.1.1'], profilesNotRun: [] },
+            checksResults: [{
+                ruleId: 'aria-allowed-attr',
+                outcome: 'fail',
+                checkOutcome: 'cantTell',
+                verdicts: { 'wcag22-aa': 'cantTell', 'en301549-v4.1.1': 'fail' },
+                severity: 'serious',
+                occurrences: [
+                    { selector: '#g', html: '<div id="g">', occurrenceOutcome: 'fail', verdicts: { 'wcag22-aa': 'cantTell', 'en301549-v4.1.1': 'fail' } }
+                ]
+            }],
+            rulesResults: [
+                {
+                    ruleId: 'wcag-4.1.2-aria-validity', outcome: 'cantTell', severity: 'serious', profiles: ['wcag22-aa'],
+                    data: { details: { checksIds: ['aria-allowed-attr'], contributors: [{ testId: 'aria-allowed-attr', outcome: 'cantTell' }] } }
+                },
+                {
+                    ruleId: 'en301549-V4.1.1-x.y', outcome: 'fail', severity: 'serious', profiles: ['en301549-v4.1.1'],
+                    data: { details: { checksIds: ['aria-allowed-attr'], contributors: [{ testId: 'aria-allowed-attr', outcome: 'fail' }] } }
+                }
+            ]
+        }));
+
+        const { canonical } = await runOnPage(page, {
+            selection: { version: '2.2', level: 'AA', profile: null, bestPractices: false, profiles: ['wcag22-aa', 'en301549-v4.1.1'] },
+            engineOptions: { findingsSource: 'both' },
+        });
+        const of = (id) => canonical.findings.find((f) => f.ruleId === id);
+        assert.deepEqual(of('wcag-4.1.2-aria-validity').occurrences.map((o) => o.occurrenceOutcome), ['cantTell']);
+        assert.deepEqual(of('en301549-V4.1.1-x.y').occurrences.map((o) => o.occurrenceOutcome), ['fail']);
+        const rule = of('aria-allowed-attr');
+        assert.deepEqual(rule.verdicts, { 'wcag22-aa': 'cantTell', 'en301549-v4.1.1': 'fail' });
+        assert.equal(rule.checkOutcome, 'cantTell');
+        assert.deepEqual(rule.occurrences[0].verdicts, { 'wcag22-aa': 'cantTell', 'en301549-v4.1.1': 'fail' });
+        assert.deepEqual(canonical.runOptions.conformanceProfiles.map((p) => p.id), ['wcag22-aa', 'en301549-v4.1.1']);
+        assert.deepEqual(canonical.runOptions.engineOptions.profile, ['wcag22-aa', 'en301549-v4.1.1'], 'core was asked for the list');
+    });
+
+    test('a scan of several profiles names each one that did not run', async () => {
+        const { runOnPage } = require('./a11y-labs-engine');
+        const page = fakePage(async () => ({
+            engine: { profile: 'wcag22-aa', profiles: ['wcag22-aa'], profilesNotRun: [{ profile: 'en301549-v4.1.1', reason: 'unknown-profile' }] },
+            checksResults: [],
+            rulesResults: []
+        }));
+        const { canonical } = await runOnPage(page, {
+            selection: { version: '2.2', level: 'AA', profile: 'en301549-v4.1.1', bestPractices: false, profiles: ['wcag22-aa', 'en301549-v4.1.1'] },
+            engineOptions: {},
+        });
+        assert.deepEqual(canonical.runOptions.profilesNotRun, [{ id: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1', reason: 'unknown-profile' }]);
+        assert.equal('conformanceProfiles' in canonical.runOptions, false, 'one ran');
+        const notice = canonical.notices.find((n) => n.code === 'profile-not-run');
+        assert.equal(notice.profile, 'en301549-v4.1.1');
+        assert.match(notice.message, /no EN 301 549 V4\.1\.1 profile, so the scan did not check against it/);
+        // No fallback scan, as a scan of one standard alone would have.
+        assert.equal(canonical.notices.some((n) => n.code === 'profile-unavailable'), false);
+    });
+
     test('a composite with mixed pass and notApplicable contributors splits into separate pass/notApplicable findings, same as fail/cantTell', async () => {
         const { runOnPage } = require('./a11y-labs-engine');
         const page = fakePage(async () => ({
