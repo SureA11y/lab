@@ -1463,6 +1463,14 @@ async function runA11yWorkflow(url, tags, options = {}) {
         }
 
         engineOptions.findingsSource = meta.findingsSource || 'composite';
+        // A debug run (A11Y_DEBUG_MODE) times each rule: surea11y's perfStats,
+        // with the time each rule took (profileRules), kept with its native
+        // output, to find what makes a scan slow.
+        if (['1', 'true', 'yes', 'on'].includes(String(process.env.A11Y_DEBUG_MODE || '').trim().toLowerCase())
+            && engineOptions.perfStats === undefined) {
+            engineOptions.perfStats = true;
+            engineOptions.profileRules = true;
+        }
         if (Array.isArray(meta.resultTypes) && meta.resultTypes.length) engineOptions.resultTypes = meta.resultTypes;
 
         function normalizeList(v) {

@@ -28,7 +28,7 @@ Read by the server and the command-line runner alike.
 | `A11Y_MAX_RUNS` | How many runs started from the app's Run workflow (or `POST /workflow-start`) go at once; the others wait their turn, and say so in their log (default `4`). The queue has its own setting |
 | `A11Y_MAX_WAITING` | How many of those runs may wait their turn (default `50`); past them, a run is refused with 429 Too Many Requests, to try again later |
 | `A11Y_VALIDATE_CANONICAL` | Check every scan's result against the lab's result model; for development |
-| `A11Y_DEBUG_MODE` | More logging on the server, and surea11y's own output kept in the report |
+| `A11Y_DEBUG_MODE` | More logging on the server, and surea11y's own output kept in the report, with the time each of its rules took (`perfStats.ruleTimings`), to find what makes a scan slow |
 | `A11Y_ECHO_BROWSER_CONSOLE` | Copy the scanned page's console output to the server's (set to `1`) |
 | `A11Y_DUMP_RESULT_JSON`, `A11Y_DUMP_DIR`, `A11Y_DUMP_LOG` | Write surea11y's raw result for every scan to `a11y-dumps/` (or the folder given), and log where |
 

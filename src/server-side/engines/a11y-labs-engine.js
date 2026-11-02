@@ -1131,6 +1131,8 @@ async function runOnPage(
         // `native` is a complete core result that @surea11y/core's SARIF,
         // JUnit, EARL and HTML renderers accept as it is.
         engine: engineOutput && engineOutput.engine ? engineOutput.engine : null,
+        // Core's counters and, with profileRules, each rule's time (a debug run).
+        ...(engineOutput && engineOutput.perfStats ? { perfStats: engineOutput.perfStats } : {}),
         url: engineOutput && engineOutput.url ? engineOutput.url : (pageUrl || null),
         title: engineOutput && engineOutput.title ? engineOutput.title : (pageTitle || null),
         timestamp: engineOutput && engineOutput.timestamp ? engineOutput.timestamp : new Date().toISOString(),
