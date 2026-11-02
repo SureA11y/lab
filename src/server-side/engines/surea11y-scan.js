@@ -289,6 +289,9 @@ async function installCoreHooks(page, hooks = Object.keys(CORE_HOOKS)) {
 const FRAME_CONCURRENCY = 4;
 // At most this many sub-frames are scanned; the rest are named as not scanned.
 const MAX_FRAMES = 100;
+// How long one frame may take: a frame whose page never answers has no
+// document to scan, and waiting on it held the whole scan for minutes.
+const FRAME_TIMEOUT_MS = 10000;
 
 /** Maps `items` through async `fn`, at most `limit` at a time, keeping their order. */
 async function mapInBatches(items, limit, fn) {
@@ -349,16 +352,26 @@ async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = []
     const results = await mapInBatches(scanned, FRAME_CONCURRENCY, async (frame) => {
         const url = typeof frame.url === 'function' ? frame.url() : null;
         if (signal && signal.aborted) return { url, error: 'the scan was given up on' };
+        let timer = null;
         try {
-            const frameSelectors = await frameSelectorsOf(frame);
-            const builder = new A11yCoreBuilder({ page: frame, url: url || undefined });
-            builder.options(engineOptions);
-            if (Array.isArray(packs) && packs.length) builder.withPacks(packs);
-            applySelection(builder, runOnly);
-            builder.logger(() => {});
-            return { url, frameSelectors, result: await builder.analyze() };
+            const scan = (async () => {
+                const frameSelectors = await frameSelectorsOf(frame);
+                const builder = new A11yCoreBuilder({ page: frame, url: url || undefined });
+                builder.options(engineOptions);
+                if (Array.isArray(packs) && packs.length) builder.withPacks(packs);
+                applySelection(builder, runOnly);
+                builder.logger(() => {});
+                return { url, frameSelectors, result: await builder.analyze() };
+            })();
+            const late = new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error(`it did not answer within ${FRAME_TIMEOUT_MS / 1000} s`)), FRAME_TIMEOUT_MS);
+            });
+            scan.catch(() => {});
+            return await Promise.race([scan, late]);
         } catch (e) {
             return { url, error: String((e && e.message) || e) };
+        } finally {
+            clearTimeout(timer);
         }
     });
     for (const frame of frames.slice(MAX_FRAMES)) {

@@ -332,6 +332,9 @@ test('a downloaded report has no link into the guide', { skip: !HAS_PROCEDURES &
     assert.ok(found.links.length > 0, 'the app has them, its dialogs opened');
     const item = await page.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => /^Download as a single file/.test(b.textContent.trim())));
     await item.evaluate((b) => b.click());
+    // The report's name, asked in the app's own dialog.
+    await page.waitForSelector('dialog.report-name-dialog[open]');
+    await page.click('dialog.report-name-dialog button[type="submit"]');
     let html = null;
     for (let i = 0; i < 160 && !html; i++) {
         const name = fs.readdirSync(downloads).find((f) => f.endsWith('.html'));
