@@ -303,7 +303,107 @@ const CORE_EMBEDDED_ARIA_HIDDEN = (() => {
     }
 })();
 
+describe('frames that never answer, in Chrome', () => {
+    let hang;
+    before(async () => {
+        // A server that takes each request and never answers.
+        hang = require('http').createServer(() => {});
+        await new Promise((resolve) => hang.listen(0, '127.0.0.1', resolve));
+    });
+    after(() => { if (hang) hang.close(); });
+
+    // Ad slots added after load, each on its own host, none answering.
+    const pageWithHangingFrames = async (count) => {
+        const page = await browser.newPage();
+        await page.setContent('<!doctype html><html lang="en"><head><title>Ads</title></head><body><main></main></body></html>');
+        await page.evaluate((port, n) => {
+            for (let i = 0; i < n; i += 1) {
+                const f = document.createElement('iframe');
+                f.title = `ad ${i}`;
+                f.src = `http://ad${i}.localhost:${port}/`;
+                document.querySelector('main').append(f);
+            }
+        }, hang.address().port, count);
+        return page;
+    };
+
+    test('cost the frames\' time limit once, not a lazy-frame wait each', async () => {
+        const page = await pageWithHangingFrames(8);
+        try {
+            const started = Date.now();
+            const results = await scanFrames(page, { engineOptions: { locale: 'en' } });
+            const took = Date.now() - started;
+            assert.equal(results.filter((r) => r.error).length, 8);
+            // Two rounds of four at 10 s each, and nothing on top of them.
+            assert.ok(took < 22000, `took ${took} ms`);
+        } finally {
+            await page.close();
+        }
+    });
+
+    test('share one budget: the frames not reached in it are named as not scanned', async () => {
+        const page = await pageWithHangingFrames(12);
+        try {
+            const started = Date.now();
+            const results = await scanFrames(page, { engineOptions: { locale: 'en' }, budgetMs: 3000 });
+            const took = Date.now() - started;
+            assert.equal(results.length, 12);
+            assert.ok(results.every((r) => r.error), JSON.stringify(results));
+            assert.ok(took < 6000, `took ${took} ms`);
+        } finally {
+            await page.close();
+        }
+    });
+});
+
+// The same, for embeddedInert.
+const CORE_EMBEDDED_INERT = (() => {
+    try {
+        require('@surea11y/core/testing').runa11yCoreOnHtml('<p>x</p>', {
+            engineOptions: { embeddedInert: true, strictOptions: true },
+            runOnly: ['img-alt-present'],
+        });
+        return true;
+    } catch {
+        return false;
+    }
+})();
+
 describe('frames in Chrome', () => {
+    test('a frame behind an open modal dialog is left out, one under [inert] is scanned as inert, through a slot too', async () => {
+        const page = await browser.newPage();
+        try {
+            const frame = (id) => `<iframe id="${id}" title="${id}" srcdoc="<html lang=en><title>${id}</title><img src=a.png>"></iframe>`;
+            await page.setContent(`<!doctype html><html lang="en"><head><title>Frames</title></head><body><main>
+                <div inert>${frame('inert')}</div>
+                <x-wrap>${frame('slotted')}</x-wrap>
+                ${frame('covered')}
+                <dialog id="d"><p>Cookies?</p>${frame('in-dialog')}</dialog>
+                </main>
+                <script>
+                    document.querySelector('x-wrap').attachShadow({ mode: 'open' }).innerHTML = '<div aria-hidden="true"><slot></slot></div>';
+                    document.getElementById('d').showModal();
+                </script></body></html>`, { waitUntil: 'load' });
+            const results = await scanFrames(page, { engineOptions: { locale: 'en' } });
+            const byTitle = Object.fromEntries(results.map((r) => [r.result ? r.result.title : r.url, r]));
+            const skipped = results.filter((r) => r.skipped).map((r) => r.skipped);
+            // Behind the modal: the inert one, the slotted one and the covered one.
+            assert.deepEqual(skipped, ['hidden', 'hidden', 'hidden'], JSON.stringify(results.map((r) => r.skipped || (r.result && r.result.title))));
+            assert.ok(byTitle['in-dialog'] && byTitle['in-dialog'].result, 'the frame in the dialog is scanned');
+            await page.evaluate(() => document.getElementById('d').close());
+            const after = await scanFrames(page, { engineOptions: { locale: 'en' } });
+            const of = (title) => after.find((r) => r.result && r.result.title === title);
+            assert.equal(of('inert').inert, true);
+            assert.equal(of('slotted').ariaHidden, true, 'aria-hidden around the slot reaches the slotted frame');
+            if (CORE_EMBEDDED_INERT) {
+                const img = of('inert').result.checksResults.find((c) => c.ruleId === 'img-alt-present');
+                assert.notEqual(img && img.outcome, 'fail', 'a name is no rule of inert content');
+            }
+        } finally {
+            await page.close();
+        }
+    });
+
     const framesOf = async (page) => {
         const out = {};
         const subs = page.frames().filter((f) => f !== page.mainFrame());

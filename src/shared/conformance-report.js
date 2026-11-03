@@ -135,13 +135,14 @@
             if (!bySc.has(sc)) bySc.set(sc, { failPages: [], failElements: 0, failed: new Set(), askPages: [], questions: [] });
             return bySc.get(sc);
         };
-        // The pages with iframes whose content could not be scanned: what is
-        // in them is unknown, so nothing is known not to apply there.
+        // The pages with iframes whose content was not scanned, because they
+        // could not be or the scan left them out (Scan iframes too off): what
+        // is in them is unknown, so nothing is known not to apply there.
         bySc.unscanned = [];
         for (const scan of asArray(report && report.scans)) {
             if (!scan || scan.includedInReport === false) continue;
             const page = str(scan.label).replace(/^Scan:\s*/, '') || str(scan.url) || 'a page';
-            if (asArray(scan.canonical && scan.canonical.notices).some((n) => n && n.code === 'frames-not-scanned')) {
+            if (asArray(scan.canonical && scan.canonical.notices).some((n) => n && (n.code === 'frames-not-scanned' || n.code === 'frames-off'))) {
                 bySc.unscanned.push(page);
             }
             for (const f of asArray(scan.canonical && scan.canonical.findings)) {
@@ -158,10 +159,12 @@
                     if (failing.length) {
                         e.failPages.push(page);
                         const where = str(scan.url) || page;
-                        // An occurrence naming no element is one of its own.
+                        // An occurrence naming no element is one of its own; an
+                        // element is named through the iframes and shadow hosts
+                        // it is in, so the same markup in two iframes is two.
                         for (const [o, i] of failing) {
                             e.failed.add(JSON.stringify(o && o.target
-                                ? [str(o.pageUrl) || where, o.target]
+                                ? [str(o.pageUrl) || where, asArray(o.frameSelectors), asArray(o.shadowHostSelectors), o.target]
                                 : [where, null, f.ruleId, i]));
                         }
                         e.failElements = e.failed.size;
@@ -189,7 +192,7 @@
         const status = entry ? entry.status : null;
         if (status === 'notApplicable') {
             if (unscanned.length) {
-                return { conformance: 'notEvaluated', remarks: `Nothing on the scanned pages that this applies to, but some iframes on ${listNames(unscanned)} could not be scanned: check what they show.` };
+                return { conformance: 'notEvaluated', remarks: `Nothing on the scanned pages that this applies to, but some iframes on ${listNames(unscanned)} were not scanned: check what they show.` };
             }
             return { conformance: 'notApplicable', remarks: 'Nothing on the scanned pages that this applies to: confirm for the rest of the product.' };
         }

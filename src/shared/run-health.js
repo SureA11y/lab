@@ -54,6 +54,18 @@
         }, []);
     }
 
+    // The scans whose page had iframes they were asked to scan and could not
+    // (the engine's frames-not-scanned notice): their findings leave out what
+    // those iframes show, so a comparison would read theirs as fixed.
+    function collectFramesNotScanned(payload) {
+        return asArray(payload && payload.scans).reduce((out, scan, index) => {
+            const notices = asArray(scan && scan.canonical && scan.canonical.notices);
+            const notice = notices.find((n) => n && n.code === 'frames-not-scanned');
+            if (notice) out.push({ label: scanLabel(scan, index), url: scan.url || null, message: notice.message || null });
+            return out;
+        }, []);
+    }
+
     function collectActionFailures(payload, wanted) {
         return asArray(payload && payload.actionResults).reduce((out, result) => {
             if (!result || result.status !== wanted) return out;
@@ -72,6 +84,7 @@
         const report = payload && typeof payload === 'object' ? payload : {};
 
         const skippedScans = collectSkippedScans(report);
+        const framesNotScanned = collectFramesNotScanned(report);
         const failedActions = collectActionFailures(report, 'failed');
         const optionalFailures = collectActionFailures(report, 'failed-optional');
 
@@ -84,6 +97,13 @@
                 kind: 'skipped-scans',
                 count: skippedScans.length,
                 detail: skippedScans.map((s) => s.label).join(', '),
+            });
+        }
+        if (framesNotScanned.length) {
+            reasons.push({
+                kind: 'frames-not-scanned',
+                count: framesNotScanned.length,
+                detail: framesNotScanned.map((s) => s.label).join(', '),
             });
         }
         if (iterationFailures) {
@@ -113,6 +133,7 @@
             failed,
             reasons,
             skippedScans,
+            framesNotScanned,
             failedActions,
             optionalFailures,
             iterationFailures,
@@ -128,6 +149,9 @@
             switch (reason.kind) {
                 case 'skipped-scans':
                     return `${reason.count} scan${reason.count === 1 ? '' : 's'} skipped: ${reason.detail}`;
+                case 'frames-not-scanned':
+                    return `${reason.count} scan${reason.count === 1 ? '' : 's'} could not scan some of the page's iframes, `
+                        + `so what they show is not in the findings: ${reason.detail}`;
                 case 'iteration-failures':
                     return `${reason.count} iteration${reason.count === 1 ? '' : 's'} failed`
                         + (reason.detail ? `: ${reason.detail}` : '');

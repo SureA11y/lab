@@ -6,7 +6,7 @@
     "AI agents"
   ],
   "purpose": "Generate valid run specs (the workflow files the headless runner takes and other tools exchange) and app configuration files, including custom steps.",
-  "generatedAt": "2026-11-03T11:34:32.798Z",
+  "generatedAt": "2026-11-03T13:49:08.041Z",
   "sourceOfTruth": {
     "actionDefinitionsFile": "src/workflow/action-definitions.js",
     "workflowEngineFile": "src/workflow/workflow-engine.js",
@@ -318,8 +318,8 @@
           "type": "boolean",
           "required": false,
           "label": "Scan iframes too",
-          "description": "Scan the content of the page's iframes as well, each whole, and report what they show with the page: an element in an iframe names the iframe it is in. An iframe the page doesn't show, that the scan excludes or leaves outside its Include, or that shows nothing is left out, and the report says which and why; one under aria-hidden is scanned for what is seen, not for names and roles. Off, the report says how many iframes were left out.",
-          "default": true
+          "description": "Scan the content of the page's iframes as well, each whole, and report what they show with the page: an element in an iframe names the iframe it is in. An iframe the page doesn't show, that the scan excludes or leaves outside its Include, or that shows nothing is left out, and the report says which and why; one under aria-hidden is scanned for what is seen, not for names and roles. Off, the default, the page's own content is scanned and the report says how many iframes were left out.",
+          "default": false
         },
         "heavyNodeThreshold": {
           "type": "number",

@@ -364,7 +364,24 @@ test('a page whose iframes could not be scanned leaves "Not Applicable" a questi
         canonical: { findings: [], notices: [{ code: 'frames-not-scanned', message: '1 iframe could not be scanned' }] } }] };
     const r = rowOf(buildConformanceReport(withFrames), 'wcag-a', '1.1.1');
     assert.equal(r.conformance, 'notEvaluated');
-    assert.match(r.remarks, /some iframes on Home could not be scanned/);
+    assert.match(r.remarks, /some iframes on Home were not scanned/);
+});
+
+test('a page whose iframes the scan left out (Scan iframes too off) leaves "Not Applicable" a question too', () => {
+    const withFrames = { ...report, scans: [{ ...scan('Home', [], [{ sc: '1.1.1', status: 'notApplicable' }]),
+        canonical: { findings: [], notices: [{ code: 'frames-off', message: 'This page has 1 iframe, and this scan left it out' }] } }] };
+    const r = rowOf(buildConformanceReport(withFrames), 'wcag-a', '1.1.1');
+    assert.equal(r.conformance, 'notEvaluated');
+    assert.match(r.remarks, /some iframes on Home were not scanned/);
+});
+
+test('the same element in two iframes of a page is two failing elements', () => {
+    const img = (frame) => ({ pageUrl: 'https://shop.test/', target: ['html > body > img'], ...(frame ? { frameSelectors: [frame] } : {}) });
+    const finding = { ruleId: 'wcag-1.1.1', title: 'Images', outcome: 'fail', wcag: { sc: ['1.1.1'], scNormative: ['1.1.1'] },
+        occurrences: [img(null), img('main > iframe:nth-of-type(1)'), img('main > iframe:nth-of-type(2)')] };
+    const withFrames = { ...report, scans: [{ ...scan('Home', [], [{ sc: '1.1.1', status: 'doesNotSupport' }]),
+        url: 'https://shop.test/', canonical: { findings: [finding] } }] };
+    assert.match(rowOf(buildConformanceReport(withFrames), 'wcag-a', '1.1.1').remarks, /found 3 failing elements/);
 });
 
 test('the target is what the scans checked against, unless the options say otherwise', () => {

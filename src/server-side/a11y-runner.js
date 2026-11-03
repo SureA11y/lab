@@ -1698,7 +1698,11 @@ async function runA11yWorkflow(url, tags, options = {}) {
                         elementScreenshots: shotOptions
                             ? { ...shotOptions, budgetMs: CAPTURE_BUDGET_MS, signal: shotAbort.signal }
                             : null,
-                        frames: meta.frames !== false
+                        frames: meta.frames === true,
+                        // The page's iframes share a third of the scan's time,
+                        // so ones that never answer can't cost it the page's
+                        // own findings.
+                        framesBudgetMs: Math.max(1000, Math.floor(scanTimeoutMs / 3))
                     }, scanEngineId),
                     new Promise((_, reject) => {
                         engineTimer = setTimeout(() => {
@@ -2050,9 +2054,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
             profile: s.profile || null,
             includeBestPractice: s.includeBestPractice === true,
             resultTypes: s.resultTypes || null,
-            // Scan iframes too: on unless the step turns it off (the older
-            // iframes field, which only ever turned it on, reads the same).
-            frames: s.frames !== false && s.iframes !== false,
+            // Scan iframes too: off unless the step turns it on (the older
+            // iframes field reads the same).
+            frames: s.frames === true || s.iframes === true,
             disableRule: s.disableRule || null,
             disableRules: s.disableRules || null,
             heavyNodeThreshold: s.heavyNodeThreshold || null,

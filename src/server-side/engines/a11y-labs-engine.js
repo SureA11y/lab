@@ -1102,8 +1102,10 @@ async function runOnPage(
         // null for no pictures of the flagged elements.
         elementScreenshots = null,
         // Whether the page's iframes are scanned too, their findings with
-        // the page's (the step's Scan iframes too, on unless it says).
-        frames = true
+        // the page's (the step's Scan iframes too, off unless it says).
+        frames = false,
+        // How long the iframes may take, all of them (scanFrames).
+        framesBudgetMs = null
     } = {}
 ) {
     // Basic page metadata
@@ -1205,7 +1207,7 @@ async function runOnPage(
     // say so. After the pictures, which are the top page's.
     const subFrames = typeof page.frames === 'function' ? page.frames().length - 1 : 0;
     if (frames && subFrames > 0 && !noKnownRuleIncluded) {
-        const frameResults = await scanFrames(page, { engineOptions: scannedCfg, runOnly: scannedRunOnly, packs: PACKS, contextSelector: ctxSelector });
+        const frameResults = await scanFrames(page, { engineOptions: scannedCfg, runOnly: scannedRunOnly, packs: PACKS, contextSelector: ctxSelector, budgetMs: framesBudgetMs });
         mergeFrameResults(engineOutput, frameResults);
         engineOutput.frames = frameResults.map((f) => ({
             url: f.url || null,
@@ -1213,6 +1215,7 @@ async function runOnPage(
             ...(f.error ? { error: f.error } : {}),
             ...(f.skipped ? { skipped: f.skipped } : {}),
             ...(f.ariaHidden ? { ariaHidden: true } : {}),
+            ...(f.inert ? { inert: true } : {}),
         }));
         // Frames left out as core's scan across frames leaves them out (not
         // shown, excluded, outside the scope) or empty: said, so their
@@ -1220,7 +1223,7 @@ async function runOnPage(
         const skipped = frameResults.filter((f) => f.skipped);
         if (skipped.length) {
             const WHY = {
-                hidden: 'the page does not show it',
+                hidden: 'the page does not show it, or an open dialog covers it',
                 excluded: 'the scan excludes it',
                 'outside-scope': "it is outside the scan's Include",
                 empty: 'it shows nothing',

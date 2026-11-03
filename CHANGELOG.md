@@ -34,12 +34,19 @@ The first public release.
 - **Comparisons.** Two reports side by side, or up to 24 as a dashboard of
   what was fixed and what appeared at each step, how long each problem has
   been open, and whether each run covered enough to be compared.
-- **What a scan covers.** A page's iframes are scanned with it (each
-  element names the iframe it is in; a step's Scan iframes too turns it
-  off), lazy ones and those in shadow roots too, but for those the page
-  doesn't show, that the scan excludes or leaves outside its Include, or
-  that show nothing, which the report lists with why; one under aria-hidden
-  is scanned for what is seen, not for names and roles. So is every element
+- **What a scan covers.** A step's Scan iframes too, off by default,
+  scans a page's iframes with it (each element names the iframe it is in),
+  lazy ones and those in shadow roots too, but for those the page doesn't
+  show, that the scan excludes or leaves outside its Include, or that show
+  nothing, or that an open modal dialog covers, which the report lists
+  with why; one under aria-hidden is scanned for what is seen, not for
+  names and roles, and one under inert only for how it looks. The iframes
+  share a third of the scan's time, so ones that never answer don't cost
+  the page its own findings, and a run whose iframes could not all be
+  scanned reads as degraded, so a comparison doesn't take what they show
+  as fixed. Off, the report says how many iframes the page has that the
+  scan left out, and the conformance report drafts what it found nothing
+  to apply to as not evaluated there. So is every element
   in a shadow root, each counted as its own.
   A large page is scanned in full and its report says it is large; an
   address that gives a PDF, JSON or an image is skipped, saying so; a page
