@@ -104,3 +104,22 @@ test('a finding of a standard from a pack has a pill per requirement, named by i
     f.standards.normativeMappings = [...f.standards.normativeMappings, { ...f.standards.normativeMappings[0], version: '2.0' }];
     assert.ok(pills(twoVersions).some((row) => row.includes('Sample Standard 1 (1.0) | Sample Standard 1 (2.0)')));
 });
+
+test('a finding lists its criteria under each standard\'s name once, the pills holding only the numbers', () => {
+    pills(load('en301549'));
+    const cells = [...document.querySelectorAll('#results td[data-label="Criteria"]')].filter((td) => td.querySelector('.crit-group'));
+    assert.ok(cells.length > 0, 'rows have grouped criteria');
+    for (const td of cells) {
+        const names = [...td.querySelectorAll('.crit-group__name')].map((el) => el.textContent);
+        assert.equal(new Set(names).size, names.length, `each standard once: ${names.join(', ')}`);
+        for (const group of td.querySelectorAll('.crit-group')) {
+            const name = group.querySelector('.crit-group__name');
+            assert.equal(name.getAttribute('aria-hidden'), 'true', 'the name over the group is not read twice');
+            for (const pill of group.querySelectorAll('.tag-pill')) {
+                const hidden = pill.querySelector('.visually-hidden');
+                assert.equal(hidden && hidden.textContent, name.textContent + ' ', 'a screen reader still hears the standard');
+                assert.ok(!pill.lastChild.textContent.startsWith(name.textContent), 'the visible text is only the number');
+            }
+        }
+    }
+});
