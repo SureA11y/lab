@@ -92,8 +92,8 @@ manual part.
 
 - EN 301 549 comes to surea11y as a pack, `@surea11y/pack-en301549`,
   installed with the lab.
-- WAI-ARIA 1.2 comes as the pack `@surea11y/pack-wai-aria`: install it, or
-  name it in `A11Y_PACKS` ([configuration](../configuration.md#standards)).
+- WAI-ARIA 1.2 comes as the pack `@surea11y/pack-wai-aria`, installed with
+  the lab as an optional dependency ([configuration](../configuration.md#standards)).
   It reads surea11y's ARIA findings by WAI-ARIA's own wording, so a finding
   WCAG only asks about can fail there: an unnamed `role="grid"` is a question
   for WCAG 4.1.2 and a failure of WAI-ARIA's "Roles that require an
