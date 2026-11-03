@@ -118,7 +118,9 @@
     function scanKey(scan) {
         const url = String(scan.url || '');
         let page = url;
-        try { const u = new URL(url); page = u.pathname + u.search; } catch { /* not a URL: as it is */ }
+        // A hash that routes a single-page app (#/cart) is a page of its own,
+        // as report-format's pagePath reads it.
+        try { const u = new URL(url); page = u.pathname + u.search + (/^#!?\//.test(u.hash) ? u.hash : ''); } catch { /* not a URL: as it is */ }
         return `at:${page}`;
     }
 

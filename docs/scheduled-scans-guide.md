@@ -339,7 +339,8 @@ With `--baseline` as well, failures the baseline run already had are not
 reported again: SARIF leaves them out, and JUnit lists only the new ones,
 marking a rule as skipped when all of its failures are known. A failure counts
 as known when the baseline had the same rule failing on the same markup, on the
-same page (path and query, so a staging run can use a production baseline). If
+same page (path and query, and a hash that routes a single-page app such as
+`#/cart`, so a staging run can use a production baseline). If
 a scan's label changed, every baseline scan of that page counts. This needs the
 baseline run to have used `--format` too, since that is when a run records what
 it found in a form the exports can match; otherwise nothing is filtered. EARL

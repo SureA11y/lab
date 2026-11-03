@@ -5,7 +5,9 @@ a redesign, staging against live, one release against the next, variant A
 against variant B. **You get** what was fixed, what is new and what still
 fails, rule by rule and element by element.
 
-Two runs are compared by matching each page by its path and query, and each
+Two runs are compared by matching each page by its path and query (and a hash
+that routes a single-page app, such as `#/cart`; a hash like `#main` is a place
+in the page and does not count), and each
 failure by its rule and element: the address's host does not count, so a
 staging site compares with the live one.
 

@@ -77,12 +77,19 @@
     const PATH_CACHE_MAX = 5000;
     const pathCache = new Map();
 
-    /** A page's path and query, which is what tells two pages of a site apart. */
+    // A hash that routes a single-page app (#/cart, #!/cart) names a page of
+    // its own; any other hash is a place in the page (#main) and doesn't.
+    const routeOf = (hash) => (/^#!?\//.test(hash) ? hash : '');
+
+    /**
+     * A page's path and query, which is what tells two pages of a site apart,
+     * and its hash where that routes a single-page app.
+     */
     function pagePath(url) {
         const key = String(url || '');
         let path = pathCache.get(key);
         if (path === undefined) {
-            try { const u = new URL(url); path = u.pathname + u.search; }
+            try { const u = new URL(url); path = u.pathname + u.search + routeOf(u.hash); }
             catch { path = key; }
             if (pathCache.size >= PATH_CACHE_MAX) pathCache.clear();
             pathCache.set(key, path);
@@ -289,6 +296,7 @@
         upgradeReport,
         reportVersionOf,
         pagePath,
+        routeOf,
         occurrenceKey,
         elementTarget,
         occurrenceTotal,

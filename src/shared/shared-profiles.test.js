@@ -279,6 +279,18 @@ describe('compareOnShared, scan by scan', () => {
         assert.deepEqual(reports[1].scans[1].canonical.margins, []);
     });
 
+    test('routes of a single-page app are pages of their own, matched by route', () => {
+        const at = (route, profiles, findings) => ({ ...scan('App', profiles, findings), url: `https://example.com/app${route}` });
+        // Read as one page, the cart would pair with the checkout, which
+        // checked the same profiles, and keep its WAI-ARIA row.
+        const a = reportOf('a', [at('#/cart', [AA, ARIA], [ariaRow]), at('#/checkout', [AA, ARIA], [])]);
+        const b = reportOf('b', [at('#/checkout', [AA, ARIA], []), at('#/cart', [AA], [])]);
+        const { reports, basis } = compareOnShared([a, b]);
+        assert.deepEqual(basis.comparedOn, [AA]);
+        // The cart is read beside the cart, on WCAG 2.2 AA alone.
+        assert.deepEqual(reports[0].scans[0].canonical.findings, []);
+    });
+
     test("a run that drops one of a page's scans pairs the others with the scans that checked what they did", () => {
         const enRow = row('en-9.1.1.1', null, 'fail', ['en301549-v4.1.1']);
         const page = (profiles, findings) => scan('Products', profiles, findings);
