@@ -249,13 +249,12 @@ export function createRenderer({
         return [...byClause.values()];
     }
 
-    // "RGAA 1.1": one pill per RGAA criterion. Findings carry them only when
+    // RGAA "1.1": one pill per RGAA criterion. Findings carry them only when
     // the scan targeted RGAA, the one time core names them.
-    function rgaaPillsHtml(entries) {
+    function rgaaPills(entries) {
         return (Array.isArray(entries) ? entries : [])
             .filter((e) => e && e.criterion)
-            .map((e) => '<span class="tag-pill">RGAA ' + escapeHtml(e.criterion) + '</span>')
-            .join(' ');
+            .map((e) => ({standard: 'RGAA', text: String(e.criterion)}));
     }
 
     // The requirements a finding names of any other standard: one from a
@@ -284,16 +283,13 @@ export function createRenderer({
         return [...byKey.values()].sort((a, b) => num(a.standard, b.standard) || num(a.requirement, b.requirement));
     }
 
-    // "Sample Standard 3": a pill per requirement, named by its standard as
-    // every pill is; the version only where a finding names the requirement
-    // in more than one.
-    function otherStandardPillsHtml(entries) {
+    // Sample Standard "3": a pill per requirement, under its standard; the
+    // version only where a finding names the requirement in more than one.
+    function otherStandardPills(entries) {
         return (Array.isArray(entries) ? entries : [])
             .flatMap((e) => (e.versions.length > 1
-                ? e.versions.map((v) => e.standard + ' ' + e.requirement + ' (' + v + ')')
-                : [e.standard + ' ' + e.requirement]))
-            .map((text) => '<span class="tag-pill">' + escapeHtml(text) + '</span>')
-            .join(' ');
+                ? e.versions.map((v) => ({standard: e.standard, text: e.requirement + ' (' + v + ')'}))
+                : [{standard: e.standard, text: e.requirement}]));
     }
 
     // Which EN 301 549 clauses a scan's results should name, given the
@@ -315,31 +311,51 @@ export function createRenderer({
             .map((c) => ({...c, versions: [version], versionImplied: true}));
     }
 
-    // Every pill names its standard, so criteria from different standards can
-    // sit side by side: "WCAG 1.1.1", "RGAA 1.1", and "EN 301 549 9.1.1.1",
-    // spelled out because "EN" alone reads as English.
-    // "EN 301 549 9.1.1.1" when both versions of the standard have the clause,
-    // and "EN 301 549 9.2.5.8 (V4.1.1)" when only one does, since the two restate
+    // EN 301 549 "9.1.1.1" when both versions of the standard have the
+    // clause, and "9.2.5.8 (V4.1.1)" when only one does, since the two restate
     // different WCAG versions. Under an EN 301 549 target the version is
     // already known, so it is left out.
-    function en301549PillsHtml(clauses) {
+    function en301549Pills(clauses) {
         return (Array.isArray(clauses) ? clauses : [])
             .map((c) => {
                 const versions = Array.isArray(c?.versions) ? c.versions : [];
-                const text = 'EN 301 549 ' + c.clause + (versions.length === 1 && !c.versionImplied ? ' (' + versions[0] + ')' : '');
-                return '<span class="tag-pill">' + escapeHtml(text) + '</span>';
-            })
-            .join(' ');
+                return {
+                    standard: 'EN 301 549',
+                    text: c.clause + (versions.length === 1 && !c.versionImplied ? ' (' + versions[0] + ')' : '')
+                };
+            });
     }
 
+    // A finding's criteria, grouped by standard: the standard's name once,
+    // over pills holding only the numbers, so the pills stay short enough to
+    // wrap within the Criteria column instead of running out of it. Each
+    // pill still says its standard to a screen reader ("WCAG 1.4.3", the name
+    // visually hidden), and the name over the group is hidden from it, so it
+    // is not heard twice. "EN 301 549" is spelled out because "EN" alone
+    // reads as English.
     function buildGroupedTagsHtml(v) {
-        const groupedTags = Array.isArray(v?.SC) ? v.SC : [];
-        return [
-            groupedTags.map((t) => '<span class="tag-pill">WCAG ' + escapeHtml(t) + '</span>').join(' '),
-            en301549PillsHtml(v?.EN),
-            otherStandardPillsHtml(v?.STANDARDS),
-            rgaaPillsHtml(v?.RGAA)
-        ].filter(Boolean).join(' ');
+        const pills = [
+            ...(Array.isArray(v?.SC) ? v.SC : []).map((t) => ({standard: 'WCAG', text: String(t)})),
+            ...en301549Pills(v?.EN),
+            ...otherStandardPills(v?.STANDARDS),
+            ...rgaaPills(v?.RGAA)
+        ];
+        const groups = new Map();
+        for (const pill of pills) {
+            if (!groups.has(pill.standard)) groups.set(pill.standard, []);
+            groups.get(pill.standard).push(pill.text);
+        }
+        if (!groups.size) return '';
+        return '<div class="crit-groups">' +
+            [...groups].map(([standard, texts]) =>
+                '<div class="crit-group">' +
+                '<span class="crit-group__name" aria-hidden="true">' + escapeHtml(standard) + '</span>' +
+                '<span class="crit-group__pills">' +
+                texts.map((text) => '<span class="tag-pill"><span class="visually-hidden">' + escapeHtml(standard) + ' </span>' + escapeHtml(text) + '</span>').join(' ') +
+                '</span>' +
+                '</div>'
+            ).join('') +
+            '</div>';
     }
 
     function escapeAngleBrackets(str) {
