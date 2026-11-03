@@ -310,12 +310,12 @@ export function createReportView(app) {
         return clear;
     }
 
-    // The profile filter bar: one chip per profile the scans were checked
-    // against. Shown only when picking one would change what is shown (not
-    // when every scan has the same profiles); the selection is pruned to the
-    // profiles still there. A scan matches when any of its profiles is picked.
-    // Like the tag filter, it decides what an export of the included scans
-    // holds (isScanIncludedInReport).
+    // The Profiles selector: one switch per profile the report's scans were
+    // checked against, every one on until it is turned off, several at once
+    // if wanted. Shown when the report has more than one profile. A scan whose
+    // profiles are all off is hidden; one with a profile still on shows only
+    // the results of those (app.viewScan), and so does every export. The last
+    // profile on stays on, so something is always shown.
     function renderScanProfileFilter(scans) {
         const el = app.scanProfileFilterEl;
         if (!el) return;
@@ -332,37 +332,65 @@ export function createReportView(app) {
 
         const available = new Set(profiles.map((p) => p.key));
         app.activeProfileSelection = app.activeProfileSelection.filter((key) => available.has(key));
+        if (app.activeProfileSelection.length >= profiles.length) app.activeProfileSelection = [];
         app.activeProfileFilter = makeProfileFilter(app.activeProfileSelection);
 
         el.hidden = false;
         el.replaceChildren();
+        el.setAttribute('role', 'group');
 
         const labelEl = document.createElement('span');
         labelEl.className = 'scan-tag-filter__label';
-        labelEl.textContent = 'Filter by profile:';
+        labelEl.id = 'scan-profile-filter-label';
+        labelEl.textContent = 'Profiles shown:';
+        el.setAttribute('aria-labelledby', labelEl.id);
         el.appendChild(labelEl);
 
+        const off = new Set(app.activeProfileSelection);
+        const onCount = profiles.length - off.size;
         profiles.forEach(({ key, label }) => {
-            const btn = buildTagFilterChip({
-                label, kind: 'profile', pressed: app.activeProfileSelection.includes(key),
-            });
+            const on = !off.has(key);
+            const btn = buildTagFilterChip({ label, kind: 'profile', pressed: on });
             btn.dataset.profileKey = key;
+            const last = on && onCount === 1;
+            if (last) {
+                btn.setAttribute('aria-disabled', 'true');
+                btn.title = 'At least one profile stays shown';
+            }
             btn.addEventListener('click', () => {
-                app.activeProfileSelection = app.activeProfileSelection.includes(key)
-                    ? app.activeProfileSelection.filter((k) => k !== key)
-                    : [...app.activeProfileSelection, key];
-                app.activeProfileFilter = makeProfileFilter(app.activeProfileSelection);
-                onTagFilterChanged();
+                if (btn.getAttribute('aria-disabled') === 'true') return;
+                app.activeProfileSelection = on
+                    ? [...app.activeProfileSelection, key]
+                    : app.activeProfileSelection.filter((k) => k !== key);
+                onProfileFilterChanged({ focusKey: key });
             });
             el.appendChild(btn);
         });
 
         if (isProfileFilterActive(app.activeProfileFilter)) {
-            el.appendChild(buildFilterClearButton(() => {
+            const all = buildFilterClearButton(() => {
                 app.activeProfileSelection = [];
-                app.activeProfileFilter = makeProfileFilter(app.activeProfileSelection);
-                onTagFilterChanged();
-            }));
+                onProfileFilterChanged({ focusKey: profiles[0].key });
+            });
+            all.textContent = 'Show all';
+            el.appendChild(all);
+        }
+    }
+
+    // A profile turned on or off changes what each scan shows, not only which
+    // scans show: the report is drawn again from the scans as the selector
+    // reads them, and focus goes back to the switch pressed.
+    function onProfileFilterChanged({ focusKey = null } = {}) {
+        app.activeProfileFilter = makeProfileFilter(app.activeProfileSelection);
+        const bucket = app.getActiveBucket();
+        const payload = bucket?.payload;
+        if (!payload) return;
+        app.recomputeDerivedReportData(payload);
+        app.renderActiveBucket();
+        if (focusKey !== null) {
+            const target = Array.from(app.scanProfileFilterEl?.querySelectorAll('.scan-tag-filter__chip') || [])
+                .find((c) => c.dataset.profileKey === focusKey);
+            if (target) target.focus();
         }
     }
 
@@ -562,8 +590,11 @@ export function createReportView(app) {
         const keep = ignoreTagFilter
             ? (scan) => !!scan && scan.includedInReport !== false
             : (scan) => app.isScanIncludedInReport(scan);
-        const picked = includedOnly && Array.isArray(source.scans)
-            ? {...source, scans: source.scans.filter(keep)}
+        // Each scan as the Profiles selector shows it: a profile turned off
+        // is left out of every export, whatever its format.
+        const view = typeof app.viewScan === 'function' ? app.viewScan : (scan) => scan;
+        const picked = Array.isArray(source.scans)
+            ? {...source, scans: (includedOnly ? source.scans.filter(keep) : source.scans).map(view)}
             : source;
         const cloned = cloneJsonData(picked);
 

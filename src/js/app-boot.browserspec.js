@@ -140,3 +140,84 @@ test('a report opens on the Open report tab, and two in Compare', async () => {
     assert.deepEqual(errors, []);
     await page.close();
 });
+
+test('the Sort select is as tall as the Hide excluded button beside it', async () => {
+    const { page, errors } = await openApp();
+    await page.click('#mode-open');
+    await (await page.$('#resultsFiles')).uploadFile(reportFile);
+    await page.waitForSelector('#scan-sort-select', { timeout: 30000 });
+    const heights = await page.evaluate(() => ['#scan-sort-select', '#hide-excluded-scans-btn']
+        .map((id) => Math.round(document.querySelector(id).getBoundingClientRect().height)));
+    assert.equal(heights[0], heights[1], `select ${heights[0]}px, button ${heights[1]}px`);
+    assert.deepEqual(errors, []);
+    await page.close();
+});
+
+test('the Profiles selector hides a scan whose profiles are all off, and shows the others with only the profiles on', async () => {
+    // The fixture's scan of WCAG 2.2 AA, beside one of WCAG 2.2 AA and
+    // WAI-ARIA 1.2 with a WAI-ARIA requirement of its own.
+    const payload = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+    const wcagOnly = { ...payload.scans[0], id: 'wcag-only', label: 'WCAG only' };
+    const both = JSON.parse(JSON.stringify(payload.scans[0]));
+    Object.assign(both, {
+        id: 'both', label: 'Both',
+        profile: { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' },
+        profiles: [{ id: 'wcag22-aa', label: 'WCAG 2.2 AA' }, { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' }],
+    });
+    both.canonical.findings.push({
+        id: 'wai-aria-1.2-roles', uid: 'surea11y|surea11y:fail:wai-aria-1.2-roles',
+        ruleId: 'wai-aria-1.2-roles', title: 'Roles are valid WAI-ARIA roles', outcome: 'fail', severity: 'serious',
+        meta: { atomic: false }, wcag: { sc: [] },
+        evidence: { rollup: { profiles: ['wai-aria-1.2'], checksIds: [] } },
+        occurrences: [{ target: ['#widget'], html: '<div role="widget"></div>', pageUrl: siteUrl, occurrenceOutcome: 'fail' }],
+    });
+    const file = path.join(path.dirname(reportFile), 'profiles.a11y-report.json');
+    fs.writeFileSync(file, JSON.stringify({ ...payload, scans: [wcagOnly, both] }));
+
+    const { page, errors } = await openApp();
+    await page.click('#mode-open');
+    await (await page.$('#resultsFiles')).uploadFile(file);
+    const settle = () => page.waitForFunction(() => document.querySelectorAll('#results .scan-results-wrapper').length >= 2, { timeout: 30000 });
+    await settle();
+
+    const chips = () => page.$$eval('#scan-profile-filter .scan-tag-filter__chip', (els) => els.map((el) => ({
+        label: el.textContent, on: el.getAttribute('aria-pressed') === 'true', locked: el.getAttribute('aria-disabled') === 'true',
+    })));
+    const wrapper = (id) => `#results .scan-results-wrapper[data-scan-id="${id}"]`;
+    const shows = (id, text) => page.$eval(wrapper(id), (el, t) => el.textContent.includes(t), text);
+    const hidden = (id) => page.$eval(wrapper(id), (el) => !!el.closest('.scan-filtered-out') || el.offsetParent === null);
+    const press = async (label) => {
+        const handles = await page.$$('#scan-profile-filter .scan-tag-filter__chip, #scan-profile-filter .scan-tag-filter__clear');
+        for (const h of handles) if ((await h.evaluate((el) => el.textContent)) === label) return h.click();
+        throw new Error(`no ${label}`);
+    };
+
+    // Every profile shown to begin with.
+    assert.deepEqual(await chips(), [
+        { label: 'WCAG 2.2 AA', on: true, locked: false },
+        { label: 'WAI-ARIA 1.2', on: true, locked: false },
+    ]);
+    assert.equal(await shows('both', 'Roles are valid WAI-ARIA roles'), true);
+
+    // WAI-ARIA off: the scan of both stays, without WAI-ARIA's results; the
+    // last profile on can't be turned off.
+    await press('WAI-ARIA 1.2');
+    await settle();
+    assert.deepEqual(await chips(), [
+        { label: 'WCAG 2.2 AA', on: true, locked: true },
+        { label: 'WAI-ARIA 1.2', on: false, locked: false },
+    ]);
+    assert.equal(await hidden('both'), false);
+    assert.equal(await shows('both', 'Roles are valid WAI-ARIA roles'), false);
+
+    // Both shown again, then WCAG off: the scan of WCAG alone is hidden.
+    await press('Show all');
+    await settle();
+    await press('WCAG 2.2 AA');
+    await settle();
+    assert.equal(await hidden('wcag-only'), true);
+    assert.equal(await hidden('both'), false);
+    assert.equal(await shows('both', 'Roles are valid WAI-ARIA roles'), true);
+    assert.deepEqual(errors, []);
+    await page.close();
+});

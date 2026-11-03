@@ -15,6 +15,9 @@ export const SCAN_FIELDS = Object.freeze([
     // those asked for that did not run.
     'profiles',
     'profilesNotRun',
+    // The profiles it checked that the report was saved without (the
+    // Profiles selector had them off).
+    'profilesLeftOut',
     // The same, as reports saved before recorded it, which report-scan.js
     // still reads.
     'wcagLevel',

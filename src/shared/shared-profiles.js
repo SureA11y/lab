@@ -273,6 +273,63 @@
         return out;
     }
 
+    /**
+     * A scan read on some of its own profiles, as the report view's Profiles
+     * selector shows it: `keys` the profiles still on (a profile's id, or its
+     * label where it has none). Its findings are what those profiles make of
+     * them (narrowFindings: a requirement's row goes with its profile, a
+     * rule's finding takes the worst verdict of the profiles kept and goes
+     * when none of them judged it), its profiles become those, and what was
+     * made from everything it checked (its score, its counts, and its WCAG
+     * coverage when WCAG is off) is left out or counted again. A scan with
+     * all its profiles on, or none, comes back as it is.
+     */
+    // A WCAG profile of any version: its id (wcag22-aa), or, for an older
+    // version with none, its label (WCAG 2.1 AA).
+    function isWcagProfile(p) {
+        return /^wcag\d/i.test(String((p && p.id) || '')) || /^WCAG \d/.test(String((p && p.label) || ''));
+    }
+
+    function narrowScanToProfiles(scan, keys) {
+        if (!scan || typeof scan !== 'object' || scan.skipped || scan.skipInfo) return scan;
+        const profiles = reportScanOf().scanProfiles(scan);
+        const keyOf = (p) => String(p.id || p.label || '');
+        const own = profiles.map(keyOf).filter(Boolean);
+        const on = new Set(asArray(keys).map(String));
+        const kept = own.filter((k) => on.has(k));
+        if (!kept.length || kept.length === own.length) return scan;
+        const keptProfiles = profiles.filter((p) => kept.includes(keyOf(p)));
+        const canonical = scan.canonical && typeof scan.canonical === 'object'
+            ? { ...scan.canonical, findings: narrowFindings(scan.canonical.findings, { own, kept, level: null }) }
+            : scan.canonical;
+        const out = {
+            ...scan,
+            canonical,
+            profile: keptProfiles.find((p) => !isWcagProfile(p)) || keptProfiles[0],
+            profilesLeftOut: profiles.filter((p) => !kept.includes(keyOf(p))),
+        };
+        if (keptProfiles.length > 1) out.profiles = keptProfiles;
+        else delete out.profiles;
+        // Counted again from the findings kept.
+        if (scan.summary && typeof scan.summary === 'object') {
+            const { failCount: _f, occurrenceCount: _o, reviewCount: _r, passesCount: _p, ...rest } = scan.summary;
+            out.summary = rest;
+        }
+        const wcagKept = keptProfiles.some(isWcagProfile);
+        if (scan.metrics && typeof scan.metrics === 'object') {
+            const metrics = { ...scan.metrics };
+            if (metrics.a11ySummary && typeof metrics.a11ySummary === 'object') {
+                const { scores: _scores, ...rest } = metrics.a11ySummary;
+                metrics.a11ySummary = { ...rest, scoreLeftOut: true };
+                if (!wcagKept) delete metrics.a11ySummary.coverageSummary;
+            }
+            if (!wcagKept) delete metrics.coverageSummary;
+            out.metrics = metrics;
+        }
+        if (!wcagKept) delete out.coverageSummary;
+        return out;
+    }
+
     function narrowReport(report, plans) {
         if (!report || typeof report !== 'object') return report;
         let narrowed = false;
@@ -416,5 +473,5 @@
         return parts.join(' ');
     }
 
-    return { compareOnShared, sharedProfiles, basisSentence };
+    return { compareOnShared, sharedProfiles, basisSentence, narrowScanToProfiles };
 }));

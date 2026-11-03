@@ -413,6 +413,13 @@
 .scan-tag-filter__chip[aria-pressed="true"]:hover {
     background: var(--surface-hover);
 }
+/* The last profile shown: it stays on, so it doesn't look pressable. */
+.scan-tag-filter__chip[aria-disabled="true"] {
+    cursor: not-allowed;
+}
+.scan-tag-filter__chip[aria-disabled="true"]:hover {
+    background: transparent;
+}
 .scan-tag-filter__chip:focus-visible {
     /* Focus stays outside the box — a thick inset ring plus an inset focus
        indicator would read as one thing. */

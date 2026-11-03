@@ -27,10 +27,13 @@ The first public release.
   element, the same in every run) or a standalone HTML page.
   A report's time reads in the reader's own time zone, named; scans see the
   machine's zone unless `A11Y_TZ` names one.
-  A report's scans can be filtered by tag and, when their profiles differ,
-  by profile; a download holds the scans the filters show, so one report
-  gives a download per profile. A finding's criteria are listed under their
-  standard's name.
+  A report's scans can be filtered by tag, and, when the report has more
+  than one profile, shown by profile: every profile is shown until it is
+  turned off, several at once if wanted. A scan whose profiles are all off
+  is hidden; one with a profile still on shows only those profiles'
+  findings, outcomes and counts. Every download, whatever its format, holds
+  what the filters show, so one report gives a download per profile. A
+  finding's criteria are listed under their standard's name.
 - **Comparisons.** Two reports side by side, or up to 24 as a dashboard of
   what was fixed and what appeared at each step, how long each problem has
   been open, and whether each run covered enough to be compared.

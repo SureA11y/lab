@@ -12,9 +12,11 @@ import {optInRulesLabel} from './report-fields.js';
  */
 export function createRunSummaryUi(app) {
     /** Normalize scans list from final payload */
+    // Each read as the Profiles selector shows it (app.viewScan).
     function getScansFromPayload(data, { includedOnly = false } = {}) {
         const scans = Array.isArray(data?.scans) ? data.scans : [];
-        return includedOnly ? scans.filter(app.isScanIncludedInReport) : scans;
+        const view = typeof app.viewScan === 'function' ? app.viewScan : (scan) => scan;
+        return (includedOnly ? scans.filter(app.isScanIncludedInReport) : scans).map(view);
     }
 
     /** Build one <li> row for the scans summary list (same behavior, extracted) */

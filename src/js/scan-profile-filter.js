@@ -1,9 +1,12 @@
 'use strict';
 
-// Pure helpers backing the per-scan profile filter in the report view: which
-// profiles a report's scans were checked against, whether the filter is worth
-// offering, and whether a given scan matches. No DOM, so they're unit-tested
-// directly; the report UI holds the live selection and calls these.
+// Pure helpers backing the Profiles selector in the report view: which
+// profiles a report's scans were checked against, whether the selector is
+// worth offering, which scans still show and which of a scan's profiles stay.
+// Every profile is shown until it is turned off: a scan whose profiles are all
+// off is hidden, and one with a profile still on shows only those profiles'
+// results (shared/shared-profiles.js narrowScanToProfiles). No DOM, so they're
+// unit-tested directly; the report UI holds the live selection.
 //
 // A scan's profiles come from shared/report-scan.js (scanProfiles), which reads
 // every report format alike. A scan checked against several profiles at once
@@ -30,16 +33,15 @@ export function scanProfileKeys(scan, profilesOf = defaultProfilesOf) {
 }
 
 /**
- * The profiles across the given scans, as chips to offer:
+ * The profiles across the given scans, as switches to offer:
  * [{ key, label }] in the order first met, the unknown one last. `useful` is
- * false when picking any of them would not change what is shown (every scan
- * has the same profiles, or there is only one), so the UI can leave the
- * filter out.
+ * false when there is only one, so turning it off would leave nothing: the
+ * UI leaves the selector out. A report of one scan of several profiles has
+ * several to choose from.
  */
 export function collectScanProfiles(scans, profilesOf = defaultProfilesOf) {
     const list = Array.isArray(scans) ? scans.filter(Boolean) : [];
     const labels = new Map();
-    const counts = new Map();
 
     for (const scan of list) {
         const named = new Map();
@@ -50,30 +52,34 @@ export function collectScanProfiles(scans, profilesOf = defaultProfilesOf) {
         if (!named.size) named.set(UNKNOWN_PROFILE, 'Unknown profile');
         for (const [key, label] of named) {
             if (!labels.has(key)) labels.set(key, label);
-            counts.set(key, (counts.get(key) || 0) + 1);
         }
     }
 
     const profiles = [...labels]
         .map(([key, label]) => ({key, label}))
         .sort((a, b) => (a.key === UNKNOWN_PROFILE) - (b.key === UNKNOWN_PROFILE));
-    const useful = profiles.length > 1 && profiles.some((p) => counts.get(p.key) < list.length);
+    const useful = profiles.length > 1;
 
     return {profiles, useful};
 }
 
-/** A filter from the selected profile keys. */
-export function makeProfileFilter(keys = []) {
-    return {keys: new Set((Array.isArray(keys) ? keys : []).map(String))};
+/** A filter from the keys of the profiles turned off. */
+export function makeProfileFilter(offKeys = []) {
+    return {off: new Set((Array.isArray(offKeys) ? offKeys : []).map(String))};
 }
 
 export function isProfileFilterActive(filter) {
-    return !!filter && filter.keys.size > 0;
+    return !!filter && filter.off.size > 0;
 }
 
-// A scan matches when the filter is inactive, or when any of its profiles is
-// selected: picking two profiles shows the scans of either.
+/** The keys of a scan's profiles still on. */
+export function keptProfileKeys(scan, filter, profilesOf = defaultProfilesOf) {
+    const keys = scanProfileKeys(scan, profilesOf);
+    return isProfileFilterActive(filter) ? keys.filter((key) => !filter.off.has(key)) : keys;
+}
+
+// A scan shows while any of its profiles is on: one whose profiles are all
+// off is hidden.
 export function scanMatchesProfileFilter(scan, filter, profilesOf = defaultProfilesOf) {
-    if (!isProfileFilterActive(filter)) return true;
-    return scanProfileKeys(scan, profilesOf).some((key) => filter.keys.has(key));
+    return keptProfileKeys(scan, filter, profilesOf).length > 0;
 }

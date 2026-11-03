@@ -29,17 +29,17 @@ describe('collectScanProfiles', () => {
         assert.equal(useful, true);
     });
 
-    test('is not useful when every scan has the same profile', () => {
+    test('is not useful when the report has only one profile', () => {
         assert.equal(mod.collectScanProfiles([scan(rgaa), scan(rgaa)]).useful, false);
         assert.equal(mod.collectScanProfiles([scan(rgaa)]).useful, false);
         assert.equal(mod.collectScanProfiles([]).useful, false);
     });
 
-    test('is not useful when every scan was checked against the same several profiles', () => {
+    test('is useful for one scan checked against several profiles', () => {
         const both = () => scan(aria, { profiles: [wcagAA, aria] });
-        const out = mod.collectScanProfiles([both(), both()]);
+        const out = mod.collectScanProfiles([both()]);
         assert.equal(out.profiles.length, 2);
-        assert.equal(out.useful, false);
+        assert.equal(out.useful, true);
     });
 
     test('offers the scans that name no profile as "Unknown profile", last', () => {
@@ -65,37 +65,38 @@ describe('collectScanProfiles', () => {
 });
 
 describe('scanMatchesProfileFilter', () => {
-    test('an empty selection matches every scan', () => {
+    test('with every profile on, every scan shows', () => {
         const filter = mod.makeProfileFilter([]);
         assert.equal(mod.isProfileFilterActive(filter), false);
         assert.equal(mod.scanMatchesProfileFilter(scan(rgaa), filter), true);
         assert.equal(mod.scanMatchesProfileFilter(unknown(), filter), true);
     });
 
-    test('a scan matches when its profile is picked', () => {
+    test('a scan of one profile is hidden when that profile is off', () => {
         const filter = mod.makeProfileFilter(['rgaa-4.1.2']);
         assert.equal(mod.isProfileFilterActive(filter), true);
-        assert.equal(mod.scanMatchesProfileFilter(scan(rgaa), filter), true);
-        assert.equal(mod.scanMatchesProfileFilter(scan(wcagAA), filter), false);
-    });
-
-    test('picking two profiles shows the scans of either', () => {
-        const filter = mod.makeProfileFilter(['rgaa-4.1.2', 'wcag22-aa']);
-        assert.equal(mod.scanMatchesProfileFilter(scan(rgaa), filter), true);
-        assert.equal(mod.scanMatchesProfileFilter(scan(wcagAA), filter), true);
-        assert.equal(mod.scanMatchesProfileFilter(unknown(), filter), false);
-    });
-
-    test('a scan of several profiles matches when any of them is picked', () => {
-        const several = scan(aria, { profiles: [wcagAA, aria] });
-        assert.equal(mod.scanMatchesProfileFilter(several, mod.makeProfileFilter(['wai-aria-1.2'])), true);
-        assert.equal(mod.scanMatchesProfileFilter(several, mod.makeProfileFilter(['wcag22-aa'])), true);
-        assert.equal(mod.scanMatchesProfileFilter(several, mod.makeProfileFilter(['rgaa-4.1.2'])), false);
-    });
-
-    test('"Unknown profile" picks the scans that name none', () => {
-        const filter = mod.makeProfileFilter([mod.UNKNOWN_PROFILE]);
-        assert.equal(mod.scanMatchesProfileFilter(unknown(), filter), true);
         assert.equal(mod.scanMatchesProfileFilter(scan(rgaa), filter), false);
+        assert.equal(mod.scanMatchesProfileFilter(scan(wcagAA), filter), true);
+    });
+
+    test('several profiles can be off at once', () => {
+        const filter = mod.makeProfileFilter(['rgaa-4.1.2', 'wcag22-aa']);
+        assert.equal(mod.scanMatchesProfileFilter(scan(rgaa), filter), false);
+        assert.equal(mod.scanMatchesProfileFilter(scan(wcagAA), filter), false);
+        assert.equal(mod.scanMatchesProfileFilter(unknown(), filter), true);
+    });
+
+    test('a scan of several profiles shows while any of them is on, with the ones on kept', () => {
+        const several = scan(aria, { profiles: [wcagAA, aria, rgaa] });
+        const filter = mod.makeProfileFilter(['wai-aria-1.2', 'rgaa-4.1.2']);
+        assert.equal(mod.scanMatchesProfileFilter(several, filter), true);
+        assert.deepEqual(mod.keptProfileKeys(several, filter), ['wcag22-aa']);
+        assert.equal(mod.scanMatchesProfileFilter(several, mod.makeProfileFilter(['wcag22-aa', 'wai-aria-1.2', 'rgaa-4.1.2'])), false);
+    });
+
+    test('"Unknown profile" turned off hides the scans that name none', () => {
+        const filter = mod.makeProfileFilter([mod.UNKNOWN_PROFILE]);
+        assert.equal(mod.scanMatchesProfileFilter(unknown(), filter), false);
+        assert.equal(mod.scanMatchesProfileFilter(scan(rgaa), filter), true);
     });
 });
