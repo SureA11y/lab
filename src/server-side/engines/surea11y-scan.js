@@ -419,11 +419,14 @@ async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = []
     const results = await mapInBatches(scanned, FRAME_CONCURRENCY, async (frame) => {
         const url = typeof frame.url === 'function' ? frame.url() : null;
         if (signal && signal.aborted) return { url, error: 'the scan was given up on' };
-        const skipped = await skipReason(frame);
-        if (skipped) return { url, skipped };
         let timer = null;
         try {
+            // Within the frame's time limit: a frame that never answers is
+            // not asked why it would be left out for longer than it is
+            // waited for.
             const scan = (async () => {
+                const skipped = await skipReason(frame);
+                if (skipped) return { url, skipped };
                 const frameSelectors = await frameSelectorsOf(frame);
                 const builder = new A11yCoreBuilder({ page: frame, url: url || undefined });
                 builder.options(engineOptions);
