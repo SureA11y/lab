@@ -285,33 +285,80 @@ describe('core hooks in Chrome', () => {
     });
 });
 
-// Frames no one perceives are left out, as core's own scan across frames
-// leaves them out, each with its reason; the others are scanned.
-describe('frames left out in Chrome', () => {
-    test('a hidden, excluded, aria-hidden or empty frame is left out, a frame inside one with it', async () => {
+// Frames are read as core's own scan across frames reads them: those the
+// page doesn't show, that the scan excludes or leaves outside its Include, or
+// that show nothing are left out, each with its reason, a frame inside one
+// with it; one under aria-hidden is scanned as aria-hidden.
+describe('frames in Chrome', () => {
+    const framesOf = async (page) => {
+        const out = {};
+        const subs = page.frames().filter((f) => f !== page.mainFrame());
+        for (const frame of subs) {
+            const el = await frame.frameElement();
+            out[await el.evaluate((e) => e.id || `${e.ownerDocument.defaultView.frameElement.id} > inner`)] = frame;
+        }
+        return { subs, out };
+    };
+
+    test('left out, scanned as aria-hidden, or scanned', async () => {
         const page = await browser.newPage();
         try {
-            await page.setContent(`<!doctype html><html lang="en"><head><title>Frames</title></head><body><main>
+            await page.setContent(`<!doctype html><html lang="en"><head><title>Frames</title></head><body><main id="main">
                 <iframe id="shown" title="Map" srcdoc="<p>map</p>"></iframe>
                 <iframe id="none" style="display:none" srcdoc="<p>x</p>"></iframe>
                 <div class="ad"><iframe id="excluded" srcdoc="<p>ad</p>"></iframe></div>
-                <iframe id="ah" aria-hidden="TRUE" srcdoc="<p>tracker</p><iframe srcdoc='<p>inner</p>'></iframe>"></iframe>
+                <iframe id="ah" aria-hidden="TRUE" srcdoc="<img src='a.png'><p>tracker</p><iframe srcdoc='<img src=b.png>'></iframe>"></iframe>
                 <iframe id="empty"></iframe>
-            </main></body></html>`, { waitUntil: 'load' });
-            const results = await scanFrames(page, { engineOptions: { locale: 'en', excludeSelectors: ['.ad'] } });
-            const byId = {};
-            for (const frame of page.frames()) {
-                if (frame === page.mainFrame()) continue;
-                const el = await frame.frameElement();
-                const id = await el.evaluate((e) => e.id || e.ownerDocument.defaultView.frameElement.id + ' > inner');
-                byId[id] = results[page.frames().filter((f) => f !== page.mainFrame()).indexOf(frame)];
+                <iframe id="shadowed" srcdoc="<body><script>document.body.attachShadow({mode:'open'}).innerHTML='<img src=c.png>'</script></body>"></iframe>
+            </main><footer><iframe id="outside" srcdoc="<p>out</p>"></iframe></footer></body></html>`, { waitUntil: 'load' });
+            const results = await scanFrames(page, { engineOptions: { locale: 'en', excludeSelectors: ['.ad'] }, contextSelector: '#main' });
+            const { subs, out } = await framesOf(page);
+            const at = (id) => results[subs.indexOf(out[id])];
+            assert.ok(at('shown').result, 'a frame shown is scanned');
+            assert.equal(at('none').skipped, 'hidden');
+            assert.equal(at('excluded').skipped, 'excluded');
+            assert.equal(at('outside').skipped, 'outside-scope');
+            assert.equal(at('empty').skipped, 'empty');
+            assert.ok(at('shadowed').result, 'a body with a shadow root shows something');
+            for (const id of ['ah', 'ah > inner']) {
+                assert.equal(at(id).ariaHidden, true, id);
+                const img = at(id).result.checksResults.find((c) => c.ruleId === 'img-alt-present');
+                assert.notEqual(img && img.outcome, 'fail', `${id}: a name is no rule of what is out of the tree`);
             }
-            assert.ok(byId.shown.result, 'a frame shown is scanned');
-            assert.equal(byId.none.skipped, 'hidden');
-            assert.equal(byId.excluded.skipped, 'excluded');
-            assert.equal(byId.ah.skipped, 'aria-hidden');
-            assert.equal(byId['ah > inner'].skipped, 'aria-hidden');
-            assert.equal(byId.empty.skipped, 'empty');
+        } finally {
+            await page.close();
+        }
+    });
+
+    test('a lazy frame below the fold is loaded and scanned, under its own URL', async () => {
+        const page = await browser.newPage();
+        try {
+            await page.setContent('<!doctype html><html lang="en"><head><title>Lazy</title></head><body><main>'
+                + '<div style="height:4000px"></div>'
+                + '<iframe id="lazy" loading="lazy" title="lazy" src="data:text/html,<img src=x.png>"></iframe>'
+                + '</main></body></html>', { waitUntil: 'domcontentloaded' });
+            const started = Date.now();
+            const [lazy] = await scanFrames(page, { engineOptions: { locale: 'en' } });
+            assert.ok(Date.now() - started < 9000, 'not waited out');
+            assert.ok(lazy.result, lazy.error || lazy.skipped);
+            assert.match(String(lazy.url), /^data:text\/html/);
+        } finally {
+            await page.close();
+        }
+    });
+
+    test('frames in two shadow roots are told apart, each naming its host', async () => {
+        const page = await browser.newPage();
+        try {
+            await page.setContent('<!doctype html><html lang="en"><head><title>Shadow</title></head><body><main>'
+                + '<x-a></x-a><x-a></x-a>'
+                + '<script>for (const h of document.querySelectorAll("x-a")) h.attachShadow({mode:"open"}).innerHTML = \'<iframe title="s" srcdoc="<img src=y.png>"></iframe>\';</script>'
+                + '</main></body></html>', { waitUntil: 'load' });
+            const results = await scanFrames(page, { engineOptions: { locale: 'en' } });
+            assert.equal(results.length, 2);
+            const selectors = results.map((r) => JSON.stringify(r.frameSelectors));
+            assert.notEqual(selectors[0], selectors[1]);
+            assert.ok(selectors.every((x) => x.includes('>>>')), selectors.join(' | '));
         } finally {
             await page.close();
         }

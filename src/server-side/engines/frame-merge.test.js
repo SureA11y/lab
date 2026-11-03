@@ -26,7 +26,7 @@ test('a frame\'s findings join the page\'s, each naming its frame; the worse out
     mergeFrameResults(top, frames);
     const byId = Object.fromEntries(top.checksResults.map((r) => [r.ruleId, r]));
     assert.equal(byId['button-name-present'].outcome, 'fail');
-    assert.deepEqual(byId['button-name-present'].occurrences, [{ selector: 'button', frameUrl: 'https://x.test/a', frameSelectors: ['main > iframe:nth-of-type(1)'] }]);
+    assert.deepEqual(byId['button-name-present'].occurrences, [{ selector: 'button', occurrenceOutcome: 'fail', frameUrl: 'https://x.test/a', frameSelectors: ['main > iframe:nth-of-type(1)'] }]);
     assert.equal(byId['img-alt-present'].outcome, 'fail', 'the page\'s own fail stays');
     assert.equal(byId['frame-only'].outcome, 'cantTell', 'a rule only a frame ran is added');
     const rollup = top.rulesResults[0];
@@ -39,4 +39,24 @@ test('a capped list\'s counts add up across frames', () => {
     const top = { checksResults: [check('contrast-minimum', 'fail', [], counts(80, 50))], rulesResults: [] };
     mergeFrameResults(top, [{ url: 'https://x.test/a', frameSelectors: ['iframe'], result: { checksResults: [check('contrast-minimum', 'fail', [], counts(3, 3))], rulesResults: [] } }]);
     assert.deepEqual(top.checksResults[0].data.details, { elementCount: 83, reportedCount: 53, maxOccurrences: 50, truncated: true });
+});
+
+test('each element keeps its own document\'s tier: a note of a rule that passed in its frame is no failure', () => {
+    const top = { checksResults: [check('contrast-minimum', 'fail', [{ selector: '#low' }])], rulesResults: [] };
+    mergeFrameResults(top, [{ url: 'https://x.test/a', frameSelectors: ['iframe'], result: {
+        checksResults: [check('contrast-minimum', 'pass', [{ selector: '', summary: 'All text meets the minimum contrast' }])], rulesResults: [],
+    } }]);
+    const [own, note] = top.checksResults[0].occurrences;
+    assert.equal(own.occurrenceOutcome, 'fail');
+    assert.equal(note.occurrenceOutcome, 'pass');
+    // And the other way: the page's note stays a note when a frame fails the rule.
+    const top2 = { checksResults: [check('contrast-minimum', 'pass', [{ selector: '' }])], rulesResults: [] };
+    mergeFrameResults(top2, [{ url: 'https://x.test/a', frameSelectors: ['iframe'], result: { checksResults: [check('contrast-minimum', 'fail', [{ selector: 'p' }])], rulesResults: [] } }]);
+    assert.deepEqual(top2.checksResults[0].occurrences.map((o) => o.occurrenceOutcome), ['pass', 'fail']);
+});
+
+test('a frame\'s count is kept where the page\'s result has none', () => {
+    const top = { checksResults: [check('contrast-minimum', 'fail', [])], rulesResults: [] };
+    mergeFrameResults(top, [{ url: 'https://x.test/a', frameSelectors: ['iframe'], result: { checksResults: [check('contrast-minimum', 'fail', [], { details: { elementCount: 7, reportedCount: 5, truncated: true } })], rulesResults: [] } }]);
+    assert.deepEqual(top.checksResults[0].data.details, { elementCount: 7, reportedCount: 5, truncated: true });
 });

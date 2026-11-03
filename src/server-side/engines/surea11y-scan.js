@@ -292,6 +292,10 @@ const MAX_FRAMES = 100;
 // How long one frame may take: a frame whose page never answers has no
 // document to scan, and waiting on it held the whole scan for minutes.
 const FRAME_TIMEOUT_MS = 10000;
+// How long the lazy iframes made eager are waited for (loadLazyFrames).
+const LAZY_FRAME_WAIT_MS = 3000;
+// How long a frame is asked about its lazy iframes, or its element's src.
+const LAZY_FRAME_ASK_MS = 1000;
 
 /** Maps `items` through async `fn`, at most `limit` at a time, keeping their order. */
 async function mapInBatches(items, limit, fn) {
@@ -319,18 +323,32 @@ async function frameSelectorsOf(frame) {
     for (let f = frame; f && f.parentFrame && f.parentFrame(); f = f.parentFrame()) {
         const handle = await f.frameElement();
         if (!handle) return null;
+        // Through the shadow roots it is in, each host's selector before
+        // the part inside it (" >>> "), so two frames in two hosts' shadow
+        // roots are two frames.
         const selector = await handle.evaluate((el) => {
-            const parts = [];
-            for (let node = el; node && node.nodeType === 1 && node !== node.ownerDocument.documentElement; node = node.parentElement) {
-                if (node.id && node.ownerDocument.querySelectorAll(`#${CSS.escape(node.id)}`).length === 1) {
-                    parts.unshift(`#${CSS.escape(node.id)}`);
-                    break;
+            const within = (start) => {
+                const root = start.getRootNode();
+                const parts = [];
+                for (let node = start; node && node.nodeType === 1; node = node.parentElement) {
+                    if (node === node.ownerDocument.documentElement) break;
+                    if (node.id && root.querySelectorAll(`#${CSS.escape(node.id)}`).length === 1) {
+                        parts.unshift(`#${CSS.escape(node.id)}`);
+                        break;
+                    }
+                    let i = 1;
+                    for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) if (sib.localName === node.localName) i += 1;
+                    parts.unshift(`${node.localName}:nth-of-type(${i})`);
                 }
-                let i = 1;
-                for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) if (sib.localName === node.localName) i += 1;
-                parts.unshift(`${node.localName}:nth-of-type(${i})`);
+                return parts.join(' > ');
+            };
+            const levels = [];
+            for (let node = el; node; ) {
+                levels.unshift(within(node));
+                const root = node.getRootNode();
+                node = root && root.host ? root.host : null;
             }
-            return parts.join(' > ');
+            return levels.join(' >>> ');
         });
         await handle.dispose().catch(() => {});
         chain.unshift(selector);
@@ -339,52 +357,113 @@ async function frameSelectorsOf(frame) {
 }
 
 /**
- * Why a frame is left out of the scan, or null to scan it. Its <iframe> is
- * read in its parent document, as core's own scan across frames reads it
- * (src/core/frame-scan.js), with two cases more:
+ * How a frame is read, from its <iframe> in its parent document, as core's
+ * own scan across frames reads it (src/core/frame-scan.js):
+ * { skipped } for one left out, else { ariaHidden } for one under
+ * aria-hidden="true", scanned with engineOptions.embeddedAriaHidden (what is
+ * seen still counts, names and roles don't). Left out:
  * - 'hidden': the page does not show it (display:none, the hidden attribute,
  *   a closed <details>, content-visibility:hidden or visibility:hidden),
  *   unless engineOptions.includeHiddenElements;
  * - 'excluded': it, or an element around it, matches engineOptions'
  *   excludeSelectors (the scan's Exclude);
- * - 'aria-hidden': it, or an element around it, has aria-hidden="true", so
- *   its content is out of the accessibility tree;
- * - 'empty': its document has nothing in it.
+ * - 'outside-scope': a frame of the page outside the scan's Include
+ *   (`contextSelector`), as core's scan across frames reads only the frames
+ *   in its roots;
+ * - 'empty': its document shows nothing: no element, no text, no shadow
+ *   root and no generated content in its body.
  * A frame whose element or document can't be read is scanned.
  */
-async function frameSkipReason(frame, engineOptions = {}) {
+async function frameReading(frame, engineOptions = {}, contextSelector = null) {
     let handle = null;
     try {
         handle = await frame.frameElement();
+        let ariaHidden = false;
         if (handle) {
-            const reason = await handle.evaluate((el, { excludeSelectors, includeHidden }) => {
+            const read = await handle.evaluate((el, { excludeSelectors, includeHidden, scope }) => {
                 if (!includeHidden && typeof el.checkVisibility === 'function'
-                    && !el.checkVisibility({ visibilityProperty: true })) return 'hidden';
+                    && !el.checkVisibility({ visibilityProperty: true })) return { skipped: 'hidden' };
+                // Through shadow roots too, up to the document.
+                const closest = (node, selector) => {
+                    for (let n = node; n; ) {
+                        if (n.closest(selector)) return true;
+                        const root = n.getRootNode();
+                        n = root && root.host ? root.host : null;
+                    }
+                    return false;
+                };
                 for (const selector of excludeSelectors) {
-                    try { if (el.closest(selector)) return 'excluded'; } catch { /* a selector the page can't parse excludes nothing */ }
+                    try { if (closest(el, selector)) return { skipped: 'excluded' }; } catch { /* a selector the page can't parse excludes nothing */ }
                 }
-                for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
-                    const value = node.getAttribute('aria-hidden');
-                    if (value != null && value.trim().toLowerCase() === 'true') return 'aria-hidden';
+                if (scope) {
+                    try { if (!closest(el, scope)) return { skipped: 'outside-scope' }; } catch { /* the scan says so of its own scope */ }
                 }
-                return null;
+                for (let node = el; node; ) {
+                    if (node.nodeType === 1) {
+                        const value = node.getAttribute('aria-hidden');
+                        if (value != null && value.trim().toLowerCase() === 'true') return { ariaHidden: true };
+                    }
+                    node = node.parentNode && node.parentNode.nodeType === 11 ? node.parentNode.host : node.parentNode;
+                }
+                return {};
             }, {
                 excludeSelectors: (Array.isArray(engineOptions.excludeSelectors) ? engineOptions.excludeSelectors : [])
                     .map(String).map((x) => x.trim()).filter(Boolean),
                 includeHidden: engineOptions.includeHiddenElements === true,
+                scope: typeof contextSelector === 'string' && contextSelector.trim() ? contextSelector.trim() : null,
             });
-            if (reason) return reason;
+            if (read.skipped) return { skipped: read.skipped };
+            ariaHidden = !!read.ariaHidden;
         }
         const empty = await frame.evaluate(() => {
             const body = document.body;
             if (!body || body.localName !== 'body') return false;
-            return !body.children.length && !body.textContent.trim();
+            if (body.children.length || body.textContent.trim() || body.shadowRoot) return false;
+            const shows = (pseudo) => {
+                const content = getComputedStyle(body, pseudo).content;
+                return content && content !== 'none' && content !== 'normal';
+            };
+            return !shows('::before') && !shows('::after');
         });
-        return empty ? 'empty' : null;
+        return empty ? { skipped: 'empty' } : { ariaHidden };
     } catch {
-        return null;
+        return {};
     } finally {
         if (handle) await handle.dispose().catch(() => {});
+    }
+}
+
+// What a promise gives within `ms`, or `fallback` once that has passed or it
+// fails.
+function withinMs(ms, fallback, promise) {
+    let timer = null;
+    const late = new Promise((resolve) => { timer = setTimeout(() => resolve(fallback), ms); });
+    return Promise.race([Promise.resolve(promise).catch(() => fallback), late]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * Loads the page's lazy iframes, which a scan never scrolls to: made eager,
+ * waited for a little. Each frame's own lazy iframes too.
+ */
+async function loadLazyFrames(page) {
+    let changed = 0;
+    for (const frame of page.frames()) {
+        // A frame that never answers is not waited for: its own scan says so.
+        changed += await withinMs(LAZY_FRAME_ASK_MS, 0, frame.evaluate(() => {
+            let n = 0;
+            const visit = (root) => {
+                for (const el of root.querySelectorAll('iframe[loading="lazy" i], frame[loading="lazy" i]')) {
+                    el.setAttribute('loading', 'eager');
+                    n += 1;
+                }
+                for (const host of root.querySelectorAll('*')) if (host.shadowRoot) visit(host.shadowRoot);
+            };
+            visit(document);
+            return n;
+        }));
+    }
+    if (changed && typeof page.waitForNetworkIdle === 'function') {
+        await page.waitForNetworkIdle({ idleTime: 300, timeout: LAZY_FRAME_WAIT_MS }).catch(() => {});
     }
 }
 
@@ -392,32 +471,45 @@ async function frameSkipReason(frame, engineOptions = {}) {
  * Core's native result for each sub-frame of `page`, scanned whole (the
  * scan's Include selectors are the top document's), a few at a time:
  * [{ url, frameSelectors, result }], [{ url, skipped }] for a frame left out
- * (frameSkipReason), or [{ url, error }] for a frame that could not be
+ * (frameReading), or [{ url, error }] for a frame that could not be
  * scanned (detached, sandboxed, timed out). Element pictures
  * are the top page's only: the lab pictures the page it shows.
  */
-async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = [], signal = null } = {}) {
+async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = [], signal = null, contextSelector = null } = {}) {
+    await loadLazyFrames(page);
     const main = page.mainFrame();
     const frames = page.frames().filter((f) => f !== main && !(typeof f.detached === 'boolean' && f.detached));
     const scanned = frames.slice(0, MAX_FRAMES);
-    // Why each frame is left out, if it is (frameSkipReason), a frame inside
-    // one left out with it.
-    const reasons = new Map();
-    const skipReason = (frame) => {
-        if (!reasons.has(frame)) {
-            reasons.set(frame, (async () => {
+    // How each frame is read (frameReading): a frame inside one left out is
+    // left out with it, and one inside an aria-hidden one is aria-hidden. The
+    // scan's Include is the page's, so it scopes the page's own frames.
+    const readings = new Map();
+    const readingOf = (frame) => {
+        if (!readings.has(frame)) {
+            readings.set(frame, (async () => {
                 const parent = frame.parentFrame && frame.parentFrame();
-                if (parent && parent !== main) {
-                    const above = await skipReason(parent);
-                    if (above) return above;
-                }
-                return frameSkipReason(frame, engineOptions);
+                const above = parent && parent !== main ? await readingOf(parent) : {};
+                if (above.skipped) return above;
+                const own = await frameReading(frame, engineOptions, parent === main ? contextSelector : null);
+                return own.skipped ? own : { ariaHidden: !!(above.ariaHidden || own.ariaHidden) };
             })());
         }
-        return reasons.get(frame);
+        return readings.get(frame);
+    };
+    // A frame not loaded yet has no URL of its own: its element's src says
+    // which one it is.
+    const urlOf = async (frame) => {
+        const own = typeof frame.url === 'function' ? frame.url() : null;
+        if (own) return own;
+        return withinMs(LAZY_FRAME_ASK_MS, null, (async () => {
+            const handle = await frame.frameElement();
+            const src = handle ? await handle.evaluate((el) => el.src || el.getAttribute('src') || null) : null;
+            if (handle) await handle.dispose().catch(() => {});
+            return src;
+        })());
     };
     const results = await mapInBatches(scanned, FRAME_CONCURRENCY, async (frame) => {
-        const url = typeof frame.url === 'function' ? frame.url() : null;
+        const url = await urlOf(frame);
         if (signal && signal.aborted) return { url, error: 'the scan was given up on' };
         let timer = null;
         try {
@@ -425,15 +517,15 @@ async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = []
             // not asked why it would be left out for longer than it is
             // waited for.
             const scan = (async () => {
-                const skipped = await skipReason(frame);
-                if (skipped) return { url, skipped };
+                const reading = await readingOf(frame);
+                if (reading.skipped) return { url, skipped: reading.skipped };
                 const frameSelectors = await frameSelectorsOf(frame);
                 const builder = new A11yCoreBuilder({ page: frame, url: url || undefined });
-                builder.options(engineOptions);
+                builder.options(reading.ariaHidden ? { ...engineOptions, embeddedAriaHidden: true } : engineOptions);
                 if (Array.isArray(packs) && packs.length) builder.withPacks(packs);
                 applySelection(builder, runOnly);
                 builder.logger(() => {});
-                return { url, frameSelectors, result: await builder.analyze() };
+                return { url, frameSelectors, ...(reading.ariaHidden ? { ariaHidden: true } : {}), result: await builder.analyze() };
             })();
             const late = new Promise((_, reject) => {
                 timer = setTimeout(() => reject(new Error(`it did not answer within ${FRAME_TIMEOUT_MS / 1000} s`)), FRAME_TIMEOUT_MS);
@@ -453,6 +545,15 @@ async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = []
 }
 
 const OUTCOME_RANK = { fail: 4, failed: 4, cantTell: 3, pass: 2, passed: 2, notApplicable: 1, inapplicable: 1 };
+
+// An occurrence with its own tier, as its document's rule gave it: its own
+// occurrenceOutcome, or the rule's outcome; 'pass' for a note of a rule that
+// passed, which no merged outcome makes a failure.
+function stampTier(o, outcome) {
+    if (!o || typeof o !== 'object' || o.occurrenceOutcome) return o;
+    const tier = outcome === 'fail' || outcome === 'cantTell' ? outcome : 'pass';
+    return { ...o, occurrenceOutcome: tier };
+}
 
 /** The worse of two outcomes: a rule fails on the page if it fails in any of its frames. */
 function worseOutcome(a, b) {
@@ -476,7 +577,7 @@ function mergeFrameResults(top, frameResults) {
             for (const r of f.result[key] || []) {
                 if (!r || !r.ruleId) continue;
                 const occurrences = (Array.isArray(r.occurrences) ? r.occurrences : [])
-                    .map((o) => ({ ...o, frameUrl: f.url, frameSelectors: f.frameSelectors || null }));
+                    .map((o) => ({ ...stampTier(o, r.outcome), frameUrl: f.url, frameSelectors: f.frameSelectors || null }));
                 const held = byId.get(r.ruleId);
                 if (!held) {
                     const copy = { ...r, occurrences };
@@ -484,7 +585,9 @@ function mergeFrameResults(top, frameResults) {
                     byId.set(r.ruleId, copy);
                     continue;
                 }
-                held.occurrences = [...(Array.isArray(held.occurrences) ? held.occurrences : []), ...occurrences];
+                // Each element keeps its own document's tier: the merged rule's
+                // worse outcome is no verdict on it.
+                held.occurrences = [...(Array.isArray(held.occurrences) ? held.occurrences : []).map((o) => stampTier(o, held.outcome)), ...occurrences];
                 held.outcome = worseOutcome(held.outcome, r.outcome);
                 if (held.outcomeNormalized || r.outcomeNormalized) held.outcomeNormalized = worseOutcome(held.outcomeNormalized, r.outcomeNormalized);
                 const a = held.data && held.data.details;
@@ -501,8 +604,10 @@ function mergeFrameResults(top, frameResults) {
                     }
                     held.data = { ...held.data, details: { ...a, contributors } };
                 }
-                if (a && b && Number.isFinite(a.elementCount) && Number.isFinite(b.elementCount)) {
-                    held.data = { ...held.data, details: { ...a, elementCount: a.elementCount + b.elementCount, reportedCount: (a.reportedCount || 0) + (b.reportedCount || 0), truncated: !!(a.truncated || b.truncated) } };
+                if (b && Number.isFinite(b.elementCount)) {
+                    const base = a || {};
+                    const own = Number.isFinite(base.elementCount) ? base.elementCount : 0;
+                    held.data = { ...held.data, details: { ...base, elementCount: own + b.elementCount, reportedCount: (base.reportedCount || 0) + (b.reportedCount || 0), truncated: !!(base.truncated || b.truncated) } };
                 }
             }
         }
@@ -510,4 +615,4 @@ function mergeFrameResults(top, frameResults) {
     return top;
 }
 
-module.exports = { scanPage, scanFrames, frameSkipReason, mergeFrameResults, captureScreenshots, applySelection, CORE_HOOKS, coreHooksFrom, installCoreHooks };
+module.exports = { scanPage, scanFrames, frameReading, mergeFrameResults, captureScreenshots, applySelection, CORE_HOOKS, coreHooksFrom, installCoreHooks };

@@ -135,9 +135,15 @@
             if (!bySc.has(sc)) bySc.set(sc, { failPages: [], failElements: 0, failed: new Set(), askPages: [], questions: [] });
             return bySc.get(sc);
         };
+        // The pages with iframes whose content could not be scanned: what is
+        // in them is unknown, so nothing is known not to apply there.
+        bySc.unscanned = [];
         for (const scan of asArray(report && report.scans)) {
             if (!scan || scan.includedInReport === false) continue;
             const page = str(scan.label).replace(/^Scan:\s*/, '') || str(scan.url) || 'a page';
+            if (asArray(scan.canonical && scan.canonical.notices).some((n) => n && n.code === 'frames-not-scanned')) {
+                bySc.unscanned.push(page);
+            }
             for (const f of asArray(scan.canonical && scan.canonical.findings)) {
                 if (!f || (f.outcome !== 'fail' && f.outcome !== 'cantTell')) continue;
                 for (const sc of requirementsOf(f)) {
@@ -171,7 +177,7 @@
     }
 
     // The draft for one criterion: { conformance, remarks }.
-    function draftFor(entry, evidence) {
+    function draftFor(entry, evidence, unscanned = []) {
         const e = evidence || { failPages: [], failElements: 0, askPages: [], questions: [] };
         if (e.failPages.length) {
             const n = e.failElements;
@@ -182,6 +188,9 @@
         }
         const status = entry ? entry.status : null;
         if (status === 'notApplicable') {
+            if (unscanned.length) {
+                return { conformance: 'notEvaluated', remarks: `Nothing on the scanned pages that this applies to, but some iframes on ${listNames(unscanned)} could not be scanned: check what they show.` };
+            }
             return { conformance: 'notApplicable', remarks: 'Nothing on the scanned pages that this applies to: confirm for the rest of the product.' };
         }
         if (e.askPages.length) {
@@ -428,7 +437,7 @@
         const tableOf = (id, title, ids) => {
             const rows = ids.map((rid) => byId.get(rid)).filter((r) => r && !r.wcag && !seen.has(r.id)).map((r) => {
                 seen.add(r.id);
-                return row({ id: r.id, name: r.title || named.get(r.id) || `Requirement ${r.id}` }, draftFor(null, evidence.get(r.id)), reviewedOf(r.id));
+                return row({ id: r.id, name: r.title || named.get(r.id) || `Requirement ${r.id}` }, draftFor(null, evidence.get(r.id), evidence.unscanned), reviewedOf(r.id));
             });
             if (rows.length) tables.push({ id: `std-${std.key}-${id}`.replace(/[^A-Za-z0-9_-]/g, '-'), title: `${std.name} ${std.version}: ${title}`, standard: std.key, version: std.version, rows });
         };
@@ -459,7 +468,7 @@
         const scope = wcag.criteriaForScope({ level: target.level, version: target.wcagVersion });
         const wcagRows = scope.map((c) => row(
             { id: c.sc, name: c.title, level: c.level },
-            draftFor(statusBySc.get(c.sc), evidence.get(c.sc)),
+            draftFor(statusBySc.get(c.sc), evidence.get(c.sc), evidence.unscanned),
             reviewed[c.sc],
         ));
 
@@ -479,7 +488,7 @@
         const chapter9 = enWcag.map((c) => {
             const same = byId.get(c.sc) || row(
                 { id: c.sc, name: c.title, level: c.level },
-                draftFor(statusBySc.get(c.sc), evidence.get(c.sc)),
+                draftFor(statusBySc.get(c.sc), evidence.get(c.sc), evidence.unscanned),
                 reviewed[c.sc],
             );
             return { ...same, id: `9.${c.sc}`, name: c.title, wcag: c.sc };
