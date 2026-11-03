@@ -100,7 +100,10 @@ function compareToBaseline(baselinePayload, currentPayload) {
     return {
         diff,
         summary: summarizeDiff(diff),
-        swapped: assignBaselineAndCurrent(baselinePayload, currentPayload).baseline !== baselinePayload,
+        // The baseline is newer than this run only when both say when they
+        // were made: an undated one sorts last, which says nothing of its age.
+        swapped: !!(reportIdentity(baselinePayload).timestamp && reportIdentity(currentPayload).timestamp)
+            && assignBaselineAndCurrent(baselinePayload, currentPayload).baseline !== baselinePayload,
         // The opt-in rules each side ran (["rgaa"]). When they differ, the
         // findings of those rules are new or resolved because of what was
         // checked, not because of the pages.

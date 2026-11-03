@@ -176,6 +176,13 @@ describe('compareToBaseline', () => {
 
         assert.equal(compareToBaseline(a, b).swapped, false);
     });
+
+    test('does not call an undated baseline newer than a dated run', () => {
+        const undated = { runId: 'a', url: 'https://example.com/', scans: [] };
+        const run = payload('run_new', '2026-03-01T00:00:00Z', []);
+
+        assert.equal(compareToBaseline(undated, run).swapped, false);
+    });
 });
 
 describe('summarizeDiff', () => {
