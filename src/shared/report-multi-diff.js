@@ -281,7 +281,8 @@
             scoreState: typeof sc.evaluationState === 'string' ? sc.evaluationState : null,
             // Left out because the reports were compared on the profiles they
             // share: the score was made from everything the run checked.
-            scoreLeftOut: !!(report && report.metrics && report.metrics.a11ySummary && report.metrics.a11ySummary.scoreLeftOut),
+            ...(report && report.metrics && report.metrics.a11ySummary && report.metrics.a11ySummary.scoreLeftOut
+                ? { scoreLeftOut: true } : {}),
             pageScores: pageScoreSpread(report),
         };
     }
