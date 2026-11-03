@@ -112,8 +112,9 @@
     // What matches a scan across reports: its page, by path and query, so a
     // run on another host (staging beside live) lines up with it, and a scan
     // added before others or relabelled shifts nothing. Scans of one page are
-    // matched in order (scanKeys). A scan's id is the run's own numbering
-    // (scan-3), or the extension's, so it says nothing of the page.
+    // paired by what they checked, then in order (pairedScanKeys). A scan's
+    // id is the run's own numbering (scan-3), or the extension's, so it says
+    // nothing of the page.
     function scanKey(scan) {
         const url = String(scan.url || '');
         let page = url;
@@ -121,20 +122,61 @@
         return `at:${page}`;
     }
 
-    // The key of each of a report's scans, in order (null for a skipped one).
-    // Scans sharing a key are matched in their order: the second with the
-    // second. A skipped scan keeps its place, so the scans after it still
-    // match the same steps of the other run.
-    function scanKeys(report) {
-        const seen = new Map();
-        return asArray(report && report.scans).map((s) => {
-            if (!s) return null;
-            const key = scanKey(s);
-            const n = (seen.get(key) || 0) + 1;
-            seen.set(key, n);
-            if (s.skipped || s.skipInfo) return null;
-            return n === 1 ? key : `${key}#${n}`;
-        });
+    // The ids of the profiles a scan checked, or [] when it names none.
+    function profileIdsOf(scan) {
+        return reportScanOf().scanProfiles(scan).map((p) => String(p.id || p.label || '')).filter(Boolean);
+    }
+
+    /**
+     * The key of each scan of each report, in order (null for a skipped
+     * one). Scans of one page are paired across the reports, each with a scan
+     * of the latest report: first one that checked the same profiles, then
+     * one that shares some, then the next in order; a scan left over is a
+     * scan of its own. So a run that drops one of a page's scans, or adds
+     * one, still sets each scan beside the one that checked what it did,
+     * and scans that all checked the same profiles pair in order, as before.
+     * A skipped scan keeps its place, so the scans after it still match.
+     */
+    function pairedScanKeys(reports) {
+        const list = asArray(reports);
+        const slotsByPage = new Map(); // page -> [{ ids }]
+        const keys = list.map((report) => asArray(report && report.scans).map(() => null));
+        const order = list.map((_, r) => r).reverse();
+        for (const r of order) {
+            const byPage = new Map();
+            asArray(list[r] && list[r].scans).forEach((s, i) => {
+                if (!s) return;
+                const page = scanKey(s);
+                if (!byPage.has(page)) byPage.set(page, []);
+                byPage.get(page).push({ i, ids: profileIdsOf(s), skipped: !!(s.skipped || s.skipInfo) });
+            });
+            for (const [page, scans] of byPage) {
+                if (!slotsByPage.has(page)) slotsByPage.set(page, []);
+                const slots = slotsByPage.get(page);
+                const used = new Set();
+                const slotOf = new Map();
+                const same = (a, b) => a.length === b.length && a.every((id) => b.includes(id));
+                const shares = (a, b) => a.some((id) => b.includes(id));
+                for (const test of [same, shares, () => true]) {
+                    for (const scan of scans) {
+                        if (slotOf.has(scan)) continue;
+                        const n = slots.findIndex((slot, k) => !used.has(k) && test(scan.ids, slot.ids));
+                        if (n < 0) continue;
+                        used.add(n);
+                        slotOf.set(scan, n);
+                    }
+                }
+                for (const scan of scans) {
+                    if (!slotOf.has(scan)) {
+                        slots.push({ ids: scan.ids });
+                        slotOf.set(scan, slots.length - 1);
+                    }
+                    const n = slotOf.get(scan) + 1;
+                    if (!scan.skipped) keys[r][scan.i] = n === 1 ? page : `${page}#${n}`;
+                }
+            }
+        }
+        return keys;
     }
 
     // The WCAG levels of a finding's criteria; [] when it names none.
@@ -351,10 +393,9 @@
         return out;
     }
 
-    function narrowReport(report, plans) {
+    function narrowReport(report, plans, keys) {
         if (!report || typeof report !== 'object') return report;
         let narrowed = false;
-        const keys = scanKeys(report);
         const scans = asArray(report.scans).map((s, i) => {
             const shared = keys[i] ? plans.get(keys[i]) : null;
             if (!shared) return s;
@@ -404,8 +445,9 @@
         const list = asArray(reports);
         // Each scan by its key, in each report.
         const byKey = new Map();
+        const keysByReport = pairedScanKeys(list);
         list.forEach((report, r) => {
-            const keys = scanKeys(report);
+            const keys = keysByReport[r];
             asArray(report && report.scans).forEach((scan, i) => {
                 const key = keys[i];
                 if (!key) return;
@@ -485,7 +527,7 @@
             return { reports: list, basis: none.length ? { comparedOn: [], leftOut: [] } : null, mismatch };
         }
         return {
-            reports: list.map((r) => narrowReport(r, plans)),
+            reports: list.map((r, i) => narrowReport(r, plans, keysByReport[i])),
             basis: { comparedOn, leftOut, ...(notCompared.length ? { notCompared } : {}) },
             mismatch,
         };
