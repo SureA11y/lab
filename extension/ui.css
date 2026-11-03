@@ -884,6 +884,51 @@ input:focus, textarea:focus, select:focus{
     opacity: .95;
 }
 
+/* A finding's criteria, grouped by standard (main-issues-table.js
+   buildGroupedTagsHtml), as the app lists them: the standard's name once,
+   then pills holding only the numbers, which wrap within the column. A pill
+   may break inside too, rather than run out of a narrow column. */
+.crit-groups {
+    display: grid;
+    gap: .4rem;
+}
+.crit-group__name {
+    display: block;
+    margin-bottom: .2rem;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+.crit-group__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+}
+.crit-group .tag-pill {
+    margin: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    padding: .15rem .45rem;
+}
+/* Here the criteria head the wide Description cell rather than a column of
+   their own, so each standard's name sits on the line of its pills, and the
+   groups follow one another, wrapping as the panel narrows. */
+.issues-table .crit-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem 1rem;
+    margin-bottom: .35rem;
+}
+.issues-table .crit-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem;
+}
+.issues-table .crit-group__name {
+    display: inline;
+    margin: 0;
+}
+
 .instances-meta {
     /* Full strength: at .85 opacity the severity colours fell below 4.5:1 on
        a failing row's tint (3.89:1) and on the review rows (4.25:1). */
