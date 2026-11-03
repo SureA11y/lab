@@ -799,7 +799,9 @@ button.src-dialog-close:focus-visible {
     gap: .25rem;
 }
 .crit-group .tag-pill {
+    margin: 0;
     white-space: normal;
+    overflow-wrap: anywhere;
     padding: .15rem .45rem;
 }
 
