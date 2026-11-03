@@ -82,6 +82,9 @@ function normalizeSeverity(sev) {
 function normalizeOccurrenceOutcome(outcome, fallbackOutcome) {
     const own = String(outcome || '').trim();
     if (own === 'fail' || own === 'cantTell') return own;
+    // An element its own scan passed (a frame's note, or a rollup's own
+    // profiles' verdict) is no failure of the rule's merged outcome.
+    if (own === 'pass' || own === 'notApplicable') return null;
     const fallback = String(fallbackOutcome || '').trim();
     if (fallback === 'fail' || fallback === 'cantTell') return fallback;
     return null;
@@ -1202,28 +1205,30 @@ async function runOnPage(
     // say so. After the pictures, which are the top page's.
     const subFrames = typeof page.frames === 'function' ? page.frames().length - 1 : 0;
     if (frames && subFrames > 0 && !noKnownRuleIncluded) {
-        const frameResults = await scanFrames(page, { engineOptions: scannedCfg, runOnly: scannedRunOnly, packs: PACKS });
+        const frameResults = await scanFrames(page, { engineOptions: scannedCfg, runOnly: scannedRunOnly, packs: PACKS, contextSelector: ctxSelector });
         mergeFrameResults(engineOutput, frameResults);
         engineOutput.frames = frameResults.map((f) => ({
             url: f.url || null,
             frameSelectors: f.frameSelectors || null,
             ...(f.error ? { error: f.error } : {}),
             ...(f.skipped ? { skipped: f.skipped } : {}),
+            ...(f.ariaHidden ? { ariaHidden: true } : {}),
         }));
-        // Frames no one perceives, left out as core's scan across frames
-        // leaves them out: said, so their content is known to be unchecked.
+        // Frames left out as core's scan across frames leaves them out (not
+        // shown, excluded, outside the scope) or empty: said, so their
+        // content is known to be unchecked.
         const skipped = frameResults.filter((f) => f.skipped);
         if (skipped.length) {
             const WHY = {
                 hidden: 'the page does not show it',
                 excluded: 'the scan excludes it',
-                'aria-hidden': 'it is aria-hidden',
-                empty: 'it is empty',
+                'outside-scope': "it is outside the scan's Include",
+                empty: 'it shows nothing',
             };
             notices.push({
                 engineId: ENGINE_ID,
                 code: 'frames-left-out',
-                message: `${skipped.length} of the page's ${frameResults.length} iframes ${skipped.length === 1 ? 'was' : 'were'} left out, as no one perceives what they show: `
+                message: `${skipped.length} of the page's ${frameResults.length} iframes ${skipped.length === 1 ? 'was' : 'were'} left out: `
                     + skipped.slice(0, 5).map((f) => `${f.url || 'an iframe'} (${WHY[f.skipped] || f.skipped})`).join('; ') + (skipped.length > 5 ? '; …' : '') + '.'
             });
         }

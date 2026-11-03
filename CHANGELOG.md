@@ -36,9 +36,11 @@ The first public release.
   been open, and whether each run covered enough to be compared.
 - **What a scan covers.** A page's iframes are scanned with it (each
   element names the iframe it is in; a step's Scan iframes too turns it
-  off), but for those no one perceives (hidden, excluded, aria-hidden or
-  empty), which the report lists with why; and so is every element in a
-  shadow root, each counted as its own.
+  off), lazy ones and those in shadow roots too, but for those the page
+  doesn't show, that the scan excludes or leaves outside its Include, or
+  that show nothing, which the report lists with why; one under aria-hidden
+  is scanned for what is seen, not for names and roles. So is every element
+  in a shadow root, each counted as its own.
   A large page is scanned in full and its report says it is large; an
   address that gives a PDF, JSON or an image is skipped, saying so; a page
   its server answered with an error is scanned with a notice of the status.

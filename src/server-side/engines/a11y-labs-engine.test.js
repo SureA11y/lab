@@ -374,6 +374,24 @@ describe('a11y-labs-engine: normalizeOccurrenceOutcome (via canonical occurrence
         const { canonical } = await runOnPage(page, {});
         assert.equal(canonical.findings[0].occurrences[0].occurrenceOutcome, null);
     });
+
+    test('an occurrence its own scan passed is no failure of a rule that fails elsewhere', async () => {
+        const { runOnPage } = require('./a11y-labs-engine');
+        const page = fakePage(async () => ({
+            checksResults: [{
+                ruleId: 'accesskeys',
+                outcome: 'fail',
+                severity: 'minor',
+                occurrences: [
+                    { selector: '#a', html: '<div>', summary: 's' },
+                    { selector: '#b', html: '<div>', summary: 'note', occurrenceOutcome: 'pass' },
+                ]
+            }],
+            rulesResults: []
+        }));
+        const { canonical } = await runOnPage(page, {});
+        assert.deepEqual(canonical.findings[0].occurrences.map((o) => o.occurrenceOutcome), ['fail', null]);
+    });
 });
 
 describe('a11y-labs-engine: tag/ruleId helpers', () => {

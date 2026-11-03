@@ -359,6 +359,14 @@ test("a failing finding's questions are not failing elements: they ask a person 
     assert.equal(rowOf(acr, 'wcag-a', '4.1.2').remarks, 'Automated checks found 1 failing element, on Home.');
 });
 
+test('a page whose iframes could not be scanned leaves "Not Applicable" a question', () => {
+    const withFrames = { ...report, scans: [{ ...scan('Home', [], [{ sc: '1.1.1', status: 'notApplicable' }]),
+        canonical: { findings: [], notices: [{ code: 'frames-not-scanned', message: '1 iframe could not be scanned' }] } }] };
+    const r = rowOf(buildConformanceReport(withFrames), 'wcag-a', '1.1.1');
+    assert.equal(r.conformance, 'notEvaluated');
+    assert.match(r.remarks, /some iframes on Home could not be scanned/);
+});
+
 test('the target is what the scans checked against, unless the options say otherwise', () => {
     const withScans = (scans) => ({ ...report, scans: scans.map((s) => ({ ...report.scans[0], ...s })) });
     // A WCAG 2.2 AAA scan beside a WAI-ARIA one: a WCAG 2.2 AAA report.
