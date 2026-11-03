@@ -352,6 +352,13 @@ test('an element counts once per criterion, however many findings and scans of i
     assert.equal(rowOf(acr, 'wcag-a', '1.1.1').remarks, 'Automated checks found 1 failing element, on Home.');
 });
 
+test("a failing finding's questions are not failing elements: they ask a person to look", () => {
+    const mixed = { ...finding('4.1.2', 'fail', 3) };
+    mixed.occurrences = mixed.occurrences.map((o, i) => (i ? { ...o, occurrenceOutcome: 'cantTell' } : o));
+    const acr = buildConformanceReport({ ...report, scans: [scan('Home', [mixed], [])] });
+    assert.equal(rowOf(acr, 'wcag-a', '4.1.2').remarks, 'Automated checks found 1 failing element, on Home.');
+});
+
 test('the target is what the scans checked against, unless the options say otherwise', () => {
     const withScans = (scans) => ({ ...report, scans: scans.map((s) => ({ ...report.scans[0], ...s })) });
     // A WCAG 2.2 AAA scan beside a WAI-ARIA one: a WCAG 2.2 AAA report.

@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 
 const { isBatch, checkBatch } = require('./batch-spec');
-const { main, worstExit } = require('./run-workflow');
+const { main, worstExit, batchComparison } = require('./run-workflow');
 const { EXIT } = require('./baseline');
 
 const SPEC = {
@@ -153,5 +153,17 @@ describe('run-workflow.js with a batch', () => {
         const { code, out } = await run(batchSpec(), ['--baseline', 'old/payload.json']);
         assert.equal(code, EXIT.BAD_USAGE);
         assert.match(out.join('\n'), /use --baseline auto or @name/);
+    });
+});
+
+describe('batchComparison', () => {
+    const summary = { occurrences: { new: 7, fixed: 13, still: 0 } };
+
+    test("a comparison its run didn't count gives no counts, and says so", () => {
+        assert.deepEqual(batchComparison({ summary, profiles: { mismatch: true } }), { notCompared: true });
+    });
+
+    test('a comparison that counts gives its counts', () => {
+        assert.deepEqual(batchComparison({ summary, profiles: { mismatch: false } }), { compared: summary });
     });
 });

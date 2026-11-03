@@ -1204,7 +1204,29 @@ async function runOnPage(
     if (frames && subFrames > 0 && !noKnownRuleIncluded) {
         const frameResults = await scanFrames(page, { engineOptions: scannedCfg, runOnly: scannedRunOnly, packs: PACKS });
         mergeFrameResults(engineOutput, frameResults);
-        engineOutput.frames = frameResults.map((f) => ({ url: f.url || null, frameSelectors: f.frameSelectors || null, ...(f.error ? { error: f.error } : {}) }));
+        engineOutput.frames = frameResults.map((f) => ({
+            url: f.url || null,
+            frameSelectors: f.frameSelectors || null,
+            ...(f.error ? { error: f.error } : {}),
+            ...(f.skipped ? { skipped: f.skipped } : {}),
+        }));
+        // Frames no one perceives, left out as core's scan across frames
+        // leaves them out: said, so their content is known to be unchecked.
+        const skipped = frameResults.filter((f) => f.skipped);
+        if (skipped.length) {
+            const WHY = {
+                hidden: 'the page does not show it',
+                excluded: 'the scan excludes it',
+                'aria-hidden': 'it is aria-hidden',
+                empty: 'it is empty',
+            };
+            notices.push({
+                engineId: ENGINE_ID,
+                code: 'frames-left-out',
+                message: `${skipped.length} of the page's ${frameResults.length} iframes ${skipped.length === 1 ? 'was' : 'were'} left out, as no one perceives what they show: `
+                    + skipped.slice(0, 5).map((f) => `${f.url || 'an iframe'} (${WHY[f.skipped] || f.skipped})`).join('; ') + (skipped.length > 5 ? '; …' : '') + '.'
+            });
+        }
         const missed = frameResults.filter((f) => f.error);
         if (missed.length) {
             notices.push({

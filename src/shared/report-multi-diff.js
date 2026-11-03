@@ -279,6 +279,9 @@
             // no score, and a series must break its line there rather than draw
             // through it. (R4 of the design notes.)
             scoreState: typeof sc.evaluationState === 'string' ? sc.evaluationState : null,
+            // Left out because the reports were compared on the profiles they
+            // share: the score was made from everything the run checked.
+            scoreLeftOut: !!(report && report.metrics && report.metrics.a11ySummary && report.metrics.a11ySummary.scoreLeftOut),
             pageScores: pageScoreSpread(report),
         };
     }

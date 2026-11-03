@@ -942,7 +942,9 @@ function trustCards(d) {
 
         const flags = [];
         if (c.stats.score == null) {
-            flags.push('No score: this run evaluated too little to carry one, so its line breaks here.');
+            flags.push(c.stats.scoreLeftOut
+                ? 'No score: the runs are compared on the profiles they share, and its score was made from everything it checked.'
+                : 'No score: this run evaluated too little to carry one, so its line breaks here.');
         }
         for (const reason of (health.reasons || [])) flags.push(reason);
         if (health.cancelled) flags.push('The run was cancelled before it finished.');

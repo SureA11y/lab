@@ -142,19 +142,25 @@
                 if (!f || (f.outcome !== 'fail' && f.outcome !== 'cantTell')) continue;
                 for (const sc of requirementsOf(f)) {
                     const e = at(String(sc));
-                    if (f.outcome === 'fail') {
+                    // A failing finding's elements, each by its own tier: one
+                    // that only asks is a question, not a failing element.
+                    const occurrences = asArray(f.occurrences);
+                    const tierOf = (o) => str(o && o.occurrenceOutcome) || str(o && o.outcome) || f.outcome;
+                    const failing = f.outcome !== 'fail' ? [] : occurrences.length
+                        ? occurrences.map((o, i) => [o, i]).filter(([o]) => tierOf(o) === 'fail')
+                        : [[null, 0]];
+                    if (failing.length) {
                         e.failPages.push(page);
-                        const occurrences = asArray(f.occurrences);
                         const where = str(scan.url) || page;
-                        const keys = occurrences.length
-                            // An occurrence naming no element is one of its own.
-                            ? occurrences.map((o, i) => JSON.stringify(o && o.target
+                        // An occurrence naming no element is one of its own.
+                        for (const [o, i] of failing) {
+                            e.failed.add(JSON.stringify(o && o.target
                                 ? [str(o.pageUrl) || where, o.target]
-                                : [where, null, f.ruleId, i]))
-                            : [JSON.stringify([where, null, f.ruleId])];
-                        for (const key of keys) e.failed.add(key);
+                                : [where, null, f.ruleId, i]));
+                        }
                         e.failElements = e.failed.size;
-                    } else {
+                    }
+                    if (f.outcome === 'cantTell' || occurrences.some((o) => tierOf(o) === 'cantTell')) {
                         e.askPages.push(page);
                         if (str(f.title)) e.questions.push(str(f.title));
                     }
