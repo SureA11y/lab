@@ -231,9 +231,14 @@ test("Ctrl+Z in the workflow keeps focus in the steps it rebuilds, the Profile p
     // History takes a change once its edits settle (250 ms).
     const recorded = () => new Promise((resolve) => setTimeout(resolve, 400));
     // Two changes to the scan's profiles, the panel left open on a checkbox.
-    await page.click('.profiles-input__toggle');
+    // On the Run tab, whichever tab the last test left open; the steps are
+    // drawn once their definitions load, after the page is idle.
+    await page.click('#mode-run');
+    const toggle = '#actionsContainer .profiles-input__toggle';
+    await page.waitForSelector(toggle, { visible: true });
+    await page.$eval(toggle, (el) => el.click());
     await page.waitForSelector('.profiles-input__panel:popover-open input[value="en301549-v4.1.1"]', { visible: true });
-    const pick = (value) => page.$eval(`.profiles-input input[value="${value}"]`, (el) => el.click());
+    const pick = (value) => page.$eval(`#actionsContainer .profiles-input input[value="${value}"]`, (el) => el.click());
     await pick('wcag22-aaa');
     await recorded();
     await pick('en301549-v4.1.1');
