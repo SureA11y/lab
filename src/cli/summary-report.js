@@ -18,6 +18,7 @@ const OUTCOME = {
     degraded: 'Ran, but covered less than the spec asked for',
     regressed: 'New failing instances since the baseline',
     failing: 'Failing instances, and no baseline to compare with',
+    notCompared: 'Failing instances the baseline could not be compared with',
     likely: 'New likely failures to confirm',
     clean: 'Nothing new since the baseline',
     done: 'Run finished',
@@ -31,7 +32,7 @@ function countOccurrences(findings) {
 }
 
 /** The one line that answers "do I need to look at this?". */
-function outcomeOf({ status, health, summary, likely = null, failing = null }) {
+function outcomeOf({ status, health, summary, likely = null, failing = null, baseline = false }) {
     if (status === 'error') return { key: 'error', headline: OUTCOME.error };
     if (status === 'cancelled') return { key: 'cancelled', headline: OUTCOME.cancelled };
     if (health && health.degraded) return { key: 'degraded', headline: OUTCOME.degraded };
@@ -39,7 +40,8 @@ function outcomeOf({ status, health, summary, likely = null, failing = null }) {
         return { key: 'regressed', headline: OUTCOME.regressed };
     }
     // --fail-on-failures, as the exit code decides it.
-    if (!summary && failing > 0) return { key: 'failing', headline: OUTCOME.failing };
+    // With a baseline, they come from scans it shares no profile with.
+    if (failing > 0) return baseline ? { key: 'notCompared', headline: OUTCOME.notCompared } : { key: 'failing', headline: OUTCOME.failing };
     // --fail-on-lean, as the exit code decides it.
     if (likely && likely.new > 0) return { key: 'likely', headline: OUTCOME.likely };
     if (summary) return { key: 'clean', headline: OUTCOME.clean };
@@ -134,7 +136,7 @@ function profilesText(profiles) {
                 + (left.length ? `; left out, as only one checked it: ${left.join(', ')}` : ''));
         }
         if (notCompared.length) {
-            parts.push(`not compared, as the baseline and this run checked it against different things that share none: ${notCompared.map((s) => s.label).join(', ')}`);
+            parts.push(`not compared, as the baseline and this run checked ${notCompared.length === 1 ? 'it' : 'them'} against different things that share none: ${[...new Set(notCompared.map((s) => s.label))].join(', ')}`);
         }
         return { warning: false, text: parts.join('; ') };
     }
@@ -202,7 +204,7 @@ function comparisonSection(comparison, baselineLabel) {
 function buildSummaryMarkdown({ payload, status, health, comparison, baselineLabel, outDir, steps, likely = null, failing = null }) {
     // A comparison whose two share no profile is judged as no comparison.
     const comparable = comparison && !(comparison.profiles && comparison.profiles.mismatch) ? comparison.summary : null;
-    const outcome = outcomeOf({ status, health, summary: comparable, likely, failing });
+    const outcome = outcomeOf({ status, health, summary: comparable, likely, failing, baseline: !!comparison });
     const title = payload?.scenarioName || payload?.url || 'Workflow run';
 
     const lines = [

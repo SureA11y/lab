@@ -82,13 +82,15 @@ The first public release.
   2.2 AA, and a WCAG 2.2 AAA report beside an AA one is read at AA. The
   comparison says what it compared on and what it left out, under its
   headline, and leaves out each report's own score. Scans are matched across
-  reports by the id a workflow gives them, else by their label and page (the
-  runner's numbering and the extension's ids don't count, so a scan added
-  before others shifts nothing), in order where several share one, and read
-  on the profiles each pair shares, so a report whose own scans check
-  different profiles compares in full with another like it. A scan whose
-  reports share no profile is left out of the comparison, which names it,
-  beside scans that compare. Reports none of whose scans in common share a
+  reports by their page, its path and query (so a staging run lines up with
+  live, and a scan added before others or relabelled shifts nothing), in
+  order where several are of one page, and read on the profiles each pair
+  shares, so a report whose own scans check different profiles compares in
+  full with another like it. A page only one report has is read on what the
+  others were compared on. A scan whose reports share no profile is left
+  out of the comparison, which names it, beside scans that compare; with
+  `--fail-on-failures` its failing instances fail the run, as with no
+  baseline. Reports none of whose scans in common share a
   profile are compared as before, and the comparison says, under its
   headline, that they were checked against different standards or WCAG
   levels, naming what each was checked against as its scans do ("WCAG 2.2

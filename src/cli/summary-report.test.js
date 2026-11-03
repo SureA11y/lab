@@ -246,7 +246,9 @@ describe('questions that lean', () => {
         const md = buildSummaryMarkdown({ payload: payload(), status: 'done', health: CLEAN, comparison: null, failing: 8 });
         assert.match(md, /\*\*Failing instances, and no baseline to compare with\*\*/);
         assert.equal(outcomeOf({ status: 'done', health: CLEAN, summary: null, failing: 0 }).key, 'done');
-        assert.equal(outcomeOf({ status: 'done', health: CLEAN, summary: { occurrences: { new: 0 } }, failing: 8 }).key, 'clean');
+        // Failing instances with a baseline come from scans it couldn't be compared with.
+        assert.equal(outcomeOf({ status: 'done', health: CLEAN, summary: { occurrences: { new: 0 } }, failing: 8, baseline: true }).key, 'notCompared');
+        assert.equal(outcomeOf({ status: 'done', health: CLEAN, summary: null, failing: 8, baseline: true }).headline, 'Failing instances the baseline could not be compared with');
     });
 });
 

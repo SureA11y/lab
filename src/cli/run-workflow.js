@@ -606,6 +606,20 @@ async function main(argv) {
 }
 
 /**
+ * This run's scans that the comparison left out (sharing no profile with
+ * the baseline's), as the payload has them: the comparison's own copies
+ * of the two reports keep the scans in order, those left out marked.
+ */
+function notComparedScansOf(comparison, payload) {
+    const compared = comparison && comparison.diff && comparison.diff.compared;
+    if (!Array.isArray(compared)) return [];
+    const current = compared[comparison.swapped ? 0 : 1];
+    const scans = Array.isArray(payload && payload.scans) ? payload.scans : [];
+    return (current && Array.isArray(current.scans) ? current.scans : [])
+        .map((s, i) => (s && s.notCompared ? scans[i] : null)).filter(Boolean);
+}
+
+/**
  * The baseline a run is compared with: { payload, label }, both null when
  * there is none (a first run with `auto` is not a failure), or { error }.
  */
@@ -784,11 +798,15 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
     // instance counts. So with a baseline that shares no profile with the
     // run, whose new instances are what was checked rather than the pages.
     const uncompared = !!comparison && !comparableSummary(comparison);
-    const failing = options.failOnFailures && (!baselinePayload || uncompared)
-        ? countInstances(findingsByOutcome(payload.scans).fail)
-        : null;
+    // Beside scans that compare, those left out of the comparison (sharing
+    // no profile with the baseline's) count as with no baseline too.
+    const notComparedScans = comparison && !uncompared ? notComparedScansOf(comparison, payload) : [];
+    const failing = !options.failOnFailures ? null
+        : (!baselinePayload || uncompared) ? countInstances(findingsByOutcome(payload.scans).fail)
+            : notComparedScans.length ? countInstances(findingsByOutcome(notComparedScans).fail)
+                : null;
     if (failing) {
-        console.log(`${uncompared ? 'Not compared' : 'No baseline'} ${failing} failing instance${failing === 1 ? '' : 's'} fail${failing === 1 ? 's' : ''} the run (--fail-on-failures)`);
+        console.log(`${baselinePayload ? 'Not compared' : 'No baseline'} ${failing} failing instance${failing === 1 ? '' : 's'} fail${failing === 1 ? 's' : ''} the run (--fail-on-failures)`);
     }
 
     fs.writeFileSync(

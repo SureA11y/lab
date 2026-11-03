@@ -222,4 +222,37 @@ describe('compareOnShared, scan by scan', () => {
         const { reports } = compareOnShared([a, b]);
         assert.deepEqual(reports[0].scans[0].metrics.coverageSummary.criteria.map((c) => c.sc), ['1.1.1']);
     });
+
+    test('scans match by page across hosts and labels: staging beside live', () => {
+        const a = reportOf('a', [scan('Home', [AA], [], { url: 'https://staging.example.com/?x=1' })]);
+        const b = reportOf('b', [scan('Start', [AA, ARIA], [ariaRow], { url: 'https://www.example.com/?x=1', id: 'checkout' })]);
+        const out = compareOnShared([a, b]);
+        assert.equal(out.mismatch, false);
+        assert.deepEqual(out.basis.comparedOn, [AA]);
+        assert.deepEqual(out.reports[1].scans[0].canonical.findings, []);
+    });
+
+    test('a page only one report has is read on what the others were compared on', () => {
+        const fail = row('wcag-1.4.3-contrast-minimum', '1.4.3', 'fail');
+        const a = reportOf('a', [scan('Home', [AA], [fail])]);
+        const b = reportOf('b', [scan('Home', [AA, ARIA], [fail, ariaRow]), scan('Products', [AA, ARIA], [fail, ariaRow])]);
+        const { reports, basis } = compareOnShared([a, b]);
+        assert.deepEqual(basis.leftOut, [ARIA]);
+        assert.deepEqual(reports[1].scans[1].canonical.findings.map((f) => f.ruleId), ['wcag-1.4.3-contrast-minimum']);
+        const diff = diffReports(a, b, { mode: 'evolution' });
+        assert.deepEqual(diff.rows.filter((r) => r.category === 'new').map((r) => r.ruleId), []);
+    });
+
+    test("a scan left out of the comparison keeps none of its margins", () => {
+        const a = reportOf('a', [scan('Home', [AA], []), scan('Products', [AA], [])]);
+        const b = reportOf('b', [scan('Home', [AA], []), scan('Products', [EN], [], { canonical: { findings: [], margins: [{ ruleId: 'target-size-minimum', value: 29 }] } })]);
+        const { reports } = compareOnShared([a, b]);
+        assert.deepEqual(reports[1].scans[1].canonical.margins, []);
+    });
+
+    test('a scan that names no profile (an older report) leaves the reports for their identities to say', () => {
+        const a = reportOf('a', [{ label: 'Home', url: 'https://example.com/home', canonical: { findings: [] } }]);
+        const b = reportOf('b', [scan('Home', [AA], [])]);
+        assert.equal(compareOnShared([a, b]).mismatch, null);
+    });
 });

@@ -195,7 +195,7 @@ export function sharedProfilesNoteHTML(doc) {
             }
         }
         if (notCompared.length) {
-            parts.push(esc(`Not compared, as its reports checked it against different things that share none: ${notCompared.map((s) => s.label).join(', ')}.`));
+            parts.push(esc(`Not compared, as its reports checked ${notCompared.length === 1 ? 'it' : 'them'} against different things that share none: ${[...new Set(notCompared.map((s) => s.label))].join(', ')}.`));
         }
         return `<p class="dash-caveat dash-caveat--info"><span class="dash-caveat-i" aria-hidden="true">i</span>
         <span>${parts.join(' ')}</span></p>`;
