@@ -191,11 +191,15 @@ export function sharedProfilesNoteHTML(doc) {
         if (comparedOn.length) {
             parts.push(esc(`Compared on ${comparedOn.map((p) => p.label).join(' + ')}, which every report checked.`));
             if (leftOut.length) {
-                parts.push(`${esc(`Left out, as not every report checked it: ${leftOut.map((p) => p.label).join(', ')}.`)} Each report's own score is left out too, since it was made from everything that report checked.`);
+                parts.push(`${esc(`Left out, as not every report checked it on the same pages: ${leftOut.map((p) => p.label).join(', ')}.`)} Each report's own score is left out too, since it was made from everything that report checked.`);
             }
         }
         if (notCompared.length) {
             parts.push(esc(`Not compared, as its reports checked ${notCompared.length === 1 ? 'it' : 'them'} against different things that share none: ${[...new Set(notCompared.map((s) => s.label))].join(', ')}.`));
+            // The score goes with it, as above; said once.
+            if (!(comparedOn.length && leftOut.length)) {
+                parts.push("Each report's own score is left out too, since it was made from everything that report checked.");
+            }
         }
         return `<p class="dash-caveat dash-caveat--info"><span class="dash-caveat-i" aria-hidden="true">i</span>
         <span>${parts.join(' ')}</span></p>`;

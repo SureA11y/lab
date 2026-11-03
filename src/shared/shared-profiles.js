@@ -349,7 +349,9 @@
                 ...(shared.wcag ? [{ id: wcagId(shared.wcag), label: wcagLabel(shared.wcag) }] : []),
                 ...shared.standards,
             ];
-            if (!on.length) { none.push({ key, label: scans[0].label || scans[0].url || key }); continue; }
+            // Named as the latest report names it: the run being read.
+            const latest = scans[scans.length - 1];
+            if (!on.length) { none.push({ key, label: latest.label || latest.url || key }); continue; }
             comparable += 1;
             plans.set(key, shared);
             pushOnce(comparedOn, on);
@@ -408,7 +410,7 @@
         const parts = [];
         if (on.length) {
             parts.push(`Compared on ${on.join(' + ')}, which every report checked.`
-                + (out.length ? ` Left out, as not every report checked it: ${out.join(', ')}.` : ''));
+                + (out.length ? ` Left out, as not every report checked it on the same pages: ${out.join(', ')}.` : ''));
         }
         if (not.length) parts.push(`Not compared, as its reports checked ${not.length === 1 ? 'it' : 'them'} against different things that share none: ${[...new Set(not)].join(', ')}.`);
         return parts.join(' ');

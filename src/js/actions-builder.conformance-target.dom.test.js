@@ -232,5 +232,10 @@ describe('the profile field, folded', () => {
     test('a variable shows on the line', () => {
         const { actionsEl } = newBuilder([{ type: 'a11yScan', profile: '{var:profiles}' }]);
         assert.equal(field(actionsEl).querySelector('.profiles-input__summary').textContent, 'This scan checks the profiles {var:profiles} names.');
+        // Text that names no variable is not said to name profiles.
+        const tokenInput = field(actionsEl).querySelector('.select-token-input');
+        tokenInput.value = 'wcag22-aa';
+        tokenInput.dispatchEvent(new win.Event('input', { bubbles: true }));
+        assert.equal(field(actionsEl).querySelector('.profiles-input__summary').textContent, 'This scan checks the profiles a variable names.');
     });
 });
