@@ -5,7 +5,7 @@ import {createConfigIO} from './config-io.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
 import {setupModeSwitch} from './tabs-ui.js';
 import {collectScanTags, makeTagFilter, scanMatchesTagFilter, applyScanTagsEdit} from './scan-tag-filter.js';
-import {makeProfileFilter, scanMatchesProfileFilter} from './scan-profile-filter.js';
+import {makeProfileFilter, scanMatchesProfileFilter, keptProfileKeys, isProfileFilterActive} from './scan-profile-filter.js';
 import {createAdvancedDialog} from './advanced-dialog.js';
 import {setupRulesCatalogDialog} from './rules-catalog-dialog.module.js';
 import {installInPageLinks} from './in-page-links.js';
@@ -154,6 +154,7 @@ function storeActiveMode(mode) {
         set activeProfileFilter(value) { activeProfileFilter = value; },
         get activeProfileSelection() { return activeProfileSelection; },
         set activeProfileSelection(value) { activeProfileSelection = value; },
+        get viewScan() { return viewScan; },
         get applyScanPresentationMode() { return applyScanPresentationMode; },
         get applyScanSort() { return applyScanSort; },
         get clearActiveBucketState() { return clearActiveBucketState; },
@@ -365,6 +366,34 @@ function storeActiveMode(mode) {
 
     function scanMatchesActiveFilters(scan) {
         return scanMatchesTagFilter(scan, activeTagFilter) && scanMatchesProfileFilter(scan, activeProfileFilter);
+    }
+
+    // A scan as the Profiles selector shows it: read on the profiles of it
+    // still on (shared/shared-profiles.js narrowScanToProfiles), the same
+    // object while they all are. The view, its counts and every export read
+    // scans through it. Made once per selection; whether the scan is included
+    // in the report is read from the scan itself, which the Exclude toggle
+    // changes.
+    let viewScanCache = new WeakMap();
+    let viewScanCacheKey = '';
+    function viewScan(scan) {
+        if (!scan || typeof scan !== 'object' || !isProfileFilterActive(activeProfileFilter)) return scan;
+        const key = [...activeProfileFilter.off].sort().join('\u0001');
+        if (key !== viewScanCacheKey) {
+            viewScanCache = new WeakMap();
+            viewScanCacheKey = key;
+        }
+        let out = viewScanCache.get(scan);
+        if (!out) {
+            const api = globalThis.A11Y_SHARED_PROFILES;
+            const kept = keptProfileKeys(scan, activeProfileFilter);
+            out = api && typeof api.narrowScanToProfiles === 'function' && kept.length
+                ? api.narrowScanToProfiles(scan, kept)
+                : scan;
+            viewScanCache.set(scan, out);
+        }
+        if (out !== scan) out.includedInReport = scan.includedInReport;
+        return out;
     }
     const screenshots = $('#screenshots');
     const screenshotsContainer = $('#screenshots-container');
@@ -1554,7 +1583,7 @@ function storeActiveMode(mode) {
 
     function getIncludedScans(payload) {
         const scans = Array.isArray(payload?.scans) ? payload.scans : [];
-        return scans.filter(isScanIncludedInReport);
+        return scans.filter(isScanIncludedInReport).map(viewScan);
     }
 
     function recomputeDerivedReportData(payload) {

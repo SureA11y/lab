@@ -3,7 +3,7 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { compareOnShared, basisSentence } = require('./shared-profiles.js');
+const { compareOnShared, basisSentence, narrowScanToProfiles } = require('./shared-profiles.js');
 const { diffReports } = require('./report-diff.js');
 const { diffReportSeries } = require('./report-multi-diff.js');
 
@@ -283,5 +283,57 @@ describe('compareOnShared, scan by scan', () => {
         const a = reportOf('a', [{ label: 'Home', url: 'https://example.com/home', canonical: { findings: [] } }]);
         const b = reportOf('b', [scan('Home', [AA], [])]);
         assert.equal(compareOnShared([a, b]).mismatch, null);
+    });
+});
+
+describe('narrowScanToProfiles', () => {
+    const scanOf = (profiles, findings) => ({
+        ...report('a', profiles, findings).scans[0],
+        summary: { failCount: 2, occurrenceCount: 2, label: 'kept' },
+        metrics: { a11ySummary: { scores: { avgPageAccessibility: 80 }, coverageSummary: { criteria: [] } }, coverageSummary: { criteria: [] } },
+    });
+    const findings = () => [
+        row('wcag-4.1.2-aria-validity', '4.1.2', 'cantTell', ['wcag22-aa']),
+        row('wai-aria-1.2-supported-attributes', null, 'fail', ['wai-aria-1.2']),
+        row('en-9.1.1.1', '1.1.1', 'fail', ['en301549-v4.1.1']),
+        { ruleId: 'aria-allowed-attr', outcome: 'fail', meta: { atomic: true }, wcag: { sc: ['4.1.2'] },
+            verdicts: { 'wcag22-aa': 'cantTell', 'wai-aria-1.2': 'fail' },
+            occurrences: [occ('#g', 'fail', { 'wcag22-aa': 'cantTell', 'wai-aria-1.2': 'fail' })] },
+        { ruleId: 'region', outcome: 'cantTell', bestPractice: true, occurrences: [] },
+    ];
+
+    test('WAI-ARIA and EN 301 549 off: the WCAG rows, and what WCAG makes of each rule', () => {
+        const scan = scanOf([AA, ARIA, EN], findings());
+        const out = narrowScanToProfiles(scan, ['wcag22-aa']);
+        const rows = out.canonical.findings;
+        assert.deepEqual(rows.map((f) => f.ruleId), ['wcag-4.1.2-aria-validity', 'aria-allowed-attr', 'region']);
+        const rule = rows.find((f) => f.ruleId === 'aria-allowed-attr');
+        assert.equal(rule.outcome, 'cantTell');
+        assert.equal(rule.occurrences[0].occurrenceOutcome, 'cantTell');
+        assert.deepEqual(out.profile, AA);
+        assert.equal(out.profiles, undefined);
+        assert.deepEqual(out.profilesLeftOut, [ARIA, EN]);
+        // Counted again, and its score left out.
+        assert.deepEqual(out.summary, { label: 'kept' });
+        assert.equal(out.metrics.a11ySummary.scores, undefined);
+        assert.equal(out.metrics.a11ySummary.scoreLeftOut, true);
+        assert.ok(out.metrics.coverageSummary, 'WCAG on keeps its coverage');
+        // The scan as loaded is not changed.
+        assert.equal(scan.canonical.findings.length, 5);
+    });
+
+    test('WCAG off: its coverage goes with it, and the standards kept stay several', () => {
+        const out = narrowScanToProfiles(scanOf([AA, ARIA, EN], findings()), ['wai-aria-1.2', 'en301549-v4.1.1']);
+        assert.deepEqual(out.canonical.findings.map((f) => f.ruleId),
+            ['wai-aria-1.2-supported-attributes', 'en-9.1.1.1', 'aria-allowed-attr', 'region']);
+        assert.deepEqual(out.profiles, [ARIA, EN]);
+        assert.equal(out.metrics.coverageSummary, undefined);
+        assert.equal(out.metrics.a11ySummary.coverageSummary, undefined);
+    });
+
+    test('a scan with all its profiles on, or none, is the same scan', () => {
+        const scan = scanOf([AA, ARIA], findings());
+        assert.equal(narrowScanToProfiles(scan, ['wcag22-aa', 'wai-aria-1.2', 'rgaa']), scan);
+        assert.equal(narrowScanToProfiles(scan, ['rgaa']), scan);
     });
 });
