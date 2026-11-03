@@ -452,9 +452,14 @@ describe('a11y-labs-engine: rule catalog metadata', () => {
         // Every other rule in the catalog is there.
         const catalog = getRulesCatalog().rules;
         const optIn = catalog.filter((r) => (r.tags || []).includes('rgaa')).map((r) => r.ruleId);
+        // A pack's own rules run only under its profile (WAI-ARIA's, say).
+        const packKeys = require('../standard-packs').installedPacks()
+            .map((p) => p && p.standard && p.standard.key).filter(Boolean);
+        const packOnly = catalog.filter((r) => (r.tags || []).some((t) => packKeys.includes(t)) && !(r.tags || []).some((t) => /^wcag/.test(t)))
+            .map((r) => r.ruleId).filter((id) => !optIn.includes(id));
         if (CORE_HAS_GATED_RULES) assert.ok(optIn.includes('doctype-present'));
         for (const id of optIn) assert.equal(ids.has(id), false, `${id} is opt-in and should not be in a default run`);
-        assert.equal(rules.length, catalog.length - optIn.length);
+        assert.equal(rules.length, catalog.length - optIn.length - packOnly.length);
     });
 });
 

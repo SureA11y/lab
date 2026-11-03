@@ -90,7 +90,7 @@ function registerProfiles(standards, {
     if (Array.isArray(options)) {
         for (const std of standards) {
             for (const p of std.profiles) {
-                if (added.includes(p.id) && !options.some((o) => o && o.value === p.id)) options.push({ value: p.id, label: p.label });
+                if (added.includes(p.id) && !options.some((o) => o && o.value === p.id)) options.push({ value: p.id, label: p.label, pack: true });
             }
         }
     }

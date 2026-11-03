@@ -65,5 +65,5 @@ test('a pack\'s profiles become scan targets and step options; ones the lab know
         { profiles: [{ id: 'demo-2.0', label: 'Demo Standard 2.0' }] },
     ], { targets, actions });
     assert.deepEqual(out, ['demo-2.0']);
-    assert.deepEqual(actions.a11yScan.fields.profile.options, [{ value: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' }, { value: 'demo-2.0', label: 'Demo Standard 2.0' }]);
+    assert.deepEqual(actions.a11yScan.fields.profile.options, [{ value: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' }, { value: 'demo-2.0', label: 'Demo Standard 2.0', pack: true }]);
 });
