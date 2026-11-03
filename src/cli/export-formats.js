@@ -68,10 +68,11 @@ function scanFileStem(entry, index, total) {
     return name ? `${number}-${name}` : number;
 }
 
-// Path and query, as the lab's own run comparison matches pages: a run
-// against staging can then be compared with a baseline taken elsewhere.
+// Path and query, and a hash that routes a single-page app (#/cart), as
+// the lab's own run comparison matches pages: a run against staging can
+// then be compared with a baseline taken elsewhere.
 function pagePath(url) {
-    try { const u = new URL(url); return u.pathname + u.search; }
+    try { const u = new URL(url); return u.pathname + u.search + (/^#!?\//.test(u.hash) ? u.hash : ''); }
     catch { return String(url || ''); }
 }
 

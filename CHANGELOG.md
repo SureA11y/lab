@@ -100,9 +100,11 @@ The first public release.
   2.2 AA, and a WCAG 2.2 AAA report beside an AA one is read at AA. The
   comparison says what it compared on and what it left out, under its
   headline, and leaves out each report's own score. Scans are matched across
-  reports by their page, its path and query (so a staging run lines up with
-  live, and a scan added before others or relabelled shifts nothing), in
-  order where several are of one page, and read on the profiles each pair
+  reports by their page: its path and query, and a hash that routes a
+  single-page app (`#/cart`, `#!/cart`), so a staging run lines up with
+  live, and a scan added before others or relabelled shifts nothing. Several
+  scans of one page pair by the profiles they checked, then in order, and
+  are read on the profiles each pair
   shares, so a report whose own scans check different profiles compares in
   full with another like it. A page only one report has is read on what the
   others were compared on. A scan whose reports share no profile is left

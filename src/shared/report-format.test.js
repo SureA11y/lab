@@ -163,4 +163,15 @@ describe('pagePath', () => {
         assert.equal(format.pagePath('not a url'), 'not a url');
         assert.equal(format.pagePath(undefined), '');
     });
+
+    test('keeps a hash that routes a single-page app, and drops one that is a place in the page', () => {
+        assert.equal(format.pagePath('https://example.com/app#/cart'), '/app#/cart');
+        assert.equal(format.pagePath('https://example.com/app#!/cart?step=2'), '/app#!/cart?step=2');
+        assert.notEqual(format.pagePath('https://example.com/app#/cart'), format.pagePath('https://example.com/app#/checkout'));
+        assert.equal(format.pagePath('https://example.com/app#main'), '/app');
+        // So an element on one route is not the same occurrence as one on another.
+        const occ = (pageUrl) => format.occurrenceIdOf('r', { pageUrl, target: ['#buy'] });
+        assert.notEqual(occ('https://example.com/app#/cart'), occ('https://example.com/app#/checkout'));
+        assert.equal(occ('https://example.com/app#top'), occ('https://example.com/app'));
+    });
 });

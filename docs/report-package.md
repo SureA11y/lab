@@ -110,7 +110,8 @@ the lab. It is strict on what such a reader relies on and open on the rest
 - Each occurrence has an `occurrenceId` (`occ_` and 14 hex digits): the same
   issue on the same element of the same page has the same id in every
   report, whatever the site's origin, so a staging run and a live one name it
-  alike. It is a hash of the rule, the page's path and query, and the
+  alike. It is a hash of the rule, the page's path and query (with a hash
+  that routes a single-page app, such as `#/cart`), and the
   element's target, which is what comparisons match occurrences on, and
   compared occurrences carry it (in `diff.json` too). Its limit: an element
   whose selector changes (a renamed class) gets a new id, and reads as one
