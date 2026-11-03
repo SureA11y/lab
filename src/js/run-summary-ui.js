@@ -8,7 +8,7 @@ import {optInRulesLabel} from './report-fields.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * (buildScanTagChipsHtml, buildSummaryControlsHtml, isScanIncludedInReport, resultsState, runResultText, runResultToStatus, scanMatchesActiveTagFilter, summaryEl).
+ * (buildScanTagChipsHtml, buildSummaryControlsHtml, isScanIncludedInReport, resultsState, runResultText, runResultToStatus, scanMatchesActiveFilters, summaryEl).
  */
 export function createRunSummaryUi(app) {
     /** Normalize scans list from final payload */
@@ -61,7 +61,7 @@ export function createRunSummaryUi(app) {
 
         const liClasses = [
             isIncluded ? '' : 'scan-summary-excluded',
-            app.scanMatchesActiveTagFilter(scan) ? '' : 'scan-filtered-out',
+            app.scanMatchesActiveFilters(scan) ? '' : 'scan-filtered-out',
             isFailureFreeScan(scan) ? 'scan-no-failures' : '',
         ].filter(Boolean).join(' ');
 

@@ -5,6 +5,7 @@ import {createConfigIO} from './config-io.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
 import {setupModeSwitch} from './tabs-ui.js';
 import {collectScanTags, makeTagFilter, scanMatchesTagFilter, applyScanTagsEdit} from './scan-tag-filter.js';
+import {makeProfileFilter, scanMatchesProfileFilter} from './scan-profile-filter.js';
 import {createAdvancedDialog} from './advanced-dialog.js';
 import {setupRulesCatalogDialog} from './rules-catalog-dialog.module.js';
 import {installInPageLinks} from './in-page-links.js';
@@ -127,7 +128,7 @@ function storeActiveMode(mode) {
         set runResultText(value) { runResultText = value; },
         get runResultToStatus() { return runResultToStatus; },
         set runResultToStatus(value) { runResultToStatus = value; },
-        get scanMatchesActiveTagFilter() { return scanMatchesActiveTagFilter; },
+        get scanMatchesActiveFilters() { return scanMatchesActiveFilters; },
         get appendConfigFileEl() { return appendConfigFileEl; },
         get cancelButton() { return cancelButton; },
         get configFileEl() { return configFileEl; },
@@ -149,6 +150,10 @@ function storeActiveMode(mode) {
         set activeTagFilter(value) { activeTagFilter = value; },
         get activeTagSelection() { return activeTagSelection; },
         set activeTagSelection(value) { activeTagSelection = value; },
+        get activeProfileFilter() { return activeProfileFilter; },
+        set activeProfileFilter(value) { activeProfileFilter = value; },
+        get activeProfileSelection() { return activeProfileSelection; },
+        set activeProfileSelection(value) { activeProfileSelection = value; },
         get applyScanPresentationMode() { return applyScanPresentationMode; },
         get applyScanSort() { return applyScanSort; },
         get clearActiveBucketState() { return clearActiveBucketState; },
@@ -182,6 +187,7 @@ function storeActiveMode(mode) {
         get runSummary() { return runSummary; },
         get runSummaryUi() { return runSummaryUi; },
         get scanTagFilterEl() { return scanTagFilterEl; },
+        get scanProfileFilterEl() { return scanProfileFilterEl; },
         get scenarioInput() { return scenarioInput; },
         get screenshotsContainer() { return screenshotsContainer; },
         get screenshotsUi() { return screenshotsUi; },
@@ -332,6 +338,7 @@ function storeActiveMode(mode) {
     const results = $('#results');
     const resultsContainer = $('#results-container');
     const scanTagFilterEl = $('#scan-tag-filter');
+    const scanProfileFilterEl = $('#scan-profile-filter');
     const runComparisonEl = $('#run-comparison');
     const compareContextSeg = $('#compare-context-seg');
     const compareContextDesc = $('#compare-context-desc');
@@ -351,8 +358,13 @@ function storeActiveMode(mode) {
     let activeTagSelection = { tags: [], untagged: false, mode: 'or' };
     let activeTagFilter = makeTagFilter(activeTagSelection);
 
-    function scanMatchesActiveTagFilter(scan) {
-        return scanMatchesTagFilter(scan, activeTagFilter);
+    // The profile filter beside it: the keys of the profiles picked (any of
+    // them matches). A scan is shown when it matches both filters.
+    let activeProfileSelection = [];
+    let activeProfileFilter = makeProfileFilter(activeProfileSelection);
+
+    function scanMatchesActiveFilters(scan) {
+        return scanMatchesTagFilter(scan, activeTagFilter) && scanMatchesProfileFilter(scan, activeProfileFilter);
     }
     const screenshots = $('#screenshots');
     const screenshotsContainer = $('#screenshots-container');
@@ -563,6 +575,7 @@ function storeActiveMode(mode) {
             payload: bucketFor(mode).payload,
             grouping: groupingUi.getSelectedBuiltInGroupingId(mode),
             tags: JSON.stringify(activeTagSelection),
+            profiles: JSON.stringify(activeProfileSelection),
             sort: activeScanSort,
             summary: lastSummaryReportValue,
         };
@@ -573,7 +586,7 @@ function storeActiveMode(mode) {
     }
 
     function resultsSlots() {
-        return new Set([reportDataContainer, scanTagFilterEl, summaryEl, results,
+        return new Set([reportDataContainer, scanTagFilterEl, scanProfileFilterEl, summaryEl, results,
             resultsContainer.querySelector(':scope > .results-header-row')]);
     }
 
@@ -600,6 +613,8 @@ function storeActiveMode(mode) {
             reportData: take(reportDataContainer),
             tagFilter: take(scanTagFilterEl),
             tagFilterHidden: scanTagFilterEl.hidden,
+            profileFilter: take(scanProfileFilterEl),
+            profileFilterHidden: scanProfileFilterEl.hidden,
             summary: take(summaryEl),
             results: take(results),
             screenshots: take(screenshots),
@@ -632,6 +647,8 @@ function storeActiveMode(mode) {
         reportDataContainer.append(parked.reportData);
         scanTagFilterEl.append(parked.tagFilter);
         scanTagFilterEl.hidden = parked.tagFilterHidden;
+        scanProfileFilterEl.append(parked.profileFilter);
+        scanProfileFilterEl.hidden = parked.profileFilterHidden;
         summaryEl.append(parked.summary);
         results.append(parked.results);
         screenshots.append(parked.screenshots);
@@ -1007,8 +1024,8 @@ function storeActiveMode(mode) {
 
         // The filter bar re-derives its chips from the scans and prunes any
         // selection that no longer exists, so an edited-away tag drops out.
-        reportView.renderScanTagFilter(payload);
-        reportView.applyScanTagFilterVisibility(payload.scans);
+        reportView.renderScanFilters(payload);
+        reportView.applyScanFilterVisibility(payload.scans);
         applyScanSort();
 
         const label = scan.label || scan.id || 'Scan';
@@ -1526,13 +1543,13 @@ function storeActiveMode(mode) {
     }
 
     // A scan counts toward the aggregate (global findings, metrics, summary
-    // totals) when it is BOTH manually included AND matches the active tag
-    // filter. The two dimensions are independent: the manual Exclude toggle
-    // never hides a scan from the view, while the tag filter never changes a
+    // totals) when it is BOTH manually included AND matches the active tag and
+    // profile filters. The two are independent: the manual Exclude toggle
+    // never hides a scan from the view, while the filters never change a
     // scan's manual include state - it only narrows which scans the view and
     // the aggregate consider.
     function isScanIncludedInReport(scan) {
-        return !!scan && scan.includedInReport !== false && scanMatchesActiveTagFilter(scan);
+        return !!scan && scan.includedInReport !== false && scanMatchesActiveFilters(scan);
     }
 
     function getIncludedScans(payload) {
@@ -2051,7 +2068,7 @@ function storeActiveMode(mode) {
     // ---- Scan sorting ----
     // Sort is a stable ordering of every scan card, applied by the shared module
     // that reads the data-sort-* baked onto each card. It is independent of the
-    // tag filter and include state, which only change visibility. The same
+    // tag and profile filters and the include state, which only change visibility. The same
     // module runs in exported reports.
     let activeScanSort = 'default';
 

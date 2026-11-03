@@ -779,6 +779,33 @@ button.src-dialog-close:focus-visible {
     border-color: var(--warn);
 }
 
+/* A finding's criteria, grouped by standard (a11y-ui.rendering.js
+   buildGroupedTagsHtml): the standard's name once, then pills holding only
+   the numbers, which wrap within the Criteria column. A pill may break inside
+   too, rather than run out of a narrow column. */
+.crit-groups {
+    display: grid;
+    gap: .4rem;
+}
+.crit-group__name {
+    display: block;
+    margin-bottom: .2rem;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+.crit-group__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+}
+.crit-group .tag-pill {
+    margin: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    padding: .15rem .45rem;
+}
+
+
 .no-results {
     padding: 1.25rem 1rem .5rem;
     font-size: var(--fs-base);

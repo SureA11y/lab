@@ -12,7 +12,7 @@ In the run workflow and open report tabs, the report's download button:
 | Option | What you get |
 |---|---|
 | **Download report** (zip) | The whole report: `<name>.html`, `styles/report.css`, `images/`, `<name>.a11y-report.json` and `<name>.a11y-config.json`. Open the HTML in any browser; load the zip in the app (open report, compare). |
-| Download all scans (zip) | The same, with the scans the tag filter hides. |
+| Download all scans (zip) | The same, with the scans the tag and profile filters hide. |
 | Download as a single file | One `.html` with its styles and pictures inline. Above 50 MB it asks first, as a browser is slow to open a file that large, and offers the zip instead. |
 | Conformance report | An Accessibility Conformance Report in the layout of the VPAT 2.5 (WCAG and EU edition), as one `.html`: a table per WCAG level and the EN 301 549 chapters, drafted from the report. The draft never says "Supports": a failure is "Does Not Support", nothing to apply to is "Not Applicable", and the rest "Not Evaluated" until a person decides ([design](design/conformance-report-design.md)). |
 | Conformance report (Word) | The same report as a `.docx`, for teams that edit and sign it in Word: headings for its parts, a caption before every table, header rows that repeat on every page. |

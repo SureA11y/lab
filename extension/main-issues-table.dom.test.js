@@ -561,6 +561,31 @@ describe('RGAA criteria next to the WCAG criteria', () => {
     });
 });
 
+describe('criteria grouped by standard', () => {
+    test('names each standard once, over pills holding only the numbers', () => {
+        const scan = scanWith(['img.hero']);
+        Object.assign(scan.canonical.findings[0], {
+            wcag: {sc: ['1.1.1', '2.5.8']},
+            en301549: [
+                {clause: '9.1.1.1', versions: ['V3.2.1', 'V4.1.1']},
+                {clause: '9.2.5.8', versions: ['V4.1.1']}
+            ]
+        });
+        render(scan);
+
+        const groups = [...outEl.querySelectorAll('.crit-group')].map((g) => ({
+            name: g.querySelector('.crit-group__name').textContent,
+            hiddenName: g.querySelector('.crit-group__name').getAttribute('aria-hidden'),
+            shown: [...g.querySelectorAll('.tag-pill')].map((el) => el.lastChild.textContent),
+            heard: [...g.querySelectorAll('.tag-pill .visually-hidden')].map((el) => el.textContent)
+        }));
+        assert.deepEqual(groups, [
+            {name: 'WCAG', hiddenName: 'true', shown: ['1.1.1', '2.5.8'], heard: ['WCAG ', 'WCAG ']},
+            {name: 'EN 301 549', hiddenName: 'true', shown: ['9.1.1.1', '9.2.5.8 (V4.1.1)'], heard: ['EN 301 549 ', 'EN 301 549 ']}
+        ]);
+    });
+});
+
 describe('notes, margins and details in the panel', () => {
     const margin = (o) => ({ruleId: 'contrast-minimum', title: 'Text contrast', unit: 'ratio', limit: 'min', threshold: 4.5, value: 4.52, headroom: 0.02, selector: 'p.lead', ...o});
 
