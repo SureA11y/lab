@@ -3138,10 +3138,14 @@ a.engine-brand {
 .scan-sort { display: inline-flex; align-items: center; gap: var(--space-2); }
 .scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-mono); }
 #scan-sort-select {
+    /* The height of the buttons beside it (Hide excluded): 36px, the DS sm
+       size every button has. */
+    box-sizing: border-box;
+    min-height: 36px;
     font-family: var(--font-mono);
     font-weight: 600;
     font-size: var(--fs-sm);
-    padding: 4px var(--space-3);
+    padding: 0 var(--space-3);
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-strong);
     background: var(--surface-2);
