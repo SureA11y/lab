@@ -9,6 +9,7 @@ const path = require('path');
 const { isBatch, checkBatch } = require('./batch-spec');
 const { main, worstExit, batchComparison } = require('./run-workflow');
 const { EXIT } = require('./baseline');
+const { baselineFilePath } = require('./run-store');
 
 const SPEC = {
     type: 'a11y-run-spec',
@@ -109,6 +110,7 @@ describe('worstExit', () => {
         assert.equal(worstExit([EXIT.LIKELY_FAILURES, EXIT.RUN_FAILED]), EXIT.RUN_FAILED);
         assert.equal(worstExit([EXIT.OK, EXIT.CANCELLED]), EXIT.CANCELLED);
         assert.equal(worstExit([EXIT.OK]), EXIT.OK);
+        assert.equal(worstExit([EXIT.OK, EXIT.BAD_USAGE, EXIT.NEW_INSTANCES]), EXIT.BAD_USAGE);
     });
 });
 
@@ -146,6 +148,27 @@ describe('run-workflow.js with a batch', () => {
         const { code, out } = await run(config({ rows: [{ name: 'A' }, { name: 'A' }], enabled: true }), ['--check', '--no-batch']);
         assert.equal(code, EXIT.OK);
         assert.match(out.join('\n'), /ok, 1 step/);
+    });
+
+    test("a row whose baseline can't be read is not run, and the batch exits 2", async () => {
+        const store = fs.mkdtempSync(path.join(os.tmpdir(), 'batch-store-'));
+        try {
+            const doc = batchSpec();
+            for (const r of checkBatch(doc, { env: null }).batch.runs) {
+                const file = baselineFilePath('rel', r.spec, { storeRoot: store });
+                fs.mkdirSync(path.dirname(file), { recursive: true });
+                fs.writeFileSync(file, '{ truncated');
+            }
+            const { code, out } = await run(doc, ['--store', store, '--baseline', '@rel', '--out', path.join(store, 'out')]);
+            assert.equal(code, EXIT.BAD_USAGE);
+            const text = out.join('\n');
+            assert.match(text, /Error: Home: .*; not run/);
+            assert.match(text, /Home\s+not run/);
+            const manifest = JSON.parse(fs.readFileSync(path.join(store, 'out', 'batch.json'), 'utf8'));
+            assert.deepEqual(manifest.items.map((i) => [i.status, i.exitCode]), [['error', EXIT.BAD_USAGE], ['error', EXIT.BAD_USAGE]]);
+        } finally {
+            fs.rmSync(store, { recursive: true, force: true });
+        }
     });
 
     test('refuses what does not apply to a batch, before any browser opens', async () => {

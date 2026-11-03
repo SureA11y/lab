@@ -397,6 +397,16 @@ test('the target is what the scans checked against, unless the options say other
     assert.equal(buildConformanceReport(withScans([{ wcag: { version: '2.2', level: 'AAA' } }]), { target: { level: 'A' } }).target.level, 'A');
 });
 
+test('a report whose scans checked no WCAG profile says what they checked, not a WCAG target', () => {
+    const withScans = (scans) => ({ ...report, scans: scans.map((s) => ({ ...report.scans[0], ...s })) });
+    const aria = { wcag: { version: '2.2', level: 'AA' }, profile: { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' } };
+    const methods = buildConformanceReport(withScans([aria])).evaluation.methodsText;
+    assert.match(methods, /^Automated checks with surea11y 1\.14\.1 against WAI-ARIA 1\.2, not against WCAG\./);
+    assert.doesNotMatch(methods, /against WCAG 2\.2 Level AA/);
+    const aa = { wcag: { version: '2.2', level: 'AA' }, profile: { id: 'wcag22-aa', label: 'WCAG 2.2 AA' } };
+    assert.match(buildConformanceReport(withScans([aa, aria])).evaluation.methodsText, /^Automated checks with surea11y 1\.14\.1 against WCAG 2\.2 Level AA\./);
+});
+
 test('the target does not depend on the order of the scans, and a WAI-ARIA scan says nothing of WCAG', () => {
     const withScans = (scans) => ({ ...report, scans: scans.map((s) => ({ ...report.scans[0], ...s })) });
     const en3 = { wcag: { version: '2.1', level: 'AA' }, profile: { id: 'en301549-v3.2.1', label: 'EN 301 549 V3.2.1' } };
