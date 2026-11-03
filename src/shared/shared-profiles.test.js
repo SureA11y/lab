@@ -195,6 +195,16 @@ describe('compareOnShared, scan by scan', () => {
         assert.deepEqual(reports[0].scans[0].canonical.findings, []);
     });
 
+    test('a skipped scan keeps its place among the scans of its page', () => {
+        const enRow = row('en301549-V4.1.1-9.1.1.1', null, 'fail', ['en301549-v4.1.1']);
+        const a = reportOf('a', [scan('P', [AA], [], { skipped: true }), scan('P', [EN], [])]);
+        const b = reportOf('b', [scan('P', [AA], []), scan('P', [EN], [enRow])]);
+        const out = compareOnShared([a, b]);
+        assert.equal(out.mismatch, false);
+        assert.equal(out.basis, null);
+        assert.equal(diffReports(a, b, { mode: 'evolution' }).rows.filter((r) => r.category === 'new').length, 1);
+    });
+
     test('beside scans that compare, one sharing nothing is left out, and the reports are not mismatched', () => {
         const fail = row('wcag-1.4.3-contrast-minimum', '1.4.3', 'fail');
         const a = reportOf('a', [scan('Home', [AA], [fail]), scan('Products', [AA], [fail])]);

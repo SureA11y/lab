@@ -342,6 +342,16 @@ test('a report scanned under a standard\'s profile is drafted from the criteria 
     assert.match(rowOf(acr, 'wcag-aa', '2.4.7').remarks, /need a person to confirm this on Home/);
 });
 
+test('an element counts once per criterion, however many findings and scans of its page name it', () => {
+    // A WCAG finding and the EN 301 549 requirement restating it, in a scan
+    // of both, and a second scan of the page: one element.
+    const clause = { ...finding('1.1.1', 'fail'), ruleId: 'en-9.1.1.1', wcag: { sc: [], scNormative: [] },
+        standards: { normativeMappings: [{ standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.1.1', wcagSc: ['1.1.1'] }] } };
+    const twice = { ...report, scans: [scan('Home', [finding('1.1.1', 'fail'), clause], []), scan('Home', [finding('1.1.1', 'fail')], [])] };
+    const acr = buildConformanceReport(twice);
+    assert.equal(rowOf(acr, 'wcag-a', '1.1.1').remarks, 'Automated checks found 1 failing element, on Home.');
+});
+
 test('the target is what the scans checked against, unless the options say otherwise', () => {
     const withScans = (scans) => ({ ...report, scans: scans.map((s) => ({ ...report.scans[0], ...s })) });
     // A WCAG 2.2 AAA scan beside a WAI-ARIA one: a WCAG 2.2 AAA report.

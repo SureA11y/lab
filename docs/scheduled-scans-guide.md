@@ -658,8 +658,9 @@ scenario that has never run has nothing to compare with. The next run will.
 To fail such a run when it has failures, add `--fail-on-failures`.
 
 **"the baseline is newer than this run"** — you compared against a run that
-happened later. The comparison still works, but "new" and "fixed" are the other
-way around from what you probably meant.
+happened later, or one whose clock or timestamp says so. It is still read as the
+baseline: "new" means found in this run and not in the baseline, and the exit
+code gates on that.
 
 **Exit 4, "1 scan skipped"** — a page could not be scanned: the address gave
 something that is not a web page (a PDF, JSON, an image). The run reports zero
