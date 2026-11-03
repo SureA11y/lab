@@ -61,7 +61,10 @@
         let wcag = null;
         let known = true;
         const standards = new Map();
-        for (const p of reportScan.scanProfiles(scan)) {
+        const profiles = reportScan.scanProfiles(scan);
+        // A scan that names no profile (an older report) can't be read.
+        if (!profiles.length) known = false;
+        for (const p of profiles) {
             const level = levelOfId(p.id);
             if (level) wcag = level;
             else if (p.id) standards.set(p.id, p.label || p.id);
@@ -106,17 +109,16 @@
         return { wcag, standards, leftOut, same };
     }
 
-    // An id the run made up rather than one the workflow gave: the runner
-    // numbers scans in order (scan-3), the extension gives each a random one.
-    const MADE_UP_ID = /^(scan-\d+|manual-scan-.+)$/;
-
-    // What matches a scan across reports: an id the workflow gave it, else
-    // its label and page, so a scan added before others doesn't shift what
-    // they match.
+    // What matches a scan across reports: its page, by path and query, so a
+    // run on another host (staging beside live) lines up with it, and a scan
+    // added before others or relabelled shifts nothing. Scans of one page are
+    // matched in order (scanKeys). A scan's id is the run's own numbering
+    // (scan-3), or the extension's, so it says nothing of the page.
     function scanKey(scan) {
-        const id = typeof scan.id === 'string' && scan.id.trim() ? scan.id.trim() : '';
-        if (id && !MADE_UP_ID.test(id)) return `id:${id}`;
-        return `at:${scan.label || ''}|${scan.url || ''}`;
+        const url = String(scan.url || '');
+        let page = url;
+        try { const u = new URL(url); page = u.pathname + u.search; } catch { /* not a URL: as it is */ }
+        return `at:${page}`;
     }
 
     // The key of each of a report's scans, in order (null for a skipped one).
@@ -234,7 +236,7 @@
     // A scan left out of the comparison: its findings aren't compared.
     function excludeScan(scan) {
         const out = { ...scan, notCompared: true };
-        if (scan.canonical && typeof scan.canonical === 'object') out.canonical = { ...scan.canonical, findings: [] };
+        if (scan.canonical && typeof scan.canonical === 'object') out.canonical = { ...scan.canonical, findings: [], margins: [] };
         return out;
     }
 
@@ -350,6 +352,26 @@
             pushOnce(comparedOn, on);
             pushOnce(leftOut, shared.leftOut);
         }
+        // A scan only some reports have is read on what the others were
+        // compared on: the profiles left out are left out of it too, so a
+        // new page's findings of them don't count as new.
+        if (leftOut.length) {
+            const keptWcag = comparedOn.map((p) => levelOfId(p.id)).filter(Boolean)
+                .sort((x, y) => LEVELS.indexOf(x) - LEVELS.indexOf(y))[0] || null;
+            const outIds = new Set(leftOut.map((p) => p.id));
+            for (const [key, inReport] of byKey) {
+                if (inReport.size >= list.length) continue;
+                const own = sharedProfiles([...inReport.values()]);
+                if (!own) continue;
+                let wcag = own.wcag;
+                if (wcag && keptWcag) wcag = LEVELS.indexOf(wcag) <= LEVELS.indexOf(keptWcag) ? wcag : keptWcag;
+                else if (wcag && [...outIds].some((id) => levelOfId(id))) wcag = null;
+                const standards = own.standards.filter((p) => !outIds.has(p.id));
+                if (wcag === own.wcag && standards.length === own.standards.length) continue;
+                if (!wcag && !standards.length) continue;
+                plans.set(key, { wcag, standards, leftOut: [], same: false });
+            }
+        }
         // Whether the reports share nothing to compare on: every scan they
         // both have checked different things. null when that can't be told
         // (no scan in common, or one that names no profile), for the reports'
@@ -380,7 +402,7 @@
             parts.push(`Compared on ${on.join(' + ')}, which every report checked.`
                 + (out.length ? ` Left out, as not every report checked it: ${out.join(', ')}.` : ''));
         }
-        if (not.length) parts.push(`Not compared, as its reports checked it against different things that share none: ${not.join(', ')}.`);
+        if (not.length) parts.push(`Not compared, as its reports checked ${not.length === 1 ? 'it' : 'them'} against different things that share none: ${[...new Set(not)].join(', ')}.`);
         return parts.join(' ');
     }
 

@@ -227,8 +227,9 @@ describe('decideExit --fail-on-failures', () => {
         assert.equal(decideExit({ status: 'done', health: clean, summary: null, failing: 0 }), EXIT.OK);
     });
 
-    test('with a baseline, only new instances count, as without the flag', () => {
-        assert.equal(decideExit({ status: 'done', health: clean, summary: { occurrences: { new: 0 } }, failing: 8 }), EXIT.OK);
+    test('with a baseline, failing instances count only where given: those of scans it could not be compared with', () => {
+        assert.equal(decideExit({ status: 'done', health: clean, summary: { occurrences: { new: 0 } }, failing: null }), EXIT.OK);
+        assert.equal(decideExit({ status: 'done', health: clean, summary: { occurrences: { new: 0 } }, failing: 8 }), EXIT.NEW_INSTANCES);
     });
 
     test('a degraded or failed run still outranks it', () => {

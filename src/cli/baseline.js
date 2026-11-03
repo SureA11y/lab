@@ -151,9 +151,10 @@ function decideExit({ status, health, summary, likely = null, failing = null }) 
     if (status === 'cancelled') return EXIT.CANCELLED;
     if (health && health.degraded) return EXIT.DEGRADED;
     if (summary && summary.occurrences && summary.occurrences.new > 0) return EXIT.NEW_INSTANCES;
-    // --fail-on-failures with no baseline: every failing instance is new, as
-    // --fail-on-lean counts likely failures.
-    if (!summary && failing > 0) return EXIT.NEW_INSTANCES;
+    // --fail-on-failures with no baseline, or for scans the comparison left
+    // out: every failing instance counts as new, as --fail-on-lean counts
+    // likely failures.
+    if (failing > 0) return EXIT.NEW_INSTANCES;
     // --fail-on-lean: questions whose evidence leans fail, new since the
     // baseline (all of them without one).
     if (likely && likely.new > 0) return EXIT.LIKELY_FAILURES;
