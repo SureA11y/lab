@@ -101,8 +101,8 @@ The first public release.
   scan (the highest level, then version), never one's version beside
   another's level. It used to give WCAG 2.2 AA and
   EN 301 549 V4.1.1 unless told otherwise.
-- **WAI-ARIA 1.2 as a profile**, with its pack `@surea11y/pack-wai-aria`
-  installed or named in `A11Y_PACKS`: a scan against it reports one result
+- **WAI-ARIA 1.2 as a profile**, from its pack `@surea11y/pack-wai-aria`,
+  an optional dependency of the lab (it needs surea11y core 1.15): a scan against it reports one result
   per author requirement, and a finding that WCAG only asks about (an
   unnamed `role="grid"`) fails there. Wherever a standard judges a rule
   finding by finding, by its reason code, a requirement's row shows each
@@ -131,8 +131,8 @@ The first public release.
 - **A browser extension** (`extension/`) to scan the page in front of you
   and send a session to the lab. Its Profile is the scan step's: one WCAG
   2.2 level and any standards at once. Its build (`npm run build:extension`)
-  takes in the packs installed, so their standards (WAI-ARIA 1.2, with
-  `@surea11y/pack-wai-aria`) are offered there too. A scan records the
+  takes in the packs installed, so their standards (WAI-ARIA 1.2) are
+  offered there too. A scan records the
   profiles that ran, and says when the page has iframes, which the
   extension does not scan. A scan none of whose profiles ran stops, saying
   why, and a page scanned by an earlier build gets this build's packs.
