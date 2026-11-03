@@ -55,17 +55,36 @@ export function joinProfiles({wcag, standards, token}) {
  * choices: [{ value, label }], the field's options, the WCAG levels among
  * them by id. defaultValue: the field's default, chosen at the start.
  * -> { el, getValue, setValue, validate, focusTarget }
+ *
+ * The field shows what the scan checks, on one line, and a Change button
+ * that opens the choices in a panel below it: a disclosure, so its content
+ * follows the button in reading order. Escape, a click outside or Done
+ * closes it, focus going back to the button. Notes that ask for attention
+ * (two WCAG levels, a standard no installed pack has) stay on view.
  */
+let panelCount = 0;
 export function buildProfilesControl({fieldId, labelText, choices = [], defaultValue = "", errorId, onChange} = {}) {
     const emit = () => { if (typeof onChange === "function") onChange(); };
     const wcagChoices = choices.filter((c) => WCAG_ID.test(c.value));
     const standardChoices = choices.filter((c) => !WCAG_ID.test(c.value));
     const labelOf = (id) => (choices.find((c) => c.value === id) || {}).label || id;
     const radioName = `${fieldId}__wcag`;
+    const panelId = `${fieldId || "profiles"}__panel-${++panelCount}`;
 
     const root = createEl("fieldset", {className: "profiles-input", id: fieldId});
     if (errorId) root.setAttribute("aria-describedby", errorId);
     root.append(createEl("legend", {className: "profiles-input__legend"}, labelText));
+
+    // What the scan checks, and the button that opens the choices.
+    const summary = createEl("p", {className: "profiles-input__summary"}, "");
+    summary.setAttribute("aria-live", "polite");
+    const toggle = createEl("button", {type: "button", className: "secondary-button profiles-input__toggle"}, "Change");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-controls", panelId);
+    const bar = createEl("div", {className: "profiles-input__bar"}, [summary, toggle]);
+
+    const panel = createEl("div", {className: "profiles-input__panel", id: panelId});
+    panel.hidden = true;
 
     const groups = createEl("div", {className: "profiles-input__groups"});
 
@@ -90,10 +109,8 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
     }
     // A saved step may name a standard whose pack is not installed here: it
     // is a checkbox of its own, ticked, so it can be kept or taken off.
-    const missingNote = createEl("small", {className: "profiles-input__help"}, "");
-    missingNote.hidden = true;
     const packsNote = createEl("small", {className: "profiles-input__help"}, "From the installed packs.");
-    standardSet.append(packsNote, missingNote);
+    standardSet.append(packsNote);
     groups.append(wcagSet, standardSet);
     const unknownBoxes = [];
     function unknownBox(id) {
@@ -104,9 +121,6 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         unknownBoxes.push(input);
         return input;
     }
-    // A step saved with two WCAG levels keeps the first; this says so.
-    const levelsNote = createEl("p", {className: "profiles-input__note"}, "");
-    levelsNote.hidden = true;
 
     const tokenToggle = createEl("input", {type: "checkbox", className: "profiles-input__token-toggle"});
     const tokenInput = createEl("input", {type: "text", className: "select-token-input", placeholder: "e.g. {var:profile}"});
@@ -119,12 +133,84 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         tokenHelp,
     ]);
 
+    const done = createEl("button", {type: "button", className: "secondary-button profiles-input__done"}, "Done");
+    panel.append(groups, tokenRow, createEl("div", {className: "profiles-input__actions"}, [done]));
+
+    // Notes on view whether the panel is open or not.
+    // A step saved with two WCAG levels keeps the first; this says so.
+    const levelsNote = createEl("p", {className: "profiles-input__note"}, "");
+    levelsNote.hidden = true;
     const overlap = createEl("p", {className: "profiles-input__note"}, "");
     overlap.hidden = true;
-    const summary = createEl("p", {className: "profiles-input__summary"}, "");
-    summary.setAttribute("aria-live", "polite");
+    const missingNote = createEl("p", {className: "profiles-input__help"}, "");
+    missingNote.hidden = true;
 
-    root.append(levelsNote, groups, tokenRow, overlap, summary);
+    root.append(bar, panel, levelsNote, overlap, missingNote);
+
+    // In the top layer where the browser has popovers, so the step's card
+    // and what follows it never cover it; placed under the Change button.
+    const asPopover = typeof panel.showPopover === "function";
+    if (asPopover) panel.setAttribute("popover", "manual");
+    function place() {
+        if (!asPopover || !isOpen()) return;
+        const anchor = bar.getBoundingClientRect();
+        const width = Math.min(560, anchor.width, window.innerWidth - 16);
+        const left = Math.max(8, Math.min(anchor.left, window.innerWidth - width - 8));
+        const below = window.innerHeight - anchor.bottom - 12;
+        panel.style.width = `${width}px`;
+        panel.style.left = `${left}px`;
+        if (below >= 240 || below >= anchor.top) {
+            panel.style.top = `${anchor.bottom + 4}px`;
+            panel.style.bottom = "auto";
+            panel.style.maxHeight = `${Math.max(160, below)}px`;
+        } else {
+            panel.style.top = "auto";
+            panel.style.bottom = `${window.innerHeight - anchor.top + 4}px`;
+            panel.style.maxHeight = `${Math.max(160, anchor.top - 12)}px`;
+        }
+    }
+    const isOpen = () => !panel.hidden;
+    function open() {
+        if (isOpen()) return;
+        panel.hidden = false;
+        if (asPopover) {
+            try { panel.showPopover(); } catch { /* already shown */ }
+            place();
+            window.addEventListener("scroll", place, true);
+            window.addEventListener("resize", place);
+        }
+        toggle.setAttribute("aria-expanded", "true");
+        document.addEventListener("pointerdown", onOutside, true);
+    }
+    function close({restoreFocus = false} = {}) {
+        if (!isOpen()) return;
+        if (asPopover) {
+            try { panel.hidePopover(); } catch { /* not shown */ }
+            window.removeEventListener("scroll", place, true);
+            window.removeEventListener("resize", place);
+        }
+        panel.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+        document.removeEventListener("pointerdown", onOutside, true);
+        if (restoreFocus) toggle.focus();
+    }
+    function onOutside(e) {
+        if (!root.isConnected) { close(); return; }
+        if (!root.contains(e.target)) close();
+    }
+    toggle.addEventListener("click", () => {
+        if (isOpen()) { close(); return; }
+        open();
+        (radios.find((r) => r.checked) || radios[0] || tokenToggle).focus();
+    });
+    done.addEventListener("click", () => close({restoreFocus: true}));
+    root.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && isOpen()) {
+            e.preventDefault();
+            e.stopPropagation();
+            close({restoreFocus: true});
+        }
+    });
 
     function current() {
         if (tokenToggle.checked) return {wcag: NO_WCAG, standards: [], token: tokenInput.value.trim() || ""};
@@ -144,7 +230,9 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         const value = current();
         const ids = [...(value.wcag ? [value.wcag] : []), ...value.standards];
         if (tokenMode) {
-            summary.textContent = "This scan checks the profiles the variable names.";
+            summary.textContent = value.token
+                ? `This scan checks the profiles ${value.token} names.`
+                : "This scan checks the profiles a variable names.";
         } else {
             summary.textContent = ids.length
                 ? `This scan checks: ${ids.map(labelOf).join(" + ")}`
@@ -155,7 +243,7 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         overlap.textContent = restated.length
             ? `${restated.map(labelOf).join(" and ")} restate${restated.length === 1 ? "s" : ""} WCAG Level A and AA: beside ${labelOf(value.wcag)} the scan checks those criteria again, under the standard’s name.`
             : "";
-        const missing = unknownBoxes.filter((b) => b.checked).map((b) => b.value);
+        const missing = tokenMode ? [] : unknownBoxes.filter((b) => b.checked).map((b) => b.value);
         missingNote.hidden = !missing.length;
         missingNote.textContent = missing.length
             ? `No installed pack has ${missing.join(", ")}: the run stops, saying so, unless its pack is installed or it is taken off.`
@@ -192,21 +280,25 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         return joinProfiles(current());
     }
 
+    // What takes focus for the field: inside the panel when it is open,
+    // else the button that opens it.
+    const focusInPanel = (el) => (isOpen() ? el : toggle);
+
     /** An error message for what is chosen, or null. */
     function validate({required = false} = {}) {
         const value = current();
         if (tokenToggle.checked) {
-            if (!value.token) return {message: "Give the variable token, like {var:profile}", el: tokenInput};
-            if (!isProfileToken(value.token)) return {message: "Use a variable token like {var:profile}", el: tokenInput};
+            if (!value.token) return {message: "Give the variable token, like {var:profile}", el: focusInPanel(tokenInput)};
+            if (!isProfileToken(value.token)) return {message: "Use a variable token like {var:profile}", el: focusInPanel(tokenInput)};
             return null;
         }
         const chosen = radios.find((r) => r.checked) || radios[0];
         const levels = [value.wcag, ...value.standards.filter((id) => WCAG_ID.test(id))].filter(Boolean);
-        if (levels.length > 1) return {message: "Choose one WCAG level: each includes the ones below it", el: chosen};
+        if (levels.length > 1) return {message: "Choose one WCAG level: each includes the ones below it", el: focusInPanel(chosen)};
         // "Don't check WCAG" with no standard would save no profile, and the
         // scan would check WCAG 2.2 AA after all.
         if (!value.wcag && !value.standards.length) {
-            return {message: required ? "Choose a WCAG level or a standard" : "Choose a standard, or a WCAG level: with neither, the scan checks WCAG 2.2 AA", el: chosen};
+            return {message: required ? "Choose a WCAG level or a standard" : "Choose a standard, or a WCAG level: with neither, the scan checks WCAG 2.2 AA", el: focusInPanel(chosen)};
         }
         return null;
     }
@@ -222,5 +314,13 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
 
     setValue(defaultValue);
 
-    return {el: root, getValue, setValue, validate, focusTarget: () => radios.find((r) => r.checked) || radios[0]};
+    return {
+        el: root,
+        getValue,
+        setValue,
+        validate,
+        focusTarget: () => focusInPanel(radios.find((r) => r.checked) || radios[0]),
+        open,
+        close,
+    };
 }
