@@ -1,5 +1,5 @@
 // A report's view: its scans in batches, the View all scans dialog, the tag
-// filter, the scans kept in or left out, the report's details and their
+// and profile filters, the scans kept in or left out, the report's details and their
 // editing, the panel of downloads, and rendering the final report. Moved out
 // of a11y-ui.js; what it shares with the rest of the app it reaches through
 // `app`.
@@ -10,6 +10,7 @@ import {scanToAllScansCardProps} from './all-scans-data.js';
 import {enginesHTML, howTestedHTML} from './engine-brand.js';
 import {openConformanceReview} from './conformance-review.js';
 import {collectScanTags, isTagFilterActive, makeTagFilter} from './scan-tag-filter.js';
+import {collectScanProfiles, isProfileFilterActive, makeProfileFilter} from './scan-profile-filter.js';
 import {canCompareReport} from './report-comparison-controller.js';
 import {pickReportNamePrefill} from './report-name.js';
 import {askReportNameInDialog} from './report-name-dialog.js';
@@ -25,7 +26,7 @@ import {STATUS} from './ui-constants.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * ($, SCANS_FIRST_BATCH, SCANS_PER_BATCH, activeTagFilter, activeTagSelection, applyScanPresentationMode, applyScanSort, clearActiveBucketState, clearLiveStreamDialog, clearRenderedResultsUi, clearResults, clearScreenshots, compareTab, drawScansInBatches, focusRuntimeArea, getActiveBucket, groupingUi, isScanIncludedInReport, lastPromptedScenarioByMode, lastScanPresentationValue, lastSummaryReportValue, lastWorkflowResponse, liveUi, pendingScanDraw, recomputeDerivedReportData, reportDataContainer, reportEditMode, reportMetaEditors, results, resultsCompleteWaiters, resultsContainer, resultsFileBtn, resultsState, runSummary, runSummaryUi, scanMatchesActiveTagFilter, scanTagFilterEl, scansDialog, scenarioInput, screenshotsContainer, screenshotsDialog, screenshotsUi, setStatusReport, setStatusRun, setUiState, summaryEl, urlInput).
+ * ($, SCANS_FIRST_BATCH, SCANS_PER_BATCH, activeProfileFilter, activeProfileSelection, activeTagFilter, activeTagSelection, applyScanPresentationMode, applyScanSort, clearActiveBucketState, clearLiveStreamDialog, clearRenderedResultsUi, clearResults, clearScreenshots, compareTab, drawScansInBatches, focusRuntimeArea, getActiveBucket, groupingUi, isScanIncludedInReport, lastPromptedScenarioByMode, lastScanPresentationValue, lastSummaryReportValue, lastWorkflowResponse, liveUi, pendingScanDraw, recomputeDerivedReportData, reportDataContainer, reportEditMode, reportMetaEditors, results, resultsCompleteWaiters, resultsContainer, resultsFileBtn, resultsState, runSummary, runSummaryUi, scanMatchesActiveFilters, scanProfileFilterEl, scanTagFilterEl, scansDialog, scenarioInput, screenshotsContainer, screenshotsDialog, screenshotsUi, setStatusReport, setStatusRun, setUiState, summaryEl, urlInput).
  */
 export function createReportView(app) {
     // Asked once, as the app starts, so a report's Download menu knows
@@ -44,8 +45,8 @@ export function createReportView(app) {
 
     // Rebuilds the (hidden) all-scans dialog inside #results-container so the
     // report exporter, which clones that container, carries it into the exported
-    // HTML. Returns the number of scans visible in the current view (tag filter
-    // applied), used for the trigger button's count.
+    // HTML. Returns the number of scans visible in the current view (tag and
+    // profile filters applied), used for the trigger button's count.
     function renderAllScansDialog(allScans) {
         const existing = document.getElementById('all-scans-dialog');
         if (existing) existing.remove();
@@ -76,14 +77,14 @@ export function createReportView(app) {
         const grid = document.createElement('div');
         grid.className = 'all-scans-grid';
         allScans.forEach((scan, index) => {
-            const props = scanToAllScansCardProps(scan, index, {matchesTagFilter: app.scanMatchesActiveTagFilter});
+            const props = scanToAllScansCardProps(scan, index, {matchesTagFilter: app.scanMatchesActiveFilters});
             grid.appendChild(renderAllScansCard(props, cardDeps));
         });
         dialog.appendChild(grid);
 
         app.resultsContainer.appendChild(dialog);
 
-        return allScans.filter((scan) => app.scanMatchesActiveTagFilter(scan)).length;
+        return allScans.filter((scan) => app.scanMatchesActiveFilters(scan)).length;
     }
 
     // Rebuilds the all-scans dialog for `allScans` and returns the inline
@@ -165,8 +166,8 @@ export function createReportView(app) {
 
         syncScanIncludeUi(data.scans);
         syncSummaryReportSelector(data);
-        renderScanTagFilter(data);
-        applyScanTagFilterVisibility(data.scans);
+        renderScanFilters(data);
+        applyScanFilterVisibility(data.scans);
         app.applyScanSort();
 
         requestAnimationFrame(() => {
@@ -235,45 +236,142 @@ export function createReportView(app) {
         const payload = bucket?.payload;
         if (!payload) return;
 
-        // Remember which control had focus - the bar is rebuilt below, so a
+        // Remember which control had focus - the bars are rebuilt below, so a
         // keyboard user would otherwise be dumped to the top of the document.
-        // Covers both the tag chips and the Any/All mode buttons.
+        // Covers the tag and profile chips, the Any/All mode buttons, and a
+        // bar's Clear, which goes away: focus goes to that bar's first chip.
         const active = document.activeElement;
+        const bars = [app.scanTagFilterEl, app.scanProfileFilterEl].filter(Boolean);
+        const bar = active && bars.find((b) => b.contains(active));
         let focusKey = null;
-        if (active && active.classList) {
+        if (bar && active.classList) {
             if (active.classList.contains('scan-tag-filter__chip')) {
-                focusKey = { type: 'chip', kind: active.dataset.tagFilterKind, value: active.dataset.tagValue || null };
+                focusKey = {
+                    type: 'chip',
+                    kind: active.dataset.tagFilterKind,
+                    value: active.dataset.tagValue ?? active.dataset.profileKey ?? null
+                };
             } else if (active.classList.contains('scan-tag-filter__mode-btn')) {
                 focusKey = { type: 'mode', mode: active.dataset.tagFilterMode };
+            } else if (active.classList.contains('scan-tag-filter__clear')) {
+                focusKey = { type: 'clear' };
             }
         }
 
         app.recomputeDerivedReportData(payload);
         refreshDerivedReportUi();
 
-        if (focusKey && app.scanTagFilterEl) {
+        if (focusKey) {
             let target = null;
+            const chips = Array.from(bar.querySelectorAll('.scan-tag-filter__chip'));
             if (focusKey.type === 'chip') {
-                target = Array.from(app.scanTagFilterEl.querySelectorAll('.scan-tag-filter__chip')).find(
+                target = chips.find(
                     (c) => c.dataset.tagFilterKind === focusKey.kind &&
-                        (focusKey.kind !== 'tag' || c.dataset.tagValue === focusKey.value)
+                        (focusKey.kind === 'untagged' || (c.dataset.tagValue ?? c.dataset.profileKey) === focusKey.value)
                 );
             } else if (focusKey.type === 'mode') {
-                target = app.scanTagFilterEl.querySelector(
+                target = bar.querySelector(
                     `.scan-tag-filter__mode-btn[data-tag-filter-mode="${focusKey.mode}"]`
                 );
+            } else if (focusKey.type === 'clear') {
+                target = chips[0] || null;
             }
             if (target) target.focus();
+        }
+    }
+
+    // The tag and profile filter bars over the results, and the count of the
+    // scans they show, on the last bar shown.
+    function renderScanFilters(data) {
+        const scans = Array.isArray(data?.scans) ? data.scans : [];
+        renderScanTagFilter(scans);
+        renderScanProfileFilter(scans);
+
+        const last = [app.scanProfileFilterEl, app.scanTagFilterEl].find((el) => el && !el.hidden);
+        if (!last) return;
+        const total = scans.length;
+        const filtering = isTagFilterActive(app.activeTagFilter) || isProfileFilterActive(app.activeProfileFilter);
+        const shown = scans.filter(app.scanMatchesActiveFilters).length;
+        const count = document.createElement('span');
+        count.className = 'scan-tag-filter__count';
+        count.setAttribute('role', 'status');
+        count.textContent = filtering
+            ? `Showing ${shown} of ${total} scan${total === 1 ? '' : 's'}`
+            : `${total} scan${total === 1 ? '' : 's'}`;
+        last.appendChild(count);
+    }
+
+    function buildFilterClearButton(onClear) {
+        const clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'scan-tag-filter__clear secondary-button';
+        clear.textContent = 'Clear';
+        clear.addEventListener('click', onClear);
+        return clear;
+    }
+
+    // The profile filter bar: one chip per profile the scans were checked
+    // against. Shown only when picking one would change what is shown (not
+    // when every scan has the same profiles); the selection is pruned to the
+    // profiles still there. A scan matches when any of its profiles is picked.
+    // Like the tag filter, it decides what an export of the included scans
+    // holds (isScanIncludedInReport).
+    function renderScanProfileFilter(scans) {
+        const el = app.scanProfileFilterEl;
+        if (!el) return;
+
+        const { profiles, useful } = collectScanProfiles(scans);
+
+        if (!useful) {
+            app.activeProfileSelection = [];
+            app.activeProfileFilter = makeProfileFilter(app.activeProfileSelection);
+            el.hidden = true;
+            el.replaceChildren();
+            return;
+        }
+
+        const available = new Set(profiles.map((p) => p.key));
+        app.activeProfileSelection = app.activeProfileSelection.filter((key) => available.has(key));
+        app.activeProfileFilter = makeProfileFilter(app.activeProfileSelection);
+
+        el.hidden = false;
+        el.replaceChildren();
+
+        const labelEl = document.createElement('span');
+        labelEl.className = 'scan-tag-filter__label';
+        labelEl.textContent = 'Filter by profile:';
+        el.appendChild(labelEl);
+
+        profiles.forEach(({ key, label }) => {
+            const btn = buildTagFilterChip({
+                label, kind: 'profile', pressed: app.activeProfileSelection.includes(key),
+            });
+            btn.dataset.profileKey = key;
+            btn.addEventListener('click', () => {
+                app.activeProfileSelection = app.activeProfileSelection.includes(key)
+                    ? app.activeProfileSelection.filter((k) => k !== key)
+                    : [...app.activeProfileSelection, key];
+                app.activeProfileFilter = makeProfileFilter(app.activeProfileSelection);
+                onTagFilterChanged();
+            });
+            el.appendChild(btn);
+        });
+
+        if (isProfileFilterActive(app.activeProfileFilter)) {
+            el.appendChild(buildFilterClearButton(() => {
+                app.activeProfileSelection = [];
+                app.activeProfileFilter = makeProfileFilter(app.activeProfileSelection);
+                onTagFilterChanged();
+            }));
         }
     }
 
     // Build the multi-select tag filter bar above the results. Only shown when
     // the report actually carries tags; selection is pruned to the tags that
     // still exist so a stale pick can't silently hide everything.
-    function renderScanTagFilter(data) {
+    function renderScanTagFilter(scans) {
         if (!app.scanTagFilterEl) return;
 
-        const scans = Array.isArray(data?.scans) ? data.scans : [];
         const { tags, hasUntagged } = collectScanTags(scans);
 
         if (!tags.length) {
@@ -324,28 +422,13 @@ export function createReportView(app) {
         }
 
         if (isTagFilterActive(app.activeTagFilter)) {
-            const clear = document.createElement('button');
-            clear.type = 'button';
-            clear.className = 'scan-tag-filter__clear secondary-button';
-            clear.textContent = 'Clear';
-            clear.addEventListener('click', () => {
+            app.scanTagFilterEl.appendChild(buildFilterClearButton(() => {
                 // Keep the mode preference; only the selection is cleared.
                 app.activeTagSelection = { tags: [], untagged: false, mode: app.activeTagSelection.mode };
                 app.activeTagFilter = makeTagFilter(app.activeTagSelection);
                 onTagFilterChanged();
-            });
-            app.scanTagFilterEl.appendChild(clear);
+            }));
         }
-
-        const total = scans.length;
-        const shown = scans.filter(app.scanMatchesActiveTagFilter).length;
-        const count = document.createElement('span');
-        count.className = 'scan-tag-filter__count';
-        count.setAttribute('role', 'status');
-        count.textContent = isTagFilterActive(app.activeTagFilter)
-            ? `Showing ${shown} of ${total} scan${total === 1 ? '' : 's'}`
-            : `${total} scan${total === 1 ? '' : 's'}`;
-        app.scanTagFilterEl.appendChild(count);
 
         app.scanTagFilterEl.querySelectorAll('.scan-tag-filter__chip').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -366,17 +449,17 @@ export function createReportView(app) {
         });
     }
 
-    // Hide the scan cards that don't match the active tag filter. This is the
+    // Hide the scan cards that don't match the active tag and profile filters. This is the
     // view lens; it never touches includedInReport (manual exclude), which only
     // dims a card and drops it from the aggregate.
     // One pass over the page: a search per scan is a search of the whole
     // report per scan, which takes seconds once there are hundreds of them.
-    function applyScanTagFilterVisibility(scans) {
+    function applyScanFilterVisibility(scans) {
         if (!app.results) return;
         const hiddenById = new Map();
         (Array.isArray(scans) ? scans : []).forEach((scan) => {
             if (!scan || !scan.id) return;
-            hiddenById.set(String(scan.id), !app.scanMatchesActiveTagFilter(scan));
+            hiddenById.set(String(scan.id), !app.scanMatchesActiveFilters(scan));
         });
         if (!hiddenById.size) return;
         app.results.querySelectorAll('[data-scan-id]').forEach((el) => {
@@ -471,7 +554,8 @@ export function createReportView(app) {
         const source = data && typeof data === 'object' ? data : {};
 
         // "Included" means the effective view: manually included AND matching
-        // the active tag filter, mirroring what the on-screen aggregate shows;
+        // the active tag and profile filters, mirroring what the on-screen
+        // aggregate shows;
         // with ignoreTagFilter, as "Download all scans", only the manual choice.
         // The scans left out are dropped before copying: copying them only to
         // drop them costs seconds on a large report.
@@ -881,8 +965,8 @@ export function createReportView(app) {
         if (screenshots.length) app.screenshotsContainer.style.display = '';
         app.screenshotsUi.renderer.renderAllScreenshots(screenshots);
 
-        renderScanTagFilter(data);
-        applyScanTagFilterVisibility(scans);
+        renderScanFilters(data);
+        applyScanFilterVisibility(scans);
         app.applyScanSort();
 
         writeReportData(data, app.reportDataContainer)
@@ -914,7 +998,7 @@ export function createReportView(app) {
             if (app.pendingScanDraw !== draw) return;
             app.screenshotsUi.renderer.renderAllScans(scans, {...scanOptions, range: [start, start + app.SCANS_PER_BATCH]});
             // Each batch joins the filter and the order the earlier ones are in.
-            applyScanTagFilterVisibility(scans);
+            applyScanFilterVisibility(scans);
             app.applyScanSort();
         }
         app.resultsContainer.removeAttribute('aria-busy');
@@ -1064,14 +1148,14 @@ export function createReportView(app) {
     }
 
     return {
-        applyScanTagFilterVisibility,
+        applyScanFilterVisibility,
         buildExportPayload,
         buildScanTagChipsHtml,
         getCurrentReportName,
         markResultsComplete,
         refreshDerivedReportUi,
         renderFinalPayload,
-        renderScanTagFilter,
+        renderScanFilters,
         reportMetaRow,
         seedPromptedScenarioFor,
         whenResultsComplete,

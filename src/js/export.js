@@ -102,7 +102,7 @@ function getReportContent({ includeFilteredOut = false } = {}) {
         '.scan-summary-excluded',
         '.scan-excluded-from-report',
         '#hide-excluded-scans-btn',
-        // The tag filter is a live control, never part of the exported report.
+        // The tag and profile filters are live controls, never part of the exported report.
         '.scan-tag-filter',
         // And for the report metadata editors: the name, URL and date they were
         // set to are part of the line, but nothing in a static document can
@@ -112,8 +112,8 @@ function getReportContent({ includeFilteredOut = false } = {}) {
         'td a[href*="dequeuniversity.com"]'
     ];
 
-    // By default the export follows the current view: scans the tag filter has
-    // hidden are dropped. "Export all" passes includeFilteredOut to keep them.
+    // By default the export follows the current view: scans the tag or profile
+    // filter has hidden are dropped. "Export all" passes includeFilteredOut to keep them.
     if (!includeFilteredOut) {
         removeSelectors.push('.scan-filtered-out');
     }
@@ -963,7 +963,7 @@ export function createDownloadReportSplitButton({onBeforeAction, extraItems = []
             {
                 id: 'zip-all',
                 label: 'Download all scans',
-                description: 'Ignores the tag filter (includes hidden scans)',
+                description: 'Ignores the tag and profile filters (includes hidden scans)',
                 guard: onBeforeAction ? () => onBeforeAction('zip-all') : undefined,
                 onSelect: asTask('Download report with all scans', zip(true))
             },
