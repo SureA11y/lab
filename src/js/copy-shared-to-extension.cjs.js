@@ -60,7 +60,8 @@ const DEST_HOW_TO_CHECK = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendo
 // The installed packs, for the extension: a script that registers them in a
 // page after the bundle, and their standards, which the panel offers as
 // profiles. Built from the packs installed here (server-side/standard-packs.js:
-// the lab's dependencies and A11Y_PACKS), so they are not kept in git.
+// the lab's dependencies, surea11y's own packs wherever installed, and
+// A11Y_PACKS), so they are not kept in git.
 const DEST_PACKS_SCRIPT = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'surea11y-packs.js');
 const DEST_STANDARDS = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'standards.json');
 const SRC_REVIEW_EN = path.join(PROJECT_ROOT, 'node_modules', '@surea11y', 'core', 'src', 'i18n', 'review', 'en.json');
