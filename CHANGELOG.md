@@ -102,7 +102,8 @@ The first public release.
   another's level. It used to give WCAG 2.2 AA and
   EN 301 549 V4.1.1 unless told otherwise.
 - **WAI-ARIA 1.2 as a profile**, from its pack `@surea11y/pack-wai-aria`,
-  an optional dependency of the lab (it needs surea11y core 1.15): a scan against it reports one result
+  which the lab offers wherever it is installed, as it does EN 301 549's
+  (it needs surea11y core 1.15): a scan against it reports one result
   per author requirement, and a finding that WCAG only asks about (an
   unnamed `role="grid"`) fails there. Wherever a standard judges a rule
   finding by finding, by its reason code, a requirement's row shows each

@@ -17,12 +17,19 @@ test('the packs the lab depends on are loaded, and those named in A11Y_PACKS', (
     const tried = [];
     const load = (name) => { tried.push(name); if (name === '@surea11y/pack-missing') throw new Error('not installed'); return { name }; };
     const pkg = { dependencies: { '@surea11y/core': '1', '@surea11y/pack-en301549': '1', express: '5' }, optionalDependencies: { '@surea11y/pack-missing': '1' } };
-    const { names, packs } = loadPacks({ pkg, env: '@surea11y/pack-rgaa, ./local-pack, @surea11y/pack-en301549', load });
+    const { names, packs } = loadPacks({ pkg, env: '@surea11y/pack-rgaa, ./local-pack, @surea11y/pack-en301549', load, firstParty: [] });
     assert.deepEqual(names.slice(0, 3), ['@surea11y/pack-en301549', '@surea11y/pack-missing', '@surea11y/pack-rgaa']);
     assert.equal(names[3], path.resolve(__dirname, '..', '..', 'local-pack'), 'a path from the lab\'s folder');
     assert.equal(names.length, 4, 'each once');
     assert.deepEqual(packs.map((p) => p.name), ['@surea11y/pack-en301549', '@surea11y/pack-rgaa', names[3]], 'one that does not load is left out');
     assert.deepEqual(tried.filter((n) => n === '@surea11y/core'), [], 'only packs');
+});
+
+test("surea11y's own packs are tried whether or not the lab depends on them", () => {
+    const load = (name) => { if (name === '@surea11y/pack-wai-aria') return { name }; throw new Error('not installed'); };
+    const { names, packs } = loadPacks({ pkg: { dependencies: {} }, env: '', load });
+    assert.deepEqual(names, ['@surea11y/pack-en301549', '@surea11y/pack-wai-aria']);
+    assert.deepEqual(packs.map((p) => p.name), ['@surea11y/pack-wai-aria'], 'one not installed is left out');
 });
 
 test('a pack\'s standard is described from the pack itself', () => {

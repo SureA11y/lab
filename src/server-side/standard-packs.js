@@ -2,6 +2,7 @@
 
 // The standards the lab knows besides WCAG: those of the installed packs for
 // surea11y core. Every @surea11y/pack-* package the lab depends on is tried,
+// surea11y's own (EN 301 549's and WAI-ARIA's) whether depended on or not,
 // and any named in A11Y_PACKS (comma-separated package names or paths); a
 // pack that does not load is left out. Each one's standard (its key, name,
 // versions and profiles) comes from the pack itself, so a new standard needs
@@ -11,6 +12,11 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
 const PACK_NAME = /^@surea11y\/pack-[a-z0-9-]+$/;
+
+// The packs of surea11y's own standards, tried whether or not the lab
+// depends on them yet: one installed (by npm, or linked while it is not yet
+// published) is offered, one that isn't is left out.
+const FIRST_PARTY = ['@surea11y/pack-en301549', '@surea11y/pack-wai-aria'];
 
 // The packs the lab depends on, in package.json's order.
 function dependedOn(pkg) {
@@ -28,8 +34,8 @@ function named(env) {
  * The packs to load: { names, packs }, each pack as the package exports it,
  * in the order named, once each.
  */
-function loadPacks({ pkg = require(path.join(ROOT, 'package.json')), env = process.env.A11Y_PACKS, load = require } = {}) {
-    const names = [...new Set([...dependedOn(pkg), ...named(env)])];
+function loadPacks({ pkg = require(path.join(ROOT, 'package.json')), env = process.env.A11Y_PACKS, load = require, firstParty = FIRST_PARTY } = {}) {
+    const names = [...new Set([...dependedOn(pkg), ...firstParty, ...named(env)])];
     const packs = [];
     for (const name of names) {
         try {
