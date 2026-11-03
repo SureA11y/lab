@@ -975,7 +975,10 @@
             framing: mode === 'matrix' ? 'matrix' : (orderBy === 'time' ? 'trend' : 'versions'),
             ordered: orderBy === 'time',
         });
-        if (shared.basis && shared.basis.comparedOn.length) doc.profiles = shared.basis;
+        if (shared.basis && (shared.basis.comparedOn.length || (shared.basis.notCompared || []).length)) doc.profiles = shared.basis;
+        // Matched scan by scan: the reports share nothing to compare on only
+        // when every scan they have in common checked different things.
+        if (typeof shared.mismatch === 'boolean') doc.criteriaMismatch = shared.mismatch;
 
         const result = {
             mode, columns, rows, groups, gate, verdict, document: doc,

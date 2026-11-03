@@ -228,6 +228,14 @@ describe('interpolateVarsDeep', () => {
         assert.equal(out.list[0], 'Ada');
     });
 
+    test('a profile from a variable set to nothing keeps the variable, for the run to name', () => {
+        for (const value of ['', '   ', ' , ']) {
+            const out = interpolateVarsDeep({ profile: '{var:p}' }, { ctx: ctxWith({ p: value }) });
+            assert.equal(out.profile, '{var:p}', JSON.stringify(value));
+        }
+        assert.equal(interpolateVarsDeep({ profile: '{var:p}' }, { ctx: ctxWith({ p: 'wcag22-a' }) }).profile, 'wcag22-a');
+    });
+
     test('"label" fields are left untouched (resolved separately/late by callers)', () => {
         const out = interpolateVarsDeep({ label: '{var:name}' }, { ctx: ctxWith({ name: 'Ada' }) });
         assert.equal(out.label, '{var:name}');

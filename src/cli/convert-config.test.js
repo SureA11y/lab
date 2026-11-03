@@ -19,9 +19,15 @@ describe('convertDocument', () => {
             { type: 'a11yScan', profile: ['section508', 'wcag22-aa', 'en301549-v3.2.1'] },
         ], { profile: 'en301549-v4.1.1' }));
         assert.deepEqual(doc.actions.map((s) => s.profile), [['wcag22-aa', 'en301549-v4.1.1'], ['wcag22-aa', 'en301549-v3.2.1']]);
-        assert.ok(changes.some((c) => /profile "section508" → "wcag22-aa"/.test(c)));
+        // The list names WCAG 2.2 AA already, so section508 is dropped.
+        assert.ok(changes.some((c) => /profile "section508" dropped/.test(c)));
         // Beside another WCAG level, the one it already names stays.
         assert.deepEqual(steps(spec([{ type: 'a11yScan', profile: ['section508', 'wcag22-aaa'] }]))[0].profile, ['wcag22-aaa']);
+        // ...and the change says it was dropped, not replaced.
+        const dropped = convertDocument(spec([{ type: 'a11yScan', profile: ['Section508', 'wcag22-aaa'] }]));
+        assert.ok(dropped.changes.some((c) => /profile "Section508" dropped .*names a WCAG level already/.test(c)), dropped.changes.join('\n'));
+        // Several saved as one string, separated by commas, is a list.
+        assert.deepEqual(steps(spec([{ type: 'a11yScan', profile: 'section508, wai-aria-1.2' }]))[0].profile, ['wcag22-aa', 'wai-aria-1.2']);
     });
 
     test('a scan\'s bare level or target becomes its profile, a separate standard winning as it did', () => {

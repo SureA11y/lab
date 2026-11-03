@@ -152,9 +152,13 @@ function interpolateVarsDeep(obj, { localVars = null, ctx = null } = {}, parentK
 
     if (typeof obj === 'string') {
         if (parentKey === 'label') return obj;
-        // A scan's profile keeps a variable no one set, rather than becoming
-        // "" and so WCAG 2.2 AA: the run's check of the profile then names it.
-        if (parentKey === 'profile') return interpolateTemplate(obj, { localVars, ctx, keepUnresolved: true });
+        // A scan's profile keeps a variable no one set, or one set to
+        // nothing, rather than becoming "" and so WCAG 2.2 AA: the run's
+        // check of the profile then names it.
+        if (parentKey === 'profile') {
+            const value = interpolateTemplate(obj, { localVars, ctx, keepUnresolved: true });
+            return /\{var:[^}]+\}/.test(obj) && typeof value === 'string' && !value.replace(/,/g, '').trim() ? obj : value;
+        }
         return interpolateTemplate(obj, { localVars, ctx });
     }
     // A profile's list is read item by item as the profile itself is.

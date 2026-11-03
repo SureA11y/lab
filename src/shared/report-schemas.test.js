@@ -95,6 +95,15 @@ describe('diff.v1.schema.json', () => {
         const saved = current.scans[0].canonical.findings[0].occurrences.map((o) => o.occurrenceId);
         assert.ok(saved.every((id) => ids.includes(id)));
     });
+
+    test('a diff.json with a new rule passes: newRules lists each with its instances', () => {
+        const baseline = finished('run_a', '2026-10-01T09:00:00.000Z', []);
+        const current = finished('run_b', '2026-10-02T09:00:00.000Z', ['.c']);
+        const doc = JSON.parse(JSON.stringify(diffDocument(compareToBaseline(baseline, current))));
+        assert.equal(doc.summary.newRules.length, 1);
+        assert.equal(typeof doc.summary.newRules[0].ruleId, 'string');
+        assert.deepEqual(checkAgainstSchema(diffSchema(), doc), []);
+    });
 });
 
 describe('comparison.v1.schema.json', () => {

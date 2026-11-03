@@ -105,6 +105,14 @@
                     notes.push(`it named the engine ${show(engine)}, which the lab no longer has: it runs with surea11y now, and its findings may differ`);
                 }
             }
+            // Several profiles saved as one string, separated by commas, is
+            // the list a scan reads: a retired one among them is replaced as
+            // in a list.
+            if (typeof s.profile === 'string' && s.profile.includes(',') && !/\{var:/.test(s.profile)
+                && s.profile.split(',').some(retiredProfile)) {
+                const items = s.profile.split(',').map((p) => p.trim()).filter(Boolean);
+                s = { ...s, profile: items.length === 1 ? items[0] : items };
+            }
             if (retiredProfile(s.profile)) set({ profile: retiredProfile(s.profile) }, retiredMessage(s.profile, retiredProfile(s.profile)));
             // A list of profiles (a scan of several at once): each retired
             // one becomes its replacement, once.
@@ -119,7 +127,9 @@
                     if (!list.includes(to)) list.push(to);
                 }
                 const from = s.profile.find(retiredProfile);
-                set({ profile: list }, retiredMessage(from, retiredProfile(from)));
+                set({ profile: list }, hasLevel
+                    ? `profile ${show(from)} dropped (the lab no longer has it: it checked WCAG 2.0 AA, and the list names a WCAG level already)`
+                    : retiredMessage(from, retiredProfile(from)));
             }
             // A run has no profile any more: a scan that had none of its own
             // ("" was "the run's profile") names the run's, unless that was

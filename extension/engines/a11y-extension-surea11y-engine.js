@@ -106,6 +106,29 @@
         return (version || level) ? { version, level } : null;
     }
 
+    // The packs this build has (engines/vendor/standards.json), or null when
+    // that can't be read, once.
+    let builtPackKeysPromise = null;
+    function builtPackKeys(helpers) {
+        const api = helpers && helpers.api;
+        const url = api && api.runtime && typeof api.runtime.getURL === 'function'
+            ? api.runtime.getURL('engines/vendor/standards.json')
+            : null;
+        if (!url || typeof fetch !== 'function') return Promise.resolve(null);
+        if (!builtPackKeysPromise) {
+            builtPackKeysPromise = (async () => {
+                try {
+                    const res = await fetch(url);
+                    const json = res && res.ok ? await res.json() : null;
+                    return json && Array.isArray(json.packs) ? json.packs.map(String) : null;
+                } catch {
+                    return null;
+                }
+            })();
+        }
+        return builtPackKeysPromise;
+    }
+
     async function ensureInjected(tabId, helpers = {}) {
 
         const execInTab = helpers && helpers.execInTab;
@@ -151,16 +174,23 @@
         // was already there: a page scanned before the extension was rebuilt
         // keeps its engine and has none of this build's packs. A build
         // without packs has none, and scans with core's own profiles.
+        // This build's packs by the name the registry keeps them under
+        // ("@surea11y/pack-en301549@1.1.0"): a page holding another build's
+        // packs gets these too.
+        const wanted = await builtPackKeys(helpers);
         const [registered] = await execInTab(tabId, {
-            func: () => {
+            func: (keys) => {
                 try {
                     const registry = globalThis[Symbol.for('surea11y.packs')];
-                    return !!registry && Object.keys(registry).length > 0;
+                    if (!registry) return false;
+                    // One script of several packs keeps them under their names joined.
+                    const have = Object.keys(registry).flatMap((k) => k.split(','));
+                    return Array.isArray(keys) ? keys.every((k) => have.includes(k)) : have.length > 0;
                 } catch {
                     return false;
                 }
             },
-            args: []
+            args: [wanted]
         }).catch(() => [false]);
         if (registered) return;
         try {
@@ -393,6 +423,17 @@
             }]
         });
 
+        // None of a list's profiles ran (their packs didn't load, say): core
+        // then ran every rule, AAA and best practices among them, which no
+        // one chose. Stop, naming why, rather than save it as a scan of them.
+        const ran = result && result.engine && Array.isArray(result.engine.profiles) ? result.engine.profiles : null;
+        if (Array.isArray(engineOptions.profile) && engineOptions.profile.length && ran && !ran.length) {
+            const notRun = profilesNotRunOf(result);
+            const why = notRun.map((p) => (NOT_RUN_REASONS[p.reason] || ((label) => `The scan did not check against ${label}.`))(p.label));
+            const error = new Error(`None of the scan's profiles ran, so it checked against none of them. ${why.join(' ')}`.trim());
+            error.code = 'profiles-not-run';
+            throw error;
+        }
         return result || {};
     }
 

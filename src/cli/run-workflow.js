@@ -756,15 +756,6 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
         }
     }
 
-    // --fail-on-failures with nothing to compare with: every failing
-    // instance counts.
-    const failing = options.failOnFailures && !baselinePayload
-        ? countInstances(findingsByOutcome(payload.scans).fail)
-        : null;
-    if (failing) {
-        console.log(`No baseline ${failing} failing instance${failing === 1 ? '' : 's'} fail${failing === 1 ? 's' : ''} the run (--fail-on-failures)`);
-    }
-
     let comparison = null;
     if (baselinePayload) {
         comparison = compareToBaseline(baselinePayload, payload);
@@ -787,6 +778,17 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
         } catch (e) {
             console.error(`Warning: could not write comparison.html: ${e.message}`);
         }
+    }
+
+    // --fail-on-failures with nothing to compare with: every failing
+    // instance counts. So with a baseline that shares no profile with the
+    // run, whose new instances are what was checked rather than the pages.
+    const uncompared = !!comparison && !comparableSummary(comparison);
+    const failing = options.failOnFailures && (!baselinePayload || uncompared)
+        ? countInstances(findingsByOutcome(payload.scans).fail)
+        : null;
+    if (failing) {
+        console.log(`${uncompared ? 'Not compared' : 'No baseline'} ${failing} failing instance${failing === 1 ? '' : 's'} fail${failing === 1 ? 's' : ''} the run (--fail-on-failures)`);
     }
 
     fs.writeFileSync(
