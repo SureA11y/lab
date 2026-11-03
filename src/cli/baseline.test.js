@@ -11,6 +11,7 @@ const {
     loadBaselinePayload,
     summarizeDiff,
     compareToBaseline,
+    comparableSummary,
     decideExit,
 } = require('./baseline');
 
@@ -156,6 +157,17 @@ describe('compareToBaseline', () => {
 
         assert.equal(compareToBaseline(older, newer).swapped, false);
         assert.equal(compareToBaseline(newer, older).swapped, true);
+    });
+
+    test('reads a baseline newer than the run as the baseline still: new is what the run found', () => {
+        const baseline = payload('run_new', '2026-03-01T00:00:00Z', []);
+        const run = payload('run_old', '2026-01-01T00:00:00Z', [finding('label', 'critical', ['#field'])]);
+        const comparison = compareToBaseline(baseline, run);
+
+        assert.equal(comparison.swapped, true);
+        assert.equal(comparison.summary.occurrences.new, 1);
+        assert.equal(comparison.summary.occurrences.fixed, 0);
+        assert.equal(decideExit({ status: 'done', summary: comparableSummary(comparison) }), 3);
     });
 
     test('compares runs that carry no timestamp in the order given', () => {

@@ -127,10 +127,12 @@
         return [...new Set(out.map(String))];
     }
 
+    // Each failing element once per criterion: a WCAG row and the EN 301 549
+    // requirement restating it, or two scans of one page, name the same one.
     function scanEvidence(report, requirementsOf = wcagScOf) {
         const bySc = new Map();
         const at = (sc) => {
-            if (!bySc.has(sc)) bySc.set(sc, { failPages: [], failElements: 0, askPages: [], questions: [] });
+            if (!bySc.has(sc)) bySc.set(sc, { failPages: [], failElements: 0, failed: new Set(), askPages: [], questions: [] });
             return bySc.get(sc);
         };
         for (const scan of asArray(report && report.scans)) {
@@ -142,7 +144,16 @@
                     const e = at(String(sc));
                     if (f.outcome === 'fail') {
                         e.failPages.push(page);
-                        e.failElements += asArray(f.occurrences).length || 1;
+                        const occurrences = asArray(f.occurrences);
+                        const where = str(scan.url) || page;
+                        const keys = occurrences.length
+                            // An occurrence naming no element is one of its own.
+                            ? occurrences.map((o, i) => JSON.stringify(o && o.target
+                                ? [str(o.pageUrl) || where, o.target]
+                                : [where, null, f.ruleId, i]))
+                            : [JSON.stringify([where, null, f.ruleId])];
+                        for (const key of keys) e.failed.add(key);
+                        e.failElements = e.failed.size;
                     } else {
                         e.askPages.push(page);
                         if (str(f.title)) e.questions.push(str(f.title));

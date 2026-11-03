@@ -123,14 +123,16 @@
 
     // The key of each of a report's scans, in order (null for a skipped one).
     // Scans sharing a key are matched in their order: the second with the
-    // second.
+    // second. A skipped scan keeps its place, so the scans after it still
+    // match the same steps of the other run.
     function scanKeys(report) {
         const seen = new Map();
         return asArray(report && report.scans).map((s) => {
-            if (!s || s.skipped || s.skipInfo) return null;
+            if (!s) return null;
             const key = scanKey(s);
             const n = (seen.get(key) || 0) + 1;
             seen.set(key, n);
+            if (s.skipped || s.skipInfo) return null;
             return n === 1 ? key : `${key}#${n}`;
         });
     }

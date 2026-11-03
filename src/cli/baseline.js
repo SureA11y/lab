@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { diffReports } = require('../shared/report-diff.js');
-const { reportIdentity } = require('../shared/report-identity.js');
+const { reportIdentity, assignBaselineAndCurrent } = require('../shared/report-identity.js');
 
 const PAYLOAD_FILE = 'payload.json';
 
@@ -87,19 +87,20 @@ function summarizeDiff(diff) {
 }
 
 /**
- * Compare two payloads. `swapped` reports that the baseline is the newer of the
- * two, which the diff resolves by timestamp regardless of which was passed in.
+ * Compare two payloads, the baseline as the earlier side whatever the
+ * timestamps say: --baseline names it, and a clock or a missing timestamp
+ * must not turn new findings into fixed ones. `swapped` reports that the
+ * baseline is the newer of the two, for a warning.
  */
 function compareToBaseline(baselinePayload, currentPayload) {
-    const diff = diffReports(baselinePayload, currentPayload, { mode: 'evolution' });
-    const baselineId = reportIdentity(baselinePayload).runId;
+    const diff = diffReports(baselinePayload, currentPayload, { mode: 'evolution', order: 'given' });
 
     const optIn = (identity) => (identity && Array.isArray(identity.optInRules) ? identity.optInRules : []);
 
     return {
         diff,
         summary: summarizeDiff(diff),
-        swapped: diff.identityA.runId !== baselineId,
+        swapped: assignBaselineAndCurrent(baselinePayload, currentPayload).baseline !== baselinePayload,
         // The opt-in rules each side ran (["rgaa"]). When they differ, the
         // findings of those rules are new or resolved because of what was
         // checked, not because of the pages.

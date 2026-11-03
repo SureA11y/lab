@@ -210,7 +210,7 @@ function printComparison(comparison, baselinePayload, baselineLabel) {
     ];
 
     if (swapped) {
-        lines.push('Warning     the baseline is newer than this run, the diff reads it as the later side');
+        lines.push('Warning     the baseline is newer than this run; it is still read as the baseline');
     }
     const engines = engineChangesText(comparison.engineChanges);
     if (engines) lines.push(`Warning     ${engines}`);
@@ -613,7 +613,7 @@ async function main(argv) {
 function notComparedScansOf(comparison, payload) {
     const compared = comparison && comparison.diff && comparison.diff.compared;
     if (!Array.isArray(compared)) return [];
-    const current = compared[comparison.swapped ? 0 : 1];
+    const current = compared[1];
     const scans = Array.isArray(payload && payload.scans) ? payload.scans : [];
     return (current && Array.isArray(current.scans) ? current.scans : [])
         .map((s, i) => (s && s.notCompared ? scans[i] : null)).filter(Boolean);

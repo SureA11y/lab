@@ -204,6 +204,11 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         (radios.find((r) => r.checked) || radios[0] || tokenToggle).focus();
     });
     done.addEventListener("click", () => close({restoreFocus: true}));
+    // Focus leaving the field (Tab or Shift+Tab out of the panel) closes it, so
+    // the panel never covers the field that now has focus.
+    root.addEventListener("focusout", (e) => {
+        if (isOpen() && e.relatedTarget && !root.contains(e.relatedTarget)) close();
+    });
     root.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && isOpen()) {
             e.preventDefault();

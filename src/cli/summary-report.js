@@ -172,7 +172,7 @@ function comparisonSection(comparison, baselineLabel) {
     ];
 
     if (swapped) {
-        out.push('- The baseline is newer than this run, so the diff reads it as the later side');
+        out.push('- The baseline is newer than this run; it is still read as the baseline');
     }
 
     const engines = engineChangesText(comparison.engineChanges);

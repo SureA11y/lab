@@ -203,6 +203,22 @@ describe('the profile field, folded', () => {
         assert.equal(panel.hidden, true);
     });
 
+    test('focus leaving the field closes the panel, so it covers nothing focused', () => {
+        const { actionsEl } = newBuilder([{ type: 'a11yScan', label: 'Home' }, { type: 'a11yScan', label: 'Cart' }]);
+        const fields = Array.from(actionsEl.querySelectorAll('.profiles-input__toggle'));
+        const panels = Array.from(actionsEl.querySelectorAll('.profiles-input__panel'));
+        fields[0].click();
+        assert.equal(panels[0].hidden, false);
+        // Within the field, it stays open.
+        panels[0].querySelector('.profiles-input__done').focus();
+        assert.equal(panels[0].hidden, false);
+        // To the other step's Change: this one closes, without taking focus back.
+        fields[1].focus();
+        assert.equal(panels[0].hidden, true);
+        assert.equal(fields[0].getAttribute('aria-expanded'), 'false');
+        assert.equal(win.document.activeElement, fields[1]);
+    });
+
     test('an error in the closed field takes focus on Change; in the open one, on the choice', () => {
         const { builder, actionsEl } = newBuilder([{ type: 'a11yScan', label: 'Home' }]);
         choose(radios(actionsEl).find((r) => r.value === ''));
