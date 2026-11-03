@@ -113,6 +113,11 @@ describe('compareByTime / assignBaselineAndCurrent', () => {
         const out = assignBaselineAndCurrent(a, b);
         assert.equal(out.baseline.runId, 'x');
         assert.equal(out.current.runId, 'y');
+        // Labels that sort the other way don't swap a tie either.
+        const z = { ...a, scenarioName: 'zeta' };
+        const alpha = { ...b, scenarioName: 'alpha' };
+        assert.equal(assignBaselineAndCurrent(z, alpha).baseline, z);
+        assert.equal(assignBaselineAndCurrent({ runId: 'p', scenarioName: 'zeta' }, { runId: 'q', scenarioName: 'alpha' }).baseline.runId, 'p');
     });
 });
 

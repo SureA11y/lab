@@ -366,11 +366,18 @@ describe('comparison document: reports compared on the profiles they share', () 
         const d = { ...doc([report({ runId: 'a' }), report({ runId: 'b' })]),
             profiles: { comparedOn: [{ id: 'wcag22-aa', label: 'WCAG 2.2 AA' }], leftOut: [{ id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' }] } };
         const html = sharedProfilesNoteHTML(d);
-        assert.match(html, /Compared on WCAG 2\.2 AA, which every report checked\. Left out, as not every report checked it: WAI-ARIA 1\.2\./);
+        assert.match(html, /Compared on WCAG 2\.2 AA, which every report checked\. Left out, as not every report checked it on the same pages: WAI-ARIA 1\.2\./);
         assert.match(html, /own score is left out too/);
         assert.match(html, /dash-caveat--info/);
         // Said once, there, not again in what went into the comparison.
         assert.doesNotMatch(provenanceHTML([{ label: 'A', name: 'x' }], d), /Compared on/);
         assert.equal(sharedProfilesNoteHTML(doc([report({ runId: 'a' }), report({ runId: 'b' })])), '');
+    });
+
+    test('a scan not compared leaves the scores out too, and says so', async () => {
+        const { sharedProfilesNoteHTML } = await load();
+        const d = { ...doc([report({ runId: 'a' }), report({ runId: 'b' })]),
+            profiles: { comparedOn: [], leftOut: [], notCompared: [{ label: 'Products' }] } };
+        assert.match(sharedProfilesNoteHTML(d), /Not compared[^]*own score is left out too/);
     });
 });

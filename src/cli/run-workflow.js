@@ -99,7 +99,9 @@ Options:
   --fail-on-failures Fail a run that has no baseline to compare with when it
                      has failing instances: exit 3, as new failures against a
                      baseline do. Without it, a first run passes. With a
-                     baseline it changes nothing.
+                     baseline, it fails on the failing instances of scans
+                     not compared with it, or of all of them when the run
+                     and the baseline share no profile.
   -q, --quiet        Only print the summary
   -h, --help         Show this message
 

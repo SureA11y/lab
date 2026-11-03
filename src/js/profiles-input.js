@@ -235,7 +235,7 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         const value = current();
         const ids = [...(value.wcag ? [value.wcag] : []), ...value.standards];
         if (tokenMode) {
-            summary.textContent = value.token
+            summary.textContent = value.token && isProfileToken(value.token)
                 ? `This scan checks the profiles ${value.token} names.`
                 : "This scan checks the profiles a variable names.";
         } else {

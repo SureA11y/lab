@@ -67,7 +67,7 @@ describe('compareOnShared', () => {
         assert.equal(reports[1].scans[0].canonical.findings.length, 1);
         // The originals are untouched.
         assert.equal(a.scans[0].canonical.findings.length, 3);
-        assert.equal(basisSentence(basis), 'Compared on WCAG 2.2 AA, which every report checked. Left out, as not every report checked it: WAI-ARIA 1.2.');
+        assert.equal(basisSentence(basis), 'Compared on WCAG 2.2 AA, which every report checked. Left out, as not every report checked it on the same pages: WAI-ARIA 1.2.');
     });
 
     test('WCAG levels nest: AAA beside AA is read at AA', () => {
@@ -229,6 +229,13 @@ describe('compareOnShared, scan by scan', () => {
         const diff = diffReports(a, b, { mode: 'evolution' });
         assert.equal(diff.document.criteriaMismatch, false);
         assert.deepEqual(diff.rows.filter((r) => r.category === 'new'), []);
+    });
+
+    test('a scan not compared is named as the latest report names it', () => {
+        const fail = row('wcag-1.4.3-contrast-minimum', '1.4.3', 'fail');
+        const a = reportOf('a', [scan('Home', [AA], [fail]), { ...scan('Products', [AA], []), label: 'Old name' }]);
+        const b = reportOf('b', [scan('Home', [AA], [fail]), scan('Products', [EN], [])]);
+        assert.deepEqual(compareOnShared([a, b]).basis.notCompared, [{ label: 'Products' }]);
     });
 
     test('every scan in common sharing nothing is a mismatch', () => {

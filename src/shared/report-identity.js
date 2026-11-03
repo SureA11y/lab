@@ -224,6 +224,9 @@
     // Preserves caller order on a tie so an explicit "compare B against this
     // baseline A" choice is never silently swapped when timestamps are equal/absent.
     function assignBaselineAndCurrent(first, second) {
+        const ta = reportIdentity(first).timestamp;
+        const tb = reportIdentity(second).timestamp;
+        if (ta === tb) return { baseline: first, current: second };
         const order = compareByTime(first, second);
         if (order > 0) return { baseline: second, current: first };
         return { baseline: first, current: second };
