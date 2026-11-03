@@ -232,9 +232,11 @@ test("Ctrl+Z in the workflow keeps focus in the steps it rebuilds, the Profile p
     const recorded = () => new Promise((resolve) => setTimeout(resolve, 400));
     // Two changes to the scan's profiles, the panel left open on a checkbox.
     await page.click('.profiles-input__toggle');
-    await page.click('.profiles-input input[value="wcag22-aaa"]');
+    await page.waitForSelector('.profiles-input__panel:popover-open input[value="en301549-v4.1.1"]', { visible: true });
+    const pick = (value) => page.$eval(`.profiles-input input[value="${value}"]`, (el) => el.click());
+    await pick('wcag22-aaa');
     await recorded();
-    await page.click('.profiles-input input[value="en301549-v4.1.1"]');
+    await pick('en301549-v4.1.1');
     await recorded();
     await page.focus('.profiles-input input[value="en301549-v4.1.1"]');
     await page.keyboard.down('Control');
