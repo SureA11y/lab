@@ -279,6 +279,22 @@ describe('compareOnShared, scan by scan', () => {
         assert.deepEqual(reports[1].scans[1].canonical.margins, []);
     });
 
+    test("a run that drops one of a page's scans pairs the others with the scans that checked what they did", () => {
+        const enRow = row('en-9.1.1.1', null, 'fail', ['en301549-v4.1.1']);
+        const page = (profiles, findings) => scan('Products', profiles, findings);
+        const a = reportOf('a', [page([AA], []), page([EN], [enRow]), page([AAA], [])]);
+        const b = reportOf('b', [page([EN], [enRow]), page([AAA], [])]);
+        const { reports, basis, mismatch } = compareOnShared([a, b]);
+        assert.equal(mismatch, false);
+        assert.equal(basis, null, 'each pair checked the same profiles');
+        assert.equal(reports[0].scans.some((x) => x.notCompared), false);
+        // Scans that all checked the same profiles still pair in order.
+        const c = reportOf('a', [page([AA, ARIA], [ariaRow]), page([AA], [])]);
+        const d = reportOf('b', [page([AA], []), page([AA], [])]);
+        assert.deepEqual(compareOnShared([c, d]).basis.comparedOn, [AA]);
+        assert.deepEqual(compareOnShared([c, d]).reports[0].scans[0].canonical.findings, []);
+    });
+
     test('in a series of three, a page only some reports have is read on the profiles its own scans share', () => {
         const a = reportOf('a', [scan('Home', [AA], []), scan('Products', [AA, ARIA], [ariaRow])]);
         const b = reportOf('b', [scan('Home', [AA], [])]);
