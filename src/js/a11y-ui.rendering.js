@@ -1893,10 +1893,12 @@ export function createRenderer({
 
     // Notes on what a scan could not see on the page (a hook the page's own
     // scripts got around, a page shown in forced colors, a page that did not
-    // follow Set language's language): they qualify some
-    // results rather than the whole scan, so they sit below the results,
-    // collapsed, not with the scan's header.
-    const SCAN_NOTICES_AFTER = new Set(['listener-hook', 'internals-hook', 'live-region-hook', 'forced-colors', 'language-mismatch']);
+    // follow Set language's language, the iframes it left out as it was
+    // asked to): they qualify some results rather than the whole scan, so
+    // they sit below the results, collapsed, not with the scan's header. An
+    // iframe that could not be scanned stays with the header: the scan
+    // covered less than it was asked to.
+    const SCAN_NOTICES_AFTER = new Set(['listener-hook', 'internals-hook', 'live-region-hook', 'forced-colors', 'language-mismatch', 'frames-left-out', 'frames-off']);
 
     // The distinct messages of a scan's notices, those that qualify some
     // results (`after`) or the rest.
@@ -1942,7 +1944,7 @@ export function createRenderer({
         summary.textContent = `What this scan could not see (${messages.length} ${messages.length === 1 ? 'note' : 'notes'})`;
         const intro = document.createElement('p');
         intro.className = 'hint';
-        intro.textContent = 'Parts of this page surea11y could not fully see, and which results that affects.';
+        intro.textContent = 'Parts of this page surea11y did not or could not fully see, and which results that affects.';
         const ul = document.createElement('ul');
         for (const m of messages) {
             const li = document.createElement('li');
