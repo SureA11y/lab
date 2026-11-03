@@ -63,7 +63,12 @@
         if (field.description) out.description = field.description;
         if (field.default !== undefined) out.default = field.default;
 
-        const values = optionValues(field);
+        // A field an installed pack adds values to lists the lab's own, so
+        // the schema is the same wherever it is built: a pack's value
+        // matches the pattern beside them.
+        const values = optionValues(field.packValues === true && Array.isArray(field.options)
+            ? { ...field, options: field.options.filter((o) => !(o && o.pack === true)) }
+            : field);
         const tokenAllowed = field.variableToken !== false;
 
         switch (field.type) {
