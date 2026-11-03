@@ -124,13 +124,19 @@ function engineChangesText(changes) {
 function profilesText(profiles) {
     if (!profiles) return null;
     const basis = profiles.basis;
-    if (basis && Array.isArray(basis.comparedOn) && basis.comparedOn.length) {
-        const left = Array.isArray(basis.leftOut) ? basis.leftOut.map((p) => p.label) : [];
-        return {
-            warning: false,
-            text: `compared on ${basis.comparedOn.map((p) => p.label).join(' + ')}, which both checked`
-                + (left.length ? `; left out, as only one checked it: ${left.join(', ')}` : ''),
-        };
+    const comparedOn = basis && Array.isArray(basis.comparedOn) ? basis.comparedOn : [];
+    const notCompared = basis && Array.isArray(basis.notCompared) ? basis.notCompared : [];
+    if (!profiles.mismatch && (comparedOn.length || notCompared.length)) {
+        const left = basis && Array.isArray(basis.leftOut) ? basis.leftOut.map((p) => p.label) : [];
+        const parts = [];
+        if (comparedOn.length) {
+            parts.push(`compared on ${comparedOn.map((p) => p.label).join(' + ')}, which both checked`
+                + (left.length ? `; left out, as only one checked it: ${left.join(', ')}` : ''));
+        }
+        if (notCompared.length) {
+            parts.push(`not compared, as the baseline and this run checked it against different things that share none: ${notCompared.map((s) => s.label).join(', ')}`);
+        }
+        return { warning: false, text: parts.join('; ') };
     }
     if (profiles.mismatch) {
         const named = Array.isArray(profiles.compared) && profiles.compared.length > 1 ? ` (${profiles.compared.join(', ')})` : '';

@@ -154,3 +154,72 @@ describe('compareOnShared, scan by scan', () => {
         assert.deepEqual(reports[0].scans[0].metrics.coverageSummary.criteria.map((c) => c.sc), ['1.4.3']);
     });
 });
+
+describe('compareOnShared, scan by scan', () => {
+    const scan = (label, profiles, findings, extra = {}) => {
+        const wcag = profiles.find((p) => /^wcag22-/.test(p.id));
+        return {
+            label, url: `https://example.com/${label.toLowerCase()}`,
+            profile: profiles.find((p) => p !== wcag) || wcag,
+            ...(profiles.length > 1 ? { profiles } : {}),
+            wcag: { version: '2.2', level: wcag ? wcag.label.split(' ').pop() : null },
+            canonical: { findings }, ...extra,
+        };
+    };
+    const reportOf = (runId, scans) => ({ runId, timestamp: `2026-11-0${runId === 'a' ? 1 : 2}T10:00:00Z`, url: 'https://example.com/', scans });
+    const ariaRow = row('wai-aria-1.2-name-required', null, 'fail', ['wai-aria-1.2']);
+
+    test("an id the run numbered or the extension made up isn't a scan's identity: a scan added first shifts nothing", () => {
+        const a = reportOf('a', [
+            scan('Home', [AA], [], { id: 'scan-1' }),
+            scan('Products', [AA, ARIA], [ariaRow], { id: 'scan-2' }),
+        ]);
+        const b = reportOf('b', [
+            scan('Intro', [AA], [], { id: 'scan-1' }),
+            scan('Home', [AA], [], { id: 'scan-2' }),
+            scan('Products', [AA, ARIA], [ariaRow], { id: 'manual-scan-1f2e' }),
+        ]);
+        const out = compareOnShared([a, b]);
+        assert.equal(out.basis, null);
+        assert.equal(out.mismatch, false);
+        assert.deepEqual(diffReports(a, b, { mode: 'evolution' }).rows.filter((r) => r.category === 'new'), []);
+    });
+
+    test('scans sharing a label and page are matched in order', () => {
+        const enRow = row('en301549-V4.1.1-9.1.1.1', null, 'fail', ['en301549-v4.1.1']);
+        const a = reportOf('a', [scan('P', [AA, ARIA], [ariaRow]), scan('P', [EN], [enRow])]);
+        const b = reportOf('b', [scan('P', [AA], []), scan('P', [EN], [enRow])]);
+        const { reports } = compareOnShared([a, b]);
+        assert.equal(reports[0].scans[1].profile.id, EN.id);
+        assert.equal(reports[0].scans[1].canonical.findings.length, 1);
+        assert.deepEqual(reports[0].scans[0].canonical.findings, []);
+    });
+
+    test('beside scans that compare, one sharing nothing is left out, and the reports are not mismatched', () => {
+        const fail = row('wcag-1.4.3-contrast-minimum', '1.4.3', 'fail');
+        const a = reportOf('a', [scan('Home', [AA], [fail]), scan('Products', [AA], [fail])]);
+        const b = reportOf('b', [scan('Home', [AA], [fail]), scan('Products', [EN], [row('en301549-V4.1.1-9.1.4.3', null, 'fail', ['en301549-v4.1.1'])])]);
+        const out = compareOnShared([a, b]);
+        assert.equal(out.mismatch, false);
+        assert.deepEqual(out.basis.notCompared, [{ label: 'Products' }]);
+        assert.deepEqual(out.reports[1].scans[1].canonical.findings, []);
+        assert.match(basisSentence(out.basis), /^Not compared, as its reports checked it against different things that share none: Products\.$/);
+        const diff = diffReports(a, b, { mode: 'evolution' });
+        assert.equal(diff.document.criteriaMismatch, false);
+        assert.deepEqual(diff.rows.filter((r) => r.category === 'new'), []);
+    });
+
+    test('every scan in common sharing nothing is a mismatch', () => {
+        const a = reportOf('a', [scan('Home', [AA], [])]);
+        const b = reportOf('b', [scan('Home', [EN], [])]);
+        assert.equal(compareOnShared([a, b]).mismatch, true);
+    });
+
+    test('narrowed to WCAG 2.2, coverage leaves out 4.1.1, which 2.2 removed', () => {
+        const coverage = (scs) => ({ criteria: scs.map((sc) => ({ sc, level: null, status: 'supports' })) });
+        const a = reportOf('a', [scan('Home', [AA, ARIA], [], { metrics: { coverageSummary: coverage(['1.1.1', '4.1.1']) } })]);
+        const b = reportOf('b', [scan('Home', [AA], [], { metrics: { coverageSummary: coverage(['1.1.1']) } })]);
+        const { reports } = compareOnShared([a, b]);
+        assert.deepEqual(reports[0].scans[0].metrics.coverageSummary.criteria.map((c) => c.sc), ['1.1.1']);
+    });
+});

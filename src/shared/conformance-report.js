@@ -209,8 +209,9 @@
     const TARGET_LEVELS = ['A', 'AA', 'AAA'];
     const EN301549_PROFILE = /^en301549-v(\d+\.\d+\.\d+)$/i;
 
-    // The WCAG version and level the report's scans were checked against,
-    // the highest of each, whatever order the scans ran in, and the EN 301
+    // The WCAG version and level the report's scans were checked against:
+    // the scan of the highest level, of those the highest version, whatever
+    // order the scans ran in, and the EN 301
     // 549 version a scan checked against: the one that restates that WCAG
     // version when scans checked both, else the first. A scan of a standard
     // that is no WCAG (WAI-ARIA alone) says nothing of WCAG's level.
@@ -230,10 +231,18 @@
             const checksWcag = !ids.length || ids.some((id) => /^wcag/i.test(id) || EN301549_PROFILE.test(id));
             if (!checksWcag) continue;
             const w = s.wcag && typeof s.wcag === 'object' ? s.wcag : { version: s.wcagVersion, level: s.wcagLevel };
-            const l = str(w.level).toUpperCase();
-            if (TARGET_LEVELS.includes(l) && (!level || TARGET_LEVELS.indexOf(l) > TARGET_LEVELS.indexOf(level))) level = l;
-            const v = str(w.version);
-            if (VERSIONS.includes(v) && (!version || VERSIONS.indexOf(v) > VERSIONS.indexOf(version))) version = v;
+            const l = TARGET_LEVELS.includes(str(w.level).toUpperCase()) ? str(w.level).toUpperCase() : null;
+            const v = VERSIONS.includes(str(w.version)) ? str(w.version) : null;
+            if (!l && !v) continue;
+            // One scan's version and level, never one's version beside
+            // another's level: the highest level, then the highest version.
+            const rank = (lv, vv) => [TARGET_LEVELS.indexOf(lv), VERSIONS.indexOf(vv)];
+            const [nl, nv] = rank(l, v);
+            const [bl, bv] = rank(level, version);
+            if ((level === null && version === null) || nl > bl || (nl === bl && nv > bv)) {
+                level = l;
+                version = v;
+            }
         }
         const restating = version === '2.1' || version === '2.0' ? 'V3.2.1' : 'V4.1.1';
         const en301549 = ens.includes(restating) ? restating : (ens[0] || null);

@@ -73,7 +73,7 @@ The first public release.
   `profiles` (and any that did not run in `profilesNotRun`), and a rule
   finding says what each one makes of it. A single profile saves and scans
   as before. A step must name something to check: "Don't check WCAG" with
-  no standard is refused, as is a variable no one set, rather than checking
+  no standard is refused, as is a variable no one set or one set to nothing, rather than checking
   WCAG 2.2 AA instead. Needs surea11y core 1.15.
 - **Reports checked against different profiles are compared on those they
   share**, in the Compare tab, the dashboard, and the runner's comparisons:
@@ -81,16 +81,24 @@ The first public release.
   2.2 AA, and a WCAG 2.2 AAA report beside an AA one is read at AA. The
   comparison says what it compared on and what it left out, under its
   headline, and leaves out each report's own score. Scans are matched across
-  reports by their id and read on the profiles each pair shares, so a report
-  whose own scans check different profiles compares in full with another like
-  it. Reports that share no profile are compared as before, and the
-  comparison says, under its headline, that they were checked against
-  different standards or WCAG levels, naming what each was checked against
-  as its scans do ("WCAG 2.2 AA + WAI-ARIA 1.2"). The runner says so too,
-  and its new instances then fail nothing, since they are what was checked
-  rather than the pages.
+  reports by the id a workflow gives them, else by their label and page (the
+  runner's numbering and the extension's ids don't count, so a scan added
+  before others shifts nothing), in order where several share one, and read
+  on the profiles each pair shares, so a report whose own scans check
+  different profiles compares in full with another like it. A scan whose
+  reports share no profile is left out of the comparison, which names it,
+  beside scans that compare. Reports none of whose scans in common share a
+  profile are compared as before, and the comparison says, under its
+  headline, that they were checked against different standards or WCAG
+  levels, naming what each was checked against as its scans do ("WCAG 2.2
+  AA + WAI-ARIA 1.2"). The runner says so too, and its new instances then
+  fail nothing, since they are what was checked rather than the pages; with
+  `--fail-on-failures`, every failing instance fails the run, as with no
+  baseline.
 - **The conformance report** (VPAT) follows the WCAG level and the EN 301 549
-  version the scans were checked against. It used to give WCAG 2.2 AA and
+  version the scans were checked against, the version and level of one
+  scan (the highest level, then version), never one's version beside
+  another's level. It used to give WCAG 2.2 AA and
   EN 301 549 V4.1.1 unless told otherwise.
 - **WAI-ARIA 1.2 as a profile**, with its pack `@surea11y/pack-wai-aria`
   installed or named in `A11Y_PACKS`: a scan against it reports one result
@@ -125,7 +133,8 @@ The first public release.
   takes in the packs installed, so their standards (WAI-ARIA 1.2, with
   `@surea11y/pack-wai-aria`) are offered there too. A scan records the
   profiles that ran, and says when the page has iframes, which the
-  extension does not scan.
+  extension does not scan. A scan none of whose profiles ran stops, saying
+  why, and a page scanned by an earlier build gets this build's packs.
 - **Examples** that run against a demo shop, a getting-started guide, and
   use-case guides.
 

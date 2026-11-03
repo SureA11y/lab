@@ -50,10 +50,6 @@
     const wcagLabel = (level) => `WCAG 2.2 ${level}`;
     const wcagId = (level) => `wcag22-${level.toLowerCase()}`;
 
-    function analyzedScans(report) {
-        return asArray(report && report.scans).filter((s) => s && !s.skipped && !s.skipInfo);
-    }
-
     /**
      * What a scan checked against: { wcag: 'AA' | null, standards: Map(id ->
      * label), known }. `known` is false when it checked a WCAG level no
@@ -110,12 +106,31 @@
         return { wcag, standards, leftOut, same };
     }
 
-    // What matches a scan across reports: its id (a workflow's scans are
-    // numbered the same in each run of it), else its label and page.
+    // An id the run made up rather than one the workflow gave: the runner
+    // numbers scans in order (scan-3), the extension gives each a random one.
+    const MADE_UP_ID = /^(scan-\d+|manual-scan-.+)$/;
+
+    // What matches a scan across reports: an id the workflow gave it, else
+    // its label and page, so a scan added before others doesn't shift what
+    // they match.
     function scanKey(scan) {
         const id = typeof scan.id === 'string' && scan.id.trim() ? scan.id.trim() : '';
-        if (id) return `id:${id}`;
+        if (id && !MADE_UP_ID.test(id)) return `id:${id}`;
         return `at:${scan.label || ''}|${scan.url || ''}`;
+    }
+
+    // The key of each of a report's scans, in order (null for a skipped one).
+    // Scans sharing a key are matched in their order: the second with the
+    // second.
+    function scanKeys(report) {
+        const seen = new Map();
+        return asArray(report && report.scans).map((s) => {
+            if (!s || s.skipped || s.skipInfo) return null;
+            const key = scanKey(s);
+            const n = (seen.get(key) || 0) + 1;
+            seen.set(key, n);
+            return n === 1 ? key : `${key}#${n}`;
+        });
     }
 
     // The WCAG levels of a finding's criteria; [] when it names none.
@@ -197,14 +212,30 @@
         return c && LEVELS.includes(c.level) ? c.level : null;
     }
 
-    // A coverage summary's criteria up to the shared level.
+    // Whether WCAG 2.2, which every shared level is of, removed a criterion
+    // (4.1.1 Parsing): one scan may list it and another not.
+    function removedIn22(entry) {
+        const crit = wcagCriteriaOf();
+        const c = entry && entry.sc && crit && crit.criterionBySc ? crit.criterionBySc(String(entry.sc)) : null;
+        return !!(c && c.removedIn && Number(c.removedIn) <= 2.2);
+    }
+
+    // A coverage summary's criteria up to the shared level, of WCAG 2.2.
     function narrowCoverage(summary, level) {
         if (!summary || typeof summary !== 'object' || !level) return summary;
         const criteria = asArray(summary.criteria).filter((c) => {
+            if (removedIn22(c)) return false;
             const l = levelOfCriterion(c);
             return !l || LEVELS.indexOf(l) <= LEVELS.indexOf(level);
         });
         return { ...summary, criteria };
+    }
+
+    // A scan left out of the comparison: its findings aren't compared.
+    function excludeScan(scan) {
+        const out = { ...scan, notCompared: true };
+        if (scan.canonical && typeof scan.canonical === 'object') out.canonical = { ...scan.canonical, findings: [] };
+        return out;
     }
 
     function narrowScan(scan, shared) {
@@ -241,11 +272,12 @@
     function narrowReport(report, plans) {
         if (!report || typeof report !== 'object') return report;
         let narrowed = false;
-        const scans = asArray(report.scans).map((s) => {
-            const shared = s && !s.skipped && !s.skipInfo ? plans.get(scanKey(s)) : null;
+        const keys = scanKeys(report);
+        const scans = asArray(report.scans).map((s, i) => {
+            const shared = keys[i] ? plans.get(keys[i]) : null;
             if (!shared) return s;
             narrowed = true;
-            return narrowScan(s, shared);
+            return shared.exclude ? excludeScan(s) : narrowScan(s, shared);
         });
         if (!narrowed) return report;
         const levels = [...plans.values()].map((p) => p.wcag).filter(Boolean);
@@ -285,45 +317,71 @@
         // Each scan by its key, in each report.
         const byKey = new Map();
         list.forEach((report, r) => {
-            for (const scan of analyzedScans(report)) {
-                const key = scanKey(scan);
+            const keys = scanKeys(report);
+            asArray(report && report.scans).forEach((scan, i) => {
+                const key = keys[i];
+                if (!key) return;
                 if (!byKey.has(key)) byKey.set(key, new Map());
-                const inReport = byKey.get(key);
-                if (!inReport.has(r)) inReport.set(r, scan);
-            }
+                byKey.get(key).set(r, scan);
+            });
         });
         const plans = new Map();
         const comparedOn = [];
         const leftOut = [];
-        let sharesNone = false;
+        const none = [];
+        let matched = 0;
+        let comparable = 0;
+        let unknown = 0;
         for (const [key, inReport] of byKey) {
             // A scan only some reports have is compared as it is.
             if (inReport.size < list.length) continue;
-            const shared = sharedProfiles([...inReport.values()]);
-            if (!shared || shared.same) continue;
+            matched += 1;
+            const scans = [...inReport.values()];
+            const shared = sharedProfiles(scans);
+            if (!shared) { unknown += 1; continue; }
+            if (shared.same) { comparable += 1; continue; }
             const on = [
                 ...(shared.wcag ? [{ id: wcagId(shared.wcag), label: wcagLabel(shared.wcag) }] : []),
                 ...shared.standards,
             ];
-            if (!on.length) { sharesNone = true; continue; }
+            if (!on.length) { none.push({ key, label: scans[0].label || scans[0].url || key }); continue; }
+            comparable += 1;
             plans.set(key, shared);
             pushOnce(comparedOn, on);
             pushOnce(leftOut, shared.leftOut);
         }
-        if (!plans.size) return { reports: list, basis: sharesNone ? { comparedOn: [], leftOut: [] } : null };
+        // Whether the reports share nothing to compare on: every scan they
+        // both have checked different things. null when that can't be told
+        // (no scan in common, or one that names no profile), for the reports'
+        // own identities to say.
+        const mismatch = !matched || unknown ? null : (!comparable && none.length > 0);
+        // Beside scans that compare, one that shares nothing is left out of
+        // the comparison: its rows would be what was checked, not the page.
+        const notCompared = comparable && none.length ? none.map((n) => ({ label: n.label })) : [];
+        for (const n of (comparable ? none : [])) plans.set(n.key, { exclude: true });
+        if (!plans.size) {
+            return { reports: list, basis: none.length ? { comparedOn: [], leftOut: [] } : null, mismatch };
+        }
         return {
             reports: list.map((r) => narrowReport(r, plans)),
-            basis: { comparedOn, leftOut },
+            basis: { comparedOn, leftOut, ...(notCompared.length ? { notCompared } : {}) },
+            mismatch,
         };
     }
 
     /** "Compared on WCAG 2.2 AA, which every report checked. Left out: WAI-ARIA 1.2." */
     function basisSentence(basis) {
-        if (!basis || !asArray(basis.comparedOn).length) return null;
-        const on = basis.comparedOn.map((p) => p.label).join(' + ');
+        const on = basis ? asArray(basis.comparedOn).map((p) => p.label) : [];
+        const not = basis ? asArray(basis.notCompared).map((s) => s.label) : [];
+        if (!on.length && !not.length) return null;
         const out = asArray(basis.leftOut).map((p) => p.label);
-        return `Compared on ${on}, which every report checked.`
-            + (out.length ? ` Left out, as not every report checked it: ${out.join(', ')}.` : '');
+        const parts = [];
+        if (on.length) {
+            parts.push(`Compared on ${on.join(' + ')}, which every report checked.`
+                + (out.length ? ` Left out, as not every report checked it: ${out.join(', ')}.` : ''));
+        }
+        if (not.length) parts.push(`Not compared, as its reports checked it against different things that share none: ${not.join(', ')}.`);
+        return parts.join(' ');
     }
 
     return { compareOnShared, sharedProfiles, basisSentence };

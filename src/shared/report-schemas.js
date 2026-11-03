@@ -267,7 +267,16 @@
                     ...open({
                         rules: open({ new: count, resolved: count, persistent: count }, ['new', 'resolved', 'persistent']),
                         occurrences: open({ new: count, fixed: count, still: count }, ['new', 'fixed', 'still']),
-                        newRules: { type: 'array', items: text },
+                        newRules: {
+                            type: 'array',
+                            description: 'Each rule failing now that did not before, with its failing instances in this run.',
+                            items: open({
+                                ruleId: text,
+                                title: textOrNull,
+                                severity: { enum: [...SEVERITIES, null] },
+                                occurrences: count,
+                            }, ['ruleId', 'occurrences']),
+                        },
                         net: { type: 'integer' },
                         headline: text,
                     }, ['rules', 'occurrences', 'newRules', 'net']),

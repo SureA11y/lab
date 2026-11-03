@@ -182,15 +182,23 @@ export function reportsStripHTML(rows, { sourcesHref = '' } = {}) {
  * up. '' when the reports checked the same profiles.
  */
 export function sharedProfilesNoteHTML(doc) {
-    const basis = doc && doc.profiles && Array.isArray(doc.profiles.comparedOn) && doc.profiles.comparedOn.length
-        ? doc.profiles : null;
-    if (basis) {
-        const leftOut = Array.isArray(basis.leftOut) ? basis.leftOut : [];
+    const profiles = doc && doc.profiles ? doc.profiles : null;
+    const comparedOn = profiles && Array.isArray(profiles.comparedOn) ? profiles.comparedOn : [];
+    const notCompared = profiles && Array.isArray(profiles.notCompared) ? profiles.notCompared : [];
+    if (comparedOn.length || notCompared.length) {
+        const leftOut = Array.isArray(profiles.leftOut) ? profiles.leftOut : [];
+        const parts = [];
+        if (comparedOn.length) {
+            parts.push(esc(`Compared on ${comparedOn.map((p) => p.label).join(' + ')}, which every report checked.`));
+            if (leftOut.length) {
+                parts.push(`${esc(`Left out, as not every report checked it: ${leftOut.map((p) => p.label).join(', ')}.`)} Each report's own score is left out too, since it was made from everything that report checked.`);
+            }
+        }
+        if (notCompared.length) {
+            parts.push(esc(`Not compared, as its reports checked it against different things that share none: ${notCompared.map((s) => s.label).join(', ')}.`));
+        }
         return `<p class="dash-caveat dash-caveat--info"><span class="dash-caveat-i" aria-hidden="true">i</span>
-        <span>${esc(`Compared on ${basis.comparedOn.map((p) => p.label).join(' + ')}, which every report checked.`)}${
-            leftOut.length
-                ? ` ${esc(`Left out, as not every report checked it: ${leftOut.map((p) => p.label).join(', ')}.`)} Each report's own score is left out too, since it was made from everything that report checked.`
-                : ''}</span></p>`;
+        <span>${parts.join(' ')}</span></p>`;
     }
     // Reports that share no profile, compared as they are: said as plainly,
     // since the numbers above are about what was checked as much as the pages.

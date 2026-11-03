@@ -156,4 +156,46 @@ describe('extension surea11y adapter: injecting the packs', () => {
         await SUREA11Y.ensureInjected(1, full.helpers);
         assert.deepEqual(full.injected, []);
     });
+
+    test("a page holding another build's packs gets this build's", async () => {
+        const KEY = Symbol.for('surea11y.packs');
+        const had = globalThis[KEY];
+        globalThis[KEY] = {'@surea11y/pack-en301549@1.0.0': {}};
+        try {
+            const injected = [];
+            let call = 0;
+            const standards = {packs: ['@surea11y/pack-en301549@1.1.0', '@surea11y/pack-wai-aria@0.1.0']};
+            const helpers = {
+                api: {runtime: {getURL: () => `data:application/json,${encodeURIComponent(JSON.stringify(standards))}`}},
+                execInTab: async (_tabId, d) => [call++ === 0 ? true : d.func(...(d.args || []))],
+                injectFile: async (_tabId, file) => { injected.push(file); },
+            };
+            await SUREA11Y.ensureInjected(1, helpers);
+            assert.deepEqual(injected, ['engines/vendor/surea11y-packs.js']);
+            // One script of both packs keeps them under their names joined: nothing to add.
+            globalThis[KEY] = {[standards.packs.join(',')]: {}};
+            call = 0;
+            await SUREA11Y.ensureInjected(1, helpers);
+            assert.deepEqual(injected, ['engines/vendor/surea11y-packs.js']);
+        } finally {
+            if (had === undefined) delete globalThis[KEY];
+            else globalThis[KEY] = had;
+        }
+    });
+});
+
+describe('extension surea11y adapter: none of a list ran', () => {
+    test('the scan stops, saying why, rather than keep a scan of every rule', async () => {
+        const execInTab = async () => [{
+            engine: {profiles: [], profilesNotRun: [{profile: 'wai-aria-1.2', reason: 'pack-skipped'}, {profile: 'acme-1', reason: 'unknown-profile'}]},
+            checksResults: [], rulesResults: [],
+        }];
+        targets.registerStandardProfiles([{profiles: [{id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2', wcagVersion: '2.2'}, {id: 'acme-1', label: 'Acme 1', wcagVersion: '2.1'}]}]);
+        const selection = targets.resolveScanSelection({profile: ['wai-aria-1.2', 'acme-1']});
+        assert.deepEqual(selection.profiles, ['wai-aria-1.2', 'acme-1']);
+        await assert.rejects(
+            SUREA11Y.runInTab(1, {selection, pageReadyTimeoutMs: 0}, {execInTab}),
+            (e) => e.code === 'profiles-not-run' && /^None of the scan's profiles ran, so it checked against none of them\. .*pack did not load/.test(e.message),
+        );
+    });
 });
