@@ -99,7 +99,10 @@ and how much of the profile automated checks can reach at all.
 and [the metrics reference](a11y-metrics-reference.html) explains each score.
 
 Scans can be reordered, renamed, left out of the download, and filtered by
-tag. Their findings can be grouped by WCAG principle, by WCAG level, by the
+tag and by the profile they were checked against (offered when the scans'
+profiles differ); a download of the report holds the scans the filters show,
+so one report can give one download per profile. Each finding lists its
+criteria under their standard's name. Their findings can be grouped by WCAG principle, by WCAG level, by the
 Accessibility Product Standard's KPIs, or by a grouping of your own, loaded
 as a JSON file: a list of groups, each naming its requirements in WCAG or
 EN 301 549 terms, or those of another installed standard, by its name as its
@@ -125,7 +128,7 @@ goes to "Not in WCAG" when it corresponds to no WCAG criterion, and to
 **Download report** gives a package: the report as a page to read, its JSON to
 open again in the app, its pictures, and the configuration it ran. Its menu
 also downloads the report as a single HTML file, or with the scans the tag
-filter hides. [Reports and their format](report-package.md) describes the
+and profile filters hide. [Reports and their format](report-package.md) describes the
 package. A link can open a report in the app directly:
 `http://127.0.0.1:3000/?report=<url of its JSON or zip>`
 ([how](http-api.md#opening-reports-in-the-app-by-address)).
