@@ -79,6 +79,35 @@ function normalizeSeverity(sev) {
     return 'moderate';
 }
 
+// Why frames were left out, one part per reason, most first: how many, and
+// the addresses that say which (an about:blank says nothing, so it is not
+// listed). "3 of the page's 4 iframes were left out: 2 show nothing; 1 is
+// not shown on the page, or an open dialog covers it."
+const FRAME_LEFT_OUT_WHY = {
+    hidden: ['is not shown on the page, or an open dialog covers it', 'are not shown on the page, or an open dialog covers them'],
+    excluded: ['is excluded by the scan', 'are excluded by the scan'],
+    'outside-scope': ["is outside the scan's Include", "are outside the scan's Include"],
+    empty: ['shows nothing', 'show nothing'],
+};
+
+function framesLeftOutMessage(skipped, total) {
+    const byReason = new Map();
+    for (const f of skipped) {
+        if (!byReason.has(f.skipped)) byReason.set(f.skipped, []);
+        byReason.get(f.skipped).push(f);
+    }
+    const parts = [...byReason.entries()]
+        .sort((a, b) => b[1].length - a[1].length)
+        .map(([reason, frames]) => {
+            const n = frames.length;
+            const why = FRAME_LEFT_OUT_WHY[reason] || [`(${reason})`, `(${reason})`];
+            const urls = [...new Set(frames.map((f) => f.url).filter((u) => u && !/^about:/i.test(u)))];
+            const named = urls.length ? ` (${urls.slice(0, 3).join(', ')}${urls.length > 3 ? ', …' : ''})` : '';
+            return `${n} ${n === 1 ? why[0] : why[1]}${named}`;
+        });
+    return `${skipped.length} of the page's ${total} iframes ${skipped.length === 1 ? 'was' : 'were'} left out: ${parts.join('; ')}.`;
+}
+
 function normalizeOccurrenceOutcome(outcome, fallbackOutcome) {
     const own = String(outcome || '').trim();
     if (own === 'fail' || own === 'cantTell') return own;
@@ -1222,17 +1251,10 @@ async function runOnPage(
         // content is known to be unchecked.
         const skipped = frameResults.filter((f) => f.skipped);
         if (skipped.length) {
-            const WHY = {
-                hidden: 'the page does not show it, or an open dialog covers it',
-                excluded: 'the scan excludes it',
-                'outside-scope': "it is outside the scan's Include",
-                empty: 'it shows nothing',
-            };
             notices.push({
                 engineId: ENGINE_ID,
                 code: 'frames-left-out',
-                message: `${skipped.length} of the page's ${frameResults.length} iframes ${skipped.length === 1 ? 'was' : 'were'} left out: `
-                    + skipped.slice(0, 5).map((f) => `${f.url || 'an iframe'} (${WHY[f.skipped] || f.skipped})`).join('; ') + (skipped.length > 5 ? '; …' : '') + '.'
+                message: framesLeftOutMessage(skipped, frameResults.length),
             });
         }
         const missed = frameResults.filter((f) => f.error);
@@ -1932,6 +1954,7 @@ module.exports = {
     PACKS,
 
     // helpers
+    framesLeftOutMessage,
     normalizeTagsList,
     normalizeRuleIdsList,
     normalizeSeverity,

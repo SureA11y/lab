@@ -110,6 +110,15 @@ describe('notes on what a scan could not see', () => {
         assert.deepEqual(Array.from(resultsEl.querySelectorAll('.scan-notices-after li')).map((li) => li.textContent), [languageNote.message]);
     });
 
+    test('take the iframes the scan left out below too, and keep one that could not be scanned at the top', () => {
+        const leftOut = {engineId: 'surea11y', code: 'frames-left-out', message: "3 of the page's 4 iframes were left out: 3 show nothing."};
+        const off = {engineId: 'surea11y', code: 'frames-off', message: 'This page has 1 iframe, and this scan left it out.'};
+        const missed = {engineId: 'surea11y', code: 'frames-not-scanned', message: "1 of the page's 4 iframes could not be scanned."};
+        render([scan('s1', [leftOut, off, missed])]);
+        assert.deepEqual(Array.from(resultsEl.querySelectorAll('.scan-notices li')).map((li) => li.textContent), [missed.message]);
+        assert.deepEqual(Array.from(resultsEl.querySelectorAll('.scan-notices-after li')).map((li) => li.textContent), [leftOut.message, off.message]);
+    });
+
     test('leave no box at the top when they are all there is', () => {
         render([scan('s1', [hookNote])]);
         assert.equal(resultsEl.querySelector('.scan-notices'), null);

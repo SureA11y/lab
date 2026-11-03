@@ -113,3 +113,16 @@ test('a frame\'s count is kept where the page\'s result has none', () => {
     mergeFrameResults(top, [{ url: 'https://x.test/a', frameSelectors: ['iframe'], result: { checksResults: [check('contrast-minimum', 'fail', [], { details: { elementCount: 7, reportedCount: 5, truncated: true } })], rulesResults: [] } }]);
     assert.deepEqual(top.checksResults[0].data.details, { elementCount: 7, reportedCount: 5, truncated: true });
 });
+
+test('the iframes left out are said by reason, most first, without an about:blank address', () => {
+    const { framesLeftOutMessage } = require('./a11y-labs-engine');
+    const blank = (skipped) => ({ url: 'about:blank', skipped });
+    assert.equal(
+        framesLeftOutMessage([blank('empty'), blank('empty'), blank('hidden')], 4),
+        "3 of the page's 4 iframes were left out: 2 show nothing; 1 is not shown on the page, or an open dialog covers it."
+    );
+    assert.equal(
+        framesLeftOutMessage([{ url: 'https://ads.test/a', skipped: 'excluded' }, { url: 'https://ads.test/a', skipped: 'excluded' }], 2),
+        "2 of the page's 2 iframes were left out: 2 are excluded by the scan (https://ads.test/a)."
+    );
+});
