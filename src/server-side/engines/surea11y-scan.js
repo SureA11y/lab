@@ -292,6 +292,10 @@ const MAX_FRAMES = 100;
 // How long one frame may take: a frame whose page never answers has no
 // document to scan, and waiting on it held the whole scan for minutes.
 const FRAME_TIMEOUT_MS = 10000;
+// How long all the frames may take together, unless the caller says: frames
+// that never answer, a few at a time, ran past the scan's own limit and lost
+// the page's findings with theirs.
+const FRAMES_BUDGET_MS = 20000;
 // How long the lazy iframes made eager are waited for (loadLazyFrames).
 const LAZY_FRAME_WAIT_MS = 3000;
 // How long a frame is asked about its lazy iframes, or its element's src.
@@ -361,10 +365,13 @@ async function frameSelectorsOf(frame) {
  * own scan across frames reads it (src/core/frame-scan.js):
  * { skipped } for one left out, else { ariaHidden } for one under
  * aria-hidden="true", scanned with engineOptions.embeddedAriaHidden (what is
- * seen still counts, names and roles don't). Left out:
+ * seen still counts, names and roles don't), and { inert } for one under
+ * [inert], scanned with engineOptions.embeddedInert (only how it looks
+ * counts). The elements around a frame are read in the flat tree, through
+ * slots and shadow hosts, as the accessibility tree reads them. Left out:
  * - 'hidden': the page does not show it (display:none, the hidden attribute,
- *   a closed <details>, content-visibility:hidden or visibility:hidden),
- *   unless engineOptions.includeHiddenElements;
+ *   a closed <details>, content-visibility:hidden or visibility:hidden), or
+ *   an open modal dialog covers it, unless engineOptions.includeHiddenElements;
  * - 'excluded': it, or an element around it, matches engineOptions'
  *   excludeSelectors (the scan's Exclude);
  * - 'outside-scope': a frame of the page outside the scan's Include
@@ -379,33 +386,47 @@ async function frameReading(frame, engineOptions = {}, contextSelector = null) {
     try {
         handle = await frame.frameElement();
         let ariaHidden = false;
+        let inert = false;
         if (handle) {
             const read = await handle.evaluate((el, { excludeSelectors, includeHidden, scope }) => {
-                if (!includeHidden && typeof el.checkVisibility === 'function'
-                    && !el.checkVisibility({ visibilityProperty: true })) return { skipped: 'hidden' };
-                // Through shadow roots too, up to the document.
-                const closest = (node, selector) => {
-                    for (let n = node; n; ) {
-                        if (n.closest(selector)) return true;
-                        const root = n.getRootNode();
-                        n = root && root.host ? root.host : null;
-                    }
-                    return false;
-                };
+                // The element and those around it in the flat tree, nearest
+                // first: through the slot it is assigned to and out of a
+                // shadow root to its host.
+                const chain = [];
+                for (let n = el; n; ) {
+                    if (n.nodeType === 1) chain.push(n);
+                    let next = (n.nodeType === 1 && n.assignedSlot) || n.parentNode;
+                    if (next && next.nodeType === 11) next = next.host || null;
+                    n = next;
+                }
+                if (!includeHidden) {
+                    if (typeof el.checkVisibility === 'function' && !el.checkVisibility({ visibilityProperty: true })) return { skipped: 'hidden' };
+                    // An open modal dialog makes everything else inert: the
+                    // scan judges the dialog, not what it covers.
+                    const modals = [];
+                    const visit = (root) => {
+                        for (const d of root.querySelectorAll('dialog')) {
+                            try { if (d.matches(':modal')) modals.push(d); } catch { /* a browser without :modal */ }
+                        }
+                        for (const host of root.querySelectorAll('*')) if (host.shadowRoot) visit(host.shadowRoot);
+                    };
+                    visit(el.ownerDocument);
+                    if (modals.length && !modals.some((d) => chain.includes(d))) return { skipped: 'hidden' };
+                }
+                const matches = (selector) => chain.some((n) => n.matches(selector));
                 for (const selector of excludeSelectors) {
-                    try { if (closest(el, selector)) return { skipped: 'excluded' }; } catch { /* a selector the page can't parse excludes nothing */ }
+                    try { if (matches(selector)) return { skipped: 'excluded' }; } catch { /* a selector the page can't parse excludes nothing */ }
                 }
                 if (scope) {
-                    try { if (!closest(el, scope)) return { skipped: 'outside-scope' }; } catch { /* the scan says so of its own scope */ }
+                    try { if (!matches(scope)) return { skipped: 'outside-scope' }; } catch { /* the scan says so of its own scope */ }
                 }
-                for (let node = el; node; ) {
-                    if (node.nodeType === 1) {
-                        const value = node.getAttribute('aria-hidden');
-                        if (value != null && value.trim().toLowerCase() === 'true') return { ariaHidden: true };
-                    }
-                    node = node.parentNode && node.parentNode.nodeType === 11 ? node.parentNode.host : node.parentNode;
+                const out = {};
+                for (const node of chain) {
+                    const value = node.getAttribute('aria-hidden');
+                    if (value != null && value.trim().toLowerCase() === 'true') out.ariaHidden = true;
+                    if (node.hasAttribute('inert')) out.inert = true;
                 }
-                return {};
+                return out;
             }, {
                 excludeSelectors: (Array.isArray(engineOptions.excludeSelectors) ? engineOptions.excludeSelectors : [])
                     .map(String).map((x) => x.trim()).filter(Boolean),
@@ -414,6 +435,7 @@ async function frameReading(frame, engineOptions = {}, contextSelector = null) {
             });
             if (read.skipped) return { skipped: read.skipped };
             ariaHidden = !!read.ariaHidden;
+            inert = !!read.inert;
         }
         const empty = await frame.evaluate(() => {
             const body = document.body;
@@ -425,7 +447,8 @@ async function frameReading(frame, engineOptions = {}, contextSelector = null) {
             };
             return !shows('::before') && !shows('::after');
         });
-        return empty ? { skipped: 'empty' } : { ariaHidden };
+        if (empty) return { skipped: 'empty' };
+        return inert ? { ariaHidden, inert } : { ariaHidden };
     } catch {
         return {};
     } finally {
@@ -445,11 +468,11 @@ function withinMs(ms, fallback, promise) {
  * Loads the page's lazy iframes, which a scan never scrolls to: made eager,
  * waited for a little. Each frame's own lazy iframes too.
  */
-async function loadLazyFrames(page) {
-    let changed = 0;
-    for (const frame of page.frames()) {
-        // A frame that never answers is not waited for: its own scan says so.
-        changed += await withinMs(LAZY_FRAME_ASK_MS, 0, frame.evaluate(() => {
+async function loadLazyFrames(page, askMs = LAZY_FRAME_ASK_MS) {
+    // Every frame at once: a frame that never answers is not waited for (its
+    // own scan says so), and one after another they added a second each.
+    const counts = await Promise.all(page.frames().map((frame) =>
+        withinMs(askMs, 0, frame.evaluate(() => {
             let n = 0;
             const visit = (root) => {
                 for (const el of root.querySelectorAll('iframe[loading="lazy" i], frame[loading="lazy" i]')) {
@@ -460,8 +483,8 @@ async function loadLazyFrames(page) {
             };
             visit(document);
             return n;
-        }));
-    }
+        }))));
+    const changed = counts.reduce((sum, n) => sum + (Number(n) || 0), 0);
     if (changed && typeof page.waitForNetworkIdle === 'function') {
         await page.waitForNetworkIdle({ idleTime: 300, timeout: LAZY_FRAME_WAIT_MS }).catch(() => {});
     }
@@ -475,8 +498,13 @@ async function loadLazyFrames(page) {
  * scanned (detached, sandboxed, timed out). Element pictures
  * are the top page's only: the lab pictures the page it shows.
  */
-async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = [], signal = null, contextSelector = null } = {}) {
-    await loadLazyFrames(page);
+async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = [], signal = null, contextSelector = null, budgetMs = null } = {}) {
+    // All the frames share one budget: each frame's limit is what is left of
+    // it, and a frame not reached in time is named as not scanned.
+    const budget = Number.isFinite(budgetMs) && budgetMs > 0 ? budgetMs : FRAMES_BUDGET_MS;
+    const deadline = Date.now() + budget;
+    const left = () => deadline - Date.now();
+    await loadLazyFrames(page, Math.min(LAZY_FRAME_ASK_MS, Math.max(0, left())));
     const main = page.mainFrame();
     const frames = page.frames().filter((f) => f !== main && !(typeof f.detached === 'boolean' && f.detached));
     const scanned = frames.slice(0, MAX_FRAMES);
@@ -491,7 +519,9 @@ async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = []
                 const above = parent && parent !== main ? await readingOf(parent) : {};
                 if (above.skipped) return above;
                 const own = await frameReading(frame, engineOptions, parent === main ? contextSelector : null);
-                return own.skipped ? own : { ariaHidden: !!(above.ariaHidden || own.ariaHidden) };
+                if (own.skipped) return own;
+                const inert = !!(above.inert || own.inert);
+                return { ariaHidden: !!(above.ariaHidden || own.ariaHidden), ...(inert ? { inert } : {}) };
             })());
         }
         return readings.get(frame);
@@ -509,8 +539,10 @@ async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = []
         })());
     };
     const results = await mapInBatches(scanned, FRAME_CONCURRENCY, async (frame) => {
-        const url = await urlOf(frame);
+        const url = left() > 0 ? await urlOf(frame) : (typeof frame.url === 'function' ? frame.url() || null : null);
         if (signal && signal.aborted) return { url, error: 'the scan was given up on' };
+        const limit = Math.min(FRAME_TIMEOUT_MS, left());
+        if (limit <= 0) return { url, error: `the iframes' ${Math.round(budget / 1000)} s ran out before this one was scanned` };
         let timer = null;
         try {
             // Within the frame's time limit: a frame that never answers is
@@ -521,14 +553,24 @@ async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = []
                 if (reading.skipped) return { url, skipped: reading.skipped };
                 const frameSelectors = await frameSelectorsOf(frame);
                 const builder = new A11yCoreBuilder({ page: frame, url: url || undefined });
-                builder.options(reading.ariaHidden ? { ...engineOptions, embeddedAriaHidden: true } : engineOptions);
+                builder.options({
+                    ...engineOptions,
+                    ...(reading.ariaHidden ? { embeddedAriaHidden: true } : {}),
+                    ...(reading.inert ? { embeddedInert: true } : {}),
+                });
                 if (Array.isArray(packs) && packs.length) builder.withPacks(packs);
                 applySelection(builder, runOnly);
                 builder.logger(() => {});
-                return { url, frameSelectors, ...(reading.ariaHidden ? { ariaHidden: true } : {}), result: await builder.analyze() };
+                return {
+                    url,
+                    frameSelectors,
+                    ...(reading.ariaHidden ? { ariaHidden: true } : {}),
+                    ...(reading.inert ? { inert: true } : {}),
+                    result: await builder.analyze(),
+                };
             })();
             const late = new Promise((_, reject) => {
-                timer = setTimeout(() => reject(new Error(`it did not answer within ${FRAME_TIMEOUT_MS / 1000} s`)), FRAME_TIMEOUT_MS);
+                timer = setTimeout(() => reject(new Error(`it did not answer within ${Math.round(limit / 100) / 10} s`)), limit);
             });
             scan.catch(() => {});
             return await Promise.race([scan, late]);
@@ -555,6 +597,22 @@ function stampTier(o, outcome) {
     return { ...o, occurrenceOutcome: tier };
 }
 
+// A contributor's findingOutcomes after a merge: the page's for the
+// occurrences of its check the merge kept, then the frame's, so each still
+// says what a standard makes of its occurrence. A side without them whose
+// check kept no occurrence adds none; one that kept some leaves the merged
+// rule with none, and the lab reads its occurrences by the rule's outcome.
+function mergedFindingOutcomes(own, frame, keep) {
+    if (!keep) return Array.isArray(own) ? own : null;
+    const side = (list, mask) => {
+        if (Array.isArray(list) && list.length === mask.length) return list.filter((_, i) => mask[i]);
+        return mask.some(Boolean) ? null : [];
+    };
+    const a = side(own, keep.held);
+    const b = side(frame, keep.frame);
+    return a && b ? [...a, ...b] : null;
+}
+
 /** The worse of two outcomes: a rule fails on the page if it fails in any of its frames. */
 function worseOutcome(a, b) {
     return (OUTCOME_RANK[b] || 0) > (OUTCOME_RANK[a] || 0) ? b : a;
@@ -567,10 +625,35 @@ function worseOutcome(a, b) {
  * the worse of the two. A rule's counts of a capped list (contrast's
  * elementCount and reportedCount) are added up. Changes `top` in place.
  */
+// Whether an occurrence is a note of a document whose rule did not fail or
+// ask (a frame that passed contrast says so in one), which a rule the merge
+// makes fail or ask has no place for: it is no element of its findings.
+function isPassNote(o) {
+    const tier = o && o.occurrenceOutcome;
+    return tier === 'pass' || tier === 'passed' || tier === 'notApplicable' || tier === 'inapplicable';
+}
+
+// The worse of each profile's verdict on a rule, from a scan of several
+// profiles (`verdicts`, { profile: outcome }); null when neither has one.
+function worseVerdicts(a, b) {
+    const isMap = (v) => v && typeof v === 'object' && !Array.isArray(v);
+    if (!isMap(a) && !isMap(b)) return null;
+    const out = { ...(isMap(a) ? a : {}) };
+    for (const [profile, outcome] of Object.entries(isMap(b) ? b : {})) {
+        out[profile] = profile in out ? worseOutcome(out[profile], outcome) : outcome;
+    }
+    return out;
+}
+
 function mergeFrameResults(top, frameResults) {
     if (!top || typeof top !== 'object') return top;
     for (const f of frameResults || []) {
         if (!f || !f.result) continue;
+        // Which of each check's occurrences the merge kept, the page's and
+        // the frame's: a rollup's contributor says what a standard makes of
+        // each in findingOutcomes, one per occurrence, which must stay in
+        // step with them.
+        const kept = new Map();
         for (const key of ['checksResults', 'rulesResults']) {
             const into = Array.isArray(top[key]) ? top[key] : (top[key] = []);
             const byId = new Map(into.map((r) => [r && r.ruleId, r]));
@@ -583,13 +666,24 @@ function mergeFrameResults(top, frameResults) {
                     const copy = { ...r, occurrences };
                     into.push(copy);
                     byId.set(r.ruleId, copy);
+                    if (key === 'checksResults') kept.set(r.ruleId, { held: [], frame: occurrences.map(() => true) });
                     continue;
                 }
                 // Each element keeps its own document's tier: the merged rule's
                 // worse outcome is no verdict on it.
-                held.occurrences = [...(Array.isArray(held.occurrences) ? held.occurrences : []).map((o) => stampTier(o, held.outcome)), ...occurrences];
+                const own = (Array.isArray(held.occurrences) ? held.occurrences : []).map((o) => stampTier(o, held.outcome));
                 held.outcome = worseOutcome(held.outcome, r.outcome);
                 if (held.outcomeNormalized || r.outcomeNormalized) held.outcomeNormalized = worseOutcome(held.outcomeNormalized, r.outcomeNormalized);
+                // A scan of several profiles: each profile's verdict, and the
+                // rule's own outcome, are the worse of the two documents' too.
+                const verdicts = worseVerdicts(held.verdicts, r.verdicts);
+                if (verdicts) held.verdicts = verdicts;
+                if (held.checkOutcome || r.checkOutcome) held.checkOutcome = worseOutcome(held.checkOutcome, r.checkOutcome);
+                const failing = held.outcome === 'fail' || held.outcome === 'cantTell';
+                const keepOwn = own.map((o) => !(failing && isPassNote(o)));
+                const keepFrame = occurrences.map((o) => !(failing && isPassNote(o)));
+                held.occurrences = [...own.filter((_, i) => keepOwn[i]), ...occurrences.filter((_, i) => keepFrame[i])];
+                if (key === 'checksResults') kept.set(r.ruleId, { held: keepOwn, frame: keepFrame });
                 const a = held.data && held.data.details;
                 const b = r.data && r.data.details;
                 // A rollup's checks, each with the worse of its outcomes: the
@@ -599,8 +693,12 @@ function mergeFrameResults(top, frameResults) {
                     const byTest = new Map(contributors.map((c) => [c && c.testId, c]));
                     for (const c of b.contributors) {
                         const mine = c && byTest.get(c.testId);
-                        if (mine) mine.outcome = worseOutcome(mine.outcome, c.outcome);
-                        else if (c) contributors.push({ ...c });
+                        if (mine) {
+                            mine.outcome = worseOutcome(mine.outcome, c.outcome);
+                            const outcomes = mergedFindingOutcomes(mine.findingOutcomes, c.findingOutcomes, kept.get(c.testId));
+                            if (outcomes) mine.findingOutcomes = outcomes;
+                            else delete mine.findingOutcomes;
+                        } else if (c) contributors.push({ ...c });
                     }
                     held.data = { ...held.data, details: { ...a, contributors } };
                 }

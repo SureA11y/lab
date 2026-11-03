@@ -465,7 +465,7 @@ function saveHtmlReport(reportModel, meta = {}, engineIdOverride = null) {
  */
 async function runOnPage(
     page,
-    { selection, runOnly, wcagLevel, contextSelector, excludeSelectors, engineOptions, postProcess, elementScreenshots = null, frames = true } = {},
+    { selection, runOnly, wcagLevel, contextSelector, excludeSelectors, engineOptions, postProcess, elementScreenshots = null, frames = false, framesBudgetMs = null } = {},
     engineIdOverride = null
 ) {
     const engineIds = normalizeEngineIdList(engineIdOverride);
@@ -495,7 +495,8 @@ async function runOnPage(
         // (surea11y, through its binding) reads it.
         elementScreenshots,
         // The page's iframes scanned too: an engine that cannot leaves it.
-        frames
+        frames,
+        framesBudgetMs
     });
 
     await dumpResultJson({ result, bundle, engineIds });

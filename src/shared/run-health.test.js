@@ -15,6 +15,16 @@ function payloadWith(extra = {}) {
 }
 
 describe('assessRun', () => {
+    test('a scan whose iframes could not be scanned covered less, and the run says so', () => {
+        const health = assessRun({ scans: [
+            { label: 'Home', canonical: { notices: [{ code: 'frames-not-scanned', message: "1 of the page's 1 iframes could not be scanned" }] } },
+            { label: 'Cart', canonical: { notices: [{ code: 'frames-off', message: 'left out' }] } },
+        ] });
+        assert.equal(health.degraded, true);
+        assert.deepEqual(health.reasons, [{ kind: 'frames-not-scanned', count: 1, detail: 'Home' }]);
+        assert.match(describeRunHealth(health)[0], /could not scan some of the page's iframes.*Home/);
+    });
+
     test('a whole run is ok and gives nothing to report', () => {
         const health = assessRun(payloadWith());
 

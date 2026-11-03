@@ -1019,8 +1019,8 @@
           ]
         },
         "frames": {
-          "description": "Scan the content of the page's iframes as well, each whole, and report what they show with the page: an element in an iframe names the iframe it is in. An iframe the page doesn't show, that the scan excludes or leaves outside its Include, or that shows nothing is left out, and the report says which and why; one under aria-hidden is scanned for what is seen, not for names and roles. Off, the report says how many iframes were left out.",
-          "default": true,
+          "description": "Scan the content of the page's iframes as well, each whole, and report what they show with the page: an element in an iframe names the iframe it is in. An iframe the page doesn't show, that the scan excludes or leaves outside its Include, or that shows nothing is left out, and the report says which and why; one under aria-hidden is scanned for what is seen, not for names and roles. Off, the default, the page's own content is scanned and the report says how many iframes were left out.",
+          "default": false,
           "type": "boolean"
         },
         "heavyNodeThreshold": {
