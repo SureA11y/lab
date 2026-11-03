@@ -411,14 +411,38 @@ async function frameReading(frame, engineOptions = {}, contextSelector = null) {
                         for (const host of root.querySelectorAll('*')) if (host.shadowRoot) visit(host.shadowRoot);
                     };
                     visit(el.ownerDocument);
-                    if (modals.length && !modals.some((d) => chain.includes(d))) return { skipped: 'hidden' };
+                    // With several open, only the topmost is reachable: the
+                    // others are inert under it, and the browser hit-tests
+                    // none of an inert one, so the topmost is the one a
+                    // point at its centre lands in.
+                    const top = modals.filter((d) => {
+                        const r = d.getBoundingClientRect();
+                        if (!r.width || !r.height) return false;
+                        const x = Math.min(Math.max(r.left + r.width / 2, 0), innerWidth - 1);
+                        const y = Math.min(Math.max(r.top + r.height / 2, 0), innerHeight - 1);
+                        const hit = el.ownerDocument.elementFromPoint(x, y);
+                        return !!hit && (hit === d || d.contains(hit) || (!!hit.shadowRoot && hit.shadowRoot.contains(d)));
+                    });
+                    const reachable = top.length ? top : modals;
+                    if (modals.length && !reachable.some((d) => chain.includes(d))) return { skipped: 'hidden' };
                 }
                 const matches = (selector) => chain.some((n) => n.matches(selector));
                 for (const selector of excludeSelectors) {
                     try { if (matches(selector)) return { skipped: 'excluded' }; } catch { /* a selector the page can't parse excludes nothing */ }
                 }
                 if (scope) {
-                    try { if (!matches(scope)) return { skipped: 'outside-scope' }; } catch { /* the scan says so of its own scope */ }
+                    // The Include's roots are the document's elements it
+                    // matches, as core reads them, and their shadow roots'
+                    // frames are theirs: only the document's own elements
+                    // around the frame, through the shadow hosts it is in.
+                    const docAncestors = [];
+                    for (let n = el; n; ) {
+                        if (n.nodeType === 1 && n.getRootNode() === el.ownerDocument) docAncestors.push(n);
+                        let next = n.parentNode;
+                        if (next && next.nodeType === 11) next = next.host || null;
+                        n = next;
+                    }
+                    try { if (!docAncestors.some((n) => n.matches(scope))) return { skipped: 'outside-scope' }; } catch { /* the scan says so of its own scope */ }
                 }
                 const out = {};
                 for (const node of chain) {

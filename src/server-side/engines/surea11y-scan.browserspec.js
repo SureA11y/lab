@@ -370,6 +370,30 @@ const CORE_EMBEDDED_INERT = (() => {
 })();
 
 describe('frames in Chrome', () => {
+    test('with two modal dialogs open, only the topmost one\'s frame is scanned; the Include matches the document\'s elements only', async () => {
+        const page = await browser.newPage();
+        try {
+            const frame = (id) => `<iframe title="${id}" srcdoc="<html lang=en><title>${id}</title><img src=a.png>"></iframe>`;
+            await page.setContent(`<!doctype html><html lang="en"><head><title>Frames</title></head><body><main>
+                <dialog id="lower">${frame('lower')}</dialog><dialog id="upper">${frame('upper')}</dialog>
+                <x-panel></x-panel></main>
+                <script>
+                    document.querySelector('x-panel').attachShadow({ mode: 'open' }).innerHTML = '<div class="panel">${frame('in-panel').replace(/'/g, "\\'")}</div>';
+                    document.getElementById('lower').showModal();
+                    document.getElementById('upper').showModal();
+                </script></body></html>`, { waitUntil: 'load' });
+            const titles = (results) => results.filter((r) => r.result).map((r) => r.result.title);
+            assert.deepEqual(titles(await scanFrames(page, { engineOptions: { locale: 'en' } })), ['upper']);
+            await page.evaluate(() => { document.getElementById('upper').close(); document.getElementById('lower').close(); });
+            // .panel is only in a shadow root: core's Include matches no element, so no frame is scanned.
+            const scoped = await scanFrames(page, { engineOptions: { locale: 'en' }, contextSelector: '.panel' });
+            assert.deepEqual(titles(scoped), []);
+            assert.ok(scoped.some((r) => r.skipped === 'outside-scope'));
+        } finally {
+            await page.close();
+        }
+    });
+
     test('a frame behind an open modal dialog is left out, one under [inert] is scanned as inert, through a slot too', async () => {
         const page = await browser.newPage();
         try {
