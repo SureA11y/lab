@@ -268,8 +268,29 @@
         else delete out.profiles;
         delete out.profilesNotRun;
         for (const old of ['wcagLevel', 'wcagVersion', 'conformanceProfile']) delete out[old];
-        if (scan.metrics && scan.metrics.coverageSummary) out.metrics = { ...scan.metrics, coverageSummary: narrowCoverage(scan.metrics.coverageSummary, level) };
-        if (scan.coverageSummary) out.coverageSummary = narrowCoverage(scan.coverageSummary, level);
+        // Its score was made from everything it checked, and its WCAG
+        // coverage goes when WCAG is left out.
+        if (scan.summary && typeof scan.summary === 'object' && 'score' in scan.summary) {
+            const { score: _score, ...rest } = scan.summary;
+            out.summary = rest;
+        }
+        if (scan.metrics && typeof scan.metrics === 'object') {
+            const metrics = { ...scan.metrics };
+            if (metrics.a11ySummary && typeof metrics.a11ySummary === 'object') {
+                const { scores: _scores, coverageSummary, ...rest } = metrics.a11ySummary;
+                metrics.a11ySummary = { ...rest, scoreLeftOut: true };
+                if (coverageSummary && level) metrics.a11ySummary.coverageSummary = narrowCoverage(coverageSummary, level);
+            }
+            if (metrics.coverageSummary) {
+                if (level) metrics.coverageSummary = narrowCoverage(metrics.coverageSummary, level);
+                else delete metrics.coverageSummary;
+            }
+            out.metrics = metrics;
+        }
+        if (scan.coverageSummary) {
+            if (level) out.coverageSummary = narrowCoverage(scan.coverageSummary, level);
+            else delete out.coverageSummary;
+        }
         return out;
     }
 
@@ -351,9 +372,14 @@
             out.metrics = {
                 ...report.metrics,
                 // Said so, so a reader tells it from a run that evaluated too little.
-                a11ySummary: { ...rest, scoreLeftOut: true, ...(coverageSummary ? { coverageSummary: narrowCoverage(coverageSummary, shared.wcag) } : {}) },
+                a11ySummary: { ...rest, scoreLeftOut: true, ...(coverageSummary && shared.wcag ? { coverageSummary: narrowCoverage(coverageSummary, shared.wcag) } : {}) },
             };
-            if (report.metrics.coverageSummary) out.metrics.coverageSummary = narrowCoverage(report.metrics.coverageSummary, shared.wcag);
+        }
+        // Its WCAG coverage, up to the shared level, or none when WCAG is left out.
+        if (report.metrics && report.metrics.coverageSummary) {
+            out.metrics = { ...(out.metrics || report.metrics) };
+            if (shared.wcag) out.metrics.coverageSummary = narrowCoverage(report.metrics.coverageSummary, shared.wcag);
+            else delete out.metrics.coverageSummary;
         }
         return out;
     }
@@ -416,8 +442,10 @@
         }
         // A scan only some reports have is read on what the others were
         // compared on: the profiles left out are left out of it too, so a
-        // new page's findings of them don't count as new.
-        if (leftOut.length) {
+        // new page's findings of them don't count as new. Where its own scans
+        // checked different profiles (a series of three, a page missing from
+        // one), it is read on what they share as well.
+        {
             const keptWcag = comparedOn.map((p) => levelOfId(p.id)).filter(Boolean)
                 .sort((x, y) => LEVELS.indexOf(x) - LEVELS.indexOf(y))[0] || null;
             const outIds = new Set(leftOut.map((p) => p.id));
@@ -429,14 +457,19 @@
                 if (inReport.size >= list.length) continue;
                 const own = sharedProfiles([...inReport.values()]);
                 if (!own) continue;
+                if (own.same && !leftOut.length) continue;
                 let wcag = own.wcag;
                 const above = wcag && keptWcag && LEVELS.indexOf(wcag) > LEVELS.indexOf(keptWcag);
                 if (above && outLevels.some((l) => LEVELS.indexOf(l) > LEVELS.indexOf(keptWcag))) wcag = keptWcag;
                 else if (wcag && !keptWcag && outLevels.length) wcag = null;
                 const standards = own.standards.filter((p) => !outIds.has(p.id));
-                if (wcag === own.wcag && standards.length === own.standards.length) continue;
+                if (own.same && wcag === own.wcag && standards.length === own.standards.length) continue;
                 if (!wcag && !standards.length) continue;
                 plans.set(key, { wcag, standards, leftOut: [], same: false });
+                if (!own.same) {
+                    pushOnce(comparedOn, [...(wcag ? [{ id: wcagId(wcag), label: wcagLabel(wcag) }] : []), ...standards]);
+                    pushOnce(leftOut, own.leftOut);
+                }
             }
         }
         // Whether the reports share nothing to compare on: every scan they

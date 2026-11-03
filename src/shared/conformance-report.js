@@ -249,16 +249,24 @@
         let version = null;
         let level = null;
         const ens = [];
+        // Whether any scan checked WCAG, and, when none did, what they checked.
+        let wcagChecked = false;
+        const checked = [];
         for (const s of asArray(report && report.scans)) {
             if (!s || s.skipped || s.skipInfo || s.includedInReport === false) continue;
             const ids = [s.profile, ...asArray(s.profiles)]
                 .map((p) => str(p && typeof p === 'object' ? p.id : p)).filter(Boolean);
+            for (const p of asArray(s.profiles).length ? s.profiles : [s.profile]) {
+                const label = str(p && typeof p === 'object' ? (p.label || p.id) : p);
+                if (label && !checked.includes(label)) checked.push(label);
+            }
             for (const id of ids) {
                 const en = EN301549_PROFILE.exec(id);
                 if (en && !ens.includes(`V${en[1]}`)) ens.push(`V${en[1]}`);
             }
             const checksWcag = !ids.length || ids.some((id) => /^wcag/i.test(id) || EN301549_PROFILE.test(id));
             if (!checksWcag) continue;
+            wcagChecked = true;
             const w = s.wcag && typeof s.wcag === 'object' ? s.wcag : { version: s.wcagVersion, level: s.wcagLevel };
             const l = TARGET_LEVELS.includes(str(w.level).toUpperCase()) ? str(w.level).toUpperCase() : null;
             const v = VERSIONS.includes(str(w.version)) ? str(w.version) : null;
@@ -275,7 +283,7 @@
         }
         const restating = version === '2.1' || version === '2.0' ? 'V3.2.1' : 'V4.1.1';
         const en301549 = ens.includes(restating) ? restating : (ens[0] || null);
-        return { version, level, en301549 };
+        return { version, level, en301549, wcagChecked, checked };
     }
 
     function targetOf(report, review, options) {
@@ -307,11 +315,17 @@
     // The evaluation methods as the report states them: the automated checks,
     // the manual review and the checks it answered, then the reviewer's own
     // words.
-    function methodsText(engine, target, review, manualChecks) {
+    // `scanned` is what the scans checked against (scannedTarget): a report
+    // whose scans checked no WCAG profile says what they did check, not the
+    // target they didn't.
+    function methodsText(engine, target, review, manualChecks, scanned) {
         const name = engine ? `${engine.name}${engine.version ? ` ${engine.version}` : ''}` : '';
         const m = manualChecks;
+        const noWcag = scanned && !scanned.wcagChecked && scanned.checked.length;
         return [
-            name ? `Automated checks with ${name} against WCAG ${target.wcagVersion} Level ${target.level}.` : '',
+            !name ? '' : noWcag
+                ? `Automated checks with ${name} against ${scanned.checked.join(', ')}, not against WCAG.`
+                : `Automated checks with ${name} against WCAG ${target.wcagVersion} Level ${target.level}.`,
             str(review && review.reviewer) ? `Manual review by ${str(review.reviewer)}.` : '',
             m.checks ? `Manual checks following the test procedures of ${name || 'surea11y core'}: ${m.checks} check${m.checks === 1 ? '' : 's'} answered, on `
                 + [
@@ -538,7 +552,7 @@
                 methods: str(review && review.methods),
                 // How many checks a person answered, on how many criteria.
                 manualChecks,
-                methodsText: methodsText(engine, target, review, manualChecks),
+                methodsText: methodsText(engine, target, review, manualChecks, scannedTarget(report)),
             },
             target,
             // Other standards the scans checked against follow, for the

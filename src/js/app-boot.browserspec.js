@@ -221,3 +221,39 @@ test('the Profiles selector hides a scan whose profiles are all off, and shows t
     assert.deepEqual(errors, []);
     await page.close();
 });
+
+test("Ctrl+Z in the workflow keeps focus in the steps it rebuilds, the Profile panel's included", async () => {
+    const { page, errors } = await openApp();
+    const focused = () => page.evaluate(() => {
+        const el = document.activeElement;
+        return { tag: el.tagName, text: el.textContent.trim(), inSteps: !!document.querySelector('#actionsContainer').contains(el) };
+    });
+    // History takes a change once its edits settle (250 ms).
+    const recorded = () => new Promise((resolve) => setTimeout(resolve, 400));
+    // Two changes to the scan's profiles, the panel left open on a checkbox.
+    await page.click('.profiles-input__toggle');
+    await page.click('.profiles-input input[value="wcag22-aaa"]');
+    await recorded();
+    await page.click('.profiles-input input[value="en301549-v4.1.1"]');
+    await recorded();
+    await page.focus('.profiles-input input[value="en301549-v4.1.1"]');
+    await page.keyboard.down('Control');
+    await page.keyboard.press('z');
+    await page.keyboard.up('Control');
+    await recorded();
+    let now = await focused();
+    assert.notEqual(now.tag, 'BODY');
+    assert.equal(now.inSteps, true);
+    assert.equal(now.text, 'Change');
+    // From another control of the step.
+    await page.evaluate(() => [...document.querySelectorAll('#actionsContainer button')].find((b) => b.textContent.trim() === 'Show more options').focus());
+    await page.keyboard.down('Control');
+    await page.keyboard.press('z');
+    await page.keyboard.up('Control');
+    await recorded();
+    now = await focused();
+    assert.equal(now.inSteps, true);
+    assert.equal(now.text, 'Show more options');
+    assert.deepEqual(errors, []);
+    await page.close();
+});

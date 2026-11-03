@@ -279,6 +279,45 @@ describe('compareOnShared, scan by scan', () => {
         assert.deepEqual(reports[1].scans[1].canonical.margins, []);
     });
 
+    test('in a series of three, a page only some reports have is read on the profiles its own scans share', () => {
+        const a = reportOf('a', [scan('Home', [AA], []), scan('Products', [AA, ARIA], [ariaRow])]);
+        const b = reportOf('b', [scan('Home', [AA], [])]);
+        const c = { ...reportOf('c', [scan('Home', [AA], []), scan('Products', [AA], [])]), timestamp: '2026-11-03T10:00:00Z' };
+        const { reports, basis } = compareOnShared([a, b, c]);
+        assert.deepEqual(reports[0].scans[1].canonical.findings, [], "WAI-ARIA's row goes: the third report didn't check it");
+        assert.deepEqual(basis.comparedOn, [AA]);
+        assert.deepEqual(basis.leftOut, [ARIA]);
+    });
+
+    test("a scan read without WCAG keeps no WCAG coverage, and a narrowed scan keeps no score of its own", () => {
+        const coverage = { criteria: [{ sc: '1.1.1', level: 'A', status: 'doesNotSupport' }] };
+        const a = reportOf('a', [scan('Home', [AA, ARIA], [ariaRow], {
+            summary: { score: 40, failCount: 1 },
+            coverageSummary: coverage,
+            metrics: { coverageSummary: coverage, a11ySummary: { scores: { avgPageAccessibility: 40 }, coverageSummary: coverage } },
+        })]);
+        a.metrics = { coverageSummary: coverage, a11ySummary: { scores: { avgPageAccessibility: 40 }, coverageSummary: coverage } };
+        const b = reportOf('b', [scan('Home', [ARIA], [ariaRow])]);
+        const { reports, basis } = compareOnShared([a, b]);
+        assert.deepEqual(basis.comparedOn, [ARIA]);
+        const narrowed = reports[0].scans[0];
+        assert.equal(narrowed.coverageSummary, undefined);
+        assert.equal(narrowed.metrics.coverageSummary, undefined);
+        assert.equal(narrowed.metrics.a11ySummary.coverageSummary, undefined);
+        assert.equal(narrowed.metrics.a11ySummary.scores, undefined);
+        assert.equal(narrowed.metrics.a11ySummary.scoreLeftOut, true);
+        assert.equal(narrowed.summary.score, undefined);
+        assert.equal(reports[0].metrics.coverageSummary, undefined);
+        assert.equal(reports[0].metrics.a11ySummary.coverageSummary, undefined);
+        // Read at a WCAG level, its coverage is kept up to that level.
+        const c = reportOf('b', [scan('Home', [AA], [], { coverageSummary: coverage })]);
+        const d = { ...reportOf('a', [scan('Home', [AA, ARIA], [ariaRow], { coverageSummary: coverage })]) };
+        assert.deepEqual(compareOnShared([d, c]).reports[0].scans[0].coverageSummary, coverage);
+        // Its per-page score no longer shows beside "No score".
+        const spread = diffReportSeries([a, b]).columns[0].stats.pageScores;
+        assert.equal(spread, null);
+    });
+
     test('a scan that names no profile (an older report) leaves the reports for their identities to say', () => {
         const a = reportOf('a', [{ label: 'Home', url: 'https://example.com/home', canonical: { findings: [] } }]);
         const b = reportOf('b', [scan('Home', [AA], [])]);

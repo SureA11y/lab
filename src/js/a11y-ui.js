@@ -2361,11 +2361,39 @@ function storeActiveMode(mode) {
             else undoCustomSteps();
         } else if (actionsBuilder) {
             const atBaseline = historyBaselineSig && getActionsSig() === historyBaselineSig;
-            if (e.shiftKey) actionsBuilder.redo();
-            else if (!atBaseline) actionsBuilder.undo();
+            keepFocusThroughRebuild(() => {
+                if (e.shiftKey) actionsBuilder.redo();
+                else if (!atBaseline) actionsBuilder.undo();
+            });
             syncHistoryButtons();
         }
     });
+
+    // Undo and redo rebuild every step, so the control that had focus is
+    // gone: focus goes to the control in its place in the rebuilt steps (the
+    // nearest shown one before it, as a closed panel's checkbox gives its
+    // Change button), else to the Undo button, else to the list.
+    function keepFocusThroughRebuild(rebuild) {
+        const active = document.activeElement;
+        const focusables = () => (actionsBar
+            ? [...actionsBar.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])')]
+            : []);
+        const at = focusables().indexOf(active);
+        rebuild();
+        if (active && active !== document.body && active.isConnected) return;
+        const after = focusables();
+        const shown = (el) => !el.disabled && el.getClientRects().length > 0;
+        let target = null;
+        for (let i = Math.min(at, after.length - 1); i >= 0 && !target; i -= 1) {
+            if (shown(after[i])) target = after[i];
+        }
+        if (!target && undoBtnEl && shown(undoBtnEl)) target = undoBtnEl;
+        if (!target && actionsBar) {
+            if (!actionsBar.hasAttribute('tabindex')) actionsBar.setAttribute('tabindex', '-1');
+            target = actionsBar;
+        }
+        target?.focus();
+    }
 
     // In open-report-files.js.
     const openReportFiles = createOpenReportFiles(app);

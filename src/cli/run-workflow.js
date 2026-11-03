@@ -328,7 +328,7 @@ function reportBatchCheck(raw, specPath) {
 // The batch's exit code is its worst run's, in this order: a cancelled
 // batch, a run that failed, one that covered less than asked, new failing
 // instances, new likely failures.
-const EXIT_RANK = [EXIT.CANCELLED, EXIT.RUN_FAILED, EXIT.DEGRADED, EXIT.NEW_INSTANCES, EXIT.LIKELY_FAILURES, EXIT.OK];
+const EXIT_RANK = [EXIT.CANCELLED, EXIT.RUN_FAILED, EXIT.BAD_USAGE, EXIT.DEGRADED, EXIT.NEW_INSTANCES, EXIT.LIKELY_FAILURES, EXIT.OK];
 
 function worstExit(codes) {
     return EXIT_RANK.find((code) => codes.includes(code)) ?? EXIT.OK;
@@ -441,7 +441,17 @@ async function runBatchFile(raw, options) {
 
             const runDirName = batchRunDirName(i + 1, batch.runs.length, run.name);
             const baseline = rowBaseline(request, { batchDir, run, options });
-            if (baseline.error) console.error(`Warning: ${run.name}: ${baseline.error}; not compared`);
+            // A baseline that is there but can't be read stops its row, as
+            // it stops a single run: run uncompared, a gate would pass it.
+            if (baseline.error) {
+                console.error(`Error: ${run.name}: ${baseline.error}; not run`);
+                item.status = 'error';
+                item.exitCode = EXIT_BAD_USAGE;
+                item.error = baseline.error;
+                codes.push(EXIT_BAD_USAGE);
+                writeManifest();
+                continue;
+            }
 
             item.status = 'running';
             item.startedAt = new Date().toISOString();
@@ -451,8 +461,8 @@ async function runBatchFile(raw, options) {
             try {
                 result = await runOne(run.spec, { ...options, keep: null }, {
                     outDir: path.join(batchDir, runDirName),
-                    baselinePayload: baseline.error ? null : baseline.payload,
-                    baselineLabel: baseline.error ? null : baseline.label,
+                    baselinePayload: baseline.payload,
+                    baselineLabel: baseline.label,
                     isCancelled: cancel.isCancelled,
                 });
             } catch (err) {
@@ -495,6 +505,7 @@ async function runBatchFile(raw, options) {
 const EXIT_WORDS = {
     [EXIT.OK]: 'ok',
     [EXIT.RUN_FAILED]: 'FAILED',
+    [EXIT.BAD_USAGE]: 'not run',
     [EXIT.DEGRADED]: 'degraded',
     [EXIT.NEW_INSTANCES]: 'new failures',
     [EXIT.LIKELY_FAILURES]: 'new likely failures',
