@@ -339,19 +339,88 @@ async function frameSelectorsOf(frame) {
 }
 
 /**
+ * Why a frame is left out of the scan, or null to scan it. Its <iframe> is
+ * read in its parent document, as core's own scan across frames reads it
+ * (src/core/frame-scan.js), with two cases more:
+ * - 'hidden': the page does not show it (display:none, the hidden attribute,
+ *   a closed <details>, content-visibility:hidden or visibility:hidden),
+ *   unless engineOptions.includeHiddenElements;
+ * - 'excluded': it, or an element around it, matches engineOptions'
+ *   excludeSelectors (the scan's Exclude);
+ * - 'aria-hidden': it, or an element around it, has aria-hidden="true", so
+ *   its content is out of the accessibility tree;
+ * - 'empty': its document has nothing in it.
+ * A frame whose element or document can't be read is scanned.
+ */
+async function frameSkipReason(frame, engineOptions = {}) {
+    let handle = null;
+    try {
+        handle = await frame.frameElement();
+        if (handle) {
+            const reason = await handle.evaluate((el, { excludeSelectors, includeHidden }) => {
+                if (!includeHidden && typeof el.checkVisibility === 'function'
+                    && !el.checkVisibility({ visibilityProperty: true })) return 'hidden';
+                for (const selector of excludeSelectors) {
+                    try { if (el.closest(selector)) return 'excluded'; } catch { /* a selector the page can't parse excludes nothing */ }
+                }
+                for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+                    const value = node.getAttribute('aria-hidden');
+                    if (value != null && value.trim().toLowerCase() === 'true') return 'aria-hidden';
+                }
+                return null;
+            }, {
+                excludeSelectors: (Array.isArray(engineOptions.excludeSelectors) ? engineOptions.excludeSelectors : [])
+                    .map(String).map((x) => x.trim()).filter(Boolean),
+                includeHidden: engineOptions.includeHiddenElements === true,
+            });
+            if (reason) return reason;
+        }
+        const empty = await frame.evaluate(() => {
+            const body = document.body;
+            if (!body || body.localName !== 'body') return false;
+            return !body.children.length && !body.textContent.trim();
+        });
+        return empty ? 'empty' : null;
+    } catch {
+        return null;
+    } finally {
+        if (handle) await handle.dispose().catch(() => {});
+    }
+}
+
+/**
  * Core's native result for each sub-frame of `page`, scanned whole (the
  * scan's Include selectors are the top document's), a few at a time:
- * [{ url, frameSelectors, result }] or [{ url, error }] for a frame that
- * could not be scanned (detached, sandboxed, timed out). Element pictures
+ * [{ url, frameSelectors, result }], [{ url, skipped }] for a frame left out
+ * (frameSkipReason), or [{ url, error }] for a frame that could not be
+ * scanned (detached, sandboxed, timed out). Element pictures
  * are the top page's only: the lab pictures the page it shows.
  */
 async function scanFrames(page, { engineOptions = {}, runOnly = null, packs = [], signal = null } = {}) {
     const main = page.mainFrame();
     const frames = page.frames().filter((f) => f !== main && !(typeof f.detached === 'boolean' && f.detached));
     const scanned = frames.slice(0, MAX_FRAMES);
+    // Why each frame is left out, if it is (frameSkipReason), a frame inside
+    // one left out with it.
+    const reasons = new Map();
+    const skipReason = (frame) => {
+        if (!reasons.has(frame)) {
+            reasons.set(frame, (async () => {
+                const parent = frame.parentFrame && frame.parentFrame();
+                if (parent && parent !== main) {
+                    const above = await skipReason(parent);
+                    if (above) return above;
+                }
+                return frameSkipReason(frame, engineOptions);
+            })());
+        }
+        return reasons.get(frame);
+    };
     const results = await mapInBatches(scanned, FRAME_CONCURRENCY, async (frame) => {
         const url = typeof frame.url === 'function' ? frame.url() : null;
         if (signal && signal.aborted) return { url, error: 'the scan was given up on' };
+        const skipped = await skipReason(frame);
+        if (skipped) return { url, skipped };
         let timer = null;
         try {
             const scan = (async () => {
@@ -438,4 +507,4 @@ function mergeFrameResults(top, frameResults) {
     return top;
 }
 
-module.exports = { scanPage, scanFrames, mergeFrameResults, captureScreenshots, applySelection, CORE_HOOKS, coreHooksFrom, installCoreHooks };
+module.exports = { scanPage, scanFrames, frameSkipReason, mergeFrameResults, captureScreenshots, applySelection, CORE_HOOKS, coreHooksFrom, installCoreHooks };

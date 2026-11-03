@@ -293,7 +293,8 @@
             const { scores: _scores, coverageSummary, ...rest } = report.metrics.a11ySummary;
             out.metrics = {
                 ...report.metrics,
-                a11ySummary: { ...rest, ...(coverageSummary ? { coverageSummary: narrowCoverage(coverageSummary, shared.wcag) } : {}) },
+                // Said so, so a reader tells it from a run that evaluated too little.
+                a11ySummary: { ...rest, scoreLeftOut: true, ...(coverageSummary ? { coverageSummary: narrowCoverage(coverageSummary, shared.wcag) } : {}) },
             };
             if (report.metrics.coverageSummary) out.metrics.coverageSummary = narrowCoverage(report.metrics.coverageSummary, shared.wcag);
         }
@@ -361,13 +362,18 @@
             const keptWcag = comparedOn.map((p) => levelOfId(p.id)).filter(Boolean)
                 .sort((x, y) => LEVELS.indexOf(x) - LEVELS.indexOf(y))[0] || null;
             const outIds = new Set(leftOut.map((p) => p.id));
+            // The WCAG levels left out: a new page keeps a level unless it is
+            // one of them. A standard left out elsewhere changes nothing of
+            // its WCAG level.
+            const outLevels = [...outIds].map((id) => levelOfId(id)).filter(Boolean);
             for (const [key, inReport] of byKey) {
                 if (inReport.size >= list.length) continue;
                 const own = sharedProfiles([...inReport.values()]);
                 if (!own) continue;
                 let wcag = own.wcag;
-                if (wcag && keptWcag) wcag = LEVELS.indexOf(wcag) <= LEVELS.indexOf(keptWcag) ? wcag : keptWcag;
-                else if (wcag && [...outIds].some((id) => levelOfId(id))) wcag = null;
+                const above = wcag && keptWcag && LEVELS.indexOf(wcag) > LEVELS.indexOf(keptWcag);
+                if (above && outLevels.some((l) => LEVELS.indexOf(l) > LEVELS.indexOf(keptWcag))) wcag = keptWcag;
+                else if (wcag && !keptWcag && outLevels.length) wcag = null;
                 const standards = own.standards.filter((p) => !outIds.has(p.id));
                 if (wcag === own.wcag && standards.length === own.standards.length) continue;
                 if (!wcag && !standards.length) continue;

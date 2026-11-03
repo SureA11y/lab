@@ -16,7 +16,7 @@ const assert = require('node:assert/strict');
 const puppeteer = require('puppeteer');
 const { runa11yCoreInPage, addHowToCheck } = require('@surea11y/core');
 
-const { scanPage, captureScreenshots } = require('./surea11y-scan');
+const { scanPage, scanFrames, captureScreenshots } = require('./surea11y-scan');
 const { CAPTURE_BUDGET_MS, TIME_LIMIT_ERROR, screenshotOptionsForStep, storeElementScreenshots } = require('../element-screenshots');
 
 const FIXTURE = `<!doctype html><html lang="en"><head><title>Fixture</title>
@@ -279,6 +279,39 @@ describe('core hooks in Chrome', () => {
             assert.equal(result.engine.environment.listenerHook, undefined);
             const check = result.checksResults.find((c) => c.ruleId === 'click-handler-keyboard-operable');
             assert.notEqual(check && check.outcome, 'fail');
+        } finally {
+            await page.close();
+        }
+    });
+});
+
+// Frames no one perceives are left out, as core's own scan across frames
+// leaves them out, each with its reason; the others are scanned.
+describe('frames left out in Chrome', () => {
+    test('a hidden, excluded, aria-hidden or empty frame is left out, a frame inside one with it', async () => {
+        const page = await browser.newPage();
+        try {
+            await page.setContent(`<!doctype html><html lang="en"><head><title>Frames</title></head><body><main>
+                <iframe id="shown" title="Map" srcdoc="<p>map</p>"></iframe>
+                <iframe id="none" style="display:none" srcdoc="<p>x</p>"></iframe>
+                <div class="ad"><iframe id="excluded" srcdoc="<p>ad</p>"></iframe></div>
+                <iframe id="ah" aria-hidden="TRUE" srcdoc="<p>tracker</p><iframe srcdoc='<p>inner</p>'></iframe>"></iframe>
+                <iframe id="empty"></iframe>
+            </main></body></html>`, { waitUntil: 'load' });
+            const results = await scanFrames(page, { engineOptions: { locale: 'en', excludeSelectors: ['.ad'] } });
+            const byId = {};
+            for (const frame of page.frames()) {
+                if (frame === page.mainFrame()) continue;
+                const el = await frame.frameElement();
+                const id = await el.evaluate((e) => e.id || e.ownerDocument.defaultView.frameElement.id + ' > inner');
+                byId[id] = results[page.frames().filter((f) => f !== page.mainFrame()).indexOf(frame)];
+            }
+            assert.ok(byId.shown.result, 'a frame shown is scanned');
+            assert.equal(byId.none.skipped, 'hidden');
+            assert.equal(byId.excluded.skipped, 'excluded');
+            assert.equal(byId.ah.skipped, 'aria-hidden');
+            assert.equal(byId['ah > inner'].skipped, 'aria-hidden');
+            assert.equal(byId.empty.skipped, 'empty');
         } finally {
             await page.close();
         }

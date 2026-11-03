@@ -359,6 +359,14 @@ function rowBaseline(request, { batchDir, run, options }) {
  * as the queue runs them. batch.json is written after each, so a batch cut
  * short still says what ran.
  */
+// What a batch item says of its comparison: its counts, or, checked against
+// things that share nothing with its baseline, that it was not compared, as
+// the run's own summary says (its counts are not counted against it).
+function batchComparison(comparison) {
+    const compared = comparableSummary(comparison);
+    return compared ? { compared } : { notCompared: true };
+}
+
 async function runBatchFile(raw, options) {
     const { ok, batch, errors, warnings } = checkBatch(raw, { validateUrl: validateUrlOrThrow, env: null });
     for (const warning of warnings) console.error(`Warning: ${warning}`);
@@ -460,7 +468,7 @@ async function runBatchFile(raw, options) {
                 item.scans = summary.scans;
                 item.scansRun = summary.scansRun;
                 item.findings = summary.findings;
-                if (result.comparison) item.compared = result.comparison.summary;
+                if (result.comparison) Object.assign(item, batchComparison(result.comparison));
             }
             codes.push(result.exitCode);
             writeManifest();
@@ -497,7 +505,7 @@ function printBatchSummary(manifest, batchDir) {
     for (const item of manifest.items) {
         const outcome = item.exitCode === null ? item.status : (EXIT_WORDS[item.exitCode] || `exit ${item.exitCode}`);
         const fails = item.findings ? `, ${item.findings.fail} failing` : '';
-        const changed = item.compared ? `, ${item.compared.occurrences.new} new, ${item.compared.occurrences.fixed} fixed` : '';
+        const changed = item.compared ? `, ${item.compared.occurrences.new} new, ${item.compared.occurrences.fixed} fixed` : (item.notCompared ? ', not compared with its baseline' : '');
         console.log(`  ${item.name.padEnd(width)}  ${outcome}${fails}${changed}`);
     }
     console.log(`Folder     ${batchDir}`);
@@ -856,4 +864,4 @@ if (require.main === module) {
         });
 }
 
-module.exports = { main, formatLogLine, countInstances, printComparison, USAGE, forceExit, worstExit };
+module.exports = { main, formatLogLine, countInstances, printComparison, batchComparison, USAGE, forceExit, worstExit };

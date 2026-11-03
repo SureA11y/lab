@@ -412,6 +412,17 @@ describe('multi-report renderer — can these be read against each other', () =>
         assert.match(html, /score <b class="num">—<\/b>/);
     });
 
+    test('a score left out for comparing on shared profiles says so, not that the run evaluated too little', async () => {
+        const { comparisonSeriesHTML } = await load();
+        const d = rich();
+        d.columns[1].stats.score = null;
+        d.columns[1].stats.scoreLeftOut = true;
+
+        const html = comparisonSeriesHTML(d);
+        assert.match(html, /No score: the runs are compared on the profiles they share/);
+        assert.doesNotMatch(html, /evaluated too little/);
+    });
+
     test('a sparkline breaks at a missing value instead of drawing through it', async () => {
         const { comparisonSeriesHTML } = await load();
         const scored = (id, ts, count, score) => report({

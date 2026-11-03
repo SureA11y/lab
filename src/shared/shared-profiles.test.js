@@ -115,6 +115,8 @@ describe('the comparisons read reports on their shared profiles', () => {
         assert.deepEqual(s.rows.map((r) => r.ruleId), ['wcag-1.1.1-non-text-content']);
         assert.deepEqual(s.document.profiles.leftOut, [ARIA]);
         assert.equal(s.document.criteriaMismatch, false);
+        // Its score is left out for the comparison, not for having evaluated too little.
+        assert.deepEqual(s.columns.map((c) => [c.stats.score, c.stats.scoreLeftOut]), [[null, true], [null, true]]);
     });
 });
 
@@ -193,6 +195,16 @@ describe('compareOnShared, scan by scan', () => {
         assert.equal(reports[0].scans[1].profile.id, EN.id);
         assert.equal(reports[0].scans[1].canonical.findings.length, 1);
         assert.deepEqual(reports[0].scans[0].canonical.findings, []);
+    });
+
+    test("a page only one run scanned keeps its WCAG level when only a standard was left out elsewhere", () => {
+        const aaa = row('wcag-1.4.6-contrast-enhanced', '1.4.6', 'fail');
+        const a = reportOf('a', [scan('Home', [AA, ARIA], [ariaRow])]);
+        const b = reportOf('b', [scan('Home', [AA], []), scan('New', [AAA], [aaa])]);
+        const out = compareOnShared([a, b]);
+        assert.deepEqual(out.basis.leftOut.map((p) => p.id), [ARIA.id]);
+        assert.equal(out.reports[1].scans[1].canonical.findings.length, 1);
+        assert.equal(diffReports(a, b, { mode: 'evolution' }).rows.filter((r) => r.category === 'new' && r.ruleId === aaa.ruleId).length, 1);
     });
 
     test('a skipped scan keeps its place among the scans of its page', () => {
