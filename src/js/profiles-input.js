@@ -153,6 +153,8 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
     if (asPopover) panel.setAttribute("popover", "manual");
     function place() {
         if (!asPopover || !isOpen()) return;
+        // A field rebuilt (by undo) while its panel was open: its listeners go.
+        if (!root.isConnected) { close(); return; }
         const anchor = bar.getBoundingClientRect();
         const width = Math.min(560, anchor.width, window.innerWidth - 16);
         const left = Math.max(8, Math.min(anchor.left, window.innerWidth - width - 8));
@@ -232,6 +234,8 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
         tokenInput.hidden = !tokenMode;
         tokenHelp.hidden = !tokenMode;
         groups.hidden = tokenMode;
+        // Which of several WCAG levels the step named says nothing of a token.
+        levelsNote.hidden = tokenMode || !levelsNote.textContent;
         const value = current();
         const ids = [...(value.wcag ? [value.wcag] : []), ...value.standards];
         if (tokenMode) {
@@ -311,7 +315,10 @@ export function buildProfilesControl({fieldId, labelText, choices = [], defaultV
     root.addEventListener("change", (e) => {
         if (e.target === tokenToggle && tokenToggle.checked) tokenInput.focus();
         // A level chosen settles which of several the step named.
-        if (e.target && e.target.name === radioName) levelsNote.hidden = true;
+        if (e.target && e.target.name === radioName) {
+            levelsNote.hidden = true;
+            levelsNote.textContent = "";
+        }
         sync();
         emit();
     });

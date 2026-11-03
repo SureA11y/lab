@@ -238,4 +238,43 @@ describe('the profile field, folded', () => {
         tokenInput.dispatchEvent(new win.Event('input', { bubbles: true }));
         assert.equal(field(actionsEl).querySelector('.profiles-input__summary').textContent, 'This scan checks the profiles a variable names.');
     });
+
+    test('the note on two WCAG levels hides for a variable, and goes once a level is chosen', () => {
+        const { actionsEl } = newBuilder([{ type: 'a11yScan', profile: ['wcag22-aa', 'wcag22-aaa'] }]);
+        const note = () => Array.from(field(actionsEl).querySelectorAll('.profiles-input__note')).find((n) => /more than one WCAG level/.test(n.textContent));
+        const token = field(actionsEl).querySelector('.profiles-input__token-toggle');
+        assert.equal(note().hidden, false);
+        choose(token);
+        assert.equal(note().hidden, true);
+        choose(token, false);
+        assert.equal(note().hidden, false);
+        choose(radios(actionsEl).find((r) => r.value === 'wcag22-aaa'));
+        choose(token);
+        choose(token, false);
+        assert.equal(note(), undefined, 'a level chosen settles it');
+    });
+
+    test('a field taken out of the page while its panel is open drops its listeners on the next scroll', () => {
+        const proto = win.HTMLElement.prototype;
+        const had = { show: proto.showPopover, hide: proto.hidePopover };
+        proto.showPopover = function () {};
+        proto.hidePopover = function () {};
+        const removed = [];
+        const remove = win.removeEventListener;
+        win.removeEventListener = function (type, ...rest) { removed.push(type); return remove.call(this, type, ...rest); };
+        try {
+            const { actionsEl } = newBuilder([{ type: 'a11yScan', label: 'Home' }]);
+            const toggle = toggleOf(actionsEl);
+            toggle.click();
+            assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+            actionsEl.remove();
+            win.dispatchEvent(new win.Event('scroll'));
+            assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+            assert.ok(removed.includes('scroll') && removed.includes('resize'));
+        } finally {
+            win.removeEventListener = remove;
+            proto.showPopover = had.show;
+            proto.hidePopover = had.hide;
+        }
+    });
 });
