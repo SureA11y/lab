@@ -162,3 +162,59 @@ describe('the profile field', () => {
         assert.equal(saved(builder), '{var:q},wcag22-aaa');
     });
 });
+
+describe('the profile field, folded', () => {
+    const toggleOf = (actionsEl) => field(actionsEl).querySelector('.profiles-input__toggle');
+    const panelOf = (actionsEl) => field(actionsEl).querySelector('.profiles-input__panel');
+
+    test('shows what the scan checks on one line, the choices behind a Change button', () => {
+        const { actionsEl } = newBuilder([{ type: 'a11yScan', label: 'Home', profile: ['wcag22-aa', 'en301549-v4.1.1'] }]);
+        const toggle = toggleOf(actionsEl);
+        const panel = panelOf(actionsEl);
+        assert.equal(toggle.textContent, 'Change');
+        assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+        assert.equal(toggle.getAttribute('aria-controls'), panel.id);
+        assert.equal(panel.hidden, true);
+        assert.match(field(actionsEl).querySelector('.profiles-input__summary').textContent, /WCAG 2\.2 AA \+ EN 301 549 V4\.1\.1/);
+        // A note that asks for attention stays on view while the panel is closed.
+        const note = field(actionsEl).querySelector('.profiles-input__note:not([hidden])');
+        assert.ok(note && !panel.contains(note));
+    });
+
+    test('Change opens the panel on the chosen level; Escape and Done close it, focus back on Change', () => {
+        const { actionsEl } = newBuilder([{ type: 'a11yScan', label: 'Home', profile: 'wcag22-aaa' }]);
+        const toggle = toggleOf(actionsEl);
+        const panel = panelOf(actionsEl);
+        toggle.click();
+        assert.equal(panel.hidden, false);
+        assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+        assert.equal(win.document.activeElement.value, 'wcag22-aaa');
+        win.document.activeElement.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(panel.hidden, true);
+        assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+        assert.equal(win.document.activeElement, toggle);
+        toggle.click();
+        panel.querySelector('.profiles-input__done').click();
+        assert.equal(panel.hidden, true);
+        assert.equal(win.document.activeElement, toggle);
+        // A click outside closes it too.
+        toggle.click();
+        win.document.body.dispatchEvent(new win.Event('pointerdown', { bubbles: true }));
+        assert.equal(panel.hidden, true);
+    });
+
+    test('an error in the closed field takes focus on Change; in the open one, on the choice', () => {
+        const { builder, actionsEl } = newBuilder([{ type: 'a11yScan', label: 'Home' }]);
+        choose(radios(actionsEl).find((r) => r.value === ''));
+        const widget = field(actionsEl)._profilesWidget;
+        assert.equal(widget.validate().el, toggleOf(actionsEl));
+        widget.open();
+        assert.equal(widget.validate().el.value, '');
+        assert.equal(builder.getValue({ validate: true }).ok, false);
+    });
+
+    test('a variable shows on the line', () => {
+        const { actionsEl } = newBuilder([{ type: 'a11yScan', profile: '{var:profiles}' }]);
+        assert.equal(field(actionsEl).querySelector('.profiles-input__summary').textContent, 'This scan checks the profiles {var:profiles} names.');
+    });
+});
