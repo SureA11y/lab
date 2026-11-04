@@ -1,26 +1,37 @@
-# The lab's own tests, on every push and pull request: the unit tests on the
-# oldest Node it supports and on the latest 22 and 24, and the tests that need
-# Chrome on 24.
+# The lab's own tests. On main: the unit tests on the oldest Node it supports
+# and on the latest 22 and 24. On a pull request: on the oldest and on 24 only,
+# as main tests the latest 22 once the change is merged. The tests that need
+# Chrome run on 24 in both.
 
 name: CI
 
 on:
+  # Other branches are tested by their pull requests, so a commit pushed to a
+  # pull request's branch runs once, not twice.
   push:
-    # Dependabot's branches are tested by their pull requests.
-    branches-ignore: ['dependabot/**']
+    branches: [main]
+    paths-ignore: ['**/*.md', 'docs/**']
   pull_request:
+    paths-ignore: ['**/*.md', 'docs/**']
 
 permissions:
   contents: read
+
+# A newer push to a pull request makes the run for the older one moot. On main
+# every commit is tested to the end: the group is the commit itself.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
     name: Tests (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        node: ['22.13', '22', '24']
+        node: ${{ github.event_name == 'pull_request' && fromJSON('["22.13", "24"]') || fromJSON('["22.13", "22", "24"]') }}
     steps:
       - uses: actions/checkout@v4
 
