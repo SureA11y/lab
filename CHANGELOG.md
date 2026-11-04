@@ -56,6 +56,14 @@ The first public release.
   its server answered with an error is scanned with a notice of the status.
   A rule that lists only some of the elements it found (surea11y's contrast
   rules list 50) has all of them counted.
+- **A steps panel** beside the workflow and beside the custom steps: every
+  step as a tree, however deep, with Find (Ctrl+Shift+F, ⌘⇧F on a Mac) and
+  filters by kind (scans, clicks, containers, disabled steps). Going to a
+  step opens the containers it is in. Select steps (or ⌘/Ctrl-click them)
+  to turn them off or on together, or to change the fields they share in
+  one go, with one Undo. On a narrow screen the panel opens as a sheet.
+  It replaces the Step tree dialog. A workflow of a thousand steps
+  scrolls without stalling.
 - **Batches and a run queue**: one workflow once per row of a list (one per
   page, per environment, per release), up to four at once, each result
   saved as it finishes; a batch of thousands of runs opens a page of them
