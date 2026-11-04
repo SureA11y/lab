@@ -216,7 +216,7 @@ button {
     box-shadow: none;
 }
 
-button:hover:not(:disabled, [aria-disabled=true], .screenshot-btn, .legend-toggle, .collapse-all-toggle, .section-end-toggle, .link-button, .dsp-filter-btn, .dsp-chip, .steps-panel__chip, .dsp-link, .run-setting-chip) {
+button:hover:not(:disabled, [aria-disabled=true], .screenshot-btn, .legend-toggle, .collapse-all-toggle, .section-end-toggle, .link-button, .dsp-filter-btn, .dsp-chip, .steps-panel__chip, .runcustomstep-open, .dsp-link, .run-setting-chip) {
     background: var(--surface-5);
     border-color: var(--accent-border);
 }
@@ -235,12 +235,12 @@ button[aria-disabled=true] {
 }
 
 /* Primary buttons, keep your markup but bring reference look */
-button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.custom-steps-item):not(.legend-toggle):not(.config-header-row):not(.step-tree-node):not(.scan-tag-filter__chip):not(.scan-tag-filter__mode-btn):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.run-setting-chip):not(.dsp-link):not(.back-to-top) {
+button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.legend-toggle):not(.config-header-row):not(.scan-tag-filter__chip):not(.scan-tag-filter__mode-btn):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.runcustomstep-open):not(.run-setting-chip):not(.dsp-link):not(.back-to-top) {
     background: var(--accent-soft);
     border-color: var(--accent-border);
 }
 
-button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.custom-steps-item):not(.legend-toggle):not(.config-header-row):not(.step-tree-node):not(.scan-tag-filter__chip):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.run-setting-chip):not(.dsp-link):not(.back-to-top):hover:not(:disabled, [aria-disabled=true]) {
+button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.legend-toggle):not(.config-header-row):not(.scan-tag-filter__chip):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.runcustomstep-open):not(.run-setting-chip):not(.dsp-link):not(.back-to-top):hover:not(:disabled, [aria-disabled=true]) {
     background: color-mix(in srgb, var(--accent) 22%, transparent);
     border-color: color-mix(in srgb, var(--accent) 50%, transparent);
 }

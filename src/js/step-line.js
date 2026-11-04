@@ -428,6 +428,23 @@ export function createStepLine(builder) {
             apply();
         }
 
+        // A call to a custom step leads to it: "Open this custom step" under
+        // the choice of which one, when the app says how to open one.
+        function wireRunCustomStepOpenLink(lineEl) {
+            if (!lineEl || lineEl.dataset.actionType !== "runCustomStep") return;
+            const open = actionDef && actionDef.openCustomStep;
+            if (typeof open !== "function") return;
+            const field = lineEl.querySelector(':scope > .fields > .field[data-field-name="customStepId"]');
+            const select = field ? field.querySelector("select") : null;
+            if (!field || !select) return;
+            const link = createEl("button", {type: "button", className: "runcustomstep-open"}, "Open this custom step →");
+            const sync = () => { link.hidden = !select.value; };
+            link.addEventListener("click", () => open(select.value));
+            select.addEventListener("change", sync);
+            field.append(link);
+            sync();
+        }
+
         function wireRunCustomStepDynamicInputs(lineEl) {
             // Only applies to runCustomStep actions
             if (!lineEl || lineEl.dataset.actionType !== "runCustomStep") return;
@@ -632,6 +649,7 @@ export function createStepLine(builder) {
 
         wireRepeatDatasetOverridesCount(line);
         wireRunCustomStepDynamicInputs(line);
+        wireRunCustomStepOpenLink(line);
         wireSetViewportPresetToggle(line);
         wireSubjectFields(line);
         wireScanEngine(line);

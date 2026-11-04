@@ -62,18 +62,25 @@ function lineTitleText(line) {
  * The steps of an editor, as the model takes them, read from its lines in
  * the order they are shown.
  *
+ * Each step also has a `key`: its number and the lists it is in ("3.1|actions"),
+ * the same whether read from the lines or from saved steps (readActionNodes),
+ * so a step keeps its place when its custom step is opened in the editor.
+ *
  * @param {Element} editorEl  The section's list of steps.
- * @param {(line: Element) => string} idOf
+ * @param {(line: Element, key: string) => string} idOf
+ * @param {{depth?: number, parentId?: string|null, parentDisabled?: boolean}} [under]
+ *        Where the steps go in a larger tree: under a custom step, say.
  * @returns {{nodes: import('./steps-panel-model.js').StepNode[], lineById: Map<string, Element>}}
  */
-export function readStepNodes(editorEl, idOf) {
+export function readStepNodes(editorEl, idOf, under = {}) {
     const nodes = [];
     const lineById = new Map();
 
-    function walk(container, depth, parentId, prefix, parentDisabled) {
+    function walk(container, depth, parentId, prefix, parentDisabled, trail) {
         getDirectActionLines(container).forEach((line, i) => {
-            const id = idOf(line);
             const path = line.dataset.actionIndexPath || (prefix ? `${prefix}.${i + 1}` : String(i + 1));
+            const key = `${path}|${trail.join('.')}`;
+            const id = idOf(line, key);
             const type = String(line.dataset.actionType || '');
             const typeTitle = String(line.dataset.baseTitle || type);
             const alias = String(line.dataset.alias || '').trim();
@@ -83,11 +90,15 @@ export function readStepNodes(editorEl, idOf) {
             const name = alias || label || shownTitle;
             const nested = getDirectNestedActionContainers(line);
             const node = {
-                id, path, depth, parentId, type, typeTitle, name,
+                id, key, path, depth, parentId, type, typeTitle, name,
                 // A step in a disabled container does not run either.
                 disabled: parentDisabled || line.dataset.explicitDisabled === 'true' || line.dataset.inheritedDisabled === 'true',
                 container: nested.length > 0
             };
+            if (type === 'runCustomStep') {
+                const called = Array.from(line.querySelectorAll('.field[data-field-name="customStepId"]')).find((f) => f.closest('.line') === line);
+                node.calls = called ? String(called.querySelector('select, input')?.value || '').trim() : '';
+            }
             // What a text filter looks in: every field of the step. Read the
             // first time a text filter asks, not on every read of the editor:
             // reading every field of 1000 steps took most of a rebuild.
@@ -103,12 +114,66 @@ export function readStepNodes(editorEl, idOf) {
             });
             nodes.push(node);
             lineById.set(id, line);
-            nested.forEach((sub) => walk(sub, depth + 1, id, path, node.disabled));
+            nested.forEach((sub) => walk(sub, depth + 1, id, path, node.disabled, trail.concat([sub.dataset.fieldName || ''])));
         });
     }
 
-    if (editorEl) walk(editorEl, 0, null, '', false);
+    if (editorEl) walk(editorEl, under.depth || 0, under.parentId ?? null, '', !!under.parentDisabled, []);
     return {nodes, lineById};
+}
+
+/**
+ * Steps as the model takes them, read from saved steps rather than from
+ * lines: the steps of a custom step that is not open in the editor. Numbered
+ * and keyed as the editor numbers and keys them (readStepNodes), so the two
+ * agree once it is opened.
+ *
+ * @param {object[]} actions
+ * @param {object} o
+ * @param {(key: string) => string} o.idOf
+ * @param {(type: string) => string} o.typeTitleOf   "A11y scan" for "a11yScan".
+ * @param {(action: object) => string} o.nameOf      What the step is called, '' for none.
+ * @param {(type: string) => string[]} o.listsOf     The fields of a type that hold steps, in the editor's order.
+ * @param {number} [o.depth]
+ * @param {string|null} [o.parentId]
+ * @param {boolean} [o.parentDisabled]
+ */
+export function readActionNodes(actions, o) {
+    const nodes = [];
+    function walk(list, depth, parentId, prefix, parentDisabled, trail) {
+        (Array.isArray(list) ? list : []).forEach((action, i) => {
+            if (!action || typeof action !== 'object') return;
+            const path = prefix ? `${prefix}.${i + 1}` : String(i + 1);
+            const key = `${path}|${trail.join('.')}`;
+            const type = String(action.type || '');
+            const typeTitle = o.typeTitleOf(type) || type;
+            const name = o.nameOf(action) || typeTitle;
+            const lists = o.listsOf(type).filter((f) => Array.isArray(action[f]));
+            const node = {
+                id: o.idOf(key), key, path, depth, parentId, type, typeTitle, name,
+                disabled: parentDisabled || action.disabled === true,
+                container: o.listsOf(type).length > 0
+            };
+            if (type === 'runCustomStep') node.calls = String(action.customStepId || '').trim();
+            let searchText = null;
+            Object.defineProperty(node, 'searchText', {
+                enumerable: true,
+                get() {
+                    if (searchText === null) {
+                        const values = Object.entries(action)
+                            .filter(([k, v]) => k !== 'type' && v != null && typeof v !== 'object' && !/password|secret/i.test(k))
+                            .map(([, v]) => String(v));
+                        searchText = [name, typeTitle, type, ...values].join(' ').toLowerCase();
+                    }
+                    return searchText;
+                }
+            });
+            nodes.push(node);
+            lists.forEach((f) => walk(action[f], depth + 1, node.id, path, node.disabled, trail.concat([f])));
+        });
+    }
+    walk(actions, o.depth || 0, o.parentId ?? null, '', !!o.parentDisabled, []);
+    return nodes;
 }
 
 /**
@@ -213,6 +278,18 @@ function icon(doc, d) {
  * @param {(line: Element) => boolean} [o.isLineShown]  Whether a line is drawn (tests replace it).
  * @param {(line: Element) => DOMRect} [o.rectOf]       Its place on screen (tests replace it).
  * @param {() => boolean} [o.isEditorShown]             Whether the section is open (tests replace it).
+ * @param {() => {nodes: object[], lineById: Map<string, Element>}} [o.read]
+ *        Where the steps come from; the editor's lines by default. Custom
+ *        steps read the one open in the editor from its lines, the others
+ *        from their saved steps.
+ * @param {(node: object) => void} [o.open]
+ *        Brings a step that has no line yet into the editor (opens its
+ *        custom step), before the panel goes to it.
+ * @param {Element[]} [o.actions]   Controls of the section's own, shown under the title.
+ * @param {{count: (kind: string, query: string) => number, label: string, go: (kind: string, query: string) => void}} [o.elsewhere]
+ *        Says how many steps match in the other section, and leads there.
+ * @param {() => void} [o.onRead]   Told each time the panel has read the steps again.
+ * @param {(id: string) => string} [o.callName]  The name of the custom step a call runs.
  */
 export function createStepsPanel(o) {
     const {host, editorEl, sectionKey, title, goToLine} = o;
@@ -229,6 +306,7 @@ export function createStepsPanel(o) {
         if (!ids.has(line)) ids.set(line, `s${nextId++}`);
         return ids.get(line);
     };
+    const read = o.read || (() => readStepNodes(editorEl, idOf));
 
     const state = {
         kind: 'all',
@@ -259,12 +337,20 @@ export function createStepsPanel(o) {
     });
     const findLabel = el(doc, 'label', {for: `${baseId}-find`, className: 'steps-panel__find-label', text: 'Find steps'});
     const chipsEl = el(doc, 'div', {className: 'steps-panel__chips', role: 'group', 'aria-label': 'Show only'});
-    const statusText = el(doc, 'p', {className: 'steps-panel__status-text', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true'});
+    // The count stands out, where it is among the matches does not:
+    // "5 matches · 2 of 5". Read out whole as one status.
+    const statusCount = el(doc, 'b', {className: 'steps-panel__status-count'});
+    const statusWhere = el(doc, 'span', {className: 'steps-panel__status-where'});
+    const statusText = el(doc, 'p', {className: 'steps-panel__status-text', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true'}, [statusCount, statusWhere]);
     const prevBtn = el(doc, 'button', {type: 'button', className: 'icon-button secondary-button', 'aria-label': 'Previous match', title: 'Previous match'}, icon(doc, CHEVRON_UP));
     const nextBtn = el(doc, 'button', {type: 'button', className: 'icon-button secondary-button', 'aria-label': 'Next match', title: 'Next match'}, icon(doc, CHEVRON_DOWN));
     const clearBtn = el(doc, 'button', {type: 'button', className: 'steps-panel__clear link-button', text: 'Clear the filter'});
     const navBtns = el(doc, 'div', {className: 'steps-panel__match-nav'}, [prevBtn, nextBtn]);
-    const statusEl = el(doc, 'div', {className: 'steps-panel__status'}, [statusText, clearBtn, navBtns]);
+    const statusEl = el(doc, 'div', {className: 'steps-panel__status'}, [statusText, navBtns]);
+    const elsewhereBtn = el(doc, 'button', {type: 'button', className: 'steps-panel__elsewhere link-button'});
+    elsewhereBtn.hidden = true;
+    // Under the count: clearing the filter, and matches in the other section.
+    const linksEl = el(doc, 'div', {className: 'steps-panel__links'}, [clearBtn, elsewhereBtn]);
     const treeEl = el(doc, 'ul', {className: 'steps-panel__tree', role: 'tree', 'aria-label': title, id: `${baseId}-tree`});
     const emptyEl = el(doc, 'p', {className: 'steps-panel__empty'});
 
@@ -275,7 +361,8 @@ export function createStepsPanel(o) {
 
     const full = el(doc, 'div', {className: 'steps-panel__full', id: `${baseId}-full`}, [
         el(doc, 'div', {className: 'steps-panel__head'}, [el(doc, 'h3', {className: 'steps-panel__title', text: title}), hideBtn]),
-        el(doc, 'div', {className: 'steps-panel__controls'}, [findLabel, findField, chipsEl, statusEl]),
+        o.actions?.length ? el(doc, 'div', {className: 'steps-panel__actions'}, o.actions) : null,
+        el(doc, 'div', {className: 'steps-panel__controls'}, [findLabel, findField, chipsEl, statusEl, linksEl]),
         treeEl,
         emptyEl,
         hint
@@ -329,17 +416,20 @@ export function createStepsPanel(o) {
         clearBtn.hidden = !active;
         navBtns.hidden = !active || matches.length === 0;
         if (!active) {
-            const n = state.nodes.length;
-            setText(statusText, n === 1 ? '1 step' : `${n} steps`);
+            const n = countKinds(state.nodes).all;
+            setText(statusCount, n === 1 ? '1 step' : `${n} steps`);
+            setText(statusWhere, '');
             return;
         }
         if (!matches.length) {
-            setText(statusText, 'No steps match.');
+            setText(statusCount, 'No steps match.');
+            setText(statusWhere, '');
             return;
         }
         const at = matchPosition(matches, state.currentId);
         const count = matches.length === 1 ? '1 match' : `${matches.length} matches`;
-        setText(statusText, at ? `${count}, ${at} of ${matches.length}` : count);
+        setText(statusCount, count);
+        setText(statusWhere, at ? ` · ${at} of ${matches.length}` : '');
     }
 
     function rowClass(row) {
@@ -349,6 +439,7 @@ export function createStepsPanel(o) {
             row.match ? 'is-match' : '',
             row.context ? 'is-context' : '',
             node.disabled ? 'is-disabled' : '',
+            node.root ? 'is-root' : '',
             node.id === state.currentId ? 'is-current' : '',
             node.id === state.inViewId ? 'is-in-view' : ''
         ].filter(Boolean).join(' ');
@@ -377,17 +468,29 @@ export function createStepsPanel(o) {
                 dataset: {stepId: node.id}
             }, [
                 el(doc, 'span', {className: 'steps-panel__type', dataset: {cat: categoryOf(node)}, text: node.typeTitle}),
-                el(doc, 'span', {className: 'steps-panel__num', text: node.path}),
+                node.path ? el(doc, 'span', {className: 'steps-panel__num', text: node.path}) : null,
                 el(doc, 'span', {className: 'steps-panel__name'}, [
                     node.name,
                     node.disabled ? el(doc, 'span', {className: 'steps-panel__flag', text: ' (disabled)'}) : null
                 ]),
+                node.note ? el(doc, 'span', {className: 'steps-panel__note', text: node.note}) : null,
                 row.context ? el(doc, 'span', {className: 'visually-hidden', text: ', holds matches'}) : null
             ]);
             frag.append(item);
         });
+        // Drawing again replaces the rows: if one had focus, it goes back to
+        // the same step's new row, or focus would fall to the page.
+        const hadFocus = treeEl.contains(doc.activeElement) ? doc.activeElement.dataset?.stepId : null;
         treeEl.textContent = '';
         treeEl.append(frag);
+        if (hadFocus) {
+            const again = rowFor(listed.has(hadFocus) ? hadFocus : state.focusId);
+            if (again) {
+                treeEl.querySelectorAll('[role="treeitem"][tabindex="0"]').forEach((r) => r.setAttribute('tabindex', '-1'));
+                again.setAttribute('tabindex', '0');
+                again.focus({preventScroll: true});
+            }
+        }
         treeEl.hidden = rows.length === 0;
         emptyEl.hidden = rows.length > 0 || state.view.active;
         emptyEl.textContent = state.nodes.length ? '' : 'No steps yet.';
@@ -395,7 +498,7 @@ export function createStepsPanel(o) {
 
     function drawRail() {
         const where = nodeById(state.inViewId) || nodeById(state.currentId);
-        setText(railWhere, where ? `Steps · at ${where.path}` : 'Steps');
+        setText(railWhere, where ? `Steps · at ${where.path || where.name}` : 'Steps');
         const {active, matches} = state.view;
         railCount.hidden = !active;
         setText(railCount, active ? String(matches.length) : '');
@@ -410,12 +513,27 @@ export function createStepsPanel(o) {
         rail.hidden = !state.hidden;
     }
 
+    function drawElsewhere() {
+        const n = o.elsewhere && state.view.active ? o.elsewhere.count(state.kind, state.query) : 0;
+        elsewhereBtn.hidden = !n;
+        linksEl.hidden = clearBtn.hidden && !n;
+        if (n) setText(elsewhereBtn, `${n} more ${n === 1 ? 'match' : 'matches'} in ${o.elsewhere.label} →`);
+    }
+
     function draw() {
         state.view = applyFilter(state.nodes, {kind: state.kind, query: state.query});
         drawChips();
         drawStatus();
         drawTree();
         drawRail();
+        drawElsewhere();
+    }
+
+    function setFilter(kind, query) {
+        state.kind = KINDS.some((k) => k.id === kind) ? kind : 'all';
+        state.query = String(query || '');
+        findInput.value = state.query;
+        draw();
     }
 
     // ---- Reading the editor ----
@@ -424,16 +542,25 @@ export function createStepsPanel(o) {
     let nodeOfLine = new WeakMap();
 
     function rebuild() {
-        const read = readStepNodes(editorEl, idOf);
-        state.nodes = read.nodes;
-        state.lineById = read.lineById;
-        nodeOfLine = new WeakMap(state.nodes.map((n) => [state.lineById.get(n.id), n]));
-        if (state.currentId && !state.lineById.has(state.currentId)) state.currentId = null;
+        const got = read();
+        // A call to a custom step with no title of its own is called by the
+        // custom step it runs.
+        if (o.callName) {
+            got.nodes.forEach((n) => {
+                if (n.type === 'runCustomStep' && n.calls && n.name === n.typeTitle) n.name = o.callName(n.calls) || n.calls;
+            });
+        }
+        state.nodes = got.nodes;
+        state.lineById = got.lineById;
+        nodeOfLine = new WeakMap();
+        state.nodes.forEach((n) => { const line = state.lineById.get(n.id); if (line) nodeOfLine.set(line, n); });
+        if (state.currentId && !state.nodes.some((n) => n.id === state.currentId)) state.currentId = null;
         if (state.inViewId && !state.lineById.has(state.inViewId)) state.inViewId = null;
         visibleLines = null;
         draw();
         observeLines();
         warmSearchText();
+        o.onRead?.();
     }
 
     // What a text filter looks in is read lazily; read it while the browser
@@ -486,8 +613,16 @@ export function createStepsPanel(o) {
     }
 
     function goTo(id, {focus = false} = {}) {
-        const line = state.lineById.get(id);
-        if (!line) return;
+        const node = nodeById(id);
+        if (!node) return;
+        let line = state.lineById.get(id) || null;
+        // A step of a custom step that is not open: open it, then read the
+        // editor again to find the step's line.
+        if (!line && o.open) {
+            o.open(node);
+            rebuild();
+            line = state.lineById.get(id) || null;
+        }
         // The rows change in place: drawing the list again would take away
         // the row that has focus, and focus with it.
         const before = rowFor(state.currentId);
@@ -505,7 +640,7 @@ export function createStepsPanel(o) {
             state.focusId = id;
         }
         markLocated(id);
-        goToLine(line, {focus});
+        goToLine(line, {focus, node});
         visibleLines = null;
         drawStatus();
         drawRail();
@@ -676,6 +811,7 @@ export function createStepsPanel(o) {
         draw();
         findInput.focus();
     });
+    elsewhereBtn.addEventListener('click', () => o.elsewhere?.go(state.kind, state.query));
     prevBtn.addEventListener('click', () => stepMatch(-1));
     nextBtn.addEventListener('click', () => stepMatch(1));
 
@@ -741,7 +877,23 @@ export function createStepsPanel(o) {
     return {
         /** Reads the editor again now, after a change made all at once (a config loaded). */
         refresh: rebuild,
+        /** Draws again without reading: a note changed. */
+        redraw: draw,
+        /** Counts the other section's matches again: its steps changed. */
+        recountElsewhere: drawElsewhere,
         setHidden,
+        setFilter,
+        /** Goes to a step as clicking its row does. */
+        goTo,
+        /** Shows the panel if hidden and puts focus on a step's row, else the current one, else the first. */
+        focusTree(id) {
+            if (state.hidden) setHidden(false);
+            const row = rowFor(id) || rowFor(state.currentId) || treeEl.querySelector('[role="treeitem"]');
+            if (row) focusRow(row.dataset.stepId);
+        },
+        /** The steps as last read. */
+        get nodes() { return state.nodes; },
+        countMatches: (kind, query) => applyFilter(state.nodes, {kind, query}).matches.length,
         isHidden: () => state.hidden,
         /** For tests: what the panel holds. */
         get state() { return state; },

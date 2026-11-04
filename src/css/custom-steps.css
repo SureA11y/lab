@@ -7,7 +7,8 @@
 
 .custom-steps-panel {
     display: grid;
-    grid-template-columns: minmax(200px, 280px) 1fr;
+    /* The steps panel on the left, the custom step open in the editor beside it. */
+    grid-template-columns: 312px minmax(0, 1fr);
     gap: 0;
     padding: 14px;
     border: 1px solid var(--sb-border);
@@ -56,10 +57,6 @@ button.collapse-all-toggle {
 }
 
 button.collapse-all-toggle[hidden] { display: none !important; }
-
-/* The Workflow legend's Step tree button sits just left of collapse-all, the
-   two together at the right edge: it takes the push to the right. */
-button.step-tree-toggle + button.collapse-all-toggle { margin-left: 0; }
 
 /* Each section's own expand/collapse icon at the very end of its header
    row: it takes the push to the right unless the step buttons shown before
@@ -211,119 +208,48 @@ button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
 }
 
 .custom-steps-list-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-right: 1px solid var(--sb-border);
+    min-width: 0;
 }
 
-#custom-steps-list #custom-step-add-btn,
-#custom-steps-list #custom-step-paste-btn {
-    align-self: flex-end;
+/* Where the custom step open in the editor is called from. */
+.custom-step-usage {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.custom-step-usage[hidden] { display: none; }
+.custom-step-usage .custom-step-usage__link {
+    min-height: 28px;
+    padding: 3px 10px;
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-pill);
+    background: var(--bg-elevated);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    text-decoration: none;
+}
+.custom-step-usage .custom-step-usage__link:hover { border-color: var(--accent); }
+
+#custom-steps-list-actions :is(#custom-step-add-btn, #custom-step-paste-btn) {
     flex: 0 0 auto;
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
     padding: 0;
     justify-content: center;
     gap: 0;
-    margin-top: 4px;
 }
 
 .custom-steps-list-actions {
     display: flex;
-    justify-content: flex-end;
     gap: 6px;
-    margin-top: 4px;
-    padding-right: 14px;
-}
-
-.custom-steps-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    min-height: 160px;
-    max-height: 320px;
-    overflow: auto;
-}
-
-.custom-steps-item-row {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    padding-right: 8px;
-}
-
-.custom-steps-item-row:has(.custom-steps-item.is-active) {
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
-    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 70%, transparent);
-    border-radius: var(--radius-md) 0 0 var(--radius-md);
-    border-color: var(--sb-border);
-    border-style: solid;
-    border-width: 1px 0;
-}
-
-.custom-steps-item-row:has(.custom-steps-item:hover:not(.is-active)) {
-    background: color-mix(in srgb, var(--accent) 4%, transparent);
-}
-
-.custom-steps-item-row:has(.custom-steps-item:focus-visible) {
-    outline: var(--focus-outline);
-    outline-offset: var(--focus-outline-offset);
-    box-shadow: var(--focus-ring);
-}
-
-.custom-steps-item-row:has(.custom-steps-item.is-active:focus-visible) {
-    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 70%, transparent);
-    outline-offset: -5px;
-}
-
-.custom-steps-item.is-active:focus-visible {
-    outline: none;
-}
-
-.custom-steps-item {
-    display: block;
-    flex: 1 1 auto;
-    min-width: 0;
-    appearance: none;
-    border: 0;
-    background: transparent;
-    padding: 10px 12px;
-    text-align: left;
-    color: var(--text-main);
-    box-shadow: none;
-    cursor: pointer;
-    transition: background-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
-}
-
-.custom-steps-item:hover {
-    background: transparent !important;
-    border-color: transparent !important;
-}
-
-.custom-steps-item-id {
-    display: block;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.custom-steps-item-name {
-    display: block;
-    font-size: var(--fs-sm);
-    color: var(--text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.custom-steps-empty {
-    font-size: var(--fs-sm);
-    color: var(--text-muted);
-    margin: 0;
 }
 
 .custom-steps-editor-panel {

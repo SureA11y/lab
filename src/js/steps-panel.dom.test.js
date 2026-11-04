@@ -6,8 +6,10 @@ const { JSDOM } = require('jsdom');
 
 let createStepsPanel;
 let readPanelHidden;
+let readStepNodes;
+let readActionNodes;
 before(async () => {
-    ({ createStepsPanel, readPanelHidden } = await import('./steps-panel.js'));
+    ({ createStepsPanel, readPanelHidden, readStepNodes, readActionNodes } = await import('./steps-panel.js'));
 });
 
 // Lines shaped as the actions builder draws them: a header with the
@@ -70,7 +72,7 @@ function setup({ storage = memoryStorage(), rects = null } = {}) {
         editorEl: doc.getElementById('editor'),
         sectionKey: 'workflow',
         title: 'Workflow steps',
-        goToLine: (lineEl, opts) => went.push({ path: lineEl.dataset.actionIndexPath, ...opts }),
+        goToLine: (lineEl, opts) => went.push({ path: lineEl.dataset.actionIndexPath, focus: opts.focus }),
         storage,
         win,
         isLineShown: () => true,
@@ -173,6 +175,14 @@ describe('steps panel', () => {
         assert.ok(doc.contains(row));
     });
 
+    test('reading the editor again keeps focus on the same step', () => {
+        const { doc, panel, rows } = setup();
+        rows()[4].focus();
+        panel.refresh();
+        assert.equal(doc.activeElement.dataset.stepId, rows()[4].dataset.stepId);
+        assert.notEqual(doc.activeElement, doc.body);
+    });
+
     test('next and previous go through the matches without taking focus', () => {
         const { rows, chip, went, status, doc } = setup();
         chip('scan').click();
@@ -182,7 +192,7 @@ describe('steps panel', () => {
         next.click();
         assert.deepEqual(went.map((w) => w.path), ['2', '3.1.1.2']);
         assert.ok(went.every((w) => w.focus === false));
-        assert.equal(status(), '3 matches, 2 of 3');
+        assert.equal(status(), '3 matches · 2 of 3');
         prev.click();
         prev.click();
         assert.deepEqual(went.map((w) => w.path), ['2', '3.1.1.2', '2', '4']);
@@ -264,5 +274,80 @@ describe('steps panel', () => {
         assert.equal(rowText(rows()[1]), '2 Home');
         await new Promise((r) => setTimeout(r, 260));
         assert.equal(rowText(rows()[1]), '2 Front page');
+    });
+
+    test('steps read from saved data get the keys and numbers the editor gives them', () => {
+        const { doc } = setup();
+        const fromLines = readStepNodes(doc.getElementById('editor'), (line, key) => key).nodes;
+        const saved = [
+            { type: 'click', selector: '#accept-cookies' },
+            { type: 'a11yScan', label: 'Home' },
+            { type: 'group', alias: 'Product pages', actions: [
+                { type: 'forEachElement', selector: '.product-card', actions: [
+                    { type: 'if', actions: [{ type: 'click', selector: '#size-toggle' }, { type: 'a11yScan', label: 'Size picker' }] }
+                ] }
+            ] },
+            { type: 'a11yScan', label: 'Cart', disabled: true }
+        ];
+        const fromData = readActionNodes(saved, {
+            idOf: (key) => key,
+            typeTitleOf: (t) => t,
+            nameOf: (a) => a.label || a.alias || '',
+            listsOf: (t) => (['group', 'forEachElement', 'if'].includes(t) ? ['actions'] : [])
+        });
+        assert.deepEqual(fromData.map((n) => n.key), fromLines.map((n) => n.key));
+        assert.deepEqual(fromData.map((n) => n.path), fromLines.map((n) => n.path));
+        assert.deepEqual(fromData.map((n) => n.disabled), fromLines.map((n) => n.disabled));
+        assert.match(fromData[0].searchText, /#accept-cookies/);
+    });
+
+    test('going to a step that has no line yet opens it first, then goes to its line', () => {
+        const dom = new JSDOM('<!doctype html><body><aside id="p"></aside><div id="ed"></div></body>', { url: 'http://127.0.0.1:3000/' });
+        const win = dom.window;
+        const doc = win.document;
+        global.Element = win.Element;
+        let opened = null;
+        const went = [];
+        const lineOf = doc.createElement('div');
+        const head = { id: 'd1', key: '', path: '', depth: 0, parentId: null, root: true, container: true, type: 'customStep', typeTitle: 'Custom step', name: 'Log in', note: 'not used', disabled: false, searchText: 'log in' };
+        const step = { id: 'd1/2|', key: '2|', path: '2', depth: 1, parentId: 'd1', container: false, type: 'click', typeTitle: 'Click', name: 'Submit', disabled: false, searchText: 'submit' };
+        const panel = createStepsPanel({
+            host: doc.getElementById('p'), editorEl: doc.getElementById('ed'), sectionKey: 'custom', title: 'Custom steps',
+            storage: null, win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
+            read: () => ({ nodes: [head, step], lineById: opened ? new Map([[step.id, lineOf]]) : new Map() }),
+            open: (node) => { opened = node.id; },
+            goToLine: (line, { node }) => went.push({ line, id: node.id })
+        });
+        const rows = () => Array.from(doc.querySelectorAll('#p [role="treeitem"]'));
+        assert.match(rows()[0].textContent, /not used/);
+        assert.equal(doc.querySelector('#p .steps-panel__status-text').textContent, '1 step');
+        rows()[1].click();
+        assert.equal(opened, 'd1/2|');
+        assert.deepEqual(went, [{ line: lineOf, id: 'd1/2|' }]);
+        rows()[0].click();
+        assert.deepEqual(went[1], { line: null, id: 'd1' });
+    });
+
+    test('says how many steps match in the other section, and leads there with the same filter', () => {
+        const dom = new JSDOM('<!doctype html><body><aside id="p"></aside><div id="ed"></div></body>', { url: 'http://127.0.0.1:3000/' });
+        const win = dom.window;
+        const doc = win.document;
+        global.Element = win.Element;
+        const led = [];
+        const panel = createStepsPanel({
+            host: doc.getElementById('p'), editorEl: doc.getElementById('ed'), sectionKey: 'w', title: 'Workflow steps',
+            storage: null, win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
+            read: () => ({ nodes: [], lineById: new Map() }),
+            goToLine: () => {},
+            elsewhere: { label: 'Custom steps', count: (kind) => (kind === 'scan' ? 3 : 0), go: (kind, query) => led.push([kind, query]) }
+        });
+        const link = doc.querySelector('#p .steps-panel__elsewhere');
+        assert.equal(link.hidden, true);
+        panel.setFilter('scan', 'cart');
+        assert.equal(link.hidden, false);
+        assert.equal(link.textContent, '3 more matches in Custom steps →');
+        assert.equal(doc.querySelector('#p input[type="search"]').value, 'cart');
+        link.click();
+        assert.deepEqual(led, [['scan', 'cart']]);
     });
 });
