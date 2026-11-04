@@ -67,3 +67,56 @@ describe('a box that scrolls', () => {
         assert.equal(box.getAttribute('aria-label'), 'Every problem');
     });
 });
+
+describe('keeping boxes reachable as the page changes', () => {
+    const { keepScrollBoxesReachable } = require('./scroll-reach.js');
+    const frame = () => new Promise((res) => setTimeout(res, 30));
+
+    function page() {
+        const { window } = new JSDOM('<!doctype html><body><main></main></body>');
+        const g = globalThis;
+        const saved = { MutationObserver: g.MutationObserver, requestAnimationFrame: g.requestAnimationFrame };
+        g.MutationObserver = window.MutationObserver;
+        g.requestAnimationFrame = undefined;
+        const restore = () => Object.assign(g, saved);
+        return { document: window.document, restore };
+    }
+
+    test('a box drawn later, and output grown in a box, are looked at again', async () => {
+        const { document, restore } = page();
+        try {
+            keepScrollBoxesReachable(document.body);
+            const main = document.querySelector('main');
+            main.innerHTML = '<div class="dash-table-scroll"><table><caption>Rules</caption></table></div>';
+            const box = main.firstElementChild;
+            resize(box, { scrollWidth: 900, clientWidth: 300 });
+            await frame();
+            assert.equal(box.getAttribute('tabindex'), '0');
+            resize(box, { scrollWidth: 300, clientWidth: 300 });
+            box.querySelector('table').append(document.createElement('tbody'));
+            await frame();
+            assert.equal(box.hasAttribute('tabindex'), false);
+        } finally {
+            restore();
+        }
+    });
+
+    test('a change away from every box measures none', async () => {
+        const { document, restore } = page();
+        try {
+            const main = document.querySelector('main');
+            main.innerHTML = '<div class="dash-table-scroll"></div><section></section>';
+            const box = main.firstElementChild;
+            let reads = 0;
+            Object.defineProperty(box, 'scrollWidth', { configurable: true, get: () => { reads += 1; return 100; } });
+            Object.defineProperty(box, 'clientWidth', { configurable: true, get: () => 100 });
+            keepScrollBoxesReachable(document.body);
+            const before = reads;
+            main.querySelector('section').append(document.createElement('button'));
+            await frame();
+            assert.equal(reads, before);
+        } finally {
+            restore();
+        }
+    });
+});

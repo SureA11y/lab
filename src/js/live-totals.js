@@ -159,6 +159,15 @@ export function createLiveTotals(deps = {}) {
     function applyHiddenState() {
         if (!el) return;
         el.classList.toggle('is-tab-hidden', hidden);
+        syncPageRoom();
+    }
+
+    // While the card floats over the page, the page makes room for it
+    // (live.css). An inline card takes its own room.
+    function syncPageRoom() {
+        if (inline) return;
+        const root = doc?.documentElement;
+        if (root) root.classList.toggle('has-floating-totals', !!el && !hidden && el.isConnected);
     }
 
     /* ---- step progress ------------------------------------------------- */
@@ -590,6 +599,7 @@ export function createLiveTotals(deps = {}) {
 
         const mount = getMount() || doc.body;
         if (mount) mount.appendChild(el);
+        syncPageRoom();
         return el;
     }
 
@@ -667,6 +677,7 @@ export function createLiveTotals(deps = {}) {
     function detach() {
         if (el && el.parentNode) el.parentNode.removeChild(el);
         el = null;
+        syncPageRoom();
         panelEl = null;
         valueEls = null;
         dismissBtn = null;

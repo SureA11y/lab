@@ -233,6 +233,16 @@ and the later steps of the work keep to them too:
   when the browser is idle, not on each rebuild.
 - **Names wrap; nothing is cut.** Cut text is lost to someone who spaces
   text out (WCAG 1.4.12). A deep step's name moves to a line of its own.
+- **No style rule asks about the whole page.** `html:has(dialog[open])` and
+  its like were matched again at every change anywhere; a long workflow
+  changes at each step it scrolls into view, as its buttons move into its
+  menu. Classes on `<html>` say instead whether a dialog is open, the mode
+  bar there, the totals card floating. Scrolling a screen went from a third
+  of a second to about a tenth.
+- **Watchers of the page ignore a step's own buttons.** The panel, Undo and
+  Redo, and the scrolling boxes look again only at a change of the steps or
+  of a box, not at buttons moving in and out of a step's menu; the menu
+  reads the width it is given, not a measure that lays the page out.
 
 ## Order of the work
 

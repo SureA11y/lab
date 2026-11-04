@@ -498,8 +498,9 @@ button.src-dialog-close:focus-visible {
     box-shadow: 0 1px 0 var(--border-subtle), 0 6px 16px -10px rgba(4, 21, 14, .35);
 }
 
-/* Targets of in-page links and focus land below the bar, not under it. */
-html:has(.mode-bar) {
+/* Targets of in-page links and focus land below the bar, not under it.
+   index.html, which has the bar, has the class. */
+html.has-mode-bar {
     scroll-padding-top: calc(var(--mode-bar-h, 44px) + var(--space-3));
 }
 
