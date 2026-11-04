@@ -7,7 +7,7 @@
 
 import {getDirectActionLines, getDirectNestedActionContainers} from './action-tree.js';
 import {
-    KINDS, applyFilter, countKinds, isOfKind, matchPosition, siblingPositions, stepThroughMatches
+    KINDS, ancestorIds, applyFilter, countKinds, foldRows, isOfKind, matchPosition, siblingPositions, stepThroughMatches
 } from './steps-panel-model.js';
 
 const STORAGE_PREFIX = 'a11y-lab-steps-panel-';
@@ -93,6 +93,8 @@ export function readStepNodes(editorEl, idOf, under = {}) {
                 id, key, path, depth, parentId, type, typeTitle, name,
                 // A step in a disabled container does not run either.
                 disabled: parentDisabled || line.dataset.explicitDisabled === 'true' || line.dataset.inheritedDisabled === 'true',
+                // Turned off by itself, not only by a container it is in.
+                explicitDisabled: line.dataset.explicitDisabled === 'true',
                 container: nested.length > 0
             };
             if (type === 'runCustomStep') {
@@ -152,6 +154,7 @@ export function readActionNodes(actions, o) {
             const node = {
                 id: o.idOf(key), key, path, depth, parentId, type, typeTitle, name,
                 disabled: parentDisabled || action.disabled === true,
+                explicitDisabled: action.disabled === true,
                 container: o.listsOf(type).length > 0
             };
             if (type === 'runCustomStep') node.calls = String(action.customStepId || '').trim();
@@ -290,6 +293,10 @@ function icon(doc, d) {
  *        Says how many steps match in the other section, and leads there.
  * @param {() => void} [o.onRead]   Told each time the panel has read the steps again.
  * @param {(id: string) => string} [o.callName]  The name of the custom step a call runs.
+ * @param {Element} [o.barHost]     Where the selection bar goes, above the editor.
+ * @param {(lines: Element[], on: boolean) => number} [o.setDisabled]
+ *        Turns steps off or on as one change; says how many changed.
+ * @param {string} [o.unselectableNote]  Says why some steps cannot be selected.
  */
 export function createStepsPanel(o) {
     const {host, editorEl, sectionKey, title, goToLine} = o;
@@ -300,13 +307,10 @@ export function createStepsPanel(o) {
     const rectOf = o.rectOf || ((line) => line.getBoundingClientRect());
     const isEditorShown = o.isEditorShown || (() => editorEl.offsetParent !== null);
 
-    const ids = new WeakMap();
-    let nextId = 1;
-    const idOf = (line) => {
-        if (!ids.has(line)) ids.set(line, `s${nextId++}`);
-        return ids.get(line);
-    };
-    const read = o.read || (() => readStepNodes(editorEl, idOf));
+    // A step is known by its number and the lists it is in, not by its
+    // card: Undo and Redo draw the cards again, and the step selected, the
+    // current one and the folded ones must still be the same steps after.
+    const read = o.read || (() => readStepNodes(editorEl, (line, key) => key));
 
     const state = {
         kind: 'all',
@@ -317,8 +321,17 @@ export function createStepsPanel(o) {
         hidden: readPanelHidden(storage, sectionKey),
         nodes: [],
         lineById: new Map(),
-        view: {active: false, rows: [], matches: []}
+        view: {active: false, rows: [], matches: []},
+        // Selecting: on with Select, or ⌘/Ctrl-click on a row; off with Done.
+        selecting: false,
+        selected: new Set(),
+        // Containers folded in the list (not while a filter is on).
+        folded: new Set()
     };
+    // ⌘ on a Mac, where Ctrl-click is the right click; Ctrl elsewhere.
+    const isMac = /Mac|iPhone|iPad|iPod/i.test(win?.navigator?.userAgentData?.platform || win?.navigator?.platform || '');
+    const modKeyName = isMac ? '⌘' : 'Ctrl';
+    const withModKey = (event) => (isMac ? event.metaKey : event.ctrlKey);
     const baseId = `steps-panel-${sectionKey}`;
 
     // ---- Skeleton ----
@@ -331,6 +344,12 @@ export function createStepsPanel(o) {
         'aria-label': 'Hide the steps panel', title: 'Hide the steps panel',
         'aria-expanded': 'true', 'aria-controls': `${baseId}-full`
     }, icon(doc, CHEVRON_LEFT));
+    const selectBtn = el(doc, 'button', {
+        type: 'button', className: 'steps-panel__select',
+        title: `Choose steps to turn off or on together (or ${modKeyName}-click a step)`
+    }, 'Select');
+    const doneBtn = el(doc, 'button', {type: 'button', className: 'steps-panel__done'}, 'Done');
+    doneBtn.hidden = true;
     const findInput = el(doc, 'input', {
         type: 'search', id: `${baseId}-find`, className: 'steps-panel__find',
         placeholder: 'Label, selector, URL, {var:…}', autocomplete: 'off', spellcheck: 'false'
@@ -351,18 +370,36 @@ export function createStepsPanel(o) {
     elsewhereBtn.hidden = true;
     // Under the count: clearing the filter, and matches in the other section.
     const linksEl = el(doc, 'div', {className: 'steps-panel__links'}, [clearBtn, elsewhereBtn]);
+    const selectAllBox = el(doc, 'input', {type: 'checkbox', id: `${baseId}-all`});
+    const selectAllText = el(doc, 'span', {text: 'Select all'});
+    const selectAll = el(doc, 'label', {className: 'steps-panel__select-all', for: `${baseId}-all`}, [selectAllBox, selectAllText]);
+    const unselectableEl = el(doc, 'p', {className: 'steps-panel__unselectable', text: o.unselectableNote || ''});
+    const selectRow = el(doc, 'div', {className: 'steps-panel__select-row'}, [selectAll, unselectableEl]);
+    selectRow.hidden = true;
     const treeEl = el(doc, 'ul', {className: 'steps-panel__tree', role: 'tree', 'aria-label': title, id: `${baseId}-tree`});
     const emptyEl = el(doc, 'p', {className: 'steps-panel__empty'});
 
     const findField = el(doc, 'div', {className: 'steps-panel__find-field'}, [searchIcon(doc), findInput]);
-    const hint = el(doc, 'p', {className: 'steps-panel__hint', 'aria-hidden': 'true'}, [
-        el(doc, 'kbd', {text: '↑'}), el(doc, 'kbd', {text: '↓'}), ' move · ', el(doc, 'kbd', {text: 'Enter'}), ' opens the step'
-    ]);
+    const hint = el(doc, 'p', {className: 'steps-panel__hint', 'aria-hidden': 'true'});
+    let hintFor = null;
+    function drawHint() {
+        // Written only when the mode changes: replacing it on every draw set
+        // off the app's watchers of the page (see setText).
+        if (hintFor === state.selecting) return;
+        hintFor = state.selecting;
+        hint.textContent = '';
+        const k = (t) => el(doc, 'kbd', {text: t});
+        if (state.selecting) hint.append(k('Space'), ' selects · ', k('Enter'), ' shows it · ', k('Esc'), ' done');
+        else hint.append(k('↑'), k('↓'), ' move · ', k('Enter'), ' opens · ', k(modKeyName), '-click selects');
+    }
 
     const full = el(doc, 'div', {className: 'steps-panel__full', id: `${baseId}-full`}, [
-        el(doc, 'div', {className: 'steps-panel__head'}, [el(doc, 'h3', {className: 'steps-panel__title', text: title}), hideBtn]),
+        el(doc, 'div', {className: 'steps-panel__head'}, [
+            el(doc, 'h3', {className: 'steps-panel__title', text: title}),
+            el(doc, 'div', {className: 'steps-panel__head-actions'}, [selectBtn, doneBtn, hideBtn])
+        ]),
         o.actions?.length ? el(doc, 'div', {className: 'steps-panel__actions'}, o.actions) : null,
-        el(doc, 'div', {className: 'steps-panel__controls'}, [findLabel, findField, chipsEl, statusEl, linksEl]),
+        el(doc, 'div', {className: 'steps-panel__controls'}, [findLabel, findField, chipsEl, statusEl, linksEl, selectRow]),
         treeEl,
         emptyEl,
         hint
@@ -378,6 +415,21 @@ export function createStepsPanel(o) {
     const rail = el(doc, 'div', {className: 'steps-panel__rail'}, [showBtn, railWhere, railCount]);
 
     host.append(full, rail);
+
+    // ---- The selection bar, above the editor ----
+    const barCount = el(doc, 'b', {className: 'steps-panel-bar__count'});
+    const barTypes = el(doc, 'span', {className: 'steps-panel-bar__types'});
+    const barText = el(doc, 'p', {className: 'steps-panel-bar__text', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true'}, [barCount, barTypes]);
+    const disableBtn = el(doc, 'button', {type: 'button', className: 'steps-panel-bar__btn'});
+    const enableBtn = el(doc, 'button', {type: 'button', className: 'steps-panel-bar__btn'});
+    const bar = el(doc, 'div', {className: 'steps-panel-bar', role: 'region', 'aria-label': `Selected ${title.toLowerCase()}`}, [
+        barText,
+        el(doc, 'div', {className: 'steps-panel-bar__actions', role: 'group', 'aria-label': 'For the selected steps'}, [disableBtn, enableBtn])
+    ]);
+    const barEmpty = el(doc, 'p', {className: 'steps-panel-bar__empty', text: 'Tick steps in the panel. They show here, in the order they run, wherever they are.'});
+    bar.hidden = true;
+    barEmpty.hidden = true;
+    if (o.barHost) o.barHost.append(bar, barEmpty);
 
     // ---- Drawing ----
     let rowIndex = new Map();
@@ -441,12 +493,18 @@ export function createStepsPanel(o) {
             node.disabled ? 'is-disabled' : '',
             node.root ? 'is-root' : '',
             node.id === state.currentId ? 'is-current' : '',
-            node.id === state.inViewId ? 'is-in-view' : ''
+            node.id === state.inViewId ? 'is-in-view' : '',
+            state.selecting && state.selected.has(node.id) ? 'is-selected' : ''
         ].filter(Boolean).join(' ');
     }
 
+    function selectable(node) {
+        return !!node && !node.root && state.lineById.has(node.id);
+    }
+
     function drawTree() {
-        const {rows} = state.view;
+        const filtering = state.view.active;
+        const rows = filtering ? state.view.rows : foldRows(state.view.rows, state.folded);
         const positions = siblingPositions(rows);
         const listed = new Set(rows.map((r) => r.node.id));
         if (!listed.has(state.focusId)) {
@@ -454,6 +512,8 @@ export function createStepsPanel(o) {
         }
         const frag = doc.createDocumentFragment();
         rowIndex = new Map(rows.map((row, i) => [row.node.id, i]));
+        if (state.selecting) treeEl.setAttribute('aria-multiselectable', 'true');
+        else treeEl.removeAttribute('aria-multiselectable');
         treeHeight = 0;
         rows.forEach((row) => {
             const node = row.node;
@@ -463,10 +523,18 @@ export function createStepsPanel(o) {
                 // The indent and its guide lines are drawn by CSS from the depth.
                 style: `--depth: ${node.depth}`,
                 'aria-level': node.depth + 1, 'aria-setsize': pos.setsize, 'aria-posinset': pos.posinset,
-                'aria-expanded': node.container ? 'true' : null,
+                'aria-expanded': node.container ? (!filtering && state.folded.has(node.id) ? 'false' : 'true') : null,
                 'aria-current': node.id === state.currentId ? 'true' : null,
+                'aria-selected': state.selecting && selectable(node) ? (state.selected.has(node.id) ? 'true' : 'false') : null,
                 dataset: {stepId: node.id}
             }, [
+                // A container's caret folds it; it shows a filter's matches whatever their fold.
+                node.container && !filtering
+                    ? el(doc, 'span', {className: 'steps-panel__caret', 'aria-hidden': 'true', title: state.folded.has(node.id) ? 'Unfold' : 'Fold'}, state.folded.has(node.id) ? '▸' : '▾')
+                    : el(doc, 'span', {className: 'steps-panel__caret is-leaf', 'aria-hidden': 'true'}),
+                state.selecting && selectable(node)
+                    ? el(doc, 'span', {className: `steps-panel__check${state.selected.has(node.id) ? ' is-on' : ''}`, 'aria-hidden': 'true'})
+                    : null,
                 el(doc, 'span', {className: 'steps-panel__type', dataset: {cat: categoryOf(node)}, text: node.typeTitle}),
                 node.path ? el(doc, 'span', {className: 'steps-panel__num', text: node.path}) : null,
                 el(doc, 'span', {className: 'steps-panel__name'}, [
@@ -527,6 +595,129 @@ export function createStepsPanel(o) {
         drawTree();
         drawRail();
         drawElsewhere();
+        drawSelection();
+        drawHint();
+    }
+
+    // ---- Selecting ----
+    /** The rows a "Select all" takes: the matches with a filter, else every step. */
+    function poolForAll() {
+        const list = state.view.active ? state.view.matches : state.nodes;
+        return list.filter(selectable);
+    }
+
+    function selectedNodes() {
+        return state.nodes.filter((n) => state.selected.has(n.id));
+    }
+
+    function drawSelection() {
+        selectBtn.hidden = state.selecting;
+        doneBtn.hidden = !state.selecting;
+        selectRow.hidden = !state.selecting;
+        const pool = poolForAll();
+        const on = pool.filter((n) => state.selected.has(n.id)).length;
+        selectAllBox.checked = pool.length > 0 && on === pool.length;
+        selectAllBox.indeterminate = on > 0 && on < pool.length;
+        selectAllBox.disabled = pool.length === 0;
+        setText(selectAllText, state.view.active ? `Select all ${pool.length} matches` : `Select all ${pool.length} steps`);
+        unselectableEl.hidden = !o.unselectableNote || !state.view.rows.some(({node}) => !node.root && !selectable(node));
+
+        const picked = selectedNodes();
+        bar.hidden = !state.selecting;
+        barEmpty.hidden = !state.selecting || picked.length > 0;
+        setText(barCount, picked.length === 1 ? '1 selected' : `${picked.length} selected`);
+        const types = new Map();
+        picked.forEach((n) => types.set(n.typeTitle, (types.get(n.typeTitle) || 0) + 1));
+        setText(barTypes, types.size ? ` · ${Array.from(types, ([t, n]) => `${n} ${t}`).join(', ')}` : '');
+        // Disable counts the steps it would turn off, Enable those it would
+        // turn back on: a step off only because its container is stays as it is.
+        const canOff = picked.filter((n) => !n.explicitDisabled).length;
+        const canOn = picked.filter((n) => n.explicitDisabled).length;
+        setText(disableBtn, canOff ? `Disable ${canOff}` : 'Disable');
+        setText(enableBtn, canOn ? `Enable ${canOn}` : 'Enable');
+        disableBtn.disabled = !canOff || !o.setDisabled;
+        enableBtn.disabled = !canOn || !o.setDisabled;
+        drawSelectionView();
+    }
+
+    // The editor shows only the selected steps and, as their path, the
+    // containers they are in: a class on the editor and on those lines; no
+    // line is moved, opened or closed.
+    // Drawn again only when the selection, the mode or the cards change:
+    // touching the editor's classes makes the browser restyle all of it.
+    let viewDrawn = '';
+    function drawSelectionView() {
+        const want = state.selecting ? `on:${Array.from(state.selected).join(',')}` : 'off';
+        if (want === viewDrawn) return;
+        viewDrawn = want;
+        editorEl.querySelectorAll('.line.is-picked, .line.is-picked-path').forEach((l) => l.classList.remove('is-picked', 'is-picked-path'));
+        editorEl.classList.toggle('is-selection-view', state.selecting);
+        o.barHost?.classList.toggle('is-selecting', state.selecting);
+        if (!state.selecting) return;
+        state.selected.forEach((id) => {
+            const line = state.lineById.get(id);
+            if (!line) return;
+            line.classList.add('is-picked');
+            for (let p = line.parentElement?.closest('.line'); p && editorEl.contains(p); p = p.parentElement?.closest('.line')) p.classList.add('is-picked-path');
+        });
+    }
+
+    function startSelecting() {
+        if (state.selecting) return;
+        state.selecting = true;
+        state.selected.clear();
+    }
+
+    function stopSelecting({moveFocus = false} = {}) {
+        if (!state.selecting) return;
+        state.selecting = false;
+        state.selected.clear();
+        draw();
+        if (moveFocus) selectBtn.focus();
+        const line = state.lineById.get(state.currentId);
+        if (line) goToLine(line, {focus: false, node: nodeById(state.currentId)});
+    }
+
+    function toggleSelected(id, on = !state.selected.has(id)) {
+        const node = nodeById(id);
+        if (!selectable(node)) return;
+        if (on) state.selected.add(id);
+        else state.selected.delete(id);
+        const row = rowFor(id);
+        if (row) {
+            row.classList.toggle('is-selected', on);
+            row.setAttribute('aria-selected', on ? 'true' : 'false');
+            row.querySelector('.steps-panel__check')?.classList.toggle('is-on', on);
+        }
+        drawSelection();
+    }
+
+    function setDisabled(on) {
+        const lines = selectedNodes()
+            .filter((n) => (on ? !n.explicitDisabled : n.explicitDisabled))
+            .map((n) => state.lineById.get(n.id))
+            .filter(Boolean);
+        if (!lines.length || !o.setDisabled) return;
+        const n = o.setDisabled(lines, on);
+        setText(barTypes, ` · ${on ? 'turned off' : 'turned on'} ${n} ${n === 1 ? 'step' : 'steps'}; Undo puts ${n === 1 ? 'it' : 'them'} back`);
+        rebuild();
+    }
+
+    // ---- Folding ----
+    function setFolded(id, folded) {
+        const node = nodeById(id);
+        if (!node?.container || state.view.active) return;
+        if (folded) state.folded.add(id);
+        else state.folded.delete(id);
+        drawTree();
+        focusRow(id);
+    }
+
+    /** Unfolds the containers a step is in, so its row is listed. */
+    function unfoldTo(id) {
+        let changed = false;
+        ancestorIds(state.nodes, id).forEach((a) => { if (state.folded.delete(a)) changed = true; });
+        if (changed) drawTree();
     }
 
     function setFilter(kind, query) {
@@ -550,8 +741,28 @@ export function createStepsPanel(o) {
                 if (n.type === 'runCustomStep' && n.calls && n.name === n.typeTitle) n.name = o.callName(n.calls) || n.calls;
             });
         }
+        // A step whose card is still there follows its card to its new
+        // number (a step moved, or one before it removed); one whose card
+        // was drawn again (Undo, Redo) keeps its number.
+        const idOfLine = new Map();
+        got.lineById.forEach((line, id) => idOfLine.set(line, id));
+        // Undo and Redo draw every card again; a step removed takes only its
+        // own: if any card is still there, a card that is not was removed.
+        const redrawnAll = !Array.from(state.lineById.values()).some((line) => idOfLine.has(line));
+        const follow = (id) => {
+            const line = state.lineById.get(id);
+            if (line && idOfLine.has(line)) return idOfLine.get(line);
+            return redrawnAll ? id : null;
+        };
+        state.selected = new Set(Array.from(state.selected, follow).filter(Boolean));
+        state.folded = new Set(Array.from(state.folded, (id) => follow(id) || id));
+        if (state.currentId) state.currentId = follow(state.currentId);
+        if (state.focusId) state.focusId = follow(state.focusId) || state.focusId;
         state.nodes = got.nodes;
         state.lineById = got.lineById;
+        if (state.selecting) viewDrawn = '';
+        state.selected.forEach((id) => { if (!state.lineById.has(id)) state.selected.delete(id); });
+        state.folded.forEach((id) => { if (!state.nodes.some((n) => n.id === id)) state.folded.delete(id); });
         nodeOfLine = new WeakMap();
         state.nodes.forEach((n) => { const line = state.lineById.get(n.id); if (line) nodeOfLine.set(line, n); });
         if (state.currentId && !state.nodes.some((n) => n.id === state.currentId)) state.currentId = null;
@@ -623,6 +834,7 @@ export function createStepsPanel(o) {
             rebuild();
             line = state.lineById.get(id) || null;
         }
+        if (!rowFor(id)) unfoldTo(id);
         // The rows change in place: drawing the list again would take away
         // the row that has focus, and focus with it.
         const before = rowFor(state.currentId);
@@ -640,6 +852,7 @@ export function createStepsPanel(o) {
             state.focusId = id;
         }
         markLocated(id);
+        holdListStill();
         goToLine(line, {focus, node});
         visibleLines = null;
         drawStatus();
@@ -714,13 +927,34 @@ export function createStepsPanel(o) {
         return lines[last + 1] || lines[last];
     }
 
+    // While the editor scrolls to a step chosen in the panel, the steps it
+    // passes are in view one after another; the list keeps still, so the row
+    // clicked stays under the pointer. It follows the editor again once that
+    // scroll ends.
+    let quietUntil = 0;
+    let quietTimer = null;
+    const now = () => (win?.performance?.now ? win.performance.now() : Date.now());
+    function holdListStill() {
+        quietUntil = Infinity;
+        const settle = () => {
+            clearTimeout(quietTimer);
+            quietUntil = now() + 150;
+        };
+        win?.addEventListener?.('scrollend', settle, {once: true});
+        // Browsers without scrollend, or nothing to scroll: let go anyway.
+        clearTimeout(quietTimer);
+        quietTimer = setTimeout(settle, 1500);
+    }
+
     function setInView(id) {
+        // A step folded away is shown by the nearest container that is listed.
+        if (id && !rowIndex.has(id)) id = ancestorIds(state.nodes, id).find((a) => rowIndex.has(a)) || id;
         if (id === state.inViewId) return;
         rowFor(state.inViewId)?.classList.remove('is-in-view');
         state.inViewId = id;
         rowFor(id)?.classList.add('is-in-view');
         drawRail();
-        keepRowInView(id);
+        if (now() >= quietUntil) keepRowInView(id);
     }
 
     /** Works the step in view out from where the lines are (without an observer, and in tests). */
@@ -812,13 +1046,59 @@ export function createStepsPanel(o) {
         findInput.focus();
     });
     elsewhereBtn.addEventListener('click', () => o.elsewhere?.go(state.kind, state.query));
+    selectBtn.addEventListener('click', () => {
+        startSelecting();
+        draw();
+        doneBtn.focus();
+    });
+    doneBtn.addEventListener('click', () => stopSelecting({moveFocus: true}));
+    selectAllBox.addEventListener('change', () => {
+        const pool = poolForAll();
+        if (selectAllBox.checked) pool.forEach((n) => state.selected.add(n.id));
+        else pool.forEach((n) => state.selected.delete(n.id));
+        draw();
+    });
+    disableBtn.addEventListener('click', () => setDisabled(true));
+    enableBtn.addEventListener('click', () => setDisabled(false));
     prevBtn.addEventListener('click', () => stepMatch(-1));
     nextBtn.addEventListener('click', () => stepMatch(1));
 
     treeEl.addEventListener('click', (event) => {
         const item = event.target.closest('[role="treeitem"]');
         if (!item) return;
-        goTo(item.dataset.stepId, {focus: true});
+        const id = item.dataset.stepId;
+        const node = nodeById(id);
+        if (event.target.closest('.steps-panel__caret') && node?.container && !state.view.active) {
+            setFolded(id, !state.folded.has(id));
+            return;
+        }
+        // ⌘/Ctrl-click: selects, turning Select on with the current step if it was off.
+        if (withModKey(event)) {
+            event.preventDefault();
+            if (!selectable(node)) return;
+            if (!state.selecting) {
+                startSelecting();
+                if (selectable(nodeById(state.currentId))) state.selected.add(state.currentId);
+                state.selected.add(id);
+                state.focusId = id;
+                draw();
+                focusRow(id);
+                return;
+            }
+            toggleSelected(id);
+            return;
+        }
+        if (state.selecting) {
+            // The tick picks or drops; the row shows its card, picking it if it was not.
+            if (event.target.closest('.steps-panel__check')) {
+                toggleSelected(id);
+                return;
+            }
+            if (selectable(node) && !state.selected.has(id)) toggleSelected(id, true);
+            if (state.lineById.has(id)) goTo(id, {focus: false});
+            return;
+        }
+        goTo(id, {focus: true});
     });
 
     function focusRow(id) {
@@ -844,15 +1124,47 @@ export function createStepsPanel(o) {
             case 'Home': target = rows[0]; break;
             case 'End': target = rows[rows.length - 1]; break;
             case 'ArrowRight': {
+                // A folded container unfolds; an open one goes to its first step.
+                if (node?.container && !state.view.active && state.folded.has(node.id)) {
+                    event.preventDefault();
+                    setFolded(node.id, false);
+                    return;
+                }
                 const next = rows[at + 1];
                 if (node?.container && next && nodeById(next.dataset.stepId)?.parentId === node.id) target = next;
                 break;
             }
-            case 'ArrowLeft': target = node?.parentId ? rowFor(node.parentId) : null; break;
+            case 'ArrowLeft':
+                // An open container folds; anything else goes to its container.
+                if (node?.container && !state.view.active && !state.folded.has(node.id)) {
+                    event.preventDefault();
+                    setFolded(node.id, true);
+                    return;
+                }
+                target = node?.parentId ? rowFor(node.parentId) : null;
+                break;
             case 'Enter':
+                event.preventDefault();
+                goTo(item.dataset.stepId, {focus: !state.selecting});
+                return;
             case ' ':
                 event.preventDefault();
-                goTo(item.dataset.stepId, {focus: true});
+                if (state.selecting) toggleSelected(item.dataset.stepId);
+                else goTo(item.dataset.stepId, {focus: true});
+                return;
+            case 'Escape':
+                if (!state.selecting) return;
+                event.preventDefault();
+                stopSelecting();
+                focusRow(item.dataset.stepId);
+                return;
+            case 'a':
+            case 'A':
+                if (!state.selecting || !withModKey(event)) return;
+                event.preventDefault();
+                poolForAll().forEach((n) => state.selected.add(n.id));
+                draw();
+                focusRow(item.dataset.stepId);
                 return;
             default: return;
         }
@@ -883,6 +1195,10 @@ export function createStepsPanel(o) {
         recountElsewhere: drawElsewhere,
         setHidden,
         setFilter,
+        /** For tests and the app: whether selecting, and what is selected. */
+        get selecting() { return state.selecting; },
+        get selectedIds() { return Array.from(state.selected); },
+        stopSelecting,
         /** Goes to a step as clicking its row does. */
         goTo,
         /** Shows the panel if hidden and puts focus on a step's row, else the current one, else the first. */
@@ -909,6 +1225,9 @@ export function createStepsPanel(o) {
             win?.removeEventListener('resize', onResize);
             clearTimeout(resizeTimer);
             band?.disconnect();
+            clearTimeout(quietTimer);
+            bar.remove();
+            barEmpty.remove();
             if (warmHandle) win?.cancelIdleCallback?.(warmHandle);
             host.textContent = '';
         }

@@ -1093,6 +1093,22 @@ export function createActionsBuilder ({
         applyDisabledState(lineEl);
     }
 
+    /**
+     * Turns several steps off or on as one change: one Undo puts them all
+     * back. The steps panel's Disable and Enable use it on the selection.
+     * Steps already as asked are left as they are.
+     */
+    function setStepsDisabled(lines, on) {
+        let changed = 0;
+        (lines || []).forEach((lineEl) => {
+            if (!lineEl || !actionsEl.contains(lineEl) || isExplicitDisabled(lineEl) === !!on) return;
+            setLineExplicitDisabled(lineEl, !!on);
+            changed += 1;
+        });
+        if (changed) pushHistory(on ? "disableSteps" : "enableSteps");
+        return changed;
+    }
+
     function addShortcuts(shortcutsDefs = [], shortcutCallback, container) {
         shortcutsDefs.forEach(shortcut => {
             if (!defs[shortcut]) return;
@@ -1443,6 +1459,7 @@ export function createActionsBuilder ({
         addAction,
         appendActions,
         loadActions,
+        setStepsDisabled,
         setReservedVariableNames,
         clear,
         destroy,

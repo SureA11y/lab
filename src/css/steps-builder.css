@@ -94,8 +94,10 @@
 :is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .edit-title { display: none; }
 :is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .line-title { text-decoration: line-through; }
 
-:is(#actions-builder, #custom-step-actions-builder) .line.is-collapsed .fields,
-:is(#actions-builder, #custom-step-actions-builder) .line.is-collapsed .action-arrays-below { display: none; }
+/* Not while the steps panel shows the selected steps (is-picked) and the
+   steps they are in (is-picked-path): those show whatever their cards say. */
+:is(#actions-builder, #custom-step-actions-builder) .line.is-collapsed:not(.is-picked, .is-picked-path) .fields,
+:is(#actions-builder, #custom-step-actions-builder) .line.is-collapsed:not(.is-picked, .is-picked-path) .action-arrays-below { display: none; }
 
 :is(#actions-builder, #custom-step-actions-builder) .line-header {
     display: flex;
@@ -803,7 +805,7 @@
     color: var(--text-main);
     overflow: hidden;
 }
-.steps-panel.is-hidden { flex-basis: 40px; background: transparent; border-color: transparent; overflow: visible; }
+.steps-panel.is-hidden { flex-basis: 40px; width: 40px; background: transparent; border-color: transparent; overflow: visible; }
 
 .steps-panel__full { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
 .steps-panel__full[hidden], .steps-panel__rail[hidden] { display: none; }
@@ -964,9 +966,6 @@
 .steps-panel__type {
     flex: none;
     white-space: nowrap;
-    max-width: 8.5em;
-    overflow: hidden;
-    text-overflow: ellipsis;
     font-family: var(--font-mono);
     font-size: var(--fs-xxs);
     font-weight: 600;
@@ -1088,3 +1087,131 @@
 
 /* The links under the count are targets of 24px at least (WCAG 2.5.8). */
 .steps-panel .steps-panel__links :is(.steps-panel__clear, .steps-panel__elsewhere) { display: inline-flex; align-items: center; min-height: 24px; }
+
+/* ---- Selecting and folding (steps-panel.js) ---- */
+.steps-panel__head-actions { display: inline-flex; align-items: center; gap: var(--space-1); }
+.steps-panel .steps-panel__head-actions :is(.steps-panel__select, .steps-panel__done) {
+    min-height: 30px;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-base);
+    color: var(--text-main);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    cursor: pointer;
+}
+.steps-panel .steps-panel__head-actions .steps-panel__done { background: var(--accent); border-color: var(--accent); color: var(--bg-elevated); }
+.steps-panel .steps-panel__head-actions :is(.steps-panel__select, .steps-panel__done)[hidden] { display: none; }
+
+.steps-panel__select-row { display: flex; flex-direction: column; gap: var(--space-1); }
+.steps-panel__select-row[hidden] { display: none; }
+.steps-panel__select-all { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 24px; font-weight: 600; cursor: pointer; }
+.steps-panel__select-all input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+.steps-panel__unselectable { margin: 0; font-size: var(--fs-xs); color: var(--text-muted); }
+.steps-panel__unselectable[hidden] { display: none; }
+
+/* The caret folds a container; a step with nothing in it keeps the room, so names line up. */
+.steps-panel__caret { flex: none; width: 14px; text-align: center; color: var(--text-muted); font-size: var(--fs-xs); line-height: 1.6; }
+.steps-panel__caret:not(.is-leaf) { cursor: pointer; }
+.steps-panel__caret:not(.is-leaf):hover { color: var(--accent); }
+
+.steps-panel__check {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    border: 1.5px solid var(--text-muted);
+    border-radius: var(--radius-xs);
+    background: var(--bg-elevated);
+}
+.steps-panel__check.is-on {
+    border-color: var(--accent);
+    background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat;
+}
+.steps-panel__row.is-selected { background-color: var(--accent-soft); }
+
+/* The selection bar, above the editor while selecting. */
+.steps-panel-bar {
+    position: sticky;
+    top: 56px;
+    z-index: 3;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: var(--bg-elevated);
+}
+.steps-panel-bar[hidden], .steps-panel-bar__empty[hidden] { display: none; }
+.steps-panel-bar__text { margin: 0; flex: 1 1 auto; font-size: var(--fs-sm); }
+.steps-panel-bar__types { opacity: .92; }
+.steps-panel-bar__actions { display: inline-flex; gap: var(--space-2); }
+.steps-panel-bar .steps-panel-bar__btn {
+    min-height: 30px;
+    padding: 4px 12px;
+    border: 1px solid var(--bg-elevated);
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    cursor: pointer;
+}
+.steps-panel-bar .steps-panel-bar__btn:disabled { opacity: .55; cursor: default; }
+.steps-panel-bar__empty {
+    margin: 0 0 var(--space-3);
+    padding: var(--space-6);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-md);
+    text-align: center;
+    color: var(--text-muted);
+}
+/* While selecting, adding steps waits: the editor shows only the selection. */
+.steps-panel-barhost.is-selecting ~ .actions-builder-actions { display: none; }
+
+/* The selection view: only the selected steps, and the containers they are
+   in as one-line headers that say where they are. No card is opened or
+   closed for it. */
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line:not(.is-picked, .is-picked-path) { display: none; }
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > :not(.line-header, .action-arrays-below, .action-array) { display: none; }
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > .line-header .line-controls { display: none; }
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > .action-arrays-below > .action-array > :not(.actions-subcontainer),
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > .action-array > :not(.actions-subcontainer) { display: none; }
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) :is(.action-arrays-below > .action-array, .action-array):not(:has(.is-picked)) { display: none; }
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-style: solid;
+    border-width: 0 0 0 2px;
+    border-color: var(--border-strong);
+    background: transparent;
+}
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > .line-header .line-title { color: var(--text-muted); font-size: var(--fs-sm); }
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked { box-shadow: 0 0 0 2px var(--accent-soft); }
+
+@media (forced-colors: active) {
+    .steps-panel__check.is-on { forced-color-adjust: none; background-color: Highlight; border-color: Highlight; }
+    .steps-panel__row.is-selected { outline: 1px solid Highlight; outline-offset: -1px; }
+    .steps-panel-bar { border: 2px solid CanvasText; }
+}
+/* The path reads as an outline, not as boxes in boxes. */
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > .action-arrays-below > .action-array,
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > .action-array {
+    margin: 0;
+    padding: 0 0 0 var(--space-3);
+    border: 0;
+    background: transparent;
+}
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > .action-arrays-below,
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > .action-arrays-below > .action-array > .actions-subcontainer,
+:is(#actions-builder, #custom-step-actions-builder) .is-selection-view .line.is-picked-path:not(.is-picked) > .action-array > .actions-subcontainer {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}

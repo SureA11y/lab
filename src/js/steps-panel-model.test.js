@@ -122,3 +122,29 @@ describe('steps panel model: headings over steps', () => {
         assert.deepEqual(m.applyFilter(nodes, { query: 'guest' }).matches.map((n) => n.id), ['d0']);
     });
 });
+
+describe('steps panel model: folding', () => {
+    const nodes = () => {
+        const n = (id, depth, parentId, container = false) => ({ id, depth, parentId, container, path: id, type: 't', name: id, searchText: id });
+        return [n('a', 0, null), n('b', 0, null, true), n('c', 1, 'b', true), n('d', 2, 'c'), n('e', 1, 'b'), n('f', 0, null)];
+    };
+    const ids = (rows) => rows.map((r) => r.node.id);
+    const rowsOf = (list) => list.map((node) => ({ node }));
+
+    test('a folded container keeps its row and hides what is in it', () => {
+        assert.deepEqual(ids(m.foldRows(rowsOf(nodes()), new Set(['b']))), ['a', 'b', 'f']);
+    });
+
+    test('folding an inner container hides only its own steps', () => {
+        assert.deepEqual(ids(m.foldRows(rowsOf(nodes()), new Set(['c']))), ['a', 'b', 'c', 'e', 'f']);
+    });
+
+    test('nothing folded, nothing hidden', () => {
+        assert.equal(m.foldRows(rowsOf(nodes()), new Set()).length, 6);
+    });
+
+    test('lists the containers a step is in, nearest first', () => {
+        assert.deepEqual(m.ancestorIds(nodes(), 'd'), ['c', 'b']);
+        assert.deepEqual(m.ancestorIds(nodes(), 'a'), []);
+    });
+});

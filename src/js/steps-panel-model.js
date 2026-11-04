@@ -157,3 +157,33 @@ export function siblingPositions(rows) {
     groups.forEach((ids) => ids.forEach((id, i) => out.set(id, {posinset: i + 1, setsize: ids.length})));
     return out;
 }
+
+/**
+ * The rows left once folded containers hide what is in them. A folded
+ * container's own row stays. Only for the list without a filter: a filter
+ * shows every match, wherever it is.
+ *
+ * @param {{node: StepNode}[]} rows  In editor order.
+ * @param {Set<string>} folded       Ids of folded containers.
+ */
+export function foldRows(rows, folded) {
+    if (!folded || !folded.size) return rows || [];
+    const out = [];
+    let hideDeeperThan = Infinity;
+    (rows || []).forEach((row) => {
+        const {node} = row;
+        if (node.depth > hideDeeperThan) return;
+        hideDeeperThan = Infinity;
+        out.push(row);
+        if (node.container && folded.has(node.id)) hideDeeperThan = node.depth;
+    });
+    return out;
+}
+
+/** The containers a step is in, nearest first. */
+export function ancestorIds(nodes, id) {
+    const byId = new Map((nodes || []).map((n) => [n.id, n]));
+    const out = [];
+    for (let p = byId.get(id)?.parentId; p; p = byId.get(p)?.parentId) out.push(p);
+    return out;
+}

@@ -183,6 +183,86 @@ describe('steps panel', () => {
         assert.notEqual(doc.activeElement, doc.body);
     });
 
+    test('Ctrl-click turns Select on with the current step and the clicked one', () => {
+        const { doc, win, rows, panel } = setup();
+        rows()[1].click();
+        rows()[6].dispatchEvent(new win.MouseEvent('click', { bubbles: true, ctrlKey: true }));
+        assert.equal(panel.selecting, true);
+        assert.deepEqual(rows().filter((r) => r.getAttribute('aria-selected') === 'true').map((r) => r.querySelector('.steps-panel__num').textContent), ['2', '3.1.1.2']);
+        assert.equal(doc.querySelector('#panel [role="tree"]').getAttribute('aria-multiselectable'), 'true');
+    });
+
+    test('while selecting, Space picks or drops the focused step and Escape stops', () => {
+        const { doc, win, rows, panel } = setup();
+        doc.querySelector('#panel .steps-panel__select').click();
+        const row = rows()[3];
+        row.focus();
+        row.dispatchEvent(new win.KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+        assert.equal(rows()[3].getAttribute('aria-selected'), 'true');
+        rows()[3].dispatchEvent(new win.KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+        assert.equal(rows()[3].getAttribute('aria-selected'), 'false');
+        rows()[3].dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(panel.selecting, false);
+        assert.equal(rows()[3].getAttribute('aria-selected'), null);
+    });
+
+    test('the editor shows the selected steps and, as their path, their containers', () => {
+        const { doc, win, rows } = setup();
+        doc.querySelector('#panel .steps-panel__select').click();
+        rows()[6].dispatchEvent(new win.MouseEvent('click', { bubbles: true, ctrlKey: true }));
+        const editor = doc.getElementById('editor');
+        assert.ok(editor.classList.contains('is-selection-view'));
+        assert.deepEqual(Array.from(editor.querySelectorAll('.is-picked')).map((l) => l.dataset.actionIndexPath), ['3.1.1.2']);
+        assert.deepEqual(Array.from(editor.querySelectorAll('.is-picked-path')).map((l) => l.dataset.actionIndexPath), ['3', '3.1', '3.1.1']);
+        doc.querySelector('#panel .steps-panel__done').click();
+        assert.equal(editor.classList.contains('is-selection-view'), false);
+        assert.equal(editor.querySelectorAll('.is-picked, .is-picked-path').length, 0);
+    });
+
+    test('a container folds and unfolds from its caret and from the keyboard', () => {
+        const { doc, win, rows } = setup();
+        const group = () => rows().find((r) => r.querySelector('.steps-panel__num').textContent === '3');
+        group().querySelector('.steps-panel__caret').click();
+        assert.equal(rows().length, 4);
+        assert.equal(group().getAttribute('aria-expanded'), 'false');
+        group().dispatchEvent(new win.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        assert.equal(rows().length, 8);
+        group().dispatchEvent(new win.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+        assert.equal(rows().length, 4);
+        assert.equal(doc.activeElement, group());
+    });
+
+    test('a filter shows its matches inside folded containers', () => {
+        const { rows, chip } = setup();
+        rows()[2].querySelector('.steps-panel__caret').click();
+        chip('scan').click();
+        assert.ok(rows().some((r) => r.querySelector('.steps-panel__num').textContent === '3.1.1.2'));
+    });
+
+    test('Disable and Enable act on the selection as one change', () => {
+        const dom = new JSDOM(`<!doctype html><body><aside id="panel"></aside><div id="bar"></div><div id="editor">${editorHtml()}</div></body>`, { url: 'http://127.0.0.1:3000/' });
+        const win = dom.window;
+        const doc = win.document;
+        global.Element = win.Element;
+        const calls = [];
+        createStepsPanel({
+            host: doc.getElementById('panel'), editorEl: doc.getElementById('editor'), sectionKey: 'workflow', title: 'Workflow steps',
+            goToLine: () => {}, storage: null, win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
+            barHost: doc.getElementById('bar'),
+            setDisabled: (lines, on) => { calls.push([lines.map((l) => l.dataset.actionIndexPath), on]); lines.forEach((l) => { if (on) l.dataset.explicitDisabled = 'true'; else delete l.dataset.explicitDisabled; }); return lines.length; }
+        });
+        const rows = () => Array.from(doc.querySelectorAll('#panel [role="treeitem"]'));
+        doc.querySelector('#panel .steps-panel__select').click();
+        [0, 1, 7].forEach((i) => rows()[i].dispatchEvent(new win.MouseEvent('click', { bubbles: true, ctrlKey: true })));
+        const [off, on] = doc.querySelectorAll('#bar .steps-panel-bar__btn');
+        assert.equal(off.textContent, 'Disable 2');
+        assert.equal(on.textContent, 'Enable 1');
+        off.click();
+        assert.deepEqual(calls, [[['1', '2'], true]]);
+        assert.equal(on.textContent, 'Enable 3');
+        assert.equal(off.disabled, true);
+    });
+
     test('next and previous go through the matches without taking focus', () => {
         const { rows, chip, went, status, doc } = setup();
         chip('scan').click();
