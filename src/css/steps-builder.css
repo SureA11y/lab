@@ -89,7 +89,9 @@
     gap: 5px;
 }
 
-:is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper .edit-title { border: transparent; padding: 0; min-width: 24px; min-height: 24px; }
+/* 26px, not 24: its rounded corners leave a 24px square a pointer can hit
+   (WCAG 2.5.8), where a nested step's title sits close to other targets. */
+:is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper .edit-title { border: transparent; padding: 0; min-width: 26px; min-height: 26px; }
 :is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .line-title-wrapper { color: var(--text-muted); }
 :is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .edit-title { display: none; }
 :is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .line-title { text-decoration: line-through; }
