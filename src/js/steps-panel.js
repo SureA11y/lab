@@ -6,6 +6,7 @@
 // (steps-panel-model.js); this draws it and wires it.
 
 import {getDirectActionLines, getDirectNestedActionContainers} from './action-tree.js';
+import {asList, isEdit, planChanges, sharedFields, tally} from './steps-bulk-edit.js';
 import {
     KINDS, ancestorIds, applyFilter, countKinds, foldRows, isOfKind, matchPosition, siblingPositions, stepThroughMatches
 } from './steps-panel-model.js';
@@ -297,6 +298,9 @@ function icon(doc, d) {
  * @param {(lines: Element[], on: boolean) => number} [o.setDisabled]
  *        Turns steps off or on as one change; says how many changed.
  * @param {string} [o.unselectableNote]  Says why some steps cannot be selected.
+ * @param {{defs: object, read: (line: Element) => object, apply: (entries: {line: Element, values: object}[]) => number, warn?: (nodes: object[]) => string}} [o.edit]
+ *        Edit together: the step definitions, reading a step's values, and
+ *        setting several steps' fields as one change.
  */
 export function createStepsPanel(o) {
     const {host, editorEl, sectionKey, title, goToLine} = o;
@@ -326,7 +330,12 @@ export function createStepsPanel(o) {
         selecting: false,
         selected: new Set(),
         // Containers folded in the list (not while a filter is on).
-        folded: new Set()
+        folded: new Set(),
+        // Edit together: open or not, and the values chosen, by field.
+        editOpen: false,
+        edits: {},
+        // What the last Disable, Enable or Apply did: said until the selection changes.
+        barNote: ''
     };
     // ⌘ on a Mac, where Ctrl-click is the right click; Ctrl elsewhere.
     const isMac = /Mac|iPhone|iPad|iPod/i.test(win?.navigator?.userAgentData?.platform || win?.navigator?.platform || '');
@@ -422,9 +431,20 @@ export function createStepsPanel(o) {
     const barText = el(doc, 'p', {className: 'steps-panel-bar__text', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true'}, [barCount, barTypes]);
     const disableBtn = el(doc, 'button', {type: 'button', className: 'steps-panel-bar__btn'});
     const enableBtn = el(doc, 'button', {type: 'button', className: 'steps-panel-bar__btn'});
+    const editToggle = el(doc, 'button', {
+        type: 'button', className: 'steps-panel-bar__edit', 'aria-expanded': 'false', 'aria-controls': `${baseId}-edit`
+    });
+    const editHint = el(doc, 'span', {className: 'steps-panel-bar__edit-hint'});
+    const editPending = el(doc, 'span', {className: 'steps-panel-bar__pending'});
+    const editBody = el(doc, 'div', {className: 'steps-panel-edit', id: `${baseId}-edit`, role: 'group', 'aria-label': 'Edit the selected steps together'});
+    editBody.hidden = true;
     const bar = el(doc, 'div', {className: 'steps-panel-bar', role: 'region', 'aria-label': `Selected ${title.toLowerCase()}`}, [
-        barText,
-        el(doc, 'div', {className: 'steps-panel-bar__actions', role: 'group', 'aria-label': 'For the selected steps'}, [disableBtn, enableBtn])
+        el(doc, 'div', {className: 'steps-panel-bar__row'}, [
+            barText,
+            el(doc, 'div', {className: 'steps-panel-bar__actions', role: 'group', 'aria-label': 'For the selected steps'}, [disableBtn, enableBtn])
+        ]),
+        o.edit ? el(doc, 'div', {className: 'steps-panel-bar__row steps-panel-bar__row--edit'}, [editToggle, editHint, editPending]) : null,
+        o.edit ? editBody : null
     ]);
     const barEmpty = el(doc, 'p', {className: 'steps-panel-bar__empty', text: 'Tick steps in the panel. They show here, in the order they run, wherever they are.'});
     bar.hidden = true;
@@ -514,7 +534,6 @@ export function createStepsPanel(o) {
         rowIndex = new Map(rows.map((row, i) => [row.node.id, i]));
         if (state.selecting) treeEl.setAttribute('aria-multiselectable', 'true');
         else treeEl.removeAttribute('aria-multiselectable');
-        treeHeight = 0;
         rows.forEach((row) => {
             const node = row.node;
             const pos = positions.get(node.id);
@@ -575,7 +594,6 @@ export function createStepsPanel(o) {
     }
 
     function drawHidden() {
-        treeHeight = 0;
         host.classList.toggle('is-hidden', state.hidden);
         full.hidden = state.hidden;
         rail.hidden = !state.hidden;
@@ -628,7 +646,7 @@ export function createStepsPanel(o) {
         setText(barCount, picked.length === 1 ? '1 selected' : `${picked.length} selected`);
         const types = new Map();
         picked.forEach((n) => types.set(n.typeTitle, (types.get(n.typeTitle) || 0) + 1));
-        setText(barTypes, types.size ? ` · ${Array.from(types, ([t, n]) => `${n} ${t}`).join(', ')}` : '');
+        setText(barTypes, state.barNote || (types.size ? ` · ${Array.from(types, ([t, n]) => `${n} ${t}`).join(', ')}` : ''));
         // Disable counts the steps it would turn off, Enable those it would
         // turn back on: a step off only because its container is stays as it is.
         const canOff = picked.filter((n) => !n.explicitDisabled).length;
@@ -638,6 +656,221 @@ export function createStepsPanel(o) {
         disableBtn.disabled = !canOff || !o.setDisabled;
         enableBtn.disabled = !canOn || !o.setDisabled;
         drawSelectionView();
+        drawEdit();
+    }
+
+    // ---- Edit together ----
+    let editFields = [];
+    let editFieldsKey = '';
+    let editValues = null; // Map: step id -> its values, read when needed
+    let moreOpen = false;
+
+    let valuesKey = '';
+    function selectedValues() {
+        const key = Array.from(state.selected).join('\n');
+        if (key !== valuesKey) {
+            valuesKey = key;
+            editValues = null;
+        }
+        if (!editValues) {
+            editValues = new Map();
+            selectedNodes().forEach((n) => {
+                const line = state.lineById.get(n.id);
+                if (line) editValues.set(n.id, o.edit.read(line) || {});
+            });
+        }
+        return editValues;
+    }
+
+    function currentPlan() {
+        const values = selectedValues();
+        return planChanges(Array.from(values, ([id, v]) => ({id, values: v})), state.edits, editFields);
+    }
+
+    function fieldControl(f) {
+        const id = `${baseId}-edit-${f.name}`;
+        const edit = state.edits[f.name] || {};
+        const keep = 'Keep each step\u2019s own';
+        let control;
+        if (f.kind === 'choice' || f.kind === 'boolean') {
+            const opts = f.kind === 'boolean' ? [{value: 'true', label: 'Yes'}, {value: 'false', label: 'No'}] : f.options;
+            control = el(doc, 'select', {id, className: 'steps-panel-edit__control', dataset: {field: f.name}},
+                [el(doc, 'option', {value: ''}, keep), ...opts.map((op) => el(doc, 'option', {value: op.value}, op.label))]);
+            control.value = edit.value == null ? '' : String(edit.value);
+        } else if (f.kind === 'list') {
+            const mode = el(doc, 'select', {className: 'steps-panel-edit__mode', 'aria-label': `${f.label}: add or remove`, dataset: {field: f.name, part: 'mode'}},
+                [el(doc, 'option', {value: 'add'}, 'Add'), el(doc, 'option', {value: 'remove'}, 'Remove')]);
+            mode.value = edit.mode || 'add';
+            const input = el(doc, 'input', {id, type: 'text', className: 'steps-panel-edit__control', placeholder: 'Comma-separated', dataset: {field: f.name}});
+            input.value = asList(edit.value).join(', ');
+            control = el(doc, 'div', {className: 'steps-panel-edit__list'}, [mode, input]);
+        } else {
+            control = el(doc, 'input', {id, type: f.kind === 'number' ? 'number' : 'text', className: 'steps-panel-edit__control', placeholder: keep, dataset: {field: f.name}});
+            control.value = edit.value == null ? '' : String(edit.value);
+        }
+        return control;
+    }
+
+    function fieldRow(f, values) {
+        const now = tally(values.map((v) => v?.[f.name]), f);
+        const nowEl = el(doc, 'p', {className: 'steps-panel-edit__now'}, [
+            'Now: ',
+            now.length > 1 ? el(doc, 'span', {className: 'steps-panel-edit__mixed', text: 'Mixed'}) : null,
+            ...now.map(({text, n}) => el(doc, 'span', {className: 'steps-panel-edit__value'}, [text, el(doc, 'b', {text: ` ×${n}`})]))
+        ]);
+        return el(doc, 'div', {className: 'steps-panel-edit__row', dataset: {field: f.name}}, [
+            el(doc, 'label', {className: 'steps-panel-edit__label', for: `${baseId}-edit-${f.name}`, text: f.label}),
+            el(doc, 'div', {className: 'steps-panel-edit__field'}, [nowEl, fieldControl(f)]),
+            el(doc, 'p', {className: 'steps-panel-edit__count', dataset: {count: f.name}})
+        ]);
+    }
+
+    const editWarn = el(doc, 'p', {className: 'steps-panel-edit__warn'});
+    const editSummary = el(doc, 'p', {className: 'steps-panel-edit__summary', role: 'status', 'aria-live': 'polite'});
+    const editClear = el(doc, 'button', {type: 'button', className: 'steps-panel-edit__clear'}, 'Clear changes');
+    const editApply = el(doc, 'button', {type: 'button', className: 'steps-panel-edit__apply'});
+    const moreBtn = el(doc, 'button', {type: 'button', className: 'steps-panel-edit__more', 'aria-expanded': 'false'});
+
+    function drawEditForm() {
+        const picked = selectedNodes();
+        const key = Array.from(new Set(picked.map((n) => n.type))).sort().join(',');
+        if (key === editFieldsKey && editBody.firstChild) return false;
+        editFieldsKey = key;
+        editFields = o.edit ? sharedFields(picked.map((n) => n.type), o.edit.defs) : [];
+        Object.keys(state.edits).forEach((name) => { if (!editFields.some((f) => f.name === name)) delete state.edits[name]; });
+        const values = Array.from(selectedValues().values());
+        // Drawn again after the editor is read again (an Undo, say): focus
+        // goes back to the control that had it, the caret where it was.
+        const had = editBody.contains(doc.activeElement) ? doc.activeElement : null;
+        const back = had ? {field: had.dataset?.field, part: had.dataset?.part || '', cls: had.className, at: had.selectionStart} : null;
+        editBody.textContent = '';
+        const types = key.split(',').filter(Boolean);
+        editBody.append(el(doc, 'p', {className: 'steps-panel-edit__intro', text: types.length > 1
+            ? `These steps are of ${types.length} kinds, so only the fields they all have are here. Only the fields you change are written.`
+            : 'Only the fields you change are written; the rest stay as each step has them. Each card shows what it will get.'}));
+        if (!editFields.length) {
+            editBody.append(el(doc, 'p', {className: 'steps-panel-edit__none', text: 'These steps share no field that can be set for all of them at once.'}));
+            return true;
+        }
+        const primary = editFields.filter((f) => f.primary);
+        const rest = editFields.filter((f) => !f.primary);
+        const main = primary.length ? primary : rest.splice(0, 4);
+        main.forEach((f) => editBody.append(fieldRow(f, values)));
+        if (rest.length) {
+            const more = el(doc, 'div', {className: 'steps-panel-edit__rest', id: `${baseId}-edit-more`});
+            rest.forEach((f) => more.append(fieldRow(f, values)));
+            more.hidden = !moreOpen && !rest.some((f) => isEdit(state.edits[f.name], f));
+            moreBtn.setAttribute('aria-controls', more.id);
+            moreBtn.setAttribute('aria-expanded', more.hidden ? 'false' : 'true');
+            setText(moreBtn, more.hidden ? `More fields (${rest.length})` : 'Fewer fields');
+            editBody.append(moreBtn, more);
+        }
+        editBody.append(editWarn, el(doc, 'div', {className: 'steps-panel-edit__foot'}, [editSummary, editClear, editApply]));
+        if (back) {
+            const again = back.field
+                ? editBody.querySelector(`[data-field="${back.field}"]${back.part ? `[data-part="${back.part}"]` : ':not([data-part])'}`)
+                : Array.from(editBody.querySelectorAll('button')).find((x) => x.className === back.cls);
+            if (again) {
+                again.focus({preventScroll: true});
+                if (typeof back.at === 'number' && typeof again.setSelectionRange === 'function') {
+                    try { again.setSelectionRange(back.at, back.at); } catch { /* not a text field */ }
+                }
+            }
+        }
+        return true;
+    }
+
+    // Whether any card shows a preview now: clearing them searches the
+    // whole editor, too slow to do on every draw of a thousand steps.
+    let previewsShown = false;
+    function drawPreviews(plan) {
+        if (!plan.length && !previewsShown) return;
+        previewsShown = plan.length > 0;
+        editorEl.querySelectorAll('.steps-panel-preview').forEach((n) => n.remove());
+        editorEl.querySelectorAll('.field.has-pending-change').forEach((f) => f.classList.remove('has-pending-change'));
+        plan.forEach(({id, changes}) => {
+            const line = state.lineById.get(id);
+            const head = line?.querySelector(':scope > .line-header');
+            if (!head) return;
+            const items = changes.map((c) => el(doc, 'li', {}, [
+                el(doc, 'span', {className: 'steps-panel-preview__field', text: `${c.label}: `}),
+                el(doc, 'del', {text: c.beforeText}),
+                el(doc, 'span', {'aria-hidden': 'true', text: ' → '}),
+                el(doc, 'span', {className: 'visually-hidden', text: ' becomes '}),
+                el(doc, 'ins', {text: c.afterText})
+            ]));
+            head.after(el(doc, 'div', {className: 'steps-panel-preview'}, [
+                el(doc, 'p', {className: 'steps-panel-preview__title', text: changes.length === 1 ? 'Will change, once applied:' : `${changes.length} changes, once applied:`}),
+                el(doc, 'ul', {}, items)
+            ]));
+            changes.forEach((c) => line.querySelector(`:scope > .fields > .field[data-field-name="${c.name}"]`)?.classList.add('has-pending-change'));
+        });
+    }
+
+    function drawEdit() {
+        if (!o.edit) return;
+        const picked = selectedNodes();
+        const n = picked.length;
+        const can = state.selecting && n >= 2;
+        if (!can) state.editOpen = false;
+        editToggle.disabled = !can;
+        editToggle.setAttribute('aria-expanded', state.editOpen ? 'true' : 'false');
+        setText(editToggle, n >= 2 ? `${state.editOpen ? '▾' : '▸'} Edit ${n} steps together` : '▸ Edit steps together');
+        setText(editHint, n < 2 ? 'Select 2 or more steps to change them together.' : '');
+        editBody.hidden = !state.editOpen;
+        if (!state.selecting) {
+            state.edits = {};
+            editValues = null;
+            editFieldsKey = '';
+            if (editBody.firstChild) editBody.textContent = '';
+            drawPreviews([]);
+            setText(editPending, '');
+            return;
+        }
+        if (state.editOpen) drawEditForm();
+        const plan = n >= 2 ? currentPlan() : [];
+        const changes = plan.reduce((a, p) => a + p.changes.length, 0);
+        setText(editPending, changes ? `${changes} ${changes === 1 ? 'change' : 'changes'} in ${plan.length} ${plan.length === 1 ? 'step' : 'steps'}, not applied` : '');
+        if (state.editOpen) {
+            editFields.forEach((f) => {
+                const k = plan.filter((p) => p.changes.some((c) => c.name === f.name)).length;
+                const countEl = editBody.querySelector(`[data-count="${f.name}"]`);
+                if (countEl) setText(countEl, k ? `Changes ${k} of ${n}` : '');
+                editBody.querySelector(`.steps-panel-edit__row[data-field="${f.name}"]`)?.classList.toggle('is-changed', k > 0);
+            });
+            const warn = o.edit.warn ? o.edit.warn(picked) : '';
+            editWarn.hidden = !warn;
+            setText(editWarn, warn || '');
+            setText(editSummary, changes ? `${changes} ${changes === 1 ? 'change' : 'changes'} in ${plan.length} ${plan.length === 1 ? 'step' : 'steps'}` : 'Nothing to change yet.');
+            setText(editApply, plan.length ? `Apply to ${plan.length} ${plan.length === 1 ? 'step' : 'steps'}` : 'Apply');
+            editApply.disabled = !plan.length;
+            editClear.disabled = !Object.keys(state.edits).length;
+        }
+        drawPreviews(plan);
+    }
+
+    function setEdit(name, patch) {
+        const now = {...(state.edits[name] || {}), ...patch};
+        state.edits[name] = now;
+        drawEdit();
+    }
+
+    function applyEdit() {
+        const plan = currentPlan();
+        if (!plan.length) return;
+        const entries = plan.map(({id, changes}) => ({
+            line: state.lineById.get(id),
+            values: Object.fromEntries(changes.map((c) => [c.name, c.after]))
+        })).filter((e) => e.line);
+        const fields = plan.reduce((a, p) => a + p.changes.length, 0);
+        drawPreviews([]);
+        const n = o.edit.apply(entries);
+        state.edits = {};
+        editValues = null;
+        editFieldsKey = '';
+        state.barNote = ` · changed ${fields} ${fields === 1 ? 'field' : 'fields'} in ${n} ${n === 1 ? 'step' : 'steps'}; Undo puts ${fields === 1 ? 'it' : 'them'} back`;
+        rebuild();
+        editToggle.focus();
     }
 
     // The editor shows only the selected steps and, as their path, the
@@ -666,6 +899,7 @@ export function createStepsPanel(o) {
         if (state.selecting) return;
         state.selecting = true;
         state.selected.clear();
+        state.barNote = '';
     }
 
     function stopSelecting({moveFocus = false} = {}) {
@@ -683,6 +917,8 @@ export function createStepsPanel(o) {
         if (!selectable(node)) return;
         if (on) state.selected.add(id);
         else state.selected.delete(id);
+        editValues = null;
+        state.barNote = '';
         const row = rowFor(id);
         if (row) {
             row.classList.toggle('is-selected', on);
@@ -699,7 +935,7 @@ export function createStepsPanel(o) {
             .filter(Boolean);
         if (!lines.length || !o.setDisabled) return;
         const n = o.setDisabled(lines, on);
-        setText(barTypes, ` · ${on ? 'turned off' : 'turned on'} ${n} ${n === 1 ? 'step' : 'steps'}; Undo puts ${n === 1 ? 'it' : 'them'} back`);
+        state.barNote = ` · ${on ? 'turned off' : 'turned on'} ${n} ${n === 1 ? 'step' : 'steps'}; Undo puts ${n === 1 ? 'it' : 'them'} back`;
         rebuild();
     }
 
@@ -761,6 +997,8 @@ export function createStepsPanel(o) {
         state.nodes = got.nodes;
         state.lineById = got.lineById;
         if (state.selecting) viewDrawn = '';
+        editValues = null;
+        editFieldsKey = '';
         state.selected.forEach((id) => { if (!state.lineById.has(id)) state.selected.delete(id); });
         state.folded.forEach((id) => { if (!state.nodes.some((n) => n.id === id)) state.folded.delete(id); });
         nodeOfLine = new WeakMap();
@@ -804,7 +1042,16 @@ export function createStepsPanel(o) {
         }, REBUILD_DELAY_MS);
     }
 
-    const observer = win?.MutationObserver ? new win.MutationObserver(scheduleRebuild) : null;
+    // The previews of Edit together are the panel's own: adding or taking
+    // them away is not a change of the steps.
+    const isOwnNode = (n) => n?.nodeType === 1 && n.classList?.contains('steps-panel-preview');
+    const isOwnRecord = (r) => (r.type === 'childList'
+        && [...r.addedNodes, ...r.removedNodes].every(isOwnNode))
+        || !!r.target?.closest?.('.steps-panel-preview');
+    const observer = win?.MutationObserver ? new win.MutationObserver((records) => {
+        if (records.every(isOwnRecord)) return;
+        scheduleRebuild();
+    }) : null;
     observer?.observe(editorEl, {
         childList: true, subtree: true, attributes: true,
         attributeFilter: ['data-explicit-disabled', 'data-inherited-disabled', 'data-alias', 'data-action-index-path']
@@ -852,7 +1099,6 @@ export function createStepsPanel(o) {
             state.focusId = id;
         }
         markLocated(id);
-        holdListStill();
         goToLine(line, {focus, node});
         visibleLines = null;
         drawStatus();
@@ -862,38 +1108,11 @@ export function createStepsPanel(o) {
     function stepMatch(direction) {
         const target = stepThroughMatches(state.nodes, state.view.matches, state.currentId, direction);
         if (target) goTo(target.id, {focus: false});
-        if (target) keepRowInView(target.id);
     }
 
     // ---- Following the editor ----
     function rowFor(id) {
         return id ? treeEl.querySelector(`[data-step-id="${id}"]`) : null;
-    }
-
-    // Where rows are, worked out rather than read: reading a row's place
-    // while the editor scrolls made the browser lay out the whole page again,
-    // a seventh of a second a scroll at 1000 steps. Rows are one line high,
-    // so a row's top is its index times the height of one, measured once.
-    let rowHeight = 0;
-    let treeHeight = 0;
-    let treeScroll = 0;
-    treeEl.addEventListener('scroll', () => { treeScroll = treeEl.scrollTop; }, {passive: true});
-
-    function keepRowInView(id) {
-        const index = rowIndex.get(id);
-        if (index === undefined || treeEl.hidden || state.hidden) return;
-        if (!rowHeight || !treeHeight) {
-            const first = treeEl.firstElementChild;
-            rowHeight = first ? first.offsetHeight : 0;
-            treeHeight = treeEl.clientHeight;
-            treeScroll = treeEl.scrollTop;
-            if (!rowHeight || !treeHeight) return;
-        }
-        const top = index * rowHeight;
-        if (top < treeScroll || top + rowHeight > treeScroll + treeHeight) {
-            treeScroll = Math.max(0, top - treeHeight / 2);
-            treeEl.scrollTop = treeScroll;
-        }
     }
 
     function linesShown() {
@@ -927,25 +1146,6 @@ export function createStepsPanel(o) {
         return lines[last + 1] || lines[last];
     }
 
-    // While the editor scrolls to a step chosen in the panel, the steps it
-    // passes are in view one after another; the list keeps still, so the row
-    // clicked stays under the pointer. It follows the editor again once that
-    // scroll ends.
-    let quietUntil = 0;
-    let quietTimer = null;
-    const now = () => (win?.performance?.now ? win.performance.now() : Date.now());
-    function holdListStill() {
-        quietUntil = Infinity;
-        const settle = () => {
-            clearTimeout(quietTimer);
-            quietUntil = now() + 150;
-        };
-        win?.addEventListener?.('scrollend', settle, {once: true});
-        // Browsers without scrollend, or nothing to scroll: let go anyway.
-        clearTimeout(quietTimer);
-        quietTimer = setTimeout(settle, 1500);
-    }
-
     function setInView(id) {
         // A step folded away is shown by the nearest container that is listed.
         if (id && !rowIndex.has(id)) id = ancestorIds(state.nodes, id).find((a) => rowIndex.has(a)) || id;
@@ -954,7 +1154,6 @@ export function createStepsPanel(o) {
         state.inViewId = id;
         rowFor(id)?.classList.add('is-in-view');
         drawRail();
-        if (now() >= quietUntil) keepRowInView(id);
     }
 
     /** Works the step in view out from where the lines are (without an observer, and in tests). */
@@ -1005,7 +1204,6 @@ export function createStepsPanel(o) {
     };
     let resizeTimer = null;
     const onResize = () => {
-        treeHeight = 0;
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(observeLines, 150);
     };
@@ -1053,12 +1251,41 @@ export function createStepsPanel(o) {
     });
     doneBtn.addEventListener('click', () => stopSelecting({moveFocus: true}));
     selectAllBox.addEventListener('change', () => {
+        editValues = null;
+        state.barNote = '';
         const pool = poolForAll();
         if (selectAllBox.checked) pool.forEach((n) => state.selected.add(n.id));
         else pool.forEach((n) => state.selected.delete(n.id));
         draw();
     });
     disableBtn.addEventListener('click', () => setDisabled(true));
+    editToggle.addEventListener('click', () => {
+        state.editOpen = !state.editOpen;
+        drawEdit();
+        if (state.editOpen) editBody.querySelector('select, input')?.focus();
+    });
+    const onEditInput = (event) => {
+        const t = event.target;
+        const name = t.dataset?.field;
+        if (!name) return;
+        if (t.dataset.part === 'mode') setEdit(name, {mode: t.value});
+        else setEdit(name, {value: t.value});
+    };
+    editBody.addEventListener('input', onEditInput);
+    editBody.addEventListener('change', onEditInput);
+    moreBtn.addEventListener('click', () => {
+        moreOpen = !moreOpen;
+        editFieldsKey = '';
+        drawEdit();
+        moreBtn.focus();
+    });
+    editClear.addEventListener('click', () => {
+        state.edits = {};
+        editFieldsKey = '';
+        drawEdit();
+        editToggle.focus();
+    });
+    editApply.addEventListener('click', applyEdit);
     enableBtn.addEventListener('click', () => setDisabled(false));
     prevBtn.addEventListener('click', () => stepMatch(-1));
     nextBtn.addEventListener('click', () => stepMatch(1));
@@ -1089,13 +1316,16 @@ export function createStepsPanel(o) {
             return;
         }
         if (state.selecting) {
-            // The tick picks or drops; the row shows its card, picking it if it was not.
-            if (event.target.closest('.steps-panel__check')) {
-                toggleSelected(id);
-                return;
+            // While selecting, a click picks or drops the step, and that is
+            // all: the editor stays where it is and focus stays on the row.
+            toggleSelected(id);
+            const row = rowFor(id);
+            if (row) {
+                treeEl.querySelectorAll('[role="treeitem"][tabindex="0"]').forEach((r) => r.setAttribute('tabindex', '-1'));
+                row.setAttribute('tabindex', '0');
+                state.focusId = id;
+                row.focus({preventScroll: true});
             }
-            if (selectable(node) && !state.selected.has(id)) toggleSelected(id, true);
-            if (state.lineById.has(id)) goTo(id, {focus: false});
             return;
         }
         goTo(id, {focus: true});
@@ -1107,8 +1337,9 @@ export function createStepsPanel(o) {
         treeEl.querySelectorAll('[role="treeitem"][tabindex="0"]').forEach((r) => r.setAttribute('tabindex', '-1'));
         row.setAttribute('tabindex', '0');
         state.focusId = id;
+        // Moving focus is the one time the list moves: the browser keeps the
+        // focused row in sight, or someone at the keyboard would lose it.
         row.focus();
-        keepRowInView(id);
     }
 
     treeEl.addEventListener('keydown', (event) => {
@@ -1145,7 +1376,9 @@ export function createStepsPanel(o) {
                 break;
             case 'Enter':
                 event.preventDefault();
+                // While selecting, Enter shows the step's card and focus stays here.
                 goTo(item.dataset.stepId, {focus: !state.selecting});
+                if (state.selecting) item.focus({preventScroll: true});
                 return;
             case ' ':
                 event.preventDefault();
@@ -1163,6 +1396,7 @@ export function createStepsPanel(o) {
                 if (!state.selecting || !withModKey(event)) return;
                 event.preventDefault();
                 poolForAll().forEach((n) => state.selected.add(n.id));
+                state.barNote = '';
                 draw();
                 focusRow(item.dataset.stepId);
                 return;
@@ -1225,7 +1459,6 @@ export function createStepsPanel(o) {
             win?.removeEventListener('resize', onResize);
             clearTimeout(resizeTimer);
             band?.disconnect();
-            clearTimeout(quietTimer);
             bar.remove();
             barEmpty.remove();
             if (warmHandle) win?.cancelIdleCallback?.(warmHandle);

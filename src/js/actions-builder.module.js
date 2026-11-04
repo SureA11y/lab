@@ -1109,6 +1109,45 @@ export function createActionsBuilder ({
         return changed;
     }
 
+    /** One step's values, as saved: what Edit together reads from each card. */
+    function readStep(lineEl) {
+        return lineEl && actionsEl.contains(lineEl) ? stepValues.readLineToObject(lineEl, {maskValues: "text"}) : null;
+    }
+
+    /**
+     * Sets fields of several steps as one change: one Undo puts them all
+     * back. Only the fields named are set, through the same setter loading a
+     * config uses, so the fields drawn as widgets (Profile, Tags) take them
+     * too; the steps inside a container are not touched.
+     *
+     * @param {{line: Element, values: Object<string, *>}[]} entries
+     * @returns {number} How many steps changed.
+     */
+    function setStepsFieldValues(entries) {
+        let changed = 0;
+        (entries || []).forEach(({line, values}) => {
+            if (!line || !actionsEl.contains(line) || !values) return;
+            let any = false;
+            Object.entries(values).forEach(([name, value]) => {
+                const fieldEl = line.querySelector(`:scope > .fields > .field[data-field-name="${name}"]`);
+                if (!fieldEl) return;
+                stepValues.setFieldValue(fieldEl, value);
+                any = true;
+            });
+            if (!any) return;
+            changed += 1;
+            // What setting a field by hand would bring up to date.
+            line._applySetViewportPresetVisibility?.();
+            line._applyScanEngine?.();
+            line._applySubjectFieldVisibility?.();
+        });
+        if (changed) {
+            updateLineTitles(actionsEl);
+            pushHistory("editTogether");
+        }
+        return changed;
+    }
+
     function addShortcuts(shortcutsDefs = [], shortcutCallback, container) {
         shortcutsDefs.forEach(shortcut => {
             if (!defs[shortcut]) return;
@@ -1460,6 +1499,8 @@ export function createActionsBuilder ({
         appendActions,
         loadActions,
         setStepsDisabled,
+        readStep,
+        setStepsFieldValues,
         setReservedVariableNames,
         clear,
         destroy,
