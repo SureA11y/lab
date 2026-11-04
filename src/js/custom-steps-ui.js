@@ -5,11 +5,11 @@
 
 import {createActionsBuilder, redactMaskedFieldsDeep, withPasswordStepTypeDeep} from './actions-builder.module.js';
 import {createEl} from './a11y-ui.utils.js';
-import {cloneCustomStepValue, collectUsedCustomStepIds, customStepTabId, deepRemapCustomStepIds, formatCustomStepInputsText, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepInputsText, parseCustomStepsJson} from './custom-steps-data.js';
+import {cloneCustomStepValue, collectUsedCustomStepIds, deepRemapCustomStepIds, formatCustomStepInputsText, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepInputsText, parseCustomStepsJson} from './custom-steps-data.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * (actionsBuilder, copiedCustomStep, createCustomStepActionsHistoryButtons, createCustomStepsListHistoryButtons, customStepActionsBuilder, customStepActionsBuilderEl, customStepActionsEl, customStepAddBtn, customStepCopyBtn, customStepDeleteBtn, customStepIdInput, customStepInputsTextarea, customStepNameInput, customStepPasteBtn, customStepToolbarEl, customStepsCountBadgeEl, customStepsData, customStepsInput, customStepsListActionsEl, customStepsListEl, customStepsPanelEl, pushCustomStepsHistory, resetCustomStepsHistory, rulesCatalog, scheduleCustomStepsHistoryPush, selectedCustomStepIndex, setCustomStepActionsHistoryBaselineToCurrent, setCustomStepsExpanded, setUiState, syncingCustomStepEditor).
+ * (actionsBuilder, copiedCustomStep, createCustomStepActionsHistoryButtons, createCustomStepsListHistoryButtons, customStepActionsBuilder, customStepActionsBuilderEl, customStepActionsEl, customStepAddBtn, customStepCopyBtn, customStepDeleteBtn, customStepIdInput, customStepInputsTextarea, customStepNameInput, customStepPasteBtn, customStepToolbarEl, customStepsCountBadgeEl, customStepsData, customStepsInput, customStepsPanelEl, onCustomStepsListChanged, pushCustomStepsHistory, resetCustomStepsHistory, rulesCatalog, scheduleCustomStepsHistoryPush, selectedCustomStepIndex, setCustomStepActionsHistoryBaselineToCurrent, setCustomStepsExpanded, setUiState, syncingCustomStepEditor).
  */
 export function createCustomStepsUi(app) {
     function getCustomStepSelectChoices() {
@@ -218,27 +218,6 @@ export function createCustomStepsUi(app) {
         app.customStepPasteBtn.title = hasClipboard ? 'Paste custom step' : 'Copy a custom step first';
     }
 
-    function appendCustomStepsListActions() {
-        if (!app.customStepsListEl) return;
-        if (!app.customStepPasteBtn && !app.customStepAddBtn) return;
-
-        if (!app.customStepsListActionsEl) {
-            app.customStepsListActionsEl = createEl('div', {
-                id: 'custom-steps-list-actions',
-                className: 'custom-steps-list-actions'
-            });
-        }
-
-        if (app.customStepPasteBtn && app.customStepPasteBtn.parentElement !== app.customStepsListActionsEl) {
-            app.customStepsListActionsEl.appendChild(app.customStepPasteBtn);
-        }
-        if (app.customStepAddBtn && app.customStepAddBtn.parentElement !== app.customStepsListActionsEl) {
-            app.customStepsListActionsEl.appendChild(app.customStepAddBtn);
-        }
-
-        app.customStepsListEl.appendChild(app.customStepsListActionsEl);
-    }
-
     function copyCustomStepAt(index) {
         if (index < 0 || index >= app.customStepsData.length) return;
         const persist = persistSelectedCustomStepActions({validate: false});
@@ -282,104 +261,16 @@ export function createCustomStepsUi(app) {
         app.pushCustomStepsHistory();
     }
 
+    // The custom steps are listed by the Custom steps panel (steps-panel.js),
+    // which a11y-ui.js sets up: this labels the editor by the custom step open
+    // in it and tells the panel to read the custom steps again.
     function renderCustomStepsList() {
-        if (!app.customStepsListEl) return;
-        app.customStepsListEl.innerHTML = '';
-        if (!app.customStepsData.length) {
-            const empty = document.createElement('p');
-            empty.className = 'custom-steps-empty';
-            empty.textContent = 'No custom steps yet.';
-            app.customStepsListEl.appendChild(empty);
-            appendCustomStepsListActions();
-            // No tab is active — the panel isn't labelled by anything.
-            app.customStepsPanelEl?.removeAttribute('aria-labelledby');
-            syncCustomStepPasteButtonState();
-            return;
-        }
-
-        // Roving tabindex: exactly one tab is in the page tab order. Prefer the
-        // selected step; if somehow none is selected, make the first tab reachable.
-        const activeIndex = (app.selectedCustomStepIndex >= 0 && app.selectedCustomStepIndex < app.customStepsData.length)
-            ? app.selectedCustomStepIndex
-            : 0;
-
-        app.customStepsData.forEach((step, index) => {
-            const isSelected = index === app.selectedCustomStepIndex;
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.id = customStepTabId(index);
-            btn.className = `custom-steps-item${isSelected ? ' is-active' : ''}`;
-            btn.setAttribute('role', 'tab');
-            btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
-            // Every tab controls the same, reused editor panel.
-            btn.setAttribute('aria-controls', 'custom-steps-tabpanel');
-            btn.tabIndex = index === activeIndex ? 0 : -1;
-            btn.dataset.index = String(index);
-
-            const id = document.createElement('span');
-            id.className = 'custom-steps-item-id';
-            id.textContent = step.id || `(step ${index + 1})`;
-            btn.appendChild(id);
-
-            const name = document.createElement('span');
-            name.className = 'custom-steps-item-name';
-            name.textContent = step.name || step.id || '';
-            btn.appendChild(name);
-
-            btn.addEventListener('click', () => activateCustomStepTab(index));
-
-            // The row is presentational so the tab reads as a direct child of
-            // the tablist. Copy/delete now live in the editor panel toolbar.
-            const row = createEl('div', {className: 'custom-steps-item-row'}, [btn]);
-            app.customStepsListEl.appendChild(row);
-        });
-
-        appendCustomStepsListActions();
-        // Label the shared panel by whichever tab is currently active.
-        app.customStepsPanelEl?.setAttribute('aria-labelledby', customStepTabId(activeIndex));
+        const selected = app.customStepsData[app.selectedCustomStepIndex];
+        app.customStepsPanelEl?.setAttribute('aria-label', selected
+            ? `Custom step: ${selected.name || selected.id}`
+            : 'Custom step');
         syncCustomStepPasteButtonState();
-    }
-
-    // Activate a tab: select its step (loads it into the panel) and, since the
-    // list is re-rendered, move focus back onto the freshly-built active tab.
-    function activateCustomStepTab(index) {
-        selectCustomStep(index);
-        const tab = app.customStepsListEl?.querySelector(`.custom-steps-item[data-index="${index}"]`);
-        tab?.focus();
-    }
-
-    // Vertical tablist keyboard model (WAI-ARIA APG): Up/Down move between tabs,
-    // Home/End jump to the ends, wrapping around, with automatic activation.
-    function handleCustomStepsTablistKeydown(event) {
-        const target = event.target;
-        if (!target || target.getAttribute?.('role') !== 'tab') return;
-
-        const count = app.customStepsData.length;
-        if (!count) return;
-
-        const current = Number(target.dataset.index);
-        if (!Number.isFinite(current)) return;
-
-        let nextIndex;
-        switch (event.key) {
-            case 'ArrowDown':
-                nextIndex = (current + 1) % count;
-                break;
-            case 'ArrowUp':
-                nextIndex = (current - 1 + count) % count;
-                break;
-            case 'Home':
-                nextIndex = 0;
-                break;
-            case 'End':
-                nextIndex = count - 1;
-                break;
-            default:
-                return;
-        }
-
-        event.preventDefault();
-        activateCustomStepTab(nextIndex);
+        app.onCustomStepsListChanged?.();
     }
 
     function removeCustomStepAt(index) {
@@ -522,11 +413,6 @@ export function createCustomStepsUi(app) {
             });
             app.createCustomStepActionsHistoryButtons();
             app.createCustomStepsListHistoryButtons();
-        }
-
-        // Delegated so it survives the list being re-rendered on every change.
-        if (app.customStepsListEl) {
-            app.customStepsListEl.addEventListener('keydown', handleCustomStepsTablistKeydown);
         }
 
         if (app.customStepAddBtn) {

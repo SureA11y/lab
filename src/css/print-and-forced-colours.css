@@ -433,12 +433,6 @@
         color: HighlightText;
         border-color: Highlight;
     }
-    .custom-steps-item-row:has(.custom-steps-item.is-active) {
-        background: Highlight;
-    }
-    .custom-steps-item-row:has(.custom-steps-item.is-active) .custom-steps-item {
-        color: HighlightText;
-    }
 
     /* opacity is not forced, so a disabled control would keep its colour and
        only dim. GrayText is the palette's own answer. */

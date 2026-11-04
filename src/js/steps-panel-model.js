@@ -17,6 +17,8 @@
  * @property {string} searchText What a text filter looks in, lower case.
  * @property {boolean} disabled  Turned off, by itself or by a container it is in.
  * @property {boolean} container It holds steps of its own.
+ * @property {boolean} [root]    A heading over steps, not a step: a custom step's
+ *                               definition. A text filter finds it; kinds and counts leave it out.
  */
 
 /** The type chips, in order. `all` is the chip that filters nothing. */
@@ -34,6 +36,7 @@ const CLICK_TYPES = new Set(['click', 'clickByText']);
 /** Whether a step is of a kind; `all` takes every step. */
 export function isOfKind(node, kind) {
     if (!node) return false;
+    if (node.root) return kind === 'all';
     switch (kind) {
         case 'scan': return SCAN_TYPES.has(node.type);
         case 'click': return CLICK_TYPES.has(node.type);
@@ -65,6 +68,7 @@ export function countKinds(nodes) {
     const counts = {};
     KINDS.forEach(({id}) => { counts[id] = 0; });
     (nodes || []).forEach((node) => {
+        if (node.root) return;
         KINDS.forEach(({id}) => { if (isOfKind(node, id)) counts[id] += 1; });
     });
     return counts;

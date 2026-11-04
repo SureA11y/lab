@@ -16,9 +16,9 @@ import {getActivity} from './activity.js';
 import {clearLazyBodies, setLazyScope} from './lazy-dialogs.js';
 import {attachFileDrop} from './file-drop.js';
 import {buildGlobalSummary, ensureScanSummaryCounts, ensureScansIncludedFlag, getA11yGlobalFindings, normalizePayloadForUi, pickMetricDefsFromPayload, prepareDataForReport, stripVolatileKeysDeep} from './report-data.js';
-import {buildActionTreeNodes, buildCustomStepMaps, collapseLineIfExpanded, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
+import {collapseLineIfExpanded, deriveActionDisplayLabel, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
 import {parseCustomStepsJson} from './custom-steps-data.js';
-import {createStepsPanel} from './steps-panel.js';
+import {createStepsPanel, readActionNodes, readStepNodes} from './steps-panel.js';
 import {setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
 import {STATUS, TAB_MODE_STORAGE_KEY} from './ui-constants.js';
@@ -236,10 +236,8 @@ function storeActiveMode(mode) {
         get customStepsCountBadgeEl() { return customStepsCountBadgeEl; },
         get customStepsData() { return customStepsData; },
         set customStepsData(value) { customStepsData = value; },
-        get customStepsListActionsEl() { return customStepsListActionsEl; },
-        set customStepsListActionsEl(value) { customStepsListActionsEl = value; },
-        get customStepsListEl() { return customStepsListEl; },
         get customStepsPanelEl() { return customStepsPanelEl; },
+        get onCustomStepsListChanged() { return onCustomStepsListChanged; },
         get pushCustomStepsHistory() { return pushCustomStepsHistory; },
         get resetCustomStepsHistory() { return resetCustomStepsHistory; },
         get rulesCatalog() { return rulesCatalog; },
@@ -324,9 +322,8 @@ function storeActiveMode(mode) {
     const scenarioInput = $('#scenario-name');
     const customStepsInput = $('#custom-steps-json');
     const customStepsCountBadgeEl = $('#custom-steps-count-badge');
-    const customStepsListEl = $('#custom-steps-list');
     const customStepsPanelEl = $('#custom-steps-tabpanel');
-    let customStepsListActionsEl = $('#custom-steps-list-actions');
+    const customStepsListActionsEl = $('#custom-steps-list-actions');
     const customStepPasteBtn = $('#custom-step-paste-btn');
     const customStepAddBtn = $('#custom-step-add-btn');
     const customStepCopyBtn = $('#custom-step-copy-btn');
@@ -422,10 +419,6 @@ function storeActiveMode(mode) {
     const workflowToggleBtn = $('#workflow-toggle');
     const workflowContentEl = $('#workflow-content');
     const workflowCollapseAllBtn = $('#workflow-collapse-all-toggle');
-    const stepTreeOpenBtn = $('#step-tree-open-btn');
-    const stepTreeDialogEl = $('#step-tree-dialog');
-    const stepTreeCloseBtn = $('#step-tree-close-btn');
-    const stepTreeContainerEl = $('#step-tree-container');
     const liveStreamEl = $('#live-stream');
     const reportDataContainer = $('#report-data');
     const historyManagementButtonsContainer = $('#history-management');
@@ -1453,12 +1446,12 @@ function storeActiveMode(mode) {
 
             lastCustomStepsHistorySig = getCustomStepsListSig(snap.steps);
 
-            // renderCustomStepsList() rebuilds the list buttons from scratch,
-            // destroying whatever had focus — land back on the active step
-            // (or the add button if the list is now empty) so a repeated
-            // keyboard shortcut still targets this list, not another domain.
-            const activeItem = customStepsListEl?.querySelector('.custom-steps-item.is-active');
-            (activeItem || customStepPasteBtn || customStepAddBtn)?.focus();
+            // Restoring may replace what had focus: land on the custom step
+            // now open, in the panel (or the add button if there are none),
+            // so a repeated keyboard shortcut still targets this list.
+            customStepsPanel?.refresh();
+            if (customStepsData.length && customStepsPanel) customStepsPanel.focusTree(`d${selectedCustomStepIndex}`);
+            else (customStepPasteBtn || customStepAddBtn)?.focus();
         } finally {
             isRestoringCustomStepsHistory = false;
             syncCustomStepsListHistoryButtons();
@@ -1634,7 +1627,6 @@ function storeActiveMode(mode) {
         workflowToggleBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         workflowContentEl.hidden = !expanded;
         workflowToggleBtn.setAttribute('aria-label', expanded ? 'Collapse workflow' : 'Expand workflow');
-        if (stepTreeOpenBtn) stepTreeOpenBtn.hidden = !expanded;
         if (workflowCollapseAllBtn) {
             workflowCollapseAllBtn.hidden = !expanded;
             if (expanded) refreshWorkflowCollapseAllBtn?.();
@@ -1768,14 +1760,11 @@ function storeActiveMode(mode) {
     }
 
     /**
-     * Opens a workflow step for the steps panel: the section, the containers
-     * the step is in and its card, then scrolls to it. Other cards stay as
-     * they are, unlike the Step tree dialog, which closes them.
+     * Opens a step for a steps panel: the containers it is in and its card,
+     * then scrolls to it and, with `focus`, moves focus to it. Other cards
+     * stay as they are.
      */
-    function goToWorkflowLine(line, {focus = false} = {}) {
-        if (!line) return;
-        setConfigExpanded(true);
-        setWorkflowExpanded(true);
+    function revealLine(line, {focus = false} = {}) {
         const ancestors = [];
         for (let p = line.parentElement?.closest('.line'); p; p = p.parentElement?.closest('.line')) ancestors.unshift(p);
         ancestors.forEach(expandLineIfCollapsed);
@@ -1792,6 +1781,176 @@ function storeActiveMode(mode) {
         line.focus({preventScroll: true});
     }
 
+    function goToWorkflowLine(line, {focus = false} = {}) {
+        if (!line) return;
+        setConfigExpanded(true);
+        setWorkflowExpanded(true);
+        revealLine(line, {focus});
+    }
+
+    // ---- The Custom steps panel ----
+    // Its top rows are the custom steps; under each, its steps. The one open
+    // in the editor is read from its lines, the others from their saved steps.
+    let stepDefs = null;
+    let customStepsPanel = null;
+
+    const defIndexOf = (nodeId) => Number((/^d(\d+)/.exec(String(nodeId || '')) || [])[1] ?? -1);
+
+    function typeTitleOf(type) {
+        return String(stepDefs?.[type]?.label || type || '');
+    }
+
+    function listsOf(type) {
+        const fields = stepDefs?.[type]?.fields || {};
+        return Object.keys(fields).filter((k) => String(fields[k]?.type || '') === 'Action[]');
+    }
+
+    // What a saved step is called, as the editor would title it.
+    function nameOfAction(action) {
+        // A call with no title of its own is named by the panel (callName).
+        if (action.type === 'runCustomStep') return String(action.label || action.alias || '').trim();
+        const own = deriveActionDisplayLabel(action);
+        if (own) return own;
+        if (action.type === 'case') {
+            const options = stepDefs?.case?.fields?.comparison?.options || [];
+            const opt = options.find((x) => String(x?.value ?? x) === String(action.comparison ?? ''));
+            const how = opt ? String(opt.label ?? opt.value ?? opt) : '';
+            if (how) return `${typeTitleOf('case')} · ${how} "${action.value ?? ''}"`;
+        }
+        return '';
+    }
+
+    function callsIn(actions, id) {
+        return (Array.isArray(actions) ? actions : []).some((a) => a && typeof a === 'object' && (
+            (a.type === 'runCustomStep' && String(a.customStepId || '').trim() === id)
+            || Object.values(a).some((v) => Array.isArray(v) && callsIn(v, id))));
+    }
+
+    function customStepName(id) {
+        const def = customStepsData.find((d) => String(d?.id || '').trim() === id);
+        return def ? String(def.name || def.id) : '';
+    }
+
+    function openCustomStepCalls() {
+        const ids = new Set();
+        customStepActionsEl?.querySelectorAll('.line[data-action-type="runCustomStep"] .field[data-field-name="customStepId"] select')
+            .forEach((sel) => { if (sel.value) ids.add(sel.value.trim()); });
+        return ids;
+    }
+
+    /** Where a custom step runs: the workflow's calls to it, and the custom steps that call it. */
+    function customStepUsage(id) {
+        const key = String(id || '').trim();
+        const inWorkflow = key ? (workflowStepsPanel?.nodes || []).filter((n) => n.calls === key) : [];
+        const inCustomSteps = key ? customStepsData
+            .map((d, i) => ({d, i}))
+            .filter(({d, i}) => i !== customStepsData.findIndex((x) => x.id === key) && (
+                // The one open in the editor may have changed since it was saved: read its lines.
+                i === selectedCustomStepIndex ? openCustomStepCalls().has(key) : callsIn(d.actions, key)))
+            : [];
+        return {inWorkflow, inCustomSteps};
+    }
+
+    function usageNote({inWorkflow, inCustomSteps}) {
+        const parts = [];
+        if (inWorkflow.length) parts.push(`runs at ${inWorkflow.map((n) => n.path).join(', ')}`);
+        if (inCustomSteps.length) parts.push(`in ${inCustomSteps.map(({d}) => d.name || d.id).join(', ')}`);
+        return parts.length ? parts.join(' · ') : 'not used';
+    }
+
+    function readCustomStepNodes() {
+        const nodes = [];
+        const lineById = new Map();
+        customStepsData.forEach((def, i) => {
+            const defId = `d${i}`;
+            const name = String(def?.name || def?.id || `Custom step ${i + 1}`);
+            const head = {
+                id: defId, key: '', path: '', depth: 0, parentId: null, root: true, container: true, disabled: false,
+                type: 'customStep', typeTitle: 'Custom step', name,
+                note: usageNote(customStepUsage(def?.id)),
+                searchText: `${name} ${def?.id || ''}`.toLowerCase()
+            };
+            nodes.push(head);
+            if (i === selectedCustomStepIndex && customStepActionsEl) {
+                const got = readStepNodes(customStepActionsEl, (line, key) => `${defId}/${key}`, {depth: 1, parentId: defId});
+                nodes.push(...got.nodes);
+                got.lineById.forEach((line, id) => lineById.set(id, line));
+            } else {
+                nodes.push(...readActionNodes(def?.actions, {
+                    idOf: (key) => `${defId}/${key}`, typeTitleOf, nameOf: nameOfAction, listsOf, depth: 1, parentId: defId
+                }));
+            }
+        });
+        return {nodes, lineById};
+    }
+
+    function openCustomStepOf(node) {
+        const index = defIndexOf(node?.id);
+        if (index < 0 || index >= customStepsData.length) return;
+        if (index !== selectedCustomStepIndex) customStepsUi.selectCustomStep(index);
+    }
+
+    function goToCustomStepLine(line, {focus = false, node = null} = {}) {
+        setConfigExpanded(true);
+        setCustomStepsExpanded(true);
+        if (line) {
+            revealLine(line, {focus});
+            return;
+        }
+        // A custom step's own row: open it, and its name field is where to start.
+        openCustomStepOf(node);
+        const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+        customStepsPanelEl?.scrollIntoView({block: 'start', behavior: reduce ? 'auto' : 'smooth'});
+        if (focus) customStepIdInput?.focus({preventScroll: true});
+    }
+
+    /** Goes to a custom step by its id, from a call to it. */
+    function openCustomStepById(id) {
+        const index = customStepsData.findIndex((d) => String(d?.id || '').trim() === String(id || '').trim());
+        if (index < 0 || !customStepsPanel) return;
+        customStepsPanel.refresh();
+        customStepsPanel.goTo(`d${index}`, {focus: true});
+    }
+
+    // Under the custom step open in the editor: where it is called from.
+    const customStepUsageEl = $('#custom-step-usage');
+    function drawCustomStepUsage() {
+        if (!customStepUsageEl) return;
+        const def = customStepsData[selectedCustomStepIndex];
+        customStepUsageEl.textContent = '';
+        customStepUsageEl.hidden = !def;
+        if (!def) return;
+        const {inWorkflow, inCustomSteps} = customStepUsage(def.id);
+        customStepUsageEl.append(createEl('span', {}, 'Used in:'));
+        if (!inWorkflow.length && !inCustomSteps.length) {
+            customStepUsageEl.append(createEl('span', {}, 'nothing yet: no step runs it.'));
+            return;
+        }
+        inWorkflow.forEach((n) => {
+            const btn = createEl('button', {type: 'button', className: 'link-button custom-step-usage__link'}, `Workflow step ${n.path} →`);
+            btn.addEventListener('click', () => workflowStepsPanel?.goTo(n.id, {focus: true}));
+            customStepUsageEl.append(btn);
+        });
+        inCustomSteps.forEach(({d, i}) => {
+            const btn = createEl('button', {type: 'button', className: 'link-button custom-step-usage__link'}, `Custom step ${d.name || d.id} →`);
+            btn.addEventListener('click', () => customStepsPanel?.goTo(`d${i}`, {focus: true}));
+            customStepUsageEl.append(btn);
+        });
+    }
+
+    function onCustomStepsListChanged() {
+        customStepsPanel?.refresh();
+    }
+
+    // "3 more matches in Custom steps →": the other panel, filtered alike.
+    function showFilteredIn(panel, expand, kind, query) {
+        if (!panel) return;
+        setConfigExpanded(true);
+        expand(true);
+        panel.setFilter(kind, query);
+        panel.focusTree();
+    }
+
     let workflowStepsPanel = null;
     function initWorkflowStepsPanel() {
         const host = $('#workflow-steps-panel');
@@ -1801,126 +1960,42 @@ function storeActiveMode(mode) {
             editorEl: actionsBar,
             sectionKey: 'workflow',
             title: 'Workflow steps',
-            goToLine: goToWorkflowLine
+            goToLine: goToWorkflowLine,
+            callName: customStepName,
+            elsewhere: {
+                label: 'Custom steps',
+                count: (kind, query) => customStepsPanel?.countMatches(kind, query) || 0,
+                go: (kind, query) => showFilteredIn(customStepsPanel, setCustomStepsExpanded, kind, query)
+            },
+            // Where each custom step runs comes from the workflow's calls.
+            onRead: () => customStepsPanel?.refresh()
         });
     }
 
-    function buildCurrentStepTreeModel() {
-        const workflowActions = actionsBuilder?.getValue({ validate: false, maskValues: 'text' })?.value || [];
-        const customStepsState = customStepsUi.readCustomStepsFromUi({ validate: false });
-        const customSteps = customStepsState?.ok && Array.isArray(customStepsState.value) ? customStepsState.value : [];
-        const { byId: customStepsById, nameById: customStepNamesById } = buildCustomStepMaps(customSteps);
-
-        return {
-            workflow: buildActionTreeNodes(workflowActions, { scope: 'workflow' }, [], [], {
-                inlineCustomSteps: true,
-                customStepsById,
-                customStepNamesById
-            }),
-            customSteps: customSteps.map((step) => ({
-                id: String(step?.id || '').trim(),
-                name: String(step?.name || '').trim(),
-                nodes: buildActionTreeNodes(step?.actions || [], {
-                    scope: 'custom-step',
-                    customStepId: String(step?.id || '').trim()
-                }, [], [], {
-                    inlineCustomSteps: false,
-                    customStepsById,
-                    customStepNamesById
-                })
-            }))
-        };
-    }
-
-    function renderStepTreeList(nodes, rootClass = 'step-tree-list') {
-        const ul = createEl('ul', { className: rootClass });
-        nodes.forEach((node) => {
-            const btn = createEl('button', {
-                type: 'button',
-                className: 'step-tree-node',
-                title: node.label
-            }, node.label);
-
-            btn.addEventListener('click', () => {
-                const ok = goToStep(node.ref);
-                if (ok) closeStepTreeDialog();
-            });
-
-            const liChildren = [btn];
-            if (Array.isArray(node.children) && node.children.length) {
-                liChildren.push(renderStepTreeList(node.children, 'step-tree-list'));
+    function initCustomStepsPanel(defs) {
+        stepDefs = defs;
+        const host = $('#custom-steps-steps-panel');
+        if (!host || !customStepActionsEl || customStepsPanel) return;
+        const history = $('#custom-steps-history-management');
+        customStepsPanel = createStepsPanel({
+            host,
+            editorEl: customStepActionsEl,
+            sectionKey: 'custom-steps',
+            title: 'Custom steps',
+            read: readCustomStepNodes,
+            open: openCustomStepOf,
+            goToLine: goToCustomStepLine,
+            callName: customStepName,
+            actions: [customStepsListActionsEl, history].filter(Boolean),
+            elsewhere: {
+                label: 'the Workflow',
+                count: (kind, query) => workflowStepsPanel?.countMatches(kind, query) || 0,
+                go: (kind, query) => showFilteredIn(workflowStepsPanel, setWorkflowExpanded, kind, query)
+            },
+            onRead: () => {
+                drawCustomStepUsage();
+                workflowStepsPanel?.recountElsewhere();
             }
-            ul.appendChild(createEl('li', {}, liChildren));
-        });
-        return ul;
-    }
-
-    function renderStepTreeDialog() {
-        if (!stepTreeContainerEl) return;
-        stepTreeContainerEl.innerHTML = '';
-
-        const model = buildCurrentStepTreeModel();
-        const hasWorkflow = Array.isArray(model.workflow) && model.workflow.length > 0;
-        const hasCustom = Array.isArray(model.customSteps) && model.customSteps.some((s) => Array.isArray(s.nodes) && s.nodes.length > 0);
-
-        if (!hasWorkflow && !hasCustom) {
-            stepTreeContainerEl.appendChild(createEl('p', { className: 'step-tree-empty' }, 'No steps configured yet.'));
-            return;
-        }
-
-        if (hasWorkflow) {
-            const section = createEl('section', {}, [
-                createEl('h4', { className: 'step-tree-section-title' }, 'Workflow'),
-                renderStepTreeList(model.workflow, 'step-tree-list step-tree-list--root')
-            ]);
-            stepTreeContainerEl.appendChild(section);
-        }
-
-        if (hasCustom) {
-            const section = createEl('section', {}, [
-                createEl('h4', { className: 'step-tree-section-title' }, 'Custom steps')
-            ]);
-
-            stepTreeContainerEl.appendChild(section);
-            model.customSteps.forEach((step) => {
-                if (!Array.isArray(step.nodes) || !step.nodes.length) return;
-                const title = step.name && step.name !== step.id
-                    ? `Custom step: ${step.id} — ${step.name}`
-                    : `Custom step: ${step.id}`;
-                const customStepHeading = createEl('h5', { className: 'step-tree-section-title' }, title);
-                const customStepConfig = renderStepTreeList(step.nodes, 'step-tree-list step-tree-list--root');
-                stepTreeContainerEl.appendChild(customStepHeading);
-                stepTreeContainerEl.appendChild(customStepConfig);
-            });
-        }
-    }
-
-    function closeStepTreeDialog() {
-        if (!stepTreeDialogEl) return;
-        if (typeof stepTreeDialogEl.close === 'function' && stepTreeDialogEl.open) {
-            stepTreeDialogEl.close();
-            return;
-        }
-        stepTreeDialogEl.removeAttribute('open');
-    }
-
-    function openStepTreeDialog() {
-        if (!stepTreeDialogEl) return;
-        renderStepTreeDialog();
-        if (typeof stepTreeDialogEl.showModal === 'function') {
-            stepTreeDialogEl.showModal();
-            return;
-        }
-        stepTreeDialogEl.setAttribute('open', 'open');
-    }
-
-    function setupStepTreeDialog() {
-        if (!stepTreeOpenBtn || !stepTreeDialogEl || !stepTreeCloseBtn) return;
-        stepTreeOpenBtn.append(svgIcon('step-tree'));
-        stepTreeOpenBtn.addEventListener('click', openStepTreeDialog);
-        stepTreeCloseBtn.addEventListener('click', closeStepTreeDialog);
-        stepTreeDialogEl.addEventListener('click', (event) => {
-            if (event.target === stepTreeDialogEl) closeStepTreeDialog();
         });
     }
 
@@ -2477,7 +2552,6 @@ function storeActiveMode(mode) {
     initCustomStepsCollapseUi();
     initWorkflowCollapseUi();
     initSectionEndToggles();
-    setupStepTreeDialog();
     setupActionsBuilder(actionsToolbarBottom, actionsBar, () => {
         cfgIO = createConfigIO({
             form,
@@ -2736,6 +2810,7 @@ function storeActiveMode(mode) {
                     defs.runCustomStep.fields.customStepId.optionsProvider = () => customStepsUi.getCustomStepSelectChoices();
                 }
                 if (defs?.runCustomStep) {
+                    defs.runCustomStep.openCustomStep = (customStepId) => openCustomStepById(customStepId);
                     defs.runCustomStep.getStepInputsSchema = (customStepId) => {
                         const id = String(customStepId || '').trim();
                         if (!id) return null;
@@ -2755,6 +2830,7 @@ function storeActiveMode(mode) {
                 createHistoryButtons();
                 initWorkflowStepsPanel();
                 customStepsUi.initCustomStepsUi(defs);
+                initCustomStepsPanel(defs);
                 runWorkflowUi.fillRunLanguages(defs);
                 runSettings.sync();
                 callback();

@@ -152,7 +152,3 @@ export function cloneCustomStepValue(step) {
         actions: Array.isArray(step.actions) ? JSON.parse(JSON.stringify(step.actions)) : []
     };
 }
-
-export function customStepTabId(index) {
-    return `custom-step-tab-${index}`;
-}

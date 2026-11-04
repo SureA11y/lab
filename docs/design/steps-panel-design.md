@@ -102,6 +102,29 @@ Left out on purpose:
   ancestors show only their header, as the path. Lines are never moved, so
   nothing about saving, numbering or history changes.
 
+## Custom steps
+
+The editor shows one custom step at a time, so the panel cannot read them
+all from the page:
+
+- **Each custom step is a heading row**, with its steps under it. A text
+  filter finds it by name; the type chips and the step counts leave it out,
+  as it is not a step.
+- **The one open in the editor is read from its lines; the others from
+  their saved steps** (`readActionNodes`), numbered and keyed as the editor
+  numbers them (number and the lists it is in), so a step keeps its row when
+  its custom step is opened. Going to a step of one that is not open opens
+  it first.
+- **Where each runs** comes from the Workflow panel's steps (each call notes
+  the custom step it runs) and from the other custom steps' saved steps,
+  the open one's from its lines: reading it with `getValue()` once a custom
+  step was the slow read the panel avoids.
+- The panel took the place of the list of custom steps: their add, paste,
+  undo and redo buttons are in it, and the editor is a region named by the
+  custom step open in it ("Custom step: Log in"), as there are no tabs to
+  name it any more.
+- The Step tree dialog is gone: the two panels do all it did, and stay.
+
 ## What a thousand steps taught
 
 The panel was stress-tested on a config of 981 steps, eleven levels deep.
@@ -129,10 +152,10 @@ and the later steps of the work keep to them too:
 
 ## Order of the work
 
-1. **Workflow steps panel, navigating:** the tree, find and chips, previous and
+1. **Workflow steps panel, navigating** (done): the tree, find and chips, previous and
    next, going to a step, following the scroll, hiding to the rail and
    remembering it. The Step tree dialog stays until step 2 covers custom steps.
-2. **Custom steps panel:** the same panel, with the definitions as the top
+2. **Custom steps panel** (done): the same panel, with the definitions as the top
    level (replacing the list of definitions), where each is used, the links
    between calls and definitions, and the "N more in …" links between the two
    panels. The Step tree dialog goes.

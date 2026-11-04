@@ -797,7 +797,7 @@
     flex-direction: column;
     background: var(--bg-elevated);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     font-family: var(--font-sans);
     font-size: var(--fs-sm);
     color: var(--text-main);
@@ -816,16 +816,27 @@
     gap: var(--space-2);
     padding: var(--space-3) var(--space-2) var(--space-1) var(--space-4);
 }
-.steps-panel__title { margin: 0; font-family: var(--font-display); font-size: var(--fs-md); font-weight: 600; letter-spacing: .01em; }
+.steps-panel__title { margin: 0; font-size: var(--fs-md); font-weight: 600; }
 :is(.steps-panel__hide, .steps-panel__show) {
     width: 32px;
     height: 32px;
+    padding: 0;
     border-radius: var(--radius-md);
     border: 1px solid transparent;
     background: transparent;
     color: var(--text-muted);
 }
 :is(.steps-panel__hide, .steps-panel__show):hover { background: var(--surface-hover); color: var(--text-main); }
+
+/* The section's own controls (Custom steps: add, paste, undo, redo). */
+.steps-panel__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-4) var(--space-1);
+}
+.steps-panel__actions .history-management { display: inline-flex; gap: 6px; margin-left: auto; }
 
 /* Find, chips and status */
 .steps-panel__controls { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2) var(--space-4) var(--space-3); border-bottom: 1px solid var(--border-soft); }
@@ -866,25 +877,35 @@
 .steps-panel__chip[hidden] { display: none; }
 .steps-panel__chip:hover { border-color: var(--accent); color: var(--text-main); }
 .steps-panel__chip:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
-.steps-panel__chip-count {
-    min-width: 1.5em;
-    padding: 0 5px;
-    border-radius: var(--radius-pill);
-    background: var(--na-soft);
-    color: var(--text-muted);
-    font-weight: 600;
-    text-align: center;
-}
+.steps-panel__chip-count { font-weight: 400; }
 .steps-panel__chip.is-on { background: var(--accent); border-color: var(--accent); color: var(--bg-elevated); }
-.steps-panel__chip.is-on .steps-panel__chip-count { background: transparent; color: inherit; box-shadow: inset 0 0 0 1px currentColor; }
 
 .steps-panel__status { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-2); min-height: 28px; }
-.steps-panel__status-text { margin: 0; flex: 1 1 auto; font-size: var(--fs-xs); color: var(--text-muted); }
-.steps-panel__match-nav { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-md); overflow: hidden; }
-.steps-panel__match-nav .icon-button { width: 28px; height: 28px; border: 0; border-radius: 0; background: var(--bg-elevated); color: var(--text-muted); }
-.steps-panel__match-nav .icon-button + .icon-button { border-left: 1px solid var(--border-strong); }
-.steps-panel__match-nav .icon-button:hover { background: var(--surface-hover); color: var(--text-main); }
-.steps-panel__match-nav[hidden], .steps-panel__clear[hidden] { display: none; }
+.steps-panel__status-text { margin: 0; flex: 1 1 auto; font-size: var(--fs-sm); color: var(--text-main); }
+.steps-panel__status-count { font-weight: 600; }
+.steps-panel__status-where { color: var(--text-muted); }
+.steps-panel__match-nav { display: inline-flex; gap: var(--space-1); }
+.steps-panel__match-nav .icon-button { width: 30px; height: 30px; padding: 0; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--surface-base); color: var(--text-muted); }
+/* The panel's icon buttons say their own size: the section around them may
+   pad buttons, which would leave the icon no room. */
+.steps-panel .icon-button { display: inline-flex; align-items: center; justify-content: center; }
+.steps-panel .icon-button svg { flex: none; }
+.steps-panel__match-nav .icon-button:hover { border-color: var(--accent-border); color: var(--text-main); }
+.steps-panel__match-nav[hidden], .steps-panel__clear[hidden], .steps-panel__elsewhere[hidden], .steps-panel__links[hidden] { display: none; }
+.steps-panel__links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); }
+.steps-panel__elsewhere {
+    align-self: flex-start;
+    border: 0;
+    background: transparent;
+    padding: 2px 0;
+    font: inherit;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
 .steps-panel__clear {
     border: 0;
     background: transparent;
@@ -965,24 +986,18 @@
 .steps-panel__name { flex: 1 1 10ch; min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
 .steps-panel__flag { margin-left: 4px; color: var(--text-muted); font-size: var(--fs-xs); }
 
+/* A custom step's own row: a heading over its steps, with where it runs. */
+.steps-panel__row.is-root { margin-top: var(--space-2); }
+.steps-panel__row.is-root:first-child { margin-top: 0; }
+.steps-panel__row.is-root .steps-panel__name { font-weight: 600; color: var(--text-main); }
+/* Where a custom step runs, at the row's end; below its name when there is no room. */
+.steps-panel__note { margin-left: auto; padding-left: var(--space-2); font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap; }
 .steps-panel__row.is-match .steps-panel__name { font-weight: 600; }
 .steps-panel__row.is-context { color: var(--text-muted); }
 .steps-panel__row.is-disabled .steps-panel__name { text-decoration: line-through; color: var(--text-muted); }
 .steps-panel__row.is-disabled .steps-panel__flag { display: inline-block; text-decoration: none; }
-.steps-panel__row.is-in-view { background-color: var(--info-soft); }
-.steps-panel__row.is-in-view::after,
-.steps-panel__row.is-current::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 5px;
-    bottom: 5px;
-    width: 3px;
-    border-radius: 2px;
-    background: var(--accent-border);
-}
-.steps-panel__row.is-current { background-color: var(--accent-soft); }
-.steps-panel__row.is-current::after { background: var(--accent); }
+.steps-panel__row.is-in-view { background-color: var(--info-soft); box-shadow: inset 3px 0 0 var(--accent-border); }
+.steps-panel__row.is-current { background-color: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
 
 .steps-panel__empty { margin: 0; padding: var(--space-4); color: var(--text-muted); }
 .steps-panel__empty:empty, .steps-panel__empty[hidden] { display: none; }
@@ -1043,10 +1058,33 @@
 
 @media (forced-colors: active) {
     .steps-panel__chip.is-on { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; }
-    .steps-panel__chip.is-on .steps-panel__chip-count { background: HighlightText; color: Highlight; }
     .steps-panel__row.is-current { outline: 2px solid Highlight; outline-offset: -2px; }
     .steps-panel__row.is-in-view { outline: 1px dashed CanvasText; outline-offset: -2px; }
     .steps-panel__row::before { background-image: none; }
     .steps-panel__type { border: 1px solid CanvasText; }
     .line.is-located { outline-color: Highlight; }
 }
+
+/* On a call to a custom step: the way to it, as the custom step's
+   "Used in" links lead back (custom-steps.css). */
+.line .runcustomstep-open {
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    min-height: 28px;
+    margin-top: var(--space-2);
+    padding: 3px 10px;
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-pill);
+    background: var(--bg-elevated);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    cursor: pointer;
+}
+.line .runcustomstep-open:hover { border-color: var(--accent); }
+.line .runcustomstep-open[hidden] { display: none; }
+
+/* The links under the count are targets of 24px at least (WCAG 2.5.8). */
+.steps-panel .steps-panel__links :is(.steps-panel__clear, .steps-panel__elsewhere) { display: inline-flex; align-items: center; min-height: 24px; }

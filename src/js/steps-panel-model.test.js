@@ -103,3 +103,22 @@ describe('steps panel model', () => {
         assert.deepEqual(pos.get('i'), {posinset: 1, setsize: 1});
     });
 });
+
+describe('steps panel model: headings over steps', () => {
+    const def = { id: 'd0', path: '', depth: 0, type: 'customStep', typeTitle: 'Custom step', name: 'Checkout as guest', parentId: null, root: true, container: true, disabled: false, searchText: 'checkout as guest checkout-as-guest' };
+    const inner = (id, type, name) => ({ id, path: '1', depth: 1, type, typeTitle: type, name, parentId: 'd0', container: false, disabled: false, searchText: name.toLowerCase() });
+    const nodes = [def, inner('a', 'a11yScan', 'Payment'), inner('b', 'click', 'Pay')];
+
+    test('a custom step is not counted as a step, nor as a container', () => {
+        assert.deepEqual(m.countKinds(nodes), { all: 2, scan: 1, click: 1, container: 0, disabled: 0 });
+    });
+
+    test('a kind keeps the custom step over its matches, as context', () => {
+        const r = m.applyFilter(nodes, { kind: 'scan' });
+        assert.deepEqual(r.rows.map((row) => [row.node.id, row.context]), [['d0', true], ['a', false]]);
+    });
+
+    test('text finds a custom step by its name', () => {
+        assert.deepEqual(m.applyFilter(nodes, { query: 'guest' }).matches.map((n) => n.id), ['d0']);
+    });
+});
