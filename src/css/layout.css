@@ -346,9 +346,10 @@ textarea {
 }
 
 /* The browser's own placeholder grey (#757575) fell below 4.5:1 on these
-   fields: 4.3:1 in the light theme, 3.6:1 in the dark one. */
+   fields: 4.3:1 in the light theme, 3.6:1 in the dark one. The muted text
+   colour is 7:1 (AAA) on every surface a field sits on. */
 ::placeholder {
-    color: var(--text-soft);
+    color: var(--text-muted);
     opacity: 1;
 }
 
