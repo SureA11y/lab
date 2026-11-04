@@ -1056,7 +1056,21 @@ export function createActionsBuilder ({
             }
         }
         const fieldsContainer = lineEl.querySelector(".fields");
-        lineEl.setAttribute("aria-disabled", disabled ? "true" : "false");
+        // Not aria-disabled on the step: on a group it says every control in
+        // it is unavailable, the button that turns the step back on among
+        // them. Its fields are disabled one by one below; its name says it
+        // is off ("Action 4 - A11y scan, disabled").
+        lineEl.removeAttribute("aria-disabled");
+        const titleWrap = lineEl.querySelector(":scope > .line-header .line-title-wrapper");
+        let note = titleWrap ? titleWrap.querySelector(":scope > .line-disabled-note") : null;
+        if (disabled && titleWrap && !note) {
+            note = createEl("span", {className: "visually-hidden line-disabled-note"}, ", disabled");
+            const title = titleWrap.querySelector(":scope > .line-title");
+            if (title) title.after(note);
+            else titleWrap.append(note);
+        } else if (!disabled && note) {
+            note.remove();
+        }
 
         fieldsContainer.querySelectorAll("input, select, textarea, button").forEach((el) => {
             if (el.closest(".line") !== lineEl) return;
