@@ -90,7 +90,7 @@
 }
 
 :is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper .edit-title { border: transparent; padding: 0; min-width: 24px; min-height: 24px; }
-:is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .line-title-wrapper { opacity: .6; }
+:is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .line-title-wrapper { color: var(--text-muted); }
 :is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .edit-title { display: none; }
 :is(#actions-builder, #custom-step-actions-builder) .line.is-disabled .line-title { text-decoration: line-through; }
 
@@ -407,7 +407,7 @@
     padding: 1px 7px;
     border-radius: var(--radius-sm);
 }
-:is(#actions-builder, #custom-step-actions-builder) .branch-chip--then { background: var(--accent-soft); color: var(--accent); }
+:is(#actions-builder, #custom-step-actions-builder) .branch-chip--then { background: var(--accent-soft); color: var(--accent-on-soft); }
 :is(#actions-builder, #custom-step-actions-builder) .branch-chip--else { background: var(--surface-3); color: var(--text-muted); }
 :is(#actions-builder, #custom-step-actions-builder) .branch-chip--default { background: var(--surface-3); color: var(--text-muted); }
 
@@ -856,7 +856,7 @@
     color: var(--text-main);
     font: inherit;
 }
-.steps-panel__find::placeholder { color: var(--text-soft); }
+.steps-panel__find::placeholder { color: var(--text-muted); }
 .steps-panel__find:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
 
 .steps-panel__chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -976,7 +976,7 @@
     background: var(--na-soft);
     color: var(--text-muted);
 }
-.steps-panel__type[data-cat="scan"] { background: var(--accent-soft); color: var(--accent); }
+.steps-panel__type[data-cat="scan"] { background: var(--accent-soft); color: var(--accent-on-soft); }
 .steps-panel__type[data-cat="container"] { background: transparent; box-shadow: inset 0 0 0 1px var(--border-strong); }
 .steps-panel__num { flex: none; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
 /* A long name wraps rather than being cut: cut text is lost to someone who

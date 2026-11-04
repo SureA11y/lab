@@ -138,7 +138,7 @@
     --panel2: var(--surface-0);
 
     --text-main: #31352f;
-    --text-muted: #4e5651;
+    --text-muted: #424945;
     --text-soft: #646b66;
     --text: var(--text-main);
     --muted: var(--text-muted);
@@ -202,7 +202,7 @@
     --bg: #101413;
 
     --text-main: #c7d2cb;
-    --text-muted: #9ba69f;
+    --text-muted: #b0bab3;
     --text-soft: #8b958f;
 
     --line: #232927;
@@ -246,7 +246,7 @@
         --bg: #101413;
 
         --text-main: #c7d2cb;
-        --text-muted: #9ba69f;
+        --text-muted: #b0bab3;
         --text-soft: #8b958f;
 
         --line: #232927;
@@ -451,7 +451,7 @@ input, textarea, select{
 textarea{ min-height: 72px; resize: vertical; }
 
 /* The browser's own placeholder grey fell below 4.5:1 on these fields. */
-::placeholder{ color: var(--text-soft); opacity: 1; }
+::placeholder{ color: var(--text-muted); opacity: 1; }
 
 input:focus, textarea:focus, select:focus{
     border-color: color-mix(in srgb, var(--accent-2) 55%, transparent);
