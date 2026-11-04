@@ -260,7 +260,12 @@ describe('steps panel', () => {
             host: doc.getElementById('panel'), editorEl: doc.getElementById('editor'), sectionKey: 'workflow', title: 'Workflow steps',
             goToLine: () => {}, storage: null, win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
             barHost: doc.getElementById('bar'),
-            setDisabled: (lines, on) => { calls.push([lines.map((l) => l.dataset.actionIndexPath), on]); lines.forEach((l) => { if (on) l.dataset.explicitDisabled = 'true'; else delete l.dataset.explicitDisabled; }); return lines.length; }
+            setDisabled: (entries, on) => {
+                const lines = entries.map((e) => e.line);
+                calls.push([lines.map((l) => l.dataset.actionIndexPath), on]);
+                lines.forEach((l) => { if (on) l.dataset.explicitDisabled = 'true'; else delete l.dataset.explicitDisabled; });
+                return lines.length;
+            }
         });
         const rows = () => Array.from(doc.querySelectorAll('#panel [role="treeitem"]'));
         doc.querySelector('#panel .steps-panel__select').click();
@@ -453,5 +458,43 @@ describe('steps panel', () => {
         assert.equal(doc.querySelector('#p input[type="search"]').value, 'cart');
         link.click();
         assert.deepEqual(led, [['scan', 'cart']]);
+    });
+
+    test('Find from anywhere: shows a hidden panel, and Escape goes back', () => {
+        const { doc, win, panel } = setup();
+        const field = doc.querySelector('#editor .field input');
+        panel.setHidden(true);
+        field.focus();
+        panel.focusFind();
+        const find = doc.querySelector('#panel input[type="search"]');
+        assert.equal(panel.isHidden(), false);
+        assert.equal(doc.activeElement, find);
+        find.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(doc.activeElement, field);
+    });
+
+    test('narrow: the panel is a bar, and opens as a sheet that going to a step closes', () => {
+        const dom = new JSDOM(`<!doctype html><body><aside id="panel"></aside><div id="editor">${editorHtml()}</div></body>`, { url: 'http://127.0.0.1:3000/' });
+        const win = dom.window;
+        const doc = win.document;
+        global.Element = win.Element;
+        win.matchMedia = () => ({ matches: true, addEventListener() {}, removeEventListener() {} });
+        const went = [];
+        const panel = createStepsPanel({
+            host: doc.getElementById('panel'), editorEl: doc.getElementById('editor'), sectionKey: 'workflow', title: 'Workflow steps',
+            goToLine: (line) => went.push(line.dataset.actionIndexPath), storage: null, win,
+            isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 })
+        });
+        const sheet = doc.querySelector('#panel .steps-panel__sheet');
+        assert.equal(doc.querySelector('#panel .steps-panel__rail').hidden, false);
+        assert.equal(sheet.contains(doc.querySelector('#panel .steps-panel__full')), false);
+        doc.querySelector('#panel .steps-panel__show').click();
+        assert.equal(panel.isSheetOpen, true);
+        assert.ok(sheet.contains(doc.querySelector('#panel .steps-panel__full')));
+        assert.equal(doc.querySelector('#panel .steps-panel__hide').getAttribute('aria-label'), 'Close the steps panel');
+        sheet.querySelectorAll('[role="treeitem"]')[6].click();
+        assert.equal(panel.isSheetOpen, false);
+        assert.deepEqual(went, ['3.1.1.2']);
+        assert.equal(sheet.contains(doc.querySelector('#panel .steps-panel__full')), false);
     });
 });

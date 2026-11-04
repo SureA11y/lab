@@ -1938,6 +1938,49 @@ function storeActiveMode(mode) {
         });
     }
 
+    /**
+     * A step of a custom step, as saved: found by its panel id ("d1/3.2|actions"),
+     * its number and the lists it is in, as the editor numbers them.
+     */
+    function savedCustomStepAction(nodeId, data = customStepsData) {
+        const m = /^d(\d+)\/([^|]*)\|(.*)$/.exec(String(nodeId || ''));
+        if (!m) return null;
+        const def = data[Number(m[1])];
+        const path = m[2].split('.').map((x) => Number(x) - 1);
+        const trail = m[3] ? m[3].split('.') : [];
+        let list = def?.actions;
+        let action = null;
+        for (let i = 0; i < path.length; i += 1) {
+            action = Array.isArray(list) ? list[path[i]] : null;
+            if (!action) return null;
+            if (i < path.length - 1) list = action[trail[i]];
+        }
+        return action;
+    }
+
+    /**
+     * Changes steps of custom steps where they are kept, open in the editor
+     * or not, as one change of the Custom steps: the panel's Undo puts it
+     * back. The one open is first saved as the editor has it, and that is
+     * kept as a change of its own, so Undo takes back this change only.
+     */
+    function changeSavedCustomSteps(entries, change) {
+        const saved = customStepsUi.readCustomStepsFromUi({validate: false});
+        if (!saved?.ok) return 0;
+        pushCustomStepsHistory();
+        let changed = 0;
+        entries.forEach((entry) => {
+            const action = savedCustomStepAction(entry.node?.id);
+            if (action && change(action, entry)) changed += 1;
+        });
+        if (!changed) return 0;
+        customStepsUi.loadSelectedCustomStepIntoEditor();
+        customStepsUi.syncCustomStepsHiddenInput();
+        pushCustomStepsHistory();
+        customStepsPanel?.refresh();
+        return changed;
+    }
+
     function onCustomStepsListChanged() {
         customStepsPanel?.refresh();
     }
@@ -1962,12 +2005,14 @@ function storeActiveMode(mode) {
             title: 'Workflow steps',
             goToLine: goToWorkflowLine,
             callName: customStepName,
+            findShortcut: true,
             barHost: $('#workflow-selection-bar'),
-            setDisabled: (lines, on) => actionsBuilder?.setStepsDisabled(lines, on) || 0,
+            setDisabled: (entries, on) => actionsBuilder?.setStepsDisabled(entries.map((e) => e.line).filter(Boolean), on) || 0,
             edit: {
                 get defs() { return stepDefs; },
-                read: (line) => actionsBuilder?.readStep(line),
-                apply: (entries) => actionsBuilder?.setStepsFieldValues(entries) || 0,
+                read: (node, line) => actionsBuilder?.readStep(line),
+                apply: (entries) => actionsBuilder?.setStepsFieldValues(entries.filter((e) => e.line)) || 0,
+                makeField: (type, name) => actionsBuilder?.createEditField(type, name) || null,
                 warn: (nodes) => {
                     const off = nodes.filter((n) => n.disabled).length;
                     return off ? `${off} of these ${off === 1 ? 'is' : 'are'} turned off: changed like the others, ${off === 1 ? 'it stays' : 'they stay'} off.` : '';
@@ -1983,6 +2028,23 @@ function storeActiveMode(mode) {
         });
     }
 
+    // Ctrl+Shift+F (⌘⇧F on a Mac), from anywhere in the app: Find in the
+    // steps panel of the section focus is in (Custom steps, or else the
+    // Workflow), opening it if needed. Ctrl/⌘+K is the Add step palette's.
+    document.addEventListener('keydown', (event) => {
+        const mac = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgentData?.platform || navigator.platform || '');
+        if (!(mac ? event.metaKey : event.ctrlKey) || !event.shiftKey || event.altKey) return;
+        if (String(event.key).toLowerCase() !== 'f') return;
+        const inCustom = !!(customStepsContentEl && customStepsContentEl.contains(document.activeElement));
+        const panel = inCustom ? customStepsPanel : workflowStepsPanel;
+        if (!panel) return;
+        event.preventDefault();
+        setConfigExpanded(true);
+        if (inCustom) setCustomStepsExpanded(true);
+        else setWorkflowExpanded(true);
+        panel.focusFind();
+    });
+
     function initCustomStepsPanel(defs) {
         stepDefs = defs;
         const host = $('#custom-steps-steps-panel');
@@ -1997,27 +2059,41 @@ function storeActiveMode(mode) {
             open: openCustomStepOf,
             goToLine: goToCustomStepLine,
             callName: customStepName,
+            findShortcut: true,
             barHost: $('#custom-steps-selection-bar'),
-            setDisabled: (lines, on) => customStepActionsBuilder?.setStepsDisabled(lines, on) || 0,
+            // Steps of every custom step can be selected, open in the editor
+            // or not: they are changed in the custom steps' saved steps.
+            selectAnywhere: true,
+            outsideLabel: 'other custom steps',
+            setDisabled: (entries, on) => changeSavedCustomSteps(entries, (action) => {
+                if (!!action.disabled === !!on) return false;
+                if (on) action.disabled = true;
+                else delete action.disabled;
+                return true;
+            }),
             edit: {
                 get defs() { return stepDefs; },
-                read: (line) => customStepActionsBuilder?.readStep(line),
-                apply: (entries) => customStepActionsBuilder?.setStepsFieldValues(entries) || 0,
+                read: (node, line) => (line ? customStepActionsBuilder?.readStep(line) : savedCustomStepAction(node.id)) || {},
+                apply: (entries) => changeSavedCustomSteps(entries, (action, entry) => {
+                    Object.assign(action, JSON.parse(JSON.stringify(entry.values)));
+                    return true;
+                }),
+                makeField: (type, name) => customStepActionsBuilder?.createEditField(type, name) || null,
                 // Steps of a custom step are changed for every call to it.
-                warn: () => {
-                    const def = customStepsData[selectedCustomStepIndex];
-                    if (!def) return '';
-                    const {inWorkflow, inCustomSteps} = customStepUsage(def.id);
-                    const where = [
-                        inWorkflow.length ? `workflow ${inWorkflow.length === 1 ? 'step' : 'steps'} ${inWorkflow.map((n) => n.path).join(', ')}` : '',
-                        inCustomSteps.length ? inCustomSteps.map(({d}) => `“${d.name || d.id}”`).join(', ') : ''
-                    ].filter(Boolean).join(' and ');
-                    return where
-                        ? `These steps are in the custom step “${def.name || def.id}”, so every place that runs it gets the change: ${where}.`
-                        : `These steps are in the custom step “${def.name || def.id}”, which nothing runs yet.`;
+                warn: (nodes) => {
+                    const defs = Array.from(new Set(nodes.map((n) => defIndexOf(n.id)))).filter((i) => i >= 0).map((i) => customStepsData[i]).filter(Boolean);
+                    if (!defs.length) return '';
+                    const parts = defs.map((def) => {
+                        const {inWorkflow, inCustomSteps} = customStepUsage(def.id);
+                        const where = [
+                            inWorkflow.length ? `workflow ${inWorkflow.length === 1 ? 'step' : 'steps'} ${inWorkflow.map((n) => n.path).join(', ')}` : '',
+                            inCustomSteps.length ? inCustomSteps.map(({d}) => `“${d.name || d.id}”`).join(', ') : ''
+                        ].filter(Boolean).join(' and ');
+                        return `“${def.name || def.id}” ${where ? `runs at ${where}` : 'is not run yet'}`;
+                    });
+                    return `These steps are in custom steps, so every place that runs them gets the change: ${parts.join('; ')}.`;
                 }
             },
-            unselectableNote: 'Only the steps of the custom step open in the editor can be selected: open another to select its steps.',
             actions: [customStepsListActionsEl, history].filter(Boolean),
             elsewhere: {
                 label: 'the Workflow',

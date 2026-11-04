@@ -31,7 +31,8 @@ Worked out on clickable prototypes before any code:
    by itself (below). The step clicked keeps a stronger highlight than the
    one in view.
 3. **Find and filter.** A text box (label, selector, URL, `{var:…}`, type) and
-   type chips (All, A11y scan, Click, Containers, Disabled) with their counts.
+   type chips (All, A11y scan, Click, Containers, Disabled) with their counts;
+   a chip names one type exactly (A11y scan is not Merged scan).
    Matches are bold; their parent containers stay, dimmed, so each match shows
    where it lives. Previous and next go through the matches.
 4. **Hidden to a rail.** `‹` collapses the panel to a narrow rail at the left
@@ -136,10 +137,12 @@ all from the page:
   drops the focused step, ⌘/Ctrl-A takes every one listed, Escape ends.
 - **Disable and Enable** count only the steps they would change: a step off
   only because its container is off is not turned on by Enable.
-- **Only the steps of the custom step open in the editor can be selected,**
-  as Disable, Enable and the selection view act on the editor's cards. The
-  panel says so rather than opening another custom step and dropping the
-  selection.
+- **Every custom step's steps can be selected,** open in the editor or not,
+  as the filter finds them all. Those with no card are changed in the
+  custom steps' saved steps: the one open is saved first, and the change
+  is one change of the Custom steps, which the panel's Undo puts back. The
+  selection view shows the open one's cards; the bar says how many selected
+  steps are elsewhere.
 - **A step is known by its number and the lists it is in, not by its card.**
   Undo and Redo draw every card again, and the selection, the current step
   and the folded containers must still be the same steps after. A card that
@@ -170,10 +173,12 @@ lose it (WCAG 2.4.11).
   alike (same name and type), leaving out a step's own name, secrets, and
   the steps inside containers; the ones a card shows before "Show more
   options" come first, the rest behind "More fields".
-- Each field says what the steps hold now ("Mixed: WCAG 2.2 AA ×2, AAA
-  ×1"), takes a new value or "Keep each step's own", and says how many steps
-  it would change. A list (Tags) adds or removes items rather than replacing
-  them, so each step keeps its own.
+- Each field is the field as the steps have it (Profile's choices, Tags'
+  chips), made by the editor's own field maker, and opens with "Change …";
+  until then each step keeps its own. It says what the steps hold now
+  ("Mixed: WCAG 2.2 AA ×2, AAA ×1") and how many steps it would change. A
+  list (Tags) adds or removes items rather than replacing them, so each step
+  keeps its own.
 - Each card it would change says what it will get, old value struck out and
   the new one, before anything is written. Apply writes only the fields that
   change, through the editor's own field setter, so the fields drawn as
@@ -182,6 +187,27 @@ lose it (WCAG 2.4.11).
   change, and names them.
 - What decides which fields are shared and what each step would get is
   plain data (`steps-bulk-edit.js`), tested on its own.
+
+## Narrow screens
+
+Below 900 px there is no room beside the editor. The panel is a bar at the
+top of its section ("Steps · at 3.2"), the whole of which opens the panel
+as a sheet: a modal `<dialog>`, which keeps focus in it, closes on Escape
+and shades the page behind. Going to a step closes it, as the step is
+behind it; while selecting it stays open until closed. Widening the window
+puts the panel back beside the editor. Where fingers point, rows and chips
+are larger targets.
+
+## Find steps from anywhere
+
+The spec had Ctrl+K open a box to go to any step. Ctrl/⌘+K was already the
+Add step palette's, and a second search over the steps would have
+repeated the panel's. Instead, **Ctrl+Shift+F** (⌘⇧F on a Mac) takes focus
+to Find in the panel of the section focus is in, opening the section, the
+panel or its sheet as needed; Escape in an empty Find takes focus back to
+where it was. A single-key shortcut ("/") was left out: WCAG 2.1.4 asks
+that those can be turned off. The field says its shortcut to screen readers
+(`aria-keyshortcuts`) and shows it beside its label.
 
 ## What a thousand steps taught
 
@@ -221,9 +247,9 @@ and the later steps of the work keep to them too:
    selection view, Disable and Enable; with ⌘/Ctrl-click, and folding.
 4. **Edit together** (done): the bar, the shared fields, the previews on the
    cards, Apply with one Undo, the warning for custom steps.
-5. **Narrow screens and Go to step:** below about 900 px the panel becomes a
-   bar at the top of the section that opens it as a sheet; Ctrl+K opens a
-   go-to box over both sections.
+5. **Narrow screens and Find steps** (done): below 900 px the panel is a
+   bar at the top of its section that opens it as a sheet; Ctrl+Shift+F
+   (⌘⇧F) goes to Find from anywhere.
 
 The prototypes these come from are kept with the design work, outside the
 repository.

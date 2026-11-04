@@ -148,3 +148,10 @@ describe('steps panel model: folding', () => {
         assert.deepEqual(m.ancestorIds(nodes(), 'a'), []);
     });
 });
+
+describe('steps panel model: the A11y scan chip', () => {
+    test('takes A11y scans only, not Merged scans', () => {
+        const n = (id, type) => ({ id, type, depth: 0, parentId: null, name: id, searchText: id });
+        assert.deepEqual(m.applyFilter([n('a', 'a11yScan'), n('b', 'mergedScan')], { kind: 'scan' }).matches.map((x) => x.id), ['a']);
+    });
+});

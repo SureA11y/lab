@@ -30,7 +30,8 @@ export const KINDS = [
     {id: 'disabled', label: 'Disabled'}
 ];
 
-const SCAN_TYPES = new Set(['a11yScan', 'mergedScan']);
+// The A11y scan chip is that type only: a Merged scan is a step of its own.
+const SCAN_TYPES = new Set(['a11yScan']);
 const CLICK_TYPES = new Set(['click', 'clickByText']);
 
 /** Whether a step is of a kind; `all` takes every step. */

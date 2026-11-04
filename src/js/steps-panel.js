@@ -237,12 +237,14 @@ function searchIcon(doc) {
 
 /** How a step's type is coloured: scans, containers, or the rest. Words say it too. */
 function categoryOf(node) {
-    if (isOfKind(node, 'scan')) return 'scan';
+    // Coloured as scans: both kinds scan the page.
+    if (node.type === 'a11yScan' || node.type === 'mergedScan') return 'scan';
     if (node.container) return 'container';
     return 'action';
 }
 
 const CHEVRON_LEFT = 'M15 6l-6 6 6 6';
+const CLOSE_X = 'M6 6l12 12M18 6L6 18';
 const CHEVRON_RIGHT = 'M9 6l6 6-6 6';
 const CHEVRON_UP = 'M6 15l6-6 6 6';
 const CHEVRON_DOWN = 'M6 9l6 6 6-6';
@@ -293,14 +295,19 @@ function icon(doc, d) {
  * @param {{count: (kind: string, query: string) => number, label: string, go: (kind: string, query: string) => void}} [o.elsewhere]
  *        Says how many steps match in the other section, and leads there.
  * @param {() => void} [o.onRead]   Told each time the panel has read the steps again.
+ * @param {boolean} [o.findShortcut]  The app takes Ctrl+Shift+F (⌘⇧F on a Mac) to Find: say so.
  * @param {(id: string) => string} [o.callName]  The name of the custom step a call runs.
  * @param {Element} [o.barHost]     Where the selection bar goes, above the editor.
- * @param {(lines: Element[], on: boolean) => number} [o.setDisabled]
+ * @param {(entries: {node: object, line: Element|null}[], on: boolean) => number} [o.setDisabled]
  *        Turns steps off or on as one change; says how many changed.
+ * @param {boolean} [o.selectAnywhere]  Steps with no card in the editor can be selected
+ *        too (custom steps not open): the section's callbacks change them where they are kept.
+ * @param {string} [o.outsideLabel]  Where selected steps with no card are: "other custom steps".
  * @param {string} [o.unselectableNote]  Says why some steps cannot be selected.
- * @param {{defs: object, read: (line: Element) => object, apply: (entries: {line: Element, values: object}[]) => number, warn?: (nodes: object[]) => string}} [o.edit]
- *        Edit together: the step definitions, reading a step's values, and
- *        setting several steps' fields as one change.
+ * @param {{defs: object, read: (node: object, line: Element|null) => object, apply: (entries: {node: object, line: Element|null, values: object}[]) => number, warn?: (nodes: object[]) => string, makeField?: (type: string, name: string) => ({el: Element, read: () => *, set: (v: *) => void}|null)}} [o.edit]
+ *        Edit together: the step definitions, reading a step's values,
+ *        setting several steps' fields as one change, and the fields as the
+ *        steps have them.
  */
 export function createStepsPanel(o) {
     const {host, editorEl, sectionKey, title, goToLine} = o;
@@ -364,6 +371,11 @@ export function createStepsPanel(o) {
         placeholder: 'Label, selector, URL, {var:…}', autocomplete: 'off', spellcheck: 'false'
     });
     const findLabel = el(doc, 'label', {for: `${baseId}-find`, className: 'steps-panel__find-label', text: 'Find steps'});
+    if (o.findShortcut) {
+        // Said to screen readers by aria-keyshortcuts; shown beside the label.
+        findInput.setAttribute('aria-keyshortcuts', isMac ? 'Meta+Shift+F' : 'Control+Shift+F');
+        findLabel.append(' ', el(doc, 'kbd', {className: 'steps-panel__shortcut', 'aria-hidden': 'true', text: isMac ? '⌘⇧F' : 'Ctrl+Shift+F'}));
+    }
     const chipsEl = el(doc, 'div', {className: 'steps-panel__chips', role: 'group', 'aria-label': 'Show only'});
     // The count stands out, where it is among the matches does not:
     // "5 matches · 2 of 5". Read out whole as one status.
@@ -425,12 +437,57 @@ export function createStepsPanel(o) {
 
     host.append(full, rail);
 
+    // ---- Narrow screens: the panel as a sheet ----
+    // Below 900px there is no room beside the editor: the rail becomes a bar
+    // at the top of the section, and the panel opens over the editor in a
+    // modal dialog, which keeps focus in it, closes on Escape and shades the
+    // page behind it.
+    const sheet = el(doc, 'dialog', {className: 'steps-panel__sheet', 'aria-label': title});
+    host.append(sheet);
+    const narrowQuery = win?.matchMedia ? win.matchMedia('(max-width: 900px)') : null;
+    let narrow = !!narrowQuery?.matches;
+    let sheetOpen = false;
+
+    function openSheet() {
+        if (sheetOpen) return;
+        sheetOpen = true;
+        sheet.append(full);
+        full.hidden = false;
+        if (typeof sheet.showModal === 'function') sheet.showModal();
+        else sheet.setAttribute('open', '');
+        hideBtn.setAttribute('aria-label', 'Close the steps panel');
+        hideBtn.title = 'Close the steps panel';
+        hideBtn.replaceChildren(icon(doc, CLOSE_X));
+    }
+
+    function closeSheet({returnFocus = true} = {}) {
+        if (!sheetOpen) return;
+        if (typeof sheet.close === 'function' && sheet.open) sheet.close();
+        else sheet.removeAttribute('open');
+        afterSheetClosed(returnFocus);
+    }
+
+    function afterSheetClosed(returnFocus) {
+        if (!sheetOpen) return;
+        sheetOpen = false;
+        host.insertBefore(full, rail);
+        hideBtn.setAttribute('aria-label', 'Hide the steps panel');
+        hideBtn.title = 'Hide the steps panel';
+        hideBtn.replaceChildren(icon(doc, CHEVRON_LEFT));
+        drawHidden();
+        if (returnFocus) showBtn.focus();
+    }
+    // Escape, or the browser closing it: put the panel back.
+    sheet.addEventListener('close', () => afterSheetClosed(true));
+
     // ---- The selection bar, above the editor ----
     const barCount = el(doc, 'b', {className: 'steps-panel-bar__count'});
     const barTypes = el(doc, 'span', {className: 'steps-panel-bar__types'});
     const barText = el(doc, 'p', {className: 'steps-panel-bar__text', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true'}, [barCount, barTypes]);
     const disableBtn = el(doc, 'button', {type: 'button', className: 'steps-panel-bar__btn'});
     const enableBtn = el(doc, 'button', {type: 'button', className: 'steps-panel-bar__btn'});
+    const barOutside = el(doc, 'p', {className: 'steps-panel-bar__outside'});
+    barOutside.hidden = true;
     const editToggle = el(doc, 'button', {
         type: 'button', className: 'steps-panel-bar__edit', 'aria-expanded': 'false', 'aria-controls': `${baseId}-edit`
     });
@@ -443,6 +500,7 @@ export function createStepsPanel(o) {
             barText,
             el(doc, 'div', {className: 'steps-panel-bar__actions', role: 'group', 'aria-label': 'For the selected steps'}, [disableBtn, enableBtn])
         ]),
+        barOutside,
         o.edit ? el(doc, 'div', {className: 'steps-panel-bar__row steps-panel-bar__row--edit'}, [editToggle, editHint, editPending]) : null,
         o.edit ? editBody : null
     ]);
@@ -519,7 +577,7 @@ export function createStepsPanel(o) {
     }
 
     function selectable(node) {
-        return !!node && !node.root && state.lineById.has(node.id);
+        return !!node && !node.root && (o.selectAnywhere || state.lineById.has(node.id));
     }
 
     function drawTree() {
@@ -594,9 +652,12 @@ export function createStepsPanel(o) {
     }
 
     function drawHidden() {
-        host.classList.toggle('is-hidden', state.hidden);
-        full.hidden = state.hidden;
-        rail.hidden = !state.hidden;
+        // Narrow, the bar always shows and the panel only in its sheet.
+        const folded = narrow || state.hidden;
+        host.classList.toggle('is-hidden', folded);
+        host.classList.toggle('is-narrow', narrow);
+        if (!sheetOpen) full.hidden = folded;
+        rail.hidden = !folded;
     }
 
     function drawElsewhere() {
@@ -643,6 +704,11 @@ export function createStepsPanel(o) {
         const picked = selectedNodes();
         bar.hidden = !state.selecting;
         barEmpty.hidden = !state.selecting || picked.length > 0;
+        // Selected steps with no card here (in custom steps not open) are
+        // changed all the same; the editor cannot show them.
+        const outside = picked.filter((n) => !state.lineById.has(n.id)).length;
+        barOutside.hidden = !state.selecting || !outside;
+        setText(barOutside, outside ? `${outside} of them ${outside === 1 ? 'is' : 'are'} in ${o.outsideLabel || 'another part'}, not shown here; Disable, Enable and Edit together change ${outside === 1 ? 'it' : 'them'} too.` : '');
         setText(barCount, picked.length === 1 ? '1 selected' : `${picked.length} selected`);
         const types = new Map();
         picked.forEach((n) => types.set(n.typeTitle, (types.get(n.typeTitle) || 0) + 1));
@@ -675,16 +741,31 @@ export function createStepsPanel(o) {
         if (!editValues) {
             editValues = new Map();
             selectedNodes().forEach((n) => {
-                const line = state.lineById.get(n.id);
-                if (line) editValues.set(n.id, o.edit.read(line) || {});
+                const line = state.lineById.get(n.id) || null;
+                if (line || o.selectAnywhere) editValues.set(n.id, o.edit.read(n, line) || {});
             });
         }
         return editValues;
     }
 
+    // What the form asks for. A field drawn as the steps have it counts only
+    // once "Change this" is ticked; its value is what it holds then.
+    function effectiveEdits() {
+        const out = {};
+        Object.entries(state.edits).forEach(([name, e]) => {
+            if (!e) return;
+            if (e.widget) {
+                if (e.on) out[name] = {value: e.value, mode: e.mode};
+            } else {
+                out[name] = e;
+            }
+        });
+        return out;
+    }
+
     function currentPlan() {
         const values = selectedValues();
-        return planChanges(Array.from(values, ([id, v]) => ({id, values: v})), state.edits, editFields);
+        return planChanges(Array.from(values, ([id, v]) => ({id, values: v})), effectiveEdits(), editFields);
     }
 
     function fieldControl(f) {
@@ -711,6 +792,48 @@ export function createStepsPanel(o) {
         return control;
     }
 
+    // The fields drawn as the steps have them, by field name, while the form is drawn.
+    let widgets = new Map();
+
+    function widgetRow(f, values, now, nowEl) {
+        const type = selectedNodes()[0]?.type;
+        const w = o.edit.makeField?.(type, f.name);
+        if (!w) return null;
+        const edit = state.edits[f.name] || (state.edits[f.name] = {widget: true, on: false, mode: 'add'});
+        edit.widget = true;
+        // It starts with what most of the steps hold (a list starts empty:
+        // its items are added or removed), or with what was chosen before.
+        if (edit.value !== undefined) w.set(edit.value);
+        else if (f.kind !== 'list') {
+            const common = values.map((v) => v?.[f.name]).find((v) => v != null && v !== '');
+            if (common !== undefined) w.set(common);
+        } else {
+            w.set([]);
+        }
+        widgets.set(f.name, w);
+        const toggleId = `${baseId}-edit-${f.name}-on`;
+        const toggle = el(doc, 'input', {type: 'checkbox', id: toggleId, className: 'steps-panel-edit__on', dataset: {toggle: f.name}});
+        toggle.checked = !!edit.on;
+        const box = el(doc, 'fieldset', {className: 'steps-panel-edit__value', dataset: {box: f.name}}, [
+            el(doc, 'legend', {className: 'visually-hidden', text: `New ${f.label}`}),
+            f.kind === 'list' ? (() => {
+                const mode = el(doc, 'select', {className: 'steps-panel-edit__mode', 'aria-label': `${f.label}: add or remove`, dataset: {field: f.name, part: 'mode'}},
+                    [el(doc, 'option', {value: 'add'}, 'Add these'), el(doc, 'option', {value: 'remove'}, 'Remove these')]);
+                mode.value = edit.mode || 'add';
+                return mode;
+            })() : null,
+            w.el
+        ]);
+        box.disabled = !edit.on;
+        return el(doc, 'div', {className: 'steps-panel-edit__row is-widget', dataset: {field: f.name}}, [
+            el(doc, 'div', {className: 'steps-panel-edit__label'}, [
+                el(doc, 'label', {className: 'steps-panel-edit__on-label', for: toggleId}, [toggle, ` Change ${f.label}`])
+            ]),
+            el(doc, 'div', {className: 'steps-panel-edit__field'}, [nowEl, box]),
+            el(doc, 'p', {className: 'steps-panel-edit__count', dataset: {count: f.name}})
+        ]);
+    }
+
     function fieldRow(f, values) {
         const now = tally(values.map((v) => v?.[f.name]), f);
         const nowEl = el(doc, 'p', {className: 'steps-panel-edit__now'}, [
@@ -718,6 +841,8 @@ export function createStepsPanel(o) {
             now.length > 1 ? el(doc, 'span', {className: 'steps-panel-edit__mixed', text: 'Mixed'}) : null,
             ...now.map(({text, n}) => el(doc, 'span', {className: 'steps-panel-edit__value'}, [text, el(doc, 'b', {text: ` ×${n}`})]))
         ]);
+        const widgetEl = o.edit.makeField ? widgetRow(f, values, now, nowEl) : null;
+        if (widgetEl) return widgetEl;
         return el(doc, 'div', {className: 'steps-panel-edit__row', dataset: {field: f.name}}, [
             el(doc, 'label', {className: 'steps-panel-edit__label', for: `${baseId}-edit-${f.name}`, text: f.label}),
             el(doc, 'div', {className: 'steps-panel-edit__field'}, [nowEl, fieldControl(f)]),
@@ -744,6 +869,7 @@ export function createStepsPanel(o) {
         const had = editBody.contains(doc.activeElement) ? doc.activeElement : null;
         const back = had ? {field: had.dataset?.field, part: had.dataset?.part || '', cls: had.className, at: had.selectionStart} : null;
         editBody.textContent = '';
+        widgets = new Map();
         const types = key.split(',').filter(Boolean);
         editBody.append(el(doc, 'p', {className: 'steps-panel-edit__intro', text: types.length > 1
             ? `These steps are of ${types.length} kinds, so only the fields they all have are here. Only the fields you change are written.`
@@ -859,9 +985,10 @@ export function createStepsPanel(o) {
         const plan = currentPlan();
         if (!plan.length) return;
         const entries = plan.map(({id, changes}) => ({
-            line: state.lineById.get(id),
+            node: nodeById(id),
+            line: state.lineById.get(id) || null,
             values: Object.fromEntries(changes.map((c) => [c.name, c.after]))
-        })).filter((e) => e.line);
+        })).filter((e) => e.line || o.selectAnywhere);
         const fields = plan.reduce((a, p) => a + p.changes.length, 0);
         drawPreviews([]);
         const n = o.edit.apply(entries);
@@ -929,12 +1056,12 @@ export function createStepsPanel(o) {
     }
 
     function setDisabled(on) {
-        const lines = selectedNodes()
+        const entries = selectedNodes()
             .filter((n) => (on ? !n.explicitDisabled : n.explicitDisabled))
-            .map((n) => state.lineById.get(n.id))
-            .filter(Boolean);
-        if (!lines.length || !o.setDisabled) return;
-        const n = o.setDisabled(lines, on);
+            .map((n) => ({node: n, line: state.lineById.get(n.id) || null}))
+            .filter((e) => e.line || o.selectAnywhere);
+        if (!entries.length || !o.setDisabled) return;
+        const n = o.setDisabled(entries, on);
         state.barNote = ` · ${on ? 'turned off' : 'turned on'} ${n} ${n === 1 ? 'step' : 'steps'}; Undo puts ${n === 1 ? 'it' : 'them'} back`;
         rebuild();
     }
@@ -985,9 +1112,13 @@ export function createStepsPanel(o) {
         // Undo and Redo draw every card again; a step removed takes only its
         // own: if any card is still there, a card that is not was removed.
         const redrawnAll = !Array.from(state.lineById.values()).some((line) => idOfLine.has(line));
+        const stillThere = new Set(got.nodes.map((n) => n.id));
         const follow = (id) => {
             const line = state.lineById.get(id);
-            if (line && idOfLine.has(line)) return idOfLine.get(line);
+            // A step with no card (a custom step not open) is known by its
+            // id alone: it stays as long as the step does.
+            if (!line) return stillThere.has(id) ? id : null;
+            if (idOfLine.has(line)) return idOfLine.get(line);
             return redrawnAll ? id : null;
         };
         state.selected = new Set(Array.from(state.selected, follow).filter(Boolean));
@@ -999,7 +1130,9 @@ export function createStepsPanel(o) {
         if (state.selecting) viewDrawn = '';
         editValues = null;
         editFieldsKey = '';
-        state.selected.forEach((id) => { if (!state.lineById.has(id)) state.selected.delete(id); });
+        state.selected.forEach((id) => {
+            if (!stillThere.has(id) || (!o.selectAnywhere && !state.lineById.has(id))) state.selected.delete(id);
+        });
         state.folded.forEach((id) => { if (!state.nodes.some((n) => n.id === id)) state.folded.delete(id); });
         nodeOfLine = new WeakMap();
         state.nodes.forEach((n) => { const line = state.lineById.get(n.id); if (line) nodeOfLine.set(line, n); });
@@ -1099,6 +1232,8 @@ export function createStepsPanel(o) {
             state.focusId = id;
         }
         markLocated(id);
+        // From the sheet, going to a step closes it: the step is behind it.
+        if (sheetOpen && !state.selecting) closeSheet({returnFocus: false});
         goToLine(line, {focus, node});
         visibleLines = null;
         drawStatus();
@@ -1228,6 +1363,11 @@ export function createStepsPanel(o) {
             findInput.value = '';
             state.query = '';
             draw();
+        } else if (event.key === 'Escape' && cameFrom?.isConnected && !sheetOpen) {
+            event.preventDefault();
+            const back = cameFrom;
+            cameFrom = null;
+            back.focus();
         }
     });
     chipsEl.addEventListener('click', (event) => {
@@ -1266,13 +1406,42 @@ export function createStepsPanel(o) {
     });
     const onEditInput = (event) => {
         const t = event.target;
-        const name = t.dataset?.field;
+        // "Change this": the field's box opens or closes for input.
+        if (t.dataset?.toggle) {
+            const name = t.dataset.toggle;
+            const box = editBody.querySelector(`[data-box="${name}"]`);
+            if (box) box.disabled = !t.checked;
+            const w = widgets.get(name);
+            setEdit(name, {on: t.checked, value: w ? w.read() : undefined});
+            return;
+        }
+        const name = t.dataset?.field || t.closest?.('[data-box]')?.dataset.box;
         if (!name) return;
-        if (t.dataset.part === 'mode') setEdit(name, {mode: t.value});
+        if (t.dataset?.part === 'mode') {
+            setEdit(name, {mode: t.value});
+            return;
+        }
+        const w = widgets.get(name);
+        if (w) setEdit(name, {value: w.read()});
         else setEdit(name, {value: t.value});
     };
     editBody.addEventListener('input', onEditInput);
     editBody.addEventListener('change', onEditInput);
+    // Some fields are widgets that change without an input event (a tag
+    // added with Enter or removed, a profile chosen in its panel): read them
+    // again after a key, a click or focus leaving them.
+    const rereadBox = (event) => {
+        const box = event.target.closest?.('[data-box]');
+        if (!box || box.disabled) return;
+        const name = box.dataset.box;
+        setTimeout(() => {
+            const w = widgets.get(name);
+            if (!w || !state.edits[name]?.on) return;
+            const value = w.read();
+            if (JSON.stringify(value) !== JSON.stringify(state.edits[name].value)) setEdit(name, {value});
+        }, 0);
+    };
+    ['click', 'keyup', 'focusout'].forEach((type) => editBody.addEventListener(type, rereadBox));
     moreBtn.addEventListener('click', () => {
         moreOpen = !moreOpen;
         editFieldsKey = '';
@@ -1414,8 +1583,43 @@ export function createStepsPanel(o) {
         drawHidden();
         if (moveFocus) (state.hidden ? showBtn : hideBtn).focus();
     }
-    hideBtn.addEventListener('click', () => setHidden(true, {moveFocus: true}));
-    showBtn.addEventListener('click', () => setHidden(false, {moveFocus: true}));
+    hideBtn.addEventListener('click', () => {
+        if (sheetOpen) closeSheet();
+        else setHidden(true, {moveFocus: true});
+    });
+    showBtn.addEventListener('click', () => {
+        if (narrow) {
+            openSheet();
+            (rowFor(state.currentId) || findInput).focus();
+        } else {
+            setHidden(false, {moveFocus: true});
+        }
+    });
+    // Narrow, the whole bar opens the sheet for a finger; its button is the
+    // control for the keyboard and screen readers.
+    rail.addEventListener('click', (event) => {
+        if (!narrow || event.target.closest('button')) return;
+        showBtn.click();
+    });
+    const onNarrowChange = () => {
+        narrow = !!narrowQuery?.matches;
+        if (!narrow && sheetOpen) closeSheet({returnFocus: false});
+        drawHidden();
+    };
+    narrowQuery?.addEventListener?.('change', onNarrowChange);
+
+    // ---- Find steps from anywhere ----
+    // Where focus was when the shortcut brought it to Find: Escape in an
+    // empty Find takes it back there.
+    let cameFrom = null;
+    function focusFind() {
+        const before = doc.activeElement;
+        if (narrow) openSheet();
+        else if (state.hidden) setHidden(false);
+        cameFrom = before && before !== doc.body && !host.contains(before) ? before : null;
+        findInput.focus();
+        findInput.select();
+    }
 
     setHidden(state.hidden, {remember: false});
     rebuild();
@@ -1429,6 +1633,10 @@ export function createStepsPanel(o) {
         recountElsewhere: drawElsewhere,
         setHidden,
         setFilter,
+        /** Takes focus to Find, showing the panel (or its sheet) first: the "Find steps" shortcut. */
+        focusFind,
+        /** Narrow screens: whether the panel shows as a sheet now. */
+        get isSheetOpen() { return sheetOpen; },
         /** For tests and the app: whether selecting, and what is selected. */
         get selecting() { return state.selecting; },
         get selectedIds() { return Array.from(state.selected); },
@@ -1437,7 +1645,8 @@ export function createStepsPanel(o) {
         goTo,
         /** Shows the panel if hidden and puts focus on a step's row, else the current one, else the first. */
         focusTree(id) {
-            if (state.hidden) setHidden(false);
+            if (narrow) openSheet();
+            else if (state.hidden) setHidden(false);
             const row = rowFor(id) || rowFor(state.currentId) || treeEl.querySelector('[role="treeitem"]');
             if (row) focusRow(row.dataset.stepId);
         },
@@ -1461,6 +1670,8 @@ export function createStepsPanel(o) {
             band?.disconnect();
             bar.remove();
             barEmpty.remove();
+            narrowQuery?.removeEventListener?.('change', onNarrowChange);
+            if (sheetOpen) closeSheet({returnFocus: false});
             if (warmHandle) win?.cancelIdleCallback?.(warmHandle);
             host.textContent = '';
         }
