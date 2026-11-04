@@ -13,8 +13,12 @@ organised, and what a change needs before it is merged.
   before the work.
 
 A pull request says what it changes and why, comes with its tests, and keeps
-the whole suite passing; the template lists what to check. Contributions are
-accepted under the lab's license, the GNU AGPL-3.0 ([LICENSE](LICENSE)).
+the whole suite passing; the template lists what to check. The lab is not
+open source ([LICENSE](LICENSE)), so a contribution is accepted only with the
+right to use it as part of the lab: by sending one, you grant Jorge Rumoroso a
+perpetual, worldwide, irrevocable, royalty-free license to use, change,
+distribute and sublicense it under any terms, including a later open-source
+license, and you confirm you have the right to grant it.
 
 ## Setting up
 
