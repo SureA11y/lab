@@ -113,6 +113,10 @@ all from the page:
 - **Each custom step is a heading row**, with its steps under it. A text
   filter finds it by name; the type chips and the step counts leave it out,
   as it is not a step.
+- **Each comes folded** the first time the panel lists it (a config
+  loaded, one added), so the panel opens as a list of custom steps; after
+  that it stays as it was left. A filter still lists the matches in folded
+  ones, and going to a step unfolds its custom step.
 - **The one open in the editor is read from its lines; the others from
   their saved steps** (`readActionNodes`), numbered and keyed as the editor
   numbers them (number and the lists it is in), so a step keeps its row when
@@ -185,6 +189,10 @@ lose it (WCAG 2.4.11).
   widgets take them too, and as one change: one Undo puts them all back.
 - In Custom steps, it says every place that runs the custom step gets the
   change, and names them.
+- The warning, what is about to change and Apply are pinned to the bottom
+  of the form, however many fields it lists; the form is as tall as fits
+  under the bar once the bar is stuck to the top, so Apply is always in the
+  window, and opening it brings the whole of it into view.
 - What decides which fields are shared and what each step would get is
   plain data (`steps-bulk-edit.js`), tested on its own.
 

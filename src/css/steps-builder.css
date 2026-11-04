@@ -1148,7 +1148,7 @@
 }
 .steps-panel-bar[hidden], .steps-panel-bar__empty[hidden] { display: none; }
 .steps-panel-bar__text { margin: 0; flex: 1 1 auto; font-size: var(--fs-sm); }
-.steps-panel-bar__types { opacity: .92; }
+.steps-panel-bar__types { font-weight: 400; }
 .steps-panel-bar__actions { display: inline-flex; gap: var(--space-2); }
 .steps-panel-bar .steps-panel-bar__btn {
     min-height: 30px;
@@ -1279,7 +1279,20 @@
 .steps-panel-edit__rest[hidden] { display: none; }
 .steps-panel-edit__warn { margin: var(--space-2) 0 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--warn-soft); color: var(--text-main); font-size: var(--fs-sm); }
 .steps-panel-edit__warn[hidden] { display: none; }
-.steps-panel-edit__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-3); }
+.steps-panel-edit__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+/* Pinned to the bottom of the form as it scrolls, over the fields under it,
+   reaching its edges past the form's padding. */
+.steps-panel-edit__dock {
+    position: sticky;
+    bottom: calc(-1 * var(--space-3));
+    z-index: 1;
+    margin: var(--space-3) calc(-1 * var(--space-4)) calc(-1 * var(--space-3));
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-elevated);
+    box-shadow: 0 -6px 12px -10px rgba(4, 21, 14, .35);
+}
+.steps-panel-edit__dock .steps-panel-edit__warn { margin: 0 0 var(--space-2); }
 .steps-panel-edit__summary { margin: 0 auto 0 0; font-size: var(--fs-sm); color: var(--text-muted); }
 .steps-panel-edit :is(.steps-panel-edit__clear, .steps-panel-edit__apply) {
     min-height: 32px;
@@ -1375,10 +1388,10 @@
    "Change …", and until then each step keeps its own. */
 .steps-panel-edit__on-label { display: inline-flex; align-items: flex-start; gap: var(--space-2); font-weight: 600; cursor: pointer; }
 .steps-panel-edit__on { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
-.steps-panel-edit__value { min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--space-2); }
-.steps-panel-edit__value:disabled { opacity: .6; }
-.steps-panel-edit__value .edit-together-field .fields { display: block; }
-.steps-panel-edit__value .edit-together-field .field { margin: 0; }
-.steps-panel-edit__value .steps-panel-edit__mode { max-width: 200px; min-height: 32px; }
+.steps-panel-edit__input { min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.steps-panel-edit__input:disabled { opacity: .6; }
+.steps-panel-edit__input .edit-together-field .fields { display: block; }
+.steps-panel-edit__input .edit-together-field .field { margin: 0; }
+.steps-panel-edit__input .steps-panel-edit__mode { max-width: 200px; min-height: 32px; }
 .steps-panel-bar__outside { margin: 0; font-size: var(--fs-sm); }
 .steps-panel-bar__outside[hidden] { display: none; }
