@@ -1044,11 +1044,8 @@
 /* Narrow: no room beside the editor, so the panel sits above it. */
 @media (max-width: 900px) {
     .steps-panel-layout { flex-direction: column; align-items: stretch; }
-    .steps-panel { position: static; flex-basis: auto; max-height: none; }
-    .steps-panel__tree { max-height: 260px; }
-    .steps-panel.is-hidden { flex-basis: auto; }
-    .steps-panel__rail { flex-direction: row; justify-content: flex-start; padding: var(--space-1) var(--space-2); }
-    .steps-panel__rail-where { writing-mode: horizontal-tb; transform: none; }
+    /* The panel opens as a sheet here (below); the bar takes the row. */
+    .custom-steps-panel:has(> .custom-steps-list-panel > .steps-panel.is-hidden) { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1322,3 +1319,64 @@
     .steps-panel-preview { border: 1px solid CanvasText; border-left-width: 3px; }
     .steps-panel-edit__row.is-changed { border-left: 3px solid Highlight; }
 }
+
+/* ---- Narrow screens: the panel as a sheet (steps-panel.js) ---- */
+.steps-panel__sheet {
+    width: min(calc(100vw - 16px), 560px);
+    max-width: none;
+    height: min(85vh, 760px);
+    max-height: none;
+    margin: auto auto 0;
+    padding: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px 12px 0 0;
+    background: var(--bg-elevated);
+    color: var(--text-main);
+}
+.steps-panel__sheet[open] { display: flex; flex-direction: column; }
+.steps-panel__sheet::backdrop { background: rgba(4, 21, 14, .45); }
+.steps-panel__sheet .steps-panel__full { flex: 1 1 auto; min-height: 0; }
+.steps-panel .steps-panel__sheet .steps-panel__tree { max-height: none; }
+
+/* Narrow, the rail is a bar across the top of the section that opens the sheet. */
+.steps-panel.is-narrow { position: static; flex-basis: auto; width: auto; max-height: none; }
+.steps-panel.is-narrow .steps-panel__rail {
+    cursor: pointer;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+}
+.steps-panel.is-narrow .steps-panel__rail-where { writing-mode: horizontal-tb; transform: none; font-size: var(--fs-sm); color: var(--text-main); }
+
+/* Where fingers point, rows and chips are easier targets. */
+@media (pointer: coarse) {
+    .steps-panel__row { min-height: 40px; }
+    .steps-panel__chip { min-height: 36px; }
+}
+
+/* The Find steps shortcut, beside its label. */
+.steps-panel__shortcut {
+    margin-left: var(--space-1);
+    padding: 0 4px;
+    border: 1px solid var(--border-strong);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xxs);
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+/* Edit together with the fields as the steps have them: each opens with
+   "Change …", and until then each step keeps its own. */
+.steps-panel-edit__on-label { display: inline-flex; align-items: flex-start; gap: var(--space-2); font-weight: 600; cursor: pointer; }
+.steps-panel-edit__on { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+.steps-panel-edit__value { min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.steps-panel-edit__value:disabled { opacity: .6; }
+.steps-panel-edit__value .edit-together-field .fields { display: block; }
+.steps-panel-edit__value .edit-together-field .field { margin: 0; }
+.steps-panel-edit__value .steps-panel-edit__mode { max-width: 200px; min-height: 32px; }
+.steps-panel-bar__outside { margin: 0; font-size: var(--fs-sm); }
+.steps-panel-bar__outside[hidden] { display: none; }

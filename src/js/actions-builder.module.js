@@ -1109,6 +1109,29 @@ export function createActionsBuilder ({
         return changed;
     }
 
+    /**
+     * A field as a card of the given type has it, outside any card: Edit
+     * together uses it, so a field reads and works as it does on the step
+     * (Profile's choices, Tags' chips). It sits in a holder shaped like a
+     * card, as the editor reads fields from cards; the holder is not one.
+     *
+     * @returns {{el: Element, field: Element, read: () => *, set: (value: *) => void} | null}
+     */
+    function createEditField(type, name) {
+        const fieldDef = defs?.[type]?.fields?.[name];
+        if (!fieldDef) return null;
+        const field = stepFields.fieldInputFor(name, fieldDef, type, 0);
+        const holder = createEl("div", {className: "edit-together-field", dataset: {actionType: type}}, [
+            createEl("div", {className: "fields"}, [field])
+        ]);
+        return {
+            el: holder,
+            field,
+            read: () => stepValues.readLineToObject(holder, {maskValues: "text"})?.[name],
+            set: (value) => stepValues.setFieldValue(field, value),
+        };
+    }
+
     /** One step's values, as saved: what Edit together reads from each card. */
     function readStep(lineEl) {
         return lineEl && actionsEl.contains(lineEl) ? stepValues.readLineToObject(lineEl, {maskValues: "text"}) : null;
@@ -1501,6 +1524,7 @@ export function createActionsBuilder ({
         setStepsDisabled,
         readStep,
         setStepsFieldValues,
+        createEditField,
         setReservedVariableNames,
         clear,
         destroy,
