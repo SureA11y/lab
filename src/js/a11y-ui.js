@@ -18,6 +18,7 @@ import {attachFileDrop} from './file-drop.js';
 import {buildGlobalSummary, ensureScanSummaryCounts, ensureScansIncludedFlag, getA11yGlobalFindings, normalizePayloadForUi, pickMetricDefsFromPayload, prepareDataForReport, stripVolatileKeysDeep} from './report-data.js';
 import {buildActionTreeNodes, buildCustomStepMaps, collapseLineIfExpanded, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
 import {parseCustomStepsJson} from './custom-steps-data.js';
+import {createStepsPanel} from './steps-panel.js';
 import {setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
 import {STATUS, TAB_MODE_STORAGE_KEY} from './ui-constants.js';
@@ -1766,6 +1767,44 @@ function storeActiveMode(mode) {
         return true;
     }
 
+    /**
+     * Opens a workflow step for the steps panel: the section, the containers
+     * the step is in and its card, then scrolls to it. Other cards stay as
+     * they are, unlike the Step tree dialog, which closes them.
+     */
+    function goToWorkflowLine(line, {focus = false} = {}) {
+        if (!line) return;
+        setConfigExpanded(true);
+        setWorkflowExpanded(true);
+        const ancestors = [];
+        for (let p = line.parentElement?.closest('.line'); p; p = p.parentElement?.closest('.line')) ancestors.unshift(p);
+        ancestors.forEach(expandLineIfCollapsed);
+        expandLineIfCollapsed(line);
+        // A near step glides into view; a far one jumps, as a long glide
+        // through a thousand steps is still going when you want to read it.
+        const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+        const far = Math.abs(line.getBoundingClientRect().top) > 2 * window.innerHeight;
+        line.scrollIntoView({block: 'center', behavior: reduce || far ? 'auto' : 'smooth'});
+        if (!focus) return;
+        // The step itself takes focus: it is a named group ("3.2.1 - Click"),
+        // so a screen reader says where focus went, and Tab goes on into it.
+        if (!line.hasAttribute('tabindex')) line.setAttribute('tabindex', '-1');
+        line.focus({preventScroll: true});
+    }
+
+    let workflowStepsPanel = null;
+    function initWorkflowStepsPanel() {
+        const host = $('#workflow-steps-panel');
+        if (!host || !actionsBar || workflowStepsPanel) return;
+        workflowStepsPanel = createStepsPanel({
+            host,
+            editorEl: actionsBar,
+            sectionKey: 'workflow',
+            title: 'Workflow steps',
+            goToLine: goToWorkflowLine
+        });
+    }
+
     function buildCurrentStepTreeModel() {
         const workflowActions = actionsBuilder?.getValue({ validate: false, maskValues: 'text' })?.value || [];
         const customStepsState = customStepsUi.readCustomStepsFromUi({ validate: false });
@@ -2714,6 +2753,7 @@ function storeActiveMode(mode) {
                     }
                 });
                 createHistoryButtons();
+                initWorkflowStepsPanel();
                 customStepsUi.initCustomStepsUi(defs);
                 runWorkflowUi.fillRunLanguages(defs);
                 runSettings.sync();

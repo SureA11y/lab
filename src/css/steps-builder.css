@@ -772,3 +772,281 @@
 .fields-toggle[aria-expanded="true"] .fields-toggle-icon {
     transform: rotate(180deg);
 }
+
+/* ==========================================================================
+   STEPS PANEL
+   A map of the section's steps beside its editor (steps-panel.js,
+   docs/design/steps-panel-design.md). It stays in view while the editor
+   scrolls, and folds to a rail at the left.
+   ========================================================================== */
+
+.steps-panel-layout { display: flex; align-items: flex-start; gap: var(--space-4); }
+.steps-panel-layout[hidden] { display: none; }
+.steps-panel-editor { flex: 1 1 0; min-width: 0; }
+
+/* min-width: 0, or a deep step's long row would widen the panel to fit it,
+   squeeze the editor, and make every card lay its buttons out again. Rows
+   too long for it scroll sideways inside the list instead. */
+.steps-panel {
+    flex: 0 0 312px;
+    min-width: 0;
+    position: sticky;
+    top: 56px; /* below the sticky mode bar */
+    max-height: calc(100vh - 72px);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+    color: var(--text-main);
+    overflow: hidden;
+}
+.steps-panel.is-hidden { flex-basis: 40px; background: transparent; border-color: transparent; overflow: visible; }
+
+.steps-panel__full { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.steps-panel__full[hidden], .steps-panel__rail[hidden] { display: none; }
+
+/* Header */
+.steps-panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-2) var(--space-1) var(--space-4);
+}
+.steps-panel__title { margin: 0; font-family: var(--font-display); font-size: var(--fs-md); font-weight: 600; letter-spacing: .01em; }
+:is(.steps-panel__hide, .steps-panel__show) {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+}
+:is(.steps-panel__hide, .steps-panel__show):hover { background: var(--surface-hover); color: var(--text-main); }
+
+/* Find, chips and status */
+.steps-panel__controls { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2) var(--space-4) var(--space-3); border-bottom: 1px solid var(--border-soft); }
+.steps-panel__find-label { font-size: var(--fs-xs); font-weight: 600; color: var(--text-main); }
+.steps-panel__find-field { position: relative; }
+.steps-panel__find-icon { position: absolute; left: 10px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+.steps-panel__find {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 36px;
+    padding: 6px 10px 6px 34px;
+    border: 1px solid var(--field-border);
+    border-radius: var(--radius-md);
+    background: var(--surface-base);
+    color: var(--text-main);
+    font: inherit;
+}
+.steps-panel__find::placeholder { color: var(--text-soft); }
+.steps-panel__find:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
+
+.steps-panel__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.steps-panel__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-elevated);
+    color: var(--text-main);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+}
+.steps-panel__chip[hidden] { display: none; }
+.steps-panel__chip:hover { border-color: var(--accent); color: var(--text-main); }
+.steps-panel__chip:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+.steps-panel__chip-count {
+    min-width: 1.5em;
+    padding: 0 5px;
+    border-radius: var(--radius-pill);
+    background: var(--na-soft);
+    color: var(--text-muted);
+    font-weight: 600;
+    text-align: center;
+}
+.steps-panel__chip.is-on { background: var(--accent); border-color: var(--accent); color: var(--bg-elevated); }
+.steps-panel__chip.is-on .steps-panel__chip-count { background: transparent; color: inherit; box-shadow: inset 0 0 0 1px currentColor; }
+
+.steps-panel__status { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-2); min-height: 28px; }
+.steps-panel__status-text { margin: 0; flex: 1 1 auto; font-size: var(--fs-xs); color: var(--text-muted); }
+.steps-panel__match-nav { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-md); overflow: hidden; }
+.steps-panel__match-nav .icon-button { width: 28px; height: 28px; border: 0; border-radius: 0; background: var(--bg-elevated); color: var(--text-muted); }
+.steps-panel__match-nav .icon-button + .icon-button { border-left: 1px solid var(--border-strong); }
+.steps-panel__match-nav .icon-button:hover { background: var(--surface-hover); color: var(--text-main); }
+.steps-panel__match-nav[hidden], .steps-panel__clear[hidden] { display: none; }
+.steps-panel__clear {
+    border: 0;
+    background: transparent;
+    padding: 2px 0;
+    font: inherit;
+    font-size: var(--fs-xs);
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+/* The tree */
+.steps-panel__tree {
+    width: 100%;
+    box-sizing: border-box;
+    list-style: none;
+    margin: 0;
+    padding: var(--space-2) var(--space-2) var(--space-2);
+    overflow: auto;
+    flex: 1 1 auto;
+    min-height: 120px;
+    position: relative;
+    scrollbar-width: thin;
+}
+.steps-panel__tree[hidden] { display: none; }
+
+/* --depth is the step's level: each level indents the row 16px, and a guide
+   line for each is drawn behind it, so a deep tree needs no element per
+   level and the text keeps a plain background. */
+.steps-panel__row {
+    --indent: calc(var(--depth, 0) * 16px);
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
+    min-height: 30px;
+    padding: 5px var(--space-2) 5px calc(6px + var(--indent));
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+.steps-panel__row::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 6px;
+    width: var(--indent);
+    background-image: repeating-linear-gradient(to right, transparent 0 7px, var(--border-subtle) 7px 8px, transparent 8px 16px);
+    pointer-events: none;
+}
+.steps-panel__row:hover { background-color: var(--surface-hover); }
+.steps-panel__row:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
+
+.steps-panel__type {
+    flex: none;
+    white-space: nowrap;
+    max-width: 8.5em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--font-mono);
+    font-size: var(--fs-xxs);
+    font-weight: 600;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--na-soft);
+    color: var(--text-muted);
+}
+.steps-panel__type[data-cat="scan"] { background: var(--accent-soft); color: var(--accent); }
+.steps-panel__type[data-cat="container"] { background: transparent; box-shadow: inset 0 0 0 1px var(--border-strong); }
+.steps-panel__num { flex: none; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
+/* A long name wraps rather than being cut: cut text is lost to someone who
+   spaces text out (WCAG 1.4.12). Where a deep step leaves it less than ten
+   characters beside its type and number, it goes to a line of its own. */
+.steps-panel__name { flex: 1 1 10ch; min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+.steps-panel__flag { margin-left: 4px; color: var(--text-muted); font-size: var(--fs-xs); }
+
+.steps-panel__row.is-match .steps-panel__name { font-weight: 600; }
+.steps-panel__row.is-context { color: var(--text-muted); }
+.steps-panel__row.is-disabled .steps-panel__name { text-decoration: line-through; color: var(--text-muted); }
+.steps-panel__row.is-disabled .steps-panel__flag { display: inline-block; text-decoration: none; }
+.steps-panel__row.is-in-view { background-color: var(--info-soft); }
+.steps-panel__row.is-in-view::after,
+.steps-panel__row.is-current::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 5px;
+    bottom: 5px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent-border);
+}
+.steps-panel__row.is-current { background-color: var(--accent-soft); }
+.steps-panel__row.is-current::after { background: var(--accent); }
+
+.steps-panel__empty { margin: 0; padding: var(--space-4); color: var(--text-muted); }
+.steps-panel__empty:empty, .steps-panel__empty[hidden] { display: none; }
+
+.steps-panel__hint {
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    border-top: 1px solid var(--border-soft);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+.steps-panel__hint kbd {
+    display: inline-block;
+    min-width: 1.4em;
+    margin-right: 2px;
+    padding: 0 4px;
+    border: 1px solid var(--border-strong);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xxs);
+    text-align: center;
+}
+
+/* The rail */
+.steps-panel__rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-1) 0 var(--space-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--bg-elevated);
+}
+.steps-panel__rail-where { writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.steps-panel__rail-count { min-width: 1.5em; font-family: var(--font-mono); font-size: var(--fs-xxs); font-weight: 600; text-align: center; padding: 2px 6px; border-radius: var(--radius-pill); background: var(--accent); color: var(--bg-elevated); }
+.steps-panel__rail-count[hidden] { display: none; }
+
+/* The step the panel went to, in the editor. */
+.line.is-located { outline: 2px solid var(--accent); outline-offset: 2px; }
+.line.is-located:focus { outline-width: 3px; }
+
+/* Narrow: no room beside the editor, so the panel sits above it. */
+@media (max-width: 900px) {
+    .steps-panel-layout { flex-direction: column; align-items: stretch; }
+    .steps-panel { position: static; flex-basis: auto; max-height: none; }
+    .steps-panel__tree { max-height: 260px; }
+    .steps-panel.is-hidden { flex-basis: auto; }
+    .steps-panel__rail { flex-direction: row; justify-content: flex-start; padding: var(--space-1) var(--space-2); }
+    .steps-panel__rail-where { writing-mode: horizontal-tb; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .steps-panel__chip { transition: none; }
+}
+
+@media (forced-colors: active) {
+    .steps-panel__chip.is-on { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; }
+    .steps-panel__chip.is-on .steps-panel__chip-count { background: HighlightText; color: Highlight; }
+    .steps-panel__row.is-current { outline: 2px solid Highlight; outline-offset: -2px; }
+    .steps-panel__row.is-in-view { outline: 1px dashed CanvasText; outline-offset: -2px; }
+    .steps-panel__row::before { background-image: none; }
+    .steps-panel__type { border: 1px solid CanvasText; }
+    .line.is-located { outline-color: Highlight; }
+}
