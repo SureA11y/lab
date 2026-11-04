@@ -211,6 +211,11 @@ button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
     min-width: 0;
 }
 
+/* The panel folded to its rail takes only the rail's width. */
+.custom-steps-panel:has(> .custom-steps-list-panel > .steps-panel.is-hidden) {
+    grid-template-columns: 40px minmax(0, 1fr);
+}
+
 /* Where the custom step open in the editor is called from. */
 .custom-step-usage {
     display: flex;

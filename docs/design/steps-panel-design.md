@@ -125,6 +125,38 @@ all from the page:
   name it any more.
 - The Step tree dialog is gone: the two panels do all it did, and stay.
 
+## Selecting
+
+- **⌘-click on a Mac, Ctrl-click elsewhere,** on a step turns Select on with
+  the current step and the clicked one, and while selecting adds or drops a
+  step without scrolling. On a Mac, Ctrl-click is the right click: the
+  panel names the key each system uses. From the keyboard, Space picks or
+  drops the focused step, ⌘/Ctrl-A takes every one listed, Escape ends.
+- **Disable and Enable** count only the steps they would change: a step off
+  only because its container is off is not turned on by Enable.
+- **Only the steps of the custom step open in the editor can be selected,**
+  as Disable, Enable and the selection view act on the editor's cards. The
+  panel says so rather than opening another custom step and dropping the
+  selection.
+- **A step is known by its number and the lists it is in, not by its card.**
+  Undo and Redo draw every card again, and the selection, the current step
+  and the folded containers must still be the same steps after. A card that
+  is still there after a change (a step moved, or one before it removed) is
+  followed to its new number; a removed one drops out of the selection.
+
+## Folding
+
+Containers fold in the list, from their caret or with Left and Right as in
+any tree; `aria-expanded` says which. A filter shows every match whatever
+the folding, so no match hides in a folded container. The step in view,
+folded away, is shown by the nearest container listed.
+
+## The list keeps still
+
+Going to a step scrolls the editor, which passes other steps on its way;
+the list does not follow them, so the row clicked stays under the pointer.
+It follows the editor again once that scroll ends.
+
 ## What a thousand steps taught
 
 The panel was stress-tested on a config of 981 steps, eleven levels deep.
@@ -159,8 +191,8 @@ and the later steps of the work keep to them too:
    level (replacing the list of definitions), where each is used, the links
    between calls and definitions, and the "N more in …" links between the two
    panels. The Step tree dialog goes.
-3. **Selecting:** Select and Done, checkboxes, Select all matches, the
-   selection view, Disable and Enable.
+3. **Selecting** (done): Select and Done, checkboxes, Select all matches, the
+   selection view, Disable and Enable; with ⌘/Ctrl-click, and folding.
 4. **Edit together:** the bar, the shared fields, the previews on the cards,
    Apply with one Undo, the warning for custom steps.
 5. **Narrow screens and Go to step:** below about 900 px the panel becomes a

@@ -1962,6 +1962,8 @@ function storeActiveMode(mode) {
             title: 'Workflow steps',
             goToLine: goToWorkflowLine,
             callName: customStepName,
+            barHost: $('#workflow-selection-bar'),
+            setDisabled: (lines, on) => actionsBuilder?.setStepsDisabled(lines, on) || 0,
             elsewhere: {
                 label: 'Custom steps',
                 count: (kind, query) => customStepsPanel?.countMatches(kind, query) || 0,
@@ -1986,6 +1988,9 @@ function storeActiveMode(mode) {
             open: openCustomStepOf,
             goToLine: goToCustomStepLine,
             callName: customStepName,
+            barHost: $('#custom-steps-selection-bar'),
+            setDisabled: (lines, on) => customStepActionsBuilder?.setStepsDisabled(lines, on) || 0,
+            unselectableNote: 'Only the steps of the custom step open in the editor can be selected: open another to select its steps.',
             actions: [customStepsListActionsEl, history].filter(Boolean),
             elsewhere: {
                 label: 'the Workflow',
