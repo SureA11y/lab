@@ -70,12 +70,37 @@
         };
         scan();
         if (typeof MutationObserver === 'function') {
+            // Only a change that adds a box, or changes what is in one, is
+            // looked at again. Measuring every box at each change anywhere
+            // laid the page out each time, and a long workflow changes at
+            // every step it scrolls into view.
             let queued = false;
-            new MutationObserver(() => {
-                if (queued) return;
+            let full = false;
+            const touched = new Set();
+            const later = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (fn) => setTimeout(fn, 16);
+            const flush = () => {
+                queued = false;
+                if (full) {
+                    full = false;
+                    touched.clear();
+                    scan();
+                    return;
+                }
+                touched.forEach((box) => { if (box.isConnected) sync(box); });
+                touched.clear();
+            };
+            const holdsBox = (node) => node.nodeType === 1
+                && (node.matches(selector) || !!node.querySelector(selector));
+            new MutationObserver((records) => {
+                for (const rec of records) {
+                    const target = rec.target.nodeType === 1 ? rec.target : rec.target.parentElement;
+                    const box = target && target.closest(selector);
+                    if (box) touched.add(box);
+                    if (!full && Array.prototype.some.call(rec.addedNodes, holdsBox)) full = true;
+                }
+                if (queued || (!full && !touched.size)) return;
                 queued = true;
-                const later = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (fn) => setTimeout(fn, 16);
-                later(() => { queued = false; scan(); });
+                later(flush);
             }).observe(root, { childList: true, subtree: true });
         }
     }

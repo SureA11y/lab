@@ -1178,9 +1178,11 @@ export function createStepsPanel(o) {
     // The previews of Edit together are the panel's own: adding or taking
     // them away is not a change of the steps.
     const isOwnNode = (n) => n?.nodeType === 1 && n.classList?.contains('steps-panel-preview');
+    // Nor is a step's buttons moving into its menu or out of it, which a
+    // long workflow does for each step it scrolls into view.
     const isOwnRecord = (r) => (r.type === 'childList'
         && [...r.addedNodes, ...r.removedNodes].every(isOwnNode))
-        || !!r.target?.closest?.('.steps-panel-preview');
+        || !!r.target?.closest?.('.steps-panel-preview, .line-controls, .flyout-menu, .flyout-root');
     const observer = win?.MutationObserver ? new win.MutationObserver((records) => {
         if (records.every(isOwnRecord)) return;
         scheduleRebuild();

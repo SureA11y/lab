@@ -7,8 +7,10 @@
 
 * { box-sizing: border-box; }
 
-html:has(dialog[open]),
-body:has(dialog[open]) {
+/* While a dialog is open (page-state.js sets the class: a :has() rule on
+   the whole page was matched again at every change in it). */
+html.has-open-dialog,
+html.has-open-dialog body {
     overflow: hidden;
 }
 

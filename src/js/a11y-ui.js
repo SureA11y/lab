@@ -10,6 +10,7 @@ import {createAdvancedDialog} from './advanced-dialog.js';
 import {setupRulesCatalogDialog} from './rules-catalog-dialog.module.js';
 import {installInPageLinks} from './in-page-links.js';
 import {installBackToTop} from './back-to-top.js';
+import {trackOpenDialogs} from './page-state.js';
 import {setWhenReportDrawn} from './export.js';
 import {afterPaint, isBusy, runBusy} from './busy.js';
 import {getActivity} from './activity.js';
@@ -2638,6 +2639,7 @@ function storeActiveMode(mode) {
     const openQuery = compareTab.readOpenQuery();
     const initialMode = openQuery ? openQuery.mode : getStoredActiveMode();
     const tabsmode = setupModeSwitch({initialMode});
+    trackOpenDialogs(document);
     installBackToTop({
         bar: document.querySelector('.mode-bar'),
         button: document.getElementById('back-to-top'),
@@ -2857,7 +2859,16 @@ function storeActiveMode(mode) {
             actionsBar.addEventListener('click', onAny, true);
 
             // 2) Sync on DOM changes in actions UI (covers add, remove, reorder, nested edits)
-            historyObserver = new MutationObserver(() => scheduleHistorySync());
+            // A step's buttons moving into its menu, or out, as it comes into
+            // view changes no step: Undo and Redo are left alone for it.
+            const onlyChrome = (rec) => {
+                const t = rec.target.nodeType === 1 ? rec.target : rec.target.parentElement;
+                return !!t && !!t.closest('.line-controls, .flyout-menu, .flyout-root');
+            };
+            historyObserver = new MutationObserver((records) => {
+                if (records.every(onlyChrome)) return;
+                scheduleHistorySync();
+            });
             historyObserver.observe(actionsBar, { childList: true, subtree: true });
         }
 

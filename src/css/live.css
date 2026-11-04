@@ -189,10 +189,12 @@
 
 /* While the card floats over the page, a control that takes focus scrolls
    clear of it, and the end of the page can scroll out from under it. */
-html:has(.live-totals:not(.live-totals--inline, .is-tab-hidden)) {
+/* live-totals.js sets the class while the card floats, shown: a :has() rule
+   on the whole page was matched again at every change in it. */
+html.has-floating-totals {
     scroll-padding-bottom: 190px;
 }
-body:has(.live-totals:not(.live-totals--inline, .is-tab-hidden)) {
+html.has-floating-totals body {
     padding-bottom: 190px;
 }
 

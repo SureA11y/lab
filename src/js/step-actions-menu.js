@@ -240,8 +240,16 @@ export function createStepActionsMenu(builder) {
         flyoutRoot.style.display = 'none';
         setCollapsed(false);
 
-        const ro = new ResizeObserver(() => {
-            const w = measureEl.getBoundingClientRect().width;
+        // The width comes from the observer's entry, not a rect read: a long
+        // workflow's steps are laid out only as they scroll into view, and
+        // reading a rect here forced the page's layout once per step, every
+        // step reaching the screen stalling the scroll. A box with no width
+        // (hidden, or not laid out yet) says nothing about the room it has.
+        const ro = new ResizeObserver((entries) => {
+            const entry = entries[entries.length - 1];
+            const box = entry && entry.borderBoxSize && entry.borderBoxSize[0];
+            const w = box ? box.inlineSize : (entry ? entry.contentRect.width : 0);
+            if (!w) return;
             setCollapsed(w < collapseAtPx || (!!collapseIfFn && collapseIfFn(w)));
         });
         ro.observe(measureEl);
