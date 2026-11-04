@@ -64,6 +64,11 @@ The first public release.
   one go, with one Undo. On a narrow screen the panel opens as a sheet.
   It replaces the Step tree dialog. A workflow of a thousand steps
   scrolls without stalling.
+- **A focused button takes a wash of its own colour**, besides the focus
+  outline: light red for Delete, light purple for an accent link, a deeper
+  fill for Run and the other filled buttons. A focused button's text is
+  at 7:1 or more (AAA) in both themes; red and accent text deepen with the
+  wash, so Delete and Run read better focused than at rest.
 - **Batches and a run queue**: one workflow once per row of a list (one per
   page, per environment, per release), up to four at once, each result
   saved as it finishes; a batch of thousands of runs opens a page of them

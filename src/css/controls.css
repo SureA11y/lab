@@ -238,6 +238,7 @@ button[aria-disabled=true] {
 button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.legend-toggle):not(.config-header-row):not(.scan-tag-filter__chip):not(.scan-tag-filter__mode-btn):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.steps-panel__select):not(.steps-panel__done):not(.steps-panel-bar__btn):not(.steps-panel-bar__edit):not(.steps-panel-edit__more):not(.steps-panel-edit__clear):not(.steps-panel-edit__apply):not(.runcustomstep-open):not(.run-setting-chip):not(.dsp-link):not(.back-to-top) {
     background: var(--accent-soft);
     border-color: var(--accent-border);
+    --focus-ring: var(--focus-ring-soft);
 }
 
 button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.legend-toggle):not(.config-header-row):not(.scan-tag-filter__chip):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.steps-panel__select):not(.steps-panel__done):not(.steps-panel-bar__btn):not(.steps-panel-bar__edit):not(.steps-panel-edit__more):not(.steps-panel-edit__clear):not(.steps-panel-edit__apply):not(.runcustomstep-open):not(.run-setting-chip):not(.dsp-link):not(.back-to-top):hover:not(:disabled, [aria-disabled=true]) {
@@ -294,13 +295,26 @@ button.src-dialog-close:focus-visible {
 
 .remove.secondary-button:hover:not(:disabled, [aria-disabled=true]) {
     background-color: var(--danger-soft);
-    color: var(--danger);
+    color: var(--danger-on-soft);
     border-color: color-mix(in srgb, var(--danger) 55%, transparent);
 }
 
 .remove.secondary-button:focus-visible {
-    background-color: color-mix(in srgb, var(--danger) 16%, transparent);
+    color: var(--danger-on-soft);
     border-color: color-mix(in srgb, var(--danger) 65%, transparent);
+}
+
+/* Focus washes a button in the hue of its own text (--focus-ring, in
+   tokens.css). Red and accent text deepen with it, so their contrast goes up
+   as the background takes the wash; a filled button deepens instead. */
+[role="button"]:focus-visible { box-shadow: var(--focus-ring); }
+.link-button:focus-visible { color: var(--accent-on-soft); }
+/* A button filled with a strong colour deepens away from its text instead
+   (its contrast goes up); one on the accent's soft fill (Load config, the
+   theme switch, above) takes more of the accent: a grey wash would take
+   their colour away. */
+:is(#scan-button, .steps-panel__chip.is-on, .steps-panel__done, .steps-panel-bar__edit, .steps-panel-edit__apply) {
+    --focus-ring: var(--focus-ring-filled);
 }
 
 /* =========================================================
@@ -636,7 +650,7 @@ html.has-mode-bar {
 .mode-tab:focus-visible {
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
-    box-shadow: none;
+    box-shadow: var(--focus-ring);
 }
 
 .tab-indicator {

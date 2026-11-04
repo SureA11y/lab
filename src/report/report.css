@@ -99,6 +99,7 @@
     /* Status */
     --danger: #b3271a;
     --danger-soft: #fbe4e1;
+    --danger-on-soft: #911e14;
     --ok: #0b6e4c;
     --ok-soft: #e1f3ea;
     --ok-contrast: #ffffff;
@@ -131,7 +132,13 @@
     --shadow-popover: 0 4px 14px rgba(4, 21, 14, 0.26);
     --focus-outline: 2px solid var(--accent);
     --focus-outline-offset: 2px;
-    --focus-ring: none;
+    /* A focused button's wash, as in the app (tokens.css). */
+    --focus-tint-l: 95%;
+    --focus-tint-c: 0.045;
+    --focus-ring: inset 0 0 0 100vmax oklch(from currentColor var(--focus-tint-l) min(calc(c * 0.35), var(--focus-tint-c)) h);
+    --focus-ring-filled: inset 0 0 0 100vmax rgb(from currentColor calc(255 - r) calc(255 - g) calc(255 - b) / 14%);
+    /* A button on the accent's soft fill takes more of the accent. */
+    --focus-ring-soft: inset 0 0 0 100vmax color-mix(in srgb, var(--accent) 12%, var(--accent-soft));
 
     /* Neutral palette */
     --neutral-50: rgba(var(--brand-rgb), .06);
@@ -206,6 +213,8 @@
 
     --danger: #ff8a7a;
     --danger-soft: #3a211d;
+    --danger-on-soft: var(--danger);
+    --focus-tint-l: 25%;
     --ok: #3bc98f;
     --ok-soft: #163c2e;
     --ok-contrast: #04150e;
@@ -277,6 +286,8 @@
 
         --danger: #ff8a7a;
         --danger-soft: #3a211d;
+        --danger-on-soft: var(--danger);
+        --focus-tint-l: 25%;
         --ok: #3bc98f;
         --ok-soft: #163c2e;
         --ok-contrast: #04150e;
@@ -672,7 +683,7 @@ button[aria-disabled=true] {
 
 .remove.secondary-button:hover:not(:disabled, [aria-disabled=true]) {
     background-color: var(--danger-soft);
-    color: var(--danger);
+    color: var(--danger-on-soft);
     border-color: color-mix(in srgb, var(--danger) 55%, transparent);
 }
 
@@ -688,7 +699,7 @@ button.src-dialog-close:focus-visible {
 }
 
 .remove.secondary-button:focus-visible {
-    background-color: color-mix(in srgb, var(--danger) 16%, transparent);
+    color: var(--danger-on-soft);
     border-color: color-mix(in srgb, var(--danger) 65%, transparent);
 }
 
