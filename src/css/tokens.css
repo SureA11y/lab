@@ -226,6 +226,8 @@ html[data-initial-mode="compare"] #results-container { display: none; }
     /* Status */
     --danger: #b3271a;
     --danger-soft: #fbe4e1;
+    /* Red as text on a red wash or --danger-soft: 7.2:1 (AAA). */
+    --danger-on-soft: #911e14;
     --ok: #0b6e4c;
     --ok-soft: #e1f3ea;
     --ok-contrast: #ffffff;
@@ -268,7 +270,18 @@ html[data-initial-mode="compare"] #results-container { display: none; }
     --shadow-popover: 0 4px 14px rgba(4, 21, 14, 0.26);
     --focus-outline: 2px solid var(--accent);
     --focus-outline-offset: 2px;
-    --focus-ring: none;
+    /* A focused button is washed in the hue of its own text, at this
+       lightness: light red for Delete, light purple for an accent link, a
+       faint grey for a grey icon. Its strength follows the text's, so grey
+       text gets a grey wash. An inset shadow, over the button's own
+       background and under its text; forced colours drop it. */
+    --focus-tint-l: 95%;
+    --focus-tint-c: 0.045;
+    --focus-ring: inset 0 0 0 100vmax oklch(from currentColor var(--focus-tint-l) min(calc(c * 0.35), var(--focus-tint-c)) h);
+    /* A filled button is deepened instead, away from its text. */
+    --focus-ring-filled: inset 0 0 0 100vmax rgb(from currentColor calc(255 - r) calc(255 - g) calc(255 - b) / 14%);
+    /* A button on the accent's soft fill takes more of the accent. */
+    --focus-ring-soft: inset 0 0 0 100vmax color-mix(in srgb, var(--accent) 12%, var(--accent-soft));
 
     /* Neutral palette */
     --neutral-50: rgba(var(--brand-rgb), .06);
@@ -359,6 +372,7 @@ html[data-initial-mode="compare"] #results-container { display: none; }
     /* Status */
     --danger: #ff8a7a;
     --danger-soft: #3a211d;
+    --danger-on-soft: var(--danger);
     --ok: #3bc98f;
     --ok-soft: #163c2e;
     --ok-contrast: #04150e;
@@ -401,7 +415,13 @@ html[data-initial-mode="compare"] #results-container { display: none; }
     --shadow-popover: 0 4px 14px rgba(4, 21, 14, 0.26);
     --focus-outline: 2px solid var(--accent);
     --focus-outline-offset: 2px;
-    --focus-ring: none;
+    --focus-tint-l: 25%;
+    --focus-tint-c: 0.045;
+    --focus-ring: inset 0 0 0 100vmax oklch(from currentColor var(--focus-tint-l) min(calc(c * 0.35), var(--focus-tint-c)) h);
+    /* A filled button is deepened instead, away from its text. */
+    --focus-ring-filled: inset 0 0 0 100vmax rgb(from currentColor calc(255 - r) calc(255 - g) calc(255 - b) / 14%);
+    /* A button on the accent's soft fill takes more of the accent. */
+    --focus-ring-soft: inset 0 0 0 100vmax color-mix(in srgb, var(--accent) 12%, var(--accent-soft));
 
     /* Neutral palette */
     --neutral-50: rgba(var(--brand-rgb), .06);
@@ -492,6 +512,7 @@ html[data-initial-mode="compare"] #results-container { display: none; }
         /* Status */
         --danger: #ff8a7a;
         --danger-soft: #3a211d;
+        --danger-on-soft: var(--danger);
         --ok: #3bc98f;
         --ok-soft: #163c2e;
         --ok-contrast: #04150e;
@@ -531,7 +552,13 @@ html[data-initial-mode="compare"] #results-container { display: none; }
         --shadow-popover: 0 4px 14px rgba(4, 21, 14, 0.26);
         --focus-outline: 2px solid var(--accent);
         --focus-outline-offset: 2px;
-        --focus-ring: none;
+        --focus-tint-l: 25%;
+        --focus-tint-c: 0.045;
+        --focus-ring: inset 0 0 0 100vmax oklch(from currentColor var(--focus-tint-l) min(calc(c * 0.35), var(--focus-tint-c)) h);
+        /* A filled button is deepened instead, away from its text. */
+        --focus-ring-filled: inset 0 0 0 100vmax rgb(from currentColor calc(255 - r) calc(255 - g) calc(255 - b) / 14%);
+        /* A button on the accent's soft fill takes more of the accent. */
+        --focus-ring-soft: inset 0 0 0 100vmax color-mix(in srgb, var(--accent) 12%, var(--accent-soft));
 
         /* Neutral palette */
         --neutral-50: rgba(var(--brand-rgb), .06);

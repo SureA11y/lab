@@ -229,7 +229,9 @@ body.queue-mode-active #screenshots-container { display: none; }
    hue alone. The inset shadow keeps the ring out of the layout, so toggling
    can't resize the segmented control. */
 .compare-panel .ctx-opt[aria-pressed="true"] { background: var(--surface-5); color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
-.compare-panel .ctx-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.compare-panel .ctx-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; color: var(--accent-on-soft); box-shadow: var(--focus-ring); }
+/* Pressed and focused: its pressed ring over the focus wash. */
+.compare-panel .ctx-opt[aria-pressed="true"]:focus-visible { box-shadow: inset 0 0 0 2px var(--accent), var(--focus-ring); }
 .compare-panel .ctx-desc { font-size: var(--fs-xs); color: var(--text-soft); }
 .compare-loaders { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
 .compare-loader { display: inline-flex; align-items: center; gap: var(--space-2); }

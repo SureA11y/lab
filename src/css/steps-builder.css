@@ -1162,6 +1162,9 @@
     font-weight: 600;
     cursor: pointer;
 }
+/* Focused, accent text deepens with the wash it gets (controls.css). */
+.steps-panel-bar .steps-panel-bar__btn:focus-visible,
+.line .runcustomstep-open:focus-visible { color: var(--accent-on-soft); }
 .steps-panel-bar .steps-panel-bar__btn:disabled { opacity: .55; cursor: default; }
 .steps-panel-bar__empty {
     margin: 0 0 var(--space-3);
