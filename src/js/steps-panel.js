@@ -447,10 +447,15 @@ export function createStepsPanel(o) {
     const narrowQuery = win?.matchMedia ? win.matchMedia('(max-width: 900px)') : null;
     let narrow = !!narrowQuery?.matches;
     let sheetOpen = false;
+    // Where focus was when Find steps was pressed, to go back to on Escape.
+    let cameFrom = null;
 
     function openSheet() {
         if (sheetOpen) return;
         sheetOpen = true;
+        // Opened from its bar, it gives focus back to the bar; Find steps
+        // (focusFind) says where it came from after.
+        cameFrom = null;
         sheet.append(full);
         full.hidden = false;
         if (typeof sheet.showModal === 'function') sheet.showModal();
@@ -475,7 +480,10 @@ export function createStepsPanel(o) {
         hideBtn.title = 'Hide the steps panel';
         hideBtn.replaceChildren(icon(doc, CHEVRON_LEFT));
         drawHidden();
-        if (returnFocus) showBtn.focus();
+        // Opened with Find steps from a field: back to that field.
+        const back = cameFrom?.isConnected ? cameFrom : null;
+        cameFrom = null;
+        if (returnFocus) (back || showBtn).focus();
     }
     // Escape, or the browser closing it: put the panel back.
     sheet.addEventListener('close', () => afterSheetClosed(true));
@@ -585,8 +593,10 @@ export function createStepsPanel(o) {
         const rows = filtering ? state.view.rows : foldRows(state.view.rows, state.folded);
         const positions = siblingPositions(rows);
         const listed = new Set(rows.map((r) => r.node.id));
+        // With no row to come back to, the tab stop is the current step's
+        // row; while selecting, the first row, where a list is read from.
         if (!listed.has(state.focusId)) {
-            state.focusId = listed.has(state.currentId) ? state.currentId : (rows[0]?.node.id ?? null);
+            state.focusId = !state.selecting && listed.has(state.currentId) ? state.currentId : (rows[0]?.node.id ?? null);
         }
         const frag = doc.createDocumentFragment();
         rowIndex = new Map(rows.map((row, i) => [row.node.id, i]));
@@ -814,7 +824,7 @@ export function createStepsPanel(o) {
         const toggleId = `${baseId}-edit-${f.name}-on`;
         const toggle = el(doc, 'input', {type: 'checkbox', id: toggleId, className: 'steps-panel-edit__on', dataset: {toggle: f.name}});
         toggle.checked = !!edit.on;
-        const box = el(doc, 'fieldset', {className: 'steps-panel-edit__value', dataset: {box: f.name}}, [
+        const box = el(doc, 'fieldset', {className: 'steps-panel-edit__input', dataset: {box: f.name}}, [
             el(doc, 'legend', {className: 'visually-hidden', text: `New ${f.label}`}),
             f.kind === 'list' ? (() => {
                 const mode = el(doc, 'select', {className: 'steps-panel-edit__mode', 'aria-label': `${f.label}: add or remove`, dataset: {field: f.name, part: 'mode'}},
@@ -891,7 +901,11 @@ export function createStepsPanel(o) {
             setText(moreBtn, more.hidden ? `More fields (${rest.length})` : 'Fewer fields');
             editBody.append(moreBtn, more);
         }
-        editBody.append(editWarn, el(doc, 'div', {className: 'steps-panel-edit__foot'}, [editSummary, editClear, editApply]));
+        // The warning and Apply stay at the bottom of the form, however many
+        // fields it lists: what is about to change is never scrolled away.
+        editBody.append(el(doc, 'div', {className: 'steps-panel-edit__dock'}, [
+            editWarn, el(doc, 'div', {className: 'steps-panel-edit__foot'}, [editSummary, editClear, editApply])
+        ]));
         if (back) {
             const again = back.field
                 ? editBody.querySelector(`[data-field="${back.field}"]${back.part ? `[data-part="${back.part}"]` : ':not([data-part])'}`)
@@ -1027,12 +1041,16 @@ export function createStepsPanel(o) {
         state.selecting = true;
         state.selected.clear();
         state.barNote = '';
+        // A selection starts from the top of the list, not from the row
+        // the last one ended on.
+        state.focusId = null;
     }
 
     function stopSelecting({moveFocus = false} = {}) {
         if (!state.selecting) return;
         state.selecting = false;
         state.selected.clear();
+        state.focusId = null;
         draw();
         if (moveFocus) selectBtn.focus();
         const line = state.lineById.get(state.currentId);
@@ -1094,6 +1112,7 @@ export function createStepsPanel(o) {
     let visibleLines = null; // the lines drawn now, in order; null when stale
 
     let nodeOfLine = new WeakMap();
+    const seenRoots = new Set();
 
     function rebuild() {
         const got = read();
@@ -1134,6 +1153,17 @@ export function createStepsPanel(o) {
             if (!stillThere.has(id) || (!o.selectAnywhere && !state.lineById.has(id))) state.selected.delete(id);
         });
         state.folded.forEach((id) => { if (!state.nodes.some((n) => n.id === id)) state.folded.delete(id); });
+        // foldNewRoots: a top-level item (a custom step) comes folded the
+        // first time it is listed; after that it is as it was left.
+        if (o.foldNewRoots) {
+            state.nodes.forEach((n) => {
+                if (!n.root || !n.container) return;
+                const key = n.foldKey || n.id;
+                if (seenRoots.has(key)) return;
+                seenRoots.add(key);
+                state.folded.add(n.id);
+            });
+        }
         nodeOfLine = new WeakMap();
         state.nodes.forEach((n) => { const line = state.lineById.get(n.id); if (line) nodeOfLine.set(line, n); });
         if (state.currentId && !state.nodes.some((n) => n.id === state.currentId)) state.currentId = null;
@@ -1401,10 +1431,27 @@ export function createStepsPanel(o) {
         draw();
     });
     disableBtn.addEventListener('click', () => setDisabled(true));
+    // The form is as tall as fits under the bar once the bar is stuck to the
+    // top, so its Apply, pinned to its bottom, is in the window; opening it
+    // brings the whole of it into view.
+    function fitEditForm() {
+        const bar = editBody.closest('.steps-panel-bar');
+        if (!bar || !win || editBody.hidden) return;
+        const stuckTop = parseFloat(win.getComputedStyle(bar).top) || 0;
+        const above = editBody.getBoundingClientRect().top - bar.getBoundingClientRect().top;
+        const below = parseFloat(win.getComputedStyle(bar).paddingBottom) || 0;
+        const room = Math.floor(win.innerHeight - stuckTop - above - below - 8);
+        editBody.style.maxHeight = `${Math.max(200, Math.min(520, room))}px`;
+    }
+    const onResizeEdit = () => { if (state.editOpen) fitEditForm(); };
+    win?.addEventListener('resize', onResizeEdit);
     editToggle.addEventListener('click', () => {
         state.editOpen = !state.editOpen;
         drawEdit();
-        if (state.editOpen) editBody.querySelector('select, input')?.focus();
+        if (!state.editOpen) return;
+        fitEditForm();
+        editBody.querySelector('select, input')?.focus({preventScroll: true});
+        editBody.scrollIntoView?.({block: 'nearest'});
     });
     const onEditInput = (event) => {
         const t = event.target;
@@ -1613,7 +1660,6 @@ export function createStepsPanel(o) {
     // ---- Find steps from anywhere ----
     // Where focus was when the shortcut brought it to Find: Escape in an
     // empty Find takes it back there.
-    let cameFrom = null;
     function focusFind() {
         const before = doc.activeElement;
         if (narrow) openSheet();
@@ -1667,6 +1713,7 @@ export function createStepsPanel(o) {
             editorEl.removeEventListener('click', onEditorClick, true);
             win?.removeEventListener('scroll', onScroll);
             win?.removeEventListener('resize', onScroll);
+            win?.removeEventListener('resize', onResizeEdit);
             win?.removeEventListener('resize', onResize);
             clearTimeout(resizeTimer);
             band?.disconnect();

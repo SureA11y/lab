@@ -1866,7 +1866,7 @@ function storeActiveMode(mode) {
             const defId = `d${i}`;
             const name = String(def?.name || def?.id || `Custom step ${i + 1}`);
             const head = {
-                id: defId, key: '', path: '', depth: 0, parentId: null, root: true, container: true, disabled: false,
+                id: defId, foldKey: `def:${def?.id || name}`, key: '', path: '', depth: 0, parentId: null, root: true, container: true, disabled: false,
                 type: 'customStep', typeTitle: 'Custom step', name,
                 note: usageNote(customStepUsage(def?.id)),
                 searchText: `${name} ${def?.id || ''}`.toLowerCase()
@@ -2065,6 +2065,7 @@ function storeActiveMode(mode) {
             // Steps of every custom step can be selected, open in the editor
             // or not: they are changed in the custom steps' saved steps.
             selectAnywhere: true,
+            foldNewRoots: true,
             outsideLabel: 'other custom steps',
             setDisabled: (entries, on) => changeSavedCustomSteps(entries, (action) => {
                 if (!!action.disabled === !!on) return false;

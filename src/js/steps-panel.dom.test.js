@@ -217,6 +217,16 @@ describe('steps panel', () => {
         assert.equal(rows()[4].getAttribute('aria-selected'), 'false');
     });
 
+    test('selecting again starts from the first row, not where the last selection ended', () => {
+        const { doc, rows } = setup();
+        doc.querySelector('#panel .steps-panel__select').click();
+        rows()[4].click();
+        doc.querySelector('#panel .steps-panel__done').click();
+        doc.querySelector('#panel .steps-panel__select').click();
+        const stops = rows().filter((r) => r.getAttribute('tabindex') === '0');
+        assert.deepEqual(stops, [rows()[0]]);
+    });
+
     test('the editor shows the selected steps and, as their path, their containers', () => {
         const { doc, win, rows } = setup();
         doc.querySelector('#panel .steps-panel__select').click();
