@@ -27,9 +27,9 @@ Worked out on clickable prototypes before any code:
    match in the other ("2 more in Custom steps →") and leads there.
 2. **It is for navigating first.** Clicking a step scrolls the editor to it,
    opens its parent containers and its card, and highlights it. As the editor
-   scrolls, the panel highlights the step in view and keeps that row visible in
-   its own list. The step clicked keeps a stronger highlight than the one in
-   view.
+   scrolls, the panel highlights the step in view; its own list never moves
+   by itself (below). The step clicked keeps a stronger highlight than the
+   one in view.
 3. **Find and filter.** A text box (label, selector, URL, `{var:…}`, type) and
    type chips (All, A11y scan, Click, Containers, Disabled) with their counts.
    Matches are bold; their parent containers stay, dimmed, so each match shows
@@ -43,8 +43,10 @@ Worked out on clickable prototypes before any code:
    them off and clears the selection. Ticking a container selects that
    container only, never the steps inside it.
 6. **The selection view.** While selecting, the editor shows only the selected
-   steps, in the order they run, each with its path. Clicking a ticked step in
-   the panel scrolls to its card; clicking an unticked one ticks it.
+   steps, in the order they run, each with its path. While selecting, a click on a
+   step in the panel only ticks or unticks it: the editor stays where it is
+   and focus stays on the row. Enter shows the step's card, focus staying
+   in the panel.
 7. **Disable and Enable** sit on the selection bar from one selected step, each
    counting only the steps it would change ("Disable 4", "Enable 1").
 8. **Edit together** is a bar on top of the selection view, closed by default
@@ -151,11 +153,35 @@ any tree; `aria-expanded` says which. A filter shows every match whatever
 the folding, so no match hides in a folded container. The step in view,
 folded away, is shown by the nearest container listed.
 
-## The list keeps still
+## The list never scrolls by itself
 
-Going to a step scrolls the editor, which passes other steps on its way;
-the list does not follow them, so the row clicked stays under the pointer.
-It follows the editor again once that scroll ends.
+The panel highlights the step in view and the current step, but never
+moves its list to show them: not while the editor scrolls, not when going
+to a step, not when stepping through matches. A list that moved on its
+own took the row from under the pointer and lost the reader's place. The
+one exception is focus: moving through the list with the keyboard, the
+browser keeps the focused row in sight, or someone at the keyboard would
+lose it (WCAG 2.4.11).
+
+## Edit together
+
+- A bar on top of the selection view, closed by default and disabled until
+  two steps are selected. It lists the fields the selected steps all have,
+  alike (same name and type), leaving out a step's own name, secrets, and
+  the steps inside containers; the ones a card shows before "Show more
+  options" come first, the rest behind "More fields".
+- Each field says what the steps hold now ("Mixed: WCAG 2.2 AA ×2, AAA
+  ×1"), takes a new value or "Keep each step's own", and says how many steps
+  it would change. A list (Tags) adds or removes items rather than replacing
+  them, so each step keeps its own.
+- Each card it would change says what it will get, old value struck out and
+  the new one, before anything is written. Apply writes only the fields that
+  change, through the editor's own field setter, so the fields drawn as
+  widgets take them too, and as one change: one Undo puts them all back.
+- In Custom steps, it says every place that runs the custom step gets the
+  change, and names them.
+- What decides which fields are shared and what each step would get is
+  plain data (`steps-bulk-edit.js`), tested on its own.
 
 ## What a thousand steps taught
 
@@ -193,8 +219,8 @@ and the later steps of the work keep to them too:
    panels. The Step tree dialog goes.
 3. **Selecting** (done): Select and Done, checkboxes, Select all matches, the
    selection view, Disable and Enable; with ⌘/Ctrl-click, and folding.
-4. **Edit together:** the bar, the shared fields, the previews on the cards,
-   Apply with one Undo, the warning for custom steps.
+4. **Edit together** (done): the bar, the shared fields, the previews on the
+   cards, Apply with one Undo, the warning for custom steps.
 5. **Narrow screens and Go to step:** below about 900 px the panel becomes a
    bar at the top of the section that opens it as a sheet; Ctrl+K opens a
    go-to box over both sections.

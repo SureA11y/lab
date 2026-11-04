@@ -396,5 +396,6 @@ export function createStepValues(builder) {
         populateLineFromObject,
         readContainer,
         readLineToObject,
+        setFieldValue,
     };
 }

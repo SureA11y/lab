@@ -1964,6 +1964,15 @@ function storeActiveMode(mode) {
             callName: customStepName,
             barHost: $('#workflow-selection-bar'),
             setDisabled: (lines, on) => actionsBuilder?.setStepsDisabled(lines, on) || 0,
+            edit: {
+                get defs() { return stepDefs; },
+                read: (line) => actionsBuilder?.readStep(line),
+                apply: (entries) => actionsBuilder?.setStepsFieldValues(entries) || 0,
+                warn: (nodes) => {
+                    const off = nodes.filter((n) => n.disabled).length;
+                    return off ? `${off} of these ${off === 1 ? 'is' : 'are'} turned off: changed like the others, ${off === 1 ? 'it stays' : 'they stay'} off.` : '';
+                }
+            },
             elsewhere: {
                 label: 'Custom steps',
                 count: (kind, query) => customStepsPanel?.countMatches(kind, query) || 0,
@@ -1990,6 +1999,24 @@ function storeActiveMode(mode) {
             callName: customStepName,
             barHost: $('#custom-steps-selection-bar'),
             setDisabled: (lines, on) => customStepActionsBuilder?.setStepsDisabled(lines, on) || 0,
+            edit: {
+                get defs() { return stepDefs; },
+                read: (line) => customStepActionsBuilder?.readStep(line),
+                apply: (entries) => customStepActionsBuilder?.setStepsFieldValues(entries) || 0,
+                // Steps of a custom step are changed for every call to it.
+                warn: () => {
+                    const def = customStepsData[selectedCustomStepIndex];
+                    if (!def) return '';
+                    const {inWorkflow, inCustomSteps} = customStepUsage(def.id);
+                    const where = [
+                        inWorkflow.length ? `workflow ${inWorkflow.length === 1 ? 'step' : 'steps'} ${inWorkflow.map((n) => n.path).join(', ')}` : '',
+                        inCustomSteps.length ? inCustomSteps.map(({d}) => `“${d.name || d.id}”`).join(', ') : ''
+                    ].filter(Boolean).join(' and ');
+                    return where
+                        ? `These steps are in the custom step “${def.name || def.id}”, so every place that runs it gets the change: ${where}.`
+                        : `These steps are in the custom step “${def.name || def.id}”, which nothing runs yet.`;
+                }
+            },
             unselectableNote: 'Only the steps of the custom step open in the editor can be selected: open another to select its steps.',
             actions: [customStepsListActionsEl, history].filter(Boolean),
             elsewhere: {

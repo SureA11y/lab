@@ -206,6 +206,17 @@ describe('steps panel', () => {
         assert.equal(rows()[3].getAttribute('aria-selected'), null);
     });
 
+    test('while selecting, a click picks the step and focus stays on its row', () => {
+        const { doc, rows, went } = setup();
+        doc.querySelector('#panel .steps-panel__select').click();
+        rows()[4].click();
+        assert.equal(rows()[4].getAttribute('aria-selected'), 'true');
+        assert.equal(doc.activeElement, rows()[4]);
+        assert.deepEqual(went, []);
+        rows()[4].click();
+        assert.equal(rows()[4].getAttribute('aria-selected'), 'false');
+    });
+
     test('the editor shows the selected steps and, as their path, their containers', () => {
         const { doc, win, rows } = setup();
         doc.querySelector('#panel .steps-panel__select').click();
@@ -261,6 +272,19 @@ describe('steps panel', () => {
         assert.deepEqual(calls, [[['1', '2'], true]]);
         assert.equal(on.textContent, 'Enable 3');
         assert.equal(off.disabled, true);
+    });
+
+    test('the list never scrolls by itself', () => {
+        const order = ['1', '2', '3', '3.1', '3.1.1', '3.1.1.1', '3.1.1.2', '4'];
+        let offset = 0;
+        const { doc, panel, chip, rows } = setup({ rects: (path) => ({ top: order.indexOf(path) * 100 - offset, bottom: order.indexOf(path) * 100 + 100 - offset }) });
+        const tree = doc.querySelector('#panel [role="tree"]');
+        tree.scrollTop = 40;
+        rows()[6].click();
+        chip('scan').click();
+        doc.querySelector('#panel button[aria-label="Next match"]').click();
+        [300, 650, 0].forEach((o) => { offset = o; panel.syncInView(); });
+        assert.equal(tree.scrollTop, 40);
     });
 
     test('next and previous go through the matches without taking focus', () => {
