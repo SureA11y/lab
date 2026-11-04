@@ -531,10 +531,13 @@
                                         aria-controls="workflow-content"
                                 ></button>
                             </legend>
-                            <div id="workflow-content" class="workflow-content" role="region" aria-label="Workflow">
-                                <div id="actionsContainer" role="group" aria-label="Configured actions list"></div>
-                                <div class="actions-builder-actions">
-                                    <div id="toolbar" class="toolbar"></div>
+                            <div id="workflow-content" class="workflow-content steps-panel-layout" role="region" aria-label="Workflow">
+                                <aside id="workflow-steps-panel" class="steps-panel"></aside>
+                                <div class="steps-panel-editor">
+                                    <div id="actionsContainer" role="group" aria-label="Configured actions list"></div>
+                                    <div class="actions-builder-actions">
+                                        <div id="toolbar" class="toolbar"></div>
+                                    </div>
                                 </div>
                             </div>
                         </fieldset>
