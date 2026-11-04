@@ -30,7 +30,7 @@ FROM node:24-bookworm-slim
 # Shown by GitHub's container registry: the repository the image comes from,
 # its licence and what it is.
 LABEL org.opencontainers.image.source="https://github.com/SureA11y/lab" \
-      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      org.opencontainers.image.licenses="LicenseRef-PolyForm-Strict-1.0.0" \
       org.opencontainers.image.description="surea11y-lab: accessibility workflows, scans and comparisons, as an app, an HTTP API and a runner"
 
 # Debian's Chromium, and the fonts a page is likely to ask for: the scans and

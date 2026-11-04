@@ -1,7 +1,7 @@
 # surea11y-lab
 
 [![CI](https://github.com/SureA11y/lab/actions/workflows/ci.yml/badge.svg)](https://github.com/SureA11y/lab/actions/workflows/ci.yml)
-[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+[![License: PolyForm Strict 1.0.0](https://img.shields.io/badge/license-PolyForm%20Strict%201.0.0-blue)](LICENSE)
 
 Tools around [surea11y](https://www.npmjs.com/package/@surea11y/core) for
 checking the accessibility of websites: not one page at a time, but the way
@@ -119,8 +119,10 @@ server has no login) and how to report a vulnerability. Changes are listed in
 
 ## License
 
-Copyright (C) 2026 Jorge Rumoroso. The lab is free software under the GNU
-Affero General Public License, version 3 ([LICENSE](LICENSE)): use it, change
-it and share it, and if you offer a changed version to others over a network,
-offer them its source too. The engine it is built on, `@surea11y/core`, is
-under the Mozilla Public License 2.0.
+Copyright (C) 2026 Jorge Rumoroso. The lab is source-available under the
+[PolyForm Strict License 1.0.0](LICENSE): you may read it, and run it as it is
+for any noncommercial purpose, such as personal study, testing and research,
+or in a charity, school or public body. You may not change it, build on it,
+redistribute it, publish it (to npm or anywhere else) or use it commercially.
+For any other use, ask for a license. The engine it is built on,
+`@surea11y/core`, is under the Mozilla Public License 2.0.
