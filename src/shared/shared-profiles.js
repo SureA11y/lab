@@ -306,18 +306,50 @@
         return out;
     }
 
+    // Findings with one profile's id put for another's: in the profiles a
+    // row is of, and as the key of what each profile made of it.
+    function renameProfile(findings, from, to) {
+        const rekey = (v) => {
+            if (!v || typeof v !== 'object' || !(from in v)) return v;
+            const out = { ...v, [to]: v[from] };
+            delete out[from];
+            return out;
+        };
+        return findings.map((f) => {
+            if (!f || typeof f !== 'object') return f;
+            let out = f;
+            const rollup = f.evidence && f.evidence.rollup;
+            if (rollup && Array.isArray(rollup.profiles) && rollup.profiles.includes(from)) {
+                out = { ...out, evidence: { ...f.evidence, rollup: { ...rollup, profiles: rollup.profiles.map((id) => (id === from ? to : id)) } } };
+            }
+            if (f.verdicts && from in f.verdicts) {
+                out = {
+                    ...out,
+                    verdicts: rekey(f.verdicts),
+                    occurrences: asArray(out.occurrences).map((o) => (o && o.verdicts ? { ...o, verdicts: rekey(o.verdicts) } : o)),
+                };
+            }
+            return out;
+        });
+    }
+
     function narrowScan(scan, shared) {
         if (!scan || scan.skipped || scan.skipInfo) return scan;
         const mine = profilesOfScan(scan);
         const own = [...(mine.wcag ? [wcagId(mine.wcag)] : []), ...mine.standards.keys()];
         const kept = [...(shared.wcag && mine.wcag ? [wcagId(mine.wcag)] : []), ...shared.standards.map((s) => s.id)];
         const level = shared.wcag;
-        const canonical = scan.canonical && typeof scan.canonical === 'object'
-            ? {
-                ...scan.canonical,
-                findings: narrowFindings(scan.canonical.findings, { own, kept, level }),
-            }
-            : scan.canonical;
+        let findings = scan.canonical && typeof scan.canonical === 'object'
+            ? narrowFindings(scan.canonical.findings, { own, kept, level })
+            : null;
+        // Read at a lower WCAG level than it checked, the scan's WCAG
+        // profile becomes that level's: so do its findings' (whose row each
+        // is, and what each profile made of it), or a reading by profile
+        // (its score) finds no WCAG finding at all.
+        if (findings && mine.wcag && level && mine.wcag !== level) {
+            findings = renameProfile(findings, wcagId(mine.wcag), wcagId(level));
+        }
+        const canonical = findings ? { ...scan.canonical, findings } : scan.canonical;
         const profiles = [
             ...(shared.wcag ? [{ id: wcagId(shared.wcag), label: wcagLabel(shared.wcag) }] : []),
             ...shared.standards,
@@ -375,6 +407,60 @@
         return /^wcag\d/i.test(String((p && p.id) || '')) || /^WCAG \d/.test(String((p && p.label) || ''));
     }
 
+    // A WCAG profile, or one whose requirements are WCAG's restated (EN 301
+    // 549): WCAG's coverage still describes a scan read on it.
+    function checksWcagProfile(p) {
+        return isWcagProfile(p) || /^en301549-/i.test(String((p && p.id) || ''));
+    }
+
+    const occurrenceTotal = (f) => asArray(f && f.occurrences).length + (Number(f && f.unlisted) > 0 ? Number(f.unlisted) : 0);
+
+    /** A scan's counts, as its summary keeps them, from its findings. */
+    function summaryCounts(findings) {
+        const list = asArray(findings).filter((f) => f && typeof f === 'object');
+        const fails = list.filter((f) => f.outcome === 'fail');
+        return {
+            failCount: fails.length,
+            occurrenceCount: fails.reduce((n, f) => n + occurrenceTotal(f), 0),
+            reviewCount: list.filter((f) => f.outcome === 'cantTell').length,
+            passesCount: list.filter((f) => f.outcome === 'pass').length,
+        };
+    }
+
+    /**
+     * A scan's verdict by severity, as the run writes it in summary.score
+     * (workflow-payload-builder.js), from the findings it has now.
+     */
+    function severityVerdict(findings) {
+        const counts = { critical: 0, serious: 0, moderate: 0, minor: 0, unknown: 0 };
+        for (const f of asArray(findings)) {
+            if (!f || f.outcome !== 'fail') continue;
+            const impact = f.severity ? String(f.severity) : 'unknown';
+            if (counts[impact] === undefined) counts.unknown += occurrenceTotal(f);
+            else counts[impact] += occurrenceTotal(f);
+        }
+        const total = counts.critical + counts.serious + counts.moderate + counts.minor + counts.unknown;
+        if (counts.critical > 0) return { label: 'fail', description: 'Critical violations detected. These issues are likely to block users and should be fixed as a priority.', counts };
+        if (counts.serious > 0) return { label: 'warning', description: 'Serious violations detected. These issues can significantly affect users and should be addressed soon.', counts };
+        if (total > 0) return { label: 'info', description: 'Only moderate or minor violations detected. They still matter, but have lower immediate impact.', counts };
+        return { label: 'pass', description: 'No violations detected.', counts };
+    }
+
+    /** The ids of the profiles a scan checked (a profile's id, else its label). */
+    function scanProfileIds(scan) {
+        return reportScanOf().scanProfiles(scan).map((p) => String(p.id || p.label || '')).filter(Boolean);
+    }
+
+    /**
+     * What one of a scan's profiles makes of its findings: `own` the ids of
+     * every profile the scan checked, `id` the one read. A requirement's row
+     * goes with its profile; a rule's finding takes that profile's verdict.
+     * How a scan of several profiles is scored (a11y-summary.js).
+     */
+    function findingsForProfile(findings, own, id) {
+        return narrowFindings(findings, { own: asArray(own).map(String), kept: [String(id)], level: null });
+    }
+
     function narrowScanToProfiles(scan, keys) {
         if (!scan || typeof scan !== 'object' || scan.skipped || scan.skipInfo) return scan;
         const profiles = reportScanOf().scanProfiles(scan);
@@ -395,12 +481,16 @@
         };
         if (keptProfiles.length > 1) out.profiles = keptProfiles;
         else delete out.profiles;
-        // Counted again from the findings kept.
+        // Counted again from the findings kept: the scan list reads them.
         if (scan.summary && typeof scan.summary === 'object') {
-            const { failCount: _f, occurrenceCount: _o, reviewCount: _r, passesCount: _p, ...rest } = scan.summary;
-            out.summary = rest;
+            out.summary = { ...scan.summary, ...summaryCounts(canonical && canonical.findings) };
+            if (scan.summary.score && typeof scan.summary.score === 'object') {
+                out.summary.score = severityVerdict(canonical && canonical.findings);
+            }
         }
-        const wcagKept = keptProfiles.some(isWcagProfile);
+        // WCAG's coverage goes when no profile kept judges WCAG's criteria:
+        // a WCAG level, or EN 301 549, which restates them.
+        const wcagKept = keptProfiles.some(checksWcagProfile);
         if (scan.metrics && typeof scan.metrics === 'object') {
             const metrics = { ...scan.metrics };
             if (metrics.a11ySummary && typeof metrics.a11ySummary === 'object') {
@@ -536,23 +626,97 @@
                 }
             }
         }
+        // No page in every report (pages are matched by path, so /v1/cart
+        // and /v2/cart are two pages): nothing above was read on what the
+        // reports share, and a profile only one report checked would read
+        // as fixed or new. Each report is read on the profiles every report
+        // checked on some page instead.
+        let byReport = null;
+        if (!matched && list.length > 1) byReport = planByReport(list, byKey);
+        if (byReport) {
+            for (const [key, plan] of byReport.plans) plans.set(key, plan);
+            pushOnce(comparedOn, byReport.comparedOn);
+            pushOnce(leftOut, byReport.leftOut);
+        }
         // Whether the reports share nothing to compare on: every scan they
         // both have checked different things. null when that can't be told
         // (no scan in common, or one that names no profile), for the reports'
-        // own identities to say.
-        const mismatch = !matched || unknown ? null : (!comparable && none.length > 0);
+        // own identities to say; false when, with no page in common, the
+        // reports still checked some profile alike.
+        const mismatch = byReport ? !byReport.comparedOn.length : (!matched || unknown ? null : (!comparable && none.length > 0));
+        const unmatchedPages = !matched && list.length > 1 && byKey.size > 0;
         // Beside scans that compare, one that shares nothing is left out of
         // the comparison: its rows would be what was checked, not the page.
         const notCompared = comparable && none.length ? none.map((n) => ({ label: n.label })) : [];
         for (const n of (comparable ? none : [])) plans.set(n.key, { exclude: true });
         if (!plans.size) {
-            return { reports: list, basis: none.length ? { comparedOn: [], leftOut: [] } : null, mismatch };
+            return { reports: list, basis: none.length ? { comparedOn: [], leftOut: [] } : null, mismatch, unmatchedPages };
         }
         return {
             reports: list.map((r, i) => narrowReport(r, plans, keysByReport[i])),
-            basis: { comparedOn, leftOut, ...(notCompared.length ? { notCompared } : {}) },
+            basis: {
+                comparedOn, leftOut,
+                ...(notCompared.length ? { notCompared } : {}),
+                ...(byReport && byReport.notCompared.length ? { notCompared: byReport.notCompared } : {}),
+                ...(byReport ? { byReport: true } : {}),
+            },
             mismatch,
+            unmatchedPages,
         };
+    }
+
+    /**
+     * Reports with no page in common, read report by report: on the
+     * profiles every report checked on some page, WCAG at the lowest level
+     * any checked. -> { plans, comparedOn, leftOut, notCompared } for the
+     * scans to narrow, or null when the reports checked the same profiles,
+     * or one names none.
+     */
+    function planByReport(list, byKey) {
+        const each = list.map((report) => {
+            const read = readScans(report).map(profilesOfScan);
+            if (!read.length || read.some((p) => !p.known)) return null;
+            const levels = read.map((p) => p.wcag).filter(Boolean);
+            const standards = new Map();
+            for (const p of read) for (const [id, label] of p.standards) standards.set(id, label);
+            return { levels, standards, all: read };
+        });
+        if (each.some((e) => !e)) return null;
+        // The highest level every report checked somewhere: each report's
+        // highest, then the lowest of those. A page checked lower stays at
+        // its own level (below).
+        const highest = (e) => Math.max(...e.levels.map((l) => LEVELS.indexOf(l)));
+        const wcag = each.every((e) => e.levels.length)
+            ? LEVELS[Math.min(...each.map(highest))]
+            : null;
+        const labels = new Map();
+        for (const e of each) for (const [id, label] of e.standards) labels.set(id, label);
+        const standards = [...labels.keys()].filter((id) => each.every((e) => e.standards.has(id))).map((id) => ({ id, label: labels.get(id) }));
+        const leftOut = [];
+        const levelsSeen = [...new Set(each.flatMap((e) => e.levels))].sort((x, y) => LEVELS.indexOf(x) - LEVELS.indexOf(y));
+        for (const l of levelsSeen) {
+            if (!wcag || LEVELS.indexOf(l) > LEVELS.indexOf(wcag)) leftOut.push({ id: wcagId(l), label: wcag ? `${wcagLabel(l)}'s criteria above ${wcag}` : wcagLabel(l) });
+        }
+        for (const [id, label] of labels) if (!standards.some((p) => p.id === id)) leftOut.push({ id, label });
+        // The same profiles everywhere: nothing to narrow.
+        if (!leftOut.length) return null;
+        const comparedOn = [...(wcag ? [{ id: wcagId(wcag), label: wcagLabel(wcag) }] : []), ...standards];
+        const plans = new Map();
+        const notCompared = [];
+        for (const [key, inReport] of byKey) {
+            const scan = [...inReport.values()][0];
+            const mine = profilesOfScan(scan);
+            if (!mine.known) continue;
+            const level = wcag && mine.wcag ? LEVELS[Math.min(LEVELS.indexOf(wcag), LEVELS.indexOf(mine.wcag))] : null;
+            const keep = standards.filter((p) => mine.standards.has(p.id));
+            if (!level && !keep.length) {
+                if (comparedOn.length) { plans.set(key, { exclude: true }); notCompared.push({ label: scan.label || scan.url || key }); }
+                continue;
+            }
+            if (level === mine.wcag && keep.length === mine.standards.size) continue;
+            plans.set(key, { wcag: level, standards: keep, leftOut: [], same: false });
+        }
+        return { plans, comparedOn, leftOut, notCompared };
     }
 
     /** "Compared on WCAG 2.2 AA, which every report checked. Left out: WAI-ARIA 1.2." */
@@ -567,6 +731,7 @@
                 + (out.length ? ` Left out, as not every report checked it on the same pages: ${out.join(', ')}.` : ''));
         }
         if (not.length) parts.push(`Not compared, as its reports checked ${not.length === 1 ? 'it' : 'them'} against different things that share none: ${[...new Set(not)].join(', ')}.`);
+        if (basis && basis.byReport) parts.push('No page is in every report, so each report is read on the profiles every report checked on some page.');
         return parts.join(' ');
     }
 
@@ -618,8 +783,12 @@
         return keys.map((key) => {
             const names = [...labels.get(key)];
             let label = names[0];
+            // Levels told apart scan by scan (each pair of scans is read at
+            // the lower of its two), so the switch names them all: "WCAG 2.2
+            // A to AAA", not the lowest one any scan checked.
             if (key === WCAG_KEY && names.length > 1) {
-                label = levels.length ? wcagLabel(LEVELS[Math.min(...levels.map((l) => LEVELS.indexOf(l)))]) : 'WCAG';
+                const seen = [...new Set(levels)].sort((x, y) => LEVELS.indexOf(x) - LEVELS.indexOf(y));
+                label = seen.length > 1 ? `WCAG 2.2 ${seen[0]} to ${seen[seen.length - 1]}` : (seen.length ? wcagLabel(seen[0]) : 'WCAG');
             }
             return { key, label };
         });
@@ -660,14 +829,17 @@
         }
         if (!changed) return report;
         const out = { ...report, scans };
+        // WCAG's coverage stays while a scan is still read on a profile that
+        // judges WCAG's criteria (EN 301 549 restates them).
+        const wcagKept = readScans(out).some((scan) => reportScanOf().scanProfiles(scan).some(checksWcagProfile));
         if (report.metrics && typeof report.metrics === 'object') {
             const metrics = { ...report.metrics };
             if (metrics.a11ySummary && typeof metrics.a11ySummary === 'object') {
                 const { scores: _scores, ...rest } = metrics.a11ySummary;
                 metrics.a11ySummary = { ...rest, scoreLeftOut: true };
-                if (offKeys.has(WCAG_KEY)) delete metrics.a11ySummary.coverageSummary;
+                if (!wcagKept) delete metrics.a11ySummary.coverageSummary;
             }
-            if (offKeys.has(WCAG_KEY)) delete metrics.coverageSummary;
+            if (!wcagKept) delete metrics.coverageSummary;
             out.metrics = metrics;
         }
         return out;
@@ -698,15 +870,32 @@
     }
 
     /**
-     * A scan whose score was left out, scored again on the findings it was
-     * narrowed to, the way the run scored it (a11y-summary.js), from the page
-     * measurements its report kept. Without them (an older report), or
-     * without the scoring loaded, it stays without one.
+     * Whether a scan's score must be made again: left out, because the scan
+     * is read on fewer profiles than it checked, or made from a scan of
+     * several profiles as one, counting a defect once per profile (reports
+     * saved before such a scan took its worst profile's score).
+     */
+    function needsScore(scan) {
+        const summary = scan && scan.metrics && scan.metrics.a11ySummary;
+        if (!summary || typeof summary !== 'object') return false;
+        if (summary.scoreLeftOut) return true;
+        const scores = summary.scores;
+        return !!(scores && scores.avgPageAccessibility != null && !scores.scoredOn && scanProfileIds(scan).length > 1);
+    }
+
+    /**
+     * A scan scored again on the findings it has now, the way the run scores
+     * it (a11y-summary.js: a scan of several profiles takes its worst
+     * profile's score), from the page measurements its report kept: its
+     * whole summary, so its counts and signals are the findings' it has now.
+     * Without the measurements (an older report), or without the scoring
+     * loaded, it stays as it is. The report view's Profiles selector scores
+     * its scans with it, as comparisons do.
      */
     function rescoreScan(scan) {
-        const metrics = scan && scan.metrics;
-        const summary = metrics && metrics.a11ySummary;
-        if (!summary || !summary.scoreLeftOut) return scan;
+        if (!needsScore(scan)) return scan;
+        const metrics = scan.metrics;
+        const summary = metrics.a11ySummary;
         const api = summaryOf && summaryOf();
         const dom = metrics.domMetrics;
         if (!api || typeof api.buildA11ySummary !== 'function') return scan;
@@ -722,6 +911,7 @@
                 canonical: scan.mergedScan ? scoringView(scan.canonical) : scan.canonical,
                 domMetrics: dom,
                 coverageSummary: coverage,
+                profiles: scanProfileIds(scan),
             });
         } catch {
             return scan;
@@ -730,7 +920,15 @@
         const { scoreLeftOut: _left, ...rest } = summary;
         return {
             ...scan,
-            metrics: { ...metrics, a11ySummary: { ...rest, scores: built.scores, scoreRecounted: true } },
+            metrics: {
+                ...metrics,
+                a11ySummary: {
+                    ...rest,
+                    ...built,
+                    ...(rest.coverageSummary ? { coverageSummary: rest.coverageSummary } : {}),
+                    scoreRecounted: true,
+                },
+            },
         };
     }
 
@@ -759,11 +957,14 @@
         const summary = report.metrics && report.metrics.a11ySummary;
         if (!changed && !(summary && summary.scoreLeftOut)) return report;
         const out = changed ? { ...report, scans } : report;
-        if (!summary || !summary.scoreLeftOut) return out;
+        if (!summary) return out;
         const api = globalSummaryOf && globalSummaryOf();
         if (!api || typeof api.buildGlobalSummary !== 'function') return out;
         const read = readScans(out);
-        if (!read.some((scan) => scoreOfScan(scan) != null)) return out;
+        // Scored from its pages' scores, or, where no page has enough on
+        // its own to score, from all of them together, as the run does: so
+        // there must be pages to measure.
+        if (!read.some((scan) => scoreOfScan(scan) != null || (scan.metrics && scan.metrics.domMetrics))) return out;
         let built;
         try {
             built = api.buildGlobalSummary({ scans: read, options: { domP90: 90, useMinConfidence: false } });
@@ -808,5 +1009,6 @@
     return {
         compareOnShared, sharedProfiles, basisSentence, narrowScanToProfiles,
         comparisonProfiles, narrowReportToProfiles, rescoreScan, rescoreReport, prepareComparison, WCAG_KEY,
+        findingsForProfile, scanProfileIds, summaryCounts,
     };
 }));

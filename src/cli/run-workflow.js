@@ -216,6 +216,9 @@ function printComparison(comparison, baselinePayload, baselineLabel) {
     }
     const engines = engineChangesText(comparison.engineChanges);
     if (engines) lines.push(`Warning     ${engines}`);
+    if (comparison.pagesUnmatched) {
+        lines.push('Warning     no page of this run is a page of the baseline (pages are matched by path and query), so every failing instance reads as new or fixed');
+    }
     const profiles = profilesText(comparison.profiles);
     if (profiles) lines.push(`${profiles.warning ? 'Warning' : 'Note'}${profiles.warning ? '    ' : '       '} ${profiles.text}`);
 

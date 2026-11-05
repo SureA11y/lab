@@ -135,6 +135,7 @@ function profilesText(profiles) {
             parts.push(`compared on ${comparedOn.map((p) => p.label).join(' + ')}, which both checked`
                 + (left.length ? `; left out, as only one checked it: ${left.join(', ')}` : ''));
         }
+        if (basis && basis.byReport) parts.push('no page is in both, so each is read on the profiles both checked on some page');
         if (notCompared.length) {
             parts.push(`not compared, as the baseline and this run checked ${notCompared.length === 1 ? 'it' : 'them'} against different things that share none: ${[...new Set(notCompared.map((s) => s.label))].join(', ')}`);
         }
@@ -177,6 +178,9 @@ function comparisonSection(comparison, baselineLabel) {
 
     const engines = engineChangesText(comparison.engineChanges);
     if (engines) out.push(`- ${engines.charAt(0).toUpperCase()}${engines.slice(1)}`);
+    if (comparison.pagesUnmatched) {
+        out.push('- No page of this run is a page of the baseline (pages are matched by path and query), so every failing instance reads as new or fixed');
+    }
     const profiles = profilesText(comparison.profiles);
     if (profiles) out.push(`- ${profiles.text.charAt(0).toUpperCase()}${profiles.text.slice(1)}`);
 

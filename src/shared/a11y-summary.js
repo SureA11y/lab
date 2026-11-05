@@ -5,11 +5,13 @@
 
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) {
-        module.exports = factory(require('./a11y-metric-defs.js'));
+        // shared-profiles.js is read when a scan of several profiles is
+        // scored, so it may load after this file (and needs this one).
+        module.exports = factory(require('./a11y-metric-defs.js'), () => require('./shared-profiles.js'));
     } else {
-        root.A11Y_SUMMARY = factory(root.A11Y_METRIC_DEFS);
+        root.A11Y_SUMMARY = factory(root.A11Y_METRIC_DEFS, () => root.A11Y_SHARED_PROFILES);
     }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (metricDefs) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (metricDefs, sharedProfilesOf) {
     const { METRIC_DEFS } = metricDefs;
 
     const IMPACT_WEIGHTS = {
@@ -299,7 +301,62 @@
         };
     }
 
-    function buildA11ySummary({ canonical, domMetrics, textMetrics, coverageSummary }) {
+    // A profile whose findings are WCAG's, restated or not, so WCAG's
+    // coverage gates its score: a WCAG level, or EN 301 549.
+    function checksWcag(id) {
+        return /^wcag/i.test(String(id || '')) || /^en301549-/i.test(String(id || ''));
+    }
+
+    /**
+     * The summary of a scan, scored as the profiles it checked score it.
+     *
+     * A scan checked against several profiles at once (WCAG 2.2 AA +
+     * WAI-ARIA 1.2 + EN 301 549) lists each profile's requirements as rows
+     * of their own, and the rows restate one another: the elements too small
+     * to tap fail WCAG 2.5.8 and EN 301 549's 9.2.5.8 alike, and an invalid
+     * ARIA attribute fails WCAG 4.1.2 and a WAI-ARIA row. Scored as one, the
+     * same defect counted once per profile, so a scan of three profiles
+     * scored far below any of them (19 beside 40, 40 and 100). Each profile
+     * judges the page as a scan of it alone would, so the scan takes the
+     * score of the profile it does worst on, each scored on what that
+     * profile makes of the findings (shared-profiles.js findingsForProfile).
+     * Its counts and signals stay the whole scan's. `profiles`: the ids of
+     * the profiles the scan checked; one, or none, scores as before.
+     * `scores.scoredOn` names the profile the score is, and
+     * `scores.byProfile` each one's.
+     */
+    function buildA11ySummary({ canonical, domMetrics, textMetrics, coverageSummary, profiles } = {}) {
+        const whole = buildOneSummary({ canonical, domMetrics, textMetrics, coverageSummary });
+        const ids = [...new Set((Array.isArray(profiles) ? profiles : []).map((p) => String((p && typeof p === 'object') ? (p.id || p.label || '') : (p || ''))).filter(Boolean))];
+        const api = sharedProfilesOf && sharedProfilesOf();
+        const findings = canonical && Array.isArray(canonical.findings) ? canonical.findings : null;
+        if (ids.length < 2 || !findings || !api || typeof api.findingsForProfile !== 'function') return whole;
+
+        const views = ids.map((id) => ({
+            id,
+            summary: buildOneSummary({
+                canonical: { ...canonical, findings: api.findingsForProfile(findings, ids, id) },
+                domMetrics,
+                textMetrics,
+                coverageSummary: checksWcag(id) ? coverageSummary : null,
+            }),
+        }));
+        const scored = views.filter((v) => v.summary.scores && v.summary.scores.adjusted != null);
+        // None can carry a score (too little of the page to measure): the
+        // whole scan's statement stands.
+        if (!scored.length) return whole;
+        const worst = scored.reduce((a, b) => (b.summary.scores.adjusted < a.summary.scores.adjusted ? b : a));
+        return {
+            ...whole,
+            scores: {
+                ...worst.summary.scores,
+                scoredOn: worst.id,
+                byProfile: Object.fromEntries(views.map((v) => [v.id, v.summary.scores ? v.summary.scores.avgPageAccessibility : null])),
+            },
+        };
+    }
+
+    function buildOneSummary({ canonical, domMetrics, textMetrics, coverageSummary }) {
         const domTotal = Math.max(1, safeNum(domMetrics && domMetrics.totalElements, 1));
 
         let violations = [];
@@ -593,6 +650,7 @@
 
     return {
         buildA11ySummary,
+        checksWcag,
         // Exported so global-summary.js can reuse the exact same weighting/normalization
         // logic instead of maintaining a second copy that could drift out of sync.
         IMPACT_WEIGHTS,

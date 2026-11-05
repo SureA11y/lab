@@ -1819,7 +1819,9 @@ async function runA11yWorkflow(url, tags, options = {}) {
 
             try {
                 if (canonical && domMetrics && typeof domMetrics.totalElements === 'number') {
-                    a11ySummary = buildA11ySummary({canonical, domMetrics, coverageSummary});
+                    // A scan of several profiles takes its worst profile's
+                    // score, each scored as a scan of it alone would be.
+                    a11ySummary = buildA11ySummary({canonical, domMetrics, coverageSummary, profiles: appliedProfilesOf({canonical}).profiles});
                 } else {
                     a11ySummary = null;
                 }

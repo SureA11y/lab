@@ -309,6 +309,13 @@
 
     // ---- how each profile moves the comparison ----
 
+    /** The elements a report's failing rules are on: their page and element keys. */
+    function elementKeys(rules) {
+        const keys = new Set();
+        for (const r of rules.values()) for (const key of r.occ.keys()) keys.add(key);
+        return keys;
+    }
+
     /**
      * How much of a comparison each profile it is read on accounts for.
      * `reports` are the reports as given to the engine, in column order;
@@ -316,24 +323,25 @@
      * of the prepared reports). Null unless the comparison is read on two
      * profiles or more.
      *
-     * Each profile's results are a report read on that profile alone (the
-     * same preparation as the comparison, every other profile off). The
-     * counts of the profiles alone do not add up to the comparison's: a rule
-     * can fail under two profiles (WCAG and WAI-ARIA both judge
-     * aria-allowed-attr) and the comparison counts it once. So each failing
-     * problem of the comparison is put down to the one profile it fails
-     * under, or to `shared` when it fails under more than one (a best
-     * practice, or a rule both judge); those add up to the comparison's.
+     * The profiles overlap, and not by rule: each lists its own
+     * requirements, so the elements too small to tap fail WCAG 2.5.8 and EN
+     * 301 549's 9.2.5.8 as two rows, and an invalid ARIA attribute fails
+     * WCAG 4.1.2 and a WAI-ARIA row. So what is put down to a profile is a
+     * broken element: each element failing in a report goes to the one
+     * profile that flags it there, or to `shared` when more than one does.
+     * Those add up to the comparison's broken elements, and, with two
+     * reports, to the elements fixed, newly broken and still broken. Beside
+     * them, each profile read on its own (the same preparation as the
+     * comparison, every other profile off): its problems, failures and
+     * score, which overlap and do not add up.
      *
      * -> { profiles: [{ key, label }], rows: [{ key, label, kind:
-     *    'profile' | 'shared' | 'total', columns: [{ problems, failures,
-     *    score }], alone: [{ problems, failures }] | null, change }] }, each
-     *    `columns` entry a report's: its problems and failures put down to
-     *    the row (score: the report read on that profile alone, scored again,
-     *    or as compared for the total; null for shared), `alone` the profile
-     *    read alone (shared problems included), `change` for two reports the
-     *    comparison's categories put down to the row ({ new, resolved,
-     *    persistent } or { aonly, bonly, both }), else null.
+     *    'profile' | 'shared' | 'total', columns: [{ elements, problems,
+     *    failures, score }], change }] }: each `columns` entry a report's,
+     *    `elements` put down to the row; `problems`, `failures` and `score`
+     *    the profile on its own (the comparison's, for the total; null for
+     *    shared). `change`, with two reports, the elements by what became of
+     *    them ({ fixed, new, still } or { aonly, bonly, both }), else null.
      */
     function profileBreakdown(reports, { combined, compared, mode = 'evolution', profilesOff = [] } = {}) {
         const api = sharedProfilesOf && sharedProfilesOf();
@@ -348,41 +356,38 @@
         // Each profile alone: every other offered profile off.
         const alone = profiles.map((p) => {
             const prepared = prepareComparison(list, { profilesOff: offered.filter((o) => o.key !== p.key).map((o) => o.key) });
-            return prepared.reports.map((r) => ({ rules: collectFailingRules(r), score: num(score(r).avgPageAccessibility) }));
+            return prepared.reports.map((r) => {
+                const rules = collectFailingRules(r);
+                return { rules, elements: elementKeys(rules), score: num(score(r).avgPageAccessibility) };
+            });
         });
         const failuresOf = (rules) => { let n = 0; for (const r of rules.values()) n += sizeOf(r); return n; };
 
-        // Whose a report's failing rule is: the profiles it fails under there.
-        const whose = (col, ruleId) => profiles.filter((_, i) => alone[i][col].rules.has(ruleId)).map((p) => p.key);
+        // Whose a report's broken element is: the profiles that flag it there.
+        const whose = (col, key) => profiles.filter((_, i) => alone[i][col].elements.has(key)).map((p) => p.key);
         const bucketOf = (keys) => (keys.length === 1 ? keys[0] : 'shared');
 
         const keys = [...profiles.map((p) => p.key), 'shared'];
-        const blank = () => list.map(() => ({ problems: 0, failures: 0 }));
-        const counts = new Map(keys.map((k) => [k, blank()]));
-        combined.forEach((rules, col) => {
-            for (const [ruleId, rule] of rules) {
-                const cell = counts.get(bucketOf(whose(col, ruleId)))[col];
-                cell.problems += 1;
-                cell.failures += sizeOf(rule);
-            }
+        const counts = new Map(keys.map((k) => [k, list.map(() => 0)]));
+        const combinedElements = combined.map(elementKeys);
+        combinedElements.forEach((els, col) => {
+            for (const key of els) counts.get(bucketOf(whose(col, key)))[col] += 1;
         });
 
-        // At two reports, the comparison's own categories, put down the same
-        // way: a new problem to whose it is in the later report, a fixed one
-        // to whose it was, one in both to every profile it failed under in
-        // either.
+        // At two reports, each element by what became of it, put down to
+        // whose it is in the report it fails in (both, when it still fails).
         let change = null;
         if (list.length === 2) {
-            const cats = mode === 'ab' ? ['aonly', 'bonly', 'both'] : ['new', 'resolved', 'persistent'];
+            const cats = mode === 'ab' ? ['aonly', 'bonly', 'both'] : ['fixed', 'new', 'still'];
             change = new Map(keys.map((k) => [k, Object.fromEntries(cats.map((c) => [c, 0]))]));
-            const [aRules, bRules] = combined;
-            for (const id of new Set([...aRules.keys(), ...bRules.keys()])) {
-                const inA = aRules.has(id);
-                const inB = bRules.has(id);
+            const [inA, inB] = combinedElements;
+            for (const key of new Set([...inA, ...inB])) {
+                const a = inA.has(key);
+                const b = inB.has(key);
                 const cat = mode === 'ab'
-                    ? (inA && inB ? 'both' : (inA ? 'aonly' : 'bonly'))
-                    : (inA && inB ? 'persistent' : (inA ? 'resolved' : 'new'));
-                const owners = new Set([...(inA ? whose(0, id) : []), ...(inB ? whose(1, id) : [])]);
+                    ? (a && b ? 'both' : (a ? 'aonly' : 'bonly'))
+                    : (a && b ? 'still' : (a ? 'fixed' : 'new'));
+                const owners = new Set([...(a ? whose(0, key) : []), ...(b ? whose(1, key) : [])]);
                 change.get(bucketOf([...owners]))[cat] += 1;
             }
         }
@@ -392,24 +397,37 @@
             key: p.key,
             label: p.label,
             kind: 'profile',
-            columns: counts.get(p.key).map((c, col) => ({ ...c, score: alone[i][col].score })),
-            alone: alone[i].map((c) => ({ problems: c.rules.size, failures: failuresOf(c.rules) })),
+            columns: counts.get(p.key).map((elements, col) => ({
+                elements,
+                problems: alone[i][col].rules.size,
+                failures: failuresOf(alone[i][col].rules),
+                score: alone[i][col].score,
+            })),
             change: change ? change.get(p.key) : null,
         }));
         rows.push({
             key: 'shared',
             label: 'More than one profile',
             kind: 'shared',
-            columns: counts.get('shared').map((c) => ({ ...c, score: null })),
-            alone: null,
+            columns: counts.get('shared').map((elements) => ({ elements, problems: null, failures: null, score: null })),
             change: change ? change.get('shared') : null,
         });
-        const total = { key: 'total', label: 'As compared', kind: 'total', alone: null };
-        total.columns = combined.map((rules, col) => ({ problems: rules.size, failures: failuresOf(rules), score: comparedScores[col] == null ? null : comparedScores[col] }));
+        const total = {
+            key: 'total',
+            label: 'As compared',
+            kind: 'total',
+            columns: combined.map((rules, col) => ({
+                elements: combinedElements[col].size,
+                problems: rules.size,
+                failures: failuresOf(rules),
+                score: comparedScores[col] == null ? null : comparedScores[col],
+            })),
+            change: null,
+        };
         if (change) {
             total.change = {};
             for (const k of keys) for (const [cat, n] of Object.entries(change.get(k))) total.change[cat] = (total.change[cat] || 0) + n;
-        } else total.change = null;
+        }
         rows.push(total);
         return { profiles, rows };
     }
@@ -751,6 +769,9 @@
         // when every scan they have in common checked different things.
         if (typeof shared.mismatch === 'boolean') doc.criteriaMismatch = shared.mismatch;
         if (shared.filter) doc.profileFilter = shared.filter;
+        // No page in every report: pages are matched by path, so every
+        // failure reads as fixed or new, element by element.
+        if (shared.unmatchedPages) doc.pagesUnmatched = true;
         const recounted = [a, b].some(scoreRecounted);
         if (recounted) doc.scoresRecounted = true;
 

@@ -27,11 +27,13 @@
 
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) {
-        module.exports = factory(require('./a11y-summary.js'), require('./coverage-summary.js'), require('./occurrence-mining.js'));
+        module.exports = factory(require('./a11y-summary.js'), require('./coverage-summary.js'), require('./occurrence-mining.js'), () => require('./shared-profiles.js'));
     } else {
-        root.A11Y_GLOBAL_SUMMARY = factory(root.A11Y_SUMMARY, root.A11Y_COVERAGE_SUMMARY, root.A11Y_OCCURRENCE_MINING);
+        // shared-profiles.js is read when a run with scans of several
+        // profiles is summed up, so it may load after this file.
+        root.A11Y_GLOBAL_SUMMARY = factory(root.A11Y_SUMMARY, root.A11Y_COVERAGE_SUMMARY, root.A11Y_OCCURRENCE_MINING, () => root.A11Y_SHARED_PROFILES);
     }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (a11ySummary, coverageSummary, occurrenceMining) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (a11ySummary, coverageSummary, occurrenceMining, sharedProfilesOf) {
     const {
         buildA11ySummary,
         // Reused (not redefined) so per-page and portfolio scoring can never diverge
@@ -690,6 +692,41 @@
         };
     }
 
+    /**
+     * The portfolio scores of the profile a run does worst on, when some of
+     * its scans checked several profiles: { id, scores, byProfile }, or null.
+     * Each profile is scored over the scans that checked it, each read on it
+     * alone (shared-profiles.js narrowScanToProfiles).
+     */
+    function worstProfilePortfolio(scans, options) {
+        const api = sharedProfilesOf && sharedProfilesOf();
+        if (!api || typeof api.scanProfileIds !== 'function' || typeof api.narrowScanToProfiles !== 'function') return null;
+        const list = asArray(scans).filter((s) => s && !s.skipped && !s.skipInfo);
+        let idsByScan;
+        try {
+            idsByScan = list.map((s) => api.scanProfileIds(s));
+        } catch {
+            return null;
+        }
+        if (!idsByScan.some((ids) => ids.length > 1)) return null;
+        const ids = [...new Set(idsByScan.flat())];
+        const views = ids.map((id) => {
+            const own = list
+                .map((s, i) => (idsByScan[i].includes(id) ? (idsByScan[i].length > 1 ? api.narrowScanToProfiles(s, [id]) : s) : null))
+                .filter(Boolean);
+            const built = buildGlobalSummary({ scans: own, options: { ...options, singleProfile: true, scoresOnly: true } });
+            return { id, scores: built && built.a11ySummary ? built.a11ySummary.scores : null };
+        });
+        const scored = views.filter((v) => v.scores && v.scores.adjusted != null);
+        if (!scored.length) return null;
+        const worst = scored.reduce((a, b) => (b.scores.adjusted < a.scores.adjusted ? b : a));
+        return {
+            id: worst.id,
+            scores: worst.scores,
+            byProfile: Object.fromEntries(views.map((v) => [v.id, v.scores ? v.scores.adjusted : null])),
+        };
+    }
+
     function buildGlobalSummary(arg1, arg2, arg3) {
         // Support both:
         // 1) buildGlobalSummary({ scans, mergedA11y, options })
@@ -860,6 +897,22 @@
             }
         }
 
+        // A run with scans of several profiles: each profile scored over the
+        // scans that checked it, as a run of it alone would be, and the run
+        // takes the one it does worst on, as each of those scans does
+        // (a11y-summary.js). Summed as one, a defect two profiles restate
+        // (WCAG 2.5.8 and EN 301 549's 9.2.5.8) counted twice.
+        if (!options.singleProfile) {
+            const worst = worstProfilePortfolio(scans, options);
+            if (worst) {
+                base.scores.evidence = worst.scores.evidence;
+                base.scores.adjusted = worst.scores.adjusted;
+                base.scores.confidence = worst.scores.confidence;
+                base.scores.scoredOn = worst.id;
+                base.scores.byProfile = worst.byProfile;
+            }
+        }
+
         // Compute from per-scan adjusted scores (or avgPageAccessibility if present).
         const pageScores = asArray(scans)
             .map(pickA11ySummary)
@@ -887,6 +940,7 @@
         base.coverageSummary = portfolioCoverage;
 
         // Merged occurrences carry their pageUrl, so scope can be counted across the run.
+        if (options.scoresOnly) return { domMetrics, a11ySummary: base };
         try {
             base.occurrences = mineOccurrences({
                 findings: portfolioCanonical.findings,

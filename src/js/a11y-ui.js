@@ -379,8 +379,9 @@ function storeActiveMode(mode) {
     let viewScanCache = new WeakMap();
     let viewScanCacheKey = '';
     function viewScan(scan) {
-        if (!scan || typeof scan !== 'object' || !isProfileFilterActive(activeProfileFilter)) return scan;
-        const key = [...activeProfileFilter.off].sort().join('\u0001');
+        if (!scan || typeof scan !== 'object') return scan;
+        const filtering = isProfileFilterActive(activeProfileFilter);
+        const key = filtering ? [...activeProfileFilter.off].sort().join('\u0001') : '';
         if (key !== viewScanCacheKey) {
             viewScanCache = new WeakMap();
             viewScanCacheKey = key;
@@ -388,14 +389,23 @@ function storeActiveMode(mode) {
         let out = viewScanCache.get(scan);
         if (!out) {
             const api = globalThis.A11Y_SHARED_PROFILES;
-            const kept = keptProfileKeys(scan, activeProfileFilter);
-            out = api && typeof api.narrowScanToProfiles === 'function' && kept.length
+            const kept = filtering ? keptProfileKeys(scan, activeProfileFilter) : [];
+            out = filtering && api && typeof api.narrowScanToProfiles === 'function' && kept.length
                 ? api.narrowScanToProfiles(scan, kept)
                 : scan;
-            if (out !== scan && typeof api.rescoreScan === 'function') out = api.rescoreScan(out);
+            // Scored again where it must be: read on fewer profiles than it
+            // checked, or a scan of several saved before it took its worst
+            // profile's score (shared/a11y-summary.js).
+            if (api && typeof api.rescoreScan === 'function') out = api.rescoreScan(out);
             viewScanCache.set(scan, out);
         }
-        if (out !== scan) out.includedInReport = scan.includedInReport;
+        // What the reader edits on the scan itself (Exclude, rename, tags)
+        // is read from it, not from the copy made before the edit.
+        if (out !== scan) {
+            out.includedInReport = scan.includedInReport;
+            out.label = scan.label;
+            out.scanTags = scan.scanTags;
+        }
         return out;
     }
     const screenshots = $('#screenshots');

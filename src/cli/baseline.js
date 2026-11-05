@@ -121,6 +121,9 @@ function compareToBaseline(baselinePayload, currentPayload) {
             mismatch: !!(diff && diff.document && diff.document.criteriaMismatch),
             compared: (diff && diff.document && Array.isArray(diff.document.standardsCompared)) ? diff.document.standardsCompared : [],
         },
+        // No page of the run is a page of the baseline (pages are matched by
+        // path and query), so every failing instance reads as new or fixed.
+        pagesUnmatched: !!(diff && diff.document && diff.document.pagesUnmatched),
     };
 }
 

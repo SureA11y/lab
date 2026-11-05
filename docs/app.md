@@ -244,12 +244,18 @@ left, from the page measurements the report kept (a report too old to keep
 them shows no score). The choice is saved in the zip.
 
 With two profiles or more compared, the **By profile** section says how much
-of the comparison each one accounts for: every failing problem is put down to
-the one profile it fails under, or to *More than one profile* when several
-judge it, so the rows add up to the comparison's own numbers (with two
-reports, its fixed, new and still failing too). Beside them is each
-profile's score on its own, which is not a share of the total: scores don't
-add up.
+of the comparison each one accounts for: every broken element is put down to
+the one profile that flags it, or to *More than one profile* when several do
+(WCAG 2.5.8 and EN 301 549's 9.2.5.8 flag the same small targets), so the
+rows add up to the comparison's broken elements (with two reports, to those
+fixed, newly broken and still broken too). Beside them, under **On its own**,
+is each profile read alone: its problems, failures and score, which overlap
+and don't add up.
+
+Pages are matched across reports by their path and query. When no page is in
+every report (a site under `/v1/` beside the same one under `/v2/`), the
+comparison says so, since every failure then reads as fixed or new, and reads
+each report on the profiles every report checked on some page.
 
 ## Batches and the queue
 

@@ -452,8 +452,14 @@ body.queue-mode-active #screenshots-container { display: none; }
 .cmp2 .byprof-hint { display: block; font-size: var(--fs-xs); color: var(--text-soft); font-weight: 400; }
 .cmp2 .byprof-score { display: block; font-size: var(--fs-xs); color: var(--text-muted); }
 .cmp2 .byprof-delta { color: var(--text-muted); white-space: nowrap; }
+/* A "from → to (change)" reads as one; the table scrolls on a narrow screen. */
+.cmp2 .byprof-table td { white-space: nowrap; }
 .cmp2 .byprof-dim { color: var(--text-soft); }
 .cmp2 .byprof-row--total th, .cmp2 .byprof-row--total td { font-weight: 600; border-top: 2px solid var(--border-strong); }
+/* The heading keeps its words together; the profiles named beside it wrap. */
+.cmp2 .byprof .sec-head h3 { white-space: nowrap; }
+.cmp2 .byprof .sec-head .layer { min-width: 0; text-align: right; overflow-wrap: anywhere; }
+.cmp2 .byprof-table thead th[scope="colgroup"] { text-align: left; border-bottom: 1px solid var(--border-subtle); }
 .cmp2 .byprof-lead { font-size: var(--fs-sm); margin: 0 0 var(--space-3); max-width: 74ch; }
 /* A and B are symmetric: neither side's room is better, so no colour says so. */
 .cmp2[data-mode="ab"] .margin-chg { color: var(--text-main); font-weight: 400; }
@@ -645,7 +651,9 @@ body.queue-mode-active #screenshots-container { display: none; }
 .cmp2 .dash-split .dash-panel > .dash-tableview { margin-top: auto; padding-top: 14px; }
 .cmp2 .dash-tableview summary { font-size: var(--fs-xs); color: var(--text-muted); cursor: pointer; }
 .cmp2 .dash-tableview summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.cmp2 .dash-table-scroll { overflow-x: auto; margin-top: 10px; }
+/* Positioned, so what a table hides for screen readers (absolutely placed)
+   stays inside the scroll box rather than widening the page on a phone. */
+.cmp2 .dash-table-scroll { overflow-x: auto; margin-top: 10px; position: relative; }
 .cmp2 .dash-tableview table { border-collapse: collapse; font-size: var(--fs-xs); width: 100%; font-variant-numeric: tabular-nums; }
 .cmp2 .dash-tableview th, .cmp2 .dash-tableview td { text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--border-soft); white-space: nowrap; }
 .cmp2 .dash-tableview th[scope="row"], .cmp2 .dash-tableview thead th:first-child { text-align: left; }

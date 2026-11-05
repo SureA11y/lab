@@ -380,8 +380,8 @@ describe('narrowScanToProfiles', () => {
         assert.deepEqual(out.profile, AA);
         assert.equal(out.profiles, undefined);
         assert.deepEqual(out.profilesLeftOut, [ARIA, EN]);
-        // Counted again, and its score left out.
-        assert.deepEqual(out.summary, { label: 'kept' });
+        // Counted again from the findings kept, and its score left out.
+        assert.deepEqual(out.summary, { label: 'kept', failCount: 0, occurrenceCount: 0, reviewCount: 3, passesCount: 0 });
         assert.equal(out.metrics.a11ySummary.scores, undefined);
         assert.equal(out.metrics.a11ySummary.scoreLeftOut, true);
         assert.ok(out.metrics.coverageSummary, 'WCAG on keeps its coverage');
@@ -389,13 +389,27 @@ describe('narrowScanToProfiles', () => {
         assert.equal(scan.canonical.findings.length, 5);
     });
 
-    test('WCAG off: its coverage goes with it, and the standards kept stay several', () => {
+    test('WCAG off: the standards kept stay several, and EN 301 549, which restates WCAG, keeps its coverage', () => {
         const out = narrowScanToProfiles(scanOf([AA, ARIA, EN], findings()), ['wai-aria-1.2', 'en301549-v4.1.1']);
         assert.deepEqual(out.canonical.findings.map((f) => f.ruleId),
             ['wai-aria-1.2-supported-attributes', 'en-9.1.1.1', 'aria-allowed-attr', 'region']);
         assert.deepEqual(out.profiles, [ARIA, EN]);
+        assert.deepEqual(out.summary.failCount, 3);
+        assert.ok(out.metrics.coverageSummary, 'EN 301 549 keeps WCAG\'s coverage');
+    });
+
+    test('WCAG and EN 301 549 off: WCAG\'s coverage goes with them', () => {
+        const out = narrowScanToProfiles(scanOf([AA, ARIA, EN], findings()), ['wai-aria-1.2']);
         assert.equal(out.metrics.coverageSummary, undefined);
         assert.equal(out.metrics.a11ySummary.coverageSummary, undefined);
+    });
+
+    test('a scan\'s verdict by severity is counted again too', () => {
+        const scan = scanOf([AA, ARIA], findings());
+        scan.summary.score = { label: 'fail', description: 'x', counts: { critical: 9, serious: 9, moderate: 0, minor: 0, unknown: 0 } };
+        const out = narrowScanToProfiles(scan, ['wcag22-aa']);
+        assert.deepEqual(out.summary.score.counts, { critical: 0, serious: 0, moderate: 0, minor: 0, unknown: 0 });
+        assert.equal(out.summary.score.label, 'pass');
     });
 
     test('a scan with all its profiles on, or none, is the same scan', () => {

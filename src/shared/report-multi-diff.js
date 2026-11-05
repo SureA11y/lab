@@ -989,6 +989,9 @@
         // when every scan they have in common checked different things.
         if (typeof shared.mismatch === 'boolean') doc.criteriaMismatch = shared.mismatch;
         if (shared.filter) doc.profileFilter = shared.filter;
+        // No page in every report: pages are matched by path, so every
+        // failure reads as fixed or new, element by element.
+        if (shared.unmatchedPages) doc.pagesUnmatched = true;
         if (ordered.some(scoreRecounted)) doc.scoresRecounted = true;
 
         const byProfile = profileBreakdown(orderedPairs.map((pair) => pair.report), {

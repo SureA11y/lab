@@ -738,6 +738,18 @@ function scoringView(canonical) {
     };
 }
 
+/**
+ * The profiles a merged scan's contexts all checked, when they checked
+ * several and the same ones: its score is then its worst profile's
+ * (a11y-summary.js). [] otherwise, which scores the merged findings as one.
+ */
+function sharedScanProfiles(entries) {
+    const idsOf = (e) => (Array.isArray(e && e.profiles) ? e.profiles : []).map((p) => String((p && (p.id || p.label)) || p || '')).filter(Boolean).sort();
+    const first = idsOf(entries[0]);
+    if (first.length < 2) return [];
+    return entries.every((e) => idsOf(e).join('|') === first.join('|')) ? first : [];
+}
+
 /** One merged scan from the collected scans of one Merged scan step, in run order. */
 function mergeGroup(entries, { buildCoverageAwareSummary, buildA11ySummary, automationCoverageForEngines } = {}) {
     const total = entries.length;
@@ -840,7 +852,7 @@ function mergeGroup(entries, { buildCoverageAwareSummary, buildA11ySummary, auto
             coverageSummary = buildCoverageAwareSummary({ canonical, automationCoverage });
         }
         if (typeof buildA11ySummary === 'function' && domMetrics) {
-            a11ySummary = buildA11ySummary({ canonical: scoringView(canonical), domMetrics, coverageSummary });
+            a11ySummary = buildA11ySummary({ canonical: scoringView(canonical), domMetrics, coverageSummary, profiles: sharedScanProfiles(active.map(({ e }) => e)) });
         }
     } catch {
         coverageSummary = coverageSummary || null;
@@ -866,7 +878,7 @@ function mergeGroup(entries, { buildCoverageAwareSummary, buildA11ySummary, auto
                 const engineCoverage = buildCoverageAwareSummary({ canonical: engineCanonical, automationCoverage: parts[0].p.automationCoverage || null });
                 out[engineId] = {
                     engine: parts[0].p.engine,
-                    a11ySummary: buildA11ySummary({ canonical: scoringView(engineCanonical), domMetrics, coverageSummary: engineCoverage }),
+                    a11ySummary: buildA11ySummary({ canonical: scoringView(engineCanonical), domMetrics, coverageSummary: engineCoverage, profiles: sharedScanProfiles(active.map(({ e }) => e)) }),
                     coverageSummary: engineCoverage,
                 };
             }
