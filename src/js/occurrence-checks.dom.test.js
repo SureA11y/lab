@@ -122,3 +122,15 @@ describe('the element count', () => {
         assert.equal(resultsEl.querySelector('.instances-meta').textContent, '3 occurrences');
     });
 });
+
+describe('an element the merge joined across contexts', () => {
+    test('shows, and copies, its selector in a context where it has other ids', () => {
+        render([{...option(0, {contexts: ['Desktop', 'Mobile']}), contextTargets: {Mobile: ['#mat-option-284']}}]);
+        assert.equal(resultsEl.querySelector('.instances-meta').textContent, '1 occurrence');
+        const line = resultsEl.querySelector('.node-context-selector');
+        assert.match(line.textContent, /Selector in Mobile:\s*#mat-option-284/);
+        const button = line.querySelector('.copy-selector-btn');
+        assert.equal(button.dataset.selector, '#mat-option-284');
+        assert.equal(button.getAttribute('aria-label'), 'Copy selector in Mobile');
+    });
+});

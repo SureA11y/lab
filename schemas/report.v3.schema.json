@@ -511,6 +511,13 @@
             }
           },
           "description": "On a rollup's occurrence, when more than one of its checks flagged the element: what each check said, the first being the occurrence's own fields. The element is one occurrence whatever the number of checks."
+        },
+        "contextTargets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array"
+          },
+          "description": "On a merged scan's occurrence, by context: the element's target in a context where the page gave it other ids (a framework numbering the ids it makes as it goes), and so another selector. The occurrence's own target is its first context's."
         }
       },
       "description": "One element a finding concluded on."

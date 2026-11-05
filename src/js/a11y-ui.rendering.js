@@ -461,7 +461,9 @@ export function createRenderer({
                 // A merged scan's occurrence: the contexts it occurs in, of how many.
                 ...(Array.isArray(occ?.contexts) && occ.contexts.length
                     ? {contexts: occ.contexts.map(String), contextsTotal: Number(occ.contextsTotal) || occ.contexts.length}
-                    : {})
+                    : {}),
+                // ...and the selector it has in a context where its ids differ.
+                ...(contextTargetsOf(occ) ? {contextTargets: contextTargetsOf(occ)} : {})
             };
         });
 
@@ -493,6 +495,17 @@ export function createRenderer({
             },
             nodes
         };
+    }
+
+    // A merged scan's occurrence whose element has other ids in some of its
+    // contexts: [context, selector] for each of them, or null.
+    function contextTargetsOf(occ) {
+        const map = occ?.contextTargets;
+        if (!map || typeof map !== 'object' || Array.isArray(map)) return null;
+        const out = Object.entries(map)
+            .filter(([, target]) => Array.isArray(target) && target.length)
+            .map(([context, target]) => [String(context), target.map(String).join(', ')]);
+        return out.length ? out : null;
     }
 
     // What each check of a rollup said about one element, when more than one
@@ -887,6 +900,14 @@ export function createRenderer({
                     ? '<div class="example-node-code"><div class="example-node-html"><code>' + escapeHtml(shortHtml) + '</code><button type="button" class="copy-selector-btn" data-selector="' + escapeAttr(selector) + '">Copy selector</button></div></div>'
                     : '';
 
+                // The same element, numbered otherwise by the page in another
+                // context: its selector there, to find it in that context.
+                const contextSelectorsPart = Array.isArray(n.contextTargets) && n.contextTargets.length
+                    ? n.contextTargets.map(([context, sel]) => '<div class="node-detail node-context-selector"><strong>Selector in ' + escapeHtml(context) +
+                        ':</strong> <code>' + escapeHtml(sel) + '</code> <button type="button" class="copy-selector-btn" data-selector="' + escapeAttr(sel) +
+                        '" aria-label="Copy selector in ' + escapeAttr(context) + '">Copy selector</button></div>').join('')
+                    : '';
+
                 const failurePart = failure
                     ? '<div class="node-detail"' + langAttr(n.lang) + '>' + convertIndentedBlockToHtml(escapeAngleBrackets(failure)) + '</div>'
                     : '';
@@ -916,11 +937,11 @@ export function createRenderer({
                             buildOccurrenceGuidanceHtml(cn, {stepsShown: !!shared}) +
                             '</div>';
                     }).join('');
-                    return '<div class="example-node">' + selectorPart + htmlPart + picture + hosts +
+                    return '<div class="example-node">' + selectorPart + htmlPart + contextSelectorsPart + picture + hosts +
                         '<p class="node-detail node-checks-lead">' + n.checks.length + ' checks flagged this element:</p>' + perCheck + '</div>';
                 }
 
-                return '<div class="example-node">' + selectorPart + htmlPart + picture + failurePart + buildOccurrenceDetailsHtml(n) + buildOccurrenceGuidanceHtml(n, {stepsShown: !!shared}) + sourceLine + '</div>';
+                return '<div class="example-node">' + selectorPart + htmlPart + contextSelectorsPart + picture + failurePart + buildOccurrenceDetailsHtml(n) + buildOccurrenceGuidanceHtml(n, {stepsShown: !!shared}) + sourceLine + '</div>';
             })
             .join('');
     }
