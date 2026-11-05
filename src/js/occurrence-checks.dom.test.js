@@ -1,9 +1,9 @@
 'use strict';
 
 // One element several checks of a rollup flagged (an occurrence's `checks`)
-// is one occurrence in a finding's details, each check's word under it; and
-// the occurrence count says how many elements they are about when that is
-// fewer, as in a merged scan whose contexts give one element two ids.
+// is one instance per check in a finding's details, each with its check's
+// word; and the occurrence count says how many elements they are about when
+// that is fewer, as in a merged scan whose contexts give one element two ids.
 // Driven under jsdom.
 
 const {test, describe, before, beforeEach} = require('node:test');
@@ -86,46 +86,51 @@ function option(n, {contexts, checks = true} = {}) {
 }
 
 describe('an element several checks flagged', () => {
-    test('is one occurrence, with what each check said under it', () => {
+    test('is one instance per check, each with what its check said', () => {
         render([option(0)]);
-        const nodes = resultsEl.querySelectorAll('.example-node');
-        assert.equal(nodes.length, 1);
-        const checks = Array.from(nodes[0].querySelectorAll('.node-check'));
-        assert.deepEqual(checks.map((c) => c.querySelector('.node-check-title code').textContent),
-            ['nested-interactive-controls-absent', 'presentational-children-focusable-absent']);
-        assert.match(checks[0].textContent, /interactive controls nested inside it/);
-        assert.match(checks[0].textContent, /Move the nested controls/);
-        assert.match(checks[1].textContent, /makes its children presentational/);
-        assert.match(checks[1].textContent, /Focusable elements/);
-        assert.match(nodes[0].querySelector('.node-checks-lead').textContent, /2 checks flagged this element/);
-        assert.match(resultsEl.querySelector('.instances-meta').textContent, /^1 occurrence$/);
+        const nodes = Array.from(resultsEl.querySelectorAll('.example-node'));
+        assert.equal(nodes.length, 2);
+        assert.equal(resultsEl.querySelectorAll('.node-checks-lead, .node-check').length, 0);
+        assert.match(nodes[0].textContent, /Check:\s*nested-interactive-controls-absent/);
+        assert.match(nodes[0].textContent, /interactive controls nested inside it/);
+        assert.match(nodes[0].textContent, /Move the nested controls/);
+        assert.doesNotMatch(nodes[0].textContent, /presentational/);
+        assert.match(nodes[1].textContent, /Check:\s*presentational-children-focusable-absent/);
+        assert.match(nodes[1].textContent, /makes its children presentational/);
+        assert.match(nodes[1].textContent, /Focusable elements/);
+        assert.equal(resultsEl.querySelector('.instances-meta').textContent, '2 occurrences · 1 element');
     });
 
-    test('an element one check flagged keeps its single check line', () => {
+    test('an element one check flagged is one instance', () => {
         render([option(0, {checks: false})]);
-        assert.equal(resultsEl.querySelectorAll('.node-check').length, 0);
+        assert.equal(resultsEl.querySelectorAll('.example-node').length, 1);
         assert.match(resultsEl.querySelector('.example-node').textContent, /Check:\s*nested-interactive-controls-absent/);
     });
 });
 
 describe('the element count', () => {
     test('counts the same element of two contexts, with different ids, once', () => {
-        const desktop = [0, 1, 2].map((n) => option(n, {contexts: ['Desktop']}));
-        const mobile = [284, 285, 286].map((n) => option(n, {contexts: ['Mobile']}));
+        const desktop = [0, 1, 2].map((n) => option(n, {contexts: ['Desktop'], checks: false}));
+        const mobile = [284, 285, 286].map((n) => option(n, {contexts: ['Mobile'], checks: false}));
         render([...desktop, ...mobile]);
         assert.equal(resultsEl.querySelector('.instances-meta').textContent, '6 occurrences · 3 elements');
         assert.match(resultsEl.querySelector('.src-dialog-meta').textContent, /6 occurrences · 3 elements/);
     });
 
+    test('a merged element two checks flagged: one instance per check, one element', () => {
+        render([0, 1, 2].map((n) => option(n, {contexts: ['Desktop', 'Mobile']})));
+        assert.equal(resultsEl.querySelector('.instances-meta').textContent, '6 occurrences · 3 elements');
+    });
+
     test('says nothing when each occurrence is an element of its own', () => {
-        render([0, 1, 2].map((n) => option(n)));
+        render([0, 1, 2].map((n) => option(n, {checks: false})));
         assert.equal(resultsEl.querySelector('.instances-meta').textContent, '3 occurrences');
     });
 });
 
 describe('an element the merge joined across contexts', () => {
     test('shows, and copies, its selector in a context where it has other ids', () => {
-        render([{...option(0, {contexts: ['Desktop', 'Mobile']}), contextTargets: {Mobile: ['#mat-option-284']}}]);
+        render([{...option(0, {contexts: ['Desktop', 'Mobile'], checks: false}), contextTargets: {Mobile: ['#mat-option-284']}}]);
         assert.equal(resultsEl.querySelector('.instances-meta').textContent, '1 occurrence');
         const line = resultsEl.querySelector('.node-context-selector');
         assert.match(line.textContent, /Selector in Mobile:\s*#mat-option-284/);

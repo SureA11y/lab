@@ -1058,11 +1058,6 @@ input:focus, textarea:focus, select:focus{
 }
 .example-node:last-child { border-bottom: 0; }
 
-/* One element several checks flagged: each check's own block under it. */
-.node-check { margin-top: .6rem; padding-top: .5rem; border-top: 1px solid var(--line); }
-.node-check-title { font-size: inherit; font-weight: 600; margin: 0; }
-.node-checks-lead { font-weight: 600; }
-
 .example-node-header h2 {
     font-size: var(--fs-md);
     margin: 0 0 6px;

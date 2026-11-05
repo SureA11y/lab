@@ -33,9 +33,10 @@ The first public release.
   is hidden; one with a profile still on shows only those profiles'
   findings, outcomes and counts. Every download, whatever its format, holds
   what the filters show, so one report gives a download per profile. A
-  finding's criteria are listed under their standard's name. An element that several checks
-  of one criterion flag (a link inside a `role="option"`, say) is one
-  occurrence, with what each check said under it; and when a finding's
+  finding's criteria are listed under their standard's name. An element
+  that several checks of one criterion flag (a link inside a
+  `role="option"`, say) is listed once per check, each with what its check
+  said, and saved as one occurrence with the same id; and when a finding's
   occurrences are about fewer elements, as a merged scan's contexts can
   give one element two ids, the count says so: "284 occurrences · 142
   elements". A merged scan joins such an element across its contexts when
