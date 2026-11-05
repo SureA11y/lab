@@ -339,6 +339,9 @@
         const own = [...(mine.wcag ? [wcagId(mine.wcag)] : []), ...mine.standards.keys()];
         const kept = [...(shared.wcag && mine.wcag ? [wcagId(mine.wcag)] : []), ...shared.standards.map((s) => s.id)];
         const level = shared.wcag;
+        // WCAG's coverage, up to the level compared; with no WCAG level but
+        // EN 301 549 compared, which restates WCAG's Level A and AA, up to AA.
+        const coverageLevel = level || (shared.standards.some((p) => /^en301549-/i.test(String(p.id || ''))) ? 'AA' : null);
         let findings = scan.canonical && typeof scan.canonical === 'object'
             ? narrowFindings(scan.canonical.findings, { own, kept, level })
             : null;
@@ -375,16 +378,16 @@
             if (metrics.a11ySummary && typeof metrics.a11ySummary === 'object') {
                 const { scores: _scores, coverageSummary, ...rest } = metrics.a11ySummary;
                 metrics.a11ySummary = { ...rest, scoreLeftOut: true };
-                if (coverageSummary && level) metrics.a11ySummary.coverageSummary = narrowCoverage(coverageSummary, level);
+                if (coverageSummary && coverageLevel) metrics.a11ySummary.coverageSummary = narrowCoverage(coverageSummary, coverageLevel);
             }
             if (metrics.coverageSummary) {
-                if (level) metrics.coverageSummary = narrowCoverage(metrics.coverageSummary, level);
+                if (coverageLevel) metrics.coverageSummary = narrowCoverage(metrics.coverageSummary, coverageLevel);
                 else delete metrics.coverageSummary;
             }
             out.metrics = metrics;
         }
         if (scan.coverageSummary) {
-            if (level) out.coverageSummary = narrowCoverage(scan.coverageSummary, level);
+            if (coverageLevel) out.coverageSummary = narrowCoverage(scan.coverageSummary, coverageLevel);
             else delete out.coverageSummary;
         }
         return out;

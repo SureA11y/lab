@@ -341,6 +341,18 @@ describe('a scan read at a lower WCAG level than it checked', () => {
     });
 });
 
+describe('reports compared on EN 301 549 without a WCAG level', () => {
+    test('keep WCAG\'s coverage, which EN 301 549 restates', () => {
+        const EN = { id: 'en301549-v4.1.1', label: 'EN 301 549 V4.1.1' };
+        const withCoverage = (s) => ({ ...s, metrics: { ...s.metrics, coverageSummary: { criteria: [{ sc: '1.1.1', level: 'A' }] } } });
+        const a = report('a', 1, [withCoverage(scan([EN, ARIA], []))]);
+        const b = report('b', 2, [withCoverage(scan([EN], []))]);
+        const out = compareOnShared([a, b]);
+        assert.deepEqual(out.basis.comparedOn.map((p) => p.id), ['en301549-v4.1.1']);
+        assert.ok(out.reports[0].scans[0].metrics.coverageSummary);
+    });
+});
+
 describe('reports with no page in common', () => {
     const at = (s, path) => ({ ...s, url: `https://example.com/${path}` });
     test('are read on the profiles every report checked on some page, not said to share none', () => {
