@@ -565,8 +565,11 @@ html.no-theme-transition * {
 /* The cell's count line does not wrap (.instances-meta); this one may, but
    only between its parts: "1 likely fails," / "1 needs a person". */
 .instances-lean__part { white-space: nowrap; }
-/* A sentence in place of the count ("Partly checked: …") wraps in the column. */
-.instances-meta.instances-meta--note { white-space: normal; }
+/* A sentence in place of the count ("Partly checked: …") wraps in the
+   column; "284 occurrences · 142 elements", only between its two parts. */
+.instances-meta.instances-meta--note,
+.instances-meta.instances-meta--elements { white-space: normal; }
+.instances-meta__part { white-space: nowrap; }
 .node-lean { padding: 4px 8px; border-left: 3px solid var(--border-subtle); }
 .node-lean-fail { border-left-color: var(--warn); background: var(--warn-soft); }
 .node-lean-pass { border-left-color: var(--ok); background: var(--ok-soft); }
