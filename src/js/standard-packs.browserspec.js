@@ -184,7 +184,11 @@ test('Review conformance asks its requirements of its own, and the checklist lis
         if (name) acr = fs.readFileSync(path.join(downloads, name), 'utf8');
         else await new Promise((resolve) => setTimeout(resolve, 250));
     }
-    assert.ok(acr && !acr.includes('Sample Standard'), 'the VPAT is WCAG\'s and EN 301 549\'s');
+    assert.ok(acr, 'downloaded');
+    // Its tables and the standards it covers are WCAG's and EN 301 549's;
+    // only its evaluation methods name what the scans checked against.
+    assert.ok(!/<(h2|caption|th|td)\b[^>]*>[^<]*Sample Standard/.test(acr), 'the VPAT is WCAG\'s and EN 301 549\'s');
+    assert.match(acr, /Automated checks with surea11y [\d.]+ against Sample Standard 1\.0 \(sample-1\.0\), not against WCAG\./);
     assert.deepEqual(errors, []);
     await page.close();
 });
