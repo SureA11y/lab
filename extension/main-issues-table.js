@@ -431,22 +431,28 @@
         return html;
     }
 
-    // What each check of a rollup said about one element, when more than one
-    // flagged it (the occurrence's `checks`), or null.
-    function checksOfOccurrence(occ) {
-        const list = Array.isArray(occ?.checks) ? occ.checks : [];
-        const out = list
-            .filter((c) => c && typeof c === 'object' && String(c.checkId || '').trim())
-            .map((c) => ({
-                checkId: String(c.checkId).trim(),
+    // An element several checks of a rollup flagged (the occurrence's
+    // `checks`) is listed once per check, each with what that check said:
+    // one instance per element and check.
+    function occurrencesByCheck(occ) {
+        const list = (Array.isArray(occ?.checks) ? occ.checks : [])
+            .filter((c) => c && typeof c === 'object' && String(c.checkId || '').trim());
+        if (list.length < 2) return [occ];
+        return list.map((c) => {
+            const {checks, summary, ...rest} = occ;
+            const checkId = String(c.checkId).trim();
+            return {
+                ...rest,
                 failureSummary: typeof c.failureSummary === 'string' ? c.failureSummary : '',
                 hint: typeof c.hint === 'string' ? c.hint : '',
                 uncertainty: c.uncertainty && typeof c.uncertainty === 'object' ? c.uncertainty : null,
                 lean: c.lean && (c.lean.toward === 'fail' || c.lean.toward === 'pass') ? c.lean : null,
                 howToCheck: c.howToCheck && Array.isArray(c.howToCheck.steps) ? c.howToCheck : null,
-                details: c.details && typeof c.details === 'object' ? c.details : null
-            }));
-        return out.length > 1 ? out : null;
+                details: c.details && typeof c.details === 'object' ? c.details : null,
+                atomicCheckId: checkId,
+                sourceAtomicRules: [checkId]
+            };
+        });
     }
 
     function findingToIssueRow(f, fallbackUrl = '', targetId = null) {
@@ -467,7 +473,7 @@
             : [];
         const contributorTestIds = normalizeStringListUnique(contributors.map((c) => c.testId));
 
-        const nodes = occurrences.map((occ) => {
+        const nodes = occurrences.flatMap(occurrencesByCheck).map((occ) => {
             const pageUrl = occ?.pageUrl ? String(occ.pageUrl) : (fallbackUrl || '');
             const failureSummary = occ?.failureSummary
                 ? String(occ.failureSummary)
@@ -509,8 +515,6 @@
                 howToCheck: occ?.howToCheck && Array.isArray(occ.howToCheck.steps) ? occ.howToCheck : null,
                 details: occ?.details && typeof occ.details === 'object' ? occ.details : null,
                 shadowHostSelectors: Array.isArray(occ?.shadowHostSelectors) ? occ.shadowHostSelectors : null,
-                // An element more than one check of a rollup flagged: what each said.
-                ...(checksOfOccurrence(occ) ? { checks: checksOfOccurrence(occ) } : {})
             };
         });
 
@@ -784,22 +788,6 @@
                     escapeHtml(resolvedAtomicRules.join(', ')) +
                     '</code></div>'
                     : '';
-
-                // One element several checks flagged: what each said, under
-                // its own heading, the element shown once above them.
-                if (Array.isArray(n.checks) && n.checks.length > 1) {
-                    const hosts = buildOccurrenceDetailsHtml({ shadowHostSelectors: n.shadowHostSelectors });
-                    const perCheck = n.checks.map((c) => {
-                        const said = (c.failureSummary || '').trim();
-                        return '<div class="node-check"><h3 class="node-check-title">Check: <code>' + escapeHtml(c.checkId) + '</code></h3>' +
-                            (said ? '<div class="node-detail"' + langAttr(n.lang) + '>' + convertIndentedBlockToHtml(escapeAngleBrackets(said)) + '</div>' : '') +
-                            buildOccurrenceDetailsHtml({ details: c.details }) +
-                            buildOccurrenceGuidanceHtml({ ...c, lang: n.lang }, { stepsShown: !!shared }) +
-                            '</div>';
-                    }).join('');
-                    return '<div class="example-node">' + selectorPart + htmlPart + hosts +
-                        '<p class="node-detail node-checks-lead">' + n.checks.length + ' checks flagged this element:</p>' + perCheck + '</div>';
-                }
 
                 return '<div class="example-node">' + selectorPart + htmlPart + failurePart + buildOccurrenceDetailsHtml(n) + buildOccurrenceGuidanceHtml(n, { stepsShown: !!shared }) + sourceLine + '</div>';
             })
