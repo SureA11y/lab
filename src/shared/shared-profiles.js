@@ -19,24 +19,44 @@
  * - a rule's own finding takes the worst of what the profiles kept make of
  *   it (its verdicts), and goes when none of them checked it;
  * - each scan's profiles, and its WCAG level, become the shared ones, and a
- *   report's own score, made from everything it checked, is left out.
+ *   report's own score, made from everything it checked, is left out, to be
+ *   scored again on what is compared where its report kept what to score
+ *   it from (rescoreReport).
  *
  * Reports that all checked the same profiles are returned as they are, and so
  * are reports that share none: the comparison then says they were checked
  * against different things.
  *
+ * A comparison can also be read on fewer profiles than the reports share,
+ * the reader turning some off (prepareComparison), and a report read on
+ * fewer profiles than it checked is scored again on what is left
+ * (rescoreReport), from the page measurements it kept.
+ *
  * Browser: available as globalThis.A11Y_SHARED_PROFILES (after report-scan.js
- *          and wcag-criteria.js).
+ *          and wcag-criteria.js; a11y-summary.js and global-summary.js to
+ *          score again).
  * Node:    module.exports.
  */
 
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) {
-        module.exports = factory(() => require('./report-scan.js'), () => require('./wcag-criteria.js'));
+        module.exports = factory(
+            () => require('./report-scan.js'),
+            () => require('./wcag-criteria.js'),
+            () => require('./a11y-summary.js'),
+            () => require('./global-summary.js'),
+        );
     } else {
-        root.A11Y_SHARED_PROFILES = factory(() => root.A11Y_REPORT_SCAN, () => root.A11Y_WCAG_CRITERIA);
+        // The scores are read when a comparison runs, and only if loaded: a
+        // page without them compares as before, its scores left out.
+        root.A11Y_SHARED_PROFILES = factory(
+            () => root.A11Y_REPORT_SCAN,
+            () => root.A11Y_WCAG_CRITERIA,
+            () => root.A11Y_SUMMARY,
+            () => root.A11Y_GLOBAL_SUMMARY,
+        );
     }
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (reportScanOf, wcagCriteriaOf) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (reportScanOf, wcagCriteriaOf, summaryOf, globalSummaryOf) {
 
     const LEVELS = ['A', 'AA', 'AAA'];
     const WCAG_ID = /^wcag22-(a{1,3})$/;
@@ -550,5 +570,243 @@
         return parts.join(' ');
     }
 
-    return { compareOnShared, sharedProfiles, basisSentence, narrowScanToProfiles };
+    // ---- A comparison read on the profiles the reader chooses ----
+
+    // The key a profile is chosen by in a comparison: WCAG's levels nest, so
+    // WCAG is one choice whatever level each report checked (compareOnShared
+    // then reads it at the lowest), and any other profile is its id.
+    const WCAG_KEY = 'wcag';
+    function choiceKeyOf(p) {
+        if (!p) return '';
+        return isWcagProfile(p) ? WCAG_KEY : String(p.id || p.label || '');
+    }
+    const ownKeyOf = (p) => String((p && (p.id || p.label)) || '');
+
+    function readScans(report) {
+        return asArray(report && report.scans).filter((s) => s && !s.skipped && !s.skipInfo);
+    }
+
+    /**
+     * The profiles a comparison of these reports can be read on: those every
+     * report checked on some scan, [{ key, label }], WCAG first. A profile
+     * only some reports checked is not offered: the comparison leaves it out
+     * already (compareOnShared). WCAG is named at the lowest level checked,
+     * the one it is compared at.
+     */
+    function comparisonProfiles(reports) {
+        const list = asArray(reports);
+        if (!list.length) return [];
+        const order = [];
+        const labels = new Map(); // key -> Set of labels
+        const levels = [];
+        const each = list.map((report) => {
+            const keys = new Set();
+            for (const scan of readScans(report)) {
+                for (const p of reportScanOf().scanProfiles(scan)) {
+                    const key = choiceKeyOf(p);
+                    if (!key) continue;
+                    keys.add(key);
+                    if (!labels.has(key)) { labels.set(key, new Set()); order.push(key); }
+                    labels.get(key).add(String(p.label || p.id));
+                    if (key === WCAG_KEY) { const l = levelOfId(p.id); if (l) levels.push(l); }
+                }
+            }
+            return keys;
+        });
+        const keys = order.filter((k) => each.every((set) => set.has(k)))
+            .sort((a, b) => (b === WCAG_KEY) - (a === WCAG_KEY));
+        return keys.map((key) => {
+            const names = [...labels.get(key)];
+            let label = names[0];
+            if (key === WCAG_KEY && names.length > 1) {
+                label = levels.length ? wcagLabel(LEVELS[Math.min(...levels.map((l) => LEVELS.indexOf(l)))]) : 'WCAG';
+            }
+            return { key, label };
+        });
+    }
+
+    /**
+     * A report read without the profiles turned off (`off`: keys from
+     * comparisonProfiles). Each scan keeps its other profiles' results, as the
+     * report view's Profiles selector shows them (narrowScanToProfiles); a
+     * scan whose profiles are all off is left out, and one that names none is
+     * kept as it is. The report's own score, made from everything it checked,
+     * is left out, to be counted again (rescoreReports); so is its WCAG
+     * coverage when WCAG is off.
+     */
+    function narrowReportToProfiles(report, off) {
+        const offKeys = new Set(asArray(off).map(String));
+        if (!offKeys.size || !report || typeof report !== 'object') return report;
+        let changed = false;
+        const scans = [];
+        for (const scan of asArray(report.scans)) {
+            if (!scan || scan.skipped || scan.skipInfo) { scans.push(scan); continue; }
+            const profiles = reportScanOf().scanProfiles(scan);
+            const kept = profiles.filter((p) => !offKeys.has(choiceKeyOf(p)));
+            if (!profiles.length || kept.length === profiles.length) { scans.push(scan); continue; }
+            changed = true;
+            if (!kept.length) continue;
+            let narrowed = narrowScanToProfiles(scan, kept.map(ownKeyOf));
+            // A scan's own score goes with what it was made from.
+            if (narrowed.summary && typeof narrowed.summary === 'object' && 'score' in narrowed.summary) {
+                const { score: _score, ...rest } = narrowed.summary;
+                narrowed = { ...narrowed, summary: rest };
+            }
+            if (narrowed.metrics && narrowed.metrics.a11ySummary && !narrowed.metrics.a11ySummary.scoreLeftOut) {
+                const { scores: _scores, ...rest } = narrowed.metrics.a11ySummary;
+                narrowed = { ...narrowed, metrics: { ...narrowed.metrics, a11ySummary: { ...rest, scoreLeftOut: true } } };
+            }
+            scans.push(narrowed);
+        }
+        if (!changed) return report;
+        const out = { ...report, scans };
+        if (report.metrics && typeof report.metrics === 'object') {
+            const metrics = { ...report.metrics };
+            if (metrics.a11ySummary && typeof metrics.a11ySummary === 'object') {
+                const { scores: _scores, ...rest } = metrics.a11ySummary;
+                metrics.a11ySummary = { ...rest, scoreLeftOut: true };
+                if (offKeys.has(WCAG_KEY)) delete metrics.a11ySummary.coverageSummary;
+            }
+            if (offKeys.has(WCAG_KEY)) delete metrics.coverageSummary;
+            out.metrics = metrics;
+        }
+        return out;
+    }
+
+    // The findings of a merged scan as its score reads them: each rule's
+    // elements once, as merged-scan.js scores them.
+    function scoringView(canonical) {
+        const keyOf = (o) => JSON.stringify([
+            (o && o.pageUrl) || null,
+            Array.isArray(o && o.target) ? o.target : [],
+            Array.isArray(o && o.shadowHostSelectors) ? o.shadowHostSelectors : null,
+        ]);
+        return {
+            ...canonical,
+            findings: asArray(canonical.findings).map((f) => {
+                if (!f || typeof f !== 'object') return f;
+                const seen = new Set();
+                const occurrences = asArray(f.occurrences).filter((o) => {
+                    const key = keyOf(o);
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+                return { ...f, occurrences };
+            }),
+        };
+    }
+
+    /**
+     * A scan whose score was left out, scored again on the findings it was
+     * narrowed to, the way the run scored it (a11y-summary.js), from the page
+     * measurements its report kept. Without them (an older report), or
+     * without the scoring loaded, it stays without one.
+     */
+    function rescoreScan(scan) {
+        const metrics = scan && scan.metrics;
+        const summary = metrics && metrics.a11ySummary;
+        if (!summary || !summary.scoreLeftOut) return scan;
+        const api = summaryOf && summaryOf();
+        const dom = metrics.domMetrics;
+        if (!api || typeof api.buildA11ySummary !== 'function') return scan;
+        if (!dom || typeof dom.totalElements !== 'number') return scan;
+        if (!scan.canonical || !Array.isArray(scan.canonical.findings)) return scan;
+        // The WCAG coverage kept with it, to tell an evaluated page from one
+        // where nothing was; none when WCAG is left out, and the score then
+        // stands without that check, as a run without coverage scores.
+        const coverage = summary.coverageSummary || metrics.coverageSummary || scan.coverageSummary || null;
+        let built;
+        try {
+            built = api.buildA11ySummary({
+                canonical: scan.mergedScan ? scoringView(scan.canonical) : scan.canonical,
+                domMetrics: dom,
+                coverageSummary: coverage,
+            });
+        } catch {
+            return scan;
+        }
+        if (!built || !built.scores) return scan;
+        const { scoreLeftOut: _left, ...rest } = summary;
+        return {
+            ...scan,
+            metrics: { ...metrics, a11ySummary: { ...rest, scores: built.scores, scoreRecounted: true } },
+        };
+    }
+
+    const scoreOfScan = (scan) => {
+        const s = scan && scan.metrics && scan.metrics.a11ySummary && scan.metrics.a11ySummary.scores;
+        const v = s ? s.avgPageAccessibility : null;
+        return typeof v === 'number' && Number.isFinite(v) ? v : null;
+    };
+
+    /**
+     * A report read on fewer profiles than it checked, scored again: each
+     * scan whose score was left out (rescoreScan), and the report's own as
+     * the run builds it from its scans (global-summary.js: the mean of its
+     * pages' scores). A report none of whose pages can be scored again keeps
+     * its score left out. Marked `scoreRecounted`, so a view can say the
+     * score is the profiles compared's, not the one in the report.
+     */
+    function rescoreReport(report) {
+        if (!report || typeof report !== 'object') return report;
+        let changed = false;
+        const scans = asArray(report.scans).map((scan) => {
+            const next = rescoreScan(scan);
+            if (next !== scan) changed = true;
+            return next;
+        });
+        const summary = report.metrics && report.metrics.a11ySummary;
+        if (!changed && !(summary && summary.scoreLeftOut)) return report;
+        const out = changed ? { ...report, scans } : report;
+        if (!summary || !summary.scoreLeftOut) return out;
+        const api = globalSummaryOf && globalSummaryOf();
+        if (!api || typeof api.buildGlobalSummary !== 'function') return out;
+        const read = readScans(out);
+        if (!read.some((scan) => scoreOfScan(scan) != null)) return out;
+        let built;
+        try {
+            built = api.buildGlobalSummary({ scans: read, options: { domP90: 90, useMinConfidence: false } });
+        } catch {
+            return out;
+        }
+        const scores = built && built.a11ySummary && built.a11ySummary.scores;
+        if (!scores) return out;
+        const { scoreLeftOut: _left, ...rest } = summary;
+        return {
+            ...out,
+            metrics: { ...out.metrics, a11ySummary: { ...rest, scores, scoreRecounted: true } },
+        };
+    }
+
+    /**
+     * The reports as a comparison reads them: without the profiles turned
+     * off (`off`, keys from comparisonProfiles), then on the profiles they
+     * share (compareOnShared), each score left out by either scored again on
+     * what is compared (rescoreReport).
+     * -> { reports, basis, mismatch, filter }: `filter` null when nothing is
+     *    off, else { shown: [{ key, label }], off: [{ key, label }] }.
+     */
+    function prepareComparison(reports, { off = [] } = {}) {
+        const list = asArray(reports);
+        const offered = comparisonProfiles(list);
+        const offKeys = asArray(off).map(String).filter((k) => offered.some((p) => p.key === k));
+        // Something always stays on.
+        const turnedOff = offKeys.length >= offered.length ? [] : offKeys;
+        const narrowed = turnedOff.length ? list.map((r) => narrowReportToProfiles(r, turnedOff)) : list;
+        const shared = compareOnShared(narrowed);
+        const out = { ...shared, reports: shared.reports.map(rescoreReport), filter: null };
+        if (turnedOff.length) {
+            out.filter = {
+                shown: offered.filter((p) => !turnedOff.includes(p.key)),
+                off: offered.filter((p) => turnedOff.includes(p.key)),
+            };
+        }
+        return out;
+    }
+
+    return {
+        compareOnShared, sharedProfiles, basisSentence, narrowScanToProfiles,
+        comparisonProfiles, narrowReportToProfiles, rescoreReport, prepareComparison, WCAG_KEY,
+    };
 }));

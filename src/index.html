@@ -649,6 +649,11 @@
 
             <p class="compare-order-note" id="compare-order-note" hidden></p>
 
+            <!-- Which profiles the comparison is read on: one switch per profile
+                 every loaded report checked, shown when there are two or more.
+                 Rendered by renderCompareProfiles(). -->
+            <div id="compare-profiles" class="scan-tag-filter compare-profiles" hidden></div>
+
             <!-- What this comparison calls itself: the same metadata line a
                  report carries, corrected the same way. Rendered by
                  writeComparisonData(); the values travel into the exported file,

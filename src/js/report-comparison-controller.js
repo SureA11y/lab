@@ -118,6 +118,10 @@ export function createComparisonController({ setHTML, onState } = {}) {
     if (typeof setHTML !== 'function') throw new Error('createComparisonController: setHTML required');
 
     let mode = 'evolution';
+    // The profiles turned off (keys from shared-profiles.js comparisonProfiles):
+    // the comparison is read on the others. Empty = every profile the reports
+    // share.
+    let profilesOff = [];
     // null = follow the framing's default; 'time' / 'given' = the user said so.
     let orderChoice = null;
     let nextKey = 1;
@@ -192,6 +196,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
             // it outranks the timestamps at two reports just as it does at ten.
             order: orderBy(),
             document: documentFor(),
+            profilesOff: activeProfilesOff(),
         });
         // Where the failures are, in the reports as compared: read on the
         // profiles they share, like the rest of the comparison.
@@ -208,6 +213,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
             ruleLabel: ruleLabeller(),
             fallbackLabels: fallbackLabels(list),
             document: documentFor(),
+            profilesOff: activeProfilesOff(),
         });
         const source = series.ordering && Array.isArray(series.ordering.source)
             ? series.ordering.source : list.map((_, i) => i);
@@ -234,6 +240,20 @@ export function createComparisonController({ setHTML, onState } = {}) {
         if (!dispersionApi()) return null;
         const analyses = reports.map(analyse);
         return anyFailing(analyses) ? dispersionApi().seriesDispersion(analyses) : null;
+    }
+
+    // The profiles the loaded reports can be compared on, as switches.
+    function offeredProfiles() {
+        const api = globalThis.A11Y_SHARED_PROFILES;
+        if (!api || typeof api.comparisonProfiles !== 'function' || entries.length < 2) return [];
+        return api.comparisonProfiles(entries.map((e) => e.report));
+    }
+    // The choice as it applies to the reports loaded now: a profile they no
+    // longer share is not off, and turning every one off turns none off.
+    function activeProfilesOff() {
+        const offered = offeredProfiles().map((p) => p.key);
+        const off = profilesOff.filter((k) => offered.includes(k));
+        return off.length >= offered.length ? [] : off;
     }
 
     function htmlFor(state) {
@@ -425,6 +445,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
             return {
                 context: contextId(),
                 order: orderChoice,
+                profilesOff: activeProfilesOff(),
                 document: documentFor(),
                 reports: displayEntries().map((e) => ({ name: e.name, report: e.report })),
             };
@@ -435,7 +456,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
          * cannot be compared are left out and listed in `failures`; the rest
          * keep their column order.
          */
-        restore({ context, order = null, document: saved = {}, reports = [] } = {}) {
+        restore({ context, order = null, profilesOff: off = [], document: saved = {}, reports = [] } = {}) {
             entries.length = 0;
             arranged = false;
             const failures = [];
@@ -451,6 +472,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
             const ctx = CONTEXT_BY_ID[context] || CONTEXT_BY_ID.time;
             mode = ctx.mode;
             orderChoice = order === 'time' || order === 'given' ? order : null;
+            profilesOff = Array.isArray(off) ? off.map(String) : [];
             doc.title = typeof saved.title === 'string' ? saved.title.trim() : '';
             doc.note = typeof saved.note === 'string' ? saved.note.trim() : '';
             doc.generatedAt = typeof saved.generatedAt === 'string' && !Number.isNaN(new Date(saved.generatedAt).getTime())
@@ -459,6 +481,30 @@ export function createComparisonController({ setHTML, onState } = {}) {
             refresh();
             return { count: entries.length, failures };
         },
+
+        /**
+         * The profiles the loaded reports can be compared on: [{ key, label,
+         * on }], WCAG first. Fewer than two, and there is nothing to choose.
+         */
+        profiles() {
+            const off = activeProfilesOff();
+            return offeredProfiles().map((p) => ({ ...p, on: !off.includes(p.key) }));
+        },
+        /**
+         * Turn a profile on or off. The last one on stays on: a comparison
+         * of nothing has nothing to show.
+         */
+        setProfile(key, on) {
+            const k = String(key);
+            const offered = offeredProfiles().map((p) => p.key);
+            if (!offered.includes(k)) return refresh();
+            const next = on ? profilesOff.filter((x) => x !== k) : [...new Set([...activeProfilesOff(), k])];
+            if (next.filter((x) => offered.includes(x)).length >= offered.length) return refresh();
+            profilesOff = next;
+            return refresh();
+        },
+        /** Every profile on again. */
+        showAllProfiles() { profilesOff = []; return refresh(); },
 
         setMode(next) { mode = next === 'ab' ? 'ab' : 'evolution'; return refresh(); },
         getMode() { return mode; },

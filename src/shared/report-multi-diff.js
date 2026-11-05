@@ -41,7 +41,7 @@
     }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function (diffApi, identityApi, conformanceApi, healthApi) {
 
-    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath, sizeOf, compareOnShared } = diffApi;
+    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath, sizeOf, prepareComparison, scoreRecounted, profileBreakdown } = diffApi;
     const { reportIdentity, compareByTime, describeComparison } = identityApi;
     const { readConformance, conformanceMatrix, sharedTarget, en301549ForTarget } = conformanceApi;
     const { assessRun, describeRunHealth } = healthApi;
@@ -283,6 +283,9 @@
             // share: the score was made from everything the run checked.
             ...(report && report.metrics && report.metrics.a11ySummary && report.metrics.a11ySummary.scoreLeftOut
                 ? { scoreLeftOut: true } : {}),
+            // Scored again on the profiles compared, not the score the report
+            // carries (shared-profiles.js rescoreReport).
+            ...(scoreRecounted(report) ? { scoreRecounted: true } : {}),
             pageScores: pageScoreSpread(report),
         };
     }
@@ -867,7 +870,7 @@
     }
 
     function diffReportSeries(reports, {
-        mode = 'trend', order, ruleLabel, fallbackLabels, labels, unit, document,
+        mode = 'trend', order, ruleLabel, fallbackLabels, labels, unit, document, profilesOff = [],
     } = {}) {
         const list = Array.isArray(reports) ? reports.filter(Boolean) : [];
         if (list.length < 2) throw new Error('diffReportSeries: at least two reports are required');
@@ -898,7 +901,9 @@
         // Reports checked against different profiles are compared on those
         // they all share (shared-profiles.js), each column read as if checked
         // against them alone.
-        const shared = compareOnShared(orderedPairs.map((pair) => pair.report));
+        // The profiles the reader turned off go first, and a score left out
+        // is scored again on what is compared.
+        const shared = prepareComparison(orderedPairs.map((pair) => pair.report), { profilesOff });
         const ordered = shared.reports;
 
         const perColumnRules = ordered.map((r) => collectFailingRules(r));
@@ -983,9 +988,18 @@
         // Matched scan by scan: the reports share nothing to compare on only
         // when every scan they have in common checked different things.
         if (typeof shared.mismatch === 'boolean') doc.criteriaMismatch = shared.mismatch;
+        if (shared.filter) doc.profileFilter = shared.filter;
+        if (ordered.some(scoreRecounted)) doc.scoresRecounted = true;
+
+        const byProfile = profileBreakdown(orderedPairs.map((pair) => pair.report), {
+            combined: perColumnRules, compared: ordered, mode: mode === 'matrix' ? 'ab' : 'evolution', profilesOff,
+        });
 
         const result = {
             mode, columns, rows, groups, gate, verdict, document: doc,
+            // How much of the comparison each profile accounts for, column by
+            // column, only when it is read on two profiles or more.
+            ...(byProfile ? { profiles: byProfile } : {}),
             // What decided the column order, so the view can state it, and
             // where each column came from in the list given (indices), so a
             // caller holding the reports can line them up with the columns.

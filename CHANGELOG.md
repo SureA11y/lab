@@ -147,6 +147,22 @@ The first public release.
   fail nothing, since they are what was checked rather than the pages; with
   `--fail-on-failures`, every failing instance fails the run, as with no
   baseline.
+- **A comparison can be read on some of its profiles.** In the Compare tab,
+  **Profiles compared** has a switch per profile every report checked; a
+  profile turned off is left out of the comparison, the dashboard and their
+  downloads, and the zip keeps the choice. A report read on fewer profiles
+  than it checked, by the switches or because the reports share fewer, is
+  scored again on what is compared, from the page measurements it kept,
+  rather than left without a score; the comparison says so. A report saved
+  without page measurements still shows none.
+- **By profile**: a comparison read on two profiles or more says how much of
+  it each accounts for. Each failing problem is put down to the one profile
+  it fails under, or to "More than one profile", so the rows add up to the
+  comparison (and, with two reports, its fixed, new and still failing); each
+  profile's own score, the reports scored on it alone, sits beside them.
+  The runner's `comparison.html` has it too, and the diff engines return it
+  as `profiles` (`diffReports(a, b, { profilesOff })`,
+  `diffReportSeries(reports, { profilesOff })`).
 - **The conformance report** (VPAT) follows the WCAG level and the EN 301 549
   version the scans were checked against, the version and level of one
   scan (the highest level, then version), never one's version beside

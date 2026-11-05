@@ -42,6 +42,18 @@
         return api ? api.compareOnShared(reports) : { reports, basis: null };
     }
 
+    /**
+     * The reports as the comparison reads them (shared-profiles.js
+     * prepareComparison): without the profiles turned off, on the profiles
+     * they share, and scored again where either left a score out.
+     * { reports, basis, mismatch, filter }.
+     */
+    function prepareComparison(reports, { profilesOff = [] } = {}) {
+        const api = sharedProfilesOf && sharedProfilesOf();
+        if (!api) return { reports, basis: null, filter: null };
+        return api.prepareComparison(reports, { off: profilesOff });
+    }
+
     const { reportIdentity, assignBaselineAndCurrent, describeComparison } = identity;
 
     const SEV_RANK = { critical: 0, serious: 1, moderate: 2, minor: 3, unknown: 4 };
@@ -244,6 +256,11 @@
         return s || {};
     }
     function num(v) { return (typeof v === 'number' && Number.isFinite(v)) ? v : null; }
+    // Whether a report's score was counted again on the profiles compared.
+    function scoreRecounted(report) {
+        const s = report && report.metrics && report.metrics.a11ySummary;
+        return !!(s && s.scoreRecounted);
+    }
     // Scores arrive as long means (67.45054945...), and they reach the prose now,
     // not just the KPI cards, so the rounding lives at module level.
     function round2(v) { return Math.round(v * 100) / 100; }
@@ -288,6 +305,113 @@
             || Math.abs(y.delta) - Math.abs(x.delta)
             || x.ruleId.localeCompare(y.ruleId));
         return rows;
+    }
+
+    // ---- how each profile moves the comparison ----
+
+    /**
+     * How much of a comparison each profile it is read on accounts for.
+     * `reports` are the reports as given to the engine, in column order;
+     * `combined` the failing rules of each as compared (collectFailingRules
+     * of the prepared reports). Null unless the comparison is read on two
+     * profiles or more.
+     *
+     * Each profile's results are a report read on that profile alone (the
+     * same preparation as the comparison, every other profile off). The
+     * counts of the profiles alone do not add up to the comparison's: a rule
+     * can fail under two profiles (WCAG and WAI-ARIA both judge
+     * aria-allowed-attr) and the comparison counts it once. So each failing
+     * problem of the comparison is put down to the one profile it fails
+     * under, or to `shared` when it fails under more than one (a best
+     * practice, or a rule both judge); those add up to the comparison's.
+     *
+     * -> { profiles: [{ key, label }], rows: [{ key, label, kind:
+     *    'profile' | 'shared' | 'total', columns: [{ problems, failures,
+     *    score }], alone: [{ problems, failures }] | null, change }] }, each
+     *    `columns` entry a report's: its problems and failures put down to
+     *    the row (score: the report read on that profile alone, scored again,
+     *    or as compared for the total; null for shared), `alone` the profile
+     *    read alone (shared problems included), `change` for two reports the
+     *    comparison's categories put down to the row ({ new, resolved,
+     *    persistent } or { aonly, bonly, both }), else null.
+     */
+    function profileBreakdown(reports, { combined, compared, mode = 'evolution', profilesOff = [] } = {}) {
+        const api = sharedProfilesOf && sharedProfilesOf();
+        if (!api || typeof api.comparisonProfiles !== 'function') return null;
+        const list = Array.isArray(reports) ? reports : [];
+        const offered = api.comparisonProfiles(list);
+        const off = (Array.isArray(profilesOff) ? profilesOff : []).map(String);
+        let profiles = offered.filter((p) => !off.includes(p.key));
+        if (!profiles.length) profiles = offered;
+        if (profiles.length < 2 || !Array.isArray(combined) || combined.length !== list.length) return null;
+
+        // Each profile alone: every other offered profile off.
+        const alone = profiles.map((p) => {
+            const prepared = prepareComparison(list, { profilesOff: offered.filter((o) => o.key !== p.key).map((o) => o.key) });
+            return prepared.reports.map((r) => ({ rules: collectFailingRules(r), score: num(score(r).avgPageAccessibility) }));
+        });
+        const failuresOf = (rules) => { let n = 0; for (const r of rules.values()) n += sizeOf(r); return n; };
+
+        // Whose a report's failing rule is: the profiles it fails under there.
+        const whose = (col, ruleId) => profiles.filter((_, i) => alone[i][col].rules.has(ruleId)).map((p) => p.key);
+        const bucketOf = (keys) => (keys.length === 1 ? keys[0] : 'shared');
+
+        const keys = [...profiles.map((p) => p.key), 'shared'];
+        const blank = () => list.map(() => ({ problems: 0, failures: 0 }));
+        const counts = new Map(keys.map((k) => [k, blank()]));
+        combined.forEach((rules, col) => {
+            for (const [ruleId, rule] of rules) {
+                const cell = counts.get(bucketOf(whose(col, ruleId)))[col];
+                cell.problems += 1;
+                cell.failures += sizeOf(rule);
+            }
+        });
+
+        // At two reports, the comparison's own categories, put down the same
+        // way: a new problem to whose it is in the later report, a fixed one
+        // to whose it was, one in both to every profile it failed under in
+        // either.
+        let change = null;
+        if (list.length === 2) {
+            const cats = mode === 'ab' ? ['aonly', 'bonly', 'both'] : ['new', 'resolved', 'persistent'];
+            change = new Map(keys.map((k) => [k, Object.fromEntries(cats.map((c) => [c, 0]))]));
+            const [aRules, bRules] = combined;
+            for (const id of new Set([...aRules.keys(), ...bRules.keys()])) {
+                const inA = aRules.has(id);
+                const inB = bRules.has(id);
+                const cat = mode === 'ab'
+                    ? (inA && inB ? 'both' : (inA ? 'aonly' : 'bonly'))
+                    : (inA && inB ? 'persistent' : (inA ? 'resolved' : 'new'));
+                const owners = new Set([...(inA ? whose(0, id) : []), ...(inB ? whose(1, id) : [])]);
+                change.get(bucketOf([...owners]))[cat] += 1;
+            }
+        }
+
+        const comparedScores = (Array.isArray(compared) ? compared : []).map((r) => num(score(r).avgPageAccessibility));
+        const rows = profiles.map((p, i) => ({
+            key: p.key,
+            label: p.label,
+            kind: 'profile',
+            columns: counts.get(p.key).map((c, col) => ({ ...c, score: alone[i][col].score })),
+            alone: alone[i].map((c) => ({ problems: c.rules.size, failures: failuresOf(c.rules) })),
+            change: change ? change.get(p.key) : null,
+        }));
+        rows.push({
+            key: 'shared',
+            label: 'More than one profile',
+            kind: 'shared',
+            columns: counts.get('shared').map((c) => ({ ...c, score: null })),
+            alone: null,
+            change: change ? change.get('shared') : null,
+        });
+        const total = { key: 'total', label: 'As compared', kind: 'total', alone: null };
+        total.columns = combined.map((rules, col) => ({ problems: rules.size, failures: failuresOf(rules), score: comparedScores[col] == null ? null : comparedScores[col] }));
+        if (change) {
+            total.change = {};
+            for (const k of keys) for (const [cat, n] of Object.entries(change.get(k))) total.change[cat] = (total.change[cat] || 0) + n;
+        } else total.change = null;
+        rows.push(total);
+        return { profiles, rows };
     }
 
     // ---- verdict + narrative (deterministic) ----
@@ -553,7 +677,7 @@
 
     // ---- public API ----
 
-    function diffReports(reportA, reportB, { mode = 'evolution', order, document } = {}) {
+    function diffReports(reportA, reportB, { mode = 'evolution', order, document, profilesOff = [] } = {}) {
         // Evolution orders oldest -> newest (baseline vs latest); A/B keeps the
         // caller's order (A and B are symmetric).
         //
@@ -571,8 +695,9 @@
         const swapped = a !== reportA;
         // Reports checked against different profiles are compared on those
         // they share: WCAG 2.2 AA + WAI-ARIA 1.2 beside WCAG 2.2 AA alone is
-        // compared on WCAG 2.2 AA.
-        const shared = compareOnShared([a, b]);
+        // compared on WCAG 2.2 AA. The profiles the reader turned off go
+        // first, and a score left out is scored again on what is compared.
+        const shared = prepareComparison([a, b], { profilesOff });
         [a, b] = shared.reports;
 
         const identityA = reportIdentity(a);
@@ -603,6 +728,10 @@
 
         const rows = diffRules(aRules, bRules, mode);
         const verdict = mode === 'ab' ? abVerdict(stats, rows) : evolutionVerdict(stats, rows);
+        // How much of it each profile accounts for, when read on several.
+        const byProfile = profileBreakdown(swapped ? [reportB, reportA] : [reportA, reportB], {
+            combined: [aRules, bRules], compared: [a, b], mode, profilesOff,
+        });
 
         // Group rows by category for the segmented panes.
         const groups = {};
@@ -621,6 +750,9 @@
         // Matched scan by scan: the reports share nothing to compare on only
         // when every scan they have in common checked different things.
         if (typeof shared.mismatch === 'boolean') doc.criteriaMismatch = shared.mismatch;
+        if (shared.filter) doc.profileFilter = shared.filter;
+        const recounted = [a, b].some(scoreRecounted);
+        if (recounted) doc.scoresRecounted = true;
 
         const result = {
             mode,
@@ -639,6 +771,9 @@
             // Room before failing, rule by rule: empty when neither report
             // has margins (other engines, or an older surea11y).
             margins: diffMargins(a, b),
+            // How much of the comparison each profile accounts for, only
+            // when it is read on two profiles or more.
+            ...(byProfile ? { profiles: byProfile } : {}),
         };
         // The two reports as compared (read on their shared profiles), in
         // the result's order, for a view that reads them further (where the
@@ -653,5 +788,6 @@
     // pagePath travels with it so both engines normalize a page URL the same
     // way when they count how far a rule reaches.
     return {
-        sizeOf, diffReports, collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, pagePath, otherStandardsOf, mergeStandards, compareOnShared };
+        sizeOf, diffReports, collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, pagePath, otherStandardsOf, mergeStandards, compareOnShared,
+        prepareComparison, scoreRecounted, profileBreakdown };
 }));
