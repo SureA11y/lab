@@ -101,7 +101,10 @@ and [the metrics reference](a11y-metrics-reference.html) explains each score.
 Scans can be reordered, renamed, left out of the download, and filtered by
 tag and by the profile they were checked against (offered when the scans'
 profiles differ); a download of the report holds the scans the filters show,
-so one report can give one download per profile. Each finding lists its
+so one report can give one download per profile. A scan with some of its
+profiles turned off is scored again on the ones still on, from the page
+measurements the report kept, and the score says so (a report too old to keep
+them shows none). Each finding lists its
 criteria under their standard's name. Their findings can be grouped by WCAG principle, by WCAG level, by the
 Accessibility Product Standard's KPIs, or by a grouping of your own, loaded
 as a JSON file: a list of groups, each naming its requirements in WCAG or

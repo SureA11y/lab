@@ -807,6 +807,6 @@
 
     return {
         compareOnShared, sharedProfiles, basisSentence, narrowScanToProfiles,
-        comparisonProfiles, narrowReportToProfiles, rescoreReport, prepareComparison, WCAG_KEY,
+        comparisonProfiles, narrowReportToProfiles, rescoreScan, rescoreReport, prepareComparison, WCAG_KEY,
     };
 }));

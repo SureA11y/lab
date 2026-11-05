@@ -370,8 +370,9 @@ function storeActiveMode(mode) {
     }
 
     // A scan as the Profiles selector shows it: read on the profiles of it
-    // still on (shared/shared-profiles.js narrowScanToProfiles), the same
-    // object while they all are. The view, its counts and every export read
+    // still on (shared/shared-profiles.js narrowScanToProfiles), and scored
+    // again on them (rescoreScan) where the report kept the page measurements
+    // to; the same object while they all are. The view, its counts and every export read
     // scans through it. Made once per selection; whether the scan is included
     // in the report is read from the scan itself, which the Exclude toggle
     // changes.
@@ -391,6 +392,7 @@ function storeActiveMode(mode) {
             out = api && typeof api.narrowScanToProfiles === 'function' && kept.length
                 ? api.narrowScanToProfiles(scan, kept)
                 : scan;
+            if (out !== scan && typeof api.rescoreScan === 'function') out = api.rescoreScan(out);
             viewScanCache.set(scan, out);
         }
         if (out !== scan) out.includedInReport = scan.includedInReport;
@@ -1597,6 +1599,10 @@ function storeActiveMode(mode) {
             scans: includedScans,
             metricDefs
         });
+        // Read on some of its profiles, its scans' scores were counted again
+        // on them: said beside the score, which is not the one saved.
+        const recounted = includedScans.some((scan) => scan?.metrics?.a11ySummary?.scoreRecounted);
+        if (recounted && payload.metrics?.a11ySummary) payload.metrics.a11ySummary.scoreRecounted = true;
 
         return payload;
     }
