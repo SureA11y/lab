@@ -16,7 +16,8 @@ function normalizeRunSpec(raw, { validateUrl = null } = {}) {
 }
 
 const FLAGS_WITH_VALUE = new Set([
-    '--spec', '--out', '--url', '--scenario', '--baseline', '--promote', '--keep', '--store', '--format', '--review'
+    '--spec', '--out', '--url', '--scenario', '--baseline', '--promote', '--keep', '--store', '--format', '--review',
+    '--ignore-path-prefix'
 ]);
 
 function parseCliArgs(argv) {
@@ -33,6 +34,9 @@ function parseCliArgs(argv) {
         debugNative: false,
         formats: [],
         reviewPath: null,
+        // Path prefixes left out when the run's pages are matched with the
+        // baseline's (--ignore-path-prefix, repeatable).
+        pathPrefixes: [],
         failOnLean: false,
         failOnFailures: false,
         check: false,
@@ -99,6 +103,11 @@ function parseCliArgs(argv) {
             if (arg === '--url') options.url = String(value);
             if (arg === '--scenario') options.scenarioName = String(value);
             if (arg === '--review') options.reviewPath = String(value);
+            if (arg === '--ignore-path-prefix') {
+                const added = String(value).split(',').map((p) => p.trim()).filter(Boolean);
+                if (!added.length) errors.push('--ignore-path-prefix needs a path, such as /v1');
+                options.pathPrefixes = Array.from(new Set([...options.pathPrefixes, ...added]));
+            }
             if (arg === '--format') {
                 const parsed = parseFormats(value);
                 errors.push(...parsed.errors);
@@ -136,6 +145,7 @@ function parseCliArgs(argv) {
             ['--out', options.outDir], ['--store', options.storeRoot], ['--baseline', options.baselinePath],
             ['--promote', options.promote], ['--keep', options.keep], ['--format', options.formats.length || null],
             ['--review', options.reviewPath],
+            ['--ignore-path-prefix', options.pathPrefixes.length || null],
             ['--fail-on-lean', options.failOnLean || null], ['--fail-on-failures', options.failOnFailures || null],
             ['--check', options.check || null],
         ].filter(([, value]) => value != null).map(([flag]) => flag);

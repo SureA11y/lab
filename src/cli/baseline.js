@@ -92,8 +92,10 @@ function summarizeDiff(diff) {
  * must not turn new findings into fixed ones. `swapped` reports that the
  * baseline is the newer of the two, for a warning.
  */
-function compareToBaseline(baselinePayload, currentPayload) {
-    const diff = diffReports(baselinePayload, currentPayload, { mode: 'evolution', order: 'given' });
+function compareToBaseline(baselinePayload, currentPayload, { pathPrefixes = [] } = {}) {
+    // `pathPrefixes`: left out of the paths pages are matched on, for a run
+    // of one site under another path than its baseline (/v2/ beside /v1/).
+    const diff = diffReports(baselinePayload, currentPayload, { mode: 'evolution', order: 'given', pathPrefixes });
 
     const optIn = (identity) => (identity && Array.isArray(identity.optInRules) ? identity.optInRules : []);
 
@@ -124,6 +126,8 @@ function compareToBaseline(baselinePayload, currentPayload) {
         // No page of the run is a page of the baseline (pages are matched by
         // path and query), so every failing instance reads as new or fixed.
         pagesUnmatched: !!(diff && diff.document && diff.document.pagesUnmatched),
+        // The path prefixes left out when pages were matched, if any.
+        pathPrefixes: (diff && diff.document && Array.isArray(diff.document.pathPrefixes)) ? diff.document.pathPrefixes : [],
     };
 }
 

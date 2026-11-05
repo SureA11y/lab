@@ -695,7 +695,19 @@
 
     // ---- public API ----
 
-    function diffReports(reportA, reportB, { mode = 'evolution', order, document, profilesOff = [] } = {}) {
+    /**
+     * `pathPrefixes`: prefixes left out of every page path the comparison
+     * matches on (report-format.js withPathPrefixes), for reports of one
+     * site under two paths (/v1/, /v2/). The addresses shown stay as they are.
+     */
+    function diffReports(reportA, reportB, options = {}) {
+        const prefixes = reportFormat.normalizePathPrefixes(options && options.pathPrefixes);
+        const d = reportFormat.withPathPrefixes(prefixes, () => diffReportsOn(reportA, reportB, options));
+        if (prefixes.length) d.document.pathPrefixes = prefixes;
+        return d;
+    }
+
+    function diffReportsOn(reportA, reportB, { mode = 'evolution', order, document, profilesOff = [] } = {}) {
         // Evolution orders oldest -> newest (baseline vs latest); A/B keeps the
         // caller's order (A and B are symmetric).
         //
@@ -810,5 +822,6 @@
     // way when they count how far a rule reaches.
     return {
         sizeOf, diffReports, collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, pagePath, otherStandardsOf, mergeStandards, compareOnShared,
-        prepareComparison, scoreRecounted, profileBreakdown };
+        prepareComparison, scoreRecounted, profileBreakdown,
+        withPathPrefixes: reportFormat.withPathPrefixes, normalizePathPrefixes: reportFormat.normalizePathPrefixes };
 }));

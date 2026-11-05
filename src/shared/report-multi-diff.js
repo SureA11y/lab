@@ -41,7 +41,7 @@
     }
 }(typeof globalThis !== 'undefined' ? globalThis : this, function (diffApi, identityApi, conformanceApi, healthApi) {
 
-    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath, sizeOf, prepareComparison, scoreRecounted, profileBreakdown } = diffApi;
+    const { collectFailingRules, collectTightestMargins, failingOccurrencesByCheck, diffReports, pagePath, sizeOf, prepareComparison, scoreRecounted, profileBreakdown, withPathPrefixes, normalizePathPrefixes } = diffApi;
     const { reportIdentity, compareByTime, describeComparison } = identityApi;
     const { readConformance, conformanceMatrix, sharedTarget, en301549ForTarget } = conformanceApi;
     const { assessRun, describeRunHealth } = healthApi;
@@ -869,7 +869,19 @@
             || a.ruleId.localeCompare(b.ruleId));
     }
 
-    function diffReportSeries(reports, {
+    /**
+     * `pathPrefixes`: prefixes left out of every page path the comparison
+     * matches on (report-format.js withPathPrefixes), as diffReports takes.
+     */
+    function diffReportSeries(reports, options = {}) {
+        const prefixes = normalizePathPrefixes(options && options.pathPrefixes);
+        if (!prefixes.length) return seriesOn(reports, options);
+        const d = withPathPrefixes(prefixes, () => seriesOn(reports, options));
+        d.document.pathPrefixes = prefixes;
+        return d;
+    }
+
+    function seriesOn(reports, {
         mode = 'trend', order, ruleLabel, fallbackLabels, labels, unit, document, profilesOff = [],
     } = {}) {
         const list = Array.isArray(reports) ? reports.filter(Boolean) : [];

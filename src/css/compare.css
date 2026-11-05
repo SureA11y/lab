@@ -244,6 +244,11 @@ body.queue-mode-active #screenshots-container { display: none; }
 .compare-report-n { font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600; color: var(--text-soft); background: var(--surface-2); border-radius: var(--radius-sm); padding: 1px 6px; font-variant-numeric: tabular-nums; }
 .compare-order-note { font-size: var(--fs-xs); color: var(--text-soft); margin: 0 0 var(--space-3); max-width: 90ch; }
 .compare-profiles { margin: 0 0 var(--space-3); }
+/* Path prefixes left out when pages are matched. */
+.compare-paths { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-3); }
+.compare-paths-label { font-size: var(--fs-sm); }
+.compare-paths-input { min-width: 0; flex: 0 1 16rem; }
+.compare-paths-hint { flex-basis: 100%; margin: 0; font-size: var(--fs-xs); color: var(--text-soft); max-width: 90ch; }
 /* A report with no timestamp cannot take part in a date sort. The chip says so
    in words; the dashed edge repeats it without relying on colour. */
 .compare-report--undated { border-style: dashed; }

@@ -250,6 +250,7 @@
                 version: { const: 1 },
                 context: { enum: ['time', 'versions', 'variants'], description: 'What the reports are: runs over time, versions of a site, or variants of a page.' },
                 order: { anyOf: [{ enum: ['time', 'given'] }, { type: 'null' }], description: 'Whether the columns follow the runs\' time, or the order given here.' },
+                pathPrefixes: { type: 'array', items: text, description: 'Path prefixes left out when the reports\' pages are matched, so one site under two paths (/v1/, /v2/) is compared page by page. Absent when paths are matched as they are.' },
                 profilesOff: { type: 'array', items: text, description: 'The profiles turned off, so the comparison is read on the others: "wcag" for WCAG at any level, else a profile\'s id. Absent when every profile the reports share is compared.' },
                 document: open({ title: text, note: text, generatedAt: textOrNull }),
                 reports: {

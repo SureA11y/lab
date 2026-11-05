@@ -78,6 +78,13 @@ Options:
                      repeated. Scans run without surea11y are left out.
                      acr writes the run's conformance report (VPAT 2.5,
                      WCAG and EN 301 549) there too, as HTML and Word.
+  --ignore-path-prefix <path>
+                     Leave this prefix out of every page path when the
+                     run's pages are matched with the baseline's, for one
+                     site served under another path (--ignore-path-prefix
+                     /v1 --ignore-path-prefix /v2 makes /v1/cart.html and
+                     /v2/cart.html one page). Can be repeated, or list
+                     several separated by commas.
   --review <file>    A report (its JSON, payload.json or package zip) whose
                      conformance review this run takes on, filling in only
                      what it has not decided; saved in payload.json. Without
@@ -216,8 +223,11 @@ function printComparison(comparison, baselinePayload, baselineLabel) {
     }
     const engines = engineChangesText(comparison.engineChanges);
     if (engines) lines.push(`Warning     ${engines}`);
+    if (comparison.pathPrefixes && comparison.pathPrefixes.length) {
+        lines.push(`Note        pages matched with ${comparison.pathPrefixes.join(', ')} left out of their paths`);
+    }
     if (comparison.pagesUnmatched) {
-        lines.push('Warning     no page of this run is a page of the baseline (pages are matched by path and query), so every failing instance reads as new or fixed');
+        lines.push('Warning     no page of this run is a page of the baseline (pages are matched by path and query), so every failing instance reads as new or fixed; --ignore-path-prefix matches one site under two paths');
     }
     const profiles = profilesText(comparison.profiles);
     if (profiles) lines.push(`${profiles.warning ? 'Warning' : 'Note'}${profiles.warning ? '    ' : '       '} ${profiles.text}`);
@@ -796,7 +806,7 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
 
     let comparison = null;
     if (baselinePayload) {
-        comparison = compareToBaseline(baselinePayload, payload);
+        comparison = compareToBaseline(baselinePayload, payload, { pathPrefixes: options.pathPrefixes });
         fs.writeFileSync(
             path.join(outDir, 'diff.json'),
             JSON.stringify(diffDocument(comparison), null, 2),
@@ -806,7 +816,7 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
         // The same comparison as a page to read, as the app's Compare tab
         // downloads it.
         try {
-            const page = await buildComparisonHtml(baselinePayload, payload, { title: finalSpec.scenarioName || '' });
+            const page = await buildComparisonHtml(baselinePayload, payload, { title: finalSpec.scenarioName || '', pathPrefixes: options.pathPrefixes });
             if (page.html) {
                 fs.writeFileSync(path.join(outDir, 'comparison.html'), page.html, 'utf8');
                 console.log(`Comparison ${path.join(outDir, 'comparison.html')}`);

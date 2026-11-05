@@ -44,7 +44,7 @@ export function reportFileNames(names) {
 
 /**
  * comparison.json for a snapshot of the Compare tab:
- * { context, order, profilesOff, document: {title, note, generatedAt}, reports: [{name, report}] }
+ * { context, order, profilesOff, pathPrefixes, document: {title, note, generatedAt}, reports: [{name, report}] }
  * with the reports in column order.
  */
 export function buildManifest(snapshot, files) {
@@ -55,6 +55,8 @@ export function buildManifest(snapshot, files) {
         order: snapshot.order ?? null,
         // The profiles turned off, when some are.
         ...(Array.isArray(snapshot.profilesOff) && snapshot.profilesOff.length ? { profilesOff: snapshot.profilesOff.map(String) } : {}),
+        // The path prefixes left out when pages are matched, when some are.
+        ...(Array.isArray(snapshot.pathPrefixes) && snapshot.pathPrefixes.length ? { pathPrefixes: snapshot.pathPrefixes.map(String) } : {}),
         document: {
             title: snapshot.document?.title || '',
             note: snapshot.document?.note || '',
@@ -81,6 +83,7 @@ export function readManifest(json) {
         context: CONTEXTS.has(json.context) ? json.context : 'time',
         order: ORDERS.has(json.order) ? json.order : null,
         profilesOff: Array.isArray(json.profilesOff) ? json.profilesOff.filter((k) => typeof k === 'string') : [],
+        pathPrefixes: Array.isArray(json.pathPrefixes) ? json.pathPrefixes.filter((k) => typeof k === 'string') : [],
         document: {
             title: typeof doc.title === 'string' ? doc.title : '',
             note: typeof doc.note === 'string' ? doc.note : '',

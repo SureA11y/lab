@@ -45,6 +45,7 @@
             () => require('./wcag-criteria.js'),
             () => require('./a11y-summary.js'),
             () => require('./global-summary.js'),
+            () => require('./report-format.js'),
         );
     } else {
         // The scores are read when a comparison runs, and only if loaded: a
@@ -54,9 +55,10 @@
             () => root.A11Y_WCAG_CRITERIA,
             () => root.A11Y_SUMMARY,
             () => root.A11Y_GLOBAL_SUMMARY,
+            () => root.A11Y_REPORT_FORMAT,
         );
     }
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (reportScanOf, wcagCriteriaOf, summaryOf, globalSummaryOf) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (reportScanOf, wcagCriteriaOf, summaryOf, globalSummaryOf, reportFormatOf) {
 
     const LEVELS = ['A', 'AA', 'AAA'];
     const WCAG_ID = /^wcag22-(a{1,3})$/;
@@ -137,9 +139,12 @@
     // nothing of the page.
     function scanKey(scan) {
         const url = String(scan.url || '');
+        // report-format's pagePath: a hash that routes a single-page app
+        // (#/cart) is a page of its own, and a comparison may leave path
+        // prefixes out (/v1/cart and /v2/cart then are one page).
+        const format = reportFormatOf && reportFormatOf();
+        if (format && typeof format.pagePath === 'function') return `at:${format.pagePath(url)}`;
         let page = url;
-        // A hash that routes a single-page app (#/cart) is a page of its own,
-        // as report-format's pagePath reads it.
         try { const u = new URL(url); page = u.pathname + u.search + (/^#!?\//.test(u.hash) ? u.hash : ''); } catch { /* not a URL: as it is */ }
         return `at:${page}`;
     }

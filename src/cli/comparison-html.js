@@ -52,7 +52,7 @@ function readAssets() {
  * `title` names it, as the app's comparison name does; `assets` are the
  * built ones unless given.
  */
-async function buildComparisonHtml(baselinePayload, currentPayload, { title = '', generatedAt = new Date().toISOString(), assets = readAssets() } = {}) {
+async function buildComparisonHtml(baselinePayload, currentPayload, { title = '', generatedAt = new Date().toISOString(), assets = readAssets(), pathPrefixes = [] } = {}) {
     if (!assets) return { missing: 'the report assets are not built (npm run build:report)' };
 
     const [{ comparisonDiffHTML }, { documentTitle, documentSummary }, documents] = await Promise.all([
@@ -65,6 +65,7 @@ async function buildComparisonHtml(baselinePayload, currentPayload, { title = ''
         mode: 'evolution',
         order: 'given',
         document: { title, note: '', generatedAt },
+        pathPrefixes,
     });
     // As compared: read on the profiles they share.
     const [first, second] = d.compared || (d.swapped ? [currentPayload, baselinePayload] : [baselinePayload, currentPayload]);

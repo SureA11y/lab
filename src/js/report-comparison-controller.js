@@ -47,6 +47,12 @@ function seriesApi() {
 function dispersionApi() {
     return globalThis.A11Y_ISSUE_DISPERSION || null;
 }
+// Prefixes as the comparison matches on them (report-format.js).
+function normalizePrefixes(prefixes) {
+    const format = globalThis.A11Y_REPORT_FORMAT;
+    if (format && typeof format.normalizePathPrefixes === 'function') return format.normalizePathPrefixes(prefixes);
+    return [];
+}
 function identityApi() {
     const api = globalThis.A11Y_REPORT_IDENTITY;
     if (!api) throw new Error('report-comparison-controller: load shared/report-identity.js first');
@@ -122,6 +128,10 @@ export function createComparisonController({ setHTML, onState } = {}) {
     // the comparison is read on the others. Empty = every profile the reports
     // share.
     let profilesOff = [];
+    // Prefixes left out of every page path the reports are matched on
+    // (report-format.js withPathPrefixes): /v1 and /v2 make /v1/cart.html
+    // and /v2/cart.html one page. Empty = paths as they are.
+    let pathPrefixes = [];
     // null = follow the framing's default; 'time' / 'given' = the user said so.
     let orderChoice = null;
     let nextKey = 1;
@@ -197,6 +207,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
             order: orderBy(),
             document: documentFor(),
             profilesOff: activeProfilesOff(),
+            pathPrefixes,
         });
         // Where the failures are, in the reports as compared: read on the
         // profiles they share, like the rest of the comparison.
@@ -214,6 +225,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
             fallbackLabels: fallbackLabels(list),
             document: documentFor(),
             profilesOff: activeProfilesOff(),
+            pathPrefixes,
         });
         const source = series.ordering && Array.isArray(series.ordering.source)
             ? series.ordering.source : list.map((_, i) => i);
@@ -446,6 +458,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
                 context: contextId(),
                 order: orderChoice,
                 profilesOff: activeProfilesOff(),
+                pathPrefixes: pathPrefixes.slice(),
                 document: documentFor(),
                 reports: displayEntries().map((e) => ({ name: e.name, report: e.report })),
             };
@@ -456,7 +469,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
          * cannot be compared are left out and listed in `failures`; the rest
          * keep their column order.
          */
-        restore({ context, order = null, profilesOff: off = [], document: saved = {}, reports = [] } = {}) {
+        restore({ context, order = null, profilesOff: off = [], pathPrefixes: prefixes = [], document: saved = {}, reports = [] } = {}) {
             entries.length = 0;
             arranged = false;
             const failures = [];
@@ -473,6 +486,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
             mode = ctx.mode;
             orderChoice = order === 'time' || order === 'given' ? order : null;
             profilesOff = Array.isArray(off) ? off.map(String) : [];
+            pathPrefixes = normalizePrefixes(prefixes);
             doc.title = typeof saved.title === 'string' ? saved.title.trim() : '';
             doc.note = typeof saved.note === 'string' ? saved.note.trim() : '';
             doc.generatedAt = typeof saved.generatedAt === 'string' && !Number.isNaN(new Date(saved.generatedAt).getTime())
@@ -503,6 +517,26 @@ export function createComparisonController({ setHTML, onState } = {}) {
             profilesOff = next;
             return refresh();
         },
+        /**
+         * Path prefixes to leave out when pages are matched ("/v1, /v2", or
+         * a list); none to match paths as they are.
+         */
+        setPathPrefixes(prefixes) {
+            pathPrefixes = normalizePrefixes(prefixes);
+            return refresh();
+        },
+        getPathPrefixes() { return pathPrefixes.slice(); },
+        /**
+         * The prefixes that would make the loaded reports share pages, when
+         * they share none and each sits under one folder of its own (/v1/,
+         * /v2/); [] otherwise, and while prefixes are set.
+         */
+        suggestedPathPrefixes() {
+            const format = globalThis.A11Y_REPORT_FORMAT;
+            if (pathPrefixes.length || entries.length < 2 || !format || typeof format.suggestPathPrefixes !== 'function') return [];
+            return format.suggestPathPrefixes(entries.map((e) => e.report));
+        },
+
         /** Every profile on again. */
         showAllProfiles() { profilesOff = []; return refresh(); },
 
