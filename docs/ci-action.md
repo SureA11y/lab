@@ -10,7 +10,7 @@ jobs:
   accessibility:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Keep the run store between workflow runs, so each run is compared
       # with the last one.

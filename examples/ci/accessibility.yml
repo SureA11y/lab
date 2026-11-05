@@ -17,7 +17,7 @@ jobs:
   accessibility:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 1. Start the site under test. Here, the examples' demo shop; for your
       #    site, its own build and start (or point the spec at a preview URL).
