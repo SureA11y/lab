@@ -240,6 +240,36 @@ describe('queue routes', () => {
             assert.equal((await api('GET', `/queue/sessions/${id}/download.zip`)).status, 404, id);
         }
     });
+
+    test('a finished batch takes a row run again, a workflow added and a saved report', async () => {
+        const saved = (name) => ({ ...run(name), config: { runSpec: run(name).run } });
+        const { sessionId } = (await api('POST', '/queue/items', { items: [saved('Home')] })).body;
+        await waitForState(runningNamed('Home'));
+        pending.shift()({ status: 'done', payload: { scans: [{}], findings: { fail: [], cantTell: [] } } });
+        await waitForState((s) => s.sessions[0].state !== 'running');
+        const [home] = (await itemsOf(sessionId)).items;
+
+        const report = await api('POST', `/queue/sessions/${sessionId}/reports`, { report: { reportName: 'Checkout', scans: [{ url: 'https://example.com/checkout' }] } });
+        assert.equal(report.status, 200);
+        assert.equal(report.body.missingPictures, 0);
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/reports`, { report: { nope: 1 } })).status, 400);
+
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${home.id}/rerun`, {})).status, 200);
+        await waitForState(runningNamed('Home'));
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items`, { items: [run('More')] })).status, 409, 'not while it runs');
+        pending.shift()({ status: 'done', payload: { scans: [{}, {}], findings: { fail: [], cantTell: [] } } });
+        await waitForState((s) => s.sessions[0].state !== 'running');
+
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items`, { items: [run('More')] })).status, 200);
+        await waitForState(runningNamed('More'));
+        pending.shift()({ status: 'done', payload: { scans: [{}], findings: { fail: [], cantTell: [] } } });
+        await waitForState((s) => s.sessions[0].state !== 'running');
+
+        const rows = (await itemsOf(sessionId)).items;
+        assert.deepEqual(rows.map((i) => [i.name, i.status, i.scans, i.reruns, !!i.imported]),
+            [['Home', 'done', 2, 1, false], ['Checkout', 'done', 1, 0, true], ['More', 'done', 1, 0, false]]);
+        assert.ok(rows.every((i) => i.fileUrl));
+    });
 });
 
 describe('resolveQueueBaseDir', () => {

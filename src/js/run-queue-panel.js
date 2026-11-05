@@ -2,6 +2,7 @@
 
 import { setBusy } from './busy.js';
 import { resultGlyphEl } from './result-glyph.js';
+import { inlineReportFromZip } from './report-package.js';
 
 /**
  * The queue tab: what is waiting, running and finished, one section per queue
@@ -202,6 +203,8 @@ const ICONS = {
     warning: ['M12 3L2 21h20z', 'M12 10v5', 'M12 18h.01'],
     // Load workflow: back into the editor, to type its passwords again.
     edit: ['M4 20h4L19 9l-4-4L4 16z', 'M13.5 6.5l4 4'],
+    // Run again: a circling arrow.
+    rerun: ['M20 12a8 8 0 1 1-2.34-5.66', 'M20 4v4h-4'],
 };
 
 function icon(doc, name) {
@@ -310,7 +313,7 @@ function statusCell(doc, item) {
     return cell;
 }
 
-function actionsCell(doc, session, item) {
+function actionsCell(doc, session, item, { queueBusy = false } = {}) {
     // The buttons sit in a flex row inside the cell: a flex td is no longer a
     // table cell, and its row's stripe would stop short of the row's height.
     const cell = el(doc, 'div', { className: 'queue-actions' });
@@ -346,6 +349,20 @@ function actionsCell(doc, session, item) {
             'data-queue-action': 'cancel',
             'data-item-id': item.id,
             'data-focus-key': `cancel:${item.id}`,
+        }));
+    }
+    // A finished batch's row, run again from the workflow it saved; one
+    // added as a report has none.
+    if (session.state !== 'running' && item.hasConfig && !item.imported
+        && item.status !== 'waiting' && item.status !== 'running' && item.status !== 'cancelling') {
+        cell.append(iconAction(doc, 'button', 'Run again', 'rerun', item.name, {
+            type: 'button',
+            'aria-disabled': queueBusy ? 'true' : null,
+            'data-queue-action': queueBusy ? 'blocked' : 'rerun',
+            'data-blocked-reason': queueBusy ? QUEUE_BUSY_CHANGE : null,
+            'data-session-id': session.id,
+            'data-item-id': item.id,
+            'data-focus-key': `rerun:${item.id}`,
         }));
     }
     // An icon button as the others are, so a row's actions always fit its
@@ -507,7 +524,24 @@ export function describeRow(item) {
     const parts = [];
     if (Number.isInteger(item.row)) parts.push(`Workflow ${item.row}`);
     for (const [k, v] of Object.entries(item.vars || {})) parts.push(`${k}: ${v}`);
+    if (item.imported) parts.push('Added as a report');
     return parts.length ? parts.join(' · ') : null;
+}
+
+/**
+ * How a row's runs again went, or null: "Run again 2 times" and, when the
+ * last one ended without a result, that the result shown is the earlier one.
+ */
+export function describeReruns(item) {
+    if (!item.reruns) return null;
+    const times = item.reruns === 1 ? 'Run again once' : `Run again ${item.reruns} times`;
+    const last = item.lastRerun;
+    if (item.status === 'running' || item.status === 'waiting') return item.replacing ? `${times}: its earlier result stays until this one is saved` : times;
+    if (last && last.status !== 'done' && item.file) {
+        const why = last.status === 'cancelled' ? 'was cancelled' : last.status === 'interrupted' ? 'was cut short' : `failed${last.error ? ` (${last.error})` : ''}`;
+        return `${times}; the last ${why}, so this is the earlier result`;
+    }
+    return times;
 }
 
 // The scans the report holds, and below them, when Merged scans folded some
@@ -541,7 +575,7 @@ function durationCell(doc, item, duration) {
     });
 }
 
-function itemRow(doc, session, item) {
+function itemRow(doc, session, item, opts = {}) {
     // No scan yet, no figures: a 0 would read as a clean page.
     const findings = item.scans > 0 ? (item.findings || {}) : {};
     const duration = Number.isFinite(item.durationMs) ? item.durationMs : item.elapsedMs;
@@ -550,6 +584,7 @@ function itemRow(doc, session, item) {
             item.name,
             item.url ? el(doc, 'span', { className: 'queue-note', text: item.url }) : null,
             describeRow(item) ? el(doc, 'span', { className: 'queue-note', text: describeRow(item) }) : null,
+            describeReruns(item) ? el(doc, 'span', { className: 'queue-note', text: describeReruns(item) }) : null,
         ]),
         statusCell(doc, item),
         scansCell(doc, item),
@@ -557,7 +592,7 @@ function itemRow(doc, session, item) {
         findingsCell(doc, item, findings, 'cantTell', 'queue-num queue-cantTell'),
         findingsCell(doc, item, findings, 'pass', 'queue-num queue-pass'),
         durationCell(doc, item, duration),
-        actionsCell(doc, session, item),
+        actionsCell(doc, session, item, opts),
     ]);
 }
 
@@ -565,6 +600,7 @@ function itemRow(doc, session, item) {
 // pattern: aria-disabled, still focusable, never silent).
 const WAIT_FOR_BATCH = 'Available once this batch finishes: until then it would hold only the runs saved so far.';
 const QUEUE_BUSY = 'Another batch is running. Resume this one once it has finished.';
+const QUEUE_BUSY_CHANGE = 'Another batch is running. Change this one once it has finished.';
 const SENDING_TO_COMPARE = 'This batch is being sent to Compare. Delete it once that is done.';
 
 // How many of a batch's runs the app asks for at a time.
@@ -637,6 +673,17 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
             'data-session-id': session.id,
             'data-focus-key': `resume:${session.id}`,
         }, 'Resume') : null,
+        // A finished batch takes more: the workflow open in the editor, run
+        // into it, or a report saved before.
+        ...(session.state !== 'running' ? [['add-workflow', 'Add the open workflow'], ['add-report', 'Add a report…']].map(([action, text]) => el(doc, 'button', {
+            type: 'button',
+            className: 'secondary-button',
+            'aria-disabled': queueBusy ? 'true' : null,
+            'data-queue-action': queueBusy ? 'blocked' : action,
+            'data-blocked-reason': queueBusy ? QUEUE_BUSY_CHANGE : null,
+            'data-session-id': session.id,
+            'data-focus-key': `${action}:${session.id}`,
+        }, [text, el(doc, 'span', { className: 'visually-hidden', text: ` to ${describeBatch(session)}` })])) : []),
         session.state !== 'running' ? el(doc, 'button', {
             type: 'button',
             className: 'secondary-button remove queue-delete',
@@ -667,7 +714,7 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
             el(doc, 'th', { scope: 'col', text: 'Actions' }),
         ])),
         el(doc, 'tbody', {}, [
-            ...(session.items || []).map((item) => itemRow(doc, session, item)),
+            ...(session.items || []).map((item) => itemRow(doc, session, item, { queueBusy })),
             itemsFooterRow(doc, session),
         ]),
     ]);
@@ -764,6 +811,11 @@ export function describeChanges(prev, next) {
  *   Asks for the hidden values interrupted runs need; null when dismissed.
  * @param {() => ({actions: object[], customSteps: object[]}|null)} [opts.getFormWorkflow]
  *   The editor's workflow with its passwords, for Resume to reuse them.
+ * @param {() => ({run: object, config: object|null}|null)} [opts.getWorkflowItem]
+ *   The workflow open in the editor as one queue item, for "Add the open
+ *   workflow"; null when there is none to run (the editor says why).
+ * @param {() => Promise<{name: string, text: string}|null>} [opts.pickReportFile]
+ *   Asks for a saved report's file, for "Add a report…"; null when dismissed.
  * @param {HTMLInputElement} [opts.notifyToggle] "Notify me when a batch finishes":
  *   shown only where the browser can notify; the choice is kept in this browser.
  * @param {object} [opts.notifications] The browser's Notification, for tests.
@@ -783,6 +835,8 @@ export function createRunQueuePanel({
     confirmDelete = (message) => window.confirm(message),
     askMaskedValues = null,
     getFormWorkflow = () => null,
+    getWorkflowItem = () => null,
+    pickReportFile = null,
     activity = null,
     fetchImpl = (...args) => fetch(...args),
     notifyToggle = null,
@@ -1136,6 +1190,56 @@ export function createRunQueuePanel({
         await refresh();
     }
 
+    /**
+     * The hidden values `fieldsUrl` lists, from the open workflow when it
+     * has them all, else asked for: { values, fromForm }, null when
+     * dismissed, {} when none are needed.
+     */
+    async function gatherValues(fieldsUrl, task) {
+        task?.step('Finding the passwords its runs need');
+        const res = await fetchImpl(fieldsUrl, { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `The server answered ${res.status}`);
+        if (!data.fields?.length) return {};
+        // The passwords are most likely still typed in the editor the batch
+        // was started from: only ask for what is not.
+        const known = passwordsFromWorkflow(data.fields, getFormWorkflow());
+        if (data.fields.every((f) => known[f.key])) return { values: known, fromForm: true };
+        const ask = askMaskedValues || ((fields) => askMaskedValuesInDialog(doc, fields));
+        const values = await ask(data.fields.map((f) => (known[f.key] ? { ...f, value: known[f.key] } : f)));
+        return values ? { values, fromForm: false } : null;
+    }
+
+    // A report file picked here: a hidden file input, gone once read. A
+    // package (.zip, as Download report writes) gives its report with its
+    // pictures inline, which the server keeps as the batch's own.
+    function pickReportHere() {
+        return new Promise((resolve, reject) => {
+            const input = doc.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,.zip,application/json,application/zip';
+            input.hidden = true;
+            input.addEventListener('change', async () => {
+                const file = input.files && input.files[0];
+                input.remove();
+                if (!file) return resolve(null);
+                try {
+                    if (!/\.zip$/i.test(file.name)) return resolve({ name: file.name, text: await file.text() });
+                    const JSZip = doc.defaultView && doc.defaultView.JSZip;
+                    if (!JSZip) throw new Error('This page cannot open a zip. Add the report’s .json instead.');
+                    const inner = await inlineReportFromZip(await JSZip.loadAsync(file));
+                    if (!inner) throw new Error(`${file.name} holds no report: a report package has its report as a .a11y-report.json.`);
+                    resolve({ name: file.name, text: inner.text });
+                } catch (err) {
+                    reject(err);
+                }
+            });
+            input.addEventListener('cancel', () => { input.remove(); resolve(null); });
+            doc.body.append(input);
+            input.click();
+        });
+    }
+
     listEl.addEventListener('click', (event) => {
         const button = event.target.closest('[data-queue-action]');
         if (!button || !listEl.contains(button)) return;
@@ -1230,29 +1334,14 @@ export function createRunQueuePanel({
                 let values;
                 let fromForm = false;
                 if (session?.needsValues) {
-                    task?.step('Finding the passwords its runs need');
-                    const url = `/queue/sessions/${encodeURIComponent(sessionId)}/masked-fields`;
-                    const res = await fetchImpl(url, { cache: 'no-store' });
-                    const data = await res.json().catch(() => ({}));
-                    if (!res.ok) throw new Error(data.error || `The server answered ${res.status}`);
-                    if (data.fields?.length) {
-                        // The passwords are most likely still typed in the editor
-                        // the batch was started from: only ask for what is not.
-                        const known = passwordsFromWorkflow(data.fields, getFormWorkflow());
-                        if (data.fields.every((f) => known[f.key])) {
-                            values = known;
-                            fromForm = true;
-                        } else {
-                            const ask = askMaskedValues || ((fields) => askMaskedValuesInDialog(doc, fields));
-                            values = await ask(data.fields.map((f) => (known[f.key] ? { ...f, value: known[f.key] } : f)));
-                            if (!values) {
-                                setStatus('Not resumed.');
-                                task?.cancel();
-                                restoreFocus(`resume:${sessionId}`);
-                                return;
-                            }
-                        }
+                    const got = await gatherValues(`/queue/sessions/${encodeURIComponent(sessionId)}/masked-fields`, task);
+                    if (!got) {
+                        setStatus('Not resumed.');
+                        task?.cancel();
+                        restoreFocus(`resume:${sessionId}`);
+                        return;
                     }
+                    ({ values, fromForm = false } = got);
                 }
                 task?.step('Queuing its runs again');
                 const r = await post(`/queue/sessions/${encodeURIComponent(sessionId)}/resume`, values ? { values } : {});
@@ -1260,6 +1349,66 @@ export function createRunQueuePanel({
                     + (r.stillWaiting ? ` ${plural(r.stillWaiting, 'run')} still need their passwords.` : '');
                 setStatus(said);
                 if (r.stillWaiting) task?.warn(said);
+                else task?.done(said);
+            })));
+        } else if (action === 'rerun') {
+            const { session, item } = findItem(itemId);
+            if (!session || !item) return;
+            track(act(() => asTask(`Run “${item.name}” again`, async (task) => {
+                let values;
+                if (item.needsValues) {
+                    const got = await gatherValues(`/queue/sessions/${encodeURIComponent(session.id)}/masked-fields?item=${encodeURIComponent(item.id)}`, task);
+                    if (!got) {
+                        setStatus('Not run again.');
+                        task?.cancel();
+                        restoreFocus(`rerun:${item.id}`);
+                        return;
+                    }
+                    values = got.values;
+                }
+                task?.step('Queuing it');
+                await post(`/queue/sessions/${encodeURIComponent(session.id)}/items/${encodeURIComponent(item.id)}/rerun`, values ? { values } : {});
+                const said = `Running “${item.name}” again. Its result replaces the one in ${describeBatch(session)}; if it ends with none, the earlier one stays.`;
+                setStatus(said);
+                task?.done(said);
+            })));
+        } else if (action === 'add-workflow') {
+            const session = state?.sessions.find((s) => s.id === sessionId);
+            if (!session) return;
+            const workflow = getWorkflowItem();
+            if (!workflow) {
+                setStatus('Open a workflow that can run in the editor first: it is the one added.', 'error');
+                return;
+            }
+            track(act(async () => {
+                await post(`/queue/sessions/${encodeURIComponent(sessionId)}/items`, { items: [workflow] });
+                expanded.add(sessionId);
+                setStatus(`Added “${workflow.run.scenarioName || workflow.run.url}” to ${describeBatch(session)}; it runs now, and its result joins the batch.`);
+            }));
+        } else if (action === 'add-report') {
+            const session = state?.sessions.find((s) => s.id === sessionId);
+            if (!session) return;
+            track(act(() => asTask(`Add a report to ${describeBatch(session)}`, async (task) => {
+                const file = await (pickReportFile || pickReportHere)();
+                if (!file) {
+                    setStatus('No report added.');
+                    task?.cancel();
+                    restoreFocus(`add-report:${sessionId}`);
+                    return;
+                }
+                let report;
+                try {
+                    report = JSON.parse(file.text);
+                } catch {
+                    throw new Error(`${file.name} is not a report the lab saved: it is not JSON, nor a report package (.zip).`);
+                }
+                task?.step('Adding it to the batch');
+                const r = await post(`/queue/sessions/${encodeURIComponent(sessionId)}/reports`, { report });
+                expanded.add(sessionId);
+                const said = `Added ${file.name} to ${describeBatch(session)}.`
+                    + (r.missingPictures ? ` ${plural(r.missingPictures, 'picture')} it names could not be found, and are missing from it.` : '');
+                setStatus(said);
+                if (r.missingPictures) task?.warn(said);
                 else task?.done(said);
             })));
         }

@@ -132,7 +132,18 @@ function httpApiSchema() {
                         404: { description: 'No such batch', content: json(error) },
                     },
                 },
+                post: {
+                    summary: 'Add workflows to a finished batch: they run into its folder, as /queue/items takes them',
+                    parameters: [pathParam('sessionId')],
+                    requestBody: { required: true, content: json({ type: 'object', required: ['items'], properties: { items: { type: 'array', items: { type: 'object' } } } }) },
+                    responses: {
+                        ...ok('Added', { type: 'object', properties: { sessionId: { type: 'string' }, itemIds: { type: 'array', items: { type: 'string' } } } }),
+                        409: { description: 'A batch is running', content: json(error) },
+                    },
+                },
             },
+            '/queue/sessions/{sessionId}/items/{itemId}/rerun': { post: { summary: 'Run a finished batch\'s row again: its new result replaces the old one, which stays if the re-run ends with none', parameters: [pathParam('sessionId'), pathParam('itemId')], requestBody: { content: json({ type: 'object', properties: { values: { type: 'object', additionalProperties: { type: 'string' }, description: 'The hidden values its workflow needs, by the keys masked-fields?item= gives.' } } }) }, responses: { ...ok('Running again'), 409: { description: 'A batch is running', content: json(error) } } } },
+            '/queue/sessions/{sessionId}/reports': { post: { summary: 'Add a saved report to a finished batch as a run of its own, without running it', parameters: [pathParam('sessionId')], requestBody: { required: true, content: json({ type: 'object', required: ['report'], properties: { report: { type: 'object', description: 'A result\'s JSON, as the lab saves it.' }, name: { type: 'string', description: 'Its row\'s name; by default its reportName.' } } }) }, responses: { ...ok('Added', { type: 'object', properties: { sessionId: { type: 'string' }, itemId: { type: 'string' }, file: { type: 'string' }, missingPictures: { type: 'integer' } } }), 409: { description: 'A batch is running', content: json(error) } } } },
             '/queue/items': {
                 post: {
                     summary: 'Queue a batch',
@@ -158,7 +169,7 @@ function httpApiSchema() {
             '/queue/items/{itemId}/progress': { get: { summary: 'A queued run\'s log', parameters: [pathParam('itemId'), since], responses: ok('The log', progress) } },
             '/queue/items/{itemId}/cancel': { post: { summary: 'Cancel a queued run', parameters: [pathParam('itemId')], responses: ok('Its status now') } },
             '/queue/cancel': { post: { summary: 'Cancel the batch', responses: ok('What was cancelled') } },
-            '/queue/sessions/{sessionId}/masked-fields': { get: { summary: 'The secrets a batch needs typed', parameters: [pathParam('sessionId')], responses: ok('The fields') } },
+            '/queue/sessions/{sessionId}/masked-fields': { get: { summary: 'The secrets a batch needs typed: to resume it, or with ?item= to run that row again', parameters: [pathParam('sessionId'), { name: 'item', in: 'query', required: false, schema: { type: 'string' } }], responses: ok('The fields') } },
             '/queue/sessions/{sessionId}/resume': { post: { summary: 'Supply them, and resume', parameters: [pathParam('sessionId')], requestBody: { content: json({ type: 'object', properties: { values: { type: 'object', additionalProperties: { type: 'string' } } } }) }, responses: ok('Resumed') } },
             '/queue/sessions/{sessionId}/delete': { post: { summary: 'Delete a finished batch', parameters: [pathParam('sessionId')], responses: ok('Deleted') } },
             '/queue/sessions/{sessionId}/download.zip': { get: { summary: 'The batch as a report package', parameters: [pathParam('sessionId')], responses: { 200: { description: 'A zip', content: { 'application/zip': {} } } } } },

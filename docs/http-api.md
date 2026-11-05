@@ -67,6 +67,9 @@ every result on disk under `reports/batches/<start time>/`, with `batch.json`.
 | `POST /queue/items/{itemId}/cancel`, `POST /queue/cancel` | Cancels one run, or the whole batch. |
 | `POST /queue/settings` | `{ concurrency }`: how many runs at once, from 1 to `maxConcurrency`, or `"auto"` (the default): as many as a batch has, up to `maxConcurrency`. A number holds for every later batch until `"auto"` is set again. |
 | `GET /queue/sessions/{sessionId}/masked-fields` | The secrets a batch's runs need typed (saved without them), and `POST /queue/sessions/{sessionId}/resume` with `{ values }` to supply them. A reference to the environment needs neither. |
+| `POST /queue/sessions/{sessionId}/items/{itemId}/rerun` | Runs a finished batch's row again, from the workflow it saved: its new result replaces the old one in the batch, and a re-run that ends with no result keeps the old one (the row's `lastRerun` says how it went). A workflow saved without its hidden values needs them as `{ values }`, by the keys `masked-fields?item={itemId}` gives. |
+| `POST /queue/sessions/{sessionId}/items` | `{ items }`, as `POST /queue/items` takes them: workflows added to a finished batch, run into its folder after its rows. |
+| `POST /queue/sessions/{sessionId}/reports` | `{ report, name? }`: a report saved before (a result's JSON) added to a finished batch as a run of its own, without running anything. Its pictures are copied in when they are inline (data URLs) or the lab still serves them; `missingPictures` counts those it could not find. The panel sends a package's report with its pictures inline. |
 | `GET /queue/sessions/{sessionId}/download.zip` | The batch as a report package: each result, its pictures once, `batch.json` and its configuration. |
 | `GET /queue/sessions/{sessionId}/items/{itemId}/download.zip` | One run's report package. |
 | `POST /queue/sessions/{sessionId}/delete` | Deletes a finished batch and its files. |

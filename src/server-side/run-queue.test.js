@@ -1225,3 +1225,110 @@ describe('run queue helpers', () => {
         ]);
     });
 });
+
+describe('changing a finished batch', () => {
+    const saved = (name) => item(name, { config: { runSpec: item(name).run } });
+
+    async function finishedBatch() {
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun);
+        const { sessionId } = queue.addItems([saved('A'), saved('B')]);
+        await settle(queue, runner.calls[0], { status: 'done', payload: payloadWith({ scans: [{ fail: 3 }] }) });
+        await settle(queue, runner.calls[1], { status: 'done', payload: payloadWith({ scans: [{ fail: 1 }] }) });
+        await waitUntil(() => queue.getState().sessions[0].state !== 'running', 'the batch to finish');
+        return { runner, queue, sessionId, dir: files.sessionDirFor(baseDir, sessionId) };
+    }
+    const rows = (queue) => queue.getState().sessions[0].items;
+
+    test('a row run again replaces its result, in the same folder and place', async () => {
+        const { runner, queue, sessionId, dir } = await finishedBatch();
+        const [a] = rows(queue);
+        const oldFile = a.file;
+        queue.rerunItem(sessionId, a.id);
+        assert.equal(runner.calls.length, 3);
+        assert.equal(runner.calls[2].spec.scenarioName, 'A');
+        assert.equal(rows(queue)[0].status, 'running');
+        await settle(queue, runner.calls[2], { status: 'done', payload: payloadWith({ scans: [{ fail: 0 }, { fail: 2 }] }) });
+        await waitUntil(() => queue.getState().sessions[0].state !== 'running', 'the re-run to finish');
+
+        const [again, b] = rows(queue);
+        assert.equal(again.id, a.id);
+        assert.equal(again.scans, 2);
+        assert.equal(again.findings.fail, 2);
+        assert.equal(again.reruns, 1);
+        assert.equal(again.lastRerun.status, 'done');
+        assert.equal(b.findings.fail, 1, 'the other row is as it was');
+        const onDisk = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'batch.json');
+        assert.equal(onDisk.length, 2, 'the old result is gone, the new one in its place');
+        assert.ok(onDisk.includes(again.file));
+        if (again.file !== oldFile) assert.ok(!onDisk.includes(oldFile));
+    });
+
+    test('a re-run that ends with no result keeps the old one, and says so', async () => {
+        const { runner, queue, sessionId } = await finishedBatch();
+        const [a] = rows(queue);
+        queue.rerunItem(sessionId, a.id);
+        await settle(queue, runner.calls[2], { status: 'error', payload: null, error: { details: 'Site down' } });
+        await waitUntil(() => queue.getState().sessions[0].state !== 'running', 'the re-run to end');
+        const [kept] = rows(queue);
+        assert.deepEqual([kept.status, kept.file, kept.findings.fail, kept.finishedAt], ['done', a.file, 3, a.finishedAt]);
+        assert.deepEqual([kept.lastRerun.status, kept.lastRerun.error], ['error', 'Site down']);
+    });
+
+    test('a re-run cut short by a restart leaves the old result standing', async () => {
+        const { queue, sessionId } = await finishedBatch();
+        const [a] = rows(queue);
+        queue.rerunItem(sessionId, a.id);
+        const restarted = createRunQueue({ baseDir, executeRun: controlledRunner().executeRun, logError: () => {} });
+        restarted.init();
+        const [kept] = restarted.getState().sessions[0].items;
+        assert.deepEqual([kept.status, kept.file, kept.lastRerun.status], ['done', a.file, 'interrupted']);
+    });
+
+    test('workflows added to a finished batch run into it, after its rows', async () => {
+        const { runner, queue, sessionId } = await finishedBatch();
+        const { itemIds } = queue.addToSession(sessionId, [item('C')]);
+        assert.equal(itemIds.length, 1);
+        assert.equal(runner.calls[2].spec.scenarioName, 'C');
+        await settle(queue, runner.calls[2], { status: 'done', payload: payloadWith() });
+        await waitUntil(() => queue.getState().sessions[0].state !== 'running', 'the added run to finish');
+        assert.deepEqual(rows(queue).map((i) => [i.name, i.status]), [['A', 'done'], ['B', 'done'], ['C', 'done']]);
+        assert.equal(queue.getState().sessions.length, 1, 'no new batch');
+    });
+
+    test('a saved report joins a finished batch as a run of its own, without running', async () => {
+        const { runner, queue, sessionId, dir } = await finishedBatch();
+        const report = payloadWith({ scans: [{ fail: 4 }, { cantTell: 1 }], extra: { reportName: 'Checkout, by hand' } });
+        report.scans[0].url = 'https://example.com/checkout';
+        const out = await queue.importReport(sessionId, report);
+        assert.equal(runner.calls.length, 2, 'nothing ran');
+        const added = rows(queue)[2];
+        assert.deepEqual([added.name, added.status, added.url, added.scans, added.findings.fail, added.findings.cantTell],
+            ['Checkout, by hand', 'done', 'https://example.com/checkout', 2, 4, 1]);
+        assert.ok(added.imported);
+        assert.equal(JSON.parse(fs.readFileSync(path.join(dir, out.file), 'utf8')).reportName, 'Checkout, by hand');
+        assert.throws(() => queue.rerunItem(sessionId, added.id), /added as a report/);
+    });
+
+    test('a report\'s inline pictures become the batch\'s own files', async () => {
+        const { queue, sessionId, dir } = await finishedBatch();
+        const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 0xff, 0xd9]);
+        const report = payloadWith();
+        report.scans[0].screenshot = `data:image/jpeg;base64,${jpeg.toString('base64')}`;
+        const out = await queue.importReport(sessionId, report);
+        assert.equal(out.missingPictures, 0);
+        const saved = JSON.parse(fs.readFileSync(path.join(dir, out.file), 'utf8'));
+        assert.match(saved.scans[0].screenshot, /^images\/[0-9a-f]+\.jpg$/);
+        assert.deepEqual(fs.readFileSync(path.join(dir, saved.scans[0].screenshot)), jpeg);
+    });
+
+    test('not while a batch runs, and not a file that is no report', async () => {
+        const { runner, queue, sessionId } = await finishedBatch();
+        await assert.rejects(queue.importReport(sessionId, { hello: 1 }), /not a report/);
+        queue.addItems([item('Other')]);
+        assert.throws(() => queue.rerunItem(sessionId, rows(queue)[0].id), (err) => err.statusCode === 409);
+        assert.throws(() => queue.addToSession(sessionId, [item('C')]), (err) => err.statusCode === 409);
+        await assert.rejects(queue.importReport(sessionId, payloadWith()), (err) => err.statusCode === 409);
+        assert.equal(runner.calls.length, 3);
+    });
+});

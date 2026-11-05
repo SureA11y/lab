@@ -13,7 +13,7 @@ import {STATUS} from './ui-constants.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * ($, afterConfigLoaded, batchPanel, cfgIO, compareTab, focusReportArea, getWorkflowWithPasswords, queueRunWatch, refreshRunButton, setReportPayload, setSectionsState, setStatusReport, setStatusRun, tabsmode, whenResultsComplete).
+ * ($, afterConfigLoaded, batchPanel, cfgIO, compareTab, focusReportArea, getWorkflowWithPasswords, prepareRunRequest, queueRunWatch, refreshRunButton, setReportPayload, setSectionsState, setStatusReport, setStatusRun, tabsmode, whenResultsComplete).
  */
 export function createRunQueueUi(app) {
     const queueListEl = app.$('#queue-sessions');
@@ -30,6 +30,7 @@ export function createRunQueueUi(app) {
         onSendToCompare: sendQueueSessionToCompare,
         activity: getActivity(),
         getFormWorkflow: app.getWorkflowWithPasswords,
+        getWorkflowItem: workflowAsQueueItem,
         onWatch: (item, session) => app.queueRunWatch.watchQueuedRun(item, session),
         onRunningChange: (isRunning) => {
             setQueueTabSpinner(isRunning);
@@ -37,6 +38,23 @@ export function createRunQueueUi(app) {
             app.refreshRunButton();
         },
     }) : null;
+    /**
+     * The workflow open in the editor as one queue item, as Run batch makes
+     * one per row, with its saved configuration so it can be run again; null
+     * when the form cannot run (it shows why).
+     */
+    function workflowAsQueueItem() {
+        const request = app.prepareRunRequest({markMasked: true});
+        if (!request) return null;
+        let config = null;
+        try {
+            config = app.cfgIO ? app.cfgIO.buildConfigFile({includeBatch: false}) : null;
+        } catch (err) {
+            console.error('Could not build the config for the queue', err);
+        }
+        return {run: request.payload, config};
+    }
+
     // A batch still running from before a reload shows its spinner straight away.
     queuePanel?.refresh();
 

@@ -117,7 +117,30 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
 
     app.post('/queue/cancel', (_req, res) => respond(res, () => ({ cancelled: queue.cancelAll() })));
 
-    app.get('/queue/sessions/:sessionId/masked-fields', (req, res) => respond(res, () => queue.getMaskedFields(req.params.sessionId)));
+    app.get('/queue/sessions/:sessionId/masked-fields', (req, res) => respond(res, () => queue.getMaskedFields(
+        req.params.sessionId,
+        { itemId: req.query && typeof req.query.item === 'string' ? req.query.item : null },
+    )));
+
+    // A finished batch, changed: a row run again, workflows added and run,
+    // or a report saved before added as a run of its own.
+    app.post('/queue/sessions/:sessionId/items/:itemId/rerun', (req, res) => respond(res, () => (
+        queue.rerunItem(req.params.sessionId, req.params.itemId, { values: req.body && req.body.values })
+    )));
+
+    app.post('/queue/sessions/:sessionId/items', (req, res) => respond(res, () => (
+        queue.addToSession(req.params.sessionId, req.body && req.body.items)
+    )));
+
+    app.post('/queue/sessions/:sessionId/reports', async (req, res) => {
+        try {
+            res.json(await queue.importReport(req.params.sessionId, req.body && req.body.report, { name: req.body && req.body.name }));
+        } catch (err) {
+            const status = err && Number.isInteger(err.statusCode) ? err.statusCode : 500;
+            if (status >= 500) logError('[run-queue]', err);
+            res.status(status).json({ error: err && err.message ? err.message : 'Queue request failed' });
+        }
+    });
 
     // Masked values come in the body, are put into the runs held in memory,
     // and are never written: batch.json keeps the redacted workflow.

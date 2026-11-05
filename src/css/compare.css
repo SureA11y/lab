@@ -170,9 +170,10 @@ body.queue-mode-active #screenshots-container { display: none; }
 .queue-table .queue-col-fail, .queue-table .queue-col-pass { width: 6rem; }
 .queue-table .queue-col-canttell { width: 6.5rem; }
 .queue-table .queue-col-duration { width: 6rem; }
-/* A row's actions are at most two 36px icon buttons: 80px with their gap,
-   plus the cell's padding. */
-.queue-table .queue-col-actions { width: 6.5rem; }
+/* A row's actions are at most three 36px icon buttons (a finished row:
+   Open, Download, Run again): 124px with their gaps, plus the cell's
+   padding. */
+.queue-table .queue-col-actions { width: 9.25rem; }
 .queue-table th, .queue-table td { text-align: left; vertical-align: top; padding: var(--space-2) var(--space-3); border-top: 1px solid var(--border-soft); }
 .queue-table thead th { border-top: 0; font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .08em; text-transform: uppercase; color: var(--text-soft); }
 .queue-table .queue-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }

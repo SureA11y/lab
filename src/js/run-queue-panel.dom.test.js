@@ -62,7 +62,7 @@ function fakeServer(states, {maskedFields = []} = {}) {
     const posts = [];
     let current = null;
     const fetchImpl = async (url, opts = {}) => {
-        if (url.endsWith('/masked-fields')) {
+        if (url.includes('/masked-fields')) {
             return {ok: true, status: 200, json: async () => ({fields: maskedFields})};
         }
         if ((opts.method || 'GET') === 'POST') {
@@ -1348,5 +1348,76 @@ describe('run queue panel: a batch\'s runs, a page at a time', () => {
         assert.match(document.querySelector('.queue-items-more').textContent, /Show 50 more/);
         assert.deepEqual(server.asked, [100, 200]);
         assert.match(document.getElementById('status').textContent, /Showing 200 of 250 runs/);
+    });
+});
+
+describe('changing a finished batch', () => {
+    const finished = (items) => ({concurrency: 1, maxConcurrency: 8, sessions: [session({finishedAt: '2026-10-12T15:00:00.000Z'}, items)]});
+    const button = (text) => [...document.querySelectorAll('#list button')].find((b) => b.textContent.trim().startsWith(text) || b.title === text);
+    const status = () => document.getElementById('status').textContent;
+
+    test('a finished row runs again, its result to replace the old one', async () => {
+        const {p, server} = panel([finished([baseItem()])]);
+        await p.refresh();
+        const again = button('Run again');
+        assert.equal(again.querySelector('.visually-hidden').textContent, 'Run again Product v2.3');
+        again.click();
+        await until(() => server.posts.length, 'the re-run');
+        assert.equal(server.posts[0].url, '/queue/sessions/2026-10-12T14-03-27/items/i1/rerun');
+        await until(() => /Running “Product v2\.3” again/.test(status()), 'what it says');
+    });
+
+    test('no Run again for a report added as it was, or while a run goes', async () => {
+        const {p} = panel([{concurrency: 1, maxConcurrency: 8, sessions: [
+            session({id: 'running', state: 'running'}, [baseItem({id: 'r', status: 'running'})]),
+            session({id: 'done'}, [baseItem({id: 'imp', imported: {at: 'x'}, hasConfig: false}), baseItem({id: 'ok'})]),
+        ]}]);
+        await p.refresh();
+        const done = document.querySelector('[data-session-id="done"]');
+        assert.match(done.querySelector('tr[data-item-id="imp"]').textContent, /Added as a report/);
+        assert.equal(done.querySelector('tr[data-item-id="imp"] [title="Run again"]'), null);
+        // Another batch runs: said when pressed, not done.
+        const held = done.querySelector('tr[data-item-id="ok"] [title="Run again"]');
+        assert.equal(held.getAttribute('aria-disabled'), 'true');
+        held.click();
+        assert.match(status(), /Another batch is running/);
+    });
+
+    test('a row says how its runs again went', () => {
+        assert.equal(mod.describeReruns(baseItem({reruns: 2, lastRerun: {status: 'done'}})), 'Run again 2 times');
+        assert.equal(mod.describeReruns(baseItem({reruns: 1, lastRerun: {status: 'error', error: 'Site down'}})),
+            'Run again once; the last failed (Site down), so this is the earlier result');
+        assert.equal(mod.describeReruns(baseItem()), null);
+    });
+
+    test('the open workflow is added and run into the batch', async () => {
+        const workflow = {run: {url: 'https://example.com/more', scenarioName: 'More', actions: [{type: 'a11yScan'}]}, config: null};
+        const {p, server} = panel([finished([baseItem()])], {getWorkflowItem: () => workflow});
+        await p.refresh();
+        button('Add the open workflow').click();
+        await until(() => server.posts.length, 'the add');
+        assert.deepEqual(server.posts[0], {url: '/queue/sessions/2026-10-12T14-03-27/items', body: {items: [workflow]}});
+    });
+
+    test('nothing is added while the editor has no workflow to run', async () => {
+        const {p, server} = panel([finished([baseItem()])], {getWorkflowItem: () => null});
+        await p.refresh();
+        button('Add the open workflow').click();
+        assert.match(status(), /Open a workflow/);
+        assert.equal(server.posts.length, 0);
+    });
+
+    test('a saved report is added as it is; a file that is no JSON is refused', async () => {
+        const report = {reportName: 'Checkout', scans: [{}]};
+        const files = [{name: 'checkout.json', text: JSON.stringify(report)}, {name: 'shots.zip', text: 'PK..'}];
+        const {p, server} = panel([finished([baseItem()])], {pickReportFile: async () => files.shift()});
+        await p.refresh();
+        button('Add a report').click();
+        await until(() => server.posts.length, 'the report');
+        assert.deepEqual(server.posts[0], {url: '/queue/sessions/2026-10-12T14-03-27/reports', body: {report}});
+        await until(() => /Added checkout\.json/.test(status()), 'what it says');
+        button('Add a report').click();
+        await until(() => /not JSON/.test(status()), 'the refusal');
+        assert.equal(server.posts.length, 1);
     });
 });

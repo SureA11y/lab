@@ -352,7 +352,23 @@ function createRunQueue({
             // screenshots), removed with the batch: its result no longer
             // links to them once its pictures are in images/.
             runFolders: item.runFolders || null,
+            // Run again: how often, and how its last re-run ended. While one
+            // runs, the result it replaces, which stays if it fails.
+            reruns: item.reruns || 0,
+            lastRerun: item.lastRerun || null,
+            previous: item.previous || null,
+            // A report added to the batch as it was, not run here.
+            imported: item.imported || null,
         };
+    }
+
+    // What a re-run keeps of the result it replaces, to put back if it fails.
+    const RESULT_FIELDS = ['status', 'startedAt', 'finishedAt', 'durationMs', 'scans', 'scansRun', 'findings', 'file', 'error'];
+
+    function resultOf(item) {
+        const out = {};
+        for (const k of RESULT_FIELDS) out[k] = item[k] ?? null;
+        return out;
     }
 
     function persist() {
@@ -564,8 +580,12 @@ function createRunQueue({
                 item.error = err && err.message ? err.message : String(err);
             })
             .finally(() => {
-                item.finishedAt = iso();
-                item.durationMs = now() - startedMs;
+                // A failed re-run put back the times of the result it kept.
+                if (item.restored) delete item.restored;
+                else {
+                    item.finishedAt = iso();
+                    item.durationMs = now() - startedMs;
+                }
                 running.delete(item.id);
                 item.activity = null;
                 item.scanGaps = null;
@@ -674,12 +694,16 @@ function createRunQueue({
         const payload = result?.payload || null;
 
         if (!payload) {
-            if (ctl.cancelled) {
-                item.status = 'cancelled';
+            const failed = ctl.cancelled ? 'cancelled' : 'error';
+            const error = ctl.cancelled ? null : (result?.error?.details || 'Workflow failed before producing any result');
+            if (item.previous) {
+                // A re-run with nothing to show: the result it was to
+                // replace stays, and the row says the re-run did not finish.
+                keepPrevious(item, failed, error);
                 return;
             }
-            item.status = 'error';
-            item.error = result?.error?.details || 'Workflow failed before producing any result';
+            item.status = failed;
+            if (error) item.error = error;
             return;
         }
 
@@ -699,7 +723,9 @@ function createRunQueue({
             // names them by: the batch is a report package (batch-package.js).
             if (!owner.images) owner.images = createBatchImages(owner.dir);
             const packed = await packResultImages(payload, owner.images, { reportsRoot });
-            item.runFolders = packed.runFolders;
+            // A re-run's folders join those of the result it replaces: they all
+        // go with the batch.
+        item.runFolders = [...new Set([...(item.runFolders || []), ...packed.runFolders])].sort();
             if (packed.missing.length) {
                 logError(`${packed.missing.length} picture(s) of ${item.name} could not be added to the batch`, new Error(packed.missing[0].error));
             }
@@ -707,10 +733,26 @@ function createRunQueue({
             await fs.promises.rename(tmp, target);
         } catch (err) {
             await fs.promises.rm(tmp, { force: true }).catch(() => {});
+            const error = `Could not save the result: ${err && err.message ? err.message : err}`;
+            if (item.previous) {
+                keepPrevious(item, 'error', error);
+                return;
+            }
             item.status = 'error';
-            item.error = `Could not save the result: ${err && err.message ? err.message : err}`;
+            item.error = error;
             return;
         }
+
+        if (item.previous) {
+            // The re-run's result replaces the one it was run again for.
+            const old = item.previous.file;
+            if (old && old !== fileName) {
+                await fs.promises.rm(path.join(owner.dir, old), { force: true }).catch((err) => logError(`could not remove ${old}`, err));
+                owner.takenFiles.delete(old);
+            }
+            item.previous = null;
+        }
+        if (item.reruns) item.lastRerun = { at: iso(), status, error: null };
 
         const summary = summarizePayload(payload);
         item.file = fileName;
@@ -721,6 +763,16 @@ function createRunQueue({
             item.error = payload.errorDetails?.message || 'Workflow failed';
         }
         item.status = status;
+    }
+
+    // A re-run that ended without a result: the one it was to replace is
+    // put back, and the row says how the re-run went.
+    function keepPrevious(item, status, error) {
+        const startedAt = item.startedAt;
+        Object.assign(item, item.previous);
+        item.previous = null;
+        item.restored = true;
+        item.lastRerun = { at: iso(), startedAt, status, error: error || null };
     }
 
     /* ---------- public ---------- */
@@ -756,7 +808,16 @@ function createRunQueue({
             removeSpools(dir);
             const stranded = manifest.items.filter((i) => UNFINISHED.has(i.status));
             if (!stranded.length) continue;
-            for (const item of stranded) item.status = 'interrupted';
+            for (const item of stranded) {
+                if (item.previous) {
+                    // A re-run cut short: the result it was replacing stands.
+                    Object.assign(item, item.previous);
+                    item.previous = null;
+                    item.lastRerun = { at: iso(), status: 'interrupted', error: null };
+                } else {
+                    item.status = 'interrupted';
+                }
+            }
             manifest.interruptedAt = iso();
             try {
                 files.writeManifest(dir, manifest);
@@ -777,12 +838,11 @@ function createRunQueue({
      * (each row's own name replaces it in that row's run).
      * Every item is checked before any is queued.
      */
-    function addItems(rawItems, { name = null, config = null } = {}) {
+    function prepareItems(rawItems) {
         if (!Array.isArray(rawItems) || rawItems.length === 0) {
             throw queueError(400, 'No workflows to queue');
         }
-
-        const prepared = rawItems.map((raw, index) => {
+        return rawItems.map((raw, index) => {
             const spec = runSpecFrom(raw && raw.run);
             const where = rawItems.length > 1 ? `Item ${index + 1}: ` : '';
             if (!Array.isArray(spec.actions) || spec.actions.length === 0) {
@@ -805,6 +865,35 @@ function createRunQueue({
             const row = Number.isInteger(raw.row) && raw.row > 0 ? raw.row : null;
             return { spec, row, config: isPlainObject(raw.config) ? raw.config : null };
         });
+    }
+
+    // A new row of the session, waiting to run.
+    function newItem({ spec, row, config }, position) {
+        return {
+            id: crypto.randomUUID(),
+            name: itemName(spec, position),
+            url: typeof spec.url === 'string' ? spec.url : null,
+            status: 'waiting',
+            addedAt: iso(),
+            startedAt: null,
+            finishedAt: null,
+            durationMs: null,
+            scans: null,
+            scansRun: null,
+            findings: null,
+            file: null,
+            error: null,
+            needsValues: hasMaskedValues(config && config.runSpec),
+            row,
+            vars: spec.vars || null,
+            config,
+            spec,
+            scansDone: 0,
+        };
+    }
+
+    function addItems(rawItems, { name = null, config = null } = {}) {
+        const prepared = prepareItems(rawItems);
 
         // One batch at a time: rows added to a running batch would share its
         // folder, its record and its Send to Compare with another batch's.
@@ -814,28 +903,8 @@ function createRunQueue({
         if (!concurrencyChosen) concurrency = automaticConcurrency(prepared.length, maxConcurrency);
         openSession({ name: batchName(name), config });
 
-        const ids = prepared.map(({ spec, row, config }) => {
-            const item = {
-                id: crypto.randomUUID(),
-                name: itemName(spec, session.items.length + 1),
-                url: typeof spec.url === 'string' ? spec.url : null,
-                status: 'waiting',
-                addedAt: iso(),
-                startedAt: null,
-                finishedAt: null,
-                durationMs: null,
-                scans: null,
-                scansRun: null,
-                findings: null,
-                file: null,
-                error: null,
-                needsValues: hasMaskedValues(config && config.runSpec),
-                row,
-                vars: spec.vars || null,
-                config,
-                spec,
-                scansDone: 0,
-            };
+        const ids = prepared.map((p) => {
+            const item = newItem(p, session.items.length + 1);
             session.items.push(item);
             return item.id;
         });
@@ -934,10 +1003,14 @@ function createRunQueue({
      * The masked values a session's interrupted rows need before they can
      * resume, each listed once however many rows share it.
      */
-    function getMaskedFields(id) {
+    function getMaskedFields(id, { itemId = null } = {}) {
         const { manifest } = readSessionManifest(id);
         const byKey = new Map();
-        for (const m of manifest.items.filter(waitsForValues)) {
+        // One row to run again, or the interrupted rows to resume.
+        const rows = itemId
+            ? manifest.items.filter((m) => m.id === itemId && m.needsValues && m.config && m.config.runSpec)
+            : manifest.items.filter(waitsForValues);
+        for (const m of rows) {
             const spec = runSpecFrom(m.config.runSpec);
             for (const slot of findMaskedSlots(spec)) {
                 const key = maskedSlotKey(slot);
@@ -960,28 +1033,7 @@ function createRunQueue({
         const { dir, manifest } = readSessionManifest(id);
         const typed = isPlainObject(values) ? values : null;
 
-        const items = manifest.items.map((m) => ({
-            id: m.id,
-            name: m.name,
-            url: m.url,
-            status: m.status,
-            addedAt: m.addedAt,
-            startedAt: m.startedAt,
-            finishedAt: m.finishedAt,
-            durationMs: m.durationMs,
-            scans: m.scans ?? null,
-            scansRun: m.scansRun ?? null,
-            findings: m.findings ?? null,
-            file: m.file ?? null,
-            error: m.error ?? null,
-            needsValues: !!m.needsValues,
-            row: m.row ?? null,
-            vars: m.vars ?? null,
-            config: m.config ?? null,
-            runFolders: m.runFolders ?? null,
-            spec: null,
-            scansDone: 0,
-        }));
+        const items = itemsFromManifest(manifest);
 
         let resumed = 0;
         for (const item of items) {
@@ -1011,6 +1063,46 @@ function createRunQueue({
         }
         if (!concurrencyChosen) concurrency = automaticConcurrency(resumed, maxConcurrency);
 
+        reopen(id, dir, manifest, items);
+        return { sessionId: id, resumed, stillWaiting };
+    }
+
+    // A finished session's rows, as the queue holds them while it runs.
+    function itemsFromManifest(manifest) {
+        return manifest.items.map((m) => ({
+            id: m.id,
+            name: m.name,
+            url: m.url,
+            status: m.status,
+            addedAt: m.addedAt,
+            startedAt: m.startedAt,
+            finishedAt: m.finishedAt,
+            durationMs: m.durationMs,
+            scans: m.scans ?? null,
+            scansRun: m.scansRun ?? null,
+            findings: m.findings ?? null,
+            file: m.file ?? null,
+            error: m.error ?? null,
+            needsValues: !!m.needsValues,
+            row: m.row ?? null,
+            vars: m.vars ?? null,
+            config: m.config ?? null,
+            runFolders: m.runFolders ?? null,
+            reruns: m.reruns || 0,
+            lastRerun: m.lastRerun ?? null,
+            previous: m.previous ?? null,
+            imported: m.imported ?? null,
+            spec: null,
+            scansDone: 0,
+        }));
+    }
+
+    /**
+     * Makes a finished session the running one again, with `items`, and
+     * starts what waits in it: resumed, re-run or added rows land in its
+     * folder, its batch.json and its zip, as if they had run with it.
+     */
+    function reopen(id, dir, manifest, items) {
         session = {
             id,
             name: batchName(manifest.name),
@@ -1018,9 +1110,9 @@ function createRunQueue({
             startedAt: manifest.startedAt,
             finishedAt: null,
             items,
-            takenFiles: new Set(items.map((i) => i.file).filter(Boolean)),
+            takenFiles: new Set(items.flatMap((i) => [i.file, i.previous && i.previous.file]).filter(Boolean)),
             configFile: typeof manifest.configFile === 'string' ? manifest.configFile : null,
-            // A resumed batch's peak and holds carry on from where they were.
+            // A reopened batch's peak and holds carry on from where they were.
             stats: manifest.stats && typeof manifest.stats === 'object'
                 ? { peakHeapPct: null, peakHeapMb: null, heapLimitMb: null, holds: 0, ...manifest.stats }
                 : { peakHeapPct: null, peakHeapMb: null, heapLimitMb: null, holds: 0 },
@@ -1028,7 +1120,133 @@ function createRunQueue({
         persist();
         openMetrics(session);
         pump();
-        return { sessionId: id, resumed, stillWaiting };
+    }
+
+    // A finished batch to change: none may run meanwhile, as one batch runs
+    // at a time.
+    function finishedSession(id) {
+        if (session) {
+            throw queueError(409, session.id === id
+                ? 'This batch is still running. Wait for it to finish first.'
+                : 'Another batch is running. Wait for it to finish first.');
+        }
+        return readSessionManifest(id);
+    }
+
+    /**
+     * Runs a finished batch's row again, from the workflow it saved, with
+     * its row's values. Its new result replaces its old one; a re-run that
+     * ends with no result keeps the old one, and the row says so
+     * (`lastRerun`). A workflow with hidden values needs them in `values`
+     * (getMaskedFields' keys), as resuming does.
+     */
+    function rerunItem(id, itemId, { values = null } = {}) {
+        const { dir, manifest } = finishedSession(id);
+        const items = itemsFromManifest(manifest);
+        const item = items.find((i) => i.id === itemId);
+        if (!item) throw queueError(404, 'No such run in this batch');
+        if (item.imported) throw queueError(400, 'This run was added as a report, so there is no workflow to run again.');
+        let spec = runSpecFrom(item.config && item.config.runSpec);
+        if (!Array.isArray(spec.actions) || spec.actions.length === 0) {
+            throw queueError(400, 'This run kept no workflow to run again.');
+        }
+        if (item.needsValues) {
+            spec = fillMaskedValues(spec, isPlainObject(values) ? values : null);
+            if (!spec) throw queueError(400, 'Type every hidden value to run this again.');
+        }
+        try {
+            validateUrl(spec.url);
+        } catch (err) {
+            throw queueError(400, err && err.message ? err.message : 'Invalid url');
+        }
+        if (item.vars && Object.keys(item.vars).length) spec.vars = item.vars;
+        item.previous = item.file ? resultOf(item) : null;
+        item.reruns = (item.reruns || 0) + 1;
+        Object.assign(item, {
+            status: 'waiting', startedAt: null, finishedAt: null, durationMs: null, error: null,
+            scans: null, scansRun: null, findings: null, file: null, spec,
+        });
+        if (!concurrencyChosen) concurrency = automaticConcurrency(1, maxConcurrency);
+        reopen(id, dir, manifest, items);
+        return { sessionId: id, itemId };
+    }
+
+    /**
+     * Adds workflows to a finished batch, as addItems takes them: they run
+     * into its folder, and its results, batch.json and zip include them.
+     */
+    function addToSession(id, rawItems) {
+        const prepared = prepareItems(rawItems);
+        const { dir, manifest } = finishedSession(id);
+        const items = itemsFromManifest(manifest);
+        if (!concurrencyChosen) concurrency = automaticConcurrency(prepared.length, maxConcurrency);
+        const added = prepared.map((p, i) => newItem(p, items.length + i + 1));
+        reopen(id, dir, manifest, [...items, ...added]);
+        return { sessionId: id, itemIds: added.map((i) => i.id) };
+    }
+
+    /**
+     * Adds a report saved before (a result's JSON, as the lab saves it) to a
+     * finished batch as a run of its own, without running anything: it is
+     * written to the batch's folder with its pictures, as a run's result is.
+     * `name` names its row; by default, its report's name.
+     */
+    async function importReport(id, payload, { name = null } = {}) {
+        if (!isPlainObject(payload) || !Array.isArray(payload.scans)) {
+            throw queueError(400, 'This is not a report: it has no scans.');
+        }
+        const { dir, manifest } = finishedSession(id);
+        const items = itemsFromManifest(manifest);
+        const owner = { dir, takenFiles: new Set(items.map((i) => i.file).filter(Boolean)), images: createBatchImages(dir) };
+        const rowName = (typeof name === 'string' && name.trim())
+            || (typeof payload.reportName === 'string' && payload.reportName.trim())
+            || (typeof payload.scenarioName === 'string' && payload.scenarioName.trim())
+            || `Report ${items.length + 1}`;
+        const firstUrl = payload.scans.map((sc) => sc && sc.url).find((u) => typeof u === 'string' && u) || null;
+        const fileName = files.uniqueResultFileName(rowName, owner.takenFiles);
+        const target = path.join(dir, fileName);
+        const tmp = path.join(dir, `.${fileName}.${process.pid}.tmp`);
+        let packed;
+        try {
+            packed = await packResultImages(payload, owner.images, { reportsRoot });
+            await writeJsonFile(tmp, payload);
+            await fs.promises.rename(tmp, target);
+        } catch (err) {
+            await fs.promises.rm(tmp, { force: true }).catch(() => {});
+            throw queueError(500, `Could not save the report: ${err && err.message ? err.message : err}`);
+        }
+        // Another batch may have started while it was written: this one's
+        // record is read again, so neither loses a row.
+        if (session && session.id === id) throw queueError(409, 'This batch started running meanwhile. Add the report again once it has finished.');
+        const fresh = itemsFromManifest(files.readManifest(dir) || manifest);
+        const summary = summarizePayload(payload);
+        const at = iso();
+        fresh.push({
+            id: crypto.randomUUID(),
+            name: rowName,
+            url: firstUrl,
+            status: 'done',
+            addedAt: at,
+            startedAt: null,
+            finishedAt: typeof payload.timestamp === 'string' ? payload.timestamp : at,
+            durationMs: null,
+            scans: summary.scans,
+            scansRun: summary.scansRun,
+            findings: summary.findings,
+            file: fileName,
+            error: null,
+            needsValues: false,
+            row: null,
+            vars: isPlainObject(payload.vars) ? payload.vars : null,
+            config: null,
+            runFolders: packed.runFolders.length ? packed.runFolders : null,
+            reruns: 0,
+            lastRerun: null,
+            previous: null,
+            imported: { at, missingPictures: packed.missing.length },
+        });
+        files.writeManifest(dir, { ...manifest, items: fresh.map(manifestItem) });
+        return { sessionId: id, itemId: fresh[fresh.length - 1].id, file: fileName, missingPictures: packed.missing.length };
     }
 
     /**
@@ -1064,6 +1282,11 @@ function createRunQueue({
             hasConfig: !!item.config,
             row: item.row ?? null,
             vars: item.vars ?? null,
+            reruns: item.reruns || 0,
+            lastRerun: item.lastRerun || null,
+            imported: item.imported || null,
+            // While it runs again: the result it would replace.
+            replacing: item.previous && item.previous.file ? item.previous.file : null,
         };
         if (live && (item.status === 'running' || item.status === 'cancelling')) {
             view.scans = item.scansDone;
@@ -1251,6 +1474,9 @@ function createRunQueue({
         cancelItem,
         cancelAll,
         resumeSession,
+        rerunItem,
+        addToSession,
+        importReport,
         getMaskedFields,
         deleteSession,
         getItemProgress,
