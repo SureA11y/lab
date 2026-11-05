@@ -100,6 +100,7 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
 
     app.post('/queue/settings', (req, res) => respond(res, () => ({
         concurrency: queue.setConcurrency(req.body && req.body.concurrency),
+        concurrencyChosen: queue.getState({ limit: 0 }).concurrencyChosen,
     })));
 
     // Watching one run in the run tab: same shape as /workflow-progress, plus

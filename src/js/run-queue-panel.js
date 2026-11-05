@@ -859,12 +859,23 @@ export function createRunQueuePanel({
 
         if (concurrencySelect) {
             const max = state.maxConcurrency || 8;
-            if (concurrencySelect.options.length !== max) {
-                concurrencySelect.replaceChildren(...Array.from({ length: max }, (_, i) => (
-                    el(doc, 'option', { value: String(i + 1), text: String(i + 1) })
-                )));
+            // First, the default: as many as the batch has, up to the maximum;
+            // while a batch runs, how many that is for it.
+            const live = state.sessions && state.sessions.some((s) => s.state === 'running');
+            const autoText = state.concurrencyChosen === false && live
+                ? `Automatic (${state.concurrency})`
+                : `Automatic (up to ${max})`;
+            if (concurrencySelect.options.length !== max + 1) {
+                concurrencySelect.replaceChildren(
+                    el(doc, 'option', { value: 'auto', text: autoText }),
+                    ...Array.from({ length: max }, (_, i) => el(doc, 'option', { value: String(i + 1), text: String(i + 1) }))
+                );
+            } else if (concurrencySelect.options[0].textContent !== autoText) {
+                concurrencySelect.options[0].textContent = autoText;
             }
-            if (doc.activeElement !== concurrencySelect) concurrencySelect.value = String(state.concurrency);
+            if (doc.activeElement !== concurrencySelect) {
+                concurrencySelect.value = state.concurrencyChosen === false ? 'auto' : String(state.concurrency);
+            }
         }
         if (cancelAllButton) {
             cancelAllButton.setAttribute('aria-disabled', hasRunning() ? 'false' : 'true');
@@ -1340,6 +1351,12 @@ export function createRunQueuePanel({
     }
 
     concurrencySelect?.addEventListener('change', () => {
+        if (concurrencySelect.value === 'auto') {
+            const max = (state && state.maxConcurrency) || 8;
+            act(() => post('/queue/settings', { concurrency: 'auto' }),
+                `As many at the same time as a batch has workflows, up to ${max}. Runs already going are not stopped.`);
+            return;
+        }
         const value = Number(concurrencySelect.value);
         const running = runningNow();
         // Lowering it never stops a run already going: say what happens instead.

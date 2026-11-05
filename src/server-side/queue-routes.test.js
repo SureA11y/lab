@@ -29,6 +29,8 @@ before(async () => {
         logError: () => {},
     });
     queue.init();
+    // These tests follow one run at a time.
+    queue.setConcurrency(1);
 
     const app = express();
     app.use(express.json());

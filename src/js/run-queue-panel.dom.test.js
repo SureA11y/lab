@@ -135,8 +135,18 @@ describe('run queue panel', () => {
         assert.equal(cells[5], '138');
         assert.equal(cells[6], '1m 05s');
 
-        assert.equal(document.getElementById('c').options.length, 4);
+        // Automatic first, then 1 to the maximum.
+        assert.equal(document.getElementById('c').options.length, 5);
         assert.equal(document.getElementById('c').value, '2');
+    });
+
+    test('the default is Automatic, saying how many it runs while a batch runs', async () => {
+        const {p} = panel([{concurrency: 3, concurrencyChosen: false, maxConcurrency: 8, sessions: [session({state: 'running'})]}]);
+        await p.refresh();
+        const select = document.getElementById('c');
+        assert.equal(select.value, 'auto');
+        assert.equal(select.options[0].textContent, 'Automatic (3)');
+        assert.equal(select.options.length, 9);
     });
 
     test('a finished run\'s figures carry their outcome\'s tile after them, hidden from assistive technology; none on 0 or while running', async () => {
