@@ -7,7 +7,7 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { comparisonProfiles, prepareComparison, rescoreReport, compareOnShared } = require('./shared-profiles.js');
+const { comparisonProfiles, prepareComparison, rescoreReport, rescoreScan, narrowScanToProfiles, compareOnShared } = require('./shared-profiles.js');
 const { diffReports } = require('./report-diff.js');
 const { diffReportSeries } = require('./report-multi-diff.js');
 const { buildA11ySummary } = require('./a11y-summary.js');
@@ -180,6 +180,27 @@ describe('scores counted again', () => {
             domMetrics: DOM, coverageSummary: null,
         }).scores.avgPageAccessibility;
         assert.equal(out.scans[0].metrics.a11ySummary.scores.avgPageAccessibility, once);
+    });
+});
+
+describe('the report view: a scan read on some of its profiles', () => {
+    test('is scored again on them, as the comparison scores it', () => {
+        const r = after();
+        const view = rescoreScan(narrowScanToProfiles(r.scans[0], ['wai-aria-1.2']));
+        const scores = view.metrics.a11ySummary.scores;
+        assert.equal(view.metrics.a11ySummary.scoreRecounted, true);
+        assert.equal(view.metrics.a11ySummary.scoreLeftOut, undefined);
+        const compared = diffReports(before(), after(), { profilesOff: ['wcag'] });
+        assert.equal(scores.avgPageAccessibility, compared.stats.scoreB);
+    });
+
+    test('a scan with every profile on, or none to score from, is left as it is', () => {
+        const r = after();
+        assert.equal(rescoreScan(r.scans[0]), r.scans[0]);
+        const old = scan([AA, ARIA], [rule('both-1', BOTH)], { dom: null });
+        const narrowed = narrowScanToProfiles(old, ['wcag22-aa']);
+        assert.equal(rescoreScan(narrowed), narrowed);
+        assert.equal(narrowed.metrics.a11ySummary.scoreLeftOut, true);
     });
 });
 

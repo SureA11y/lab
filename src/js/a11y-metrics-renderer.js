@@ -434,6 +434,12 @@ function renderScoreCaveat(defs, defKeys, a11ySummary) {
 
     const parts = [...new Set(caveats)];
 
+    // Read on some of its profiles: scored again on those, from the page
+    // measurements the report kept (shared/shared-profiles.js rescoreScan).
+    if (a11ySummary && a11ySummary.scoreRecounted) {
+        parts.push('Scored again on the profiles shown, so it is not the score the report was saved with.');
+    }
+
     const cov = a11ySummary && a11ySummary.scanCoverage ? a11ySummary.scanCoverage : null;
     if (cov && cov.scansSkipped > 0) {
         parts.push(`${cov.scansAnalyzed} of ${cov.scansTotal} scans analyzed - ${cov.scansSkipped} skipped and not represented above.`);

@@ -31,7 +31,9 @@ The first public release.
   than one profile, shown by profile: every profile is shown until it is
   turned off, several at once if wanted. A scan whose profiles are all off
   is hidden; one with a profile still on shows only those profiles'
-  findings, outcomes and counts. Every download, whatever its format, holds
+  findings, outcomes and counts, and its score, and the report's, scored
+  again on them from the page measurements the report kept (said beside
+  the score; a report saved without them shows none). Every download, whatever its format, holds
   what the filters show, so one report gives a download per profile. A
   finding's criteria are listed under their standard's name. An element
   that several checks of one criterion flag (a link inside a

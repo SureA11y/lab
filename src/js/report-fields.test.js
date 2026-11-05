@@ -11,7 +11,9 @@ test('the report view keeps the fields its renderers read', async () => {
     for (const key of ['wcagLevel', 'conformanceProfile', 'optInRules', 'canonical', 'label']) {
         assert.ok(SCAN_FIELDS.includes(key), `scan field "${key}" would be dropped`);
     }
-    for (const key of ['title', 'wcag', 'occurrences', 'lang', 'titleLang', 'en301549', 'rgaa']) {
+    // `verdicts` and `confidence`: a scan read on some of its profiles is
+    // scored again from them (shared-profiles.js rescoreScan).
+    for (const key of ['title', 'wcag', 'occurrences', 'lang', 'titleLang', 'en301549', 'rgaa', 'verdicts', 'confidence']) {
         assert.ok(FINDING_FIELDS.includes(key), `finding field "${key}" would be dropped`);
     }
     for (const key of ['findings', 'diagnostics', 'notices', 'margins']) {

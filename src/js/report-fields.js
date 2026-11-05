@@ -69,7 +69,10 @@ export const FINDING_FIELDS = Object.freeze([
     // ({ [profile]: outcome }), and the rule's own outcome before a standard
     // judged its findings, which its WCAG criteria read.
     'verdicts',
-    'checkOutcome'
+    'checkOutcome',
+    // How sure the engine was of a finding (0 to 1), which the score reads
+    // when a scan read on some of its profiles is scored again.
+    'confidence'
 ]);
 
 // The parts of a scan's canonical result the report view reads.
