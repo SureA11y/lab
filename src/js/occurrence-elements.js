@@ -42,19 +42,29 @@ function elementKey(n) {
 
 /**
  * The number of elements the occurrences are about: for each markup, the
- * most occurrences any one context has of it.
+ * most elements any one context has of it. Within a context an element is
+ * told by its selector, so the same element flagged twice (two checks, in a
+ * report saved before they were listed under one occurrence) counts once.
  */
 export function elementCount(nodes) {
     const byKey = new Map();
     for (const n of Array.isArray(nodes) ? nodes : []) {
         const key = elementKey(n);
         const perContext = byKey.get(key) || new Map();
+        const target = Array.isArray(n?.target) && n.target.length ? n.target.join(', ') : null;
         const contexts = Array.isArray(n?.contexts) && n.contexts.length ? n.contexts : [''];
-        for (const c of new Set(contexts.map(String))) perContext.set(c, (perContext.get(c) || 0) + 1);
+        for (const c of new Set(contexts.map(String))) {
+            const seen = perContext.get(c) || { targets: new Set(), untargeted: 0 };
+            if (target === null) seen.untargeted += 1;
+            else seen.targets.add(target);
+            perContext.set(c, seen);
+        }
         byKey.set(key, perContext);
     }
     let total = 0;
-    for (const perContext of byKey.values()) total += Math.max(...perContext.values());
+    for (const perContext of byKey.values()) {
+        total += Math.max(...[...perContext.values()].map((s) => s.targets.size + s.untargeted));
+    }
     return total;
 }
 

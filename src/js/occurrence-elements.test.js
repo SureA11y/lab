@@ -32,6 +32,16 @@ describe('occurrence-elements', () => {
         ]), 2);
     });
 
+    test('the same element flagged by two checks in one context is one element', () => {
+        const opt = (id, ctx) => ({html: `<li role="option" id="${id}">A</li>`, target: [`#${id}`], urls: ['https://example.test/'], contexts: [ctx]});
+        // A merged scan saved before the checks were listed under one occurrence:
+        // each option twice per context, and its id another in each context.
+        assert.equal(elementCount([
+            opt('o-0', 'Desktop'), opt('o-0', 'Desktop'), opt('o-9', 'Mobile'), opt('o-9', 'Mobile'),
+        ]), 1);
+        assert.equal(elementCountText([opt('o-0', 'Desktop'), opt('o-0', 'Desktop')], 2), ' · 1 element');
+    });
+
     test('an occurrence of several contexts counts once for them all', () => {
         assert.equal(elementCount([node('<b>A</b>', ['Desktop', 'Mobile']), node('<b id="m">A</b>', ['Mobile'])]), 2);
     });
