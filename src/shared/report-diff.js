@@ -494,7 +494,8 @@
 
     // How many failing occurrences each check has across a report's scans,
     // by the check's own id (a margin is reported per check, a failure under
-    // its rollup). A rollup's occurrence names its check (atomicCheckId).
+    // its rollup). A rollup's occurrence names its check (atomicCheckId), or
+    // its checks (checks) when several flagged the element.
     function failingOccurrencesByCheck(report) {
         const out = new Map();
         const scans = report && Array.isArray(report.scans) ? report.scans : [];
@@ -504,8 +505,10 @@
                 if (!f || f.outcome !== 'fail') continue;
                 const isRollup = f.meta && f.meta.atomic === false;
                 for (const o of Array.isArray(f.occurrences) ? f.occurrences : []) {
-                    const id = (o && o.atomicCheckId) || (isRollup ? null : f.ruleId);
-                    if (id) out.set(id, (out.get(id) || 0) + 1);
+                    const ids = o && Array.isArray(o.checks) && o.checks.length
+                        ? [...new Set(o.checks.map((c) => c && c.checkId).filter(Boolean))]
+                        : [(o && o.atomicCheckId) || (isRollup ? null : f.ruleId)];
+                    for (const id of ids) if (id) out.set(id, (out.get(id) || 0) + 1);
                 }
             }
         }

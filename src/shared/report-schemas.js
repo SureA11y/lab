@@ -205,6 +205,11 @@
                         pageUrl: text,
                         target: { type: 'array' },
                         html: text,
+                        checks: {
+                            type: 'array',
+                            items: open({ checkId: text, failureSummary: text }, ['checkId']),
+                            description: 'On a rollup\'s occurrence, when more than one of its checks flagged the element: what each check said, the first being the occurrence\'s own fields. The element is one occurrence whatever the number of checks.',
+                        },
                     }, ['occurrenceId']),
                     description: 'One element a finding concluded on.',
                 },
