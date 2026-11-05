@@ -580,7 +580,7 @@
     },
     "/queue/settings": {
       "post": {
-        "summary": "How many runs at once",
+        "summary": "How many runs at once: a number, or \"auto\" for as many as a batch has, up to the maximum (the default)",
         "requestBody": {
           "content": {
             "application/json": {
@@ -588,8 +588,15 @@
                 "type": "object",
                 "properties": {
                   "concurrency": {
-                    "type": "integer",
-                    "minimum": 1
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      {
+                        "const": "auto"
+                      }
+                    ]
                   }
                 }
               }

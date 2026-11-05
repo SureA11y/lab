@@ -673,10 +673,15 @@
             <div class="queue-controls">
                 <label for="queue-concurrency">Runs at the same time</label>
                 <select id="queue-concurrency">
+                    <option value="auto">Automatic (up to 8)</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
                     <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
                 </select>
                 <button type="button" id="queue-cancel-all" class="secondary-button" aria-disabled="true">Cancel all</button>
                 <!-- Shown only where the browser can notify (run-queue-panel.js). -->

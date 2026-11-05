@@ -154,7 +154,7 @@ function httpApiSchema() {
                     responses: { ...ok('Queued'), 400: { description: 'A run that cannot be queued', content: json(error) }, 409: { description: 'Another batch is running', content: json(error) } },
                 },
             },
-            '/queue/settings': { post: { summary: 'How many runs at once', requestBody: { content: json({ type: 'object', properties: { concurrency: { type: 'integer', minimum: 1 } } }) }, responses: ok('The concurrency now') } },
+            '/queue/settings': { post: { summary: 'How many runs at once: a number, or "auto" for as many as a batch has, up to the maximum (the default)', requestBody: { content: json({ type: 'object', properties: { concurrency: { anyOf: [{ type: 'integer', minimum: 1 }, { const: 'auto' }] } } }) }, responses: ok('The concurrency now') } },
             '/queue/items/{itemId}/progress': { get: { summary: 'A queued run\'s log', parameters: [pathParam('itemId'), since], responses: ok('The log', progress) } },
             '/queue/items/{itemId}/cancel': { post: { summary: 'Cancel a queued run', parameters: [pathParam('itemId')], responses: ok('Its status now') } },
             '/queue/cancel': { post: { summary: 'Cancel the batch', responses: ok('What was cancelled') } },

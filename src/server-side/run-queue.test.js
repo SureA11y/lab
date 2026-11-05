@@ -6,7 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { createRunQueue, hasMaskedValues, summarizePayload } = require('./run-queue');
+const { automaticConcurrency, createRunQueue, hasMaskedValues, summarizePayload } = require('./run-queue');
 const files = require('./queue-files');
 
 /* ---------- helpers ---------- */
@@ -78,16 +78,63 @@ function onlySession(queue) {
     return queue.getState().sessions[0];
 }
 
-function newQueue(executeRun, opts = {}) {
+// Most tests follow one run at a time, so set it; `automatic: true` leaves
+// the queue's own number of runs at once.
+function newQueue(executeRun, { automatic = false, ...opts } = {}) {
     const queue = createRunQueue({ baseDir, executeRun, logError: () => {}, ...opts });
     queue.init();
+    if (!automatic) queue.setConcurrency(1);
     return queue;
 }
 
 /* ---------- tests ---------- */
 
 describe('run queue', () => {
-    test('runs one item at a time by default, in the order added', async () => {
+    test('by default a batch runs as many at once as it has runs, up to 8', async () => {
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun, { automatic: true });
+        assert.equal(queue.getState().concurrencyChosen, false);
+        queue.addItems([item('A'), item('B'), item('C')]);
+        assert.equal(runner.calls.length, 3);
+        assert.equal(queue.getState().concurrency, 3);
+        for (const call of runner.calls) await settle(queue, call, { status: 'done', payload: payloadWith() });
+
+        queue.addItems(Array.from({ length: 12 }, (_, i) => item(`R${i}`)));
+        assert.equal(runner.calls.length - 3, 8);
+        assert.equal(queue.getState().concurrency, 8);
+        assert.equal(queue.getState().sessions[0].items.filter((i) => i.status === 'waiting').length, 4);
+    });
+
+    test('a setting someone chose holds for every later batch', async () => {
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun, { automatic: true });
+        queue.setConcurrency(2);
+        queue.addItems([item('A'), item('B'), item('C'), item('D')]);
+        assert.equal(runner.calls.length, 2);
+        assert.equal(queue.getState().concurrency, 2);
+        assert.equal(queue.getState().concurrencyChosen, true);
+    });
+
+    test('"auto" goes back to the batch\'s own number of runs', async () => {
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun);
+        queue.addItems([item('A'), item('B'), item('C')]);
+        assert.equal(runner.calls.length, 1);
+        assert.equal(queue.setConcurrency('auto'), 3);
+        assert.equal(runner.calls.length, 3);
+        assert.equal(queue.getState().concurrencyChosen, false);
+    });
+
+    test('automaticConcurrency: the number of runs, from 1 to the maximum', () => {
+        assert.equal(automaticConcurrency(1), 1);
+        assert.equal(automaticConcurrency(5), 5);
+        assert.equal(automaticConcurrency(8), 8);
+        assert.equal(automaticConcurrency(30), 8);
+        assert.equal(automaticConcurrency(30, 4), 4);
+        assert.equal(automaticConcurrency(0), 1);
+    });
+
+    test('runs one item at a time when set to, in the order added', async () => {
         const runner = controlledRunner();
         const queue = newQueue(runner.executeRun);
         queue.addItems([item('A'), item('B')]);

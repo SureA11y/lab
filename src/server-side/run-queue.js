@@ -36,6 +36,16 @@ const { isConfig } = require('../shared/batch-config.js');
 
 const DEFAULT_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 8;
+
+/**
+ * How many runs of a batch of `count` go at once until someone sets it: as
+ * many as it has, up to `max` - one run at a time left most of a machine
+ * idle. The memory governor still holds a start when the heap is high.
+ */
+function automaticConcurrency(count, max = MAX_CONCURRENCY) {
+    const n = Number.isInteger(count) && count > 0 ? count : DEFAULT_CONCURRENCY;
+    return Math.min(n, max);
+}
 const KEEP_SESSIONS = 100;
 const RECENT_SESSIONS = 10;
 // How long a finished run's progress log stays readable, so someone watching
@@ -306,6 +316,9 @@ function createRunQueue({
     if (typeof executeRun !== 'function') throw new Error('createRunQueue: executeRun is required');
 
     let concurrency = DEFAULT_CONCURRENCY;
+    // Whether someone set the concurrency (setConcurrency). Until then each
+    // batch takes automaticConcurrency of its own number of runs.
+    let concurrencyChosen = false;
     let session = null;
     const running = new Map(); // item id -> { abortController, cancelled }
     // Items whose progress can be watched: running, or finished less than
@@ -798,6 +811,7 @@ function createRunQueue({
         if (session) {
             throw queueError(409, 'A batch is already running. Wait for it to finish, or cancel it, before running another.');
         }
+        if (!concurrencyChosen) concurrency = automaticConcurrency(prepared.length, maxConcurrency);
         openSession({ name: batchName(name), config });
 
         const ids = prepared.map(({ spec, row, config }) => {
@@ -833,11 +847,24 @@ function createRunQueue({
     }
 
     function setConcurrency(value) {
+        // 'auto': back to each batch's own number of runs, up to the maximum.
+        if (value === 'auto') {
+            concurrencyChosen = false;
+            if (session) {
+                const left = session.items.filter((i) => i.status === 'waiting' || running.has(i.id)).length;
+                concurrency = automaticConcurrency(left, maxConcurrency);
+            }
+            persist();
+            metric({ kind: 'concurrency', concurrency });
+            pump();
+            return concurrency;
+        }
         const n = Number(value);
         if (!Number.isInteger(n) || n < 1 || n > maxConcurrency) {
             throw queueError(400, `Runs at the same time must be a whole number from 1 to ${maxConcurrency}`);
         }
         concurrency = n;
+        concurrencyChosen = true;
         persist();
         metric({ kind: 'concurrency', concurrency });
         pump();
@@ -982,6 +1009,7 @@ function createRunQueue({
                 ? 'Type every hidden value to resume these runs.'
                 : 'Nothing in this session can be resumed on its own');
         }
+        if (!concurrencyChosen) concurrency = automaticConcurrency(resumed, maxConcurrency);
 
         session = {
             id,
@@ -1165,7 +1193,7 @@ function createRunQueue({
             if (manifest) sessions.push(sessionView(manifest, { live: false, withItems: items }));
         }
         const { hold, resources } = session ? governor.view() : { hold: null, resources: null };
-        return { concurrency, maxConcurrency, hold, resources, sessions };
+        return { concurrency, concurrencyChosen, maxConcurrency, hold, resources, sessions };
     }
 
     /**
@@ -1236,6 +1264,7 @@ module.exports = {
     DEFAULT_CONCURRENCY,
     MAX_CONCURRENCY,
     KEEP_SESSIONS,
+    automaticConcurrency,
     createRunQueue,
     hasMaskedValues,
     redactMaskedFields,

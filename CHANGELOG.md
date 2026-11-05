@@ -79,8 +79,9 @@ The first public release.
   at 7:1 or more (AAA) in both themes; red and accent text deepen with the
   wash, so Delete and Run read better focused than at rest.
 - **Batches and a run queue**: one workflow once per row of a list (one per
-  page, per environment, per release), up to four at once, each result
-  saved as it finishes; a batch of thousands of runs opens a page of them
+  page, per environment, per release), as many at once as the batch has,
+  up to eight, unless you set a number in Runs at the same time; each
+  result saved as it finishes; a batch of thousands of runs opens a page of them
   at a time.
 - **Passwords from the environment** (`{"$env": "NAME"}`), so workflows that
   log in can be saved, shared and run unattended with no password in them.
