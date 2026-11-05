@@ -191,12 +191,19 @@ export function sharedProfilesNoteHTML(doc) {
     const filter = doc && doc.profileFilter && Array.isArray(doc.profileFilter.off) && doc.profileFilter.off.length
         ? doc.profileFilter : null;
     const recounted = !!(doc && doc.scoresRecounted);
+    const unmatched = doc && doc.pagesUnmatched
+        ? esc('No page is in every report: pages are matched by their path and query (/v1/cart.html is not /v2/cart.html), so element by element every failure reads as fixed or new.')
+        : '';
     const scoreSentence = recounted
         ? "Each report's score is counted again on the profiles compared, from the page measurements it kept, so it is not the score the report itself shows."
         : "Each report's own score is left out too, since it was made from everything that report checked.";
-    if (comparedOn.length || notCompared.length || filter) {
+    if (comparedOn.length || notCompared.length || filter || unmatched) {
         const leftOut = profiles && Array.isArray(profiles.leftOut) ? profiles.leftOut : [];
         const parts = [];
+        if (unmatched) parts.push(unmatched);
+        if (profiles && profiles.byReport && comparedOn.length) {
+            parts.push(esc('Each report is read on the profiles every report checked on some page.'));
+        }
         if (filter) {
             const shown = Array.isArray(filter.shown) ? filter.shown : [];
             parts.push(esc(`Compared on ${shown.map((p) => p.label).join(' + ')} only: ${filter.off.map((p) => p.label).join(', ')} turned off above, so ${filter.off.length === 1 ? 'its' : 'their'} results are left out.`));
@@ -206,7 +213,9 @@ export function sharedProfilesNoteHTML(doc) {
             parts.push(esc(`Compared on ${comparedOn.map((p) => p.label).join(' + ')}, which every report checked.`));
         }
         if (comparedOn.length && leftOut.length) {
-            parts.push(esc(`Left out, as not every report checked it on the same pages: ${leftOut.map((p) => p.label).join(', ')}.`));
+            parts.push(esc(profiles.byReport
+                ? `Left out, as not every report checked it: ${leftOut.map((p) => p.label).join(', ')}.`
+                : `Left out, as not every report checked it on the same pages: ${leftOut.map((p) => p.label).join(', ')}.`));
         }
         if (filter || (comparedOn.length && leftOut.length)) {
             parts.push(esc(scoreSentence));

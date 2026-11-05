@@ -599,6 +599,12 @@ export function createReportView(app) {
         const cloned = cloneJsonData(picked);
 
         app.recomputeDerivedReportData(cloned);
+        // Saved as they are shown, the scores counted again on the profiles
+        // shown are the file's own: it does not say they were counted again.
+        for (const scan of Array.isArray(cloned.scans) ? cloned.scans : []) {
+            if (scan?.metrics?.a11ySummary) delete scan.metrics.a11ySummary.scoreRecounted;
+        }
+        if (cloned.metrics?.a11ySummary) delete cloned.metrics.a11ySummary.scoreRecounted;
 
         // As version 4 keeps it: one rule catalogue for the scans sharing it.
         globalThis.A11Y_REPORT_FORMAT?.compactReport(cloned);

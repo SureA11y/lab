@@ -173,6 +173,13 @@ describe('buildSummaryMarkdown', () => {
         assert.match(md, /baseline is newer than this run/);
     });
 
+    test('says when no page of the run is a page of the baseline', () => {
+        const md = buildSummaryMarkdown({ payload: payload(), status: 'done', health: CLEAN, comparison: comparison({ pagesUnmatched: true }) });
+        assert.match(md, /No page of this run is a page of the baseline/);
+        const none = buildSummaryMarkdown({ payload: payload(), status: 'done', health: CLEAN, comparison: comparison() });
+        assert.doesNotMatch(none, /No page of this run/);
+    });
+
     test('carries the error of a failed run', () => {
         const md = buildSummaryMarkdown({
             payload: payload({ failed: true, errorDetails: { message: 'navigation timed out' } }),

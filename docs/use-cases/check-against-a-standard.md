@@ -42,8 +42,14 @@ level under **WCAG 2.2** (or **Don’t check WCAG**) and tick the
   lists each one's requirements: WCAG's criteria and WAI-ARIA's own. An
   unnamed `role="grid"` stays a question under WCAG 4.1.2 and is a failure
   of WAI-ARIA's name requirement.
-- **A failure under any of them fails the scan.** Its counts and score read
-  every profile's requirements together.
+- **A failure under any of them fails the scan.** Its counts read every
+  profile's requirements together. Its score is the score of the profile it
+  does worst on, each scored as a scan of it alone would be: the profiles
+  restate each other (an element too small to tap fails WCAG 2.5.8 and EN 301
+  549's 9.2.5.8 alike), so scored as one, a defect counted once per profile.
+  The scan's metrics name that profile (`scoredOn`) and give each one's score
+  (`byProfile`). Reports saved before are scored this way when opened or
+  compared.
 - **EN 301 549 restates WCAG Level A and AA.** Beside a WCAG level, it checks
   those criteria again, under its clauses' names. The step says so.
 - **A profile that didn't run** (its pack didn't load, say) is named under

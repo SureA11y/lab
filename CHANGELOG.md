@@ -158,10 +158,28 @@ The first public release.
   rather than left without a score; the comparison says so. A report saved
   without page measurements still shows none.
 - **By profile**: a comparison read on two profiles or more says how much of
-  it each accounts for. Each failing problem is put down to the one profile
-  it fails under, or to "More than one profile", so the rows add up to the
-  comparison (and, with two reports, its fixed, new and still failing); each
-  profile's own score, the reports scored on it alone, sits beside them.
+  it each accounts for. Each broken element is put down to the one profile
+  that flags it, or to "More than one profile" when several do, so the rows
+  add up to the comparison's broken elements (and, with two reports, to
+  those fixed, newly broken and still broken); each profile on its own, its
+  problems, failures and score with the reports read on it alone, sits
+  beside them.
+- **A scan of several profiles scores as the profile it does worst on**,
+  each scored as a scan of it alone would be, and so does a run of such
+  scans. Scored as one, a defect the profiles restate counted once per
+  profile: a page checked against WCAG 2.2 AAA, WAI-ARIA 1.2 and EN 301 549
+  scored 19 where each profile alone scored 40, 100 and 40. Its counts still
+  read every profile together. Reports saved before are scored this way when
+  opened or compared, and say their score was counted again.
+- **Reports with no page in common** (pages are matched by path and query,
+  so a site under `/v1/` and the same one under `/v2/` share none) are said
+  to have none, in the app, `comparison.html` and the runner's output, as
+  every failure then reads as fixed or new; and they are read on the
+  profiles every report checked on some page, rather than said to share no
+  standard, with the requirements only one checked counted as fixed.
+- With some of a report's profiles turned off, its scans list their
+  failures again (they read 0), and a scan's verdict by severity is counted
+  again in its downloads.
   The runner's `comparison.html` has it too, and the diff engines return it
   as `profiles` (`diffReports(a, b, { profilesOff })`,
   `diffReportSeries(reports, { profilesOff })`).

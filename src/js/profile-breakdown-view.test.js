@@ -51,16 +51,18 @@ const b = () => report('b', 2, [rule('aria-1', ARIA_ONLY), rule('aria-2', ARIA_O
 const c = () => report('c', 3, [rule('aria-1', ARIA_ONLY)]);
 
 describe('By profile', () => {
-    test('two reports: a row per profile, the shared row and the total, with the categories', async () => {
+    test('two reports: a row per profile, the shared row and the total, by broken element', async () => {
         const { pairProfilesHTML } = await load();
         const d = globalThis.A11Y_REPORT_DIFF.diffReports(a(), b());
         const html = pairProfilesHTML(d.profiles, { mode: 'evolution', sides: ['Baseline', 'Latest'] });
         assert.match(html, /<h3>By profile<\/h3>/);
-        assert.match(html, /<th scope="col">Fixed<\/th><th scope="col">Newly failing<\/th><th scope="col">Still failing<\/th>/);
-        assert.match(html, /<th scope="row">WAI-ARIA 1\.2<span class="byprof-hint">on its own, shared ones included: from 1 to 3 problems<\/span><\/th><td class="num">0<\/td><td class="num">2<\/td><td class="num">0<\/td>/);
-        assert.match(html, /More than one profile/);
-        assert.match(html, /<tr class="byprof-row byprof-row--total"><th scope="row">As compared<\/th><td class="num">1<\/td><td class="num">2<\/td><td class="num">1<\/td>/);
-        assert.match(html, /WAI-ARIA 1\.2 alone accounts for 2 of the 3 problems in Latest\./);
+        assert.match(html, /<th scope="colgroup" colspan="4">Broken elements<\/th><th scope="colgroup" colspan="3">On its own<\/th>/);
+        assert.match(html, /<th scope="col">Fixed<\/th><th scope="col">Newly broken<\/th><th scope="col">Still broken<\/th><th scope="col">In each<\/th>/);
+        // WAI-ARIA alone flags the two new elements; the one both flag is shared.
+        assert.match(html, /<th scope="row">WAI-ARIA 1\.2<\/th><td class="num">0<\/td><td class="num">2<\/td><td class="num">0<\/td>/);
+        assert.match(html, /More than one profile<span class="byprof-hint">flagged by several/);
+        assert.match(html, /<tr class="byprof-row byprof-row--total"><th scope="row">As compared<\/th><td class="num">0<\/td><td class="num">2<\/td><td class="num">1<\/td>/);
+        assert.match(html, /Only WAI-ARIA 1\.2 flags 2 of the 3 broken elements in Latest\./);
     });
 
     test('variants name the sides', async () => {
@@ -82,6 +84,7 @@ describe('By profile', () => {
         const html = seriesProfilesHTML(s.profiles, { labels: ['One', 'Two', 'Three'] });
         assert.match(html, /<th scope="col">One<\/th><th scope="col">Two<\/th><th scope="col">Three<\/th>/);
         assert.match(html, /byprof-score">score <span class="num">\d+<\/span>/);
+        assert.match(html, /broken elements?<span class="byprof-hint">on its own: \d+ problems?, \d+ failures?<\/span>/);
     });
 
     test('the two-report view and the dashboard carry it', async () => {
