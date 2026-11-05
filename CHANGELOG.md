@@ -38,7 +38,10 @@ The first public release.
   occurrence, with what each check said under it; and when a finding's
   occurrences are about fewer elements, as a merged scan's contexts can
   give one element two ids, the count says so: "284 occurrences · 142
-  elements".
+  elements". A merged scan joins such an element across its contexts when
+  only its ids differ (same page, same checks saying the same, same markup
+  otherwise), one to one, and shows its selector in each context where it
+  has another, with its own "Copy selector".
 - **Comparisons.** Two reports side by side, or up to 24 as a dashboard of
   what was fixed and what appeared at each step, how long each problem has
   been open, and whether each run covered enough to be compared.

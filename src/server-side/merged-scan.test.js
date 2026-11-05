@@ -133,6 +133,72 @@ describe('merged scans', () => {
         assert.deepEqual(occurrences[0].contexts, ['Light', 'Dark']);
     });
 
+    // A list rendered once per opening numbers its options on: the same
+    // option is mat-option-0 in one context and mat-option-284 in another.
+    const option = (n, text = `Page ${n}`) => occ({
+        target: `#mat-option-${n}`,
+        html: `<mat-option role="option" class="mat-mdc-option" id="mat-option-${n}" aria-selected="false"><a href="#/p">${text}</a></mat-option>`,
+        summary: 'This <mat-option> has interactive controls nested inside it: a.',
+    });
+
+    test('the same element numbered otherwise in another context is one occurrence, with its selector there', () => {
+        const [merged] = foldMergedScans([
+            scan('Desktop', [finding('fail', 'nested', [option(0, 'Home'), option(1, 'Guide')])]),
+            scan('Mobile', [finding('fail', 'nested', [option(284, 'Home'), option(285, 'Guide')])]),
+        ], deps);
+        const occurrences = merged.canonical.findings[0].occurrences;
+        assert.deepEqual(occurrences.map((o) => [o.target, o.contexts, o.contextTargets]), [
+            [['#mat-option-0'], ['Desktop', 'Mobile'], { Mobile: ['#mat-option-284'] }],
+            [['#mat-option-1'], ['Desktop', 'Mobile'], { Mobile: ['#mat-option-285'] }],
+        ]);
+    });
+
+    test('an id the summary names does not keep the same element apart', () => {
+        const input = (n) => occ({
+            target: `#mat-input-${n}`,
+            html: `<input id="mat-input-${n}" aria-activedescendant="mat-option-${n * 142}">`,
+            summary: `aria-activedescendant points at mat-option-${n * 142}, which is not owned by this input.`,
+        });
+        const [merged] = foldMergedScans([
+            scan('Desktop', [finding('fail', 'aria', [input(0)])]),
+            scan('Mobile', [finding('fail', 'aria', [input(2)])]),
+        ], deps);
+        const occurrences = merged.canonical.findings[0].occurrences;
+        assert.equal(occurrences.length, 1);
+        assert.deepEqual(occurrences[0].contextTargets, { Mobile: ['#mat-input-2'] });
+    });
+
+    test('elements alike but for their ids are matched one to one, exact matches first', () => {
+        const button = (id) => occ({ target: `#${id}`, html: `<button id="${id}"></button>`, summary: 'No name' });
+        const [merged] = foldMergedScans([
+            scan('Desktop', [finding('fail', 'name', [button('a'), button('b')])]),
+            // c is new here; a is the same as on desktop, if listed after it.
+            scan('Mobile', [finding('fail', 'name', [button('c'), button('a'), button('d'), button('e')])]),
+        ], deps);
+        const occurrences = merged.canonical.findings[0].occurrences;
+        assert.deepEqual(occurrences.map((o) => [o.target[0], o.contexts, o.contextTargets || null]), [
+            ['#a', ['Desktop', 'Mobile'], null],
+            ['#b', ['Desktop', 'Mobile'], { Mobile: ['#c'] }],
+            // More of them than on desktop: their own occurrences.
+            ['#d', ['Mobile'], null],
+            ['#e', ['Mobile'], null],
+        ]);
+    });
+
+    test('ids aside, other markup, another result or the same selector stay apart', () => {
+        const [merged] = foldMergedScans([
+            scan('Desktop', [finding('fail', 'nested', [option(0, 'Home'), option(1, 'Guide'), occ({ target: '#t', html: '<button id="t">A</button>', summary: 'mouseenter' })])]),
+            scan('Mobile', [finding('fail', 'nested', [
+                option(284, 'Search'),
+                { ...option(285, 'Guide'), failureSummary: 'Other', summary: 'Other' },
+                occ({ target: '#t', html: '<button id="t">A</button>', summary: 'mouseenter, mouseleave' }),
+            ])]),
+        ], deps);
+        const occurrences = merged.canonical.findings[0].occurrences;
+        assert.equal(occurrences.length, 6);
+        assert.ok(occurrences.every((o) => o.contexts.length === 1 && !o.contextTargets));
+    });
+
     test('a different page, element or outcome is a different result', () => {
         assert.notEqual(occurrenceIdentity(occ()), occurrenceIdentity(occ({ pageUrl: 'https://m.example.com/product' })));
         assert.notEqual(occurrenceIdentity(occ()), occurrenceIdentity(occ({ target: '.total' })));
@@ -542,6 +608,18 @@ describe('merged scans: surea11y\'s raw result', () => {
         assert.deepEqual(contrast.occurrences.map((o) => [o.data.details.ratio, o.contexts]), [[3.5, ['Light', 'Light again']], [1.9, ['Dark']]]);
         assert.equal(alt.occurrences.length, 1);
         assert.equal(alt.occurrences[0].hint, 'In all 3 contexts.');
+    });
+
+    test('the same element numbered otherwise in another context is one occurrence here too', () => {
+        const option = (n) => coreOcc({ selector: `#mat-option-${n}`, html: `<li role="option" id="mat-option-${n}"><a href="#/">Home</a></li>`, summary: 'Nested a' });
+        const merged = mergeCoreResults([
+            { context: 'Desktop', result: coreResult([coreCheck('nested', 'fail', [option(0)])]) },
+            { context: 'Mobile', result: coreResult([coreCheck('nested', 'fail', [option(284)])]) },
+        ]);
+        const [o] = merged.checksResults[0].occurrences;
+        assert.equal(merged.checksResults[0].occurrences.length, 1);
+        assert.deepEqual([o.selector, o.contexts, o.contextSelectors], ['#mat-option-0', ['Desktop', 'Mobile'], { Mobile: '#mat-option-284' }]);
+        assert.equal(o.hint, 'Darken the text. In all 2 contexts.');
     });
 
     test('an undecided context\'s occurrences stay undecided under a failing rule', () => {

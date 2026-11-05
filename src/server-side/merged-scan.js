@@ -54,6 +54,75 @@ function occurrenceIdentity(occ) {
     });
 }
 
+// A framework numbers the ids it makes as it goes: the options of a list
+// opened three times in a run are mat-option-0.., mat-option-142.. and
+// mat-option-284.., so the same element of two contexts has another id and
+// selector, and does not match. Once no exact match is left, an occurrence of
+// another context is so taken for the same element when everything but its
+// ids is the same: its page, outcome, checks and what they said, and its
+// markup. One to one, in the order the contexts list them: an element is
+// never joined with two of another context, nor with one of its own. The
+// attributes are those src/js/occurrence-elements.js leaves out to count
+// elements.
+const ID_ATTRIBUTES = [
+    'id', 'for', 'headers', 'form', 'list',
+    'aria-activedescendant', 'aria-controls', 'aria-describedby', 'aria-details',
+    'aria-errormessage', 'aria-flowto', 'aria-labelledby', 'aria-owns',
+];
+const ID_ATTRIBUTE_RE = new RegExp(
+    `\\s(${ID_ATTRIBUTES.join('|')})\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'=<>\`]+))`,
+    'gi'
+);
+const escapeRe = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * What an occurrence is once its ids are left out: `fields` with the ids its
+ * markup holds or points at replaced, and that markup without them. Null
+ * without markup, where there is nothing to tell the element by.
+ */
+function withoutIds(html, fields) {
+    if (typeof html !== 'string' || !html.trim()) return null;
+    const ids = new Set();
+    const markup = html.replace(ID_ATTRIBUTE_RE, (_, _name, dq, sq, bare) => {
+        for (const id of String(dq ?? sq ?? bare ?? '').split(/\s+/)) if (id) ids.add(id);
+        return '';
+    }).replace(/\s+/g, ' ').trim();
+    let text = stableStringify(fields);
+    // Longest first, so mat-option-28 does not eat into mat-option-284.
+    for (const id of [...ids].sort((a, b) => b.length - a.length)) {
+        text = text.replace(new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`, 'g'), '\u0000id');
+    }
+    return `${markup}\n${text}`;
+}
+
+function occurrenceWithoutIds(occ) {
+    const o = occ && typeof occ === 'object' ? occ : {};
+    return withoutIds(o.html, {
+        pageUrl: o.pageUrl || null,
+        shadowHostSelectors: Array.isArray(o.shadowHostSelectors) ? o.shadowHostSelectors : null,
+        outcome: o.occurrenceOutcome || o.outcome || null,
+        failureSummary: o.failureSummary || o.summary || null,
+        hint: o.hint || null,
+        uncertainty: o.uncertainty || null,
+        details: o.details || null,
+        atomicCheckId: o.atomicCheckId || null,
+        sourceAtomicRules: Array.isArray(o.sourceAtomicRules) ? o.sourceAtomicRules : null,
+        checks: Array.isArray(o.checks) ? o.checks : null,
+    });
+}
+
+const sameTarget = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
+
+/**
+ * The first occurrence of `candidates` that is the element `occ` is, by
+ * withoutIds, in another context: with another selector, and none of
+ * `contexts` among its own.
+ */
+function sameElementOf(candidates, occ, contexts, targetOf) {
+    return (candidates || []).find((c) => !sameTarget(targetOf(c), targetOf(occ))
+        && !contexts.some((name) => c.contexts.includes(name))) || null;
+}
+
 function outcomeCounts(findings) {
     const out = { fail: 0, cantTell: 0, pass: 0, notApplicable: 0 };
     for (const f of findings) {
@@ -91,9 +160,35 @@ function statePicturesOf(occ, context) {
         : shot));
 }
 
-function addOccurrence(entry, occ, context, listed, contextsTotal) {
+// The element `occ` is, in the context it comes from, when it has another
+// selector there: in `contextTargets`, by context.
+function noteContextTarget(seen, occ, contexts) {
+    const targets = { ...(seen.contextTargets || {}) };
+    for (const c of contexts) if (!(c in targets)) targets[c] = Array.isArray(occ.target) ? [...occ.target] : [];
+    seen.contextTargets = targets;
+}
+
+function rememberWithoutIds(entry, copy) {
+    const key = occurrenceWithoutIds(copy);
+    if (key === null) return;
+    if (!entry.loose.has(key)) entry.loose.set(key, []);
+    entry.loose.get(key).push(copy);
+}
+
+/**
+ * Adds a context's occurrence to a merged finding. `loosely`: no exact match
+ * being left, it may join the same element of another context by
+ * occurrenceWithoutIds; it returns false when it found none, and adds nothing.
+ */
+function addOccurrence(entry, occ, context, listed, contextsTotal, loosely = false) {
     const key = occurrenceIdentity(occ);
-    const seen = entry.occ.get(key);
+    let seen = entry.occ.get(key);
+    if (!seen && loosely) {
+        const contexts = occ.contexts || [context];
+        seen = sameElementOf(entry.loose.get(occurrenceWithoutIds(occ)), occ, contexts, (o) => o.target);
+        if (!seen) return false;
+        noteContextTarget(seen, occ, contexts);
+    }
     if (seen) {
         if (listed) {
             for (const c of occ.contexts || [context]) if (!seen.contexts.includes(c)) seen.contexts.push(c);
@@ -106,7 +201,7 @@ function addOccurrence(entry, occ, context, listed, contextsTotal) {
                 else delete seen.elementStateScreenshots;
             }
         }
-        return;
+        return true;
     }
     const copy = listed ? { ...occ, contexts: occ.contexts ? [...occ.contexts] : [context], contextsTotal } : { ...occ };
     const picture = listed ? pictureOf(occ, context) : null;
@@ -114,7 +209,9 @@ function addOccurrence(entry, occ, context, listed, contextsTotal) {
     const inState = listed ? statePicturesOf(occ, context) : null;
     if (inState) copy.elementStateScreenshots = inState;
     entry.occ.set(key, copy);
+    if (listed) rememberWithoutIds(entry, copy);
     entry.finding.occurrences.push(copy);
+    return true;
 }
 
 /**
@@ -151,7 +248,7 @@ function mergeFindingLists(parts, contextsTotal) {
             const uid = f.uid || `${f.engineId || ''}:${f.outcome}:${f.ruleId || f.id}`;
             let entry = byUid.get(uid);
             if (!entry) {
-                entry = { finding: { ...f, occurrences: [] }, occ: new Map() };
+                entry = { finding: { ...f, occurrences: [] }, occ: new Map(), loose: new Map() };
                 byUid.set(uid, entry);
                 order.push(uid);
             } else if (contributorsOf(f) && contributorsOf(entry.finding)) {
@@ -160,8 +257,16 @@ function mergeFindingLists(parts, contextsTotal) {
                 if (more.length) entry.finding = withContributors(entry.finding, [...contributorsOf(entry.finding), ...more]);
             }
             const listed = LISTED_OUTCOMES.has(f.outcome);
+            // Exact matches first, so none is taken by an element that only
+            // looks like it; then the rest, each the same element of another
+            // context if there is one, else an occurrence of its own.
+            const rest = [];
             for (const occ of Array.isArray(f.occurrences) ? f.occurrences : []) {
-                addOccurrence(entry, occ, context, listed, contextsTotal);
+                if (!listed || entry.occ.has(occurrenceIdentity(occ))) addOccurrence(entry, occ, context, listed, contextsTotal);
+                else rest.push(occ);
+            }
+            for (const occ of rest) {
+                if (!addOccurrence(entry, occ, context, listed, contextsTotal, true)) addOccurrence(entry, occ, context, listed, contextsTotal);
             }
         }
         for (const [key, outcomes] of outcomesByRule) if (outcomes.size > 1) splitRules.add(key);
@@ -233,6 +338,8 @@ function mergeFindingLists(parts, contextsTotal) {
         }
         entry.finding.occurrences = stays;
         entry.occ = new Map(stays.map((o) => [occurrenceIdentity(o), o]));
+        entry.loose = new Map();
+        for (const o of stays) if (LISTED_OUTCOMES.has(o.occurrenceOutcome || o.outcome || f.outcome)) rememberWithoutIds(entry, o);
     }
 
     return entries.filter((e) => !dropped.has(e)).map((e) => e.finding);
@@ -428,6 +535,16 @@ function coreOccurrenceIdentity(occ, outcome) {
     });
 }
 
+function coreOccurrenceWithoutIds(occ, outcome) {
+    const o = occ && typeof occ === 'object' ? occ : {};
+    return withoutIds(o.html, {
+        outcome: outcome || null,
+        summary: o.summary || null,
+        hint: o.hint || null,
+        details: (o.data && o.data.details) || null,
+    });
+}
+
 function contextsText(contexts, total) {
     return contexts.length === total && total > 1
         ? `In all ${total} contexts.`
@@ -527,8 +644,22 @@ function mergeCoreChecks(parts, field, total) {
         const listed = LISTED_OUTCOMES.has(base.outcome);
         const occurrences = [];
         const index = new Map();
+        const loose = new Map();
+        const add = (occ, outcome, key, context) => {
+            const copy = listed ? { ...occ, occurrenceOutcome: outcome, contexts: [context] } : { ...occ };
+            index.set(key, copy);
+            occurrences.push(copy);
+            const without = listed ? coreOccurrenceWithoutIds(occ, outcome) : null;
+            if (without !== null) {
+                if (!loose.has(without)) loose.set(without, []);
+                loose.get(without).push(copy);
+            }
+        };
 
         for (const { check, context } of seen) {
+            // As mergeFindingLists does: exact matches first, then the same
+            // element of another context, by its markup without ids.
+            const rest = [];
             for (const occ of Array.isArray(check.occurrences) ? check.occurrences : []) {
                 if (!occ) continue;
                 const outcome = listed ? coreOccurrenceOutcome(check, occ) : null;
@@ -542,9 +673,14 @@ function mergeCoreChecks(parts, field, total) {
                     if (listed && !known.contexts.includes(context)) known.contexts.push(context);
                     continue;
                 }
-                const copy = listed ? { ...occ, occurrenceOutcome: outcome, contexts: [context] } : { ...occ };
-                index.set(key, copy);
-                occurrences.push(copy);
+                if (listed) rest.push({ occ, outcome, key });
+                else add(occ, outcome, key, context);
+            }
+            for (const { occ, outcome, key } of rest) {
+                const same = sameElementOf(loose.get(coreOccurrenceWithoutIds(occ, outcome)), occ, [context], (o) => o.selector);
+                if (!same) { add(occ, outcome, key, context); continue; }
+                same.contexts.push(context);
+                same.contextSelectors = { ...(same.contextSelectors || {}), [context]: occ.selector || null };
             }
         }
 
