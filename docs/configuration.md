@@ -48,9 +48,8 @@ added ([CONTRIBUTING.md](../CONTRIBUTING.md#adding-an-engine)).
 
 Besides WCAG, which surea11y has built in, the lab knows the standards of
 the packs installed with it: [EN 301 549](https://github.com/SureA11y/pack-en301549)'s,
-`@surea11y/pack-en301549`, is a dependency, and [WAI-ARIA 1.2](https://github.com/SureA11y/pack-wai-aria)'s,
-`@surea11y/pack-wai-aria`, is offered wherever it is installed (it needs
-surea11y core 1.15). Every `@surea11y/pack-*` package in the lab's
+`@surea11y/pack-en301549`, and [WAI-ARIA 1.2](https://github.com/SureA11y/pack-wai-aria)'s,
+`@surea11y/pack-wai-aria`, are dependencies. Every `@surea11y/pack-*` package in the lab's
 `package.json`, surea11y's own packs wherever installed, and any named in
 `A11Y_PACKS`, is loaded at start; one that does not load is left out. What the lab knows of each
 standard comes from the pack, so a further standard needs its pack
