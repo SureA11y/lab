@@ -1150,11 +1150,13 @@ export function createRenderer({
             : '';
 
         return (
-            '<div class="instances-meta">' +
-            formatCount(total) +
+            // With the element count, a narrow column wraps before it, never
+            // inside either part, nor into the next column.
+            '<div class="instances-meta' + (elements ? ' instances-meta--elements' : '') + '">' +
+            '<span class="instances-meta__part">' + formatCount(total) +
             ' ' + instanceLabel +
-            (total === 1 ? '' : 's') +
-            escapeHtml(elements) +
+            (total === 1 ? '' : 's') + '</span>' +
+            (elements ? ' <span class="instances-meta__part">' + escapeHtml(elements.replace(/^ /, '')) + '</span>' : '') +
             (leaning ? '<br><span class="instances-lean">' + leaning + '</span>' : '') +
             '</div>' +
             '<button type="button" class="src-dialog-trigger" data-dialog-id="' +
