@@ -489,12 +489,26 @@
         return 'unknown';
     }
 
-    function occKey(occ) {
+    // One element of a rollup, whatever the number of its checks that flagged
+    // it: its page, shadow hosts, selector and outcome (the app's
+    // a11y-labs-engine.js does the same).
+    function elementKey(occ) {
         const pageUrl = occ && occ.pageUrl ? String(occ.pageUrl) : '';
-        const target0 = occ && Array.isArray(occ.target) && occ.target[0] ? String(occ.target[0]) : '';
-        const html = occ && occ.html ? String(occ.html) : '';
-        const atomicCheckId = occ && occ.atomicCheckId ? String(occ.atomicCheckId) : '';
-        return `${pageUrl}::${target0}::${html}::${atomicCheckId}`;
+        const target = occ && Array.isArray(occ.target) ? occ.target.map(String).join('||') : '';
+        const hosts = occ && Array.isArray(occ.shadowHostSelectors) ? occ.shadowHostSelectors.map(String).join('>') : '';
+        const html = target ? '' : (occ && occ.html ? String(occ.html) : '');
+        const tier = occ && occ.occurrenceOutcome ? String(occ.occurrenceOutcome) : '';
+        return `${pageUrl}::${hosts}::${target}::${html}::${tier}`;
+    }
+
+    const CHECK_FIELDS = ['failureSummary', 'details', 'hint', 'uncertainty', 'lean', 'howToCheck'];
+
+    function checkEntryOf(occ, checkId) {
+        const entry = { checkId };
+        for (const k of CHECK_FIELDS) {
+            if (occ && occ[k] !== undefined && occ[k] !== null && occ[k] !== '') entry[k] = occ[k];
+        }
+        return entry;
     }
 
     function buildRuleCatalogMap(native) {
@@ -753,26 +767,37 @@
             const checksIds = Array.isArray(finding.evidence.rollup.checksIds) ? finding.evidence.rollup.checksIds : [];
             if (!checksIds.length) continue;
 
+            // An element two checks flagged is one occurrence naming both,
+            // with what each said in `checks`.
             const out = [];
-            const seen = new Set();
+            const byElement = new Map();
             for (const id of checksIds) {
                 const atomic = atomicByRuleId.get(String(id));
                 if (!atomic || !Array.isArray(atomic.occurrences)) continue;
+                const checkId = atomic.ruleId ? String(atomic.ruleId) : String(id);
                 for (const occ of atomic.occurrences) {
                     const occ2 = Object.assign({}, occ, {
                         outcome: finding.outcome || undefined,
-                        atomicCheckId: atomic.ruleId || undefined,
-                        sourceAtomicRules: atomic.ruleId ? [String(atomic.ruleId)] : []
+                        atomicCheckId: checkId,
+                        sourceAtomicRules: [checkId]
                     });
                     // A scan of several profiles: the element as this
                     // rollup's own profiles judge it.
                     const own = ownVerdict(occ.verdicts, finding.evidence.rollup.profiles);
                     if (own === 'fail' || own === 'cantTell') occ2.occurrenceOutcome = own;
                     else if (own === 'pass') delete occ2.occurrenceOutcome;
-                    const key = occKey(occ2);
-                    if (seen.has(key)) continue;
-                    seen.add(key);
-                    out.push(occ2);
+                    const key = elementKey(occ2);
+                    const seen = byElement.get(key);
+                    if (!seen) {
+                        byElement.set(key, { occ: occ2, first: occ2 });
+                        out.push(occ2);
+                        continue;
+                    }
+                    const base = seen.occ;
+                    if (base.sourceAtomicRules.includes(checkId)) continue;
+                    if (!base.checks) base.checks = [checkEntryOf(seen.first, base.atomicCheckId)];
+                    base.checks.push(checkEntryOf(occ2, checkId));
+                    base.sourceAtomicRules = base.sourceAtomicRules.concat(checkId);
                 }
             }
             finding.occurrences = out;

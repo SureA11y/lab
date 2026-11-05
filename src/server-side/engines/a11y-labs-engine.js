@@ -605,6 +605,27 @@ function ownVerdict(verdicts, profiles) {
     return worst === 'fail' || worst === 'cantTell' || worst === 'pass' ? worst : null;
 }
 
+// What one check of a rollup said about an element: an entry of the
+// occurrence's `checks` when more than one check flagged that element.
+const CHECK_FIELDS = ['failureSummary', 'details', 'hint', 'uncertainty', 'lean', 'howToCheck'];
+
+function checkEntryOf(occ, checkId) {
+    const entry = { checkId };
+    for (const k of CHECK_FIELDS) {
+        if (occ && occ[k] !== undefined && occ[k] !== null && occ[k] !== '') entry[k] = occ[k];
+    }
+    return entry;
+}
+
+/**
+ * A rollup's occurrences, from the occurrences of its checks: one per element
+ * (page, shadow hosts, selector) and outcome. An element two checks flagged,
+ * such as an option holding a link (nested-interactive-controls-absent and
+ * presentational-children-focusable-absent), is one occurrence: its own fields
+ * are the first check's, `sourceAtomicRules` names every check, and `checks`
+ * holds what each of them said. Counting it once per check overstated the
+ * rollup's occurrences and gave two occurrences the same occurrenceId.
+ */
 function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicFindings) {
     if (!Array.isArray(compositeFindings) || !compositeFindings.length) return;
     if (!Array.isArray(atomicFindings) || !atomicFindings.length) return;
@@ -617,13 +638,14 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
         atomicByRuleId.set(String(f.ruleId), f);
     }
 
-    function occKey(occ) {
+    function elementKey(occ) {
         const pageUrl = (occ && occ.pageUrl) ? String(occ.pageUrl) : '';
-        const target0 = elementTarget(occ && Array.isArray(occ.target) ? { ...occ, target: occ.target.slice(0, 1) } : occ);
-        const html = (occ && occ.html) ? String(occ.html) : '';
-        const atomicCheckId = (occ && occ.atomicCheckId) ? String(occ.atomicCheckId) : '';
-        // include atomicCheckId so we do NOT dedupe across different contributing checks
-        return `${pageUrl}::${target0}::${html}::${atomicCheckId}`;
+        // Its target after the shadow hosts and frames it is inside.
+        const target = elementTarget(occ);
+        // An element without a selector is told apart by its markup.
+        const html = target ? '' : ((occ && occ.html) ? String(occ.html) : '');
+        const tier = (occ && occ.occurrenceOutcome) ? String(occ.occurrenceOutcome) : '';
+        return `${pageUrl}::${target}::${html}::${tier}`;
     }
 
     for (const f of compositeFindings) {
@@ -637,7 +659,7 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
         if (!checksIds.length) continue;
 
         const out = [];
-        const seen = new Set();
+        const byElement = new Map();
         // Elements its checks counted and did not list (their unlisted).
         let unlisted = 0;
 
@@ -648,6 +670,7 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
             const atomic = atomicByRuleId.get(id);
             if (atomic && Number(atomic.unlisted) > 0) unlisted += Number(atomic.unlisted);
             if (!atomic || !Array.isArray(atomic.occurrences) || !atomic.occurrences.length) continue;
+            const checkId = atomic.ruleId ? String(atomic.ruleId) : id;
 
             // A standard that judges the rule by its findings' reason codes
             // says what each one is under it: a WCAG question it is certain
@@ -665,8 +688,8 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
                 if (verdict && f.outcome && verdict !== f.outcome) continue;
                 const occ2 = Object.assign({}, occ, {
                     outcome: f.outcome || undefined,
-                    atomicCheckId: atomic.ruleId || undefined,
-                    sourceAtomicRules: atomic.ruleId ? [String(atomic.ruleId)] : []
+                    atomicCheckId: checkId,
+                    sourceAtomicRules: [checkId]
                 });
                 // A scan of several profiles: the element is what this
                 // rollup's own profiles make of it, not the worst of every
@@ -681,11 +704,22 @@ function attachCompositeOccurrencesFromAtomicFindings(compositeFindings, atomicF
                     delete occ2.howToCheck;
                 }
 
-                const k = occKey(occ2);
-                if (seen.has(k)) continue;
-                seen.add(k);
-
-                out.push(occ2);
+                // One occurrence per element (and outcome): another check
+                // flagging it adds what that check said to its `checks`.
+                const k = elementKey(occ2);
+                const seen = byElement.get(k);
+                if (!seen) {
+                    byElement.set(k, { occ: occ2, first: occ2 });
+                    out.push(occ2);
+                    continue;
+                }
+                const base = seen.occ;
+                if (base.sourceAtomicRules.includes(checkId)) continue;
+                if (!base.checks) base.checks = [checkEntryOf(seen.first, base.atomicCheckId)];
+                base.checks.push(checkEntryOf(occ2, checkId));
+                base.sourceAtomicRules = base.sourceAtomicRules.concat(checkId);
+                // A picture from a later check, where the first had none.
+                if (!base.elementScreenshot && occ2.elementScreenshot) base.elementScreenshot = occ2.elementScreenshot;
             }
         }
 

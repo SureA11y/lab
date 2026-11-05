@@ -1240,6 +1240,11 @@ button.src-dialog-close:focus-visible {
 
 .src-dialog-body .example-node + .example-node { margin-top: .75rem; }
 
+/* One element several checks flagged: each check's own block under it. */
+.node-check { margin-top: .6rem; padding-top: .5rem; border-top: 1px solid var(--border-subtle); }
+.node-check-title { font-size: inherit; font-weight: 600; margin: 0; }
+.node-checks-lead { font-weight: 600; }
+
 /* Instance header */
 .example-node-header { margin-bottom: .35rem; }
 

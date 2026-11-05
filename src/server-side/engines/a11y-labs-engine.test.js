@@ -330,6 +330,81 @@ function fakePage(evaluateImpl, overrides = {}) {
     };
 }
 
+describe('a11y-labs-engine: an element several checks of a rollup flagged', () => {
+    const OPTION = '<mat-option role="option" id="mat-option-0"><a href="/x">X</a></mat-option>';
+    const page = () => ({
+        url: async () => 'https://example.test/',
+        title: async () => 'Example',
+        evaluate: async () => ({
+            url: 'https://example.test/',
+            title: 'Example',
+            timestamp: null,
+            checksResults: [
+                {
+                    ruleId: 'nested-interactive-controls-absent',
+                    outcome: 'fail',
+                    severity: 'serious',
+                    confidence: 'high',
+                    occurrences: [
+                        { selector: '#mat-option-0', html: OPTION, summary: 'has interactive controls nested inside it', hint: 'Move the nested controls out.', data: { details: { nestedElements: ['a'] } } },
+                        { selector: '#other', html: '<div role="button" id="other"><a href="/y">Y</a></div>', summary: 'nested' }
+                    ]
+                },
+                {
+                    ruleId: 'presentational-children-focusable-absent',
+                    outcome: 'fail',
+                    severity: 'serious',
+                    confidence: 'high',
+                    occurrences: [
+                        { selector: '#mat-option-0', html: OPTION, summary: 'makes its children presentational', hint: 'Move the focusable content out.', data: { details: { focusableElements: ['a'] } } }
+                    ]
+                }
+            ],
+            rulesResults: [
+                {
+                    ruleId: 'wcag-4.1.2-aria-validity',
+                    outcome: 'fail',
+                    severity: 'serious',
+                    title: 'Name, role, value: ARIA validity',
+                    description: 'rollup',
+                    data: {
+                        details: {
+                            checksIds: ['nested-interactive-controls-absent', 'presentational-children-focusable-absent'],
+                            contributors: [
+                                { testId: 'nested-interactive-controls-absent', outcome: 'fail' },
+                                { testId: 'presentational-children-focusable-absent', outcome: 'fail' }
+                            ]
+                        }
+                    }
+                }
+            ]
+        })
+    });
+
+    test('is one occurrence of the rollup, naming every check and what each said', async () => {
+        const { canonical } = await runOnPage(page(), {
+            runOnly: { includeRuleIds: ['wcag-4.1.2-aria-validity'] }
+        });
+        const finding = canonical.findings.find((f) => f.ruleId === 'wcag-4.1.2-aria-validity' && f.outcome === 'fail');
+        assert.ok(finding, 'expected the rollup');
+        assert.equal(finding.occurrences.length, 2);
+
+        const [option, other] = finding.occurrences;
+        assert.deepEqual(option.target, ['#mat-option-0']);
+        assert.deepEqual(option.sourceAtomicRules, ['nested-interactive-controls-absent', 'presentational-children-focusable-absent']);
+        assert.equal(option.atomicCheckId, 'nested-interactive-controls-absent');
+        assert.match(option.failureSummary, /nested inside it/);
+        assert.deepEqual(option.checks.map((c) => c.checkId), ['nested-interactive-controls-absent', 'presentational-children-focusable-absent']);
+        assert.match(option.checks[1].failureSummary, /presentational/);
+        assert.equal(option.checks[1].hint, 'Move the focusable content out.');
+        assert.deepEqual(option.checks[1].details, { focusableElements: ['a'] });
+
+        // An element one check flagged has no `checks`.
+        assert.deepEqual(other.target, ['#other']);
+        assert.equal('checks' in other, false);
+    });
+});
+
 describe('a11y-labs-engine: module misconfiguration guard', () => {
     test('throws at require time if @surea11y/core stops exporting runa11yCoreInPage as a function', () => {
         // @surea11y/puppeteer wraps core's runa11yCoreInPage when it loads,

@@ -449,6 +449,18 @@ describe('diffReports — room before failing (margins)', () => {
         assert.equal(d.margins[0].change, 'failsMore');
     });
 
+    test('counts a failure under each check that flagged the element, when several did', async () => {
+        const { diffReports } = await load();
+        const A = withMargins('a', '2026-01-01T00:00:00Z', [m('contrast-minimum', 0.5)]);
+        const B = withMargins('b', '2026-02-01T00:00:00Z', [m('contrast-minimum', 13.7)]);
+        // contrast-minimum is the second of the element's checks, not its atomicCheckId.
+        B.scans[0].canonical.findings = [{ ruleId: 'wcag-1.4.3', outcome: 'fail', meta: { atomic: false },
+            occurrences: [{ target: ['p'], atomicCheckId: 'other-check',
+                checks: [{ checkId: 'other-check' }, { checkId: 'contrast-minimum' }] }] }];
+        const d = diffReports(A, B, { mode: 'evolution' });
+        assert.equal(d.margins[0].change, 'failsMore');
+    });
+
     test('is empty when neither report has margins', async () => {
         const { diffReports } = await load();
         assert.deepEqual(diffReports(report({ runId: 'a' }), report({ runId: 'b' })).margins, []);

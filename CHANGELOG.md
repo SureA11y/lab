@@ -33,7 +33,12 @@ The first public release.
   is hidden; one with a profile still on shows only those profiles'
   findings, outcomes and counts. Every download, whatever its format, holds
   what the filters show, so one report gives a download per profile. A
-  finding's criteria are listed under their standard's name.
+  finding's criteria are listed under their standard's name. An element that several checks
+  of one criterion flag (a link inside a `role="option"`, say) is one
+  occurrence, with what each check said under it; and when a finding's
+  occurrences are about fewer elements, as a merged scan's contexts can
+  give one element two ids, the count says so: "284 occurrences · 142
+  elements".
 - **Comparisons.** Two reports side by side, or up to 24 as a dashboard of
   what was fixed and what appeared at each step, how long each problem has
   been open, and whether each run covered enough to be compared.

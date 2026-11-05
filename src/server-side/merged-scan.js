@@ -49,6 +49,8 @@ function occurrenceIdentity(occ) {
         details: o.details || null,
         atomicCheckId: o.atomicCheckId || null,
         sourceAtomicRules: Array.isArray(o.sourceAtomicRules) ? o.sourceAtomicRules : null,
+        // What each check of a rollup said about the element, when several did.
+        checks: Array.isArray(o.checks) ? o.checks : null,
     });
 }
 

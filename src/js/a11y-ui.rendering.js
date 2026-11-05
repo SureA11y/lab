@@ -4,6 +4,7 @@
  * Rendering helpers for a11y-ui.
  */
 import {occurrencePagesHtml} from './occurrence-pages.js';
+import {elementCountText} from './occurrence-elements.js';
 import {generateA11yMetricsContents} from './a11y-metrics-renderer.js';
 import {iconButton, scanTagChipsHtml} from './a11y-ui.utils.js';
 import {buildTagsInputControl} from './tags-input.js';
@@ -454,6 +455,9 @@ export function createRenderer({
                 // Its element pictured in the state the finding was made in
                 // (the text spacing), beside the page as it is.
                 elementStateScreenshots: elementStateScreenshotsOf(occ),
+                // A rollup's occurrence that more than one of its checks
+                // flagged: what each of them said about the element.
+                ...(checksOf(occ) ? {checks: checksOf(occ)} : {}),
                 // A merged scan's occurrence: the contexts it occurs in, of how many.
                 ...(Array.isArray(occ?.contexts) && occ.contexts.length
                     ? {contexts: occ.contexts.map(String), contextsTotal: Number(occ.contextsTotal) || occ.contexts.length}
@@ -489,6 +493,24 @@ export function createRenderer({
             },
             nodes
         };
+    }
+
+    // What each check of a rollup said about one element, when more than one
+    // flagged it (the engine's occurrence `checks`), or null.
+    function checksOf(occ) {
+        const list = Array.isArray(occ?.checks) ? occ.checks : [];
+        const out = list
+            .filter((c) => c && typeof c === 'object' && String(c.checkId || '').trim())
+            .map((c) => ({
+                checkId: String(c.checkId).trim(),
+                failureSummary: typeof c.failureSummary === 'string' ? c.failureSummary : '',
+                hint: typeof c.hint === 'string' ? c.hint : '',
+                uncertainty: c.uncertainty && typeof c.uncertainty === 'object' ? c.uncertainty : null,
+                lean: c.lean && (c.lean.toward === 'fail' || c.lean.toward === 'pass') ? c.lean : null,
+                howToCheck: c.howToCheck && Array.isArray(c.howToCheck.steps) ? c.howToCheck : null,
+                details: c.details && typeof c.details === 'object' ? c.details : null
+            }));
+        return out.length > 1 ? out : null;
     }
 
     function buildHelpLinkHtml(v) {
@@ -880,7 +902,25 @@ export function createRenderer({
                     '</code></div>'
                     : '';
 
-                return '<div class="example-node">' + selectorPart + htmlPart + buildElementScreenshotHtml(n, (selector ? instanceLabel : 'Instance') + ' ' + (nodeIndex + 1)) + failurePart + buildOccurrenceDetailsHtml(n) + buildOccurrenceGuidanceHtml(n, {stepsShown: !!shared}) + sourceLine + '</div>';
+                const picture = buildElementScreenshotHtml(n, (selector ? instanceLabel : 'Instance') + ' ' + (nodeIndex + 1));
+                // One element several checks flagged: what each said, under
+                // its own heading, the element shown once above them.
+                if (Array.isArray(n.checks) && n.checks.length > 1) {
+                    const hosts = buildOccurrenceDetailsHtml({shadowHostSelectors: n.shadowHostSelectors});
+                    const perCheck = n.checks.map((c) => {
+                        const cn = {...c, lang: n.lang};
+                        const said = (c.failureSummary || '').trim();
+                        return '<div class="node-check"><h3 class="node-check-title">Check: <code>' + escapeHtml(c.checkId) + '</code></h3>' +
+                            (said ? '<div class="node-detail"' + langAttr(n.lang) + '>' + convertIndentedBlockToHtml(escapeAngleBrackets(said)) + '</div>' : '') +
+                            buildOccurrenceDetailsHtml({details: c.details}) +
+                            buildOccurrenceGuidanceHtml(cn, {stepsShown: !!shared}) +
+                            '</div>';
+                    }).join('');
+                    return '<div class="example-node">' + selectorPart + htmlPart + picture + hosts +
+                        '<p class="node-detail node-checks-lead">' + n.checks.length + ' checks flagged this element:</p>' + perCheck + '</div>';
+                }
+
+                return '<div class="example-node">' + selectorPart + htmlPart + picture + failurePart + buildOccurrenceDetailsHtml(n) + buildOccurrenceGuidanceHtml(n, {stepsShown: !!shared}) + sourceLine + '</div>';
             })
             .join('');
     }
@@ -1092,6 +1132,9 @@ export function createRenderer({
         const instanceLabel = type === 'fail' ? 'occurrence' : 'instance';
         const unlisted = Number(issue?.unlisted) > 0 ? Number(issue.unlisted) : 0;
         const total = nodeCount + unlisted;
+        // " · 142 elements", when the occurrences are about fewer elements;
+        // not when some went unlisted, whose elements are not known.
+        const elements = unlisted ? '' : elementCountText(nodes, nodeCount);
         // Each part is kept on one line; a narrow column wraps between them.
         const leaning = type === 'cantTell'
             ? reviewGroupCountsParts(nodes)
@@ -1104,6 +1147,7 @@ export function createRenderer({
             formatCount(total) +
             ' ' + instanceLabel +
             (total === 1 ? '' : 's') +
+            escapeHtml(elements) +
             (leaning ? '<br><span class="instances-lean">' + leaning + '</span>' : '') +
             '</div>' +
             '<button type="button" class="src-dialog-trigger" data-dialog-id="' +
@@ -1126,6 +1170,7 @@ export function createRenderer({
             formatCount(total) +
             ' ' + instanceLabel +
             (total === 1 ? '' : 's') +
+            escapeHtml(elements) +
             '</p>' +
             '<button type="button" class="src-dialog-close" aria-label="Close dialog">Close</button>' +
             '</div>' +

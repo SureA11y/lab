@@ -493,6 +493,24 @@
         },
         "html": {
           "type": "string"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "checkId"
+            ],
+            "properties": {
+              "checkId": {
+                "type": "string"
+              },
+              "failureSummary": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "On a rollup's occurrence, when more than one of its checks flagged the element: what each check said, the first being the occurrence's own fields. The element is one occurrence whatever the number of checks."
         }
       },
       "description": "One element a finding concluded on."
