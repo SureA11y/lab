@@ -244,10 +244,26 @@ its own name, starting page and variables.
 ]
 ```
 
-With the batch on, **Run** sends it to the **queue**, which runs one to four at
-a time and keeps every result on the server as it finishes
+With the batch on, **Run** sends it to the **queue**, which runs as many at a
+time as the batch has, up to eight (or the number set in **Runs at the same
+time**), and keeps every result on the server as it finishes
 (`reports/batches/<start time>/`). A run can be watched live; the whole batch
 downloads as one zip and goes to the compare tab in one go. A batch whose
 workflow types a password asks for it once, before it starts.
+
+A finished batch can still change, while no other batch runs:
+
+- **Run again**, on a row, runs it again from the workflow it saved, with its
+  row's values. The new result replaces the old one; if the re-run ends with
+  no result (the site was down, it was cancelled), the old one stays and the
+  row says so. A workflow saved without its passwords asks for them first.
+- **Add the open workflow** runs the workflow in the editor into the batch, as
+  a row after the others.
+- **Add a report…** adds a report saved before as a row of its own, without
+  running anything: its `.json`, or the package **Download report** writes
+  (`.zip`), whose pictures come with it.
+
+Whatever is added is part of the batch from then on: its folder, its zip and
+Send to Compare.
 
 The same batches run from the command line ([the runner's guide](scheduled-scans-guide.md)).

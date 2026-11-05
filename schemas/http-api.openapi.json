@@ -479,6 +479,234 @@
             }
           }
         }
+      },
+      "post": {
+        "summary": "Add workflows to a finished batch: they run into its folder, as /queue/items takes them",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "items"
+                ],
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "itemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A batch is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/queue/sessions/{sessionId}/items/{itemId}/rerun": {
+      "post": {
+        "summary": "Run a finished batch's row again: its new result replaces the old one, which stays if the re-run ends with none",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "values": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "description": "The hidden values its workflow needs, by the keys masked-fields?item= gives."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Running again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A batch is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/queue/sessions/{sessionId}/reports": {
+      "post": {
+        "summary": "Add a saved report to a finished batch as a run of its own, without running it",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "report"
+                ],
+                "properties": {
+                  "report": {
+                    "type": "object",
+                    "description": "A result's JSON, as the lab saves it."
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Its row's name; by default its reportName."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "itemId": {
+                      "type": "string"
+                    },
+                    "file": {
+                      "type": "string"
+                    },
+                    "missingPictures": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A batch is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/queue/items": {
@@ -733,12 +961,20 @@
     },
     "/queue/sessions/{sessionId}/masked-fields": {
       "get": {
-        "summary": "The secrets a batch needs typed",
+        "summary": "The secrets a batch needs typed: to resume it, or with ?item= to run that row again",
         "parameters": [
           {
             "name": "sessionId",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "item",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "string"
             }

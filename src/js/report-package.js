@@ -215,3 +215,33 @@ export function resolveImageRefs(text, urls) {
     if (!urls || !urls.size) return text;
     return String(text).replace(/"(images\/[A-Za-z0-9._-]+)"/g, (match, at) => (urls.has(at) ? JSON.stringify(urls.get(at)) : match));
 }
+
+// A package's report: its *.a11y-report.json, or a CLI run's payload.json.
+const REPORT_JSON = /(^|\/)([^/]+\.a11y-report\.json|payload\.json)$/;
+
+function base64Of(bytes) {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(binary);
+}
+
+/**
+ * The report a package `zip` holds, as JSON text with its pictures inline
+ * (data URLs), for something that keeps it elsewhere, which packs them again
+ * (the queue's Add a report). `{ name, text }`, or null when the zip holds
+ * no report.
+ */
+export async function inlineReportFromZip(zip) {
+    const entry = Object.values(zip.files).find((e) => !e.dir && REPORT_JSON.test(e.name));
+    if (!entry) return null;
+    const text = await entry.async('string');
+    const urls = new Map();
+    for (const image of Object.values(zip.files).filter((e) => !e.dir && PACKAGE_PATH.test(e.name))) {
+        // Only those the report names: a package's folder can hold more.
+        if (!text.includes(`"${image.name}"`)) continue;
+        const type = MIME_TYPE_BY_EXTENSION[image.name.slice(image.name.lastIndexOf('.') + 1).toLowerCase()];
+        if (!type) continue;
+        urls.set(image.name, `data:${type};base64,${base64Of(await image.async('uint8array'))}`);
+    }
+    return { name: entry.name.slice(entry.name.lastIndexOf('/') + 1), text: resolveImageRefs(text, urls) };
+}

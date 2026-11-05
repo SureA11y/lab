@@ -82,7 +82,13 @@ The first public release.
   page, per environment, per release), as many at once as the batch has,
   up to eight, unless you set a number in Runs at the same time; each
   result saved as it finishes; a batch of thousands of runs opens a page of them
-  at a time.
+  at a time. A finished batch can be changed: **Run again** runs one of its
+  rows again, its new result replacing the old one (which stays if the
+  re-run ends with none); **Add the open workflow** runs the workflow in
+  the editor into the batch; **Add a report…** adds a report saved before
+  (its JSON or its package's zip, pictures and all) as a row of its own,
+  without running anything. All three land in the
+  batch's folder, its download and Send to Compare.
 - **Passwords from the environment** (`{"$env": "NAME"}`), so workflows that
   log in can be saved, shared and run unattended with no password in them.
 - **Reports opened by address**: `?report=<url>` and `?compare=<url>`.
