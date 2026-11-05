@@ -160,3 +160,47 @@ describe('comparison controller — profiles', () => {
         assert.equal('profilesOff' in none, false);
     });
 });
+
+describe('comparison controller — path prefixes', () => {
+    globalThis.A11Y_REPORT_FORMAT = require('../shared/report-format.js');
+    const at = (r, prefix) => ({
+        ...r,
+        scans: r.scans.map((s) => ({
+            ...s,
+            url: `https://example.com${prefix}/`,
+            canonical: { ...s.canonical, findings: s.canonical.findings.map((f) => ({ ...f, occurrences: f.occurrences.map((o) => ({ ...o, pageUrl: `https://example.com${prefix}/` })) })) },
+        })),
+    });
+    async function make() {
+        const { createComparisonController } = await load();
+        const cap = { html: '' };
+        const ctrl = createComparisonController({ setHTML: (html) => { cap.html = html; } });
+        ctrl.addReport(at(a(), '/v1'), 'a.json');
+        ctrl.addReport(at(b(), '/v2'), 'b.json');
+        return { ctrl, cap };
+    }
+
+    test('suggests the folders, matches pages leaving them out, and says so', async () => {
+        const { ctrl, cap } = await make();
+        assert.deepEqual(ctrl.suggestedPathPrefixes(), ['/v1', '/v2']);
+        assert.match(cap.html, /No page is in every report/);
+        ctrl.setPathPrefixes('v1, v2/');
+        assert.deepEqual(ctrl.getPathPrefixes(), ['/v1', '/v2']);
+        assert.deepEqual(ctrl.suggestedPathPrefixes(), [], 'nothing to suggest once set');
+        assert.match(cap.html, /Pages are matched with \/v1, \/v2 left out of their paths/);
+        assert.doesNotMatch(cap.html, /No page is in every report/);
+    });
+
+    test('the prefixes travel in a snapshot and in the zip\'s description', async () => {
+        const { ctrl } = await make();
+        ctrl.setPathPrefixes(['/v1', '/v2']);
+        const snap = ctrl.snapshot();
+        assert.deepEqual(snap.pathPrefixes, ['/v1', '/v2']);
+        const { ctrl: other } = await make();
+        other.restore(snap);
+        assert.deepEqual(other.getPathPrefixes(), ['/v1', '/v2']);
+        const { buildManifest, readManifest } = await import('./comparison-bundle.js');
+        const manifest = buildManifest(snap, ['reports/1 a.json', 'reports/2 b.json']);
+        assert.deepEqual(readManifest(JSON.parse(JSON.stringify(manifest))).pathPrefixes, ['/v1', '/v2']);
+    });
+});

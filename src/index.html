@@ -654,6 +654,17 @@
                  Rendered by renderCompareProfiles(). -->
             <div id="compare-profiles" class="scan-tag-filter compare-profiles" hidden></div>
 
+            <!-- Path prefixes left out when pages are matched: one site under
+                 two paths (/v1/, /v2/). Shown with two reports or more;
+                 renderComparePaths() keeps it in step with the comparison. -->
+            <form id="compare-paths" class="compare-paths" hidden>
+                <label for="compare-path-prefixes" class="compare-paths-label">Ignore path prefixes</label>
+                <input type="text" id="compare-path-prefixes" class="compare-paths-input" placeholder="/v1, /v2"
+                       autocomplete="off" spellcheck="false" aria-describedby="compare-paths-hint" />
+                <button type="submit" class="secondary-button">Match pages</button>
+                <p id="compare-paths-hint" class="compare-paths-hint"></p>
+            </form>
+
             <!-- What this comparison calls itself: the same metadata line a
                  report carries, corrected the same way. Rendered by
                  writeComparisonData(); the values travel into the exported file,

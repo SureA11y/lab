@@ -384,6 +384,13 @@ node src/cli/run-workflow.js <spec.json> [options]
                      repeated. Scans run without surea11y are left out.
                      acr writes the run's conformance report (VPAT 2.5,
                      WCAG and EN 301 549) there too, as HTML and Word.
+  --ignore-path-prefix <path>
+                     Leave this prefix out of every page path when the
+                     run's pages are matched with the baseline's, for one
+                     site served under another path (--ignore-path-prefix
+                     /v1 --ignore-path-prefix /v2 makes /v1/cart.html and
+                     /v2/cart.html one page). Can be repeated, or list
+                     several separated by commas.
   --review <file>    A report (its JSON, payload.json or package zip) whose
                      conformance review this run takes on, filling in only
                      what it has not decided; saved in payload.json. Without

@@ -81,11 +81,8 @@
     // its own; any other hash is a place in the page (#main) and doesn't.
     const routeOf = (hash) => (/^#!?\//.test(hash) ? hash : '');
 
-    /**
-     * A page's path and query, which is what tells two pages of a site apart,
-     * and its hash where that routes a single-page app.
-     */
-    function pagePath(url) {
+    /** A page's path, query and route, as its address has them. */
+    function ownPagePath(url) {
         const key = String(url || '');
         let path = pathCache.get(key);
         if (path === undefined) {
@@ -95,6 +92,101 @@
             pathCache.set(key, path);
         }
         return path;
+    }
+
+    // ---- Path prefixes left out when pages are matched ----
+    //
+    // Reports of one site under two paths (/v1/cart.html and /v2/cart.html,
+    // a release served beside the last) share no page, as pages are matched
+    // by path. A comparison can leave given prefixes out of every path it
+    // matches on, while it runs (withPathPrefixes): only the matching
+    // changes, never the addresses a report shows or links to, nor the ids
+    // of its occurrences.
+    let ignoredPrefixes = [];
+
+    /**
+     * Prefixes as given ("v1", "/v2/", " /staging ", or "v1, v2") as
+     * matched: each with one leading slash and no trailing one, "/" and
+     * blanks left out, once, longest first, so /v1/beta is tried before /v1.
+     */
+    function normalizePathPrefixes(prefixes) {
+        const list = (Array.isArray(prefixes) ? prefixes : String(prefixes || '').split(','))
+            .map((p) => String(p || '').trim().replace(/\/+$/, ''))
+            .filter(Boolean)
+            .map((p) => (p.startsWith('/') ? p : `/${p}`))
+            .filter((p) => p !== '/');
+        return [...new Set(list)].sort((a, b) => b.length - a.length);
+    }
+
+    // A path without the first prefix it starts with, at a segment's end:
+    // /v1 leaves /v1/cart.html as /cart.html and /v1 as /, not /v10/cart.html.
+    function stripPrefix(path) {
+        for (const prefix of ignoredPrefixes) {
+            if (path === prefix) return '/';
+            const next = path.charAt(prefix.length);
+            if (path.startsWith(prefix) && (next === '/' || next === '?' || next === '#')) {
+                const rest = path.slice(prefix.length);
+                return rest.startsWith('/') ? rest : `/${rest}`;
+            }
+        }
+        return path;
+    }
+
+    /**
+     * Runs `fn` with `prefixes` left out of every path pages are matched on
+     * (pagePath), and returns what it returns. Nested calls restore the outer
+     * prefixes when they end.
+     */
+    function withPathPrefixes(prefixes, fn) {
+        const before = ignoredPrefixes;
+        ignoredPrefixes = normalizePathPrefixes(prefixes);
+        try {
+            return fn();
+        } finally {
+            ignoredPrefixes = before;
+        }
+    }
+
+    /**
+     * A page's path and query, which is what tells two pages of a site apart,
+     * and its hash where that routes a single-page app; without a prefix a
+     * comparison leaves out (withPathPrefixes).
+     */
+    function pagePath(url) {
+        const path = ownPagePath(url);
+        return ignoredPrefixes.length ? stripPrefix(path) : path;
+    }
+
+    /**
+     * The prefixes that would let reports with no page in common match
+     * theirs: when each report's pages all sit under one first folder (/v1/,
+     * /v2/), the folders differ, and some page is then in every report.
+     * [] otherwise.
+     */
+    function suggestPathPrefixes(reports) {
+        const list = Array.isArray(reports) ? reports : [];
+        if (list.length < 2) return [];
+        const pathsOf = (report) => (Array.isArray(report && report.scans) ? report.scans : [])
+            .filter((s) => s && s.url && !s.skipped && !s.skipInfo)
+            .map((s) => ownPagePath(s.url));
+        const firstFolder = (path) => {
+            const m = /^\/([^/?#]+)\//.exec(path);
+            return m ? `/${m[1]}` : null;
+        };
+        const folders = [];
+        const pages = [];
+        for (const report of list) {
+            const paths = pathsOf(report);
+            if (!paths.length) return [];
+            const own = [...new Set(paths.map(firstFolder))];
+            if (own.length !== 1 || !own[0]) return [];
+            folders.push(own[0]);
+            pages.push(new Set(paths.map((p) => p.slice(own[0].length))));
+        }
+        const distinct = [...new Set(folders)];
+        if (distinct.length < 2) return [];
+        const shared = [...pages[0]].some((p) => pages.every((set) => set.has(p)));
+        return shared ? distinct : [];
     }
 
     /**
@@ -149,7 +241,9 @@
 
     /** The id of an occurrence of `ruleId`: "occ_" and 14 hex digits. */
     function occurrenceId(ruleId, occurrence, scanUrl) {
-        return `occ_${hash53(occurrenceKey(ruleId, occurrence, scanUrl))}`;
+        // The report's own id: made from its own path, whatever prefixes a
+        // comparison leaves out while it runs.
+        return `occ_${hash53(withPathPrefixes([], () => occurrenceKey(ruleId, occurrence, scanUrl)))}`;
     }
 
     /** An occurrence's saved id, or the one it would have been saved with. */
@@ -296,6 +390,9 @@
         upgradeReport,
         reportVersionOf,
         pagePath,
+        withPathPrefixes,
+        normalizePathPrefixes,
+        suggestPathPrefixes,
         routeOf,
         occurrenceKey,
         elementTarget,

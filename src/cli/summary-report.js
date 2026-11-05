@@ -178,8 +178,11 @@ function comparisonSection(comparison, baselineLabel) {
 
     const engines = engineChangesText(comparison.engineChanges);
     if (engines) out.push(`- ${engines.charAt(0).toUpperCase()}${engines.slice(1)}`);
+    if (Array.isArray(comparison.pathPrefixes) && comparison.pathPrefixes.length) {
+        out.push(`- Pages matched with ${comparison.pathPrefixes.join(', ')} left out of their paths`);
+    }
     if (comparison.pagesUnmatched) {
-        out.push('- No page of this run is a page of the baseline (pages are matched by path and query), so every failing instance reads as new or fixed');
+        out.push('- No page of this run is a page of the baseline (pages are matched by path and query), so every failing instance reads as new or fixed; `--ignore-path-prefix` matches one site under two paths');
     }
     const profiles = profilesText(comparison.profiles);
     if (profiles) out.push(`- ${profiles.text.charAt(0).toUpperCase()}${profiles.text.slice(1)}`);

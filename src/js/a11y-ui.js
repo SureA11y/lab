@@ -75,6 +75,7 @@ function storeActiveMode(mode) {
         get compareLoadBtn() { return compareLoadBtn; },
         get compareOrderNote() { return compareOrderNote; },
         get compareProfilesEl() { return compareProfilesEl; },
+        get comparePathsEl() { return comparePathsEl; },
         get compareReportsEl() { return compareReportsEl; },
         get compareStatusEl() { return compareStatusEl; },
         get getActiveBucket() { return getActiveBucket; },
@@ -349,6 +350,7 @@ function storeActiveMode(mode) {
     const compareClearBtn = $('#compare-clear');
     const compareOrderNote = $('#compare-order-note');
     const compareProfilesEl = $('#compare-profiles');
+    const comparePathsEl = $('#compare-paths');
     const compareStatusEl = $('#compare-status');
     const compareDocEl = $('#compare-doc');
     const compareActionsEl = $('#compare-actions');

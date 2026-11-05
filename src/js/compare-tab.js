@@ -19,7 +19,7 @@ import {STATUS} from './ui-constants.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * (buildExportPayload, compareActionsEl, compareClearBtn, compareContextDesc, compareContextSeg, compareDocEl, compareInput, compareLoadBtn, compareOrderNote, compareProfilesEl, compareReportsEl, compareStatusEl, getActiveBucket, getCurrentReportName, isZipFile, queuePanel, reportFilesLoadBtn, reportMetaRow, resultsState, runComparisonEl, setStatusReport, setStatusRun, stageReportFiles, tabsmode).
+ * (buildExportPayload, compareActionsEl, compareClearBtn, compareContextDesc, compareContextSeg, compareDocEl, compareInput, compareLoadBtn, compareOrderNote, comparePathsEl, compareProfilesEl, compareReportsEl, compareStatusEl, getActiveBucket, getCurrentReportName, isZipFile, queuePanel, reportFilesLoadBtn, reportMetaRow, resultsState, runComparisonEl, setStatusReport, setStatusRun, stageReportFiles, tabsmode).
  */
 export function createCompareTab(app) {
     // ---- Compare tab: many reports, one view (wired once) ----
@@ -282,6 +282,7 @@ export function createCompareTab(app) {
         writeComparisonData();
         renderCompareContext();
         renderCompareProfiles();
+        renderComparePaths();
     }
 
     // Which profiles the comparison is read on: a switch per profile every
@@ -335,6 +336,49 @@ export function createCompareTab(app) {
             const target = [...el.querySelectorAll('[data-compare-profile]')].find((b) => b.dataset.compareProfile === focusKey);
             target?.focus();
         }
+    }
+
+    // Path prefixes left out when pages are matched: shown with two reports
+    // or more. Pages are matched by path and query, so one site under two
+    // paths (/v1/, /v2/) shares no page; when the loaded reports are like
+    // that, the hint offers the prefixes that would match them.
+    const PATHS_HINT = 'Pages are matched by their path and query. To compare one site served under two paths, '
+        + 'list the prefixes to leave out, separated by commas.';
+    function renderComparePaths() {
+        const form = app.comparePathsEl;
+        if (!form || !comparisonController) return;
+        const shown = comparisonController.count() >= 2;
+        form.hidden = !shown;
+        if (!shown) return;
+        const input = form.querySelector('#compare-path-prefixes');
+        const hint = form.querySelector('#compare-paths-hint');
+        const set = comparisonController.getPathPrefixes();
+        if (input && document.activeElement !== input) input.value = set.join(', ');
+        if (!hint) return;
+        hint.replaceChildren();
+        const suggested = comparisonController.suggestedPathPrefixes();
+        if (suggested.length) {
+            hint.append(`No page is in every report: their pages sit under ${suggested.join(' and ')}. `);
+            const use = document.createElement('button');
+            use.type = 'button';
+            use.className = 'link-button';
+            use.dataset.usePrefixes = suggested.join(', ');
+            use.textContent = `Match them leaving out ${suggested.join(', ')}`;
+            hint.append(use);
+        } else {
+            hint.textContent = set.length
+                ? `Matching pages with ${set.join(', ')} left out of their paths. Clear the field and match again to match them as they are.`
+                : PATHS_HINT;
+        }
+    }
+
+    function applyPathPrefixes(value) {
+        comparisonController.setPathPrefixes(value);
+        renderCompareChips();
+        const set = comparisonController.getPathPrefixes();
+        setCompareStatus(set.length
+            ? `Pages matched with ${set.join(', ')} left out of their paths.`
+            : 'Pages matched by their paths as they are.', STATUS.OK);
     }
 
     // The context sets the default order; this line says how it came out and how
@@ -830,6 +874,23 @@ export function createCompareTab(app) {
         }
 
         wireCompareLoader();
+
+        if (app.comparePathsEl) {
+            app.comparePathsEl.addEventListener('submit', (event) => {
+                event.preventDefault();
+                if (refuseWhileCompareLoads(setCompareStatus)) return;
+                applyPathPrefixes(app.comparePathsEl.querySelector('#compare-path-prefixes')?.value || '');
+            });
+            app.comparePathsEl.addEventListener('click', (event) => {
+                const use = event.target.closest && event.target.closest('[data-use-prefixes]');
+                if (!use) return;
+                if (refuseWhileCompareLoads(setCompareStatus)) return;
+                const value = use.dataset.usePrefixes;
+                applyPathPrefixes(value);
+                const input = app.comparePathsEl.querySelector('#compare-path-prefixes');
+                if (input) { input.value = value; input.focus(); }
+            });
+        }
 
         // The profiles compared: delegated, as the row is drawn again on
         // every change.

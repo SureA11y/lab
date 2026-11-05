@@ -191,15 +191,19 @@ export function sharedProfilesNoteHTML(doc) {
     const filter = doc && doc.profileFilter && Array.isArray(doc.profileFilter.off) && doc.profileFilter.off.length
         ? doc.profileFilter : null;
     const recounted = !!(doc && doc.scoresRecounted);
+    const prefixes = doc && Array.isArray(doc.pathPrefixes) && doc.pathPrefixes.length
+        ? esc(`Pages are matched with ${doc.pathPrefixes.join(', ')} left out of their paths, so ${doc.pathPrefixes[0]}/cart.html${doc.pathPrefixes[1] ? ` and ${doc.pathPrefixes[1]}/cart.html are one page` : ' and /cart.html are one page'}.`)
+        : '';
     const unmatched = doc && doc.pagesUnmatched
         ? esc('No page is in every report: pages are matched by their path and query (/v1/cart.html is not /v2/cart.html), so element by element every failure reads as fixed or new.')
         : '';
     const scoreSentence = recounted
         ? "Each report's score is counted again on the profiles compared, from the page measurements it kept, so it is not the score the report itself shows."
         : "Each report's own score is left out too, since it was made from everything that report checked.";
-    if (comparedOn.length || notCompared.length || filter || unmatched) {
+    if (comparedOn.length || notCompared.length || filter || unmatched || prefixes) {
         const leftOut = profiles && Array.isArray(profiles.leftOut) ? profiles.leftOut : [];
         const parts = [];
+        if (prefixes) parts.push(prefixes);
         if (unmatched) parts.push(unmatched);
         if (profiles && profiles.byReport && comparedOn.length) {
             parts.push(esc('Each report is read on the profiles every report checked on some page.'));
