@@ -250,6 +250,7 @@
                 version: { const: 1 },
                 context: { enum: ['time', 'versions', 'variants'], description: 'What the reports are: runs over time, versions of a site, or variants of a page.' },
                 order: { anyOf: [{ enum: ['time', 'given'] }, { type: 'null' }], description: 'Whether the columns follow the runs\' time, or the order given here.' },
+                profilesOff: { type: 'array', items: text, description: 'The profiles turned off, so the comparison is read on the others: "wcag" for WCAG at any level, else a profile\'s id. Absent when every profile the reports share is compared.' },
                 document: open({ title: text, note: text, generatedAt: textOrNull }),
                 reports: {
                     type: 'array',
@@ -318,6 +319,22 @@
                                 },
                             }, ['ruleId', 'category', 'occ']),
                             description: 'One row per failing rule in either run, with its occurrences.',
+                        },
+                        profiles: {
+                            ...open({
+                                profiles: { type: 'array', items: open({ key: text, label: text }, ['key', 'label']) },
+                                rows: {
+                                    type: 'array',
+                                    items: open({
+                                        key: text,
+                                        label: text,
+                                        kind: { enum: ['profile', 'shared', 'total'] },
+                                        columns: { type: 'array', items: open({ problems: count, failures: count, score: { type: ['number', 'null'] } }, ['problems', 'failures']) },
+                                        change: { type: ['object', 'null'] },
+                                    }, ['key', 'kind', 'columns']),
+                                },
+                            }, ['profiles', 'rows']),
+                            description: 'Present when the runs are compared on two profiles or more: each failing rule put down to the one profile it fails under, or to "shared" when it fails under several, so the rows add up to the "total" row; each profile\'s score is the run scored on that profile alone.',
                         },
                     }, ['mode', 'rows']),
                     description: 'The comparison in full, as the app shows it.',

@@ -11,6 +11,7 @@
 import { mastheadHTML, provenanceHTML, sharedProfilesNoteHTML } from './comparison-document.js';
 import { formatMarginLimit, formatMarginRoom, formatMarginValue, isNearMiss } from './margins.js';
 import { failureUnitNote, problemKind } from './failure-units.js';
+import { pairProfilesHTML } from './profile-breakdown-view.js';
 
 function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => (
@@ -462,6 +463,7 @@ export function comparisonDiffHTML(d, { dispersion } = {}) {
         + `<span class="layer">globals</span></div>${kpis(d)}</section>`
         + `<section class="cmp2-sec"><div class="sec-head"><h3>Where ${d.mode === 'ab' ? 'they differ' : 'it moved'}</h3></div>`
         + `<div class="split"><div class="panel">${dumbbellSvg(d)}</div>${narrativePanel(d)}</div></section>`
+        + pairProfilesHTML(d.profiles, { mode: d.mode, sides: d.mode === 'ab' ? ['A', 'B'] : ['Baseline', 'Latest'] })
         + dispersionSection(d, dispersion)
         + findingDiff(d)
         + marginsSection(d)

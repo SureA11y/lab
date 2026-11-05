@@ -176,30 +176,46 @@ export function reportsStripHTML(rows, { sourcesHref = '' } = {}) {
 
 /**
  * What a comparison of reports checked against different profiles is
- * about, said under its headline, where a reader weighs the numbers: what it
- * compared on and left out, when they share some profiles
- * (shared-profiles.js), or that they share none and their rows don't line
- * up. '' when the reports checked the same profiles.
+ * about, said under its headline, where a reader weighs the numbers: the
+ * profiles the reader turned off, what it compared on and left out, when
+ * they share some profiles (shared-profiles.js), or that they share none and
+ * their rows don't line up; and what became of each report's own score,
+ * made from everything it checked: counted again on what is compared where
+ * the report kept what to count it from, else left out. '' when the reports
+ * checked the same profiles and none is turned off.
  */
 export function sharedProfilesNoteHTML(doc) {
     const profiles = doc && doc.profiles ? doc.profiles : null;
     const comparedOn = profiles && Array.isArray(profiles.comparedOn) ? profiles.comparedOn : [];
     const notCompared = profiles && Array.isArray(profiles.notCompared) ? profiles.notCompared : [];
-    if (comparedOn.length || notCompared.length) {
-        const leftOut = Array.isArray(profiles.leftOut) ? profiles.leftOut : [];
+    const filter = doc && doc.profileFilter && Array.isArray(doc.profileFilter.off) && doc.profileFilter.off.length
+        ? doc.profileFilter : null;
+    const recounted = !!(doc && doc.scoresRecounted);
+    const scoreSentence = recounted
+        ? "Each report's score is counted again on the profiles compared, from the page measurements it kept, so it is not the score the report itself shows."
+        : "Each report's own score is left out too, since it was made from everything that report checked.";
+    if (comparedOn.length || notCompared.length || filter) {
+        const leftOut = profiles && Array.isArray(profiles.leftOut) ? profiles.leftOut : [];
         const parts = [];
-        if (comparedOn.length) {
+        if (filter) {
+            const shown = Array.isArray(filter.shown) ? filter.shown : [];
+            parts.push(esc(`Compared on ${shown.map((p) => p.label).join(' + ')} only: ${filter.off.map((p) => p.label).join(', ')} turned off above, so ${filter.off.length === 1 ? 'its' : 'their'} results are left out.`));
+        }
+        let scoreSaid = false;
+        if (comparedOn.length && !filter) {
             parts.push(esc(`Compared on ${comparedOn.map((p) => p.label).join(' + ')}, which every report checked.`));
-            if (leftOut.length) {
-                parts.push(`${esc(`Left out, as not every report checked it on the same pages: ${leftOut.map((p) => p.label).join(', ')}.`)} Each report's own score is left out too, since it was made from everything that report checked.`);
-            }
+        }
+        if (comparedOn.length && leftOut.length) {
+            parts.push(esc(`Left out, as not every report checked it on the same pages: ${leftOut.map((p) => p.label).join(', ')}.`));
+        }
+        if (filter || (comparedOn.length && leftOut.length)) {
+            parts.push(esc(scoreSentence));
+            scoreSaid = true;
         }
         if (notCompared.length) {
             parts.push(esc(`Not compared, as its reports checked ${notCompared.length === 1 ? 'it' : 'them'} against different things that share none: ${[...new Set(notCompared.map((s) => s.label))].join(', ')}.`));
             // The score goes with it, as above; said once.
-            if (!(comparedOn.length && leftOut.length)) {
-                parts.push("Each report's own score is left out too, since it was made from everything that report checked.");
-            }
+            if (!scoreSaid) parts.push(esc(scoreSentence));
         }
         return `<p class="dash-caveat dash-caveat--info"><span class="dash-caveat-i" aria-hidden="true">i</span>
         <span>${parts.join(' ')}</span></p>`;

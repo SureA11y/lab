@@ -38,6 +38,13 @@
       ],
       "description": "Whether the columns follow the runs' time, or the order given here."
     },
+    "profilesOff": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The profiles turned off, so the comparison is read on the others: \"wcag\" for WCAG at any level, else a profile's id. Absent when every profile the reports share is compared."
+    },
     "document": {
       "type": "object",
       "required": [],

@@ -19,7 +19,7 @@ import {STATUS} from './ui-constants.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * (buildExportPayload, compareActionsEl, compareClearBtn, compareContextDesc, compareContextSeg, compareDocEl, compareInput, compareLoadBtn, compareOrderNote, compareReportsEl, compareStatusEl, getActiveBucket, getCurrentReportName, isZipFile, queuePanel, reportFilesLoadBtn, reportMetaRow, resultsState, runComparisonEl, setStatusReport, setStatusRun, stageReportFiles, tabsmode).
+ * (buildExportPayload, compareActionsEl, compareClearBtn, compareContextDesc, compareContextSeg, compareDocEl, compareInput, compareLoadBtn, compareOrderNote, compareProfilesEl, compareReportsEl, compareStatusEl, getActiveBucket, getCurrentReportName, isZipFile, queuePanel, reportFilesLoadBtn, reportMetaRow, resultsState, runComparisonEl, setStatusReport, setStatusRun, stageReportFiles, tabsmode).
  */
 export function createCompareTab(app) {
     // ---- Compare tab: many reports, one view (wired once) ----
@@ -76,6 +76,9 @@ export function createCompareTab(app) {
             else control.removeAttribute('aria-disabled');
         };
         hold(app.compareClearBtn);
+        // Drawn again when a load ends, so a switch held now gets back its
+        // own state (the last one on stays disabled).
+        if (held) app.compareProfilesEl?.querySelectorAll('button').forEach(hold);
         app.compareContextSeg?.querySelectorAll('.ctx-opt').forEach(hold);
         document.querySelectorAll('[data-compare-report]').forEach(hold);
         app.compareReportsEl?.querySelectorAll('[data-remove-key], [data-move-key]').forEach((control) => {
@@ -278,6 +281,60 @@ export function createCompareTab(app) {
         // the rendered document settled on.
         writeComparisonData();
         renderCompareContext();
+        renderCompareProfiles();
+    }
+
+    // Which profiles the comparison is read on: a switch per profile every
+    // loaded report checked, all on until turned off, the last one on staying
+    // on. Shown when there are two or more to choose between. The view reads
+    // the reports without the profiles turned off and scores them again on
+    // the rest; its "By profile" section says how much each one accounts for.
+    function renderCompareProfiles({ focusKey = null } = {}) {
+        const el = app.compareProfilesEl;
+        if (!el || !comparisonController) return;
+        const profiles = comparisonController.profiles();
+        if (profiles.length < 2) {
+            el.hidden = true;
+            el.replaceChildren();
+            return;
+        }
+        el.hidden = false;
+        el.replaceChildren();
+        el.setAttribute('role', 'group');
+
+        const label = document.createElement('span');
+        label.className = 'scan-tag-filter__label';
+        label.id = 'compare-profiles-label';
+        label.textContent = 'Profiles compared:';
+        el.setAttribute('aria-labelledby', label.id);
+        el.append(label);
+
+        const onCount = profiles.filter((p) => p.on).length;
+        for (const {key, label: name, on} of profiles) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'scan-tag-filter__chip';
+            btn.dataset.compareProfile = key;
+            btn.setAttribute('aria-pressed', String(on));
+            btn.textContent = name;
+            if (on && onCount === 1) {
+                btn.setAttribute('aria-disabled', 'true');
+                btn.title = 'At least one profile stays compared';
+            }
+            el.append(btn);
+        }
+        if (onCount < profiles.length) {
+            const all = document.createElement('button');
+            all.type = 'button';
+            all.className = 'scan-tag-filter__clear secondary-button';
+            all.dataset.compareProfilesAll = 'true';
+            all.textContent = 'Compare on all';
+            el.append(all);
+        }
+        if (focusKey !== null) {
+            const target = [...el.querySelectorAll('[data-compare-profile]')].find((b) => b.dataset.compareProfile === focusKey);
+            target?.focus();
+        }
     }
 
     // The context sets the default order; this line says how it came out and how
@@ -773,6 +830,32 @@ export function createCompareTab(app) {
         }
 
         wireCompareLoader();
+
+        // The profiles compared: delegated, as the row is drawn again on
+        // every change.
+        if (app.compareProfilesEl) {
+            app.compareProfilesEl.addEventListener('click', (event) => {
+                const target = event.target.closest && event.target.closest('button');
+                if (!target || target.getAttribute('aria-disabled') === 'true') return;
+                if (refuseWhileCompareLoads(setCompareStatus)) return;
+                if (target.dataset.compareProfilesAll) {
+                    comparisonController.showAllProfiles();
+                    renderCompareChips();
+                    const first = app.compareProfilesEl.querySelector('[data-compare-profile]');
+                    first?.focus();
+                    setCompareStatus('Compared on every profile the reports share.', STATUS.OK);
+                    return;
+                }
+                const key = target.dataset.compareProfile;
+                if (!key) return;
+                const on = target.getAttribute('aria-pressed') !== 'true';
+                comparisonController.setProfile(key, on);
+                renderCompareChips();
+                renderCompareProfiles({ focusKey: key });
+                const shown = comparisonController.profiles().filter((p) => p.on).map((p) => p.label);
+                setCompareStatus(`Compared on ${shown.join(' + ')}.`, STATUS.OK);
+            });
+        }
 
         if (app.compareClearBtn) {
             app.compareClearBtn.addEventListener('click', () => {

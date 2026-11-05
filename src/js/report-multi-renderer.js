@@ -17,6 +17,7 @@
 // (unordered variants).
 
 import { mastheadHTML, provenanceHTML, reportsStripHTML, sharedProfilesNoteHTML } from './comparison-document.js';
+import { seriesProfilesHTML } from './profile-breakdown-view.js';
 import { formatMarginLimit, formatMarginRoom, formatMarginValue, isNearMiss } from './margins.js';
 import { failureUnitNote, problemKind, problemOne } from './failure-units.js';
 
@@ -927,7 +928,8 @@ function trustCards(d) {
             `<li><b class="num">${c.stats.analyzed}</b> of ${c.stats.pages} `
             + `page${c.stats.pages === 1 ? '' : 's'} scanned</li>`,
             `<li>score <b class="num">${showNum(c.stats.score)}</b>`
-            + `${c.stats.confidence == null ? '' : ` · confidence <b class="num">${showPercent(c.stats.confidence)}</b>`}</li>`,
+            + `${c.stats.confidence == null ? '' : ` · confidence <b class="num">${showPercent(c.stats.confidence)}</b>`}`
+            + `${c.stats.scoreRecounted && c.stats.score != null ? ' <span class="dash-trust-dim">on the profiles compared</span>' : ''}</li>`,
         ];
 
         // The spread behind the average. A mean that rose while the worst page
@@ -943,7 +945,7 @@ function trustCards(d) {
         const flags = [];
         if (c.stats.score == null) {
             flags.push(c.stats.scoreLeftOut
-                ? 'No score: the runs are compared on the profiles they share, and its score was made from everything it checked.'
+                ? 'No score: the runs are compared on fewer profiles than it checked, and its score, made from everything it checked, cannot be counted again: the report kept no page measurements.'
                 : 'No score: this run evaluated too little to carry one, so its line breaks here.');
         }
         for (const reason of (health.reasons || [])) flags.push(reason);
@@ -1466,6 +1468,7 @@ export function comparisonSeriesHTML(d, { dispersion } = {}) {
         + mastheadHTML(d.document, { sourcesHref: `#${SOURCES_ID}` })
         + reportsStripHTML(sourceRows(d), { sourcesHref: `#${SOURCES_ID}` })
         + hero + numbers + trustCards(d) + change
+        + seriesProfilesHTML(d.profiles, { labels: d.columns.map((c) => label(c)) })
         + dispersionSection(d, dispersion)
         + (d.mode === 'matrix' ? '' : flowSection(d))
         + conformanceSection(d) + fixFirst(d) + ruleGrid(d)

@@ -232,6 +232,22 @@ and the comparison reads accordingly. A comparison can be named and
 annotated, and downloaded as a page, or with its reports as a zip that opens
 in the tab again.
 
+When the reports were checked against more than one profile (WCAG 2.2 AA +
+WAI-ARIA 1.2, say), **Profiles compared** has a switch for each profile every
+report checked. Turn one off and the comparison is read on the others: a
+rule's finding is what the profiles still on make of it, a requirement of a
+profile turned off goes, and each report's score is counted again on what is
+left, from the page measurements the report kept (a report too old to keep
+them shows no score). The choice is saved in the zip.
+
+With two profiles or more compared, the **By profile** section says how much
+of the comparison each one accounts for: every failing problem is put down to
+the one profile it fails under, or to *More than one profile* when several
+judge it, so the rows add up to the comparison's own numbers (with two
+reports, its fixed, new and still failing too). Beside them is each
+profile's score on its own, which is not a share of the total: scores don't
+add up.
+
 ## Batches and the queue
 
 The **Batch** section runs the workflow once per row of a JSON list: each row
