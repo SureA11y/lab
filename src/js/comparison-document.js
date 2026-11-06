@@ -210,7 +210,7 @@ export function sharedProfilesNoteHTML(doc) {
         }
         if (filter) {
             const shown = Array.isArray(filter.shown) ? filter.shown : [];
-            parts.push(esc(`Compared on ${shown.map((p) => p.label).join(' + ')} only: ${filter.off.map((p) => p.label).join(', ')} turned off above, so ${filter.off.length === 1 ? 'its' : 'their'} results are left out.`));
+            parts.push(esc(`Compared on ${shown.map((p) => p.label).join(' + ')} only: ${filter.off.map((p) => p.label).join(', ')} turned off, so ${filter.off.length === 1 ? 'its' : 'their'} results are left out.`));
         }
         let scoreSaid = false;
         if (comparedOn.length && !filter) {
