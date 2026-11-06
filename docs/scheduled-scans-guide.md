@@ -277,6 +277,14 @@ A run that failed, was cancelled, or came back degraded **cannot** become a
 baseline. That refusal matters: if a broken run became the reference, every run
 afterwards would look like an improvement, forever.
 
+
+When the run scans the site under another path than its baseline did (a
+release served at `/v2/` beside the last at `/v1/`), their pages share no
+path, and every failing instance reads as new or fixed; the run warns about
+it. `--ignore-path-prefix /v1 --ignore-path-prefix /v2` matches them page by
+page, and the comparison, `summary.md` and `diff.json` say which prefixes
+were left out.
+
 ### Step 5: put it on a schedule
 
 There is nothing left to build. A nightly run of one workflow, keeping a
