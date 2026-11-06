@@ -482,7 +482,7 @@ export function passwordsFromWorkflow(fields, workflow) {
  * when dismissed. Nothing is kept: the dialog is removed once closed, and the
  * values go to the server for this resume only.
  */
-export function askMaskedValuesInDialog(doc, fields) {
+export function askMaskedValuesInDialog(doc, fields, { action = 'Resume' } = {}) {
     return new Promise((resolve) => {
         const titleId = 'queue-values-title';
         const inputs = fields.map((f, i) => el(doc, 'input', {
@@ -497,7 +497,7 @@ export function askMaskedValuesInDialog(doc, fields) {
         const form = el(doc, 'form', { method: 'dialog', className: 'src-dialog-body queue-values-form' }, [
             el(doc, 'p', {
                 className: 'src-dialog-meta',
-                text: 'Passwords are not saved. They are used to resume these runs and are not written anywhere.',
+                text: 'Passwords are not saved. They are used for these runs only and are not written anywhere.',
             }),
             ...fields.map((f, i) => el(doc, 'div', { className: 'queue-value-field' }, [
                 el(doc, 'label', { for: `queue-value-${i}`, text: `${f.action} · ${f.field}${f.target ? ` (${f.target})` : ''}` }),
@@ -510,7 +510,7 @@ export function askMaskedValuesInDialog(doc, fields) {
                 }),
             ])),
             el(doc, 'div', { className: 'queue-values-actions' }, [
-                el(doc, 'button', { type: 'submit', value: 'resume', text: 'Resume' }),
+                el(doc, 'button', { type: 'submit', value: 'resume', text: action }),
                 el(doc, 'button', { type: 'button', className: 'secondary-button', 'data-dismiss': '', text: 'Cancel' }),
             ]),
         ]);
@@ -1210,23 +1210,24 @@ export function createRunQueuePanel({
     }
 
     /**
-     * The hidden values `fieldsUrl` lists, from the open workflow when it
-     * has them all, else asked for: { values, fromForm }, null when
-     * dismissed, {} when none are needed.
+     * The hidden values `fieldsUrl` lists, always asked for: a run with a
+     * password does not start without the person confirming it. Those still
+     * typed in the editor the batch was started from come filled in, and the
+     * dialog says so. { values }, or null when dismissed; {} when none is
+     * needed.
      */
-    async function gatherValues(fieldsUrl, task) {
+    async function gatherValues(fieldsUrl, task, { action = 'Resume' } = {}) {
         task?.step('Finding the passwords its runs need');
         const res = await fetchImpl(fieldsUrl, { cache: 'no-store' });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || `The server answered ${res.status}`);
         if (!data.fields?.length) return {};
-        // The passwords are most likely still typed in the editor the batch
-        // was started from: only ask for what is not.
         const known = passwordsFromWorkflow(data.fields, getFormWorkflow());
-        if (data.fields.every((f) => known[f.key])) return { values: known, fromForm: true };
-        const ask = askMaskedValues || ((fields) => askMaskedValuesInDialog(doc, fields));
+        task?.step('Waiting for the passwords');
+        // The dialog's button says what pressing it does: Resume, Run again.
+        const ask = askMaskedValues || ((fields) => askMaskedValuesInDialog(doc, fields, { action }));
         const values = await ask(data.fields.map((f) => (known[f.key] ? { ...f, value: known[f.key] } : f)));
-        return values ? { values, fromForm: false } : null;
+        return values ? { values } : null;
     }
 
     // A report file picked here: a hidden file input, gone once read. A
@@ -1351,7 +1352,6 @@ export function createRunQueuePanel({
             const session = state?.sessions.find((s) => s.id === sessionId);
             track(act(() => asTask(`Resume ${session ? describeBatch(session) : 'the batch'}`, async (task) => {
                 let values;
-                let fromForm = false;
                 if (session?.needsValues) {
                     const got = await gatherValues(`/queue/sessions/${encodeURIComponent(sessionId)}/masked-fields`, task);
                     if (!got) {
@@ -1360,11 +1360,11 @@ export function createRunQueuePanel({
                         restoreFocus(`resume:${sessionId}`);
                         return;
                     }
-                    ({ values, fromForm = false } = got);
+                    ({ values } = got);
                 }
                 task?.step('Queuing its runs again');
                 const r = await post(`/queue/sessions/${encodeURIComponent(sessionId)}/resume`, values ? { values } : {});
-                const said = `Resumed ${plural(r.resumed, 'run')}${fromForm ? ', with the passwords from the open workflow' : ''}.`
+                const said = `Resumed ${plural(r.resumed, 'run')}.`
                     + (r.stillWaiting ? ` ${plural(r.stillWaiting, 'run')} still need their passwords.` : '');
                 setStatus(said);
                 if (r.stillWaiting) task?.warn(said);
@@ -1376,7 +1376,7 @@ export function createRunQueuePanel({
             track(act(() => asTask(`Run “${item.name}” again`, async (task) => {
                 let values;
                 if (item.needsValues) {
-                    const got = await gatherValues(`/queue/sessions/${encodeURIComponent(session.id)}/masked-fields?item=${encodeURIComponent(item.id)}`, task);
+                    const got = await gatherValues(`/queue/sessions/${encodeURIComponent(session.id)}/masked-fields?item=${encodeURIComponent(item.id)}`, task, { action: 'Run again' });
                     if (!got) {
                         setStatus('Not run again.');
                         task?.cancel();

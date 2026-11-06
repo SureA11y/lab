@@ -292,7 +292,9 @@ A finished batch can still change, while no other batch runs:
 - **Run again**, on a row, runs it again from the workflow it saved, with its
   row's values. The new result replaces the old one; if the re-run ends with
   no result (the site was down, it was cancelled), the old one stays and the
-  row says so. A workflow saved without its passwords asks for them first.
+  row says so. Passwords are never saved, so a workflow that types one always
+  asks for it first; those still typed in the open workflow come filled in,
+  to confirm or change. Resuming an interrupted batch asks the same way.
 - **Add the open workflow** runs the workflow in the editor into the batch, as
   a row after the others.
 - **Add a report…** adds a report saved before as a row of its own, without

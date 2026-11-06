@@ -332,26 +332,29 @@ describe('run queue panel', () => {
         assert.deepEqual(server.posts, [{url: '/queue/sessions/2026-10-12T14-03-27/resume', body: {values: {k1: 'hunter2'}}}]);
     });
 
-    test('resume reuses the passwords still typed in the editor, without asking', async () => {
+    test('resume always asks, with the passwords still typed in the editor filled in', async () => {
         const fields = [{key: 'k1', action: 'Set password value', field: 'Password', target: '#pass', where: 'Step 2', rows: 3,
             match: {path: ['actions', 1], field: 'value', step: {type: 'setPassword', selector: '#pass', valueMasked: true}}}];
+        const asked = [];
         const items = [baseItem({id: 'b', status: 'interrupted', file: null, fileUrl: null, needsValues: true})];
         const {p, server} = panel([
             {concurrency: 1, maxConcurrency: 4, sessions: [session({state: 'interrupted', resumable: true, needsValues: true}, items)]},
         ], {
             maskedFields: fields,
-            askMaskedValues: async () => { throw new Error('must not ask'); },
+            askMaskedValues: async (f) => { asked.push(f); return {k1: f[0].value}; },
             getFormWorkflow: () => ({actions: [{type: 'goto'}, {type: 'setPassword', selector: '#pass', value: 'hunter2', valueMasked: true}]}),
         });
         await p.refresh();
         document.querySelector('[data-queue-action="resume"]').click();
         await until(() => server.posts.length, 'the resume POST');
         await p.refresh();
+        assert.equal(asked.length, 1, 'asked, though the editor had them all');
+        assert.equal(asked[0][0].value, 'hunter2', 'filled in from the editor');
         assert.deepEqual(server.posts, [{url: '/queue/sessions/2026-10-12T14-03-27/resume', body: {values: {k1: 'hunter2'}}}]);
-        assert.match(document.getElementById('status').textContent, /with the passwords from the open workflow/);
+        assert.doesNotMatch(document.getElementById('status').textContent, /from the open workflow/);
     });
 
-    test('resume asks only for the passwords the editor does not have, with the others filled in', async () => {
+    test('resume fills in the passwords the editor has, and leaves the others to type', async () => {
         const fields = [
             {key: 'k1', action: 'a', field: 'f', rows: 1,
                 match: {path: ['actions', 0], field: 'value', step: {type: 'setPassword', selector: '#pass', valueMasked: true}}},
@@ -415,7 +418,8 @@ describe('run queue panel', () => {
         assert.deepEqual(await pending, {k1: 'hunter2', k2: '4321'});
         assert.equal(document.querySelector('dialog.queue-values-dialog'), null);
 
-        const dismissed = mod.askMaskedValuesInDialog(document, fields);
+        const dismissed = mod.askMaskedValuesInDialog(document, fields, {action: 'Run again'});
+        assert.equal(document.querySelector('dialog.queue-values-dialog button[type="submit"]').textContent, 'Run again');
         document.querySelector('dialog.queue-values-dialog [data-dismiss]').click();
         assert.equal(await dismissed, null);
     });
@@ -1426,6 +1430,26 @@ describe('changing a finished batch', () => {
         only.click();
         assert.equal(status(), 'This is the batch’s only run. Delete the batch instead.');
         assert.equal(server.posts.length, 0);
+    });
+
+    test('a run with passwords asks for them before it runs again, even with them typed in the editor', async () => {
+        const fields = [{key: 'k1', action: 'Set password value', field: 'Password', target: '#pass', where: 'Step 2', rows: 1,
+            match: {path: ['actions', 1], field: 'value', step: {type: 'setPassword', selector: '#pass', valueMasked: true}}}];
+        const asked = [];
+        const answers = [null, {k1: 'typed'}];
+        const {p, server} = panel([finished([baseItem({needsValues: true})])], {
+            maskedFields: fields,
+            askMaskedValues: async (f) => { asked.push(f); return answers.shift(); },
+            getFormWorkflow: () => ({actions: [{type: 'goto'}, {type: 'setPassword', selector: '#pass', value: 'hunter2', valueMasked: true}]}),
+        });
+        await p.refresh();
+        button('Run again').click();
+        await until(() => status() === 'Not run again.', 'the prompt dismissed');
+        assert.equal(server.posts.length, 0, 'dismissed: nothing runs');
+        assert.equal(asked[0][0].value, 'hunter2', 'filled in from the editor');
+        button('Run again').click();
+        await until(() => server.posts.length, 'the re-run');
+        assert.deepEqual(server.posts[0].body, {values: {k1: 'typed'}});
     });
 
     test('a row says how its runs again went', () => {
