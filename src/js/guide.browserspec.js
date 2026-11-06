@@ -255,19 +255,40 @@ const barIn = (page) => page.waitForFunction(() => {
     return bar.classList.contains('is-shown') && bar.getBoundingClientRect().top === 0;
 }, { timeout: 5000 });
 
-test('scrolled past the filters, the bar keeps the logo, what is shown and the actions in reach; on a phone, the contents too', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
+test('once the title is gone, the bar keeps the logo and the actions in reach; once the filters are, they open from it; on a phone, the contents too', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
     const { page, errors } = await open('/guide?standard=wcag');
     await settled(page, /checks\./);
     const bar = () => page.$eval('#guide-bar', (b) => ({ shown: b.classList.contains('is-shown'), inert: b.inert, top: Math.round(b.getBoundingClientRect().top) }));
+    const filtersButton = () => page.$eval('[data-guide-bar="filters"]', (b) => ({ hidden: b.hidden, expanded: b.getAttribute('aria-expanded') }));
+    const formIn = () => page.$eval('#guide-filters', (f) => (f.closest('#guide-bar') ? 'bar' : 'page'));
     assert.deepEqual(await bar(), { shown: false, inert: true, top: -52 }, 'out of sight, and out of reach, at the top');
 
-    await page.evaluate(() => window.scrollTo(0, 2500));
+    // The title gone, the filters still in view: the bar, without them.
+    await page.evaluate(() => window.scrollTo(0, document.querySelector('.guide-hero').getBoundingClientRect().bottom + scrollY - 20));
     await barIn(page);
     assert.equal((await bar()).inert, false);
     assert.equal(await page.$eval('.guide-bar-brand', (a) => a.getAttribute('href')), '/');
-    assert.match(await page.$eval('[data-guide-bar="status"]', (el) => el.textContent), /^WCAG 2\.2, Level A and AA: \d+ criteria, \d+ checks$/);
+    assert.equal((await filtersButton()).hidden, true);
+
+    // The filters gone too: Filters says what is shown, and opens them.
+    await page.evaluate(() => window.scrollTo(0, 2500));
+    await page.waitForFunction(() => !document.querySelector('[data-guide-bar="filters"]').hidden, { timeout: 5000 });
+    assert.match(await page.$eval('[data-guide-bar="filters"]', (b) => b.textContent.replace(/\s+/g, ' ').trim()), /^Filters: WCAG 2\.2 · A and AA · \d+ criteria, \d+ checks$/);
     // The contents beside the guide stick below the bar.
     await page.waitForFunction(() => document.getElementById('guide-toc').getBoundingClientRect().top >= document.getElementById('guide-bar').offsetHeight, { timeout: 5000 });
+    const before = await page.evaluate(() => ({ y: scrollY, top: document.querySelector('.guide-req').getBoundingClientRect().top }));
+    await page.click('[data-guide-bar="filters"]');
+    assert.deepEqual(await filtersButton(), { hidden: false, expanded: 'true' });
+    assert.equal(await formIn(), 'bar');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'guide-standard');
+    assert.deepEqual(await page.evaluate(() => ({ y: scrollY, top: document.querySelector('.guide-req').getBoundingClientRect().top })), before, 'nothing in the page moved');
+    // A change redraws the guide; the filters stay open for the next.
+    await page.click('#guide-bar-filters-panel input[name="level"][value="AAA"]');
+    await settled(page, /Level A, AA and AAA|Level A and AA and AAA/);
+    assert.equal(await formIn(), 'bar');
+    await page.keyboard.press('Escape');
+    assert.equal(await formIn(), 'page');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.guideBar), 'filters');
 
     await page.click('[data-guide-bar="expand"]');
     assert.equal(await page.$$eval('.guide-toggle[aria-expanded="false"]', (els) => els.length), 0);
@@ -278,12 +299,17 @@ test('scrolled past the filters, the bar keeps the logo, what is shown and the a
     await page.waitForFunction(() => window.scrollY === 0 && !document.getElementById('guide-bar').classList.contains('is-shown'), { timeout: 10000 });
     assert.equal(await page.evaluate(() => document.activeElement.id), 'guide-search');
 
-    // On a phone: Contents opens the contents over the page, and a link closes them.
+    // On a phone: Contents opens the contents over the page, with Expand all
+    // and Collapse all, and a link closes them.
     await page.setViewport({ width: 375, height: 800 });
     await page.evaluate(() => window.scrollTo(0, 2500));
     await barIn(page);
+    assert.equal(await page.$eval('#guide-bar .guide-bar-actions [data-guide-bar="expand"]', (b) => getComputedStyle(b).display), 'none', 'no room in the bar');
     await page.click('[data-guide-bar="contents"]');
     assert.equal(await page.$eval('[data-guide-bar="contents"]', (b) => b.getAttribute('aria-expanded')), 'true');
+    await page.click('#guide-bar-toc [data-guide-bar="expand"]');
+    assert.equal(await page.$$eval('.guide-toggle[aria-expanded="false"]', (els) => els.length), 0);
+    assert.equal(await page.$eval('#guide-bar-toc', (el) => el.hidden), false, 'still open');
     const link = await page.$('#guide-bar-toc a[data-toc]');
     const target = await link.evaluate((a) => a.dataset.toc);
     await link.click();
