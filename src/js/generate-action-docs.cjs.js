@@ -20,6 +20,11 @@
  *    and left alone. No file is written at all (not even generatedAt)
  *    unless the generated content actually differs from what's on disk, so
  *    running the build with no source changes leaves a clean git diff.
+ *
+ * The docs come out the same on every machine: a scan step's profiles are
+ * the lab's own and its own packs' (docOptions), whatever other packs are
+ * installed or named in A11Y_PACKS. Run by `npm run build:action-docs`, not
+ * by starting the app, which leaves tracked files alone.
  */
 
 const fs = require('fs');
@@ -31,6 +36,7 @@ const { batchSpecSchema } = require('../server-side/step-check.js');
 const { SCHEMA_FILE, APP_CONFIG_SCHEMA_FILE, BATCH_SPEC_SCHEMA_FILE } = require('../shared/run-spec-schema.js');
 const { publishedSchemas } = require('../shared/report-schemas.js');
 const { httpApiSchema } = require('../server-side/http-api-schema.js');
+const { describeStandard, FIRST_PARTY } = require('../server-side/standard-packs.js');
 
 const STEP_DEFINITIONS_HTML = path.join(__dirname, '..', '..', 'docs', 'step-definitions.html');
 const CONFIGURATION_CONTRACT_JSON = path.join(__dirname, '..', '..', 'docs', 'configuration_contract.json');
@@ -41,6 +47,43 @@ function normalizeOptions(options) {
     return options.map((opt) =>
         (opt && typeof opt === 'object') ? opt : {value: opt, label: String(opt)}
     );
+}
+
+/**
+ * The profiles of the standard packs the lab installs itself (EN 301 549,
+ * WAI-ARIA), as a scan step offers them: [{ value, label, pack: true }], in
+ * the order the lab lists the packs. Read from the packs, not from what the
+ * running lab registered, so the docs are the same on every machine: a pack
+ * named in A11Y_PACKS, or another installed, adds its profiles to the app,
+ * not to the docs. A missing one is an install to make, not a doc to change.
+ */
+function firstPartyPackProfiles() {
+    const out = [];
+    for (const name of FIRST_PARTY) {
+        let pack;
+        try {
+            pack = require(name);
+        } catch {
+            throw new Error(`${name} is not installed, and the docs list its profiles: run npm install, then build the docs again`);
+        }
+        const standard = describeStandard(pack);
+        for (const p of (standard ? standard.profiles : [])) {
+            if (!out.some((o) => o.value === p.id)) out.push({value: p.id, label: p.label, pack: true});
+        }
+    }
+    return out;
+}
+
+/**
+ * A field's options as the docs list them. A field installed packs add
+ * values to (packValues) lists the lab's own, then its own packs' profiles,
+ * whatever other packs this machine has.
+ */
+function docOptions(field) {
+    const options = normalizeOptions(field.options);
+    if (!options || field.packValues !== true) return options;
+    const own = options.filter((o) => !(o && o.pack === true));
+    return [...own, ...firstPartyPackProfiles().filter((p) => !own.some((o) => o && o.value === p.value))];
 }
 
 /** Field order for a type: fieldOrder.primary first, then every other
@@ -71,7 +114,7 @@ function buildHtmlDocDefinitions() {
                 ...(f.default !== undefined ? {default: f.default} : {}),
                 ...(f.placeholder !== undefined ? {placeholder: f.placeholder} : {}),
                 ...(f.example !== undefined ? {example: f.example} : {}),
-                ...(normalizeOptions(f.options) ? {options: normalizeOptions(f.options)} : {})
+                ...(docOptions(f) ? {options: docOptions(f)} : {})
             };
         }
         out[type] = {
@@ -104,7 +147,7 @@ function buildContractCatalog() {
                 ...(f.integer === true ? {integer: true} : {}),
                 ...(typeof f.min === 'number' ? {min: f.min} : {}),
                 ...(typeof f.max === 'number' ? {max: f.max} : {}),
-                ...(normalizeOptions(f.options) ? {options: normalizeOptions(f.options)} : {})
+                ...(docOptions(f) ? {options: docOptions(f)} : {})
             };
         }
         out[type] = {
@@ -205,4 +248,6 @@ function main() {
     updateReportSchemas();
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { docOptions, firstPartyPackProfiles, buildContractCatalog, buildHtmlDocDefinitions };

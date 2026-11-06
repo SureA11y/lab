@@ -1,9 +1,15 @@
 'use strict';
 
 /**
- * npm start and npm run dev: build the report's assets and the step
- * reference, then run the server - in this process for start, under nodemon
- * for dev.
+ * npm start and npm run dev: build the report's assets, then run the server
+ * - in this process for start, under nodemon for dev.
+ *
+ * Only what is not tracked is built here (the report's assets). The step
+ * reference, docs/configuration_contract.json and the schemas are tracked
+ * files: starting the app rewrote them (and their generatedAt) wherever its
+ * packs differed from the committer's. They are built by `npm run
+ * build:action-docs` when their source changes, and the tests say when one
+ * is out of date.
  *
  * One process npm can stop. The scripts were a chain (npm, a shell, npm
  * again, a shell, node) and the shells pass no signal on, so a process
@@ -22,7 +28,6 @@ const { spawn, spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..', '..');
 const BUILDS = [
     'src/js/build-report-assets.cjs.js',
-    'src/js/generate-action-docs.cjs.js',
 ];
 const FORWARDED = ['SIGINT', 'SIGTERM', 'SIGHUP'];
 

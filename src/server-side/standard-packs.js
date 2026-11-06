@@ -162,4 +162,4 @@ function packForStandard(key) {
     return installedPacks().find((p) => p && p.standard && p.standard.key === key) || null;
 }
 
-module.exports = { loadPacks, describeStandard, registerProfiles, installedPacks, installedStandards, packForStandard };
+module.exports = { loadPacks, describeStandard, registerProfiles, installedPacks, installedStandards, packForStandard, FIRST_PARTY };

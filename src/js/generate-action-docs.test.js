@@ -138,3 +138,37 @@ describe('schemas/ report, comparison and diff schemas', () => {
         }
     });
 });
+
+describe('the generated docs are the same on every machine', () => {
+    const { docOptions, buildContractCatalog } = require('./generate-action-docs.cjs.js');
+    const { ACTION_DEFINITIONS } = require('../workflow/action-definitions.js');
+
+    test('a scan step lists the lab\'s own profiles and its own packs\', not another pack a machine has', () => {
+        const field = ACTION_DEFINITIONS.a11yScan.fields.profile;
+        const before = field.options.slice();
+        // As registerProfiles adds a pack named in A11Y_PACKS.
+        field.options.push({ value: 'sample-1.0', label: 'Sample Standard 1.0', pack: true });
+        try {
+            const values = docOptions(field).map((o) => o.value);
+            assert.ok(!values.includes('sample-1.0'));
+            assert.ok(values.includes('wai-aria-1.2'), 'the WAI-ARIA pack the lab installs');
+            assert.ok(values.includes('wcag22-aa'));
+            const listed = buildContractCatalog().a11yScan.fields.profile.options.map((o) => o.value);
+            assert.deepEqual(listed, values);
+        } finally {
+            field.options.length = 0;
+            field.options.push(...before);
+        }
+    });
+
+    test('what is committed is what the generator builds here', () => {
+        const contract = JSON.parse(fs.readFileSync(CONFIGURATION_CONTRACT_JSON, 'utf8'));
+        assert.deepEqual(contract.actionCatalog, JSON.parse(JSON.stringify(buildContractCatalog())),
+            'run `npm run build:action-docs`');
+    });
+
+    test('starting the app does not rebuild them (they are tracked files)', () => {
+        const launch = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'launch.js'), 'utf8');
+        assert.doesNotMatch(launch, /'src\/js\/generate-action-docs\.cjs\.js'/);
+    });
+});

@@ -63,11 +63,14 @@ layout, focus or what a screen reader announces.
 `src/shared/tier-boundaries.test.js` keeps the tiers apart: browser code does
 not reach into the server, and the server does not reach into the app.
 
-Some files are generated, and their tests fail when they are out of date:
+Some files are generated, and their tests fail when they are out of date.
+Starting the app builds only the report's assets, which are not committed;
+the others are committed, so they are built by their command, not by
+starting the app:
 
 | Run | When you change | It writes |
 | --- | --- | --- |
-| `npm run build:action-docs` | A step's definition, or a schema's source | `docs/step-definitions.html`, `docs/configuration_contract.json`, `schemas/*.json` |
+| `npm run build:action-docs` | A step's definition, or a schema's source | `docs/step-definitions.html`, `docs/configuration_contract.json`, `schemas/*.json` (the same on every machine: a scan step lists the lab's own profiles and its own packs', not the other packs installed or named in `A11Y_PACKS`) |
 | `npm run build:extension-shared` | A shared module the extension uses, or the packs installed | `extension/*.js` copies; the packs' script and standards in `extension/engines/vendor/` (not committed: they come from the packs installed, the lab's and `A11Y_PACKS`') |
 | `npm run build:report` | The report's styles or script | `src/report/*.min.*` (not committed) |
 
