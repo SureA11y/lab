@@ -55,6 +55,18 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
         // Its own package: its result and the pictures it names.
         item.zipUrl = item.file ? `/queue/sessions/${sessionId}/items/${encodeURIComponent(item.id)}/download.zip` : null;
         item.zipName = item.file ? `${files.fileStem(item.name)}.zip` : null;
+        // Its other results: the active one while it runs again, a re-run's
+        // waiting for a choice, its versions. Each opens and downloads alone.
+        const resultLinks = (result) => {
+            if (!result || !result.file) return result;
+            result.fileUrl = `${publicBase}/${sessionId}/${encodeURIComponent(result.file)}`;
+            result.zipUrl = `/queue/sessions/${sessionId}/items/${encodeURIComponent(item.id)}/download.zip?file=${encodeURIComponent(result.file)}`;
+            result.zipName = `${files.fileStem(result.file.replace(/\.json$/, ''))}.zip`;
+            return result;
+        };
+        resultLinks(item.active);
+        resultLinks(item.candidate);
+        for (const v of item.versions || []) resultLinks(v);
         return item;
     }
 
@@ -127,17 +139,31 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
         queue.rerunItem(req.params.sessionId, req.params.itemId, { values: req.body && req.body.values })
     )));
 
-    // One run of a finished batch: its row, its result, and the pictures and
-    // run folders only it used. POST like the other actions.
-    app.post('/queue/sessions/:sessionId/items/:itemId/delete', async (req, res) => {
+    async function respondAsync(res, fn) {
         try {
-            res.json(await queue.deleteItem(req.params.sessionId, req.params.itemId));
+            res.json(await fn());
         } catch (err) {
             const status = err && Number.isInteger(err.statusCode) ? err.statusCode : 500;
             if (status >= 500) logError('[run-queue]', err);
             res.status(status).json({ error: err && err.message ? err.message : 'Queue request failed' });
         }
-    });
+    }
+    const fileIn = (req) => (req.body && typeof req.body.file === 'string' ? req.body.file : '');
+
+    // One run of a finished batch: its row, its results, and the pictures and
+    // run folders only it used. POST like the other actions.
+    app.post('/queue/sessions/:sessionId/items/:itemId/delete', (req, res) => respondAsync(res,
+        () => queue.deleteItem(req.params.sessionId, req.params.itemId)));
+
+    // After Run again: which result the row keeps, { keep: 'new' | 'active' | 'both' }.
+    app.post('/queue/sessions/:sessionId/items/:itemId/keep', (req, res) => respondAsync(res,
+        () => queue.chooseRerunResult(req.params.sessionId, req.params.itemId, req.body && req.body.keep)));
+
+    // A row's kept versions, by their result's file: { file }.
+    app.post('/queue/sessions/:sessionId/items/:itemId/versions/activate', (req, res) => respondAsync(res,
+        () => queue.activateVersion(req.params.sessionId, req.params.itemId, fileIn(req))));
+    app.post('/queue/sessions/:sessionId/items/:itemId/versions/delete', (req, res) => respondAsync(res,
+        () => queue.deleteVersion(req.params.sessionId, req.params.itemId, fileIn(req))));
 
     // Masked values come in the body, are put into the runs held in memory,
     // and are never written: batch.json keeps the redacted workflow.
@@ -166,15 +192,18 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
     // One run as a report package: its result and the pictures it names in
     // the batch's images/ folder (batch-package.js). A result saved before
     // batches were packages has its pictures inline, or as links, and goes
-    // alone.
+    // alone. `?file=` picks another of its results: a version, or a re-run's
+    // waiting for a choice.
     app.get('/queue/sessions/:sessionId/items/:itemId/download.zip', async (req, res) => {
         const dir = queue.sessionDir(req.params.sessionId);
         const manifest = dir ? files.readManifest(dir) : null;
         const item = manifest && manifest.items.find((i) => i.id === req.params.itemId);
-        if (!item || !item.file || item.file !== path.basename(item.file)) return res.status(404).json({ error: 'No such result' });
+        const wanted = req.query && typeof req.query.file === 'string' ? req.query.file : (item && item.file);
+        const own = item ? [item.file, item.candidate && item.candidate.file, ...(Array.isArray(item.versions) ? item.versions : []).map((v) => v && v.file)] : [];
+        if (!item || !wanted || wanted !== path.basename(wanted) || !own.includes(wanted)) return res.status(404).json({ error: 'No such result' });
         let pictures;
         try {
-            pictures = await imagePathsInFile(path.join(dir, item.file));
+            pictures = await imagePathsInFile(path.join(dir, wanted));
         } catch {
             return res.status(404).json({ error: 'No such result' });
         }
@@ -183,7 +212,7 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
         const extra = isConfig(item.config)
             ? [{ name: `${files.fileStem(item.name)}${files.CONFIG_SUFFIX}`, text: JSON.stringify(redactMaskedFields(item.config), null, 2) }]
             : [];
-        streamFilesZip(res, dir, [item.file, ...present], `${files.fileStem(item.name)}.zip`, { logError, extra });
+        streamFilesZip(res, dir, [wanted, ...present], `${files.fileStem(item.name)}.zip`, { logError, extra });
     });
 }
 

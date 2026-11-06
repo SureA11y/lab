@@ -293,14 +293,32 @@ time as the batch has, up to eight (or the number set in **Runs at the same
 time**), and keeps every result on the server as it finishes
 (`reports/batches/<start time>/`). A run can be watched live; the whole batch
 downloads as one zip and goes to the compare tab in one go. A batch whose
-workflow types a password asks for it once, before it starts.
+workflow types a password asks for it once, before it starts. Each run's
+status says when it was reached, in full (*6 Nov 2026, 11:33*; a running
+one when it started), and *Ran again* under it when its result came from
+Run again, so a result from another day stands out from the batch's.
 
 A finished batch can still change, while no other batch runs:
 
 - **Run again**, on a row, runs it again from the workflow it saved, with its
-  row's values. The new result replaces the old one; if the re-run ends with
-  no result (the site was down, it was cancelled), the old one stays and the
-  row says so. Passwords are never saved, so a workflow that types one always
+  row's values. The row's result stays its **active** one, the one the
+  batch's totals, zip and Send to Compare use, until you choose: a re-run
+  cut short by a site going down is no better than what it would replace.
+  While it runs, the row shows two lines under its name: the active result,
+  and the run as it goes. Once it has a result, a third line says how it
+  compares (*Run again finished: 2 failing, 4 fewer than the active result;
+  same 4 scans*, or *Run again did not finish*) and offers **Keep: the new
+  one · the active one · both**, the suggested one in bold. The new one
+  replaces the active one; the active one lets the new one go; both keeps
+  the new one as a **version** of the row, the active one staying active.
+  What is let go is deleted, with the pictures and evidence only it used.
+  Until you choose, the row has no Run again or Delete. If the re-run ends
+  with no result (the site was down, it was cancelled), there is nothing to
+  choose: the active one stays and the row says so.
+  A row with versions says so under its name (**2 versions**): opened, it
+  lists each of its results, the active one marked, each to open or
+  download; another can be made the active one (**Make active**) or
+  deleted. A row keeps five results at most. Passwords are never saved, so a workflow that types one always
   asks for it first; those still typed in the open workflow come filled in,
   to confirm or change. Each password says which one it is: the steps it
   sits inside and its own step (*In: Step 3: Group · “Second factor” ›
@@ -308,10 +326,9 @@ A finished batch can still change, while no other batch runs:
   field value · Email = “jorge@shop.com”*; another password shows as
   *(hidden)*), and the runs it is for. Resuming an interrupted batch asks
   the same way.
-  The batch keeps its own start, end and total time; the row says when it
-  ran again and how long that took.
-- **Delete**, on a row, removes it from the batch once confirmed: its result,
-  and the pictures and evidence that only it used. A batch's only row is not
+  The batch keeps its own start, end and total time.
+- **Delete**, on a row, removes it from the batch once confirmed: its result
+  and its versions, and the pictures and evidence that only they used. A batch's only row is not
   deleted on its own: delete the batch instead.
 
 Whatever is deleted is gone from the batch: its folder, its zip and Send to

@@ -1381,7 +1381,97 @@ describe('changing a finished batch', () => {
     const button = (text) => [...document.querySelectorAll('#list button')].find((b) => b.textContent.trim().startsWith(text) || b.title === text);
     const status = () => document.getElementById('status').textContent;
 
-    test('a finished row runs again, its result to replace the old one', async () => {
+    const later = {status: 'done', scans: 4, findings: {fail: 2, cantTell: 70, pass: 140}, durationMs: 60000,
+        finishedAt: '2026-11-07T09:15:02.000Z', file: 'Product-v2.3-2.json', fileUrl: '/reports/batches/S/Product-v2.3-2.json',
+        zipUrl: '/queue/sessions/S/items/i1/download.zip?file=Product-v2.3-2.json', ranAgain: true};
+
+    test('running again, a row shows its active result above the run, its name spanning both', async () => {
+        const {p} = panel([{concurrency: 1, maxConcurrency: 8, sessions: [session({state: 'running'}, [
+            baseItem({status: 'running', scans: 1, findings: {fail: 1, cantTell: 3, pass: 9}, startedAt: '2026-11-07T09:14:00.000Z', elapsedMs: 3000,
+                active: {status: 'done', scans: 4, findings: {fail: 6, cantTell: 72, pass: 138}, durationMs: 65000, finishedAt: '2026-11-06T11:33:37.000Z',
+                    file: 'Product-v2.3.json', fileUrl: '/reports/batches/S/Product-v2.3.json', ranAgain: false}}),
+        ])]}]);
+        await p.refresh();
+        const [activeLine, runLine] = document.querySelectorAll('#list tbody tr');
+        assert.equal(activeLine.querySelector('th').getAttribute('rowspan'), '2');
+        assert.equal(runLine.querySelector('th'), null, 'the name spans both lines');
+        assert.equal(activeLine.querySelector('.queue-line-tag').textContent, 'Active');
+        assert.equal(runLine.querySelector('.queue-line-tag').textContent, 'Run again');
+        assert.match(activeLine.querySelector('.queue-fail').textContent, /^6/);
+        assert.match(runLine.querySelector('.queue-fail').textContent, /^1/);
+        assert.match(runLine.querySelector('time').textContent, /^Started 7 Nov 2026/);
+        assert.ok(activeLine.querySelector('[title="Open"]'), 'the active result opens');
+        assert.ok(runLine.querySelector('[title="Watch"]'), 'the run is watched');
+        assert.equal(document.querySelector('#list [title="Run again"]'), null);
+    });
+
+    test('a re-run\'s result waits under the active one, with a line to choose; Run again and Delete wait for the choice', async () => {
+        const {p, server} = panel([finished([baseItem({finishedAt: '2026-11-06T11:33:37.000Z', candidate: later}), baseItem({id: 'i2', name: 'Second'})])]);
+        await p.refresh();
+        const lines = [...document.querySelectorAll('#list tbody tr')].slice(0, 3);
+        assert.equal(lines[0].querySelector('th').getAttribute('rowspan'), '3');
+        assert.deepEqual(lines.slice(0, 2).map((l) => l.querySelector('.queue-line-tag').textContent), ['Active', 'Run again']);
+        assert.deepEqual([...lines[1].querySelectorAll('.queue-was')].map((w) => [w.textContent, w.className.includes('better') ? 'better' : w.className.includes('worse') ? 'worse' : '']),
+            [['was 4', ''], ['was 6', 'better'], ['was 72', ''], ['was 138', 'better']]);
+        assert.match(lines[2].textContent, /Run again finished: 2 failing, 4 fewer than the active result; same 4 scans\./);
+        const links = [...lines[2].querySelectorAll('[data-queue-action="keep"]')];
+        assert.deepEqual(links.map((l) => l.textContent), ['the new one for Product v2.3 (suggested)', 'the active one for Product v2.3', 'both for Product v2.3']);
+        assert.ok(links[0].classList.contains('queue-link--suggested'));
+        assert.equal(lines[0].querySelector('[title="Run again"]'), null, 'no Run again until the choice');
+        assert.equal(lines[0].querySelector('[title="Delete"]'), null);
+        assert.ok(document.querySelector('tr[data-item-id="i2"] [title="Delete"]'), 'the other rows keep theirs');
+
+        links[2].click();
+        await until(() => server.posts.length, 'the choice');
+        assert.deepEqual([server.posts[0].url, server.posts[0].body], ['/queue/sessions/2026-10-12T14-03-27/items/i1/keep', {keep: 'both'}]);
+        await until(() => /keeps both results/.test(document.getElementById('status').textContent), 'what it says');
+    });
+
+    test('a re-run that did not finish suggests keeping the active result, and says why', () => {
+        const choice = mod.describeChoice(baseItem(), {...later, status: 'error', scans: 1});
+        assert.deepEqual([choice.warn, choice.suggest], ['Run again did not finish:', 'active']);
+        assert.match(choice.text, /1 scan of 4; its counts are not comparable/);
+    });
+
+    test('a row with versions opens them under it: the active one marked, the others made active or deleted', async () => {
+        const asked = [];
+        const {p, server} = panel([finished([baseItem({finishedAt: '2026-11-06T11:33:37.000Z', versions: [later]})])], {
+            confirmDelete: (msg) => { asked.push(msg); return true; },
+        });
+        await p.refresh();
+        const toggle = button('2 versions');
+        assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+        assert.equal(toggle.querySelector('.visually-hidden').textContent, ' of Product v2.3');
+        toggle.click();
+        const rows = [...document.querySelectorAll('#list tbody tr')];
+        assert.equal(rows.length, 3);
+        assert.equal(rows[0].querySelector('th').getAttribute('rowspan'), '3');
+        assert.equal(document.activeElement.getAttribute('data-focus-key'), 'versions:i1');
+        assert.equal(rows[1].querySelector('.queue-line-tag').textContent, 'Active', 'the first run, active');
+        assert.equal(rows[2].querySelector('.queue-line-tag'), null);
+        assert.ok(rows[2].querySelector('[title="Open"]'));
+        assert.match(rows[2].textContent, /Ran again/);
+        rows[2].querySelector('[data-queue-action="activate-version"]').click();
+        await until(() => server.posts.length, 'made active');
+        assert.deepEqual([server.posts[0].url, server.posts[0].body], ['/queue/sessions/2026-10-12T14-03-27/items/i1/versions/activate', {file: 'Product-v2.3-2.json'}]);
+        await until(() => !document.querySelector('[data-queue-action="activate-version"][data-busy="true"]'), 'done');
+        document.querySelector('[data-queue-action="delete-version"]').click();
+        await until(() => server.posts.length === 2, 'deleted');
+        assert.match(asked[0], /^Delete the version of “Product v2\.3” from 7 Nov 2026/);
+        assert.equal(server.posts[1].url, '/queue/sessions/2026-10-12T14-03-27/items/i1/versions/delete');
+    });
+
+    test('deleting a row with versions says they go too', async () => {
+        const asked = [];
+        const {p} = panel([finished([baseItem({versions: [later]}), baseItem({id: 'i2', name: 'Second'})])], {
+            confirmDelete: (msg) => { asked.push(msg); return false; },
+        });
+        await p.refresh();
+        document.querySelector('tr[data-item-id="i1"] [title="Delete"]').click();
+        assert.match(asked[0], /^Delete “Product v2\.3” and its 2 versions from /);
+    });
+
+    test('a finished row runs again, its result to wait beside the active one', async () => {
         const {p, server} = panel([finished([baseItem()])]);
         await p.refresh();
         const again = button('Run again');
@@ -1473,11 +1563,32 @@ describe('changing a finished batch', () => {
         assert.deepEqual(server.posts[0].body, {values: {k1: 'typed'}});
     });
 
-    test('a row says how its runs again went', () => {
-        assert.equal(mod.describeReruns(baseItem({reruns: 2, lastRerun: {status: 'done'}})), 'Run again 2 times');
-        assert.equal(mod.describeReruns(baseItem({reruns: 1, lastRerun: {status: 'error', error: 'Site down'}})),
-            'Run again once; the last failed (Site down), so this is the earlier result');
+    test('a row says when a re-run ended with nothing to choose; not otherwise', () => {
+        assert.equal(mod.describeReruns(baseItem({reruns: 1, lastRerun: {at: '2026-11-07T09:15:00.000Z', status: 'error', error: 'Site down'}})),
+            `Run again ${mod.formatWhen('2026-11-07T09:15:00.000Z')} failed (Site down), so this is the earlier result`);
+        assert.equal(mod.describeReruns(baseItem({reruns: 2, lastRerun: {status: 'done', kept: 'new'}})), null);
+        assert.equal(mod.describeReruns(baseItem({reruns: 1, lastRerun: {status: 'error', kept: 'active'}})), null, 'chosen: nothing to say');
+        assert.equal(mod.describeReruns(baseItem({reruns: 1, lastRerun: {status: 'done', kept: 'pending'}, candidate: {file: 'x'}})), null);
         assert.equal(mod.describeReruns(baseItem()), null);
+    });
+
+    test('every status says when it was reached, in full, and "Ran again" under it when the result came from a re-run', async () => {
+        const {p} = panel([finished([
+            baseItem({id: 'a', finishedAt: '2026-11-06T11:33:37.000Z'}),
+            baseItem({id: 'b', finishedAt: '2026-11-07T09:15:02.000Z', ranAgain: true}),
+            baseItem({id: 'c', status: 'error', error: 'Site down', finishedAt: '2026-11-06T11:34:02.000Z'}),
+        ])]);
+        await p.refresh();
+        const when = (id) => document.querySelector(`tr[data-item-id="${id}"] .queue-status time`);
+        assert.equal(when('a').textContent, mod.formatWhen('2026-11-06T11:33:37.000Z'));
+        assert.match(when('a').textContent, /^6 Nov 2026, \d\d:\d\d$/);
+        assert.equal(when('a').getAttribute('datetime'), '2026-11-06T11:33:37.000Z');
+        assert.match(when('a').title, /^Finished 6 November 2026(,| at) \d\d:\d\d:37$/);
+        const notes = (id) => [...document.querySelectorAll(`tr[data-item-id="${id}"] .queue-status .queue-note`)].map((n) => n.textContent);
+        assert.deepEqual(notes('a').slice(1), []);
+        assert.deepEqual(notes('b').slice(1), ['Ran again'], 'under the date');
+        assert.match(when('c').title, /^Ended /);
+        assert.deepEqual(notes('c').slice(1), ['Site down']);
     });
 
     test('a finished batch offers no runs to add to it', async () => {
