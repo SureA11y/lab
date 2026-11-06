@@ -627,6 +627,94 @@
         }
       }
     },
+    "/queue/sessions/{sessionId}/items/{itemId}/delete": {
+      "post": {
+        "summary": "Delete one run of a finished batch: its row, its result, and the pictures and run folders only it used; not the batch's only run",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "type": "string"
+                    },
+                    "remaining": {
+                      "type": "integer"
+                    },
+                    "removedPictures": {
+                      "type": "integer"
+                    },
+                    "removedRunFolders": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such run in this batch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A batch is running, or this is the batch's only run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/queue/sessions/{sessionId}/reports": {
       "post": {
         "summary": "Add a saved report to a finished batch as a run of its own, without running it",

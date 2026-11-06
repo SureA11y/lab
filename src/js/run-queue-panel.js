@@ -205,6 +205,8 @@ const ICONS = {
     edit: ['M4 20h4L19 9l-4-4L4 16z', 'M13.5 6.5l4 4'],
     // Run again: a circling arrow.
     rerun: ['M20 12a8 8 0 1 1-2.34-5.66', 'M20 4v4h-4'],
+    // Delete a run from a finished batch: a bin.
+    delete: ['M4 7h16', 'M9 7V4h6v3', 'M6 7l1 13h10l1-13', 'M10 11v6', 'M14 11v6'],
 };
 
 function icon(doc, name) {
@@ -363,6 +365,22 @@ function actionsCell(doc, session, item, { queueBusy = false } = {}) {
             'data-session-id': session.id,
             'data-item-id': item.id,
             'data-focus-key': `rerun:${item.id}`,
+        }));
+    }
+    // A finished batch's run, deleted from it (its result, and what only it
+    // used); not its only one: the batch is deleted as a whole.
+    if (session.state !== 'running'
+        && item.status !== 'waiting' && item.status !== 'running' && item.status !== 'cancelling') {
+        const only = (session.counts?.total ?? (session.items || []).length) <= 1;
+        const why = queueBusy ? QUEUE_BUSY_CHANGE : (only ? DELETE_ONLY_RUN : null);
+        cell.append(iconAction(doc, 'button', 'Delete', 'delete', item.name, {
+            type: 'button',
+            'aria-disabled': why ? 'true' : null,
+            'data-queue-action': why ? 'blocked' : 'delete-item',
+            'data-blocked-reason': why,
+            'data-session-id': session.id,
+            'data-item-id': item.id,
+            'data-focus-key': `delete-item:${item.id}`,
         }));
     }
     // An icon button as the others are, so a row's actions always fit its
@@ -601,6 +619,7 @@ function itemRow(doc, session, item, opts = {}) {
 const WAIT_FOR_BATCH = 'Available once this batch finishes: until then it would hold only the runs saved so far.';
 const QUEUE_BUSY = 'Another batch is running. Resume this one once it has finished.';
 const QUEUE_BUSY_CHANGE = 'Another batch is running. Change this one once it has finished.';
+const DELETE_ONLY_RUN = 'This is the batch’s only run. Delete the batch instead.';
 const SENDING_TO_COMPARE = 'This batch is being sent to Compare. Delete it once that is done.';
 
 // How many of a batch's runs the app asks for at a time.
@@ -1371,6 +1390,27 @@ export function createRunQueuePanel({
                 const said = `Running “${item.name}” again. Its result replaces the one in ${describeBatch(session)}; if it ends with none, the earlier one stays.`;
                 setStatus(said);
                 task?.done(said);
+            })));
+        } else if (action === 'delete-item') {
+            const { session, item } = findItem(itemId);
+            if (!session || !item) return;
+            const ok = confirmDelete(
+                `Delete “${item.name}” from ${describeBatch(session)}? `
+                + 'Its result, and the pictures and evidence only it used, are removed from the server. This cannot be undone.'
+            );
+            if (!ok) return;
+            // Focus goes where the row was: the next row's Delete, else the
+            // one before, else the batch.
+            const rows = session.items || [];
+            const at = rows.findIndex((i) => i.id === item.id);
+            const next = rows[at + 1] || rows[at - 1] || null;
+            track(act(() => asTask(`Delete “${item.name}”`, async (task) => {
+                task?.step('Removing its files from the server');
+                await post(`/queue/sessions/${encodeURIComponent(session.id)}/items/${encodeURIComponent(item.id)}/delete`);
+                const said = `Deleted “${item.name}” from ${describeBatch(session)}.`;
+                setStatus(said);
+                task?.done(said);
+                restoreFocus(next ? `delete-item:${next.id}` : `session:${session.id}`);
             })));
         } else if (action === 'add-workflow') {
             const session = state?.sessions.find((s) => s.id === sessionId);

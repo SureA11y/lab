@@ -162,18 +162,37 @@ function runFoldersOf(sessionDir, reportsRoot) {
     }
     const found = new Set();
     for (const name of names) {
-        let text;
-        try {
-            text = fs.readFileSync(path.join(sessionDir, name), 'utf8');
-        } catch {
-            continue;
-        }
-        for (const m of text.matchAll(RUN_FOLDER_REF_RE)) {
-            if (m[2] === '.' || m[2] === '..') continue;
-            found.add(path.join(reportsRoot, m[1], m[2]));
-        }
+        for (const folder of runFoldersOfFile(path.join(sessionDir, name), reportsRoot)) found.add(folder);
     }
     return [...found];
+}
+
+/** The run folders one result links to, [] when it cannot be read. */
+function runFoldersOfFile(file, reportsRoot) {
+    if (!reportsRoot) return [];
+    let text;
+    try {
+        text = fs.readFileSync(file, 'utf8');
+    } catch {
+        return [];
+    }
+    const found = new Set();
+    for (const m of text.matchAll(RUN_FOLDER_REF_RE)) {
+        if (m[2] === '.' || m[2] === '..') continue;
+        found.add(path.join(reportsRoot, m[1], m[2]));
+    }
+    return [...found];
+}
+
+/** The run folders a row of batch.json records (its runFolders). */
+function recordedRunFoldersOf(item, reportsRoot) {
+    if (!reportsRoot) return [];
+    const folders = [];
+    for (const f of Array.isArray(item && item.runFolders) ? item.runFolders : []) {
+        const m = RECORDED_RUN_FOLDER_RE.exec(String(f));
+        if (m && m[2] !== '.' && m[2] !== '..') folders.push(path.join(reportsRoot, m[1], m[2]));
+    }
+    return folders;
 }
 
 /**
@@ -191,14 +210,7 @@ const RECORDED_RUN_FOLDER_RE = /^(evidence|runs)\/([A-Za-z0-9._-]+)$/;
 function recordedRunFolders(sessionDir, reportsRoot) {
     if (!reportsRoot) return [];
     const manifest = readManifest(sessionDir);
-    const folders = [];
-    for (const item of (manifest && manifest.items) || []) {
-        for (const f of Array.isArray(item && item.runFolders) ? item.runFolders : []) {
-            const m = RECORDED_RUN_FOLDER_RE.exec(String(f));
-            if (m && m[2] !== '.' && m[2] !== '..') folders.push(path.join(reportsRoot, m[1], m[2]));
-        }
-    }
-    return folders;
+    return ((manifest && manifest.items) || []).flatMap((item) => recordedRunFoldersOf(item, reportsRoot));
 }
 
 function removeSession(baseDir, id, reportsRoot) {
@@ -250,5 +262,7 @@ module.exports = {
     listSessionIds,
     pruneSessions,
     runFoldersOf,
+    runFoldersOfFile,
+    recordedRunFoldersOf,
     removeSession,
 };

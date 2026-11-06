@@ -269,6 +269,22 @@ describe('queue routes', () => {
         assert.deepEqual(rows.map((i) => [i.name, i.status, i.scans, i.reruns, !!i.imported]),
             [['Home', 'done', 2, 1, false], ['Checkout', 'done', 1, 0, true], ['More', 'done', 1, 0, false]]);
         assert.ok(rows.every((i) => i.fileUrl));
+
+        // A run deleted from it: its row and result go, and its zip follows.
+        const checkout = rows[1];
+        const deleted = await api('POST', `/queue/sessions/${sessionId}/items/${checkout.id}/delete`);
+        assert.equal(deleted.status, 200);
+        assert.deepEqual([deleted.body.deleted, deleted.body.remaining], [checkout.id, 2]);
+        assert.deepEqual((await itemsOf(sessionId)).items.map((i) => i.name), ['Home', 'More']);
+        assert.equal(fs.existsSync(path.join(baseDir, sessionId, checkout.file)), false);
+        const zip = await JSZip.loadAsync(Buffer.from(await (await fetch(`${origin}/queue/sessions/${sessionId}/download.zip`)).arrayBuffer()));
+        assert.ok(!Object.keys(zip.files).some((name) => name.endsWith(checkout.file)), 'not in the batch\'s zip');
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${checkout.id}/delete`)).status, 404, 'gone');
+        const [first] = (await itemsOf(sessionId)).items;
+        await api('POST', `/queue/sessions/${sessionId}/items/${first.id}/delete`);
+        const [last] = (await itemsOf(sessionId)).items;
+        const refused = await api('POST', `/queue/sessions/${sessionId}/items/${last.id}/delete`);
+        assert.deepEqual([refused.status, refused.body.error], [409, 'This is the batch\'s only run. Delete the batch instead.']);
     });
 });
 

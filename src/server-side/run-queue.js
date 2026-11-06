@@ -31,7 +31,7 @@ const { ACTION_DEFINITIONS } = require('../workflow/action-definitions');
 const { SPOOL_PREFIX, createScanSpool, spoolDirFor } = require('./scan-spool');
 const { createQueueGovernor } = require('./queue-governor');
 const { createRunActivity } = require('./run-activity');
-const { createBatchImages, packResultImages } = require('./batch-package');
+const { createBatchImages, packResultImages, imagePathsInFile, IMAGES_DIR } = require('./batch-package');
 const { isConfig } = require('../shared/batch-config.js');
 
 const DEFAULT_CONCURRENCY = 1;
@@ -1250,6 +1250,76 @@ function createRunQueue({
     }
 
     /**
+     * Deletes one run of a finished batch: its row in batch.json, its result,
+     * and the pictures (images/) and run folders (evidence, screenshots)
+     * that it alone used; another row's stay. The batch's zip and Send to
+     * Compare follow, as they read its folder and batch.json. Its last run is
+     * not deleted: the batch is, as a whole (deleteSession). The batch's
+     * configuration, saved when it started, stays as it was, as adding a run
+     * leaves it.
+     */
+    async function deleteItem(id, itemId) {
+        const { dir, manifest } = finishedSession(id);
+        const items = itemsFromManifest(manifest);
+        const item = items.find((i) => i.id === itemId);
+        if (!item) throw queueError(404, 'No such run in this batch');
+        if (items.length === 1) throw queueError(409, 'This is the batch\'s only run. Delete the batch instead.');
+        const remaining = items.filter((i) => i !== item);
+
+        // Its files, as names inside the batch's folder only.
+        const own = (name) => typeof name === 'string' && name && name === path.basename(name) && !name.startsWith('.');
+        const filesOf = (i) => [i.file, i.previous && i.previous.file].filter(own);
+        const mine = filesOf(item);
+        const others = new Set(remaining.flatMap(filesOf));
+        const goes = mine.filter((f) => !others.has(f));
+
+        // What it used, read before its result goes.
+        const usedPictures = async (names) => {
+            const found = new Set();
+            for (const name of names) {
+                try {
+                    for (const p of await imagePathsInFile(path.join(dir, name))) found.add(p);
+                } catch { /* gone or unreadable: it names nothing */ }
+            }
+            return found;
+        };
+        const itsPictures = await usedPictures(goes);
+        const itsFolders = new Set([...goes.flatMap((f) => files.runFoldersOfFile(path.join(dir, f), reportsRoot)), ...files.recordedRunFoldersOf(item, reportsRoot)]);
+
+        // A batch that started running meanwhile is not changed under it.
+        if (session && session.id === id) throw queueError(409, 'This batch started running meanwhile. Delete the run once it has finished.');
+        // Gone from the batch first, in one write: the rest is cleaning up.
+        files.writeManifest(dir, { ...manifest, items: remaining.map(manifestItem) });
+
+        for (const name of goes) await fs.promises.rm(path.join(dir, name), { force: true }).catch(() => {});
+
+        // Pictures and run folders another run still uses stay.
+        const stillUsed = await usedPictures([...others]);
+        let removedPictures = 0;
+        // Only the batch's own pictures, named by their content's hash
+        // (batch-package.js pictureName): "images/…" in a result can also be
+        // the page's own image, quoted in a finding's HTML.
+        const BATCH_PICTURE = /^[0-9a-f]{20}\.[a-z0-9]+$/;
+        for (const picture of itsPictures) {
+            if (stillUsed.has(picture) || !picture.startsWith(`${IMAGES_DIR}/`)) continue;
+            if (!BATCH_PICTURE.test(path.basename(picture))) continue;
+            const file = path.join(dir, IMAGES_DIR, path.basename(picture));
+            try {
+                await fs.promises.rm(file);
+                removedPictures += 1;
+            } catch { /* already gone */ }
+        }
+        const foldersKept = new Set([...[...others].flatMap((f) => files.runFoldersOfFile(path.join(dir, f), reportsRoot)), ...remaining.flatMap((i) => files.recordedRunFoldersOf(i, reportsRoot))]);
+        let removedFolders = 0;
+        for (const folder of itsFolders) {
+            if (foldersKept.has(folder)) continue;
+            await fs.promises.rm(folder, { recursive: true, force: true }).catch(() => {});
+            removedFolders += 1;
+        }
+        return { sessionId: id, deleted: itemId, remaining: remaining.length, removedPictures, removedRunFolders: removedFolders };
+    }
+
+    /**
      * What a running item is doing and how lively it is (§8.1), as ages so the
      * tab needs no clock of its own to agree with the server's.
      */
@@ -1477,6 +1547,7 @@ function createRunQueue({
         rerunItem,
         addToSession,
         importReport,
+        deleteItem,
         getMaskedFields,
         deleteSession,
         getItemProgress,

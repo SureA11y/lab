@@ -183,6 +183,12 @@ The first public release.
   app and in downloaded reports. The address now takes what the counts
   leave and ends in an ellipsis; the counts wrap only between their parts,
   each comma with the count before it.
+- **A run can be deleted from a finished batch**, as runs can be added to
+  one: **Delete** on its row, once confirmed, removes its result and the
+  pictures and evidence only it used, from the batch's folder, `batch.json`,
+  zip and Send to Compare. Not a batch's only run (the batch is deleted
+  instead), nor while a batch runs. `POST
+  /queue/sessions/{sessionId}/items/{itemId}/delete` does the same.
 - **Compare shows it is updating.** Turning a profile on or off, matching
   pages by path prefixes, changing what the reports are, or moving or
   removing a report reads the reports again, which takes a moment on large
