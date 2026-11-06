@@ -481,6 +481,34 @@ export function passwordsFromWorkflow(fields, workflow) {
  * when dismissed. Nothing is kept: the dialog is removed once closed, and the
  * values go to the server for this resume only.
  */
+/**
+ * What a password field says of where it is asked, so a person can tell
+ * which password it is: the steps it is inside and its own place ("In: Step
+ * 5: Group · “Second factor” › Step 2"), the steps just before it ("After:
+ * Set field value · Email = “jorge@shop.com”"), the runs it is for ("For:
+ * Checkout (https://shop/…) and 2 more"), and whether the open workflow
+ * filled it in. A field from an older server, with none of that, says where
+ * it is as it did ("Step 2 › 1").
+ */
+export function valueContext(f) {
+    const lines = [];
+    const trail = Array.isArray(f.trail) ? f.trail : [];
+    const place = [...trail, f.position].filter(Boolean);
+    if (place.length) lines.push(`In: ${place.join(' › ')}`);
+    else if (f.where) lines.push(`In: ${f.where}`);
+    if (Array.isArray(f.before) && f.before.length) lines.push(`After: ${f.before.join(' › ')}`);
+    const runs = Array.isArray(f.runs) ? f.runs : [];
+    if (runs.length) {
+        const named = runs.map((r) => [r.name, r.url ? `(${r.url})` : ''].filter(Boolean).join(' ') || 'a run');
+        const more = (f.rows || runs.length) - runs.length;
+        lines.push(`For: ${named.join(', ')}${more > 0 ? ` and ${plural(more, 'more run')}` : ''}`);
+    } else if (f.rows) {
+        lines.push(`Used by ${plural(f.rows, 'run')}`);
+    }
+    if (f.value) lines.push('Filled in from the open workflow');
+    return lines;
+}
+
 export function askMaskedValuesInDialog(doc, fields, { action = 'Resume' } = {}) {
     return new Promise((resolve) => {
         const titleId = 'queue-values-title';
@@ -501,12 +529,8 @@ export function askMaskedValuesInDialog(doc, fields, { action = 'Resume' } = {})
             ...fields.map((f, i) => el(doc, 'div', { className: 'queue-value-field' }, [
                 el(doc, 'label', { for: `queue-value-${i}`, text: `${f.action} · ${f.field}${f.target ? ` (${f.target})` : ''}` }),
                 inputs[i],
-                el(doc, 'span', {
-                    id: `queue-value-${i}-where`,
-                    className: 'queue-note',
-                    text: [f.where, `used by ${plural(f.rows, 'run')}`, f.value ? 'filled in from the open workflow' : '']
-                        .filter(Boolean).join(' · '),
-                }),
+                el(doc, 'ul', { id: `queue-value-${i}-where`, className: 'queue-note queue-value-context' },
+                    valueContext(f).map((line) => el(doc, 'li', { text: line }))),
             ])),
             el(doc, 'div', { className: 'queue-values-actions' }, [
                 el(doc, 'button', { type: 'submit', value: 'resume', text: action }),
