@@ -1172,84 +1172,6 @@ function createRunQueue({
     }
 
     /**
-     * Adds workflows to a finished batch, as addItems takes them: they run
-     * into its folder, and its results, batch.json and zip include them.
-     */
-    function addToSession(id, rawItems) {
-        const prepared = prepareItems(rawItems);
-        const { dir, manifest } = finishedSession(id);
-        const items = itemsFromManifest(manifest);
-        if (!concurrencyChosen) concurrency = automaticConcurrency(prepared.length, maxConcurrency);
-        const added = prepared.map((p, i) => newItem(p, items.length + i + 1));
-        reopen(id, dir, manifest, [...items, ...added]);
-        return { sessionId: id, itemIds: added.map((i) => i.id) };
-    }
-
-    /**
-     * Adds a report saved before (a result's JSON, as the lab saves it) to a
-     * finished batch as a run of its own, without running anything: it is
-     * written to the batch's folder with its pictures, as a run's result is.
-     * `name` names its row; by default, its report's name.
-     */
-    async function importReport(id, payload, { name = null } = {}) {
-        if (!isPlainObject(payload) || !Array.isArray(payload.scans)) {
-            throw queueError(400, 'This is not a report: it has no scans.');
-        }
-        const { dir, manifest } = finishedSession(id);
-        const items = itemsFromManifest(manifest);
-        const owner = { dir, takenFiles: new Set(items.map((i) => i.file).filter(Boolean)), images: createBatchImages(dir) };
-        const rowName = (typeof name === 'string' && name.trim())
-            || (typeof payload.reportName === 'string' && payload.reportName.trim())
-            || (typeof payload.scenarioName === 'string' && payload.scenarioName.trim())
-            || `Report ${items.length + 1}`;
-        const firstUrl = payload.scans.map((sc) => sc && sc.url).find((u) => typeof u === 'string' && u) || null;
-        const fileName = files.uniqueResultFileName(rowName, owner.takenFiles);
-        const target = path.join(dir, fileName);
-        const tmp = path.join(dir, `.${fileName}.${process.pid}.tmp`);
-        let packed;
-        try {
-            packed = await packResultImages(payload, owner.images, { reportsRoot });
-            await writeJsonFile(tmp, payload);
-            await fs.promises.rename(tmp, target);
-        } catch (err) {
-            await fs.promises.rm(tmp, { force: true }).catch(() => {});
-            throw queueError(500, `Could not save the report: ${err && err.message ? err.message : err}`);
-        }
-        // Another batch may have started while it was written: this one's
-        // record is read again, so neither loses a row.
-        if (session && session.id === id) throw queueError(409, 'This batch started running meanwhile. Add the report again once it has finished.');
-        const fresh = itemsFromManifest(files.readManifest(dir) || manifest);
-        const summary = summarizePayload(payload);
-        const at = iso();
-        fresh.push({
-            id: crypto.randomUUID(),
-            name: rowName,
-            url: firstUrl,
-            status: 'done',
-            addedAt: at,
-            startedAt: null,
-            finishedAt: typeof payload.timestamp === 'string' ? payload.timestamp : at,
-            durationMs: null,
-            scans: summary.scans,
-            scansRun: summary.scansRun,
-            findings: summary.findings,
-            file: fileName,
-            error: null,
-            needsValues: false,
-            row: null,
-            vars: isPlainObject(payload.vars) ? payload.vars : null,
-            config: null,
-            runFolders: packed.runFolders.length ? packed.runFolders : null,
-            reruns: 0,
-            lastRerun: null,
-            previous: null,
-            imported: { at, missingPictures: packed.missing.length },
-        });
-        files.writeManifest(dir, { ...manifest, items: fresh.map(manifestItem) });
-        return { sessionId: id, itemId: fresh[fresh.length - 1].id, file: fileName, missingPictures: packed.missing.length };
-    }
-
-    /**
      * Deletes one run of a finished batch: its row in batch.json, its result,
      * and the pictures (images/) and run folders (evidence, screenshots)
      * that it alone used; another row's stay. The batch's zip and Send to
@@ -1545,8 +1467,6 @@ function createRunQueue({
         cancelAll,
         resumeSession,
         rerunItem,
-        addToSession,
-        importReport,
         deleteItem,
         getMaskedFields,
         deleteSession,

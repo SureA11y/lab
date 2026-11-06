@@ -30,7 +30,6 @@ export function createRunQueueUi(app) {
         onSendToCompare: sendQueueSessionToCompare,
         activity: getActivity(),
         getFormWorkflow: app.getWorkflowWithPasswords,
-        getWorkflowItem: workflowAsQueueItem,
         onWatch: (item, session) => app.queueRunWatch.watchQueuedRun(item, session),
         onRunningChange: (isRunning) => {
             setQueueTabSpinner(isRunning);
@@ -43,18 +42,6 @@ export function createRunQueueUi(app) {
      * one per row, with its saved configuration so it can be run again; null
      * when the form cannot run (it shows why).
      */
-    function workflowAsQueueItem() {
-        const request = app.prepareRunRequest({markMasked: true});
-        if (!request) return null;
-        let config = null;
-        try {
-            config = app.cfgIO ? app.cfgIO.buildConfigFile({includeBatch: false}) : null;
-        } catch (err) {
-            console.error('Could not build the config for the queue', err);
-        }
-        return {run: request.payload, config};
-    }
-
     // A batch still running from before a reload shows its spinner straight away.
     queuePanel?.refresh();
 

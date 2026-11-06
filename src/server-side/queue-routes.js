@@ -122,25 +122,10 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
         { itemId: req.query && typeof req.query.item === 'string' ? req.query.item : null },
     )));
 
-    // A finished batch, changed: a row run again, workflows added and run,
-    // or a report saved before added as a run of its own.
+    // A finished batch's row, run again from the workflow it saved.
     app.post('/queue/sessions/:sessionId/items/:itemId/rerun', (req, res) => respond(res, () => (
         queue.rerunItem(req.params.sessionId, req.params.itemId, { values: req.body && req.body.values })
     )));
-
-    app.post('/queue/sessions/:sessionId/items', (req, res) => respond(res, () => (
-        queue.addToSession(req.params.sessionId, req.body && req.body.items)
-    )));
-
-    app.post('/queue/sessions/:sessionId/reports', async (req, res) => {
-        try {
-            res.json(await queue.importReport(req.params.sessionId, req.body && req.body.report, { name: req.body && req.body.name }));
-        } catch (err) {
-            const status = err && Number.isInteger(err.statusCode) ? err.statusCode : 500;
-            if (status >= 500) logError('[run-queue]', err);
-            res.status(status).json({ error: err && err.message ? err.message : 'Queue request failed' });
-        }
-    });
 
     // One run of a finished batch: its row, its result, and the pictures and
     // run folders only it used. POST like the other actions.

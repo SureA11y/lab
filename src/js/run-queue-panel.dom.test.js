@@ -1459,34 +1459,11 @@ describe('changing a finished batch', () => {
         assert.equal(mod.describeReruns(baseItem()), null);
     });
 
-    test('the open workflow is added and run into the batch', async () => {
-        const workflow = {run: {url: 'https://example.com/more', scenarioName: 'More', actions: [{type: 'a11yScan'}]}, config: null};
-        const {p, server} = panel([finished([baseItem()])], {getWorkflowItem: () => workflow});
+    test('a finished batch offers no runs to add to it', async () => {
+        const {p} = panel([finished([baseItem()])]);
         await p.refresh();
-        button('Add the open workflow').click();
-        await until(() => server.posts.length, 'the add');
-        assert.deepEqual(server.posts[0], {url: '/queue/sessions/2026-10-12T14-03-27/items', body: {items: [workflow]}});
-    });
-
-    test('nothing is added while the editor has no workflow to run', async () => {
-        const {p, server} = panel([finished([baseItem()])], {getWorkflowItem: () => null});
-        await p.refresh();
-        button('Add the open workflow').click();
-        assert.match(status(), /Open a workflow/);
-        assert.equal(server.posts.length, 0);
-    });
-
-    test('a saved report is added as it is; a file that is no JSON is refused', async () => {
-        const report = {reportName: 'Checkout', scans: [{}]};
-        const files = [{name: 'checkout.json', text: JSON.stringify(report)}, {name: 'shots.zip', text: 'PK..'}];
-        const {p, server} = panel([finished([baseItem()])], {pickReportFile: async () => files.shift()});
-        await p.refresh();
-        button('Add a report').click();
-        await until(() => server.posts.length, 'the report');
-        assert.deepEqual(server.posts[0], {url: '/queue/sessions/2026-10-12T14-03-27/reports', body: {report}});
-        await until(() => /Added checkout\.json/.test(status()), 'what it says');
-        button('Add a report').click();
-        await until(() => /not JSON/.test(status()), 'the refusal');
-        assert.equal(server.posts.length, 1);
+        assert.equal(button('Add the open workflow'), undefined);
+        assert.equal(button('Add a report'), undefined);
+        assert.ok(button('Run again'));
     });
 });

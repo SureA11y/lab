@@ -295,17 +295,13 @@ A finished batch can still change, while no other batch runs:
   row says so. Passwords are never saved, so a workflow that types one always
   asks for it first; those still typed in the open workflow come filled in,
   to confirm or change. Resuming an interrupted batch asks the same way.
-- **Add the open workflow** runs the workflow in the editor into the batch, as
-  a row after the others.
-- **Add a report…** adds a report saved before as a row of its own, without
-  running anything: its `.json`, or the package **Download report** writes
-  (`.zip`), whose pictures come with it.
 - **Delete**, on a row, removes it from the batch once confirmed: its result,
   and the pictures and evidence that only it used. A batch's only row is not
   deleted on its own: delete the batch instead.
 
-Whatever is added is part of the batch from then on, and whatever is deleted
-is gone from it: its folder, its zip and Send to Compare. The configuration
-saved beside the batch when it started stays as it was.
+Whatever is deleted is gone from the batch: its folder, its zip and Send to
+Compare. The configuration saved beside the batch when it started stays as it
+was. A batch takes no runs added to it once it has finished: queue a new
+batch instead.
 
 The same batches run from the command line ([the runner's guide](scheduled-scans-guide.md)).

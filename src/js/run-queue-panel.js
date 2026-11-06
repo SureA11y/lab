@@ -2,7 +2,6 @@
 
 import { setBusy } from './busy.js';
 import { resultGlyphEl } from './result-glyph.js';
-import { inlineReportFromZip } from './report-package.js';
 
 /**
  * The queue tab: what is waiting, running and finished, one section per queue
@@ -692,17 +691,6 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
             'data-session-id': session.id,
             'data-focus-key': `resume:${session.id}`,
         }, 'Resume') : null,
-        // A finished batch takes more: the workflow open in the editor, run
-        // into it, or a report saved before.
-        ...(session.state !== 'running' ? [['add-workflow', 'Add the open workflow'], ['add-report', 'Add a report…']].map(([action, text]) => el(doc, 'button', {
-            type: 'button',
-            className: 'secondary-button',
-            'aria-disabled': queueBusy ? 'true' : null,
-            'data-queue-action': queueBusy ? 'blocked' : action,
-            'data-blocked-reason': queueBusy ? QUEUE_BUSY_CHANGE : null,
-            'data-session-id': session.id,
-            'data-focus-key': `${action}:${session.id}`,
-        }, [text, el(doc, 'span', { className: 'visually-hidden', text: ` to ${describeBatch(session)}` })])) : []),
         session.state !== 'running' ? el(doc, 'button', {
             type: 'button',
             className: 'secondary-button remove queue-delete',
@@ -830,11 +818,6 @@ export function describeChanges(prev, next) {
  *   Asks for the hidden values interrupted runs need; null when dismissed.
  * @param {() => ({actions: object[], customSteps: object[]}|null)} [opts.getFormWorkflow]
  *   The editor's workflow with its passwords, for Resume to reuse them.
- * @param {() => ({run: object, config: object|null}|null)} [opts.getWorkflowItem]
- *   The workflow open in the editor as one queue item, for "Add the open
- *   workflow"; null when there is none to run (the editor says why).
- * @param {() => Promise<{name: string, text: string}|null>} [opts.pickReportFile]
- *   Asks for a saved report's file, for "Add a report…"; null when dismissed.
  * @param {HTMLInputElement} [opts.notifyToggle] "Notify me when a batch finishes":
  *   shown only where the browser can notify; the choice is kept in this browser.
  * @param {object} [opts.notifications] The browser's Notification, for tests.
@@ -854,8 +837,6 @@ export function createRunQueuePanel({
     confirmDelete = (message) => window.confirm(message),
     askMaskedValues = null,
     getFormWorkflow = () => null,
-    getWorkflowItem = () => null,
-    pickReportFile = null,
     activity = null,
     fetchImpl = (...args) => fetch(...args),
     notifyToggle = null,
@@ -1230,36 +1211,6 @@ export function createRunQueuePanel({
         return values ? { values } : null;
     }
 
-    // A report file picked here: a hidden file input, gone once read. A
-    // package (.zip, as Download report writes) gives its report with its
-    // pictures inline, which the server keeps as the batch's own.
-    function pickReportHere() {
-        return new Promise((resolve, reject) => {
-            const input = doc.createElement('input');
-            input.type = 'file';
-            input.accept = '.json,.zip,application/json,application/zip';
-            input.hidden = true;
-            input.addEventListener('change', async () => {
-                const file = input.files && input.files[0];
-                input.remove();
-                if (!file) return resolve(null);
-                try {
-                    if (!/\.zip$/i.test(file.name)) return resolve({ name: file.name, text: await file.text() });
-                    const JSZip = doc.defaultView && doc.defaultView.JSZip;
-                    if (!JSZip) throw new Error('This page cannot open a zip. Add the report’s .json instead.');
-                    const inner = await inlineReportFromZip(await JSZip.loadAsync(file));
-                    if (!inner) throw new Error(`${file.name} holds no report: a report package has its report as a .a11y-report.json.`);
-                    resolve({ name: file.name, text: inner.text });
-                } catch (err) {
-                    reject(err);
-                }
-            });
-            input.addEventListener('cancel', () => { input.remove(); resolve(null); });
-            doc.body.append(input);
-            input.click();
-        });
-    }
-
     listEl.addEventListener('click', (event) => {
         const button = event.target.closest('[data-queue-action]');
         if (!button || !listEl.contains(button)) return;
@@ -1411,45 +1362,6 @@ export function createRunQueuePanel({
                 setStatus(said);
                 task?.done(said);
                 restoreFocus(next ? `delete-item:${next.id}` : `session:${session.id}`);
-            })));
-        } else if (action === 'add-workflow') {
-            const session = state?.sessions.find((s) => s.id === sessionId);
-            if (!session) return;
-            const workflow = getWorkflowItem();
-            if (!workflow) {
-                setStatus('Open a workflow that can run in the editor first: it is the one added.', 'error');
-                return;
-            }
-            track(act(async () => {
-                await post(`/queue/sessions/${encodeURIComponent(sessionId)}/items`, { items: [workflow] });
-                expanded.add(sessionId);
-                setStatus(`Added “${workflow.run.scenarioName || workflow.run.url}” to ${describeBatch(session)}; it runs now, and its result joins the batch.`);
-            }));
-        } else if (action === 'add-report') {
-            const session = state?.sessions.find((s) => s.id === sessionId);
-            if (!session) return;
-            track(act(() => asTask(`Add a report to ${describeBatch(session)}`, async (task) => {
-                const file = await (pickReportFile || pickReportHere)();
-                if (!file) {
-                    setStatus('No report added.');
-                    task?.cancel();
-                    restoreFocus(`add-report:${sessionId}`);
-                    return;
-                }
-                let report;
-                try {
-                    report = JSON.parse(file.text);
-                } catch {
-                    throw new Error(`${file.name} is not a report the lab saved: it is not JSON, nor a report package (.zip).`);
-                }
-                task?.step('Adding it to the batch');
-                const r = await post(`/queue/sessions/${encodeURIComponent(sessionId)}/reports`, { report });
-                expanded.add(sessionId);
-                const said = `Added ${file.name} to ${describeBatch(session)}.`
-                    + (r.missingPictures ? ` ${plural(r.missingPictures, 'picture')} it names could not be found, and are missing from it.` : '');
-                setStatus(said);
-                if (r.missingPictures) task?.warn(said);
-                else task?.done(said);
             })));
         }
     });
