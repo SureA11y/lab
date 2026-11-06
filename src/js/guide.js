@@ -197,12 +197,12 @@ function facetHTML(requirement, f, { details, level, lang }) {
         : '';
     return `<li class="guide-check">`
         + `<div class="guide-check-head">`
-        + `<h${level} class="guide-facet-title"><button type="button" class="guide-toggle" aria-expanded="true" aria-controls="${esc(bodyId)}">`
+        + `<h${level} class="guide-facet-title"><button type="button" class="guide-toggle" aria-expanded="false" aria-controls="${esc(bodyId)}">`
         + `<svg class="guide-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg>`
         + `<span${labelLang}>${esc(f.label)}</span></button></h${level}>`
         + badgesHTML(f)
         + `</div>`
-        + `<div class="guide-check-body" id="${esc(bodyId)}">`
+        + `<div class="guide-check-body" id="${esc(bodyId)}" hidden="until-found">`
         + `<ol class="guide-steps"${textLang}>${(p.steps || []).filter(isText).map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`
         + `<div class="guide-outcomes">`
         + (isText(p.passWhen) ? `<div class="guide-outcome guide-pass"><p class="guide-outcome-head"><span aria-hidden="true">✓</span> Passes</p><p${textLang}>${esc(p.passWhen)}</p></div>` : '')
@@ -440,6 +440,23 @@ async function start() {
         requestAnimationFrame(() => { scrolling = false; markCurrent(); });
     }, { passive: true });
 
+    // A check folds and unfolds; all of them at once from the bar above. The
+    // guide opens with every check folded to its title. A folded check stays
+    // findable: the browser's find in page opens the one it finds a word in
+    // (hidden="until-found", and beforematch below).
+    const setOpen = (button, open) => {
+        button.setAttribute('aria-expanded', String(open));
+        const body = document.getElementById(button.getAttribute('aria-controls'));
+        if (!body) return;
+        if (open) body.removeAttribute('hidden');
+        else body.setAttribute('hidden', 'until-found');
+    };
+    content.addEventListener('beforematch', (event) => {
+        const body = event.target.closest('.guide-check-body');
+        const toggle = body && content.querySelector(`.guide-toggle[aria-controls="${CSS.escape(body.id)}"]`);
+        if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    });
+
     const draw = () => {
         if (!listing) return;
         const out = renderGuide(listing, state);
@@ -467,6 +484,8 @@ async function start() {
             }
             target = '';
             if (heading) {
+                // Opened at one requirement: its checks open, the rest stay folded.
+                for (const b of heading.closest('.guide-req')?.querySelectorAll('.guide-toggle') || []) setOpen(b, true);
                 heading.scrollIntoView({ block: 'start' });
                 heading.focus();
             }
@@ -588,12 +607,6 @@ async function start() {
         more.querySelector('summary').focus();
     });
 
-    // A check folds and unfolds; all of them at once from the bar above.
-    const setOpen = (button, open) => {
-        button.setAttribute('aria-expanded', String(open));
-        const body = document.getElementById(button.getAttribute('aria-controls'));
-        if (body) body.hidden = !open;
-    };
     content.addEventListener('click', async (event) => {
         const toggle = event.target.closest('.guide-toggle');
         if (toggle) {

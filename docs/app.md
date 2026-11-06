@@ -185,8 +185,11 @@ standard, or the best practices, and search it. Each requirement is a card in
 the standard's own groups, with a link to it to copy; each of its checks says
 whether automated checks decide it, decide part of it, or leave it to a
 person, what it needs (a keyboard, a screen reader, zoom…), the steps, and
-what passing and failing look like. A check folds to its title, or all of
-them do (**Collapse all**), to see a requirement at a glance. **Filters**
+what passing and failing look like. The guide opens with every check folded
+to its title, to see each requirement at a glance: open one by its title, or
+all of them with **Expand all** (**Collapse all** folds them again). A link
+to one requirement opens its checks, and the browser's find in page opens
+the check it finds a word in. **Filters**
 narrow the guide to the checks that need a screen reader, say, or to what
 only a person can judge, and add the technical details: the rules behind a
 check, and the questions scans ask about single elements. The contents beside
