@@ -205,6 +205,11 @@ The first public release.
   header, the tab bar that stays at the top shows a small logo and title
   before the tabs, shrinking into place from the header's size (not at
   phone width, where the tabs fill the bar).
+- **The testing guide keeps a bar at the top** once its filters scroll out
+  of view: the logo, a link back to the scanner, shrinking into place from
+  the header's size; what is shown; Expand all, Collapse all and Back to
+  top. On a phone, **Contents** opens the contents over the page, where
+  they used to be all the way back up.
 - **The testing guide opens with its checks folded** to their titles,
   rather than every check's steps open, so a requirement and its checks
   read at a glance. **Expand all** opens them; a link to one requirement

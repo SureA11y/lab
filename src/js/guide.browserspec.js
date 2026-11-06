@@ -248,6 +248,48 @@ test('on a phone, the contents fold away and come back', { skip: !HAS_PROCEDURES
     await page.close();
 });
 
+test('scrolled past the filters, the bar keeps the logo, what is shown and the actions in reach; on a phone, the contents too', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
+    const { page, errors } = await open('/guide?standard=wcag');
+    await settled(page, /checks\./);
+    const bar = () => page.$eval('#guide-bar', (b) => ({ shown: b.classList.contains('is-shown'), inert: b.inert, top: Math.round(b.getBoundingClientRect().top) }));
+    assert.deepEqual(await bar(), { shown: false, inert: true, top: -52 }, 'out of sight, and out of reach, at the top');
+
+    await page.evaluate(() => window.scrollTo(0, 2500));
+    await page.waitForFunction(() => document.getElementById('guide-bar').classList.contains('is-shown'), { timeout: 5000 });
+    assert.equal((await bar()).inert, false);
+    assert.equal(await page.$eval('.guide-bar-brand', (a) => a.getAttribute('href')), '/');
+    assert.match(await page.$eval('[data-guide-bar="status"]', (el) => el.textContent), /^WCAG 2\.2, Level A and AA: \d+ criteria, \d+ checks$/);
+    // The contents beside the guide stick below the bar.
+    await page.waitForFunction(() => document.getElementById('guide-toc').getBoundingClientRect().top >= document.getElementById('guide-bar').offsetHeight, { timeout: 5000 });
+
+    await page.click('[data-guide-bar="expand"]');
+    assert.equal(await page.$$eval('.guide-toggle[aria-expanded="false"]', (els) => els.length), 0);
+    await page.click('[data-guide-bar="collapse"]');
+    assert.equal(await page.$$eval('.guide-toggle[aria-expanded="true"]', (els) => els.length), 0);
+
+    await page.click('[data-guide-bar="top"]');
+    await page.waitForFunction(() => window.scrollY === 0 && !document.getElementById('guide-bar').classList.contains('is-shown'), { timeout: 10000 });
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'guide-search');
+
+    // On a phone: Contents opens the contents over the page, and a link closes them.
+    await page.setViewport({ width: 375, height: 800 });
+    await page.evaluate(() => window.scrollTo(0, 2500));
+    await page.waitForFunction(() => document.getElementById('guide-bar').classList.contains('is-shown'), { timeout: 5000 });
+    await page.click('[data-guide-bar="contents"]');
+    assert.equal(await page.$eval('[data-guide-bar="contents"]', (b) => b.getAttribute('aria-expanded')), 'true');
+    const link = await page.$('#guide-bar-toc a[data-toc]');
+    const target = await link.evaluate((a) => a.dataset.toc);
+    await link.click();
+    assert.equal(await page.$eval('#guide-bar-toc', (el) => el.hidden), true);
+    await page.waitForFunction((id) => {
+        const top = document.getElementById(id).getBoundingClientRect().top;
+        return top >= document.getElementById('guide-bar').offsetHeight && top < 200;
+    }, { timeout: 5000 }, target);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 375, 'nothing wider than the screen');
+    assert.deepEqual(errors, []);
+    await page.close();
+});
+
 test('"Save as a page" gives core\'s page of the same procedures', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
     const { page } = await open('/guide?standard=wcag&levels=A');
     await settled(page, /checks\./);
