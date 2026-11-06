@@ -193,10 +193,12 @@ the check it finds a word in. **Filters**
 narrow the guide to the checks that need a screen reader, say, or to what
 only a person can judge, and add the technical details: the rules behind a
 check, and the questions scans ask about single elements. The contents beside
-it follow where you are. Scrolled past the filters, a bar at the top keeps
-the logo (back to the scanner), what is shown, **Expand all**, **Collapse
-all** and **Back to top** in reach; on a phone it also opens the contents
-over the page (**Contents**). The address keeps what is chosen, so a link opens
+it follow where you are. Once its title scrolls away, a bar at the top keeps
+the logo (back to the scanner), **Expand all**, **Collapse all** and **Back
+to top** in reach. Once the filters scroll away too, it says what is shown
+on a **Filters** button, which opens them under the bar to change them where
+you are. On a phone it also opens the contents over the page (**Contents**),
+with Expand all and Collapse all. The address keeps what is chosen, so a link opens
 the guide at one requirement (`/guide?standard=wcag&id=1.4.3`). **Save as a
 page** downloads the same, as one page to keep or print; the colour theme is
 the app's. It records nothing: results go in a report's Review conformance.

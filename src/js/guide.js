@@ -658,7 +658,8 @@ async function start() {
 
     installGuideBar({
         bar: $('guide-bar'),
-        anchor: document.querySelector('.guide-results-bar'),
+        hero: document.querySelector('.guide-hero'),
+        filters: form,
         status,
         expand: $('guide-expand'),
         collapse: $('guide-collapse'),

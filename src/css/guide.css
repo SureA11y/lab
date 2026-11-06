@@ -154,6 +154,7 @@ html { scroll-padding-top: calc(var(--guide-bar-h) + var(--space-3)); }
     transition: transform var(--duration-base) var(--ease-standard);
 }
 .guide-bar-inner {
+    position: relative;
     max-width: 1200px; margin: 0 auto; box-sizing: border-box; min-height: var(--guide-bar-h);
     padding: var(--space-2) var(--space-5);
     display: flex; align-items: center; gap: var(--space-3);
@@ -170,20 +171,36 @@ html { scroll-padding-top: calc(var(--guide-bar-h) + var(--space-3)); }
 .guide-bar.is-shown .guide-bar-brand { --guide-bar-brand-size: 22px; }
 .guide-bar-brand .site-logo { width: var(--logo-size); height: var(--logo-size); }
 .guide-bar-title { flex: none; font-weight: 600; white-space: nowrap; padding-left: var(--space-3); border-left: 1px solid var(--border-strong); }
-.guide-bar-status { min-width: 0; color: var(--text-muted); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* What is shown, on the button that opens the filters, once they are out of
+   view: "WCAG 2.2 · A and AA · 55 criteria, 78 checks". Its name starts
+   "Filters:", read but not shown on a wide screen; on a phone it shows
+   "Filters" alone. */
+.guide-bar-filters { min-width: 0; flex: 0 1 auto; }
+.guide-bar-filters[hidden] { display: none; }
+.guide-bar-filters svg { width: 16px; height: 16px; flex: none; }
+.guide-bar-filters[aria-expanded="true"] { background: var(--accent-soft); border-color: var(--accent-border); }
+.guide-bar-filters[aria-expanded="true"] .guide-bar-caret { transform: rotate(180deg); }
+.guide-bar-filters-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.guide-bar-filters-name {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
 .guide-bar-actions { margin-left: auto; flex: none; display: flex; align-items: center; gap: var(--space-1); }
-.guide-bar-action svg { display: none; width: 18px; height: 18px; }
 .guide-bar-top { width: 36px; padding: 0; }
 .guide-bar-top svg { width: 18px; height: 18px; }
 .guide-bar-contents { display: none; }
 .guide-bar :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* The contents, opened over the page from the bar (on a phone). */
-.guide-bar .guide-bar-toc {
-    position: absolute; top: calc(100% + var(--space-1)); left: var(--space-3); right: var(--space-3);
+/* What opens under the bar: the filters, and on a phone the contents. */
+.guide-bar .guide-bar-toc,
+.guide-bar-panel {
+    position: absolute; top: calc(100% + var(--space-1)); left: var(--space-5); right: var(--space-5);
     max-height: calc(100vh - var(--guide-bar-h) - 2 * var(--space-3)); overflow: auto;
+    border-radius: var(--radius-lg);
     box-shadow: 0 12px 32px -12px rgba(4, 21, 14, .4);
 }
-.guide-bar .guide-bar-toc[hidden] { display: none; }
+.guide-bar .guide-bar-toc[hidden], .guide-bar-panel[hidden] { display: none; }
+.guide-bar-panel .guide-filters { margin: 0; }
+.guide-bar-toc-actions { display: flex; gap: var(--space-1); margin: 0 0 var(--space-2); }
 
 /* ---- Contents and requirements ---------------------------------------------- */
 
@@ -302,19 +319,16 @@ h2.guide-group-title { margin: 0 0 var(--space-3); font-size: var(--fs-2xl); fon
     .guide-req { padding: var(--space-3); }
     .guide-req-head { flex-wrap: wrap; }
     .guide-check-body { margin-left: 0; }
-    /* The bar: the logo, the contents, and the actions as icons. */
+    /* The bar: the logo, Contents, Filters and Back to top; Expand all
+       and Collapse all are in the contents. */
     .guide-bar-inner { padding: var(--space-2) var(--space-3); gap: var(--space-2); }
     .guide-bar-brand { --guide-bar-brand-size: 22px; }
-    .guide-bar-brand .wordmark, .guide-bar-title, .guide-bar-status { display: none; }
+    .guide-bar-brand .wordmark, .guide-bar-title, .guide-bar-action { display: none; }
     .guide-bar-contents { display: inline-flex; }
-    .guide-bar-action {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 36px; height: 36px; padding: 0;
-        color: var(--text-main); background: var(--surface-3); border: 1px solid var(--border-strong); text-decoration: none;
-    }
-    .guide-bar-action:hover { background: var(--surface-4); border-color: var(--accent-border); }
-    .guide-bar-action svg { display: block; }
-    .guide-bar-label {
+    .guide-bar .guide-bar-toc, .guide-bar-panel { left: var(--space-3); right: var(--space-3); }
+    .guide-bar-filters-name { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; }
+    .guide-bar-filters-colon,
+    .guide-bar-filters-summary {
         position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
         overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
     }
@@ -324,8 +338,9 @@ h2.guide-group-title { margin: 0 0 var(--space-3); font-size: var(--fs-2xl); fon
     .guide-button { font-size: 0; }
     .guide-button svg { width: 20px; height: 20px; }
     /* The bar's Contents keeps its name: there is room for it. */
-    .guide-bar .guide-bar-contents { width: auto; padding: 0 var(--space-3); font-size: var(--fs-sm); }
+    .guide-bar .guide-bar-contents, .guide-bar .guide-bar-filters { width: auto; padding: 0 var(--space-3); font-size: var(--fs-sm); }
     .guide-bar .guide-bar-contents svg { width: 18px; height: 18px; }
+    .guide-bar .guide-bar-filters svg { width: 16px; height: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
