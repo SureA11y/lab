@@ -1334,6 +1334,33 @@ describe('changing a finished batch', () => {
         if (again.file !== oldFile) assert.ok(!onDisk.includes(oldFile));
     });
 
+    test('a row run again leaves the batch\'s own times as they were', async () => {
+        const { runner, queue, sessionId, dir } = await finishedBatch();
+        const before = queue.getState().sessions[0];
+        assert.ok(before.finishedAt);
+        await new Promise((r) => setTimeout(r, 15));
+        queue.rerunItem(sessionId, rows(queue)[0].id);
+        assert.equal(queue.getState().sessions[0].finishedAt, null, 'running again meanwhile');
+        assert.equal(files.readManifest(dir).keepFinishedAt, before.finishedAt, 'kept, in case of a restart');
+        await settle(queue, runner.calls[2], { status: 'done', payload: payloadWith() });
+        await waitUntil(() => queue.getState().sessions[0].state !== 'running', 'the re-run to finish');
+        const after = queue.getState().sessions[0];
+        assert.deepEqual([after.startedAt, after.finishedAt], [before.startedAt, before.finishedAt]);
+        const manifest = files.readManifest(dir);
+        assert.deepEqual([manifest.startedAt, manifest.finishedAt, manifest.keepFinishedAt], [before.startedAt, before.finishedAt, undefined]);
+        assert.ok(Date.parse(rows(queue)[0].finishedAt) > Date.parse(before.finishedAt), 'the row says when it ran again');
+    });
+
+    test('a re-run a restart cuts short leaves the batch\'s own times too', async () => {
+        const { queue, sessionId } = await finishedBatch();
+        const before = queue.getState().sessions[0];
+        queue.rerunItem(sessionId, rows(queue)[0].id);
+        const restarted = createRunQueue({ baseDir, executeRun: controlledRunner().executeRun, logError: () => {} });
+        restarted.init();
+        const s = restarted.getState().sessions[0];
+        assert.deepEqual([s.startedAt, s.finishedAt], [before.startedAt, before.finishedAt]);
+    });
+
     test('a re-run that ends with no result keeps the old one, and says so', async () => {
         const { runner, queue, sessionId } = await finishedBatch();
         const [a] = rows(queue);
