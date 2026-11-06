@@ -23,6 +23,7 @@ const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const net = require('node:net');
+const os = require('node:os');
 const path = require('node:path');
 const puppeteer = require('puppeteer');
 
@@ -265,8 +266,10 @@ describe('Compare holds everything that changes it while a load is under way', (
         await loadIdle();
         assert.equal(await chips(), 2, 'B replaced A');
 
-        // Let go: the framing changes again.
+        // Let go: the framing changes again, drawn after a frame that shows
+        // the comparison updating.
         await press('.ctx-opt[data-context="variants"]');
+        await waitFor(() => document.querySelector('.ctx-opt[aria-pressed="true"]').dataset.context === 'variants', 'the framing to change');
         assert.equal(await context(), 'variants');
     });
 
@@ -309,5 +312,91 @@ describe('Compare holds everything that changes it while a load is under way', (
         await loadIdle();
         assert.equal(await chips(), 3, 'the open report did not join the batch');
         assert.equal((await state('[data-compare-report]')).disabled, null);
+    });
+});
+
+describe('a change to the comparison is drawn without freezing the page', () => {
+    // Two reports of two profiles, so the Profiles compared switches show.
+    const AA = { id: 'wcag22-aa', label: 'WCAG 2.2 AA' };
+    const ARIA = { id: 'wai-aria-1.2', label: 'WAI-ARIA 1.2' };
+    function twoProfileReport(id, month) {
+        const r = report(id, month);
+        r.scans[0].profile = ARIA;
+        r.scans[0].profiles = [AA, ARIA];
+        r.scans[0].canonical.findings[0].verdicts = { 'wcag22-aa': 'fail', 'wai-aria-1.2': 'pass' };
+        r.scans[0].canonical.findings.push({
+            ruleId: 'aria', id: 'aria', title: 'a', severity: 'serious', outcome: 'fail', wcag: { sc: ['4.1.2'] },
+            verdicts: { 'wcag22-aa': 'pass', 'wai-aria-1.2': 'fail' },
+            occurrences: [{ pageUrl: 'https://x/p', target: ['.b'] }],
+        });
+        return r;
+    }
+
+    test('the comparison says it is updating, holds the tab while it is, and gives focus back', async () => {
+        releaseResults();
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'compare-update-'));
+        try {
+            const files = ['a', 'b'].map((id, i) => {
+                const file = path.join(dir, `${id}.a11y-report.json`);
+                fs.writeFileSync(file, JSON.stringify(twoProfileReport(id, i + 1)));
+                return file;
+            });
+            await press('#mode-compare');
+            const input = await page.$('#compare-input');
+            await input.uploadFile(...files);
+            await waitFor(() => document.querySelector('#compare-profiles [data-compare-profile="wai-aria-1.2"]'), 'the profile switches');
+            await loadIdle();
+
+            // The next frames wait, so the state before the redraw can be read.
+            await page.evaluate(() => {
+                window.__raf = window.requestAnimationFrame;
+                window.__frames = [];
+                window.requestAnimationFrame = (cb) => { window.__frames.push(cb); return 0; };
+            });
+            await press('#compare-profiles [data-compare-profile="wai-aria-1.2"]');
+            const during = await page.evaluate(() => {
+                const view = document.querySelector('#run-comparison');
+                const pressed = document.querySelector('[data-compare-profile="wai-aria-1.2"]');
+                return {
+                    updating: view.classList.contains('compare-updating'),
+                    inert: view.inert,
+                    busy: view.getAttribute('aria-busy'),
+                    note: view.querySelector('.compare-updating-pill')?.textContent || null,
+                    status: document.querySelector('#compare-status').textContent,
+                    spinner: pressed.dataset.busy || null,
+                    other: document.querySelector('[data-compare-profile="wcag"]').getAttribute('aria-disabled'),
+                    context: document.querySelector('.ctx-opt[data-context="variants"]').getAttribute('aria-disabled'),
+                };
+            });
+            assert.deepEqual(during, {
+                updating: true, inert: true, busy: 'true', note: 'Updating the comparison…',
+                status: 'Updating the comparison…', spinner: 'true', other: 'true', context: 'true',
+            });
+
+            // A press meanwhile changes nothing.
+            await press('#compare-profiles [data-compare-profile="wcag"]');
+            assert.equal(await page.$eval('[data-compare-profile="wcag"]', (b) => b.getAttribute('aria-pressed')), 'true');
+
+            await page.evaluate(() => {
+                window.requestAnimationFrame = window.__raf;
+                for (const cb of window.__frames.splice(0)) window.__raf(cb);
+            });
+            await waitFor(() => !document.querySelector('#run-comparison').classList.contains('compare-updating'), 'the update to end');
+            const afterwards = await page.evaluate(() => ({
+                inert: document.querySelector('#run-comparison').inert,
+                busy: document.querySelector('#run-comparison').getAttribute('aria-busy'),
+                note: !!document.querySelector('.compare-updating-note'),
+                status: document.querySelector('#compare-status').textContent,
+                pressed: document.querySelector('[data-compare-profile="wai-aria-1.2"]').getAttribute('aria-pressed'),
+                focus: document.activeElement && document.activeElement.dataset.compareProfile,
+                context: document.querySelector('.ctx-opt[data-context="variants"]').getAttribute('aria-disabled'),
+            }));
+            assert.deepEqual(afterwards, {
+                inert: false, busy: null, note: false, status: 'Compared on WCAG 2.2 AA.',
+                pressed: 'false', focus: 'wai-aria-1.2', context: null,
+            });
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
     });
 });

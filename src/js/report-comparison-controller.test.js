@@ -588,3 +588,37 @@ describe('comparison controller — adding several', () => {
         assert.equal(unstamped(once), unstamped(drawn.html));
     });
 });
+
+describe('comparison controller — a change drawn by its caller', () => {
+    test('deferDraw changes without drawing; prepareDraw works it out; showDraw puts it on the page', async () => {
+        const { ctrl, cap } = await make();
+        ctrl.addReport(report({ runId: 'a', timestamp: '2026-01-01T00:00:00Z' }));
+        ctrl.addReport(report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z' }));
+        const drawnBefore = cap.count;
+        const html = cap.html;
+
+        const returned = ctrl.deferDraw(() => ctrl.setContext('variants'));
+        assert.equal(returned, 'ready');
+        assert.equal(cap.count, drawnBefore, 'nothing drawn yet');
+        assert.equal(cap.html, html);
+        assert.equal(ctrl.getContext(), 'variants', 'the change is made');
+
+        const drawn = ctrl.prepareDraw();
+        assert.equal(drawn.state, 'ready');
+        assert.match(drawn.html, /data-mode="ab"/);
+        assert.equal(cap.count, drawnBefore, 'still not drawn');
+
+        ctrl.showDraw(drawn);
+        assert.equal(cap.count, drawnBefore + 1);
+        assert.equal(cap.html, drawn.html);
+    });
+
+    test('a change outside deferDraw still draws at once', async () => {
+        const { ctrl, cap } = await make();
+        ctrl.addReport(report({ runId: 'a', timestamp: '2026-01-01T00:00:00Z' }));
+        ctrl.addReport(report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z' }));
+        const before = cap.count;
+        ctrl.setContext('variants');
+        assert.equal(cap.count, before + 1);
+    });
+});

@@ -273,14 +273,48 @@ export function createComparisonController({ setHTML, onState } = {}) {
         return entries.length === 2 ? pairHTML() : seriesHTML();
     }
 
+    // While a caller draws the change itself (deferDraw), a change does not
+    // draw: the caller works the comparison out (prepareDraw) and puts it on
+    // the page (showDraw) with a frame between, so the page can show that
+    // it is updating instead of freezing as it was.
+    let deferring = 0;
+
+    function show(drawn) {
+        setHTML(drawn.html, drawn.state);
+        if (typeof onState === 'function') onState(drawn.state, entries.length);
+        return drawn.state;
+    }
+
     function refresh() {
         const state = stateName();
-        setHTML(htmlFor(state), state);
-        if (typeof onState === 'function') onState(state, entries.length);
-        return state;
+        if (deferring) return state;
+        return show({ state, html: htmlFor(state) });
     }
 
     return {
+        /**
+         * Runs `change` (calls to this controller) without drawing; the
+         * caller then draws with prepareDraw and showDraw. Returns what
+         * `change` returns.
+         */
+        deferDraw(change) {
+            deferring += 1;
+            try {
+                return change();
+            } finally {
+                deferring -= 1;
+            }
+        },
+        /** The comparison as it now stands, worked out: { state, html }. The slow part. */
+        prepareDraw() {
+            const state = stateName();
+            return { state, html: htmlFor(state) };
+        },
+        /** Puts what prepareDraw worked out on the page. */
+        showDraw(drawn) {
+            return show(drawn);
+        },
+
         /**
          * Add one parsed report.
          *
