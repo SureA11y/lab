@@ -201,6 +201,10 @@ The first public release.
   `POST /queue/sessions/{sessionId}/items/{itemId}/delete` does the same.
   The row's actions column is wide enough for Delete beside the other three
   buttons.
+- **The logo and title stay in view.** Once the page scrolls past its
+  header, the tab bar that stays at the top shows a small logo and title
+  before the tabs, shrinking into place from the header's size (not at
+  phone width, where the tabs fill the bar).
 - **The testing guide opens with its checks folded** to their titles,
   rather than every check's steps open, so a requirement and its checks
   read at a glance. **Expand all** opens them; a link to one requirement

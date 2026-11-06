@@ -92,8 +92,14 @@
 </header>
 <main class="page">
     <!-- Mode switch: sticks to the top of the window as the page scrolls,
-         with "Back to top" at its end once the header is out of view. -->
+         with the logo and title at its start and "Back to top" at its end
+         once the header is out of view. The logo repeats the page's heading,
+         so assistive technology skips it. -->
     <div class="mode-bar">
+        <div class="mode-bar-brand" aria-hidden="true">
+            <img src="icon/logo.png" alt="" class="site-logo" />
+            <span class="wordmark"><span class="wordmark-sure">sure</span><span class="wordmark-a11y">a11y</span><span class="wordmark-product">scanner</span></span>
+        </div>
         <div class="mode-switch" role="tablist" aria-label="Mode">
             <button type="button"
                     id="mode-run"

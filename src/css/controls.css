@@ -512,6 +512,54 @@ button.src-dialog-close:focus-visible {
     box-shadow: 0 1px 0 var(--border-subtle), 0 6px 16px -10px rgba(4, 21, 14, .35);
 }
 
+/* The logo and title, small, at the bar's start once it is stuck: the page
+   still says whose it is with the header out of view. It takes no room
+   until then, and none at phone width, where the tabs fill the bar.
+   Hidden, it is the header's size (32px); as the bar sticks it shrinks to
+   22px, as if the header's title came down into the bar, and the tabs move
+   along with it. The size is a registered length so it can transition; a
+   browser without @property shows it at 22px at once. */
+@property --mode-bar-brand-size {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 22px;
+}
+
+.mode-bar-brand {
+    --mode-bar-brand-size: 32px;
+    --logo-size: var(--mode-bar-brand-size);
+    flex: none;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--logo-size) * 0.42);
+    max-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    white-space: nowrap;
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    transition:
+        --mode-bar-brand-size var(--duration-base) var(--ease-standard),
+        max-width var(--duration-base) var(--ease-standard),
+        opacity var(--duration-base) var(--ease-standard),
+        margin var(--duration-base) var(--ease-standard);
+    /* The bar's gap, given back while it is hidden. */
+    margin-right: calc(-1 * var(--space-2));
+}
+
+.mode-bar-brand .site-logo {
+    width: var(--logo-size);
+    height: var(--logo-size);
+}
+
+.mode-bar.is-stuck .mode-bar-brand {
+    --mode-bar-brand-size: 22px;
+    max-width: 18rem;
+    opacity: 1;
+    margin-right: var(--space-3);
+}
+
 /* Targets of in-page links and focus land below the bar, not under it.
    index.html, which has the bar, has the class. */
 html.has-mode-bar {
@@ -521,6 +569,8 @@ html.has-mode-bar {
 .back-to-top {
     flex: none;
     align-self: center;
+    /* At the bar's end; the tabs stay next to the logo. */
+    margin-left: auto;
 
     display: inline-flex;
     align-items: center;
@@ -574,12 +624,14 @@ html.has-mode-bar {
    none until it shows. */
 @media (max-width: 600px) {
     .mode-bar { --page-pad-x: .75rem; }
+    .mode-bar-brand { display: none; }
     .mode-bar .mode-tab { padding-inline: .5rem; }
     .back-to-top:not(.is-shown) { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .mode-bar,
+    .mode-bar-brand,
     .back-to-top,
     .back-to-top.is-shown { transition: none; }
     .back-to-top { transform: none; }
