@@ -182,11 +182,27 @@ The first public release.
   app and in downloaded reports. The address now takes what the counts
   leave and ends in an ellipsis; the counts wrap only between their parts,
   each comma with the count before it.
+- **Run again no longer replaces a row's result on its own.** A re-run
+  that half-worked (the site stopped answering after two scans) replaced a
+  good result. Now the row's result stays its *active* one, the one the
+  batch counts, until you choose. While it runs, the row shows the active
+  result above the run, the name spanning both; once it has a result, it
+  shows each count beside the active one's (*was 4*) and a line to
+  choose: **Keep: the new one · the active one · both**, the suggested one
+  in bold. Both keeps the new one as a **version** of the row: the row
+  lists its versions, each to open or download, to make active, or to
+  delete; five a row at most. Until you choose, the row has no Run again
+  or Delete. `POST …/items/{itemId}/keep`, `…/versions/activate` and
+  `…/versions/delete` do the same; a row's zip takes `?file=` for any of
+  its results, and Compare reads only each row's active one from a batch's
+  zip.
+- **Every run's status says when it was reached**, in full (*6 Nov 2026,
+  11:33*), with *Ran again* under it when its result came from Run again:
+  a result from another day stands out from the rest of its batch.
 - **A row run again leaves its batch's times as they were.** Running a row
   again reopened the batch, so its total time stretched from its start to
   the end of the re-run, days later perhaps. The batch now keeps its own
-  start, end and total time, also when a restart cuts the re-run short; the
-  row says when it ran again and how long that took.
+  start, end and total time, also when a restart cuts the re-run short.
 - **Run again and Resume always ask for a workflow's passwords.** They used
   the passwords still typed in the open workflow without asking, so a run
   could start with a password nobody confirmed. They now always ask, with
@@ -195,8 +211,8 @@ The first public release.
   inside and its own step), the steps just before it, and the runs it is
   for, so two passwords in one workflow can be told apart.
 - **A run can be deleted from a finished batch**: **Delete** on its row,
-  once confirmed, removes its result and the pictures and evidence only it
-  used, from the batch's folder, `batch.json`, zip and Send to Compare. Not
+  once confirmed, removes its results and the pictures and evidence only
+  they used, from the batch's folder, `batch.json`, zip and Send to Compare. Not
   a batch's only run (the batch is deleted instead), nor while a batch runs.
   `POST /queue/sessions/{sessionId}/items/{itemId}/delete` does the same.
   The row's actions column is wide enough for Delete beside the other three

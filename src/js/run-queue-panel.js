@@ -51,6 +51,19 @@ function formatStart(iso) {
     });
 }
 
+/**
+ * When a run's status was reached, in full but short, as reports write
+ * dates: "6 Nov 2026, 11:33". `full` adds the seconds and the month's name,
+ * for its title.
+ */
+export function formatWhen(iso, { full = false } = {}) {
+    const d = new Date(iso);
+    if (!iso || Number.isNaN(d.getTime())) return '';
+    return d.toLocaleString('en-GB', full
+        ? { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }
+        : { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 /** "Checkout – Queue started 14 Oct, 10:33:42", or without the name if it has none. */
 function sessionTitle(session) {
     const started = `Queue started ${formatStart(session.startedAt)}`;
@@ -286,11 +299,36 @@ export function describeRunNow(details = {}) {
 
 const STALL_LABEL = 'No progress for over 5 minutes. Watch the run for details.';
 
-function statusCell(doc, item) {
+/**
+ * Under a run's status, when it was reached: "6 Nov 2026, 11:33", and
+ * "Ran again" when the result came from Run again. A running run says when
+ * it started; a waiting one has no time yet.
+ */
+function whenLines(doc, item, { line = null } = {}) {
+    const running = item.status === 'running' || item.status === 'cancelling';
+    const at = running ? item.startedAt : (item.status === 'waiting' ? null : item.finishedAt);
+    const short = formatWhen(at);
+    if (!short) return [];
+    const word = running ? 'Started' : (item.status === 'done' ? 'Finished' : 'Ended');
+    return [
+        el(doc, 'time', {
+            className: 'queue-note queue-when',
+            datetime: at,
+            title: `${word} ${formatWhen(at, { full: true })}`,
+        }, running ? `Started ${short}` : short),
+        !running && item.ranAgain && line !== 'rerun' ? el(doc, 'span', { className: 'queue-note', text: 'Ran again' }) : null,
+    ];
+}
+
+// A line's label, above its status, where a row shows more than one result.
+const LINE_LABELS = { active: 'Active', rerun: 'Run again' };
+
+function statusCell(doc, item, { line = null } = {}) {
     const busy = item.status === 'running' || item.status === 'cancelling';
     // Building and writing its result, once its last step is done (§8.1).
     const saving = item.status === 'running' && item.phase === 'saving';
     const cell = el(doc, 'td', { className: `queue-status queue-status--${item.status}` }, [
+        line ? el(doc, 'span', { className: `queue-line-tag queue-line-tag--${line}`, text: LINE_LABELS[line] }) : null,
         // The word carries the state for screen readers; the spinner is a cue,
         // after it, so every status word starts at the same edge.
         saving ? 'Saving result' : (STATUS_LABELS[item.status] || item.status),
@@ -305,6 +343,7 @@ function statusCell(doc, item) {
             el(doc, 'span', { className: 'visually-hidden', text: ` ${STALL_LABEL}` }),
         ]));
     }
+    cell.append(...whenLines(doc, item, { line }).filter(Boolean));
     if (item.status === 'interrupted' && item.needsValues) {
         cell.append(el(doc, 'span', { className: 'queue-note', text: 'Its passwords were not saved' }));
     }
@@ -570,19 +609,18 @@ export function describeRow(item) {
 }
 
 /**
- * How a row's runs again went, or null: "Run again 2 times" and, when the
- * last one ended without a result, that the result shown is the earlier one.
+ * A re-run that ended with no result to choose, or null: the row's result
+ * is the one it had, and says so. A re-run's result waiting for a choice,
+ * or chosen, needs no note: the row shows it.
  */
 export function describeReruns(item) {
-    if (!item.reruns) return null;
-    const times = item.reruns === 1 ? 'Run again once' : `Run again ${item.reruns} times`;
     const last = item.lastRerun;
-    if (item.status === 'running' || item.status === 'waiting') return item.replacing ? `${times}: its earlier result stays until this one is saved` : times;
-    if (last && last.status !== 'done' && item.file) {
-        const why = last.status === 'cancelled' ? 'was cancelled' : last.status === 'interrupted' ? 'was cut short' : `failed${last.error ? ` (${last.error})` : ''}`;
-        return `${times}; the last ${why}, so this is the earlier result`;
-    }
-    return times;
+    if (!item.reruns || !last || last.kept || item.candidate || !item.file) return null;
+    if (item.status === 'running' || item.status === 'waiting' || item.status === 'cancelling') return null;
+    if (last.status === 'done') return null;
+    const why = last.status === 'cancelled' ? 'was cancelled' : last.status === 'interrupted' ? 'was cut short' : `failed${last.error ? ` (${last.error})` : ''}`;
+    const when = formatWhen(last.at);
+    return `Run again${when ? ` ${when}` : ''} ${why}, so this is the earlier result`;
 }
 
 // The scans the report holds, and below them, when Merged scans folded some
@@ -616,25 +654,240 @@ function durationCell(doc, item, duration) {
     });
 }
 
-function itemRow(doc, session, item, opts = {}) {
-    // No scan yet, no figures: a 0 would read as a clean page.
-    const findings = item.scans > 0 ? (item.findings || {}) : {};
-    const duration = Number.isFinite(item.durationMs) ? item.durationMs : item.elapsedMs;
-    return el(doc, 'tr', { 'data-item-id': item.id }, [
-        el(doc, 'th', { scope: 'row', className: 'queue-name', tabindex: '-1', 'data-focus-key': `row:${item.id}` }, [
-            item.name,
-            item.url ? el(doc, 'span', { className: 'queue-note', text: item.url }) : null,
-            describeRow(item) ? el(doc, 'span', { className: 'queue-note', text: describeRow(item) }) : null,
-            describeReruns(item) ? el(doc, 'span', { className: 'queue-note', text: describeReruns(item) }) : null,
-        ]),
-        statusCell(doc, item),
-        scansCell(doc, item),
-        findingsCell(doc, item, findings, 'fail', 'queue-num queue-fail'),
-        findingsCell(doc, item, findings, 'cantTell', 'queue-num queue-cantTell'),
-        findingsCell(doc, item, findings, 'pass', 'queue-num queue-pass'),
-        durationCell(doc, item, duration),
-        actionsCell(doc, session, item, opts),
+function nameCell(doc, item, { rows = 1, versionsOpen = false } = {}) {
+    const versions = (item.versions || []).length;
+    return el(doc, 'th', {
+        scope: 'row',
+        className: rows > 1 ? 'queue-name queue-name--group' : 'queue-name',
+        rowspan: rows > 1 ? String(rows) : null,
+        tabindex: '-1',
+        'data-focus-key': `row:${item.id}`,
+    }, [
+        item.name,
+        item.url ? el(doc, 'span', { className: 'queue-note', text: item.url }) : null,
+        describeRow(item) ? el(doc, 'span', { className: 'queue-note', text: describeRow(item) }) : null,
+        describeReruns(item) ? el(doc, 'span', { className: 'queue-note', text: describeReruns(item) }) : null,
+        // A row that kept more than one result: they open below it.
+        versions ? el(doc, 'button', {
+            type: 'button',
+            className: 'link-button queue-versions-toggle',
+            'aria-expanded': versionsOpen ? 'true' : 'false',
+            'data-queue-action': 'versions',
+            'data-item-id': item.id,
+            'data-focus-key': `versions:${item.id}`,
+        }, [`${versions + 1} versions`, el(doc, 'span', { className: 'visually-hidden', text: ` of ${item.name}` })]) : null,
     ]);
+}
+
+// A result of a row other than its own fields (the active one while it runs
+// again, a re-run's waiting for a choice, a version), as a row the cells read.
+function asRow(item, result) {
+    return { ...item, ...result, phase: null, sinceProgressMs: null, elapsedMs: null };
+}
+
+// Open and Download for one of a row's results.
+function resultActions(doc, item, result) {
+    const cell = el(doc, 'div', { className: 'queue-actions' });
+    if (!result.fileUrl) return el(doc, 'td', { className: 'queue-actions-cell' }, cell);
+    const key = `${item.id}:${result.file}`;
+    cell.append(iconAction(doc, 'button', 'Open', 'open', item.name, {
+        type: 'button',
+        'data-queue-action': 'open',
+        'data-item-id': item.id,
+        'data-result-file': result.file,
+        'data-focus-key': `open:${key}`,
+    }));
+    cell.append(iconAction(doc, 'a', 'Download', 'download', item.name, {
+        href: result.zipUrl || result.fileUrl,
+        download: result.zipUrl ? (result.zipName || true) : (result.file || true),
+        'data-focus-key': `download:${key}`,
+    }));
+    return el(doc, 'td', { className: 'queue-actions-cell' }, cell);
+}
+
+// A count, and under it what the active result had, coloured when it got
+// better or worse ("was 4"). Lower is better for failures and higher for
+// passes; fewer scans is worse.
+function withWas(doc, cell, now, was, better) {
+    if (!Number.isFinite(was)) return cell;
+    const trend = !Number.isFinite(now) || now === was || !better ? '' : (better(now, was) ? ' queue-was--better' : ' queue-was--worse');
+    cell.append(el(doc, 'span', { className: `queue-note queue-was${trend}`, text: `was ${was}` }));
+    return cell;
+}
+
+function countsCells(doc, row, { was = null } = {}) {
+    // No scan yet, no figures: a 0 would read as a clean page.
+    const findings = row.scans > 0 ? (row.findings || {}) : {};
+    const before = was && was.scans > 0 ? (was.findings || {}) : {};
+    const n = (f, k) => (Number.isFinite(f[k]) ? f[k] : f[`${k}Rules`]);
+    const duration = Number.isFinite(row.durationMs) ? row.durationMs : row.elapsedMs;
+    return [
+        was ? withWas(doc, scansCell(doc, row), row.scans, was.scans, (a, b) => a > b) : scansCell(doc, row),
+        was ? withWas(doc, findingsCell(doc, row, findings, 'fail', 'queue-num queue-fail'), n(findings, 'fail'), n(before, 'fail'), (a, b) => a < b)
+            : findingsCell(doc, row, findings, 'fail', 'queue-num queue-fail'),
+        was ? withWas(doc, findingsCell(doc, row, findings, 'cantTell', 'queue-num queue-cantTell'), n(findings, 'cantTell'), n(before, 'cantTell'), null)
+            : findingsCell(doc, row, findings, 'cantTell', 'queue-num queue-cantTell'),
+        was ? withWas(doc, findingsCell(doc, row, findings, 'pass', 'queue-num queue-pass'), n(findings, 'pass'), n(before, 'pass'), (a, b) => a > b)
+            : findingsCell(doc, row, findings, 'pass', 'queue-num queue-pass'),
+        durationCell(doc, row, duration),
+    ];
+}
+
+/**
+ * After Run again: what the re-run's result is beside the active one, and
+ * which one keeping is suggested ('new' when it finished all its scans,
+ * else 'active'). `{ text, warn, suggest }`.
+ */
+export function describeChoice(active, candidate) {
+    const fail = (r) => {
+        const f = (r && r.findings) || {};
+        return Number.isFinite(f.fail) ? f.fail : f.failRules;
+    };
+    const finished = candidate.status === 'done' && (candidate.scans || 0) >= (active.scans || 0);
+    if (!finished) {
+        return {
+            warn: 'Run again did not finish:',
+            text: `${plural(candidate.scans || 0, 'scan')} of ${active.scans || 0}; its counts are not comparable with the active result.`,
+            suggest: 'active',
+        };
+    }
+    const now = fail(candidate);
+    const was = fail(active);
+    let change = '';
+    if (Number.isFinite(now) && Number.isFinite(was)) {
+        change = now === was ? ', as many as the active result' : `, ${Math.abs(now - was)} ${now < was ? 'fewer' : 'more'} than the active result`;
+    }
+    const scans = candidate.scans === active.scans ? `same ${plural(candidate.scans || 0, 'scan')}` : `${plural(candidate.scans || 0, 'scan')}, was ${active.scans || 0}`;
+    return {
+        warn: null,
+        text: `${Number.isFinite(now) ? `${now} failing` : 'Done'}${change}; ${scans}.`,
+        suggest: 'new',
+    };
+}
+
+const KEEP_CHOICES = [
+    ['new', 'the new one'],
+    ['active', 'the active one'],
+    ['both', 'both'],
+];
+
+// The line under a re-run's result: what it is, and which to keep.
+function choiceRow(doc, item, active, candidate) {
+    const { warn, text, suggest } = describeChoice(active, candidate);
+    const links = [el(doc, 'span', { className: 'queue-keep-ask', text: 'Keep:' })];
+    KEEP_CHOICES.forEach(([keep, label], i) => {
+        if (i) links.push(el(doc, 'span', { className: 'queue-keep-sep', 'aria-hidden': 'true', text: '·' }));
+        links.push(el(doc, 'button', {
+            type: 'button',
+            className: keep === suggest ? 'link-button queue-link queue-link--suggested' : 'link-button queue-link',
+            'data-queue-action': 'keep',
+            'data-keep': keep,
+            'data-item-id': item.id,
+            'data-focus-key': `keep-${keep}:${item.id}`,
+        }, [label, el(doc, 'span', { className: 'visually-hidden', text: ` for ${item.name}${keep === suggest ? ' (suggested)' : ''}` })]));
+    });
+    return el(doc, 'tr', { className: `queue-line queue-line--choice${warn ? ' queue-line--bad' : ''}`, 'data-line-of': item.id }, [
+        el(doc, 'td', { colspan: '7' }, el(doc, 'div', { className: 'queue-choice' }, [
+            el(doc, 'p', {}, [
+                el(doc, warn ? 'span' : 'strong', { className: warn ? 'queue-choice-warn' : null, text: warn || 'Run again finished:' }),
+                ` ${text}`,
+            ]),
+            el(doc, 'div', { className: 'queue-keep' }, links),
+        ])),
+    ]);
+}
+
+// The rows a row's versions open into: each of its results, oldest first,
+// the active one marked; the others can be made active or deleted.
+function versionRows(doc, item) {
+    const active = { ...item, active: true };
+    const all = [active, ...(item.versions || [])]
+        .sort((a, b) => (Date.parse(a.finishedAt) || 0) - (Date.parse(b.finishedAt) || 0));
+    return all.map((result) => {
+        const row = asRow(item, result);
+        const status = statusCell(doc, row, { line: result.active ? 'active' : null });
+        if (!result.active) {
+            status.append(el(doc, 'div', { className: 'queue-keep' }, [
+                el(doc, 'button', {
+                    type: 'button',
+                    className: 'link-button queue-link',
+                    'data-queue-action': 'activate-version',
+                    'data-item-id': item.id,
+                    'data-result-file': result.file,
+                    'data-focus-key': `activate:${item.id}:${result.file}`,
+                }, ['Make active', el(doc, 'span', { className: 'visually-hidden', text: ` the version of ${item.name} from ${formatWhen(result.finishedAt)}` })]),
+                el(doc, 'span', { className: 'queue-keep-sep', 'aria-hidden': 'true', text: '·' }),
+                el(doc, 'button', {
+                    type: 'button',
+                    className: 'link-button queue-link',
+                    'data-queue-action': 'delete-version',
+                    'data-item-id': item.id,
+                    'data-result-file': result.file,
+                    'data-focus-key': `delete-version:${item.id}:${result.file}`,
+                }, ['Delete', el(doc, 'span', { className: 'visually-hidden', text: ` the version of ${item.name} from ${formatWhen(result.finishedAt)}` })]),
+            ]));
+        }
+        return el(doc, 'tr', { className: `queue-line queue-line--version${result.active ? ' queue-line--active' : ''}`, 'data-line-of': item.id }, [
+            status,
+            ...countsCells(doc, row),
+            resultActions(doc, item, result),
+        ]);
+    });
+}
+
+/**
+ * A row of a batch's table, or a group of rows sharing its name cell:
+ * while it runs again, the active result above the run; once the re-run
+ * has a result, that result under the active one and a line to choose which
+ * to keep; with its versions open, each of its results.
+ */
+function itemRows(doc, session, item, opts = {}) {
+    const { versionsOpen = false } = opts;
+    const runningAgain = item.active && ['waiting', 'running', 'cancelling'].includes(item.status);
+    if (runningAgain) {
+        const active = asRow(item, item.active);
+        return [
+            el(doc, 'tr', { className: 'queue-line queue-line--active', 'data-item-id': item.id }, [
+                nameCell(doc, item, { rows: 2 }),
+                statusCell(doc, active, { line: 'active' }),
+                ...countsCells(doc, active),
+                resultActions(doc, item, item.active),
+            ]),
+            el(doc, 'tr', { className: 'queue-line queue-line--rerun', 'data-line-of': item.id }, [
+                statusCell(doc, item, { line: 'rerun' }),
+                ...countsCells(doc, item),
+                actionsCell(doc, session, item, opts),
+            ]),
+        ];
+    }
+    if (item.candidate) {
+        const candidate = asRow(item, item.candidate);
+        const bad = !(item.candidate.status === 'done' && (item.candidate.scans || 0) >= (item.scans || 0));
+        return [
+            el(doc, 'tr', { className: 'queue-line queue-line--active', 'data-item-id': item.id }, [
+                nameCell(doc, item, { rows: 3 }),
+                statusCell(doc, item, { line: 'active' }),
+                ...countsCells(doc, item),
+                resultActions(doc, item, item),
+            ]),
+            el(doc, 'tr', { className: `queue-line queue-line--rerun${bad ? ' queue-line--bad' : ''}`, 'data-line-of': item.id }, [
+                statusCell(doc, candidate, { line: 'rerun' }),
+                ...countsCells(doc, candidate, { was: item }),
+                resultActions(doc, item, item.candidate),
+            ]),
+            choiceRow(doc, item, item, item.candidate),
+        ];
+    }
+    const versions = versionsOpen && (item.versions || []).length ? versionRows(doc, item) : [];
+    return [
+        el(doc, 'tr', { 'data-item-id': item.id, className: versions.length ? 'queue-line--group' : null }, [
+            nameCell(doc, item, { rows: 1 + versions.length, versionsOpen }),
+            statusCell(doc, item),
+            ...countsCells(doc, item),
+            actionsCell(doc, session, item, opts),
+        ]),
+        ...versions,
+    ];
 }
 
 // Why a control is unavailable, said when it is clicked (the app's disabled
@@ -672,7 +925,7 @@ function itemsFooterRow(doc, session) {
     ]));
 }
 
-function sessionSection(doc, session, { expanded = true, queueBusy = false, health = null, compareBlocked = null, sendingToCompare = null } = {}) {
+function sessionSection(doc, session, { expanded = true, queueBusy = false, health = null, compareBlocked = null, sendingToCompare = null, openVersions = new Set() } = {}) {
     const headingId = `queue-session-${session.id}`;
     const bodyId = `queue-session-body-${session.id}`;
     const title = sessionTitle(session);
@@ -745,7 +998,9 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
             el(doc, 'th', { scope: 'col', text: 'Actions' }),
         ])),
         el(doc, 'tbody', {}, [
-            ...(session.items || []).map((item) => itemRow(doc, session, item, { queueBusy })),
+            // Striped by run, not by table row: a run's lines share its stripe.
+            ...(session.items || []).flatMap((item, i) => itemRows(doc, session, item, { queueBusy, versionsOpen: openVersions.has(item.id) })
+                .map((tr) => { if (i % 2) tr.classList.add('queue-row--even'); return tr; })),
             itemsFooterRow(doc, session),
         ]),
     ]);
@@ -783,7 +1038,7 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
  * The sessions list for a GET /queue state. `isExpanded(session)` decides
  * which show their runs; by default all do.
  */
-export function renderQueueSessions(doc, state, { isExpanded = () => true, compareBlocked = null, sendingToCompare = null } = {}) {
+export function renderQueueSessions(doc, state, { isExpanded = () => true, compareBlocked = null, sendingToCompare = null, openVersions = new Set() } = {}) {
     const sessions = Array.isArray(state?.sessions) ? state.sessions : [];
     if (!sessions.length) {
         return el(doc, 'p', {
@@ -794,7 +1049,7 @@ export function renderQueueSessions(doc, state, { isExpanded = () => true, compa
     const queueBusy = sessions.some((s) => s.state === 'running');
     const frag = doc.createDocumentFragment();
     const health = { hold: state.hold || null, resources: state.resources || null };
-    for (const s of sessions) frag.append(sessionSection(doc, s, { expanded: isExpanded(s), queueBusy, health, compareBlocked, sendingToCompare }));
+    for (const s of sessions) frag.append(sessionSection(doc, s, { expanded: isExpanded(s), queueBusy, health, compareBlocked, sendingToCompare, openVersions }));
     return frag;
 }
 
@@ -884,6 +1139,8 @@ export function createRunQueuePanel({
     // ones stay collapsed until asked for. Kept for this page only.
     const expanded = new Set();
     const collapsedByUser = new Set();
+    // Rows whose versions are open, by id.
+    const openVersions = new Set();
     let visible = false;
     let wasRunning = false;
     let timer = null;
@@ -932,6 +1189,7 @@ export function createRunQueuePanel({
             isExpanded: (s) => expanded.has(s.id),
             compareBlocked,
             sendingToCompare,
+            openVersions,
         }));
         view.restore();
 
@@ -1088,6 +1346,13 @@ export function createRunQueuePanel({
     const pages = new Map();
 
     /** Reads the runs of an open batch, as many as it shows, when they may have changed. */
+    // A batch's runs changed without its counts moving (a result kept, a
+    // version made active or deleted): read them again on the next refresh.
+    function rowsChanged(sessionId) {
+        const page = pages.get(sessionId);
+        if (page) page.key = null;
+    }
+
     async function loadItems(session, { force = false } = {}) {
         // A batch the server gave with its runs (or without an itemsUrl) has none to read.
         if (!session || !session.itemsUrl || (Array.isArray(session.items) && !session.itemsPaged)) return;
@@ -1246,8 +1511,18 @@ export function createRunQueuePanel({
         const track = (pending, busyText) => trackBusy(button, pending, busyText);
 
         if (action === 'open' || action === 'load' || action === 'watch') {
-            const { session, item } = findItem(itemId);
+            const found = findItem(itemId);
+            const { session } = found;
+            let { item } = found;
             if (!item) return;
+            // One of its other results: the active one while it runs again,
+            // a re-run's waiting for a choice, a version.
+            const file = button.getAttribute('data-result-file');
+            if (file && file !== item.file) {
+                const result = [item.active, item.candidate, ...(item.versions || [])].find((r) => r && r.file === file);
+                if (!result) return;
+                item = { ...item, ...result };
+            }
             const busyText = {
                 open: `Opening “${item.name}”…`,
                 load: `Loading the workflow of “${item.name}”…`,
@@ -1362,16 +1637,72 @@ export function createRunQueuePanel({
                 }
                 task?.step('Queuing it');
                 await post(`/queue/sessions/${encodeURIComponent(session.id)}/items/${encodeURIComponent(item.id)}/rerun`, values ? { values } : {});
-                const said = `Running “${item.name}” again. Its result replaces the one in ${describeBatch(session)}; if it ends with none, the earlier one stays.`;
+                const said = `Running “${item.name}” again. Its result waits beside the active one until you choose which to keep; if it ends with none, the active one stays.`;
                 setStatus(said);
                 task?.done(said);
             })));
+        } else if (action === 'versions') {
+            if (openVersions.has(itemId)) openVersions.delete(itemId);
+            else openVersions.add(itemId);
+            render();
+            restoreFocus(`versions:${itemId}`);
+        } else if (action === 'keep') {
+            const { session, item } = findItem(itemId);
+            if (!session || !item) return;
+            const keep = button.getAttribute('data-keep');
+            const said = {
+                new: `“${item.name}” keeps the new result.`,
+                active: `“${item.name}” keeps its active result; the new one is deleted.`,
+                both: `“${item.name}” keeps both results: the active one, and the new one as a version.`,
+            }[keep];
+            if (!said) return;
+            track(act(() => asTask(`Keep ${keep === 'both' ? 'both results' : `the ${keep} result`} of “${item.name}”`, async (task) => {
+                task?.step(keep === 'both' ? 'Keeping both' : 'Removing the other one from the server');
+                await post(`/queue/sessions/${encodeURIComponent(session.id)}/items/${encodeURIComponent(item.id)}/keep`, { keep });
+                rowsChanged(session.id);
+                if (keep === 'both') openVersions.add(item.id);
+                setStatus(said);
+                task?.done(said);
+            })).then(() => restoreFocus(keep === 'both' ? `versions:${item.id}` : `row:${item.id}`)));
+        } else if (action === 'activate-version' || action === 'delete-version') {
+            const { session, item } = findItem(itemId);
+            const file = button.getAttribute('data-result-file');
+            const version = item && (item.versions || []).find((v) => v.file === file);
+            if (!session || !version) return;
+            const when = formatWhen(version.finishedAt);
+            if (action === 'activate-version') {
+                track(act(() => asTask(`Make the version of “${item.name}” from ${when} active`, async (task) => {
+                    task?.step('Making it active');
+                    await post(`/queue/sessions/${encodeURIComponent(session.id)}/items/${encodeURIComponent(item.id)}/versions/activate`, { file });
+                    rowsChanged(session.id);
+                    const said = `“${item.name}” now uses its version from ${when}.`;
+                    setStatus(said);
+                    task?.done(said);
+                })).then(() => restoreFocus(`versions:${item.id}`)));
+                return;
+            }
+            const ok = confirmDelete(
+                `Delete the version of “${item.name}” from ${when}? `
+                + 'Its result, and the pictures and evidence only it used, are removed from the server. This cannot be undone.'
+            );
+            if (!ok) return;
+            track(act(() => asTask(`Delete the version of “${item.name}” from ${when}`, async (task) => {
+                task?.step('Removing its files from the server');
+                await post(`/queue/sessions/${encodeURIComponent(session.id)}/items/${encodeURIComponent(item.id)}/versions/delete`, { file });
+                rowsChanged(session.id);
+                const left = (item.versions || []).length - 1;
+                if (!left) openVersions.delete(item.id);
+                const said = `Deleted the version of “${item.name}” from ${when}.`;
+                setStatus(said);
+                task?.done(said);
+            })).then(() => restoreFocus(left ? `versions:${item.id}` : `row:${item.id}`)));
         } else if (action === 'delete-item') {
             const { session, item } = findItem(itemId);
             if (!session || !item) return;
+            const versions = (item.versions || []).length;
             const ok = confirmDelete(
-                `Delete “${item.name}” from ${describeBatch(session)}? `
-                + 'Its result, and the pictures and evidence only it used, are removed from the server. This cannot be undone.'
+                `Delete “${item.name}”${versions ? ` and its ${plural(versions + 1, 'version')}` : ''} from ${describeBatch(session)}? `
+                + `${versions ? 'Their results' : 'Its result'}, and the pictures and evidence only ${versions ? 'they' : 'it'} used, are removed from the server. This cannot be undone.`
             );
             if (!ok) return;
             // Focus goes where the row was: the next row's Delete, else the

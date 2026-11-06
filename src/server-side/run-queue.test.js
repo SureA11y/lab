@@ -1331,28 +1331,142 @@ describe('changing a finished batch', () => {
     }
     const rows = (queue) => queue.getState().sessions[0].items;
 
-    test('a row run again replaces its result, in the same folder and place', async () => {
+    const resultsOnDisk = (dir) => fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'batch.json').sort();
+
+    // A row run again, its re-run finished with `fail` failures.
+    async function ranAgain(queue, runner, sessionId, at = 0, fail = 2) {
+        const before = runner.calls.length;
+        queue.rerunItem(sessionId, rows(queue)[at].id);
+        await settle(queue, runner.calls[before], { status: 'done', payload: payloadWith({ scans: [{ fail: 0 }, { fail }] }) });
+        await waitUntil(() => queue.getState().sessions[0].state !== 'running', 'the re-run to finish');
+        return rows(queue)[at];
+    }
+
+    test('a row run again shows its active result beside the run, and then waits for a choice, keeping the active one', async () => {
         const { runner, queue, sessionId, dir } = await finishedBatch();
         const [a] = rows(queue);
-        const oldFile = a.file;
         queue.rerunItem(sessionId, a.id);
         assert.equal(runner.calls.length, 3);
         assert.equal(runner.calls[2].spec.scenarioName, 'A');
-        assert.equal(rows(queue)[0].status, 'running');
+        const running = rows(queue)[0];
+        assert.equal(running.status, 'running');
+        assert.deepEqual([running.active.file, running.active.findings.fail, running.active.finishedAt], [a.file, 3, a.finishedAt], 'the active result, shown above the run');
         await settle(queue, runner.calls[2], { status: 'done', payload: payloadWith({ scans: [{ fail: 0 }, { fail: 2 }] }) });
         await waitUntil(() => queue.getState().sessions[0].state !== 'running', 'the re-run to finish');
 
-        const [again, b] = rows(queue);
-        assert.equal(again.id, a.id);
-        assert.equal(again.scans, 2);
-        assert.equal(again.findings.fail, 2);
-        assert.equal(again.reruns, 1);
-        assert.equal(again.lastRerun.status, 'done');
+        const [row, b] = rows(queue);
+        assert.equal(row.id, a.id);
+        assert.deepEqual([row.status, row.file, row.findings.fail, row.finishedAt, row.ranAgain], ['done', a.file, 3, a.finishedAt, false], 'still the active result');
+        assert.deepEqual([row.candidate.status, row.candidate.scans, row.candidate.findings.fail, row.candidate.ranAgain], ['done', 2, 2, true]);
+        assert.ok(Date.parse(row.candidate.finishedAt) >= Date.parse(a.finishedAt));
+        assert.equal(row.active, null);
+        assert.deepEqual([row.reruns, row.lastRerun.status, row.lastRerun.kept], [1, 'done', 'pending']);
         assert.equal(b.findings.fail, 1, 'the other row is as it was');
-        const onDisk = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'batch.json');
-        assert.equal(onDisk.length, 2, 'the old result is gone, the new one in its place');
-        assert.ok(onDisk.includes(again.file));
-        if (again.file !== oldFile) assert.ok(!onDisk.includes(oldFile));
+        assert.deepEqual(resultsOnDisk(dir), [a.file, b.file, row.candidate.file].sort(), 'both results kept until the choice');
+        assert.equal(queue.getState().sessions[0].counts.total, 2);
+
+        // Until the choice: no other re-run, no delete.
+        assert.throws(() => queue.rerunItem(sessionId, a.id), (err) => err.statusCode === 409 && /choose/.test(err.message));
+        await assert.rejects(queue.deleteItem(sessionId, a.id), (err) => err.statusCode === 409);
+
+        // The choice survives a restart.
+        const restarted = createRunQueue({ baseDir, executeRun: controlledRunner().executeRun, logError: () => {} });
+        restarted.init();
+        assert.equal(restarted.getState().sessions[0].items[0].candidate.file, row.candidate.file);
+    });
+
+    test('keeping the new one makes it the row\'s result, says it ran again, and lets the old one go', async () => {
+        const { runner, queue, sessionId, dir } = await finishedBatch();
+        const [a, b] = rows(queue);
+        const row = await ranAgain(queue, runner, sessionId);
+        const r = await queue.chooseRerunResult(sessionId, a.id, 'new');
+        assert.equal(r.kept, 'new');
+        const [now] = rows(queue);
+        assert.deepEqual([now.file, now.findings.fail, now.scans, now.ranAgain, now.candidate, now.finishedAt], [row.candidate.file, 2, 2, true, null, row.candidate.finishedAt]);
+        assert.deepEqual(resultsOnDisk(dir), [b.file, row.candidate.file].sort());
+        assert.equal(files.readManifest(dir).items[0].file, row.candidate.file);
+        // Run again and Delete are back.
+        assert.doesNotThrow(() => queue.rerunItem(sessionId, a.id));
+    });
+
+    test('keeping the active one lets the re-run\'s result go', async () => {
+        const { runner, queue, sessionId, dir } = await finishedBatch();
+        const [a, b] = rows(queue);
+        const row = await ranAgain(queue, runner, sessionId);
+        await queue.chooseRerunResult(sessionId, a.id, 'active');
+        const [now] = rows(queue);
+        assert.deepEqual([now.file, now.findings.fail, now.ranAgain, now.candidate, now.versions], [a.file, 3, false, null, []]);
+        assert.deepEqual(resultsOnDisk(dir), [a.file, b.file].sort());
+        assert.ok(!resultsOnDisk(dir).includes(row.candidate.file));
+    });
+
+    test('keeping both keeps the re-run\'s result as a version: one can be made active, and one let go', async () => {
+        const { runner, queue, sessionId, dir } = await finishedBatch();
+        const [a, b] = rows(queue);
+        const row = await ranAgain(queue, runner, sessionId);
+        await queue.chooseRerunResult(sessionId, a.id, 'both');
+        let [now] = rows(queue);
+        assert.deepEqual([now.file, now.findings.fail], [a.file, 3], 'the active one stays active');
+        assert.deepEqual(now.versions.map((v) => [v.file, v.findings.fail, v.ranAgain]), [[row.candidate.file, 2, true]]);
+        assert.equal(resultsOnDisk(dir).length, 3);
+
+        await queue.activateVersion(sessionId, a.id, row.candidate.file);
+        [now] = rows(queue);
+        assert.deepEqual([now.file, now.findings.fail, now.ranAgain], [row.candidate.file, 2, true], 'the batch counts this one now');
+        assert.deepEqual(now.versions.map((v) => [v.file, v.findings.fail, v.ranAgain]), [[a.file, 3, false]]);
+        assert.deepEqual(files.readManifest(dir).items[0].versions.map((v) => v.file), [a.file]);
+
+        await assert.rejects(queue.deleteVersion(sessionId, a.id, row.candidate.file), (err) => err.statusCode === 404, 'not the active one');
+        await queue.deleteVersion(sessionId, a.id, a.file);
+        [now] = rows(queue);
+        assert.deepEqual(now.versions, []);
+        assert.deepEqual(resultsOnDisk(dir), [b.file, row.candidate.file].sort());
+    });
+
+    test('a row keeps five results at most: the active one and four versions', async () => {
+        const { runner, queue, sessionId } = await finishedBatch();
+        const [a] = rows(queue);
+        for (let i = 0; i < 4; i += 1) {
+            await ranAgain(queue, runner, sessionId, 0, i);
+            await queue.chooseRerunResult(sessionId, a.id, 'both');
+        }
+        assert.equal(rows(queue)[0].versions.length, 4);
+        await ranAgain(queue, runner, sessionId, 0, 9);
+        await assert.rejects(queue.chooseRerunResult(sessionId, a.id, 'both'), (err) => err.statusCode === 409 && /5 results/.test(err.message));
+        assert.ok(rows(queue)[0].candidate, 'still waiting for a choice');
+        await queue.chooseRerunResult(sessionId, a.id, 'active');
+        assert.equal(rows(queue)[0].candidate, null);
+    });
+
+    test('a choice needs a re-run\'s result to choose, and says what to keep', async () => {
+        const { queue, sessionId } = await finishedBatch();
+        const [a] = rows(queue);
+        await assert.rejects(queue.chooseRerunResult(sessionId, a.id, 'new'), (err) => err.statusCode === 409);
+        await assert.rejects(queue.chooseRerunResult(sessionId, a.id, 'all'), (err) => err.statusCode === 400);
+        await assert.rejects(queue.activateVersion(sessionId, a.id, 'nope.json'), (err) => err.statusCode === 404);
+    });
+
+    test('deleting a row takes its versions with it', async () => {
+        const { runner, queue, sessionId, dir } = await finishedBatch();
+        const [a, b] = rows(queue);
+        await ranAgain(queue, runner, sessionId);
+        await queue.chooseRerunResult(sessionId, a.id, 'both');
+        await queue.deleteItem(sessionId, a.id);
+        assert.deepEqual(resultsOnDisk(dir), [b.file]);
+    });
+
+    test('a batch saved before results said whether they came from a re-run: one that replaced the result did', async () => {
+        const { queue, sessionId, dir } = await finishedBatch();
+        const manifest = files.readManifest(dir);
+        delete manifest.items[0].ranAgain;
+        manifest.items[0].reruns = 1;
+        manifest.items[0].lastRerun = { at: '2026-11-06T10:00:00.000Z', status: 'done', error: null };
+        delete manifest.items[1].ranAgain;
+        files.writeManifest(dir, manifest);
+        const reread = createRunQueue({ baseDir, executeRun: controlledRunner().executeRun, logError: () => {} });
+        reread.init();
+        assert.deepEqual(reread.getState().sessions[0].items.map((i) => i.ranAgain), [true, false]);
+        assert.ok(sessionId);
     });
 
     test('a row run again leaves the batch\'s own times as they were', async () => {
@@ -1369,7 +1483,7 @@ describe('changing a finished batch', () => {
         assert.deepEqual([after.startedAt, after.finishedAt], [before.startedAt, before.finishedAt]);
         const manifest = files.readManifest(dir);
         assert.deepEqual([manifest.startedAt, manifest.finishedAt, manifest.keepFinishedAt], [before.startedAt, before.finishedAt, undefined]);
-        assert.ok(Date.parse(rows(queue)[0].finishedAt) > Date.parse(before.finishedAt), 'the row says when it ran again');
+        assert.ok(Date.parse(rows(queue)[0].candidate.finishedAt) > Date.parse(before.finishedAt), 'the re-run says when it ran');
     });
 
     test('a re-run a restart cuts short leaves the batch\'s own times too', async () => {

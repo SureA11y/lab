@@ -198,7 +198,8 @@ function isReportCandidate(entry) {
  * text }], ordered, rows }, one entry per JSON file in it. A queue's "Download
  * all" zip also holds batch.json, which is not a report: it is left out, and
  * its runs give the order (`ordered`), with `rows` true when they came from
- * batch rows. Otherwise the files come in path order.
+ * batch rows; their kept versions and re-runs waiting for a choice are left
+ * out too. Otherwise the files come in path order.
  */
 export async function readCompareZip(JSZip, data) {
     const zip = await loadZip(JSZip, data);
@@ -219,7 +220,14 @@ export async function readCompareZip(JSZip, data) {
             // Unreadable: then it is just a file, and loads (or fails) as one.
         }
         if (queue && queue.type === QUEUE_MANIFEST_TYPE && Array.isArray(queue.items)) {
-            entries = entries.filter((e) => e !== queueEntry);
+            // A row's other results (kept versions, a re-run's waiting for a
+            // choice) are in the batch's folder too: only its active one is
+            // in the batch.
+            const notActive = new Set(queue.items.flatMap((i) => [
+                i && i.candidate && i.candidate.file,
+                ...(i && Array.isArray(i.versions) ? i.versions.map((v) => v && v.file) : []),
+            ]).filter((f) => typeof f === 'string'));
+            entries = entries.filter((e) => e !== queueEntry && !notActive.has(e.name));
             order = queue.items.map((i) => i && i.file).filter((f) => typeof f === 'string');
             rows = queue.items.some((i) => i && Number.isInteger(i.row));
         }

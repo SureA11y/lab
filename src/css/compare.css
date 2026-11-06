@@ -200,11 +200,61 @@ body.queue-mode-active #screenshots-container { display: none; }
     position: static; background: transparent; border-bottom: 0;
     font-size: inherit; text-transform: none; letter-spacing: normal; color: var(--text-main);
 }
-.queue-table tbody tr:nth-child(even) > * { background: var(--surface-0); }
+.queue-table tbody tr.queue-row--even > * { background: var(--surface-0); }
 .queue-table td { border-bottom: 0; }
 .queue-note { display: block; font-weight: 400; font-size: var(--fs-xs); color: var(--text-soft); overflow-wrap: anywhere; }
 .queue-value-context { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.15rem; }
 .queue-status { white-space: nowrap; }
+/* When a status was reached, under it: "6 Nov 2026, 11:33". */
+.queue-when { font-variant-numeric: tabular-nums; }
+
+/* A run showing more than one result: its name spans its lines, each line
+   marked at the start of its status: grey for the active result, the accent
+   for Run again, red for a re-run that did not finish. */
+.queue-table .queue-name--group { vertical-align: top; border-right: 1px solid var(--border-subtle); }
+.queue-table tr.queue-line + tr.queue-line > * { border-top: 1px dashed var(--border-subtle); }
+.queue-table tr.queue-line--active > .queue-status { box-shadow: inset 3px 0 0 var(--border-strong); }
+.queue-table tr.queue-line--active > td:not(.queue-actions-cell) { color: var(--text-muted); }
+.queue-table tr.queue-line--active .result-glyph { opacity: .6; }
+.queue-table tr.queue-line--version.queue-line--active > td { color: inherit; }
+.queue-table tr.queue-line--version.queue-line--active .result-glyph { opacity: 1; }
+.queue-table tr.queue-line--version.queue-line--active > .queue-status { box-shadow: inset 3px 0 0 var(--accent); }
+.queue-table tr.queue-line--version:not(.queue-line--active) > .queue-status { box-shadow: inset 3px 0 0 var(--border-strong); }
+.queue-table tr.queue-line--rerun > .queue-status,
+.queue-table tr.queue-line--choice > td { box-shadow: inset 3px 0 0 var(--accent); }
+.queue-table tr.queue-line--bad > .queue-status,
+.queue-table tr.queue-line--choice.queue-line--bad > td { box-shadow: inset 3px 0 0 var(--danger); }
+.queue-line-tag {
+    display: block; width: fit-content; margin: 0 0 4px; padding: 0 6px;
+    font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .06em; text-transform: uppercase; font-weight: 400;
+    border-radius: 999px; border: 1px solid var(--border-subtle); background: var(--surface-3); color: var(--text-muted);
+}
+.queue-line-tag--rerun { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent); }
+.queue-line--version.queue-line--active .queue-line-tag { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent); }
+/* Under a re-run's counts, the active result's: "was 4". */
+.queue-was--better { color: var(--ok); }
+.queue-was--worse { color: var(--danger); }
+/* Which result to keep: a line of small links, the suggested one in bold. */
+.queue-table tr.queue-line--choice > td { font-size: var(--fs-sm); padding-top: var(--space-1); padding-bottom: var(--space-2); }
+.queue-choice { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+.queue-choice p { margin: 0; flex: 1 1 18rem; }
+.queue-choice-warn { color: var(--danger); font-weight: 600; }
+.queue-keep { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); font-size: var(--fs-sm); white-space: nowrap; }
+.queue-keep-ask { color: var(--text-muted); }
+.queue-keep-sep { color: var(--text-soft); }
+.queue-table .queue-link, .queue-table .queue-versions-toggle {
+    min-height: 24px; padding: 2px 3px; margin: 0;
+    font: inherit; font-size: var(--fs-sm); font-weight: 400; color: var(--accent);
+    background: none; border: 0; border-radius: var(--radius-sm); box-shadow: none;
+    text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.queue-table .queue-link:hover, .queue-table .queue-versions-toggle:hover { background: var(--accent-soft); }
+.queue-table .queue-link:focus-visible, .queue-table .queue-versions-toggle:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+.queue-table .queue-link--suggested { font-weight: 700; }
+.queue-table .queue-status .queue-keep { margin: 4px 0 0 -3px; }
+.queue-table .queue-versions-toggle { display: block; margin: 4px 0 0 -3px; font-size: var(--fs-xs); font-weight: 600; }
+.queue-table .queue-versions-toggle::after { content: ' ▾'; text-decoration: none; display: inline-block; margin-left: 2px; }
+.queue-table .queue-versions-toggle[aria-expanded="true"]::after { content: ' ▴'; }
 .queue-status .queue-note { white-space: normal; }
 /* A running run that has logged nothing for minutes: worth a look, not an error. */
 .queue-stall { display: inline-flex; vertical-align: middle; margin-left: var(--space-1); color: var(--warn); }

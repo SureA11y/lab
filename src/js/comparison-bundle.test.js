@@ -126,6 +126,21 @@ describe('comparison bundle', () => {
         assert.deepEqual(back.files.map((f) => f.name), ['Release-C.json', 'Release-A.json', 'extra.json']);
     });
 
+    test('a queue zip leaves out a row\'s kept versions and a re-run waiting for a choice: only its active result is in the batch', async () => {
+        const { readCompareZip } = await load();
+        const zip = new JSZip();
+        zip.file('batch.json', JSON.stringify({
+            type: 'a11y-queue-session', version: 1,
+            items: [
+                { file: 'Home-2.json', row: 1, versions: [{ file: 'Home.json' }] },
+                { file: 'Cart.json', row: 2, candidate: { file: 'Cart-2.json' } },
+            ],
+        }));
+        for (const name of ['Home.json', 'Home-2.json', 'Cart.json', 'Cart-2.json']) zip.file(name, `{"runId":"${name}"}`);
+        const back = await readCompareZip(JSZip, await zip.generateAsync({ type: 'uint8array' }));
+        assert.deepEqual(back.files.map((f) => f.name), ['Home-2.json', 'Cart.json']);
+    });
+
     test('a batch.json that is not a queue\'s is just another file', async () => {
         const { readCompareZip } = await load();
         const zip = new JSZip();

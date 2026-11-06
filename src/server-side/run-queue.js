@@ -421,13 +421,40 @@ function createRunQueue({
             reruns: item.reruns || 0,
             lastRerun: item.lastRerun || null,
             previous: item.previous || null,
+            ranAgain: !!item.ranAgain,
+            ownFolders: item.ownFolders || null,
+            // A re-run's result, waiting beside the active one until the
+            // user chooses which to keep (chooseRerunResult).
+            candidate: item.candidate || null,
+            // The row's other results, kept with "both": only the active
+            // one (the row's own fields) counts in the batch.
+            versions: item.versions && item.versions.length ? item.versions : null,
             // A report added to the batch as it was, not run here.
             imported: item.imported || null,
         };
     }
 
     // What a re-run keeps of the result it replaces, to put back if it fails.
-    const RESULT_FIELDS = ['status', 'startedAt', 'finishedAt', 'durationMs', 'scans', 'scansRun', 'findings', 'file', 'error'];
+    // A row's result, as the row holds it and as a version or a re-run
+    // waiting for a choice keeps it. `ranAgain`: it came from Run again.
+    // `ownFolders`: the run folders this result alone made (null for a
+    // result from before results were kept apart: the row's other folders).
+    const RESULT_FIELDS = ['status', 'startedAt', 'finishedAt', 'durationMs', 'scans', 'scansRun', 'findings', 'file', 'error', 'ranAgain', 'ownFolders'];
+    // How many results a row keeps at most: the active one and its versions.
+    const MAX_VERSIONS = 5;
+
+    // Whether a row's result came from Run again. A batch from before rows
+    // said so: a re-run that ended well replaced the result then.
+    function ranAgainOf(item) {
+        if (typeof item.ranAgain === 'boolean') return item.ranAgain;
+        return !!(item.reruns && item.lastRerun && item.lastRerun.status === 'done');
+    }
+
+    /** Every result file a row holds: the active one, a re-run's, its versions. */
+    function resultFilesOf(item) {
+        return [item.file, item.previous && item.previous.file, item.candidate && item.candidate.file,
+            ...((item.versions || []).map((v) => v && v.file))].filter(Boolean);
+    }
 
     function resultOf(item) {
         const out = {};
@@ -786,14 +813,16 @@ function createRunQueue({
         const fileName = files.uniqueResultFileName(item.name, owner.takenFiles);
         const target = path.join(owner.dir, fileName);
         const tmp = path.join(owner.dir, `.${fileName}.${process.pid}.tmp`);
+        let ownFolders = [];
         try {
             // Its pictures into the batch's images/ folder, which the result
             // names them by: the batch is a report package (batch-package.js).
             if (!owner.images) owner.images = createBatchImages(owner.dir);
             const packed = await packResultImages(payload, owner.images, { reportsRoot });
-            // A re-run's folders join those of the result it replaces: they all
-        // go with the batch.
-        item.runFolders = [...new Set([...(item.runFolders || []), ...packed.runFolders])].sort();
+            // A re-run's folders join the row's others: they all go with the
+            // batch, and with this result if it is let go.
+            ownFolders = [...packed.runFolders].sort();
+            item.runFolders = [...new Set([...(item.runFolders || []), ...packed.runFolders])].sort();
             if (packed.missing.length) {
                 logError(`${packed.missing.length} picture(s) of ${item.name} could not be added to the batch`, new Error(packed.missing[0].error));
             }
@@ -811,25 +840,42 @@ function createRunQueue({
             return;
         }
 
+        const summary = summarizePayload(payload);
+        const error = status === 'error' ? (payload.errorDetails?.message || 'Workflow failed') : null;
+
         if (item.previous) {
-            // The re-run's result replaces the one it was run again for.
-            const old = item.previous.file;
-            if (old && old !== fileName) {
-                await fs.promises.rm(path.join(owner.dir, old), { force: true }).catch((err) => logError(`could not remove ${old}`, err));
-                owner.takenFiles.delete(old);
-            }
+            // A re-run's result does not replace the active one: it waits
+            // beside it, and the user chooses which to keep (a re-run cut
+            // short by a site going down is not better than what it would
+            // replace). The row keeps showing, and counting, the active one.
+            const startedMs = Date.parse(item.startedAt);
+            item.candidate = {
+                status,
+                startedAt: item.startedAt,
+                finishedAt: iso(),
+                durationMs: Number.isFinite(startedMs) ? Math.max(0, now() - startedMs) : null,
+                scans: summary.scans,
+                scansRun: summary.scansRun,
+                findings: summary.findings,
+                file: fileName,
+                error,
+                ranAgain: true,
+                ownFolders,
+            };
+            Object.assign(item, item.previous);
             item.previous = null;
+            item.restored = true;
+            item.lastRerun = { at: iso(), status, error: null, kept: 'pending' };
+            return;
         }
         if (item.reruns) item.lastRerun = { at: iso(), status, error: null };
 
-        const summary = summarizePayload(payload);
         item.file = fileName;
         item.scans = summary.scans;
         item.scansRun = summary.scansRun;
         item.findings = summary.findings;
-        if (status === 'error') {
-            item.error = payload.errorDetails?.message || 'Workflow failed';
-        }
+        item.ownFolders = ownFolders;
+        if (error) item.error = error;
         item.status = status;
     }
 
@@ -1166,6 +1212,10 @@ function createRunQueue({
             reruns: m.reruns || 0,
             lastRerun: m.lastRerun ?? null,
             previous: m.previous ?? null,
+            ranAgain: ranAgainOf(m),
+            ownFolders: Array.isArray(m.ownFolders) ? m.ownFolders : null,
+            candidate: m.candidate && typeof m.candidate === 'object' ? m.candidate : null,
+            versions: Array.isArray(m.versions) ? m.versions.filter((v) => v && typeof v === 'object') : [],
             imported: m.imported ?? null,
             spec: null,
             scansDone: 0,
@@ -1191,7 +1241,7 @@ function createRunQueue({
             // days.
             keepFinishedAt: keepTimes && typeof manifest.finishedAt === 'string' ? manifest.finishedAt : null,
             items,
-            takenFiles: new Set(items.flatMap((i) => [i.file, i.previous && i.previous.file]).filter(Boolean)),
+            takenFiles: new Set(items.flatMap(resultFilesOf)),
             configFile: typeof manifest.configFile === 'string' ? manifest.configFile : null,
             // A reopened batch's peak and holds carry on from where they were.
             stats: manifest.stats && typeof manifest.stats === 'object'
@@ -1216,16 +1266,16 @@ function createRunQueue({
 
     /**
      * Runs a finished batch's row again, from the workflow it saved, with
-     * its row's values. Its new result replaces its old one; a re-run that
-     * ends with no result keeps the old one, and the row says so
-     * (`lastRerun`). A workflow with hidden values needs them in `values`
-     * (getMaskedFields' keys), as resuming does.
+     * its row's values. Its result waits beside the row's active one
+     * (`candidate`) until chooseRerunResult says which to keep; a re-run that
+     * ends with no result leaves nothing to choose, and the row says so
+     * (`lastRerun`). Not while an earlier re-run's result waits. A workflow
+     * with hidden values needs them in `values` (getMaskedFields' keys), as
+     * resuming does.
      */
     function rerunItem(id, itemId, { values = null } = {}) {
-        const { dir, manifest } = finishedSession(id);
-        const items = itemsFromManifest(manifest);
-        const item = items.find((i) => i.id === itemId);
-        if (!item) throw queueError(404, 'No such run in this batch');
+        const { dir, manifest, items, item } = finishedRow(id, itemId);
+        if (item.candidate) throw queueError(409, CHOOSE_FIRST);
         if (item.imported) throw queueError(400, 'This run was added as a report, so there is no workflow to run again.');
         let spec = runSpecFrom(item.config && item.config.runSpec);
         if (!Array.isArray(spec.actions) || spec.actions.length === 0) {
@@ -1245,81 +1295,196 @@ function createRunQueue({
         item.reruns = (item.reruns || 0) + 1;
         Object.assign(item, {
             status: 'waiting', startedAt: null, finishedAt: null, durationMs: null, error: null,
-            scans: null, scansRun: null, findings: null, file: null, spec,
+            scans: null, scansRun: null, findings: null, file: null, ownFolders: null, ranAgain: true, spec,
         });
         if (!concurrencyChosen) concurrency = automaticConcurrency(1, maxConcurrency);
         reopen(id, dir, manifest, items, { keepTimes: true });
         return { sessionId: id, itemId };
     }
 
+    // A result file as batch.json names it: a name inside the batch's folder.
+    const ownName = (name) => typeof name === 'string' && name && name === path.basename(name) && !name.startsWith('.');
+
+    // The batch's pictures some results name ("images/<hash>.<ext>").
+    async function picturesIn(dir, names) {
+        const found = new Set();
+        for (const name of names) {
+            try {
+                for (const p of await imagePathsInFile(path.join(dir, name))) found.add(p);
+            } catch { /* gone or unreadable: it names nothing */ }
+        }
+        return found;
+    }
+
     /**
-     * Deletes one run of a finished batch: its row in batch.json, its result,
-     * and the pictures (images/) and run folders (evidence, screenshots)
-     * that it alone used; another row's stay. The batch's zip and Send to
-     * Compare follow, as they read its folder and batch.json. Its last run is
-     * not deleted: the batch is, as a whole (deleteSession). The batch's
-     * configuration, saved when it started, stays as it was, as adding a run
-     * leaves it.
+     * Writes a finished batch's rows to batch.json, then removes what they
+     * no longer name: the result files `goes`, the run folders `folders`
+     * ("evidence/<run>", as batch.json records them) and the batch's
+     * pictures only those results used. What another result still uses
+     * stays. Gone from batch.json first, in one write: the rest is cleaning
+     * up, and a file left behind is only a file.
      */
-    async function deleteItem(id, itemId) {
+    async function rewriteAndRemove(id, dir, manifest, items, goes, folders = []) {
+        const files_ = [...new Set(goes.filter(ownName))];
+        const kept = new Set(items.flatMap(resultFilesOf).filter(ownName));
+        const leaving = files_.filter((f) => !kept.has(f));
+        // What they used, read before they go.
+        const theirPictures = await picturesIn(dir, leaving);
+        const theirFolders = new Set([
+            ...leaving.flatMap((f) => files.runFoldersOfFile(path.join(dir, f), reportsRoot)),
+            ...files.recordedRunFoldersOf({ runFolders: folders }, reportsRoot),
+        ]);
+
+        // A batch that started running meanwhile is not changed under it.
+        if (session && session.id === id) throw queueError(409, 'This batch started running meanwhile. Try again once it has finished.');
+        files.writeManifest(dir, { ...manifest, items: items.map(manifestItem) });
+
+        for (const name of leaving) await fs.promises.rm(path.join(dir, name), { force: true }).catch(() => {});
+
+        // Only the batch's own pictures, named by their content's hash
+        // (batch-package.js pictureName): "images/…" in a result can also be
+        // the page's own image, quoted in a finding's HTML.
+        const stillUsed = await picturesIn(dir, [...kept]);
+        const BATCH_PICTURE = /^[0-9a-f]{20}\.[a-z0-9]+$/;
+        let removedPictures = 0;
+        for (const picture of theirPictures) {
+            if (stillUsed.has(picture) || !picture.startsWith(`${IMAGES_DIR}/`)) continue;
+            if (!BATCH_PICTURE.test(path.basename(picture))) continue;
+            try {
+                await fs.promises.rm(path.join(dir, IMAGES_DIR, path.basename(picture)));
+                removedPictures += 1;
+            } catch { /* already gone */ }
+        }
+        const foldersKept = new Set([
+            ...[...kept].flatMap((f) => files.runFoldersOfFile(path.join(dir, f), reportsRoot)),
+            ...items.flatMap((i) => files.recordedRunFoldersOf(i, reportsRoot)),
+        ]);
+        let removedRunFolders = 0;
+        for (const folder of theirFolders) {
+            if (foldersKept.has(folder)) continue;
+            await fs.promises.rm(folder, { recursive: true, force: true }).catch(() => {});
+            removedRunFolders += 1;
+        }
+        return { removedPictures, removedRunFolders };
+    }
+
+    // A finished batch's row, by id, from its batch.json.
+    function finishedRow(id, itemId) {
         const { dir, manifest } = finishedSession(id);
         const items = itemsFromManifest(manifest);
         const item = items.find((i) => i.id === itemId);
         if (!item) throw queueError(404, 'No such run in this batch');
+        return { dir, manifest, items, item };
+    }
+
+    const CHOOSE_FIRST = 'This run was run again: choose which result to keep first.';
+
+    /**
+     * Deletes one run of a finished batch: its row in batch.json, its results
+     * (the active one and its versions), and the pictures (images/) and run
+     * folders (evidence, screenshots) that only it used; another row's stay.
+     * The batch's zip and Send to Compare follow, as they read its folder
+     * and batch.json. Its last run is not deleted: the batch is, as a whole
+     * (deleteSession). The batch's configuration, saved when it started,
+     * stays as it was. Not while a re-run's result waits for a choice.
+     */
+    async function deleteItem(id, itemId) {
+        const { dir, manifest, items, item } = finishedRow(id, itemId);
         if (items.length === 1) throw queueError(409, 'This is the batch\'s only run. Delete the batch instead.');
+        if (item.candidate) throw queueError(409, CHOOSE_FIRST);
         const remaining = items.filter((i) => i !== item);
+        const { removedPictures, removedRunFolders } = await rewriteAndRemove(id, dir, manifest, remaining, resultFilesOf(item), item.runFolders || []);
+        return { sessionId: id, deleted: itemId, remaining: remaining.length, removedPictures, removedRunFolders };
+    }
 
-        // Its files, as names inside the batch's folder only.
-        const own = (name) => typeof name === 'string' && name && name === path.basename(name) && !name.startsWith('.');
-        const filesOf = (i) => [i.file, i.previous && i.previous.file].filter(own);
-        const mine = filesOf(item);
-        const others = new Set(remaining.flatMap(filesOf));
-        const goes = mine.filter((f) => !others.has(f));
+    // The run folders a result made: its own, or, for one from before
+    // results kept theirs apart, the row's that no other result claims.
+    function foldersOfResult(item, result) {
+        if (Array.isArray(result.ownFolders)) return result.ownFolders;
+        const claimed = new Set([item, item.candidate, ...(item.versions || [])]
+            .filter((r) => r && r !== result && Array.isArray(r.ownFolders))
+            .flatMap((r) => r.ownFolders));
+        return (item.runFolders || []).filter((f) => !claimed.has(f));
+    }
 
-        // What it used, read before its result goes.
-        const usedPictures = async (names) => {
-            const found = new Set();
-            for (const name of names) {
-                try {
-                    for (const p of await imagePathsInFile(path.join(dir, name))) found.add(p);
-                } catch { /* gone or unreadable: it names nothing */ }
+    function withoutFolders(item, folders) {
+        const gone = new Set(folders);
+        item.runFolders = (item.runFolders || []).filter((f) => !gone.has(f));
+    }
+
+    /**
+     * Which result a row keeps after Run again (its re-run's result waits
+     * beside the active one, `candidate`): 'new' makes it the row's result
+     * and lets the active one go; 'active' lets the re-run's go; 'both' keeps
+     * the re-run's as a version, the active one staying active. A row keeps
+     * MAX_VERSIONS results at most. What is let go is removed, with the
+     * pictures and run folders only it used.
+     */
+    async function chooseRerunResult(id, itemId, keep) {
+        if (!['new', 'active', 'both'].includes(keep)) throw queueError(400, 'Say which to keep: new, active or both.');
+        const { dir, manifest, items, item } = finishedRow(id, itemId);
+        const candidate = item.candidate;
+        if (!candidate) throw queueError(409, 'This run has no result from running it again to choose.');
+        let goes = [];
+        let folders = [];
+        if (keep === 'new') {
+            const active = resultOf(item);
+            goes = [active.file];
+            folders = foldersOfResult(item, active);
+            withoutFolders(item, folders);
+            for (const k of RESULT_FIELDS) item[k] = candidate[k] ?? null;
+        } else if (keep === 'active') {
+            goes = [candidate.file];
+            folders = foldersOfResult(item, candidate);
+            withoutFolders(item, folders);
+        } else {
+            if (1 + (item.versions || []).length + 1 > MAX_VERSIONS) {
+                throw queueError(409, `This run keeps ${MAX_VERSIONS} results already. Delete one of its versions first.`);
             }
-            return found;
-        };
-        const itsPictures = await usedPictures(goes);
-        const itsFolders = new Set([...goes.flatMap((f) => files.runFoldersOfFile(path.join(dir, f), reportsRoot)), ...files.recordedRunFoldersOf(item, reportsRoot)]);
-
-        // A batch that started running meanwhile is not changed under it.
-        if (session && session.id === id) throw queueError(409, 'This batch started running meanwhile. Delete the run once it has finished.');
-        // Gone from the batch first, in one write: the rest is cleaning up.
-        files.writeManifest(dir, { ...manifest, items: remaining.map(manifestItem) });
-
-        for (const name of goes) await fs.promises.rm(path.join(dir, name), { force: true }).catch(() => {});
-
-        // Pictures and run folders another run still uses stay.
-        const stillUsed = await usedPictures([...others]);
-        let removedPictures = 0;
-        // Only the batch's own pictures, named by their content's hash
-        // (batch-package.js pictureName): "images/…" in a result can also be
-        // the page's own image, quoted in a finding's HTML.
-        const BATCH_PICTURE = /^[0-9a-f]{20}\.[a-z0-9]+$/;
-        for (const picture of itsPictures) {
-            if (stillUsed.has(picture) || !picture.startsWith(`${IMAGES_DIR}/`)) continue;
-            if (!BATCH_PICTURE.test(path.basename(picture))) continue;
-            const file = path.join(dir, IMAGES_DIR, path.basename(picture));
-            try {
-                await fs.promises.rm(file);
-                removedPictures += 1;
-            } catch { /* already gone */ }
+            item.versions = [...(item.versions || []), candidate];
         }
-        const foldersKept = new Set([...[...others].flatMap((f) => files.runFoldersOfFile(path.join(dir, f), reportsRoot)), ...remaining.flatMap((i) => files.recordedRunFoldersOf(i, reportsRoot))]);
-        let removedFolders = 0;
-        for (const folder of itsFolders) {
-            if (foldersKept.has(folder)) continue;
-            await fs.promises.rm(folder, { recursive: true, force: true }).catch(() => {});
-            removedFolders += 1;
-        }
-        return { sessionId: id, deleted: itemId, remaining: remaining.length, removedPictures, removedRunFolders: removedFolders };
+        item.candidate = null;
+        item.lastRerun = { ...(item.lastRerun || {}), kept: keep };
+        const removed = await rewriteAndRemove(id, dir, manifest, items, goes, folders);
+        return { sessionId: id, itemId, kept: keep, ...removed };
+    }
+
+    // One of a row's versions, by its file.
+    function versionOf(item, file) {
+        const version = (item.versions || []).find((v) => v.file === file);
+        if (!version) throw queueError(404, 'No such version of this run');
+        return version;
+    }
+
+    /**
+     * Makes one of a row's kept versions its result: the one the batch's
+     * totals, zip and Send to Compare use. The one it was becomes a version.
+     */
+    async function activateVersion(id, itemId, file) {
+        const { dir, manifest, items, item } = finishedRow(id, itemId);
+        if (item.candidate) throw queueError(409, CHOOSE_FIRST);
+        const version = versionOf(item, file);
+        const active = resultOf(item);
+        item.versions = item.versions.map((v) => (v === version ? active : v));
+        for (const k of RESULT_FIELDS) item[k] = version[k] ?? null;
+        await rewriteAndRemove(id, dir, manifest, items, []);
+        return { sessionId: id, itemId, active: file };
+    }
+
+    /**
+     * Deletes one of a row's kept versions, with the pictures and run folders
+     * only it used. Not the active one: make another active first, or delete
+     * the row.
+     */
+    async function deleteVersion(id, itemId, file) {
+        const { dir, manifest, items, item } = finishedRow(id, itemId);
+        if (item.candidate) throw queueError(409, CHOOSE_FIRST);
+        const version = versionOf(item, file);
+        const folders = foldersOfResult(item, version);
+        withoutFolders(item, folders);
+        item.versions = item.versions.filter((v) => v !== version);
+        const removed = await rewriteAndRemove(id, dir, manifest, items, [version.file], folders);
+        return { sessionId: id, itemId, deleted: file, versions: item.versions.length, ...removed };
     }
 
     /**
@@ -1334,6 +1499,14 @@ function createRunQueue({
             sinceProgressMs: item.lastProgressMs ? Math.max(0, now() - item.lastProgressMs) : null,
             paceMs: item.scanGaps && item.scanGaps.length ? median(item.scanGaps) : null,
         };
+    }
+
+    // A result as the app sees it: without the run folders it made.
+    function resultView(result) {
+        const out = {};
+        for (const k of RESULT_FIELDS) if (k !== 'ownFolders') out[k] = result[k] ?? null;
+        out.ranAgain = !!out.ranAgain;
+        return out;
     }
 
     function itemView(item, { live }) {
@@ -1360,6 +1533,12 @@ function createRunQueue({
             imported: item.imported || null,
             // While it runs again: the result it would replace.
             replacing: item.previous && item.previous.file ? item.previous.file : null,
+            ranAgain: ranAgainOf(item),
+            // While it runs again, the active result, shown above the run.
+            active: item.previous && item.previous.file ? resultView(item.previous) : null,
+            // A re-run's result waiting for a choice, and the kept versions.
+            candidate: item.candidate && typeof item.candidate === 'object' ? resultView(item.candidate) : null,
+            versions: (Array.isArray(item.versions) ? item.versions : []).filter((v) => v && typeof v === 'object').map(resultView),
         };
         if (live && (item.status === 'running' || item.status === 'cancelling')) {
             view.scans = item.scansDone;
@@ -1548,6 +1727,9 @@ function createRunQueue({
         cancelAll,
         resumeSession,
         rerunItem,
+        chooseRerunResult,
+        activateVersion,
+        deleteVersion,
         deleteItem,
         getMaskedFields,
         deleteSession,

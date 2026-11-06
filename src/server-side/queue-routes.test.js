@@ -260,10 +260,33 @@ describe('queue routes', () => {
         pending.shift()({ status: 'done', payload: { scans: [{}, {}], findings: { fail: [], cantTell: [] } } });
         await waitForState((s) => s.sessions[0].state !== 'running');
 
+        // The re-run's result waits beside the active one, for a choice.
+        let waiting = (await itemsOf(sessionId)).items[0];
+        assert.deepEqual([waiting.scans, waiting.candidate.scans, waiting.candidate.ranAgain], [1, 2, true]);
+        assert.match(waiting.candidate.fileUrl, new RegExp(`/${sessionId}/`));
+        assert.match(waiting.candidate.zipUrl, /download\.zip\?file=/);
+        const candidateZip = await fetch(origin + waiting.candidate.zipUrl);
+        assert.equal(candidateZip.status, 200);
+        assert.ok(Object.keys((await JSZip.loadAsync(Buffer.from(await candidateZip.arrayBuffer()))).files).includes(waiting.candidate.file));
+        assert.equal((await fetch(`${origin}/queue/sessions/${sessionId}/items/${home.id}/download.zip?file=batch.json`)).status, 404, 'only its own results');
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${home.id}/rerun`, {})).status, 409, 'not before the choice');
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${home.id}/keep`, { keep: 'maybe' })).status, 400);
+
+        // Both kept: the new one as a version, made active, the old one let go.
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${home.id}/keep`, { keep: 'both' })).status, 200);
+        waiting = (await itemsOf(sessionId)).items[0];
+        assert.deepEqual([waiting.candidate, waiting.versions.length, waiting.versions[0].scans], [null, 1, 2]);
+        assert.ok(waiting.versions[0].zipUrl);
+        const newFile = waiting.versions[0].file;
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${home.id}/versions/activate`, { file: newFile })).status, 200);
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${home.id}/versions/delete`, { file: home.file })).status, 200);
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${home.id}/versions/delete`, { file: home.file })).status, 404, 'gone');
+
         const rows = (await itemsOf(sessionId)).items;
-        assert.deepEqual(rows.map((i) => [i.name, i.status, i.scans, i.reruns]),
-            [['Home', 'done', 2, 1], ['Cart', 'done', 1, 0], ['Shop', 'done', 1, 0]]);
+        assert.deepEqual(rows.map((i) => [i.name, i.status, i.scans, i.reruns, i.ranAgain, i.versions.length]),
+            [['Home', 'done', 2, 1, true, 0], ['Cart', 'done', 1, 0, false, 0], ['Shop', 'done', 1, 0, false, 0]]);
         assert.ok(rows.every((i) => i.fileUrl));
+        assert.equal(fs.existsSync(path.join(baseDir, sessionId, home.file)), false, 'the version let go is gone');
 
         // A run deleted from it: its row and result go, and its zip follows.
         const cart = rows[1];
