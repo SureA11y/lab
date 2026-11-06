@@ -99,7 +99,7 @@ describe('By profile', () => {
         const { comparisonDiffHTML } = await load();
         const d = globalThis.A11Y_REPORT_DIFF.diffReports(a(), b(), { profilesOff: ['wai-aria-1.2'] });
         const html = comparisonDiffHTML(d);
-        assert.match(html, /Compared on WCAG 2\.2 AA only: WAI-ARIA 1\.2 turned off above, so its results are left out\./);
+        assert.match(html, /Compared on WCAG 2\.2 AA only: WAI-ARIA 1\.2 turned off, so its results are left out\./);
         assert.match(html, /Each report's score is counted again on the profiles compared/);
         assert.doesNotMatch(html, /class="cmp2-sec byprof"/, 'one profile: nothing to break down');
     });
