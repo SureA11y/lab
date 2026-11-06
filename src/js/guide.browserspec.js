@@ -248,6 +248,13 @@ test('on a phone, the contents fold away and come back', { skip: !HAS_PROCEDURES
     await page.close();
 });
 
+// The bar shown, and done sliding in: until then its buttons can still be
+// above the top of the window.
+const barIn = (page) => page.waitForFunction(() => {
+    const bar = document.getElementById('guide-bar');
+    return bar.classList.contains('is-shown') && bar.getBoundingClientRect().top === 0;
+}, { timeout: 5000 });
+
 test('scrolled past the filters, the bar keeps the logo, what is shown and the actions in reach; on a phone, the contents too', { skip: !HAS_PROCEDURES && 'the installed core has no test procedures' }, async () => {
     const { page, errors } = await open('/guide?standard=wcag');
     await settled(page, /checks\./);
@@ -255,7 +262,7 @@ test('scrolled past the filters, the bar keeps the logo, what is shown and the a
     assert.deepEqual(await bar(), { shown: false, inert: true, top: -52 }, 'out of sight, and out of reach, at the top');
 
     await page.evaluate(() => window.scrollTo(0, 2500));
-    await page.waitForFunction(() => document.getElementById('guide-bar').classList.contains('is-shown'), { timeout: 5000 });
+    await barIn(page);
     assert.equal((await bar()).inert, false);
     assert.equal(await page.$eval('.guide-bar-brand', (a) => a.getAttribute('href')), '/');
     assert.match(await page.$eval('[data-guide-bar="status"]', (el) => el.textContent), /^WCAG 2\.2, Level A and AA: \d+ criteria, \d+ checks$/);
@@ -274,7 +281,7 @@ test('scrolled past the filters, the bar keeps the logo, what is shown and the a
     // On a phone: Contents opens the contents over the page, and a link closes them.
     await page.setViewport({ width: 375, height: 800 });
     await page.evaluate(() => window.scrollTo(0, 2500));
-    await page.waitForFunction(() => document.getElementById('guide-bar').classList.contains('is-shown'), { timeout: 5000 });
+    await barIn(page);
     await page.click('[data-guide-bar="contents"]');
     assert.equal(await page.$eval('[data-guide-bar="contents"]', (b) => b.getAttribute('aria-expanded')), 'true');
     const link = await page.$('#guide-bar-toc a[data-toc]');
