@@ -255,7 +255,13 @@ and don't add up.
 Pages are matched across reports by their path and query. When no page is in
 every report (a site under `/v1/` beside the same one under `/v2/`), the
 comparison says so, since every failure then reads as fixed or new, and reads
-each report on the profiles every report checked on some page.
+each report on the profiles every report checked on some page. To compare
+such a site page by page, list the prefixes to leave out under **Ignore path
+prefixes** (`/v1, /v2`) and choose **Match pages**; when each report sits
+under a folder of its own, the tab offers those folders in one click. Only
+the matching changes: the addresses shown and linked stay each report's own.
+The zip keeps the prefixes, and the runner takes them as
+`--ignore-path-prefix`.
 
 ## Batches and the queue
 

@@ -177,6 +177,20 @@ The first public release.
   every failure then reads as fixed or new; and they are read on the
   profiles every report checked on some page, rather than said to share no
   standard, with the requirements only one checked counted as fixed.
+- **Ignore path prefixes** in the Compare tab, and `--ignore-path-prefix`
+  in the runner, compare one site served under two paths page by page:
+  `/v1, /v2` makes `/v1/cart.html` and `/v2/cart.html` one page. When each
+  report sits under a folder of its own and no page matches, the tab offers
+  those folders. Only the matching changes; addresses shown and occurrence
+  ids stay each report's own. The comparison zip, `comparison.html`,
+  `summary.md` and `diff.json` keep or say the prefixes.
+- **Starting the app no longer rewrites tracked docs.** `npm start` and
+  `npm run dev` rebuilt `docs/configuration_contract.json` (with a new
+  `generatedAt`) and `docs/step-definitions.html` wherever the standard
+  packs installed differed from the committer's. They now build only the
+  report's assets; the docs are built by `npm run build:action-docs`, and
+  list the lab's own profiles and its own packs', whatever other packs a
+  machine has.
 - With some of a report's profiles turned off, its scans list their
   failures again (they read 0), and a scan's verdict by severity is counted
   again in its downloads.
