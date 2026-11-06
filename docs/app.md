@@ -295,6 +295,8 @@ A finished batch can still change, while no other batch runs:
   row says so. Passwords are never saved, so a workflow that types one always
   asks for it first; those still typed in the open workflow come filled in,
   to confirm or change. Resuming an interrupted batch asks the same way.
+  The batch keeps its own start, end and total time; the row says when it
+  ran again and how long that took.
 - **Delete**, on a row, removes it from the batch once confirmed: its result,
   and the pictures and evidence that only it used. A batch's only row is not
   deleted on its own: delete the batch instead.

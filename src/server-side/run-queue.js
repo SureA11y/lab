@@ -381,6 +381,9 @@ function createRunQueue({
                 name: session.name,
                 startedAt: session.startedAt,
                 finishedAt: session.finishedAt,
+                // While a row runs again: the batch's own finish, put back
+                // when it ends, or by init if a restart cuts it short.
+                ...(session.keepFinishedAt ? { keepFinishedAt: session.keepFinishedAt } : {}),
                 concurrency,
                 stats: session.stats || null,
                 // The batch's configuration, as "Save configuration" writes
@@ -527,7 +530,8 @@ function createRunQueue({
     }
 
     function closeSession() {
-        session.finishedAt = iso();
+        session.finishedAt = session.keepFinishedAt || iso();
+        session.keepFinishedAt = null;
         persist();
         if (session.metrics) session.metrics.close();
         session = null;
@@ -819,6 +823,12 @@ function createRunQueue({
                 }
             }
             manifest.interruptedAt = iso();
+            // A batch whose row was running again finished before: it keeps
+            // that finish, and so the time it took.
+            if (typeof manifest.keepFinishedAt === 'string') {
+                manifest.finishedAt = manifest.keepFinishedAt;
+                delete manifest.keepFinishedAt;
+            }
             try {
                 files.writeManifest(dir, manifest);
                 recovered.push(id);
@@ -1102,13 +1112,19 @@ function createRunQueue({
      * starts what waits in it: resumed, re-run or added rows land in its
      * folder, its batch.json and its zip, as if they had run with it.
      */
-    function reopen(id, dir, manifest, items) {
+    function reopen(id, dir, manifest, items, { keepTimes = false } = {}) {
         session = {
             id,
             name: batchName(manifest.name),
             dir,
             startedAt: manifest.startedAt,
             finishedAt: null,
+            // A row run again keeps the batch's own times: when it started,
+            // when it finished, and so how long it took. Ending, the batch
+            // takes its finish back (closeSession), and so does one a restart
+            // cut short (init): a re-run days later is not the batch taking
+            // days.
+            keepFinishedAt: keepTimes && typeof manifest.finishedAt === 'string' ? manifest.finishedAt : null,
             items,
             takenFiles: new Set(items.flatMap((i) => [i.file, i.previous && i.previous.file]).filter(Boolean)),
             configFile: typeof manifest.configFile === 'string' ? manifest.configFile : null,
@@ -1167,7 +1183,7 @@ function createRunQueue({
             scans: null, scansRun: null, findings: null, file: null, spec,
         });
         if (!concurrencyChosen) concurrency = automaticConcurrency(1, maxConcurrency);
-        reopen(id, dir, manifest, items);
+        reopen(id, dir, manifest, items, { keepTimes: true });
         return { sessionId: id, itemId };
     }
 

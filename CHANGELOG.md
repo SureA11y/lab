@@ -182,6 +182,11 @@ The first public release.
   app and in downloaded reports. The address now takes what the counts
   leave and ends in an ellipsis; the counts wrap only between their parts,
   each comma with the count before it.
+- **A row run again leaves its batch's times as they were.** Running a row
+  again reopened the batch, so its total time stretched from its start to
+  the end of the re-run, days later perhaps. The batch now keeps its own
+  start, end and total time, also when a restart cuts the re-run short; the
+  row says when it ran again and how long that took.
 - **Run again and Resume always ask for a workflow's passwords.** They used
   the passwords still typed in the open workflow without asking, so a run
   could start with a password nobody confirmed. They now always ask, with
