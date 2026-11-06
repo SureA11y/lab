@@ -121,7 +121,7 @@ describe('the scan\'s counts', () => {
             question('heading-order', [occ('#h1', {lean: {toward: 'fail', why: 'Skips.'}}), occ('#h2', {lean: {toward: 'fail', why: 'Skips.'}}), occ('#h3')]),
             question('link-name-quality', [occ('#l')]),
         ]);
-        assert.match(resultsEl.querySelector('.stream-cantTell').textContent, /2 can't tell \(2 likely fail\)$/);
+        assert.match(resultsEl.querySelector('.stream-cantTell').textContent, /2 can't tell \(2 likely fail\),$/);
     });
 });
 

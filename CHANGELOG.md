@@ -177,6 +177,12 @@ The first public release.
   every failure then reads as fixed or new; and they are read on the
   profiles every report checked on some page, rather than said to share no
   standard, with the requirements only one checked counted as fixed.
+- **A scan with a long address keeps its counts readable.** The address
+  took the row and squeezed the scan's counts into a narrow column, a line
+  starting with a lone comma ("WAI-ARIA" even broke at its hyphen), in the
+  app and in downloaded reports. The address now takes what the counts
+  leave and ends in an ellipsis; the counts wrap only between their parts,
+  each comma with the count before it.
 - **Compare shows it is updating.** Turning a profile on or off, matching
   pages by path prefixes, changing what the reports are, or moving or
   removing a report reads the reports again, which takes a moment on large
