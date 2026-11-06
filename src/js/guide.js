@@ -5,6 +5,8 @@
 // page's address, so a link can open it at one requirement
 // (?standard=wcag&id=1.4.3).
 
+import { installGuideBar } from './guide-bar.js';
+
 const TOOL_LABELS = {
     'keyboard': 'A keyboard',
     'pointer': 'A mouse or other pointer',
@@ -652,6 +654,16 @@ async function start() {
     tocToggle.addEventListener('click', () => setToc(tocToggle.getAttribute('aria-expanded') !== 'true'));
     tocList.addEventListener('click', (event) => {
         if (event.target.closest('a') && narrow.matches) setToc(false);
+    });
+
+    installGuideBar({
+        bar: $('guide-bar'),
+        anchor: document.querySelector('.guide-results-bar'),
+        status,
+        expand: $('guide-expand'),
+        collapse: $('guide-collapse'),
+        search: $('guide-search'),
+        tocList,
     });
 
     fillVersions();

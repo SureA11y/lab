@@ -28,6 +28,42 @@
 
 <a class="guide-skip" href="#guide-content">Skip to the requirements</a>
 
+<!-- The guide's bar (guide-bar.js): at the top of the window once the filters
+     have scrolled out of view, with the logo, what is shown, Expand all,
+     Collapse all and Back to top; on a phone, the contents too. Inert while
+     hidden. -->
+<div class="guide-bar" id="guide-bar" inert>
+    <div class="guide-bar-inner">
+        <a class="guide-bar-brand" href="/" title="Back to the scanner">
+            <img src="icon/logo.png" alt="" class="site-logo" />
+            <span class="wordmark"><span class="wordmark-sure">sure</span><span class="wordmark-a11y">a11y</span><span class="wordmark-product">scanner</span></span>
+            <span class="visually-hidden">: back to the scanner</span>
+        </a>
+        <span class="guide-bar-title" aria-hidden="true">Testing guide</span>
+        <span class="guide-bar-status" data-guide-bar="status" aria-hidden="true"></span>
+        <button type="button" class="guide-button guide-bar-contents" data-guide-bar="contents" aria-expanded="false" aria-controls="guide-bar-toc">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"></path></svg>
+            Contents
+        </button>
+        <nav class="guide-toc guide-bar-toc" id="guide-bar-toc" aria-label="Contents" hidden>
+            <div data-guide-bar="toc"></div>
+        </nav>
+        <div class="guide-bar-actions">
+            <button type="button" class="guide-link-button guide-bar-action" data-guide-bar="expand" title="Expand all">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"></path></svg>
+                <span class="guide-bar-label">Expand all</span>
+            </button>
+            <button type="button" class="guide-link-button guide-bar-action" data-guide-bar="collapse" title="Collapse all">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 20l5-5 5 5M7 4l5 5 5-5"></path></svg>
+                <span class="guide-bar-label">Collapse all</span>
+            </button>
+            <button type="button" class="guide-button guide-bar-top" data-guide-bar="top" aria-label="Back to top" title="Back to top">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h14"></path><path d="M12 20V9"></path><path d="M7 13l5-5 5 5"></path></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
 <header class="guide-header">
     <a class="guide-brand" href="/" title="Back to the scanner">
         <img src="icon/logo.png" alt="" class="site-logo" />
