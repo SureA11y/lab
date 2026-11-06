@@ -1383,6 +1383,51 @@ describe('changing a finished batch', () => {
         assert.match(status(), /Another batch is running/);
     });
 
+    test('a finished row is deleted from its batch once confirmed, focus going to the next', async () => {
+        const asked = [];
+        const answers = [false, true];
+        const {p, server} = panel([finished([baseItem(), baseItem({id: 'i2', name: 'Second'})])], {
+            confirmDelete: (msg) => { asked.push(msg); return answers.shift(); },
+        });
+        await p.refresh();
+        const del = document.querySelector('tr[data-item-id="i1"] [title="Delete"]');
+        assert.equal(del.querySelector('.visually-hidden').textContent, 'Delete Product v2.3');
+        del.click();
+        assert.equal(server.posts.length, 0, 'not deleted when not confirmed');
+        assert.match(asked[0], /^Delete “Product v2\.3” from .*\? Its result, and the pictures and evidence only it used, are removed from the server\. This cannot be undone\.$/);
+        document.querySelector('tr[data-item-id="i1"] [title="Delete"]').click();
+        await until(() => server.posts.length, 'the delete');
+        assert.equal(server.posts[0].url, '/queue/sessions/2026-10-12T14-03-27/items/i1/delete');
+        await until(() => /Deleted “Product v2\.3” from /.test(status()), 'what it says');
+        assert.equal(document.activeElement.getAttribute('data-focus-key'), 'delete-item:i2');
+    });
+
+    test('no Delete while a run goes; held while another batch runs, and on a batch\'s only run', async () => {
+        const {p} = panel([{concurrency: 1, maxConcurrency: 8, sessions: [
+            session({id: 'running', state: 'running'}, [baseItem({id: 'r', status: 'running'}), baseItem({id: 'w', status: 'waiting'})]),
+            session({id: 'done'}, [baseItem({id: 'ok'}), baseItem({id: 'ok2'})]),
+            session({id: 'one', counts: {total: 1, done: 1}}, [baseItem({id: 'only'})]),
+        ]}]);
+        await p.refresh();
+        assert.equal(document.querySelector('[data-session-id="running"] [title="Delete"]'), null);
+        const held = document.querySelector('tr[data-item-id="ok"] [title="Delete"]');
+        assert.equal(held.getAttribute('aria-disabled'), 'true');
+        held.click();
+        assert.match(status(), /Another batch is running/);
+        const only = document.querySelector('tr[data-item-id="only"] [title="Delete"]');
+        assert.equal(only.getAttribute('aria-disabled'), 'true');
+    });
+
+    test('a batch\'s only run says to delete the batch instead', async () => {
+        const {p, server} = panel([finished([baseItem()])]);
+        await p.refresh();
+        const only = document.querySelector('tr[data-item-id="i1"] [title="Delete"]');
+        assert.equal(only.getAttribute('aria-disabled'), 'true');
+        only.click();
+        assert.equal(status(), 'This is the batch’s only run. Delete the batch instead.');
+        assert.equal(server.posts.length, 0);
+    });
+
     test('a row says how its runs again went', () => {
         assert.equal(mod.describeReruns(baseItem({reruns: 2, lastRerun: {status: 'done'}})), 'Run again 2 times');
         assert.equal(mod.describeReruns(baseItem({reruns: 1, lastRerun: {status: 'error', error: 'Site down'}})),

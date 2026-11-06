@@ -142,6 +142,18 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
         }
     });
 
+    // One run of a finished batch: its row, its result, and the pictures and
+    // run folders only it used. POST like the other actions.
+    app.post('/queue/sessions/:sessionId/items/:itemId/delete', async (req, res) => {
+        try {
+            res.json(await queue.deleteItem(req.params.sessionId, req.params.itemId));
+        } catch (err) {
+            const status = err && Number.isInteger(err.statusCode) ? err.statusCode : 500;
+            if (status >= 500) logError('[run-queue]', err);
+            res.status(status).json({ error: err && err.message ? err.message : 'Queue request failed' });
+        }
+    });
+
     // Masked values come in the body, are put into the runs held in memory,
     // and are never written: batch.json keeps the redacted workflow.
     app.post('/queue/sessions/:sessionId/resume', (req, res) => respond(res, () => (

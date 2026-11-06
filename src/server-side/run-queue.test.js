@@ -927,6 +927,76 @@ describe('run queue live rows', () => {
     });
 });
 
+describe('deleting a run from a finished batch', () => {
+    const saved = (name) => item(name, { config: { runSpec: item(name).run } });
+    const PNG = (n) => Buffer.from([0x89, 0x50, 0x4e, 0x47, n]);
+    const JPEG = (n) => `data:image/jpeg;base64,${Buffer.from([0xff, 0xd8, 0xff, 0xe0, n, 0xff, 0xd9]).toString('base64')}`;
+
+    // A, B and C done; A and B share a picture, A alone has another and its
+    // own evidence.
+    async function batchOfThree() {
+        const reportsRoot = path.join(baseDir, 'reports');
+        const evidence = path.join(reportsRoot, 'evidence', 'run-a', 'elements-scan');
+        fs.mkdirSync(evidence, { recursive: true });
+        fs.writeFileSync(path.join(evidence, 'element.png'), PNG(1));
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun, { reportsRoot });
+        const { sessionId } = queue.addItems([saved('A'), saved('B'), saved('C')]);
+        const a = payloadWith();
+        a.scans[0].screenshots = [{ name: 'Shared', dataUrl: JPEG(7) }, { name: 'Own', dataUrl: JPEG(8) }];
+        a.scans[0].canonical = { findings: [{ occurrences: [{ elementScreenshot: { url: '/reports/evidence/run-a/elements-scan/element.png' } }] }] };
+        const b = payloadWith();
+        b.scans[0].screenshots = [{ name: 'Shared', dataUrl: JPEG(7) }];
+        await settle(queue, runner.calls[0], { status: 'done', payload: a });
+        await settle(queue, runner.calls[1], { status: 'done', payload: b });
+        await settle(queue, runner.calls[2], { status: 'done', payload: payloadWith() });
+        await waitUntil(() => queue.getState().sessions[0].state !== 'running', 'the batch to finish');
+        return { runner, queue, sessionId, reportsRoot, dir: files.sessionDirFor(baseDir, sessionId) };
+    }
+    const rows = (queue) => queue.getState().sessions[0].items;
+    const pictures = (dir) => fs.readdirSync(path.join(dir, 'images')).sort();
+    const picturesOf = (dir, file) => (fs.readFileSync(path.join(dir, file), 'utf8').match(/"images\/[^"]+"/g) || []).map((x) => x.slice(8, -1)).sort();
+
+    test('removes its row, its result, and the pictures and evidence only it used', async () => {
+        const { queue, sessionId, dir, reportsRoot } = await batchOfThree();
+        const [a, b] = rows(queue);
+        const aPictures = picturesOf(dir, a.file);
+        const bPictures = picturesOf(dir, b.file);
+        // Shared, its own, and its element's picture, copied from its evidence.
+        assert.equal(aPictures.length, 3);
+        assert.equal(pictures(dir).length, 3, 'the shared picture is kept once');
+
+        const out = await queue.deleteItem(sessionId, a.id);
+        assert.deepEqual({ ...out, sessionId: undefined }, { sessionId: undefined, deleted: a.id, remaining: 2, removedPictures: 2, removedRunFolders: 1 });
+        assert.deepEqual(rows(queue).map((i) => i.name), ['B', 'C']);
+        assert.deepEqual(files.readManifest(dir).items.map((i) => i.name), ['B', 'C']);
+        assert.equal(fs.existsSync(path.join(dir, a.file)), false, 'its result is gone');
+        assert.deepEqual(pictures(dir), bPictures, 'the picture B shares stays, A\'s own goes');
+        assert.equal(fs.existsSync(path.join(reportsRoot, 'evidence', 'run-a')), false, 'its evidence goes');
+        assert.ok(fs.existsSync(path.join(dir, b.file)));
+    });
+
+    test('a batch reopened after it reads without the run', async () => {
+        const { queue, sessionId } = await batchOfThree();
+        const [, b] = rows(queue);
+        await queue.deleteItem(sessionId, b.id);
+        const restarted = createRunQueue({ baseDir, executeRun: controlledRunner().executeRun, logError: () => {} });
+        restarted.init();
+        assert.deepEqual(restarted.getState().sessions[0].items.map((i) => i.name), ['A', 'C']);
+    });
+
+    test('not its only run, not a run it does not have, and not while a batch runs', async () => {
+        const { queue, sessionId } = await batchOfThree();
+        const [a, b, c] = rows(queue);
+        await assert.rejects(queue.deleteItem(sessionId, 'nope'), (err) => err.statusCode === 404);
+        await queue.deleteItem(sessionId, a.id);
+        await queue.deleteItem(sessionId, b.id);
+        await assert.rejects(queue.deleteItem(sessionId, c.id), (err) => err.statusCode === 409 && /only run/.test(err.message));
+        queue.addItems([item('Other')]);
+        await assert.rejects(queue.deleteItem(sessionId, c.id), (err) => err.statusCode === 409);
+    });
+});
+
 describe('run queue: a batch kept as a report package', () => {
     test('saves a run\'s pictures in images/, the result naming them, and deletes its evidence with the batch', async () => {
         const reportsRoot = path.join(baseDir, 'reports');
