@@ -294,7 +294,12 @@ A finished batch can still change, while no other batch runs:
   no result (the site was down, it was cancelled), the old one stays and the
   row says so. Passwords are never saved, so a workflow that types one always
   asks for it first; those still typed in the open workflow come filled in,
-  to confirm or change. Resuming an interrupted batch asks the same way.
+  to confirm or change. Each password says which one it is: the steps it
+  sits inside and its own step (*In: Step 3: Group · “Second factor” ›
+  Step 2*), the steps just before it, with what they type (*After: Set
+  field value · Email = “jorge@shop.com”*; another password shows as
+  *(hidden)*), and the runs it is for. Resuming an interrupted batch asks
+  the same way.
   The batch keeps its own start, end and total time; the row says when it
   ran again and how long that took.
 - **Delete**, on a row, removes it from the batch once confirmed: its result,

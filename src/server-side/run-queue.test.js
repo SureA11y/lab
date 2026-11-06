@@ -6,7 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { automaticConcurrency, createRunQueue, hasMaskedValues, summarizePayload } = require('./run-queue');
+const { automaticConcurrency, createRunQueue, describeMaskedSlot, findMaskedSlots, hasMaskedValues, summarizePayload } = require('./run-queue');
 const files = require('./queue-files');
 
 /* ---------- helpers ---------- */
@@ -589,8 +589,12 @@ describe('run queue', () => {
 
         const { fields } = restarted.getMaskedFields(sessionId);
         assert.deepEqual(fields.map(({ key, match, ...f }) => f), [
-            { action: 'Set password value', field: 'Password', target: '#pass', where: 'Step 2 › 1', rows: 2 },
-            { action: 'Set password value', field: 'Password', target: 'PIN', where: 'Custom step “Login” · Step 1', rows: 2 },
+            { action: 'Set password value', field: 'Password', target: '#pass', where: 'Step 2 › 1', rows: 2,
+                trail: ['Step 2: loop'], position: 'Step 1', before: [],
+                runs: [{ name: 'V1', url: 'https://example.com/' }, { name: 'V2', url: 'https://example.com/' }] },
+            { action: 'Set password value', field: 'Password', target: 'PIN', where: 'Custom step “Login” · Step 1', rows: 2,
+                trail: ['Custom step “Login”'], position: 'Step 1', before: [],
+                runs: [{ name: 'V1', url: 'https://example.com/' }, { name: 'V2', url: 'https://example.com/' }] },
         ]);
         assert.deepEqual(fields.map((f) => f.match), [
             { path: ['actions', 1, 'children', 0], field: 'value', step: { type: 'setPassword', selector: '#pass', valueMasked: true } },
@@ -773,6 +777,23 @@ describe('run queue', () => {
         assert.equal(queue.sessionDir(sessionId), path.join(baseDir, sessionId));
         assert.equal(queue.sessionDir('../etc'), null);
         assert.equal(queue.sessionDir('2020-01-01T00-00-00'), null);
+    });
+
+    test('a hidden value says the steps it sits inside and the steps just before it, never a hidden value', () => {
+        const spec = {
+            actions: [
+                { type: 'click', label: 'Accept cookies', selector: '#accept-cookies' },
+                { type: 'setValue', labelText: 'Email', value: 'jorge@shop.com' },
+                { type: 'setValue', labelText: 'Old password', value: 'secret', valueMasked: true },
+                { type: 'setValue', labelText: 'Password', valueMasked: true },
+            ],
+        };
+        const slots = findMaskedSlots(spec);
+        const last = describeMaskedSlot(spec, slots[1]);
+        assert.equal(last.position, 'Step 4');
+        assert.deepEqual(last.trail, []);
+        assert.deepEqual(last.before, ['Set field value · Email = “jorge@shop.com”', 'Set password value · Old password = (hidden)']);
+        assert.ok(!JSON.stringify(last).includes('secret'));
     });
 
     test('saves results without the values the user masked', async () => {

@@ -408,8 +408,8 @@ describe('run queue panel', () => {
         assert.equal(document.activeElement, inputs[0]);
         assert.deepEqual(inputs.map((i) => i.type), ['password', 'password']);
         assert.equal(dialog.querySelector(`label[for="${inputs[0].id}"]`).textContent, 'Set field value · Value (#pass)');
-        assert.equal(document.getElementById(inputs[1].getAttribute('aria-describedby')).textContent,
-            'Custom step “Login” · Step 1 · used by 2 runs');
+        assert.deepEqual([...document.getElementById(inputs[1].getAttribute('aria-describedby')).children].map((li) => li.textContent),
+            ['In: Custom step “Login” · Step 1', 'Used by 2 runs']);
 
         inputs[0].value = 'hunter2';
         inputs[1].value = '4321';
@@ -436,8 +436,29 @@ describe('run queue panel', () => {
         const inputs = [...dialog.querySelectorAll('input')];
         assert.deepEqual(inputs.map((i) => i.value), ['hunter2', '']);
         assert.equal(document.activeElement, inputs[1]);
-        assert.match(document.getElementById(inputs[0].getAttribute('aria-describedby')).textContent, /filled in from the open workflow/);
+        assert.match(document.getElementById(inputs[0].getAttribute('aria-describedby')).textContent, /Filled in from the open workflow/);
         dialog.querySelector('[data-dismiss]').click();
+        assert.equal(await pending, null);
+    });
+
+    test('each password says where it is asked, what comes just before it and which runs it is for', async () => {
+        const proto = window.HTMLDialogElement?.prototype || window.HTMLElement.prototype;
+        proto.showModal = function () { this.setAttribute('open', ''); };
+        proto.close = function () { this.removeAttribute('open'); this.dispatchEvent(new window.Event('close')); };
+        const pending = mod.askMaskedValuesInDialog(document, [{
+            key: 'k1', action: 'Set password value', field: 'Password', target: '#pin', where: 'Step 5 › 2', rows: 5,
+            trail: ['Step 5: Group · “Second factor”'], position: 'Step 2',
+            before: ['Set field value · Email = “jorge@shop.com”', 'Click · Use a PIN'],
+            runs: [{name: 'Checkout', url: 'https://shop.test/'}, {name: 'Cart', url: 'https://shop.test/cart'}, {name: 'Home'}],
+        }]);
+        const input = document.querySelector('dialog.queue-values-dialog input');
+        const lines = [...document.getElementById(input.getAttribute('aria-describedby')).children].map((li) => li.textContent);
+        assert.deepEqual(lines, [
+            'In: Step 5: Group · “Second factor” › Step 2',
+            'After: Set field value · Email = “jorge@shop.com” › Click · Use a PIN',
+            'For: Checkout (https://shop.test/), Cart (https://shop.test/cart), Home and 2 more runs',
+        ]);
+        document.querySelector('dialog.queue-values-dialog [data-dismiss]').click();
         assert.equal(await pending, null);
     });
 

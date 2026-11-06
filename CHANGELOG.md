@@ -191,12 +191,14 @@ The first public release.
   the passwords still typed in the open workflow without asking, so a run
   could start with a password nobody confirmed. They now always ask, with
   those found in the editor filled in. Passwords are still never saved.
+  Each password in the dialog says where it is asked (the steps it sits
+  inside and its own step), the steps just before it, and the runs it is
+  for, so two passwords in one workflow can be told apart.
 - **A run can be deleted from a finished batch**: **Delete** on its row,
-  once confirmed, removes its result and the
-  pictures and evidence only it used, from the batch's folder, `batch.json`,
-  zip and Send to Compare. Not a batch's only run (the batch is deleted
-  instead), nor while a batch runs. `POST
-  /queue/sessions/{sessionId}/items/{itemId}/delete` does the same.
+  once confirmed, removes its result and the pictures and evidence only it
+  used, from the batch's folder, `batch.json`, zip and Send to Compare. Not
+  a batch's only run (the batch is deleted instead), nor while a batch runs.
+  `POST /queue/sessions/{sessionId}/items/{itemId}/delete` does the same.
 - **Compare shows it is updating.** Turning a profile on or off, matching
   pages by path prefixes, changing what the reports are, or moving or
   removing a report reads the reports again, which takes a moment on large

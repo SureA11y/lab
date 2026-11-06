@@ -203,6 +203,7 @@ body.queue-mode-active #screenshots-container { display: none; }
 .queue-table tbody tr:nth-child(even) > * { background: var(--surface-0); }
 .queue-table td { border-bottom: 0; }
 .queue-note { display: block; font-weight: 400; font-size: var(--fs-xs); color: var(--text-soft); overflow-wrap: anywhere; }
+.queue-value-context { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.15rem; }
 .queue-status { white-space: nowrap; }
 .queue-status .queue-note { white-space: normal; }
 /* A running run that has logged nothing for minutes: worth a look, not an error. */

@@ -101,6 +101,8 @@ function hasMaskedValues(value) {
 }
 
 const MASKED_SUFFIX = 'Masked';
+// The runs a password field names, past which it says how many more.
+const MASKED_RUNS_SHOWN = 3;
 
 function maskedFieldsOf(node) {
     return Object.keys(node)
@@ -132,10 +134,71 @@ function maskedSlotKey({ path: at, field, node }) {
     return crypto.createHash('sha1').update(JSON.stringify([at, field, rest])).digest('hex').slice(0, 16);
 }
 
+// What a step says of itself, for a person picking a password out: its
+// type's name (or its own title), its label, what it acts on, and the value
+// it types ("Set field value · Email = “jorge@shop.com”", "Navigate to URL ·
+// https://shop/login"). A value saved hidden is never shown: "= (hidden)".
+const STEP_TARGET_FIELDS = ['labelText', 'selector', 'url', 'urlIncludes', 'selectorExists', 'targetSelector', 'itemsText', 'urlPart'];
+
+function clip(text, max = 60) {
+    const one = String(text).replace(/\s+/g, ' ').trim();
+    return one.length > max ? `${one.slice(0, max - 1)}…` : one;
+}
+
+function stepSummary(node) {
+    if (!isPlainObject(node)) return 'Step';
+    const type = node.type === 'setValue' && node.valueMasked === true ? 'setPassword' : node.type;
+    const def = ACTION_DEFINITIONS[type];
+    const shown = (f) => typeof node[f] === 'string' && node[f].trim() !== '' && node[`${f}Masked`] !== true;
+    const parts = [typeof node.alias === 'string' && node.alias.trim() ? node.alias.trim() : (def?.label || type || 'Step')];
+    if (shown('label')) parts.push(`“${clip(node.label, 40)}”`);
+    const target = STEP_TARGET_FIELDS.find(shown);
+    if (target) parts.push(clip(node[target]));
+    let text = parts.join(' · ');
+    const valueField = ['value', 'text'].find((f) => node[`${f}Masked`] === true || shown(f));
+    if (valueField) text += node[`${valueField}Masked`] === true ? ' = (hidden)' : ` = “${clip(node[valueField], 40)}”`;
+    return text;
+}
+
+/**
+ * Where a hidden value sits, for a person to tell which password it is: the
+ * steps it is inside (`trail`, outermost first: "Custom step “Login”",
+ * "Step 3: Group · “Sign in”"), its own place ("Step 2"), and up to two steps
+ * just before it (`before`, nearest last), such as the one typing the user
+ * name.
+ */
+function slotContext(spec, at) {
+    const trail = [];
+    let cursor = spec;
+    let parent = null;
+    let index = null;
+    for (let i = 0; i < at.length; i += 1) {
+        const key = at[i];
+        if (Array.isArray(cursor) && typeof key === 'number') {
+            parent = cursor;
+            index = key;
+        }
+        const next = cursor?.[key];
+        // A step the value is inside, not the step itself.
+        const inside = isPlainObject(next) && typeof next.type === 'string' && i < at.length - 1
+            && at.slice(i + 1).some((k) => typeof k === 'number');
+        if (i === 1 && at[0] === 'customSteps' && isPlainObject(next)) {
+            trail.push(`Custom step “${typeof next.name === 'string' && next.name ? next.name : Number(key) + 1}”`);
+        } else if (inside) {
+            trail.push(`Step ${Number(key) + 1}: ${stepSummary(next)}`);
+        }
+        cursor = next;
+    }
+    const before = parent && Number.isInteger(index)
+        ? parent.slice(Math.max(0, index - 2), index).filter(isPlainObject).map(stepSummary)
+        : [];
+    return { trail, position: Number.isInteger(index) ? `Step ${index + 1}` : null, before };
+}
+
 /**
  * What the person is asked for: "Set password value · Password", "#password",
- * "Step 3 › 2". `match` says which step it is, so the app can fill it from a
- * password still typed in its editor.
+ * "Step 3 › 2", and where it sits (slotContext). `match` says which step it
+ * is, so the app can fill it from a password still typed in its editor.
  */
 function describeMaskedSlot(spec, { path: at, field, node }) {
     // A setValue step saved hidden, before setPassword existed, is one now.
@@ -161,6 +224,7 @@ function describeMaskedSlot(spec, { path: at, field, node }) {
         field: def?.fields?.[field]?.alias || field,
         target: target ? target.trim() : null,
         where: [where, steps.length ? `Step ${steps.join(' › ')}` : ''].filter(Boolean).join(' · '),
+        ...slotContext(spec, at),
         match: { path: at, field, step: { ...step, type } },
     };
 }
@@ -1024,9 +1088,10 @@ function createRunQueue({
             const spec = runSpecFrom(m.config.runSpec);
             for (const slot of findMaskedSlots(spec)) {
                 const key = maskedSlotKey(slot);
-                const seen = byKey.get(key);
-                if (seen) seen.rows += 1;
-                else byKey.set(key, { key, ...describeMaskedSlot(spec, slot), rows: 1 });
+                const seen = byKey.get(key) || byKey.set(key, { key, ...describeMaskedSlot(spec, slot), rows: 0, runs: [] }).get(key);
+                seen.rows += 1;
+                // The runs it is for, by name and page: the first few.
+                if (seen.runs.length < MASKED_RUNS_SHOWN) seen.runs.push({ name: m.name || null, url: m.url || null });
             }
         }
         return { fields: [...byKey.values()] };
@@ -1502,4 +1567,6 @@ module.exports = {
     hasMaskedValues,
     redactMaskedFields,
     summarizePayload,
+    findMaskedSlots,
+    describeMaskedSlot,
 };
