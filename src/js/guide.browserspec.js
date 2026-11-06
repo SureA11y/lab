@@ -100,10 +100,18 @@ test('opened at a requirement, the guide shows it with its heading focused; filt
     await settled(page, /checks\./);
     assert.match(await statusOf(page), /^WCAG 2\.2, Level A and AA: \d+ criteria, \d+ checks\.$/);
     assert.match(await page.evaluate(() => document.activeElement.textContent.trim()), /^1\.4\.12 /);
+    // Its checks open; the others stay folded to their titles.
+    const open1412 = await page.$$eval('.guide-toggle', (ts) => ts.map((t) => [t.closest('.guide-req').id, t.getAttribute('aria-expanded')]));
+    assert.ok(open1412.some(([id]) => id === 'req-1-4-12'));
+    for (const [id, expanded] of open1412) assert.equal(expanded, String(id === 'req-1-4-12'), id);
 
     await page.click('#guide-more > summary');
+    await page.click('#guide-expand');
     await page.click('input[name="tool"][value="screen-reader"]');
     await settled(page, /of \d+ criteria shown/);
+    // A filter changed: every check folded again.
+    assert.equal(await page.$$eval('.guide-toggle[aria-expanded="true"]', (els) => els.length), 0);
+    assert.equal(await page.$$eval('.guide-check-body:not([hidden])', (els) => els.length), 0);
     assert.match(page.url(), /tools=screen-reader/);
     await page.click('input[name="automation"][value="person"]');
     await settled(page, /of \d+ criteria shown/);
@@ -164,14 +172,25 @@ test('checks fold one by one or all at once; the contents follow; a link is copi
     const ctx = browser.defaultBrowserContext();
     await ctx.overridePermissions(base, ['clipboard-read', 'clipboard-write']);
 
-    // One check folds, and unfolds.
+    // Every check starts folded to its title, findable in the page.
+    assert.equal(await page.$$eval('.guide-toggle[aria-expanded="true"]', (els) => els.length), 0);
+    assert.equal(await page.$$eval('.guide-check-body:not([hidden="until-found"])', (els) => els.length), 0);
+
+    // One check unfolds, and folds.
     const toggle = await page.$('.guide-toggle');
     const bodyId = await toggle.evaluate((b) => b.getAttribute('aria-controls'));
     await toggle.click();
-    assert.equal(await toggle.evaluate((b) => b.getAttribute('aria-expanded')), 'false');
-    assert.equal(await page.$eval(`#${bodyId}`, (el) => el.hidden), true);
+    assert.equal(await toggle.evaluate((b) => b.getAttribute('aria-expanded')), 'true');
+    assert.equal(await page.$eval(`#${bodyId}`, (el) => el.hasAttribute('hidden')), false);
     await toggle.press('Enter');
-    assert.equal(await page.$eval(`#${bodyId}`, (el) => el.hidden), false);
+    assert.equal(await toggle.evaluate((b) => b.getAttribute('aria-expanded')), 'false');
+    assert.equal(await page.$eval(`#${bodyId}`, (el) => el.getAttribute('hidden')), 'until-found');
+
+    // Find in page opens the check it finds a word in.
+    assert.equal(await page.$eval(`#${bodyId}`, (el) => {
+        el.dispatchEvent(new Event('beforematch', { bubbles: true }));
+        return document.querySelector(`[aria-controls="${el.id}"]`).getAttribute('aria-expanded');
+    }), 'true');
 
     // All of them, from the bar.
     await page.click('#guide-collapse');
