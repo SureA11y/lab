@@ -205,7 +205,9 @@ h2.guide-group-title { margin: 0 0 var(--space-3); font-size: var(--fs-2xl); fon
 .guide-needs { font-size: var(--fs-xs); color: var(--text-muted); margin-left: 4px; }
 
 .guide-check-body { margin: var(--space-2) 0 0 24px; }
-.guide-check-body[hidden] { display: none; }
+/* A folded check: hidden="until-found", which find in page can open; a
+   browser without it hides it as any hidden. */
+.guide-check-body[hidden]:not([hidden="until-found"]) { display: none; }
 .guide-steps { margin: 0 0 var(--space-3); padding-left: 1.4rem; line-height: 1.55; }
 .guide-steps li + li { margin-top: 4px; }
 .guide-outcomes { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--space-2); }
@@ -262,7 +264,7 @@ h2.guide-group-title { margin: 0 0 var(--space-3); font-size: var(--fs-2xl); fon
 @media print {
     .guide-skip, .guide-header-actions, .guide-filters, .guide-results-actions, .guide-toc, .guide-copy { display: none !important; }
     .guide-body { display: block; }
-    .guide-check-body[hidden] { display: block; }
+    .guide-check-body[hidden] { display: block; content-visibility: visible; }
     .guide-req { break-inside: avoid; border-color: #999; }
 }
 

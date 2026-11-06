@@ -199,6 +199,16 @@ The first public release.
   used, from the batch's folder, `batch.json`, zip and Send to Compare. Not
   a batch's only run (the batch is deleted instead), nor while a batch runs.
   `POST /queue/sessions/{sessionId}/items/{itemId}/delete` does the same.
+  The row's actions column is wide enough for Delete beside the other three
+  buttons.
+- **The logo and title stay in view.** Once the page scrolls past its
+  header, the tab bar that stays at the top shows a small logo and title
+  before the tabs, shrinking into place from the header's size (not at
+  phone width, where the tabs fill the bar).
+- **The testing guide opens with its checks folded** to their titles,
+  rather than every check's steps open, so a requirement and its checks
+  read at a glance. **Expand all** opens them; a link to one requirement
+  opens its checks, and find in page opens the check it finds a word in.
 - **Compare shows it is updating.** Turning a profile on or off, matching
   pages by path prefixes, changing what the reports are, or moving or
   removing a report reads the reports again, which takes a moment on large
