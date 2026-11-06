@@ -12,7 +12,7 @@ import {mountReportMetaEditors} from './report-meta-edit.js';
 import {createDownloadComparisonBtn} from './export.js';
 import {readCompareZip} from './comparison-bundle.js';
 import {folderOf, rebaseImageRefs} from './report-package.js';
-import {afterPaint, runBusy} from './busy.js';
+import {afterPaint, runBusy, setBusy} from './busy.js';
 import {getActivity} from './activity.js';
 import {computeReportGlobals, parseReportText, readReportFile, validateReportOrThrow} from './report-data.js';
 import {STATUS} from './ui-constants.js';
@@ -38,6 +38,10 @@ export function createCompareTab(app) {
     // those are held, aria-disabled and saying why when pressed.
     let compareLoad = null; // { task } while one is under way
     let compareState = null; // the controller's last state, for Download
+    // A change being drawn (a profile, path prefixes, what the reports are,
+    // a report moved or removed): { control } while it is. Held like a load,
+    // without saying so: the controls read as unavailable meanwhile.
+    let compareUpdate = null;
     let syncCompareDownload = () => {};
     const COMPARE_LOADING = 'Reports are still loading into Compare. Try again once they have.';
 
@@ -69,16 +73,17 @@ export function createCompareTab(app) {
     }
 
     function reflectCompareLoad() {
-        const held = compareLoad ? 'true' : null;
+        const held = compareLoad || compareUpdate ? 'true' : null;
         const hold = (control) => {
             if (!control) return;
             if (held) control.setAttribute('aria-disabled', held);
             else control.removeAttribute('aria-disabled');
         };
         hold(app.compareClearBtn);
-        // Drawn again when a load ends, so a switch held now gets back its
-        // own state (the last one on stays disabled).
+        // Drawn again when a load or an update ends, so a switch held now
+        // gets back its own state (the last one on stays disabled).
         if (held) app.compareProfilesEl?.querySelectorAll('button').forEach(hold);
+        app.comparePathsEl?.querySelectorAll('button, input').forEach(hold);
         app.compareContextSeg?.querySelectorAll('.ctx-opt').forEach(hold);
         document.querySelectorAll('[data-compare-report]').forEach(hold);
         app.compareReportsEl?.querySelectorAll('[data-remove-key], [data-move-key]').forEach((control) => {
@@ -372,13 +377,110 @@ export function createCompareTab(app) {
         }
     }
 
-    function applyPathPrefixes(value) {
-        comparisonController.setPathPrefixes(value);
-        renderCompareChips();
-        const set = comparisonController.getPathPrefixes();
-        setCompareStatus(set.length
-            ? `Pages matched with ${set.join(', ')} left out of their paths.`
-            : 'Pages matched by their paths as they are.', STATUS.OK);
+    // ---- a change drawn without freezing the page ----
+    //
+    // Reading the reports again (on other profiles, other path prefixes, in
+    // another order) runs on the page's only thread, and takes a moment on
+    // large reports: the page used to keep the old view, live, until the new
+    // one appeared, so a press seemed to do nothing. Now the view is marked
+    // as updating first, and the browser given a frame to show it:
+    // - the comparison is dimmed, inert (nothing in it can be pressed or
+    //   focused) and aria-busy, with a note that stays in view as it scrolls;
+    // - the control pressed shows a spinner, and the tab's other controls
+    //   are held (aria-disabled) until it is drawn;
+    // - the status line says it is updating, then what changed;
+    // - the activity panel lists it, and shows a card only when it takes a
+    //   moment (activity.js), at the frame between working the comparison
+    //   out and drawing it.
+    // The spinners turn on the compositor, so they keep turning meanwhile.
+
+    function markComparisonUpdating(on) {
+        const view = app.runComparisonEl;
+        if (!view) return;
+        view.classList.toggle('compare-updating', on);
+        view.inert = on;
+        if (on) {
+            view.setAttribute('aria-busy', 'true');
+            // Below the tab bar, which sticks to the top of the window and
+            // wraps to two lines on a narrow one.
+            const bar = document.querySelector('.mode-bar');
+            view.style.setProperty('--compare-updating-top', `${bar ? Math.round(bar.getBoundingClientRect().height) : 0}px`);
+            if (!view.querySelector(':scope > .compare-updating-note')) {
+                const note = document.createElement('div');
+                note.className = 'compare-updating-note';
+                note.setAttribute('aria-hidden', 'true');
+                const pill = document.createElement('span');
+                pill.className = 'compare-updating-pill';
+                pill.textContent = 'Updating the comparison…';
+                note.append(pill);
+                view.prepend(note);
+            }
+        } else {
+            view.removeAttribute('aria-busy');
+            view.querySelector(':scope > .compare-updating-note')?.remove();
+        }
+    }
+
+    /**
+     * Runs `change` (calls to the controller) and draws the comparison it
+     * leads to, the page showing meanwhile that it is updating. `control`
+     * is the one pressed. `title` names it in the activity panel; `said`
+     * (a string, or a function of what `change` returned) is what the
+     * status line says once it is drawn. `after` runs once it is drawn and
+     * the controls are back, to put focus where it belongs. Returns what
+     * `change` returned, or undefined while another change is drawn.
+     */
+    async function updateComparison({ title, control = null, change, said = null, after = null }) {
+        if (compareUpdate || compareLoad) return undefined;
+        compareUpdate = { control };
+        setBusy(control, true);
+        reflectCompareLoad();
+        markComparisonUpdating(true);
+        setCompareStatus('Updating the comparison…');
+        let value;
+        let failed = null;
+        try {
+            await getActivity().run(title, async (task) => {
+                task.step('Reading the reports again');
+                await afterPaint();
+                value = comparisonController.deferDraw(change);
+                const drawn = comparisonController.prepareDraw();
+                task.step('Drawing the comparison');
+                await afterPaint();
+                comparisonController.showDraw(drawn);
+                return value;
+            }, { quiet: true, rethrow: true, result: () => (typeof said === 'function' ? said(value) : said) || 'Updated' });
+        } catch (error) {
+            failed = error;
+        } finally {
+            markComparisonUpdating(false);
+            setBusy(control, false);
+            compareUpdate = null;
+            renderCompareChips();
+            reflectCompareLoad();
+        }
+        if (failed) {
+            setCompareStatus(`Could not update the comparison: ${failed && failed.message ? failed.message : String(failed)}`, STATUS.ERROR);
+            return undefined;
+        }
+        const text = typeof said === 'function' ? said(value) : said;
+        if (text) setCompareStatus(text, STATUS.OK);
+        if (typeof after === 'function') after(value);
+        return value;
+    }
+
+    async function applyPathPrefixes(value, control) {
+        await updateComparison({
+            title: 'Match the compared pages',
+            control,
+            change: () => comparisonController.setPathPrefixes(value),
+            said: () => {
+                const set = comparisonController.getPathPrefixes();
+                return set.length
+                    ? `Pages matched with ${set.join(', ')} left out of their paths.`
+                    : 'Pages matched by their paths as they are.';
+            },
+        });
     }
 
     // The context sets the default order; this line says how it came out and how
@@ -854,7 +956,7 @@ export function createCompareTab(app) {
 
         if (app.compareActionsEl) app.compareActionsEl.append(downloadComparison.element);
         // Not while a load is under way: it would hold only what has arrived.
-        syncCompareDownload = () => downloadComparison.setEnabled(compareState === 'ready' && !compareLoad);
+        syncCompareDownload = () => downloadComparison.setEnabled(compareState === 'ready' && !compareLoad && !compareUpdate);
 
         comparisonController = createComparisonController({
             setHTML: (html) => { app.runComparisonEl.innerHTML = html; },
@@ -866,9 +968,20 @@ export function createCompareTab(app) {
         if (app.compareContextSeg) {
             app.compareContextSeg.querySelectorAll('.ctx-opt').forEach((opt) => {
                 opt.addEventListener('click', () => {
-                    if (refuseWhileCompareLoads(setCompareStatus)) return;
-                    comparisonController.setContext(opt.dataset.context);
-                    renderCompareChips();
+                    if (refuseWhileCompareLoads(setCompareStatus) || compareUpdate) return;
+                    if (opt.dataset.context === comparisonController.getContext()) return;
+                    // Before two reports there is nothing to draw again.
+                    if (comparisonController.count() < 2) {
+                        comparisonController.setContext(opt.dataset.context);
+                        renderCompareChips();
+                        return;
+                    }
+                    updateComparison({
+                        title: `Compare as ${opt.textContent.replace(/^\W+/, '').trim().toLowerCase()}`,
+                        control: opt,
+                        change: () => comparisonController.setContext(opt.dataset.context),
+                        after: () => opt.focus(),
+                    });
                 });
             });
         }
@@ -878,17 +991,18 @@ export function createCompareTab(app) {
         if (app.comparePathsEl) {
             app.comparePathsEl.addEventListener('submit', (event) => {
                 event.preventDefault();
-                if (refuseWhileCompareLoads(setCompareStatus)) return;
-                applyPathPrefixes(app.comparePathsEl.querySelector('#compare-path-prefixes')?.value || '');
+                if (refuseWhileCompareLoads(setCompareStatus) || compareUpdate) return;
+                applyPathPrefixes(app.comparePathsEl.querySelector('#compare-path-prefixes')?.value || '',
+                    app.comparePathsEl.querySelector('button[type="submit"]'));
             });
             app.comparePathsEl.addEventListener('click', (event) => {
                 const use = event.target.closest && event.target.closest('[data-use-prefixes]');
                 if (!use) return;
-                if (refuseWhileCompareLoads(setCompareStatus)) return;
+                if (refuseWhileCompareLoads(setCompareStatus) || compareUpdate) return;
                 const value = use.dataset.usePrefixes;
-                applyPathPrefixes(value);
                 const input = app.comparePathsEl.querySelector('#compare-path-prefixes');
-                if (input) { input.value = value; input.focus(); }
+                if (input) input.value = value;
+                applyPathPrefixes(value, use).then(() => input?.focus());
             });
         }
 
@@ -897,24 +1011,29 @@ export function createCompareTab(app) {
         if (app.compareProfilesEl) {
             app.compareProfilesEl.addEventListener('click', (event) => {
                 const target = event.target.closest && event.target.closest('button');
-                if (!target || target.getAttribute('aria-disabled') === 'true') return;
+                if (!target || compareUpdate || target.getAttribute('aria-disabled') === 'true') return;
                 if (refuseWhileCompareLoads(setCompareStatus)) return;
                 if (target.dataset.compareProfilesAll) {
-                    comparisonController.showAllProfiles();
-                    renderCompareChips();
-                    const first = app.compareProfilesEl.querySelector('[data-compare-profile]');
-                    first?.focus();
-                    setCompareStatus('Compared on every profile the reports share.', STATUS.OK);
+                    updateComparison({
+                        title: 'Compare on every profile',
+                        control: target,
+                        change: () => comparisonController.showAllProfiles(),
+                        said: 'Compared on every profile the reports share.',
+                        after: () => app.compareProfilesEl.querySelector('[data-compare-profile]')?.focus(),
+                    });
                     return;
                 }
                 const key = target.dataset.compareProfile;
                 if (!key) return;
                 const on = target.getAttribute('aria-pressed') !== 'true';
-                comparisonController.setProfile(key, on);
-                renderCompareChips();
-                renderCompareProfiles({ focusKey: key });
-                const shown = comparisonController.profiles().filter((p) => p.on).map((p) => p.label);
-                setCompareStatus(`Compared on ${shown.join(' + ')}.`, STATUS.OK);
+                const name = target.textContent;
+                updateComparison({
+                    title: `${on ? 'Compare on' : 'Leave out'} ${name}`,
+                    control: target,
+                    change: () => comparisonController.setProfile(key, on),
+                    said: () => `Compared on ${comparisonController.profiles().filter((p) => p.on).map((p) => p.label).join(' + ')}.`,
+                    after: () => renderCompareProfiles({ focusKey: key }),
+                });
             });
         }
 
@@ -935,29 +1054,49 @@ export function createCompareTab(app) {
             app.compareReportsEl.addEventListener('click', (event) => {
                 const target = event.target.closest && event.target.closest('button');
                 if (!target) return;
-                if ((target.dataset.removeKey || target.dataset.moveKey) && refuseWhileCompareLoads(setCompareStatus)) return;
+                if ((target.dataset.removeKey || target.dataset.moveKey) && (compareUpdate || refuseWhileCompareLoads(setCompareStatus))) return;
 
                 if (target.dataset.removeKey) {
-                    comparisonController.removeReport(target.dataset.removeKey);
-                    renderCompareChips();
-                    describeCompareLoad({ added: 0, failures: [], duplicates: 0 });
+                    const key = target.dataset.removeKey;
+                    const name = target.getAttribute('aria-label') || 'Remove the report';
+                    // Removing one of two leaves nothing to compare: no
+                    // comparison to draw again.
+                    if (comparisonController.count() <= 2) {
+                        comparisonController.removeReport(key);
+                        renderCompareChips();
+                        describeCompareLoad({ added: 0, failures: [], duplicates: 0 });
+                        return;
+                    }
+                    updateComparison({
+                        title: name,
+                        control: target,
+                        change: () => comparisonController.removeReport(key),
+                        after: () => {
+                            describeCompareLoad({ added: 0, failures: [], duplicates: 0 });
+                            app.compareReportsEl.querySelector('[data-remove-key]')?.focus();
+                        },
+                    });
                     return;
                 }
 
                 if (target.dataset.moveKey) {
                     const key = target.dataset.moveKey;
                     const delta = Number(target.dataset.moveDelta);
-                    if (!comparisonController.moveReport(key, delta)) return;
-
-                    renderCompareChips();
-
-                    // Follow the moved report, so a second press moves the same
-                    // one rather than whatever landed under the cursor.
-                    const again = app.compareReportsEl.querySelector(
-                        `[data-move-key="${key}"][data-move-delta="${delta}"]`
-                    );
-                    if (again && !again.disabled) again.focus();
-                    else if (again) again.parentElement.querySelector('button:not([disabled])')?.focus();
+                    updateComparison({
+                        title: target.getAttribute('aria-label') || 'Move the report',
+                        control: target,
+                        change: () => comparisonController.moveReport(key, delta),
+                        said: (moved) => (moved ? 'Report moved.' : null),
+                        after: () => {
+                            // Follow the moved report, so a second press moves the
+                            // same one rather than whatever landed under the cursor.
+                            const again = app.compareReportsEl.querySelector(
+                                `[data-move-key="${key}"][data-move-delta="${delta}"]`
+                            );
+                            if (again && !again.disabled) again.focus();
+                            else if (again) again.parentElement.querySelector('button:not([disabled])')?.focus();
+                        },
+                    });
                 }
             });
         }

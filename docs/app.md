@@ -252,6 +252,11 @@ fixed, newly broken and still broken too). Beside them, under **On its own**,
 is each profile read alone: its problems, failures and score, which overlap
 and don't add up.
 
+On large reports, a change (a profile turned on or off, path prefixes, what
+the reports are, a report moved or removed) takes a moment to read the reports
+again: the comparison dims and says it is updating until the new one is
+drawn, and the activity panel lists the change when it is slow.
+
 Pages are matched across reports by their path and query. When no page is in
 every report (a site under `/v1/` beside the same one under `/v2/`), the
 comparison says so, since every failure then reads as fixed or new, and reads

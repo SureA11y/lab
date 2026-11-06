@@ -177,6 +177,14 @@ The first public release.
   every failure then reads as fixed or new; and they are read on the
   profiles every report checked on some page, rather than said to share no
   standard, with the requirements only one checked counted as fixed.
+- **Compare shows it is updating.** Turning a profile on or off, matching
+  pages by path prefixes, changing what the reports are, or moving or
+  removing a report reads the reports again, which takes a moment on large
+  ones: the page used to stay as it was, live, until the new comparison
+  appeared. The comparison now dims at once and cannot be used meanwhile,
+  with a note that it is updating in view; the control pressed shows a
+  spinner, the tab's other controls wait, the status line says so, and the
+  activity panel lists the change when it takes a moment.
 - **Ignore path prefixes** in the Compare tab, and `--ignore-path-prefix`
   in the runner, compare one site served under two paths page by page:
   `/v1, /v2` makes `/v1/cart.html` and `/v2/cart.html` one page. When each

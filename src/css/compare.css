@@ -244,6 +244,43 @@ body.queue-mode-active #screenshots-container { display: none; }
 .compare-report-n { font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600; color: var(--text-soft); background: var(--surface-2); border-radius: var(--radius-sm); padding: 1px 6px; font-variant-numeric: tabular-nums; }
 .compare-order-note { font-size: var(--fs-xs); color: var(--text-soft); margin: 0 0 var(--space-3); max-width: 90ch; }
 .compare-profiles { margin: 0 0 var(--space-3); }
+/* A change being drawn (compare-tab.js updateComparison): the comparison
+   dims and is inert, and a note with a spinner stays at the top of the part
+   in view while it scrolls, as the report view's results do. */
+#run-comparison.compare-updating { position: relative; cursor: progress; }
+#run-comparison.compare-updating > .cmp2 { opacity: .45; filter: grayscale(.35); transition: opacity .12s ease-out; }
+.compare-updating-note { position: sticky; top: calc(var(--compare-updating-top, 44px) + var(--space-2)); z-index: 20; height: 0; display: flex; justify-content: center; overflow: visible; pointer-events: none; }
+.compare-updating-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-soft);
+    background: var(--surface-0);
+    color: var(--text);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgb(0 0 0 / .15);
+}
+.compare-updating-pill::before {
+    content: "";
+    width: .8rem;
+    height: .8rem;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    border-top-color: color-mix(in srgb, var(--accent) 85%, transparent);
+    animation: spin .9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .compare-updating-pill::before { animation-duration: 3s; }
+    #run-comparison.compare-updating > .cmp2 { transition: none; }
+}
+@media (forced-colors: active) {
+    .compare-updating-pill { border-color: CanvasText; }
+    .compare-updating-pill::before { border-color: GrayText; border-top-color: Highlight; }
+}
 /* Path prefixes left out when pages are matched. */
 .compare-paths { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-3); }
 .compare-paths-label { font-size: var(--fs-sm); }
