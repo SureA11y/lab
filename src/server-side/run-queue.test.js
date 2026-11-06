@@ -1355,50 +1355,27 @@ describe('changing a finished batch', () => {
         assert.deepEqual([kept.status, kept.file, kept.lastRerun.status], ['done', a.file, 'interrupted']);
     });
 
-    test('workflows added to a finished batch run into it, after its rows', async () => {
-        const { runner, queue, sessionId } = await finishedBatch();
-        const { itemIds } = queue.addToSession(sessionId, [item('C')]);
-        assert.equal(itemIds.length, 1);
-        assert.equal(runner.calls[2].spec.scenarioName, 'C');
-        await settle(queue, runner.calls[2], { status: 'done', payload: payloadWith() });
-        await waitUntil(() => queue.getState().sessions[0].state !== 'running', 'the added run to finish');
-        assert.deepEqual(rows(queue).map((i) => [i.name, i.status]), [['A', 'done'], ['B', 'done'], ['C', 'done']]);
-        assert.equal(queue.getState().sessions.length, 1, 'no new batch');
-    });
-
-    test('a saved report joins a finished batch as a run of its own, without running', async () => {
-        const { runner, queue, sessionId, dir } = await finishedBatch();
-        const report = payloadWith({ scans: [{ fail: 4 }, { cantTell: 1 }], extra: { reportName: 'Checkout, by hand' } });
-        report.scans[0].url = 'https://example.com/checkout';
-        const out = await queue.importReport(sessionId, report);
-        assert.equal(runner.calls.length, 2, 'nothing ran');
-        const added = rows(queue)[2];
-        assert.deepEqual([added.name, added.status, added.url, added.scans, added.findings.fail, added.findings.cantTell],
-            ['Checkout, by hand', 'done', 'https://example.com/checkout', 2, 4, 1]);
-        assert.ok(added.imported);
-        assert.equal(JSON.parse(fs.readFileSync(path.join(dir, out.file), 'utf8')).reportName, 'Checkout, by hand');
-        assert.throws(() => queue.rerunItem(sessionId, added.id), /added as a report/);
-    });
-
-    test('a report\'s inline pictures become the batch\'s own files', async () => {
+    test('a row added as a report by an earlier copy of the lab is not run again: it kept no workflow', async () => {
         const { queue, sessionId, dir } = await finishedBatch();
-        const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 0xff, 0xd9]);
-        const report = payloadWith();
-        report.scans[0].screenshot = `data:image/jpeg;base64,${jpeg.toString('base64')}`;
-        const out = await queue.importReport(sessionId, report);
-        assert.equal(out.missingPictures, 0);
-        const saved = JSON.parse(fs.readFileSync(path.join(dir, out.file), 'utf8'));
-        assert.match(saved.scans[0].screenshot, /^images\/[0-9a-f]+\.jpg$/);
-        assert.deepEqual(fs.readFileSync(path.join(dir, saved.scans[0].screenshot)), jpeg);
+        const manifest = files.readManifest(dir);
+        manifest.items[1].imported = { at: '2026-11-05T10:00:00.000Z', missingPictures: 0 };
+        files.writeManifest(dir, manifest);
+        const reread = createRunQueue({ baseDir, executeRun: controlledRunner().executeRun, logError: () => {} });
+        reread.init();
+        assert.throws(() => reread.rerunItem(sessionId, manifest.items[1].id), /added as a report/);
+        assert.ok(reread.getState().sessions[0].items[1].imported, 'still shown as added');
     });
 
-    test('not while a batch runs, and not a file that is no report', async () => {
+    test('not while a batch runs', async () => {
         const { runner, queue, sessionId } = await finishedBatch();
-        await assert.rejects(queue.importReport(sessionId, { hello: 1 }), /not a report/);
         queue.addItems([item('Other')]);
         assert.throws(() => queue.rerunItem(sessionId, rows(queue)[0].id), (err) => err.statusCode === 409);
-        assert.throws(() => queue.addToSession(sessionId, [item('C')]), (err) => err.statusCode === 409);
-        await assert.rejects(queue.importReport(sessionId, payloadWith()), (err) => err.statusCode === 409);
         assert.equal(runner.calls.length, 3);
+    });
+
+    test('a finished batch takes no runs added to it: it is the batch it was', () => {
+        const queue = newQueue(controlledRunner().executeRun);
+        assert.equal(queue.addToSession, undefined);
+        assert.equal(queue.importReport, undefined);
     });
 });

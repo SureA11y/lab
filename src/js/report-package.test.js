@@ -161,30 +161,3 @@ describe('a report as its JSON file holds it', () => {
         assert.equal('a11yGlobalFindings' in saved, false);
     });
 });
-
-describe('a package\'s report with its pictures inline', () => {
-    test('gives the report with each picture it names as a data URL, and only those', async () => {
-        const { P } = await load();
-        const zip = new JSZip();
-        zip.file('Shop.a11y-report.json', JSON.stringify({ scans: [{ screenshot: 'images/aaa.jpg', shot: 'images/gone.png' }] }));
-        zip.file('images/aaa.jpg', JPEG);
-        zip.file('images/other.png', PNG);
-        zip.file('Shop.html', '<html>');
-        const got = await P.inlineReportFromZip(await JSZip.loadAsync(await zip.generateAsync({ type: 'uint8array' })));
-        assert.equal(got.name, 'Shop.a11y-report.json');
-        const report = JSON.parse(got.text);
-        assert.equal(report.scans[0].screenshot, dataUrl(JPEG, 'image/jpeg'));
-        assert.equal(report.scans[0].shot, 'images/gone.png', 'a picture not in the package keeps its path');
-        assert.ok(!got.text.includes(PNG.toString('base64')));
-    });
-
-    test('a CLI run\'s payload.json counts; a zip with no report gives null', async () => {
-        const { P } = await load();
-        const cli = new JSZip();
-        cli.file('run/payload.json', '{"scans":[]}');
-        assert.equal((await P.inlineReportFromZip(cli)).name, 'payload.json');
-        const other = new JSZip();
-        other.file('notes.txt', 'hi');
-        assert.equal(await P.inlineReportFromZip(other), null);
-    });
-});

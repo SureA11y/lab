@@ -241,47 +241,41 @@ describe('queue routes', () => {
         }
     });
 
-    test('a finished batch takes a row run again, a workflow added and a saved report', async () => {
+    test('a finished batch takes a row run again, and a run deleted; not runs added', async () => {
         const saved = (name) => ({ ...run(name), config: { runSpec: run(name).run } });
-        const { sessionId } = (await api('POST', '/queue/items', { items: [saved('Home')] })).body;
-        await waitForState(runningNamed('Home'));
-        pending.shift()({ status: 'done', payload: { scans: [{}], findings: { fail: [], cantTell: [] } } });
+        const { sessionId } = (await api('POST', '/queue/items', { items: [saved('Home'), saved('Cart'), saved('Shop')] })).body;
+        for (const name of ['Home', 'Cart', 'Shop']) {
+            await waitForState(runningNamed(name));
+            pending.shift()({ status: 'done', payload: { scans: [{}], findings: { fail: [], cantTell: [] } } });
+        }
         await waitForState((s) => s.sessions[0].state !== 'running');
         const [home] = (await itemsOf(sessionId)).items;
 
-        const report = await api('POST', `/queue/sessions/${sessionId}/reports`, { report: { reportName: 'Checkout', scans: [{ url: 'https://example.com/checkout' }] } });
-        assert.equal(report.status, 200);
-        assert.equal(report.body.missingPictures, 0);
-        assert.equal((await api('POST', `/queue/sessions/${sessionId}/reports`, { report: { nope: 1 } })).status, 400);
+        // Runs are not added to a finished batch, as a workflow or a report.
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items`, { items: [run('More')] })).status, 404);
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/reports`, { report: { scans: [{}] } })).status, 404);
 
         assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${home.id}/rerun`, {})).status, 200);
         await waitForState(runningNamed('Home'));
-        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items`, { items: [run('More')] })).status, 409, 'not while it runs');
         pending.shift()({ status: 'done', payload: { scans: [{}, {}], findings: { fail: [], cantTell: [] } } });
         await waitForState((s) => s.sessions[0].state !== 'running');
 
-        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items`, { items: [run('More')] })).status, 200);
-        await waitForState(runningNamed('More'));
-        pending.shift()({ status: 'done', payload: { scans: [{}], findings: { fail: [], cantTell: [] } } });
-        await waitForState((s) => s.sessions[0].state !== 'running');
-
         const rows = (await itemsOf(sessionId)).items;
-        assert.deepEqual(rows.map((i) => [i.name, i.status, i.scans, i.reruns, !!i.imported]),
-            [['Home', 'done', 2, 1, false], ['Checkout', 'done', 1, 0, true], ['More', 'done', 1, 0, false]]);
+        assert.deepEqual(rows.map((i) => [i.name, i.status, i.scans, i.reruns]),
+            [['Home', 'done', 2, 1], ['Cart', 'done', 1, 0], ['Shop', 'done', 1, 0]]);
         assert.ok(rows.every((i) => i.fileUrl));
 
         // A run deleted from it: its row and result go, and its zip follows.
-        const checkout = rows[1];
-        const deleted = await api('POST', `/queue/sessions/${sessionId}/items/${checkout.id}/delete`);
+        const cart = rows[1];
+        const deleted = await api('POST', `/queue/sessions/${sessionId}/items/${cart.id}/delete`);
         assert.equal(deleted.status, 200);
-        assert.deepEqual([deleted.body.deleted, deleted.body.remaining], [checkout.id, 2]);
-        assert.deepEqual((await itemsOf(sessionId)).items.map((i) => i.name), ['Home', 'More']);
-        assert.equal(fs.existsSync(path.join(baseDir, sessionId, checkout.file)), false);
+        assert.deepEqual([deleted.body.deleted, deleted.body.remaining], [cart.id, 2]);
+        assert.deepEqual((await itemsOf(sessionId)).items.map((i) => i.name), ['Home', 'Shop']);
+        assert.equal(fs.existsSync(path.join(baseDir, sessionId, cart.file)), false);
         const zip = await JSZip.loadAsync(Buffer.from(await (await fetch(`${origin}/queue/sessions/${sessionId}/download.zip`)).arrayBuffer()));
-        assert.ok(!Object.keys(zip.files).some((name) => name.endsWith(checkout.file)), 'not in the batch\'s zip');
-        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${checkout.id}/delete`)).status, 404, 'gone');
-        const [first] = (await itemsOf(sessionId)).items;
-        await api('POST', `/queue/sessions/${sessionId}/items/${first.id}/delete`);
+        assert.ok(!Object.keys(zip.files).some((name) => name.endsWith(cart.file)), 'not in the batch\'s zip');
+        assert.equal((await api('POST', `/queue/sessions/${sessionId}/items/${cart.id}/delete`)).status, 404, 'gone');
+        await api('POST', `/queue/sessions/${sessionId}/items/${home.id}/delete`);
         const [last] = (await itemsOf(sessionId)).items;
         const refused = await api('POST', `/queue/sessions/${sessionId}/items/${last.id}/delete`);
         assert.deepEqual([refused.status, refused.body.error], [409, 'This is the batch\'s only run. Delete the batch instead.']);

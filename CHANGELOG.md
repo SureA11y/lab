@@ -86,11 +86,10 @@ The first public release.
   result saved as it finishes; a batch of thousands of runs opens a page of them
   at a time. A finished batch can be changed: **Run again** runs one of its
   rows again, its new result replacing the old one (which stays if the
-  re-run ends with none); **Add the open workflow** runs the workflow in
-  the editor into the batch; **Add a report…** adds a report saved before
-  (its JSON or its package's zip, pictures and all) as a row of its own,
-  without running anything. All three land in the
-  batch's folder, its download and Send to Compare.
+  re-run ends with none), and **Delete** removes one of its rows. Both
+  reach the batch's folder, its download and Send to Compare. Runs are not
+  added to a finished batch: adding them made it say it took as long as
+  from its start to the last run added.
 - **Passwords from the environment** (`{"$env": "NAME"}`), so workflows that
   log in can be saved, shared and run unattended with no password in them.
 - **Reports opened by address**: `?report=<url>` and `?compare=<url>`.
@@ -187,8 +186,8 @@ The first public release.
   the passwords still typed in the open workflow without asking, so a run
   could start with a password nobody confirmed. They now always ask, with
   those found in the editor filled in. Passwords are still never saved.
-- **A run can be deleted from a finished batch**, as runs can be added to
-  one: **Delete** on its row, once confirmed, removes its result and the
+- **A run can be deleted from a finished batch**: **Delete** on its row,
+  once confirmed, removes its result and the
   pictures and evidence only it used, from the batch's folder, `batch.json`,
   zip and Send to Compare. Not a batch's only run (the batch is deleted
   instead), nor while a batch runs. `POST
