@@ -1906,6 +1906,33 @@ export function createRenderer({
         return buildUrlRow(urlFromA11y);
     }
 
+    /**
+     * What a scan checked, before its counts ("WCAG 2.2 AA + WAI-ARIA 1.2 ·
+     * Context: main: "), as parts that each stay on one line (a direct
+     * span of .stream-counts does not wrap): every profile, every other
+     * fact, the colon on the last. '' with nothing to say.
+     */
+    function scopeHtml(bits) {
+        if (!bits.length) return '';
+        const parts = [];
+        bits.forEach((bit, i) => {
+            const last = i === bits.length - 1;
+            const pieces = String(bit).split(' + ');
+            pieces.forEach((piece, j) => {
+                const end = j === pieces.length - 1 ? (last ? ':' : ' ·') : ' +';
+                parts.push('<span class="stream-scope">' + escapeHtml(piece + end) + '</span>');
+            });
+        });
+        return parts.join(' ') + ' ';
+    }
+
+    /** The fail, can't tell and pass counts, each with the comma after it inside, so no line starts with one. */
+    function streamCountsHtml({fail, cantTell, likely = '', pass}) {
+        return '<span class="stream-fail">' + resultGlyphHtml('fail') + ' ' + fail + ' fail,</span> ' +
+            '<span class="stream-cantTell">' + resultGlyphHtml('cantTell') + ' ' + cantTell + ' can\'t tell' + likely + ',</span> ' +
+            '<span class="stream-pass">' + resultGlyphHtml('pass') + ' ' + pass + ' pass</span>';
+    }
+
     function generateScanMetadata(scan) {
         const meta = document.createElement('div');
         meta.className = 'stream-counts';
@@ -1935,12 +1962,17 @@ export function createRenderer({
         const cantTell = (cantTellCount !== null) ? cantTellCount : (s.reviewCount ?? 0);
         const pass = (passCount !== null) ? passCount : (s.passesCount ?? 0);
 
-        const prefix = bits.length ? (bits.join(' · ') + ': ') : '';
         const likely = likelyFailText(countLikelyFailures(findings));
-        meta.innerHTML = escapeHtml(prefix) +
-            '<span class="stream-fail">' + resultGlyphHtml('fail') + ' ' + (fail || 0) + ' fail</span>, ' +
-            '<span class="stream-cantTell">' + resultGlyphHtml('cantTell') + ' ' + (cantTell || 0) + ' can\'t tell' + likely + '</span>, ' +
-            '<span class="stream-pass">' + resultGlyphHtml('pass') + ' ' + (pass || 0) + ' pass</span>';
+        // The line wraps between its parts, never inside one: each profile
+        // ("WAI-ARIA 1.2" is not broken at its hyphen), each other fact,
+        // and each count, with the punctuation after it, so no line starts
+        // with a comma.
+        meta.innerHTML = scopeHtml(bits) + streamCountsHtml({
+            fail: fail || 0,
+            cantTell: cantTell || 0,
+            likely,
+            pass: pass || 0,
+        });
 
         return meta;
     }
@@ -2377,7 +2409,12 @@ export function createRenderer({
         tableContainer.innerHTML = `<h3>Summary of all scans</h3>
             <div class="scan-results-meta">
             <span></span>
-            <div class="stream-counts"><span class="stream-fail">${resultGlyphHtml('fail')} ${fail.length || 0} fail</span>, <span class="stream-cantTell">${resultGlyphHtml('cantTell')} ${cantTell.length || 0} can't tell${likelyFailText(cantTell.reduce((n, row) => n + reviewGroupCounts(row.nodes).leanFail, 0))}</span>, <span class="stream-pass">${resultGlyphHtml('pass')} ${pass.length ?? 0} pass</span></div>
+            <div class="stream-counts">${streamCountsHtml({
+                fail: fail.length || 0,
+                cantTell: cantTell.length || 0,
+                likely: likelyFailText(cantTell.reduce((n, row) => n + reviewGroupCounts(row.nodes).leanFail, 0)),
+                pass: pass.length ?? 0,
+            })}</div>
         </div>
         ${violationsTableHtml}`;
         wrapper.appendChild(tableContainer);
