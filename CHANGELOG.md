@@ -210,6 +210,16 @@ The first public release.
   Cancel, or Open and Download, come first and Run again and Delete after,
   with an empty place for any a row does not have, and the columns line
   up down the table.
+- **Load config replaces the batch, and Append config adds to it.** A
+  config saved without batch rows left the rows, run name pattern and
+  on/off state already in the Batch section, so the next Run could run an
+  old batch on the workflow just loaded; it now empties the section.
+  Append config added a file's custom steps and workflow steps but not its
+  batch: its rows now go after the ones there, the batch staying on or
+  off with its run name pattern (taken from the file only when there is
+  none), and a file with only batch rows can be appended. When the rows
+  already there are not valid JSON, Append changes nothing and says to
+  fix them first.
 - **Every run's status says when it was reached**, in full (*6 Nov 2026,
   11:33*), with *Ran again* under it when its result came from Run again:
   a result from another day stands out from the rest of its batch.

@@ -2710,6 +2710,7 @@ function storeActiveMode(mode) {
             setSections: setSectionsState,
             loadBatchRows: (rows) => batchUi.batchPanel?.loadRows(rows),
             appendConfigState: customStepsUi.appendConfigState,
+            planBatchAppend: (batch) => batchUi.batchPanel?.planAppendFromConfig(batch) ?? null,
             activity: getActivity(),
 
             configFileEl,

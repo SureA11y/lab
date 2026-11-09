@@ -246,7 +246,7 @@ describe('batch rows in a config', () => {
         assert.deepEqual(order, ['batch', sections], 'after the batch, which opens its section');
         order.length = 0;
         io.applyConfig({ state: { 'url-input': 'https://example.com/' } });
-        assert.deepEqual(order, [], 'an older config leaves the sections alone');
+        assert.deepEqual(order, ['batch'], 'an older config empties the batch and leaves the sections alone');
     });
 
     test('applying a config with a batch hands it back to the section', () => {
@@ -256,7 +256,7 @@ describe('batch rows in a config', () => {
         assert.equal(io.applyConfig({ state: { 'url-input': 'https://example.com/' }, batch }), null);
         assert.deepEqual(seen, [batch]);
         io.applyConfig({ state: { 'url-input': 'https://example.com/' } });
-        assert.equal(seen.length, 1, 'a config without one leaves the section alone');
+        assert.deepEqual(seen, [batch, null], 'a config without one empties the section');
     });
 });
 
@@ -386,3 +386,68 @@ describe('loading the configuration a download carries', () => {
     });
 });
 
+describe('Append config', () => {
+    function appendThrough(doc, {planBatchAppend, appendConfigState} = {}) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        document.body.append(input);
+        const statuses = [];
+        const calls = {steps: [], applied: 0};
+        const io = createConfigIO({
+            form: document.getElementById('scan-form'),
+            urlInput: document.getElementById('url-input'),
+            appendConfigFileEl: input,
+            actionsBuilder: { getValue: () => ({ ok: true, value: [] }) },
+            getCustomSteps: () => ({ ok: true, value: [] }),
+            appendConfigState: appendConfigState || ((state, opts) => {
+                calls.steps.push(opts);
+                const has = !!state['custom-steps-json'] || (state['actions-workflow'] || []).length;
+                if (!has) return opts?.allowNothing ? { ok: true, message: '', added: 0 } : { ok: false, message: 'This config has no custom steps or workflow steps to append.' };
+                return { ok: true, message: 'Appended 1 custom step.', added: 1 };
+            }),
+            planBatchAppend: planBatchAppend || ((batch) => (batch && batch.rows
+                ? { ok: true, count: batch.rows.length, apply: () => { calls.applied += 1; } }
+                : { ok: true, count: 0, apply: () => {} })),
+            setStatusRun: (msg, tone) => statuses.push([msg, tone]),
+            STATUS: { OK: 'ok', ERROR: 'error' },
+            jsonBlob: () => ({}),
+        });
+        io.setupConfigAppender();
+        Object.defineProperty(input, 'files', { value: [new window.File([JSON.stringify(doc)], 'f.json', { type: 'application/json' })] });
+        input.dispatchEvent(new window.Event('change'));
+        return (async () => {
+            const deadline = Date.now() + 2000;
+            while (!statuses.length && Date.now() < deadline) await new Promise((r) => setTimeout(r, 5));
+            return { statuses, calls };
+        })();
+    }
+
+    const step = JSON.stringify([{ id: 's1', actions: [] }]);
+
+    test('adds the custom steps and the batch rows, and says both', async () => {
+        const { statuses, calls } = await appendThrough({ state: { 'custom-steps-json': step }, batch: { rows: [{ name: 'a' }, { name: 'b' }] } });
+        assert.equal(calls.applied, 1);
+        assert.deepEqual(statuses.at(-1), ['Appended 1 custom step. Appended 2 batch workflows.', 'ok']);
+    });
+
+    test('a file with only batch rows is appended too', async () => {
+        const { statuses, calls } = await appendThrough({ state: {}, batch: { rows: [{ name: 'a' }] } });
+        assert.equal(calls.applied, 1);
+        assert.deepEqual(statuses.at(-1), ['Appended 1 batch workflow.', 'ok']);
+    });
+
+    test('a file with nothing to add still says so', async () => {
+        const { statuses, calls } = await appendThrough({ state: {} });
+        assert.equal(calls.applied, 0);
+        assert.equal(statuses.at(-1)[1], 'error');
+    });
+
+    test('rows that cannot be added stop the append before any step is added', async () => {
+        const { statuses, calls } = await appendThrough(
+            { state: { 'custom-steps-json': step }, batch: { rows: [{ name: 'a' }] } },
+            { planBatchAppend: () => ({ ok: false, message: 'Fix the rows in the Batch section first.' }) },
+        );
+        assert.equal(calls.steps.length, 0);
+        assert.deepEqual(statuses.at(-1), ['Could not append config. Fix the rows in the Batch section first.', 'error']);
+    });
+});
