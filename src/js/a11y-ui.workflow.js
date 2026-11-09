@@ -34,8 +34,10 @@ export async function pollWorkflowUntilDone(runId, {
 
         if (shouldStop()) return { status: 'stopped', since };
 
-        onStatus(status);
+        // The logs this reply brings first: they happened before the status
+        // it reports, and a run that ended says so after its last steps.
         onProgress(prog);
+        onStatus(status);
 
         if (ACTIVE.has(status)) {
             await sleep(pollIntervalMs);

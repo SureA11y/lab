@@ -59,4 +59,19 @@ describe('pollWorkflowUntilDone', () => {
         assert.equal(out.status, 'stopped');
         assert.equal(seen.length, 1);
     });
+
+    test('hands on each reply\'s logs before its status, so a run that ended says so after its last steps', async () => {
+        serve([
+            {status: 'running', nextIndex: 1, logs: [{message: 'a'}]},
+            {status: 'error', nextIndex: 3, logs: [{message: 'b'}, {message: 'Workflow failed'}]},
+        ]);
+        const seen = [];
+        await pollWorkflowUntilDone('r1', {
+            pollIntervalMs: 0,
+            onProgress: (p) => seen.push(...p.logs.map((l) => l.message)),
+            onStatus: (s) => seen.push(`status:${s}`),
+        });
+        assert.deepEqual(seen, ['a', 'status:running', 'b', 'Workflow failed', 'status:error']);
+    });
 });
+
