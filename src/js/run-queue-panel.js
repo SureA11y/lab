@@ -353,11 +353,50 @@ function statusCell(doc, item, { line = null } = {}) {
     return cell;
 }
 
+/**
+ * A row's actions, each in its own place, so none moves when the row's state
+ * changes and the columns line up down the table:
+ *
+ *   1–2  Watch and Cancel while it waits or runs; Open and Download once it
+ *        has a result (Load workflow in the first when it needs passwords);
+ *   3–4  Run again and Delete once it has ended.
+ *
+ * A place with nothing in it is left empty. Run again and Delete never take
+ * Watch's or Cancel's place, so a click as a run ends does not start one.
+ * Where the row does not say why one is unavailable (another batch runs, a
+ * re-run's result waits for a choice, the batch's only run), it is shown
+ * disabled and says why when pressed.
+ */
 function actionsCell(doc, session, item, { queueBusy = false } = {}) {
     // The buttons sit in a flex row inside the cell: a flex td is no longer a
     // table cell, and its row's stripe would stop short of the row's height.
     const cell = el(doc, 'div', { className: 'queue-actions' });
-    if (item.fileUrl) {
+    const slot = () => el(doc, 'span', { className: 'queue-icon-slot', 'aria-hidden': 'true' });
+    const going = session.state === 'running' && (item.status === 'waiting' || item.status === 'running');
+    const needsLoad = item.status === 'interrupted' && item.needsValues && item.hasConfig;
+    const load = () => iconAction(doc, 'button', 'Load workflow', 'edit', item.name, {
+        type: 'button',
+        'data-queue-action': 'load',
+        'data-item-id': item.id,
+        'data-focus-key': `load:${item.id}`,
+    });
+
+    if (going) {
+        // A waiting run has no Watch yet: its place stays, so Cancel lines up
+        // with the Cancel of the running rows.
+        cell.append(item.status === 'running' ? iconAction(doc, 'button', 'Watch', 'watch', item.name, {
+            type: 'button',
+            'data-queue-action': 'watch',
+            'data-item-id': item.id,
+            'data-focus-key': `watch:${item.id}`,
+        }) : slot());
+        cell.append(iconAction(doc, 'button', 'Cancel', 'cancel', item.name, {
+            type: 'button',
+            'data-queue-action': 'cancel',
+            'data-item-id': item.id,
+            'data-focus-key': `cancel:${item.id}`,
+        }));
+    } else if (item.fileUrl) {
         cell.append(iconAction(doc, 'button', 'Open', 'open', item.name, {
             type: 'button',
             'data-queue-action': 'open',
@@ -370,49 +409,33 @@ function actionsCell(doc, session, item, { queueBusy = false } = {}) {
             download: item.zipUrl ? (item.zipName || true) : (item.file || true),
             'data-focus-key': `download:${item.id}`,
         }));
+    } else {
+        // No result: Open's place holds Load workflow when the run needs its
+        // passwords typed again.
+        cell.append(needsLoad ? load() : slot(), slot());
     }
-    if (session.state === 'running' && item.status === 'running') {
-        cell.append(iconAction(doc, 'button', 'Watch', 'watch', item.name, {
-            type: 'button',
-            'data-queue-action': 'watch',
-            'data-item-id': item.id,
-            'data-focus-key': `watch:${item.id}`,
-        }));
-    } else if (session.state === 'running' && item.status === 'waiting') {
-        // A waiting run has no Watch yet: hold its place, so Cancel lines up
-        // with the Cancel of the running rows above.
-        cell.append(el(doc, 'span', { className: 'queue-icon-slot', 'aria-hidden': 'true' }));
-    }
-    if (session.state === 'running' && (item.status === 'waiting' || item.status === 'running')) {
-        cell.append(iconAction(doc, 'button', 'Cancel', 'cancel', item.name, {
-            type: 'button',
-            'data-queue-action': 'cancel',
-            'data-item-id': item.id,
-            'data-focus-key': `cancel:${item.id}`,
-        }));
-    }
+
     // A row that has ended, of a finished batch or of the running one (a
-    // run that failed need not wait for the others), may change; only
-    // another batch running holds it.
+    // run that failed need not wait for the others), may change.
     const ended = item.status !== 'waiting' && item.status !== 'running' && item.status !== 'cancelling';
-    const otherBusy = queueBusy && session.state !== 'running';
-    // Run again from the workflow it saved; one added as a report has none.
-    if (ended && item.hasConfig && !item.imported) {
-        cell.append(iconAction(doc, 'button', 'Run again', 'rerun', item.name, {
+    if (ended) {
+        const otherBusy = queueBusy && session.state !== 'running';
+        const held = otherBusy ? QUEUE_BUSY_CHANGE : (item.candidate ? CHOOSE_FIRST : null);
+        // Run again from the workflow it saved; one added as a report has
+        // none, and says so.
+        cell.append(item.hasConfig && !item.imported ? iconAction(doc, 'button', 'Run again', 'rerun', item.name, {
             type: 'button',
-            'aria-disabled': otherBusy ? 'true' : null,
-            'data-queue-action': otherBusy ? 'blocked' : 'rerun',
-            'data-blocked-reason': otherBusy ? QUEUE_BUSY_CHANGE : null,
+            'aria-disabled': held ? 'true' : null,
+            'data-queue-action': held ? 'blocked' : 'rerun',
+            'data-blocked-reason': held,
             'data-session-id': session.id,
             'data-item-id': item.id,
             'data-focus-key': `rerun:${item.id}`,
-        }));
-    }
-    // Deleted from its batch (its result, and what only it used); not its
-    // only one: the batch is deleted as a whole.
-    if (ended) {
+        }) : slot());
+        // Deleted from its batch (its result, and what only it used); not its
+        // only one: the batch is deleted as a whole.
         const only = (session.counts?.total ?? (session.items || []).length) <= 1;
-        const why = otherBusy ? QUEUE_BUSY_CHANGE : (only ? DELETE_ONLY_RUN : null);
+        const why = held || (only ? DELETE_ONLY_RUN : null);
         cell.append(iconAction(doc, 'button', 'Delete', 'delete', item.name, {
             type: 'button',
             'aria-disabled': why ? 'true' : null,
@@ -423,16 +446,8 @@ function actionsCell(doc, session, item, { queueBusy = false } = {}) {
             'data-focus-key': `delete-item:${item.id}`,
         }));
     }
-    // An icon button as the others are, so a row's actions always fit its
-    // column on one line.
-    if (item.status === 'interrupted' && item.needsValues && item.hasConfig) {
-        cell.append(iconAction(doc, 'button', 'Load workflow', 'edit', item.name, {
-            type: 'button',
-            'data-queue-action': 'load',
-            'data-item-id': item.id,
-            'data-focus-key': `load:${item.id}`,
-        }));
-    }
+    // With a result as well, Load workflow goes after the others.
+    if (needsLoad && item.fileUrl) cell.append(load());
     return el(doc, 'td', { className: 'queue-actions-cell' }, cell);
 }
 
@@ -870,7 +885,8 @@ function itemRows(doc, session, item, opts = {}) {
                 nameCell(doc, item, { rows: 3 }),
                 statusCell(doc, item, { line: 'active' }),
                 ...countsCells(doc, item),
-                resultActions(doc, item, item),
+                // Run again and Delete wait for the choice, and say so.
+                actionsCell(doc, session, item, opts),
             ]),
             el(doc, 'tr', { className: `queue-line queue-line--rerun${bad ? ' queue-line--bad' : ''}`, 'data-line-of': item.id }, [
                 statusCell(doc, candidate, { line: 'rerun' }),
@@ -898,6 +914,7 @@ const WAIT_FOR_BATCH = 'Available once this batch finishes: until then it would 
 const QUEUE_BUSY = 'Another batch is running. Resume this one once it has finished.';
 const QUEUE_BUSY_CHANGE = 'Another batch is running. Change this one once it has finished.';
 const DELETE_ONLY_RUN = 'This is the batch’s only run. Delete the batch instead.';
+const CHOOSE_FIRST = 'Choose which result of this run to keep first.';
 const SENDING_TO_COMPARE = 'This batch is being sent to Compare. Delete it once that is done.';
 
 // How many of a batch's runs the app asks for at a time.
