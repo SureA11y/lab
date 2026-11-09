@@ -191,8 +191,8 @@ The first public release.
   choose: **Keep: the new one · the active one · both**, the suggested one
   in bold. Both keeps the new one as a **version** of the row: the row
   lists its versions, each to open or download, to make active, or to
-  delete; five a row at most. Until you choose, the row has no Run again
-  or Delete. `POST …/items/{itemId}/keep`, `…/versions/activate` and
+  delete; five a row at most. Until you choose, the row's Run again and
+  Delete are disabled, and say why. `POST …/items/{itemId}/keep`, `…/versions/activate` and
   `…/versions/delete` do the same; a row's zip takes `?file=` for any of
   its results, and Compare reads only each row's active one from a batch's
   zip.
@@ -204,6 +204,12 @@ The first public release.
   any re-run's does, the Keep links working while the batch runs too.
   Pictures a deleted or let-go result used stay until the batch is
   deleted, as a run going may name them.
+- **A row's actions keep their places.** Run again and Delete moved left
+  on a run with no result, into the places Watch and Cancel had while it
+  ran, so a click as a run ended could start it again. Now Watch and
+  Cancel, or Open and Download, come first and Run again and Delete after,
+  with an empty place for any a row does not have, and the columns line
+  up down the table.
 - **Every run's status says when it was reached**, in full (*6 Nov 2026,
   11:33*), with *Ran again* under it when its result came from Run again:
   a result from another day stands out from the rest of its batch.

@@ -317,7 +317,8 @@ run still going may use them too.
   replaces the active one; the active one lets the new one go; both keeps
   the new one as a **version** of the row, the active one staying active.
   What is let go is deleted, with the pictures and evidence only it used.
-  Until you choose, the row has no Run again or Delete. If the re-run ends
+  Until you choose, the row's Run again and Delete are disabled, and say
+  so when pressed. If the re-run ends
   with no result (the site was down, it was cancelled), there is nothing to
   choose: the active one stays and the row says so.
   A row with versions says so under its name (**2 versions**): opened, it
@@ -335,6 +336,12 @@ run still going may use them too.
 - **Delete**, on a row, removes it from the batch once confirmed: its result
   and its versions, and the pictures and evidence that only they used. A batch's only row is not
   deleted on its own: delete the batch instead.
+
+Each action of a row keeps its place, so nothing moves when a run ends:
+Watch and Cancel, or Open and Download, first, then Run again and Delete.
+A place with nothing in it is left empty. An action held for a reason the
+row does not show (another batch runs, a result to choose, the batch's
+only run) is shown disabled and says why when pressed.
 
 Whatever is deleted is gone from the batch: its folder, its zip and Send to
 Compare. The configuration saved beside the batch when it started stays as it

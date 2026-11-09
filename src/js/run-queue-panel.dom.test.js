@@ -1417,9 +1417,15 @@ describe('changing a finished batch', () => {
         const links = [...lines[2].querySelectorAll('[data-queue-action="keep"]')];
         assert.deepEqual(links.map((l) => l.textContent), ['the new one for Product v2.3 (suggested)', 'the active one for Product v2.3', 'both for Product v2.3']);
         assert.ok(links[0].classList.contains('queue-link--suggested'));
-        assert.equal(lines[0].querySelector('[title="Run again"]'), null, 'no Run again until the choice');
-        assert.equal(lines[0].querySelector('[title="Delete"]'), null);
-        assert.ok(document.querySelector('tr[data-item-id="i2"] [title="Delete"]'), 'the other rows keep theirs');
+        // Run again and Delete are there, held until the choice, and say why.
+        for (const title of ['Run again', 'Delete']) {
+            const held = lines[0].querySelector(`[title="${title}"]`);
+            assert.equal(held.getAttribute('aria-disabled'), 'true', `${title} held until the choice`);
+            held.click();
+            assert.equal(status(), 'Choose which result of this run to keep first.');
+        }
+        assert.equal(server.posts.length, 0);
+        assert.equal(document.querySelector('tr[data-item-id="i2"] [title="Delete"]').getAttribute('aria-disabled'), null, 'the other rows keep theirs');
 
         links[2].click();
         await until(() => server.posts.length, 'the choice');
@@ -1508,6 +1514,32 @@ describe('changing a finished batch', () => {
         del.click();
         await until(() => server.posts.length === 2, 'the delete');
         assert.equal(server.posts[1].url, '/queue/sessions/live/items/bad/delete');
+    });
+
+    test('each action keeps its place in the row, whatever the row\'s state', async () => {
+        const {p} = panel([{concurrency: 1, maxConcurrency: 8, sessions: [
+            session({id: 'live', state: 'running'}, [
+                baseItem({id: 'done'}),
+                baseItem({id: 'bad', status: 'error', error: 'Site down', file: null, fileUrl: null, zipUrl: null}),
+                baseItem({id: 'run', status: 'running', file: null, fileUrl: null, zipUrl: null}),
+                baseItem({id: 'wait', status: 'waiting', file: null, fileUrl: null, zipUrl: null}),
+                baseItem({id: 'imp', imported: {at: 'x'}, hasConfig: false}),
+            ]),
+        ]}]);
+        await p.refresh();
+        // Each place by what is in it: an action's title, or '' when empty.
+        const places = (id) => [...document.querySelector(`tr[data-item-id="${id}"] .queue-actions`).children]
+            .map((c) => (c.classList.contains('queue-icon-slot') ? '' : c.getAttribute('title')));
+        assert.deepEqual(places('done'), ['Open', 'Download', 'Run again', 'Delete']);
+        assert.deepEqual(places('bad'), ['', '', 'Run again', 'Delete'], 'no result: Run again and Delete stay where they are');
+        assert.deepEqual(places('run'), ['Watch', 'Cancel']);
+        assert.deepEqual(places('wait'), ['', 'Cancel']);
+        assert.deepEqual(places('imp'), ['Open', 'Download', '', 'Delete'], 'nothing to run again');
+        // Empty places are not read out or reached with Tab.
+        for (const empty of document.querySelectorAll('.queue-icon-slot')) {
+            assert.equal(empty.getAttribute('aria-hidden'), 'true');
+            assert.equal(empty.getAttribute('tabindex'), null);
+        }
     });
 
     test('no Run again for a report added as it was, or while a run goes', async () => {
