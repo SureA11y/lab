@@ -271,25 +271,72 @@ export function createBatchPanel({
          */
         clear,
         /**
+         * Checks how a config's batch would be added after the rows already in
+         * the box (Append config), without changing anything yet.
+         * -> { ok, count, apply() } to add them, { ok: true, count: 0 } when it
+         * has none, or { ok: false, message } when they cannot be combined.
+         * The batch stays enabled or disabled as it is, unless the box was
+         * empty; the run name pattern is taken only when there is none.
+         */
+        planAppendFromConfig(batch) {
+            const none = { ok: true, count: 0, apply: () => status };
+            if (!batch || typeof batch !== 'object') return none;
+            let incoming;
+            if (Array.isArray(batch.rows)) incoming = batch.rows;
+            else if (typeof batch.rowsText === 'string' && batch.rowsText.trim()) {
+                const parsed = batchApi.parseRows(batch.rowsText);
+                if (!parsed.ok) return { ok: false, message: `Its batch rows are not valid JSON yet (${parsed.error}).` };
+                incoming = parsed.rows;
+            } else return none;
+            if (!incoming.length) return none;
+
+            const currentText = rowsInput.value.trim();
+            if (!currentText) {
+                return { ok: true, count: incoming.length, apply: () => setBatchFromConfigImpl(batch) };
+            }
+            const current = batchApi.parseRows(currentText);
+            if (!current.ok) {
+                return { ok: false, message: 'Fix the rows in the Batch section first: they are not valid JSON, so the file\'s rows cannot be added to them.' };
+            }
+            return {
+                ok: true,
+                count: incoming.length,
+                apply() {
+                    const wasEnabled = enabled;
+                    if (namePatternInput && !namePatternInput.value.trim() && typeof batch.namePattern === 'string') {
+                        namePatternInput.value = batch.namePattern;
+                    }
+                    fill(JSON.stringify([...current.rows, ...incoming], null, 2));
+                    setEnabled(wasEnabled);
+                    return check();
+                },
+            };
+        },
+        /**
          * Restores the rows from a loaded config, and whether the batch is
          * enabled (on, for a config saved before that was recorded). A config
          * without a batch empties the section: loading replaces the batch, it
          * does not add to it.
          */
         setBatchFromConfig(batch) {
-            let text;
-            if (batch && typeof batch === 'object') {
-                if (typeof batch.rowsText === 'string') text = batch.rowsText;
-                else if (Array.isArray(batch.rows)) text = JSON.stringify(batch.rows, null, 2);
-            }
-            if (text === undefined) return clear();
-            if (namePatternInput) namePatternInput.value = typeof batch.namePattern === 'string' ? batch.namePattern : '';
-            fill(text);
-            if (batch.enabled === false) {
-                setEnabled(false);
-                return check();
-            }
-            return status;
+            return setBatchFromConfigImpl(batch);
         },
     };
+
+    // Restores a loaded config's batch, or empties the section when it has none.
+    function setBatchFromConfigImpl(batch) {
+        let text;
+        if (batch && typeof batch === 'object') {
+            if (typeof batch.rowsText === 'string') text = batch.rowsText;
+            else if (Array.isArray(batch.rows)) text = JSON.stringify(batch.rows, null, 2);
+        }
+        if (text === undefined) return clear();
+        if (namePatternInput) namePatternInput.value = typeof batch.namePattern === 'string' ? batch.namePattern : '';
+        fill(text);
+        if (batch.enabled === false) {
+            setEnabled(false);
+            return check();
+        }
+        return status;
+    }
 }

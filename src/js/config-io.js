@@ -27,6 +27,7 @@ export function createConfigIO(deps) {
         setSections,
         loadBatchRows,
         appendConfigState,
+        planBatchAppend,
         // helpers
         setStatusRun,
         STATUS,
@@ -410,12 +411,27 @@ export function createConfigIO(deps) {
                         return;
                     }
 
-                    // Append only touches custom steps + the workflow; scalar
-                    // fields (url, viewport, engines, …) are intentionally ignored
-                    // so the current configuration's settings are preserved.
-                    const result = appendConfigState(parsed.state) || {ok: false, message: 'Could not append config.'};
+                    // Append adds the custom steps, the workflow steps and the
+                    // batch rows; scalar fields (url, viewport, engines, …) are
+                    // intentionally ignored so the current configuration's
+                    // settings are preserved. The batch is checked first, so a
+                    // file whose rows cannot be added changes nothing.
+                    const batchPlan = typeof planBatchAppend === 'function' ? planBatchAppend(parsed.batch) : null;
+                    if (batchPlan && !batchPlan.ok) {
+                        setStatusRun('Could not append config. ' + batchPlan.message, STATUS.ERROR);
+                        return;
+                    }
+                    const batchCount = batchPlan ? batchPlan.count : 0;
+                    const result = appendConfigState(parsed.state, {allowNothing: batchCount > 0}) || {ok: false, message: 'Could not append config.'};
+                    if (result.ok && batchCount) batchPlan.apply();
+                    const batchMessage = batchCount ? `Appended ${batchCount} batch workflow${batchCount === 1 ? '' : 's'}.` : '';
+                    // A step-less file says only what it added to the batch.
+                    const stepsMessage = result.added === 0 ? '' : result.message;
+                    const message = result.ok
+                        ? [stepsMessage, batchMessage].filter(Boolean).join(' ') || 'Config appended.'
+                        : (result.message || 'Could not append config.');
                     setStatusRun(
-                        (result.message || (result.ok ? 'Config appended.' : 'Could not append config.')) + (result.ok && note ? ' ' + note : ''),
+                        message + (result.ok && note ? ' ' + note : ''),
                         result.ok ? (note ? STATUS.WARNING || STATUS.OK : STATUS.OK) : STATUS.ERROR
                     );
                     if (result.ok) callback();

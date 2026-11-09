@@ -305,4 +305,39 @@ describe('batch panel', () => {
         await tick();
         assert.equal(last().active, true);
     });
+
+    test('Append config adds the file\'s rows after the ones in the box, keeping the batch on or off as it is', () => {
+        const {p, last} = panel();
+        p.setBatchFromConfig({rows: JSON.parse(twoRows), namePattern: 'Mine {var:name}', enabled: false});
+        const plan = p.planAppendFromConfig({rows: [{name: 'v2.5', url: 'https://example.com/v2.5'}], namePattern: 'Theirs', enabled: true});
+        assert.equal(plan.ok, true);
+        assert.equal(plan.count, 1);
+        assert.equal(JSON.parse($('rows').value).length, 2, 'nothing changes before apply');
+        plan.apply();
+        assert.deepEqual(JSON.parse($('rows').value).map((r) => r.name), ['v2.3', 'v2.4', 'v2.5']);
+        assert.equal($('pattern').value, 'Mine {var:name}', 'the run name pattern already there is kept');
+        assert.equal(last().active, false);
+        assert.equal(last().state, 'ready');
+    });
+
+    test('Append config into an empty box sets the batch up as the file has it', () => {
+        const {p, last} = panel();
+        p.setBatchFromConfig(null);
+        p.planAppendFromConfig({rows: JSON.parse(twoRows), namePattern: 'P {var:name}'}).apply();
+        assert.deepEqual(JSON.parse($('rows').value), JSON.parse(twoRows));
+        assert.equal($('pattern').value, 'P {var:name}');
+        assert.equal(last().active, true);
+    });
+
+    test('Append config with no batch rows, or onto rows that do not parse, changes nothing', () => {
+        const {p} = panel();
+        assert.equal(p.planAppendFromConfig(null).count, 0);
+        assert.equal(p.planAppendFromConfig({rows: []}).count, 0);
+        type('[{"name": ');
+        const plan = p.planAppendFromConfig({rows: JSON.parse(twoRows)});
+        assert.equal(plan.ok, false);
+        assert.match(plan.message, /Fix the rows in the Batch section first/);
+        assert.equal($('rows').value, '[{"name": ');
+        assert.equal(p.planAppendFromConfig({rowsText: '[{'}).ok, false);
+    });
 });

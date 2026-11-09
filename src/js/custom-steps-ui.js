@@ -77,7 +77,7 @@ export function createCustomStepsUi(app) {
     // reference to them — in the imported workflow and in the imported steps
     // themselves — is remapped to match, so nothing that the current config
     // already relies on is altered.
-    function appendConfigState(state) {
+    function appendConfigState(state, {allowNothing = false} = {}) {
         if (!state || typeof state !== 'object') {
             return {ok: false, message: 'Config JSON must contain a "state" object.'};
         }
@@ -93,6 +93,8 @@ export function createCustomStepsUi(app) {
         const importedWorkflow = Array.isArray(state['actions-workflow']) ? state['actions-workflow'] : [];
 
         if (!importedSteps.length && !importedWorkflow.length) {
+            // The caller adds something else from the file (its batch rows).
+            if (allowNothing) return {ok: true, message: '', added: 0};
             return {ok: false, message: 'This config has no custom steps or workflow steps to append.'};
         }
 
@@ -165,7 +167,7 @@ export function createCustomStepsUi(app) {
             message += ` (${renamedCount} custom step${renamedCount === 1 ? '' : 's'} renamed to avoid id conflicts.)`;
         }
 
-        return {ok: true, message};
+        return {ok: true, message, added: workflowAppended + addedSteps.length};
     }
 
     function syncCustomStepsHiddenInput() {
