@@ -42,16 +42,23 @@ async function stepGroup(page, action, ctx, localVars, depth, actionPathPrefix) 
 
 async function stepMergedScan(page, action, ctx, localVars, depth, actionPathPrefix) {
     if (!Array.isArray(action.actions) || !action.actions.length) return;
+    const label = typeof action.label === 'string' && action.label.trim()
+        ? interpolateVarTokensLoose(action.label.trim(), {localVars, ctx}).trim()
+        : '';
+    // Inside another (directly, or through a custom step such as a
+    // multi-viewport scan reused here): its scans join the outer one as more
+    // of its contexts, so it all reports as the one scan. Its own name and
+    // tags are not a scan's; each scan inside keeps its label and tags.
     if (ctx._mergedScan) {
-        throw new Error(`A Merged scan cannot run inside another Merged scan${ctx._mergedScan.label ? ` ("${ctx._mergedScan.label}")` : ''}`);
+        const outer = ctx._mergedScan.label;
+        pushLog(ctx, 'info', `merged scan${label ? `: ${label}` : ''}, part of ${outer ? `the merged scan "${outer}"` : 'the merged scan it is in'}`);
+        await applyActions(page, action.actions, null, 0, ctx, localVars, depth + 1, actionPathPrefix);
+        return;
     }
     // One key per execution, counted on the root context so workers
     // share it: each iteration of a Repeat is a merged scan of its own.
     const root = ctx._rootCtx || ctx;
     root._mergedScanSeq = (root._mergedScanSeq || 0) + 1;
-    const label = typeof action.label === 'string' && action.label.trim()
-        ? interpolateVarTokensLoose(action.label.trim(), {localVars, ctx}).trim()
-        : '';
     pushLog(ctx, 'info', `merged scan${label ? `: ${label}` : ''}`);
     const key = `merged-${root._mergedScanSeq}`;
     ctx._mergedScan = {key, label: label || null, scanTags: interpolateScanTags(action.scanTags, {localVars, ctx})};

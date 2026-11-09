@@ -13,7 +13,7 @@ const { VIEWPORT_PRESETS } = require('../shared/scan-inputs.js');
 const runSpec = require('../shared/run-spec.js');
 const { buildRunSpecSchema, buildAppConfigSchema, buildBatchSpecSchema, checkSpecActions } = require('../shared/run-spec-schema.js');
 const { checkAgainstSchema } = require('../shared/json-schema-check.js');
-const { checkScanSteps, mergedScanNestingProblems } = require('./scan-step-check');
+const { checkScanSteps } = require('./scan-step-check');
 const { describeEngine } = require('./a11y-engine');
 const { selectorSyntaxProblem } = require('../shared/selector-syntax.js');
 
@@ -241,7 +241,6 @@ function checkWorkflowSteps({ actions, customSteps, wording = 'paths' } = {}) {
     const errors = steps.errors.slice();
     errors.push(...stepFieldProblems(doc.actions, '$.actions'));
     doc.customSteps.forEach((c, i) => errors.push(...stepFieldProblems(c && c.actions, `$.customSteps[${i}].actions`)));
-    errors.push(...mergedScanNestingProblems(doc.actions, doc.customSteps));
     const warnings = steps.warnings.filter((w) => !OWNED_BY_SCAN_CHECK.test(w));
     if (wording === 'steps') {
         const context = { actions: doc.actions, customSteps: doc.customSteps };

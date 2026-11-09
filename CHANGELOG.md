@@ -210,14 +210,19 @@ The first public release.
   Cancel, or Open and Download, come first and Run again and Delete after,
   with an empty place for any a row does not have, and the columns line
   up down the table.
-- **A Merged scan inside another is refused before the run starts.** One
-  reached through a custom step (a Merged scan running a custom step that
-  holds a Merged scan of its own) failed only when the run got there, after
-  the page had loaded and the steps before it had run. Now the run is
-  refused at once, naming the step to change as the builder numbers it
-  (*Step 3.1 - Custom step*), the custom step and both Merged scans; a
-  refusal from `POST /workflow-start` says each problem that way in
-  `steps`, beside `problems`. `--check` finds it too.
+- **A Merged scan can hold another.** One inside another, directly or
+  through a custom step (a multi-viewport scan made a custom step and run
+  inside a Merged scan of its own), failed when the run got there, after
+  the page had loaded and the steps before it had run. Now its scans join
+  the outer one as more of its contexts, each named by its own label, and
+  it all reports as that one scan, under the outer one's name and tags; the
+  log says which Merged scan the inner one is part of.
+- **A refused run names its steps as the builder does.** A run the check
+  refuses before it starts (a step missing a field, a profile that is not
+  one) said which step with a path such as `$.actions[1].actions[0]`; the
+  app now says *Step 2.1 - Navigate to URL: needs URL*. A refusal from
+  `POST /workflow-start` says each problem that way in `steps`, beside
+  `problems`.
 - **A run's log ends with how it ended.** *Workflow failed* (and
   *Finished*) were logged before the last steps the run reported, and a
   failed run said *Workflow failed* twice. Now the log says it once, after

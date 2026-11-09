@@ -225,15 +225,6 @@ export function createStepValidation(builder) {
                 return;
             }
 
-            // A scan inside two Merged scans would belong to both.
-            if (lineEl.dataset.actionType === "mergedScan"
-                && Array.from(sub.querySelectorAll('.line[data-action-type="mergedScan"]')).some((l) => !builder.isEffectivelyDisabled(l))) {
-                builder.setError(arrWrap, "A Merged scan cannot contain another Merged scan");
-                note(arrWrap);
-                ok = false;
-                return;
-            }
-
             for (const child of items) {
                 const childOk = validateLine(child, report);
                 if (!childOk) {

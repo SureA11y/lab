@@ -52,14 +52,13 @@ test('a request that is not an object is refused; the refusal lists every proble
 test('a refusal also says each problem as the builder names its step, for the app', () => {
     const request = {
         url: 'https://example.com/',
-        actions: [{ type: 'mergedScan', label: 'Cookies', actions: [{ type: 'runCustomStep', customStepId: 'mv' }] }],
-        customSteps: [{ id: 'mv', name: 'Multi-viewport', actions: [{ type: 'mergedScan', label: 'Viewports', actions: [{ type: 'a11yScan' }] }] }],
+        actions: [{ type: 'mergedScan', label: 'Cookies', actions: [{ type: 'runCustomStep', customStepId: 'go' }] }],
+        customSteps: [{ id: 'go', name: 'Go', actions: [{ type: 'navigate' }] }],
     };
     const checked = checkRunRequest(request, { env: {} });
     assert.equal(checked.ok, false);
     const body = refusal(checked.errors, request);
-    assert.match(body.problems[0], /^\$\.actions\[0\]\.actions\[0\] runs the custom step "Multi-viewport"/);
-    assert.match(body.steps[0], /^Step 1\.1 - Custom step: runs the custom step "Multi-viewport"/);
+    assert.match(body.problems[0], /^\$\.customSteps\[0\]\.actions\[0\] needs "url"/);
+    assert.match(body.steps[0], /^Custom step 1 "go", step 1 - Navigate to URL: needs URL$/);
     assert.equal('steps' in refusal(checked.errors), false, 'without the request, as before');
 });
-

@@ -63,19 +63,10 @@ describe('Merged scan in the editor', () => {
         assert.deepEqual(value[0].actions.map((a) => a.label), ['Light', 'Dark']);
     });
 
-    test('one inside another, at any depth, is flagged', () => {
+    test('one inside another, at any depth, is valid: it joins the outer one', () => {
         const { builder, actionsEl } = newBuilder([{ type: 'mergedScan', label: 'Outer', actions: [
             { type: 'group', actions: [{ type: 'mergedScan', label: 'Inner', actions: [{ type: 'a11yScan' }] }] },
         ] }]);
-        assert.equal(builder.validate().ok, false);
-        assert.ok(arrayErrors(actionsEl).includes('A Merged scan cannot contain another Merged scan'));
-    });
-
-    test('a disabled one inside does not count', () => {
-        const { builder } = newBuilder([{ type: 'mergedScan', label: 'Outer', actions: [
-            { type: 'a11yScan' },
-            { type: 'mergedScan', label: 'Inner', disabled: true, actions: [{ type: 'a11yScan' }] },
-        ] }]);
-        assert.equal(builder.validate().ok, true);
+        assert.equal(builder.validate().ok, true, arrayErrors(actionsEl).join('; '));
     });
 });

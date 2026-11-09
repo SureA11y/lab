@@ -157,8 +157,13 @@ listed as a skipped context and contributes nothing. A Merged scan whose scans
 were all skipped gives a skipped scan, as a skipped A11yScan does. One with no
 scans at all gives no scan: there is nothing to show, and nothing is shown.
 
-A Merged scan inside another Merged scan is refused when the workflow is
-checked: its scans would have two names at once.
+A Merged scan inside another Merged scan, directly or through a custom
+step (a multi-viewport scan reused inside a Merged scan of its own), joins
+the outer one: its scans are more contexts of the outer scan, each named by
+its own label, and it all reports as that one scan. The inner one's name
+and tags are not a scan's, and its log line says which it is part of.
+Nesting them used to be refused, as a scan would have had two names at
+once; one name, the outer's, is what the scan is shown under.
 
 ## 5. The report
 
