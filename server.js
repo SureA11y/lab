@@ -611,7 +611,7 @@ app.post("/workflow-start", async (req, res) => {
     // Everything that can be told before a browser opens: a run that cannot
     // work is refused here, with every reason, not accepted and failed.
     const checked = checkRunRequest(req.body, { validateUrl: validateUrlOrThrow });
-    if (!checked.ok) return res.status(400).json(refusal(checked.errors));
+    if (!checked.ok) return res.status(400).json(refusal(checked.errors, req.body));
     // Every slot taken and every place to wait too: refused, to try later.
     if (runGate.full) {
         res.set("Retry-After", "30");

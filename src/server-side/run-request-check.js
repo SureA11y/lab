@@ -11,6 +11,7 @@
 
 const { checkSpec } = require('../cli/check-spec');
 const { resolveSecretRefs, describeMissing } = require('../shared/secret-refs.js');
+const { problemsInStepWords } = require('./step-check');
 
 // Fields of the request that are not the run's: said nothing about.
 const REQUEST_ONLY = ['dryRun'];
@@ -36,13 +37,21 @@ function checkRunRequest(body, { validateUrl = null, env = process.env } = {}) {
     return { ok: errors.length === 0, errors, warnings: checked.warnings };
 }
 
-/** The 400 body for a refused run: { error, details, problems }. */
-function refusal(errors) {
-    return {
+/**
+ * The 400 body for a refused run: { error, details, problems }, plus
+ * `steps` when the request's steps are given: the same problems as the
+ * builder names the steps ("Step 3.1 - ..."), which the app shows.
+ */
+function refusal(errors, request = null) {
+    const body = {
         error: 'The workflow cannot run',
         details: errors.length === 1 ? errors[0] : `${errors.length} problems: ${errors.join('; ')}`,
         problems: errors,
     };
+    if (request && typeof request === 'object') {
+        body.steps = problemsInStepWords(errors, { actions: request.actions, customSteps: request.customSteps });
+    }
+    return body;
 }
 
 module.exports = { checkRunRequest, refusal };

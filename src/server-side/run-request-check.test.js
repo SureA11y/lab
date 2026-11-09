@@ -48,3 +48,18 @@ test('a request that is not an object is refused; the refusal lists every proble
     assert.equal(check([]).ok, false);
     assert.deepEqual(refusal(['a', 'b']), { error: 'The workflow cannot run', details: '2 problems: a; b', problems: ['a', 'b'] });
 });
+
+test('a refusal also says each problem as the builder names its step, for the app', () => {
+    const request = {
+        url: 'https://example.com/',
+        actions: [{ type: 'mergedScan', label: 'Cookies', actions: [{ type: 'runCustomStep', customStepId: 'mv' }] }],
+        customSteps: [{ id: 'mv', name: 'Multi-viewport', actions: [{ type: 'mergedScan', label: 'Viewports', actions: [{ type: 'a11yScan' }] }] }],
+    };
+    const checked = checkRunRequest(request, { env: {} });
+    assert.equal(checked.ok, false);
+    const body = refusal(checked.errors, request);
+    assert.match(body.problems[0], /^\$\.actions\[0\]\.actions\[0\] runs the custom step "Multi-viewport"/);
+    assert.match(body.steps[0], /^Step 1\.1 - Custom step: runs the custom step "Multi-viewport"/);
+    assert.equal('steps' in refusal(checked.errors), false, 'without the request, as before');
+});
+
