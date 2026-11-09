@@ -1482,6 +1482,34 @@ describe('changing a finished batch', () => {
         await until(() => /Running “Product v2\.3” again/.test(status()), 'what it says');
     });
 
+    test('a run that failed in a running batch runs again, or is deleted, without waiting for the batch', async () => {
+        const answers = [true];
+        const {p, server} = panel([{concurrency: 1, maxConcurrency: 8, sessions: [
+            session({id: 'live', state: 'running'}, [
+                baseItem({id: 'bad', name: 'Broken', status: 'error', error: 'Site down', file: null}),
+                baseItem({id: 'r', status: 'running'}),
+                baseItem({id: 'w', status: 'waiting'}),
+            ]),
+        ]}], {confirmDelete: () => answers.shift()});
+        await p.refresh();
+        const live = document.querySelector('[data-session-id="live"]');
+        for (const id of ['r', 'w']) {
+            assert.equal(live.querySelector(`tr[data-item-id="${id}"] [title="Run again"]`), null, 'not while it goes');
+            assert.equal(live.querySelector(`tr[data-item-id="${id}"] [title="Delete"]`), null);
+        }
+        const again = live.querySelector('tr[data-item-id="bad"] [title="Run again"]');
+        assert.equal(again.getAttribute('aria-disabled'), null, 'its own batch running does not hold it');
+        again.click();
+        await until(() => server.posts.length, 'the re-run');
+        assert.equal(server.posts[0].url, '/queue/sessions/live/items/bad/rerun');
+        await until(() => /“Broken” runs again with the rest of the batch/.test(status()), 'what it says');
+        const del = document.querySelector('tr[data-item-id="bad"] [title="Delete"]');
+        assert.equal(del.getAttribute('aria-disabled'), null);
+        del.click();
+        await until(() => server.posts.length === 2, 'the delete');
+        assert.equal(server.posts[1].url, '/queue/sessions/live/items/bad/delete');
+    });
+
     test('no Run again for a report added as it was, or while a run goes', async () => {
         const {p} = panel([{concurrency: 1, maxConcurrency: 8, sessions: [
             session({id: 'running', state: 'running'}, [baseItem({id: 'r', status: 'running'})]),

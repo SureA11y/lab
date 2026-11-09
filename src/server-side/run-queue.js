@@ -1265,8 +1265,10 @@ function createRunQueue({
     }
 
     /**
-     * Runs a finished batch's row again, from the workflow it saved, with
-     * its row's values. Its result waits beside the row's active one
+     * Runs a finished row again, from the workflow it saved, with its row's
+     * values: a row of a finished batch, or one of the running batch that
+     * has ended (a run that failed need not wait for the others). In the
+     * running batch it waits for a free slot as its other rows do. Its result waits beside the row's active one
      * (`candidate`) until chooseRerunResult says which to keep; a re-run that
      * ends with no result leaves nothing to choose, and the row says so
      * (`lastRerun`). Not while an earlier re-run's result waits. A workflow
@@ -1274,7 +1276,8 @@ function createRunQueue({
      * resuming does.
      */
     function rerunItem(id, itemId, { values = null } = {}) {
-        const { dir, manifest, items, item } = finishedRow(id, itemId);
+        const row = finishedRow(id, itemId);
+        const { dir, manifest, items, item } = row;
         if (item.candidate) throw queueError(409, CHOOSE_FIRST);
         if (item.imported) throw queueError(400, 'This run was added as a report, so there is no workflow to run again.');
         let spec = runSpecFrom(item.config && item.config.runSpec);
@@ -1297,6 +1300,11 @@ function createRunQueue({
             status: 'waiting', startedAt: null, finishedAt: null, durationMs: null, error: null,
             scans: null, scansRun: null, findings: null, file: null, ownFolders: null, ranAgain: true, spec,
         });
+        if (row.live) {
+            persist();
+            pump();
+            return { sessionId: id, itemId };
+        }
         if (!concurrencyChosen) concurrency = automaticConcurrency(1, maxConcurrency);
         reopen(id, dir, manifest, items, { keepTimes: true });
         return { sessionId: id, itemId };
@@ -1323,21 +1331,30 @@ function createRunQueue({
      * pictures only those results used. What another result still uses
      * stays. Gone from batch.json first, in one write: the rest is cleaning
      * up, and a file left behind is only a file.
+     *
+     * A row of the running batch (`live`) changes its rows in memory, written
+     * before anything is awaited, and leaves its pictures: a run going now
+     * may name one of them before its result is written.
      */
-    async function rewriteAndRemove(id, dir, manifest, items, goes, folders = []) {
+    async function rewriteAndRemove({ id, dir, manifest, live }, items, goes, folders = []) {
         const files_ = [...new Set(goes.filter(ownName))];
         const kept = new Set(items.flatMap(resultFilesOf).filter(ownName));
         const leaving = files_.filter((f) => !kept.has(f));
         // What they used, read before they go.
-        const theirPictures = await picturesIn(dir, leaving);
         const theirFolders = new Set([
             ...leaving.flatMap((f) => files.runFoldersOfFile(path.join(dir, f), reportsRoot)),
             ...files.recordedRunFoldersOf({ runFolders: folders }, reportsRoot),
         ]);
-
-        // A batch that started running meanwhile is not changed under it.
-        if (session && session.id === id) throw queueError(409, 'This batch started running meanwhile. Try again once it has finished.');
-        files.writeManifest(dir, { ...manifest, items: items.map(manifestItem) });
+        let theirPictures = new Set();
+        if (live) {
+            session.items = items;
+            persist();
+        } else {
+            theirPictures = await picturesIn(dir, leaving);
+            // A batch that started running meanwhile is not changed under it.
+            if (session && session.id === id) throw queueError(409, 'This batch started running meanwhile. Try again once it has finished.');
+            files.writeManifest(dir, { ...manifest, items: items.map(manifestItem) });
+        }
 
         for (const name of leaving) await fs.promises.rm(path.join(dir, name), { force: true }).catch(() => {});
 
@@ -1368,32 +1385,45 @@ function createRunQueue({
         return { removedPictures, removedRunFolders };
     }
 
-    // A finished batch's row, by id, from its batch.json.
+    /**
+     * A finished row, by id: one of the running batch that has ended, as the
+     * queue holds it (`live`), or one of a finished batch, from its
+     * batch.json.
+     */
     function finishedRow(id, itemId) {
+        if (session && session.id === id) {
+            const item = session.items.find((i) => i.id === itemId);
+            if (!item) throw queueError(404, 'No such run in this batch');
+            if (UNFINISHED.has(item.status)) throw queueError(409, 'This run has not finished yet. Wait for it, or cancel it, first.');
+            return { id, dir: session.dir, manifest: null, items: session.items, item, live: true };
+        }
         const { dir, manifest } = finishedSession(id);
         const items = itemsFromManifest(manifest);
         const item = items.find((i) => i.id === itemId);
         if (!item) throw queueError(404, 'No such run in this batch');
-        return { dir, manifest, items, item };
+        return { id, dir, manifest, items, item, live: false };
     }
 
     const CHOOSE_FIRST = 'This run was run again: choose which result to keep first.';
 
     /**
-     * Deletes one run of a finished batch: its row in batch.json, its results
-     * (the active one and its versions), and the pictures (images/) and run
-     * folders (evidence, screenshots) that only it used; another row's stay.
+     * Deletes one run that has ended, of a finished batch or of the running
+     * one (a run that failed need not wait for the others): its row in
+     * batch.json, its results (the active one and its versions), and the
+     * pictures (images/) and run folders (evidence, screenshots) that only
+     * it used; another row's stay.
      * The batch's zip and Send to Compare follow, as they read its folder
      * and batch.json. Its last run is not deleted: the batch is, as a whole
      * (deleteSession). The batch's configuration, saved when it started,
      * stays as it was. Not while a re-run's result waits for a choice.
      */
     async function deleteItem(id, itemId) {
-        const { dir, manifest, items, item } = finishedRow(id, itemId);
+        const row = finishedRow(id, itemId);
+        const { items, item } = row;
         if (items.length === 1) throw queueError(409, 'This is the batch\'s only run. Delete the batch instead.');
         if (item.candidate) throw queueError(409, CHOOSE_FIRST);
         const remaining = items.filter((i) => i !== item);
-        const { removedPictures, removedRunFolders } = await rewriteAndRemove(id, dir, manifest, remaining, resultFilesOf(item), item.runFolders || []);
+        const { removedPictures, removedRunFolders } = await rewriteAndRemove(row, remaining, resultFilesOf(item), item.runFolders || []);
         return { sessionId: id, deleted: itemId, remaining: remaining.length, removedPictures, removedRunFolders };
     }
 
@@ -1422,7 +1452,8 @@ function createRunQueue({
      */
     async function chooseRerunResult(id, itemId, keep) {
         if (!['new', 'active', 'both'].includes(keep)) throw queueError(400, 'Say which to keep: new, active or both.');
-        const { dir, manifest, items, item } = finishedRow(id, itemId);
+        const row = finishedRow(id, itemId);
+        const { items, item } = row;
         const candidate = item.candidate;
         if (!candidate) throw queueError(409, 'This run has no result from running it again to choose.');
         let goes = [];
@@ -1445,7 +1476,7 @@ function createRunQueue({
         }
         item.candidate = null;
         item.lastRerun = { ...(item.lastRerun || {}), kept: keep };
-        const removed = await rewriteAndRemove(id, dir, manifest, items, goes, folders);
+        const removed = await rewriteAndRemove(row, items, goes, folders);
         return { sessionId: id, itemId, kept: keep, ...removed };
     }
 
@@ -1461,13 +1492,14 @@ function createRunQueue({
      * totals, zip and Send to Compare use. The one it was becomes a version.
      */
     async function activateVersion(id, itemId, file) {
-        const { dir, manifest, items, item } = finishedRow(id, itemId);
+        const row = finishedRow(id, itemId);
+        const { items, item } = row;
         if (item.candidate) throw queueError(409, CHOOSE_FIRST);
         const version = versionOf(item, file);
         const active = resultOf(item);
         item.versions = item.versions.map((v) => (v === version ? active : v));
         for (const k of RESULT_FIELDS) item[k] = version[k] ?? null;
-        await rewriteAndRemove(id, dir, manifest, items, []);
+        await rewriteAndRemove(row, items, []);
         return { sessionId: id, itemId, active: file };
     }
 
@@ -1477,13 +1509,14 @@ function createRunQueue({
      * the row.
      */
     async function deleteVersion(id, itemId, file) {
-        const { dir, manifest, items, item } = finishedRow(id, itemId);
+        const row = finishedRow(id, itemId);
+        const { items, item } = row;
         if (item.candidate) throw queueError(409, CHOOSE_FIRST);
         const version = versionOf(item, file);
         const folders = foldersOfResult(item, version);
         withoutFolders(item, folders);
         item.versions = item.versions.filter((v) => v !== version);
-        const removed = await rewriteAndRemove(id, dir, manifest, items, [version.file], folders);
+        const removed = await rewriteAndRemove(row, items, [version.file], folders);
         return { sessionId: id, itemId, deleted: file, versions: item.versions.length, ...removed };
     }
 

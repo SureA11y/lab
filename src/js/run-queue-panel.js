@@ -391,26 +391,28 @@ function actionsCell(doc, session, item, { queueBusy = false } = {}) {
             'data-focus-key': `cancel:${item.id}`,
         }));
     }
-    // A finished batch's row, run again from the workflow it saved; one
-    // added as a report has none.
-    if (session.state !== 'running' && item.hasConfig && !item.imported
-        && item.status !== 'waiting' && item.status !== 'running' && item.status !== 'cancelling') {
+    // A row that has ended, of a finished batch or of the running one (a
+    // run that failed need not wait for the others), may change; only
+    // another batch running holds it.
+    const ended = item.status !== 'waiting' && item.status !== 'running' && item.status !== 'cancelling';
+    const otherBusy = queueBusy && session.state !== 'running';
+    // Run again from the workflow it saved; one added as a report has none.
+    if (ended && item.hasConfig && !item.imported) {
         cell.append(iconAction(doc, 'button', 'Run again', 'rerun', item.name, {
             type: 'button',
-            'aria-disabled': queueBusy ? 'true' : null,
-            'data-queue-action': queueBusy ? 'blocked' : 'rerun',
-            'data-blocked-reason': queueBusy ? QUEUE_BUSY_CHANGE : null,
+            'aria-disabled': otherBusy ? 'true' : null,
+            'data-queue-action': otherBusy ? 'blocked' : 'rerun',
+            'data-blocked-reason': otherBusy ? QUEUE_BUSY_CHANGE : null,
             'data-session-id': session.id,
             'data-item-id': item.id,
             'data-focus-key': `rerun:${item.id}`,
         }));
     }
-    // A finished batch's run, deleted from it (its result, and what only it
-    // used); not its only one: the batch is deleted as a whole.
-    if (session.state !== 'running'
-        && item.status !== 'waiting' && item.status !== 'running' && item.status !== 'cancelling') {
+    // Deleted from its batch (its result, and what only it used); not its
+    // only one: the batch is deleted as a whole.
+    if (ended) {
         const only = (session.counts?.total ?? (session.items || []).length) <= 1;
-        const why = queueBusy ? QUEUE_BUSY_CHANGE : (only ? DELETE_ONLY_RUN : null);
+        const why = otherBusy ? QUEUE_BUSY_CHANGE : (only ? DELETE_ONLY_RUN : null);
         cell.append(iconAction(doc, 'button', 'Delete', 'delete', item.name, {
             type: 'button',
             'aria-disabled': why ? 'true' : null,
@@ -1637,7 +1639,7 @@ export function createRunQueuePanel({
                 }
                 task?.step('Queuing it');
                 await post(`/queue/sessions/${encodeURIComponent(session.id)}/items/${encodeURIComponent(item.id)}/rerun`, values ? { values } : {});
-                const said = `Running “${item.name}” again. Its result waits beside the active one until you choose which to keep; if it ends with none, the active one stays.`;
+                const said = `${session.state === 'running' ? `“${item.name}” runs again with the rest of the batch` : `Running “${item.name}” again`}. Its result waits beside the active one until you choose which to keep; if it ends with none, the active one stays.`;
                 setStatus(said);
                 task?.done(said);
             })));

@@ -298,7 +298,12 @@ status says when it was reached, in full (*6 Nov 2026, 11:33*; a running
 one when it started), and *Ran again* under it when its result came from
 Run again, so a result from another day stands out from the batch's.
 
-A finished batch can still change, while no other batch runs:
+A run that has ended can change, while no other batch runs: in a finished
+batch, and in the running one too, so a run that failed is run again or
+deleted without waiting for the rest of its batch. Run again there joins
+the batch's runs still waiting, ahead of them, and starts once a run ends.
+The pictures a result let go there used stay until the batch is deleted: a
+run still going may use them too.
 
 - **Run again**, on a row, runs it again from the workflow it saved, with its
   row's values. The row's result stays its **active** one, the one the

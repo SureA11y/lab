@@ -196,6 +196,14 @@ The first public release.
   `…/versions/delete` do the same; a row's zip takes `?file=` for any of
   its results, and Compare reads only each row's active one from a batch's
   zip.
+- **A run that failed is run again or deleted while its batch still
+  runs.** Run again and Delete waited for the whole batch to finish, so a
+  run that failed early held its retry until the last run ended. Now a row
+  that has ended has both as soon as it ends: Run again puts it ahead of
+  the batch's runs still waiting, and its result waits for a choice as
+  any re-run's does, the Keep links working while the batch runs too.
+  Pictures a deleted or let-go result used stay until the batch is
+  deleted, as a run going may name them.
 - **Every run's status says when it was reached**, in full (*6 Nov 2026,
   11:33*), with *Ran again* under it when its result came from Run again:
   a result from another day stands out from the rest of its batch.
@@ -213,7 +221,7 @@ The first public release.
 - **A run can be deleted from a finished batch**: **Delete** on its row,
   once confirmed, removes its results and the pictures and evidence only
   they used, from the batch's folder, `batch.json`, zip and Send to Compare. Not
-  a batch's only run (the batch is deleted instead), nor while a batch runs.
+  a batch's only run (the batch is deleted instead), nor while another batch runs.
   `POST /queue/sessions/{sessionId}/items/{itemId}/delete` does the same.
   The row's actions column is wide enough for Delete beside the other three
   buttons.
