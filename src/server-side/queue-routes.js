@@ -134,7 +134,8 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
         { itemId: req.query && typeof req.query.item === 'string' ? req.query.item : null },
     )));
 
-    // A finished batch's row, run again from the workflow it saved.
+    // A finished row, run again from the workflow it saved: of a finished
+    // batch, or of the running one, without waiting for its other rows.
     app.post('/queue/sessions/:sessionId/items/:itemId/rerun', (req, res) => respond(res, () => (
         queue.rerunItem(req.params.sessionId, req.params.itemId, { values: req.body && req.body.values })
     )));
@@ -150,8 +151,9 @@ function registerQueueRoutes(app, queue, { reportsRoot, baseDir, logError = cons
     }
     const fileIn = (req) => (req.body && typeof req.body.file === 'string' ? req.body.file : '');
 
-    // One run of a finished batch: its row, its results, and the pictures and
-    // run folders only it used. POST like the other actions.
+    // One finished run of a batch, finished or running: its row, its
+    // results, and the pictures and run folders only it used. POST like the
+    // other actions.
     app.post('/queue/sessions/:sessionId/items/:itemId/delete', (req, res) => respondAsync(res,
         () => queue.deleteItem(req.params.sessionId, req.params.itemId)));
 

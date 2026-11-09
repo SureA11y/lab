@@ -1317,6 +1317,77 @@ describe('run queue helpers', () => {
     });
 });
 
+describe('changing a run that has ended while its batch still runs', () => {
+    const saved = (name) => item(name, { config: { runSpec: item(name).run } });
+    const live = (queue) => queue.getState().sessions.find((s) => s.state === 'running');
+    const row = (queue, name) => queue.getState().sessions[0].items.find((i) => i.name === name);
+    const failed = { status: 'error', payload: null, error: { details: 'Site down' } };
+
+    test('a failed run is run again at once, before the rows still waiting', async () => {
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun);
+        const { sessionId } = queue.addItems([saved('A'), saved('B'), saved('C')]);
+        await settle(queue, runner.calls[0], failed);
+        assert.equal(row(queue, 'A').status, 'error');
+
+        assert.deepEqual(queue.rerunItem(sessionId, row(queue, 'A').id), { sessionId, itemId: row(queue, 'A').id });
+        assert.equal(row(queue, 'A').status, 'waiting');
+        assert.equal(runner.calls.length, 2, 'B holds the one slot');
+        // A run still going is not run again, nor deleted.
+        assert.throws(() => queue.rerunItem(sessionId, row(queue, 'B').id), (err) => err.statusCode === 409 && /not finished/.test(err.message));
+        await assert.rejects(queue.deleteItem(sessionId, row(queue, 'B').id), (err) => err.statusCode === 409);
+
+        await settle(queue, runner.calls[1], { status: 'done', payload: payloadWith() });
+        assert.equal(runner.calls[2].spec.scenarioName, 'A', 'the re-run goes before C');
+        await settle(queue, runner.calls[2], { status: 'done', payload: payloadWith({ scans: [{ fail: 2 }] }) });
+        const a = row(queue, 'A');
+        assert.deepEqual([a.status, a.findings.fail, a.reruns, a.candidate], ['done', 2, 1, null], 'nothing to replace: the result is the row\'s');
+        assert.equal(live(queue).id, sessionId, 'the batch still runs C');
+        await settle(queue, runner.calls[3], { status: 'done', payload: payloadWith() });
+        await waitUntil(() => !live(queue), 'the batch to finish');
+        const manifest = files.readManifest(files.sessionDirFor(baseDir, sessionId));
+        assert.deepEqual(manifest.items.map((i) => i.status), ['done', 'done', 'done']);
+        assert.ok(manifest.items[0].file);
+    });
+
+    test('a failed run is deleted from the batch, which carries on', async () => {
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun);
+        const { sessionId } = queue.addItems([saved('A'), saved('B')]);
+        await settle(queue, runner.calls[0], failed);
+        await queue.deleteItem(sessionId, row(queue, 'A').id);
+        assert.deepEqual(live(queue).items.map((i) => i.name), ['B']);
+        const dir = files.sessionDirFor(baseDir, sessionId);
+        assert.deepEqual(files.readManifest(dir).items.map((i) => i.name), ['B'], 'written at once');
+        await settle(queue, runner.calls[1], { status: 'done', payload: payloadWith() });
+        await waitUntil(() => !live(queue), 'the batch to finish');
+        assert.deepEqual(files.readManifest(dir).items.map((i) => i.name), ['B']);
+    });
+
+    test('a re-run\'s result is chosen while the batch still runs', async () => {
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun);
+        const { sessionId } = queue.addItems([saved('A'), saved('B'), saved('C')]);
+        const dir = files.sessionDirFor(baseDir, sessionId);
+        await settle(queue, runner.calls[0], { status: 'done', payload: payloadWith({ scans: [{ fail: 3 }] }) });
+        const first = row(queue, 'A').file;
+        queue.rerunItem(sessionId, row(queue, 'A').id);
+        await settle(queue, runner.calls[1], { status: 'done', payload: payloadWith() });
+        await settle(queue, runner.calls[2], { status: 'done', payload: payloadWith({ scans: [{ fail: 1 }] }) });
+        const a = row(queue, 'A');
+        assert.deepEqual([a.file, a.findings.fail, a.candidate.findings.fail], [first, 3, 1], 'the re-run waits beside the active one');
+        assert.ok(live(queue), 'C runs');
+
+        await queue.chooseRerunResult(sessionId, a.id, 'new');
+        const now = row(queue, 'A');
+        assert.deepEqual([now.file, now.findings.fail, now.candidate], [a.candidate.file, 1, null]);
+        assert.ok(!fs.existsSync(path.join(dir, first)), 'the old result is let go');
+        await settle(queue, runner.calls[3], { status: 'done', payload: payloadWith() });
+        await waitUntil(() => !live(queue), 'the batch to finish');
+        assert.equal(files.readManifest(dir).items[0].file, a.candidate.file);
+    });
+});
+
 describe('changing a finished batch', () => {
     const saved = (name) => item(name, { config: { runSpec: item(name).run } });
 
@@ -1528,10 +1599,11 @@ describe('changing a finished batch', () => {
         assert.ok(reread.getState().sessions[0].items[1].imported, 'still shown as added');
     });
 
-    test('not while a batch runs', async () => {
+    test('not while another batch runs', async () => {
         const { runner, queue, sessionId } = await finishedBatch();
         queue.addItems([item('Other')]);
         assert.throws(() => queue.rerunItem(sessionId, rows(queue)[0].id), (err) => err.statusCode === 409);
+        await assert.rejects(queue.deleteItem(sessionId, rows(queue)[0].id), (err) => err.statusCode === 409);
         assert.equal(runner.calls.length, 3);
     });
 
