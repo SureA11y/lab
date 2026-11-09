@@ -28,7 +28,7 @@ test('the packs the lab depends on are loaded, and those named in A11Y_PACKS', (
 test("surea11y's own packs are tried whether or not the lab depends on them", () => {
     const load = (name) => { if (name === '@surea11y/pack-wai-aria') return { name }; throw new Error('not installed'); };
     const { names, packs } = loadPacks({ pkg: { dependencies: {} }, env: '', load });
-    assert.deepEqual(names, ['@surea11y/pack-en301549', '@surea11y/pack-wai-aria']);
+    assert.deepEqual(names, ['@surea11y/pack-en301549', '@surea11y/pack-rgaa', '@surea11y/pack-wai-aria']);
     assert.deepEqual(packs.map((p) => p.name), ['@surea11y/pack-wai-aria'], 'one not installed is left out');
 });
 

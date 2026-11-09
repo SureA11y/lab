@@ -57,15 +57,14 @@ describe('convertDocument', () => {
         assert.match(config.changes[0], /^the run's profile "section508" → "wcag22-aa"/);
     });
 
-    test('a scan\'s opt-in rules, RGAA\'s, are dropped, and an RGAA profile is left for a person', () => {
+    test('a scan\'s opt-in rules, RGAA\'s, are dropped, and an RGAA profile is kept: its pack runs it', () => {
         const { doc, changes } = convertDocument(spec([
             { type: 'a11yScan', optInRules: 'none' },
             { type: 'a11yScan', profile: 'rgaa-4.1.2' },
         ]));
         assert.deepEqual(doc.actions, [{ type: 'a11yScan' }, { type: 'a11yScan', profile: 'rgaa-4.1.2' }]);
-        assert.deepEqual(changes, ['step 1: optInRules "none" dropped (the lab no longer runs RGAA\'s rules)']);
-        // The check after says what is left to do.
-        assert.match(checkSpec(doc).errors.join('\n'), /"rgaa-4\.1\.2" is not a profile/);
+        assert.deepEqual(changes, ['step 1: optInRules "none" dropped (RGAA\'s rules run with its profile, rgaa-4.1.2)']);
+        assert.doesNotMatch(checkSpec(doc).errors.join('\n'), /rgaa/);
     });
 
     test('a scan\'s disableRules joins its excludeRuleIds', () => {

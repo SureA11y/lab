@@ -71,8 +71,9 @@
     "terser": "^5.49.1"
   },
   "dependencies": {
-    "@surea11y/core": "^1.15.0",
+    "@surea11y/core": "^1.16.1",
     "@surea11y/pack-en301549": "^1.2.0",
+    "@surea11y/pack-rgaa": "^1.0.0",
     "@surea11y/pack-wai-aria": "^1.0.0",
     "@surea11y/puppeteer": "^1.5.0",
     "archiver": "^8.0.0",
