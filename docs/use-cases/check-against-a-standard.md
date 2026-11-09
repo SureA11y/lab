@@ -98,6 +98,10 @@ manual part.
 
 - EN 301 549 comes to surea11y as a pack, `@surea11y/pack-en301549`,
   installed with the lab.
+- RGAA 4.1.2, the French accessibility standard, comes as the pack
+  `@surea11y/pack-rgaa`, also installed with the lab: its profile
+  `rgaa-4.1.2` gives one result per RGAA criterion, with the rules for what
+  RGAA asks beyond WCAG 2.1.
 - WAI-ARIA 1.2 comes as the pack `@surea11y/pack-wai-aria`, also installed
   with the lab, with no setting ([configuration](../configuration.md#standards)).
   It reads surea11y's ARIA findings by WAI-ARIA's own wording, so a finding

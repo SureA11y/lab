@@ -30,9 +30,9 @@
  *   replaced the run's);
  * - Skip iteration's textEquals, which nothing read, is dropped;
  * - a scan's crawl (and the probes it carried) is dropped;
- * - a scan's optInRules, for RGAA's rules, which the lab no longer runs, is
- *   dropped. A scan or run whose profile is RGAA's is left for a person to
- *   choose another;
+ * - a scan's optInRules, which turned RGAA's rules on, is dropped: they
+ *   run with RGAA's profile, rgaa-4.1.2, from its pack. A scan or run whose
+ *   profile is RGAA's keeps it;
  * - a scan's disableRules, a second Exclude rules that surea11y did not
  *   read, joins its excludeRuleIds, which every engine reads.
  *
@@ -149,7 +149,7 @@
             for (const key of ['crawl', 'probes']) {
                 if (key in s) set({ [key]: undefined }, `${key} ${show(s[key])} dropped (a scan no longer crawls other pages first)`);
             }
-            if ('optInRules' in s) set({ optInRules: undefined }, `optInRules ${show(s.optInRules)} dropped (the lab no longer runs RGAA's rules)`);
+            if ('optInRules' in s) set({ optInRules: undefined }, `optInRules ${show(s.optInRules)} dropped (RGAA's rules run with its profile, rgaa-4.1.2)`);
             if ('disableRules' in s) {
                 const merged = Array.from(new Set([...selectorList(s.excludeRuleIds), ...selectorList(s.disableRules)]));
                 set({ disableRules: undefined, excludeRuleIds: merged.length ? merged.join(', ') : undefined },

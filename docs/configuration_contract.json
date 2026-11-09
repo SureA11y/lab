@@ -6,7 +6,7 @@
     "AI agents"
   ],
   "purpose": "Generate valid run specs (the workflow files the headless runner takes and other tools exchange) and app configuration files, including custom steps.",
-  "generatedAt": "2026-11-05T14:27:20.832Z",
+  "generatedAt": "2026-11-09T08:27:12.952Z",
   "sourceOfTruth": {
     "actionDefinitionsFile": "src/workflow/action-definitions.js",
     "workflowEngineFile": "src/workflow/workflow-engine.js",
@@ -228,6 +228,11 @@
             {
               "value": "en301549-v3.2.1",
               "label": "EN 301 549 V3.2.1"
+            },
+            {
+              "value": "rgaa-4.1.2",
+              "label": "RGAA 4.1.2",
+              "pack": true
             },
             {
               "value": "wai-aria-1.2",

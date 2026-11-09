@@ -273,6 +273,10 @@ The first public release.
   scan (the highest level, then version), never one's version beside
   another's level. It used to give WCAG 2.2 AA and
   EN 301 549 V4.1.1 unless told otherwise.
+- **RGAA 4.1.2 as a profile**, `rgaa-4.1.2`, from its pack
+  `@surea11y/pack-rgaa`, installed with the lab as EN 301 549's is (the lab
+  now needs surea11y core 1.16.1): a scan against it reports one result per
+  RGAA criterion, with the rules for what RGAA asks beyond WCAG 2.1.
 - **WAI-ARIA 1.2 as a profile**, from its pack `@surea11y/pack-wai-aria`,
   installed with the lab as EN 301 549's is (the lab now needs surea11y
   core 1.15): a scan against it reports one result
