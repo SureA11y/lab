@@ -246,7 +246,7 @@ describe('batch rows in a config', () => {
         assert.deepEqual(order, ['batch', sections], 'after the batch, which opens its section');
         order.length = 0;
         io.applyConfig({ state: { 'url-input': 'https://example.com/' } });
-        assert.deepEqual(order, [], 'an older config leaves the sections alone');
+        assert.deepEqual(order, ['batch'], 'an older config empties the batch and leaves the sections alone');
     });
 
     test('applying a config with a batch hands it back to the section', () => {
@@ -256,7 +256,7 @@ describe('batch rows in a config', () => {
         assert.equal(io.applyConfig({ state: { 'url-input': 'https://example.com/' }, batch }), null);
         assert.deepEqual(seen, [batch]);
         io.applyConfig({ state: { 'url-input': 'https://example.com/' } });
-        assert.equal(seen.length, 1, 'a config without one leaves the section alone');
+        assert.deepEqual(seen, [batch, null], 'a config without one empties the section');
     });
 });
 

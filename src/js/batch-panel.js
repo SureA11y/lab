@@ -208,6 +208,14 @@ export function createBatchPanel({
         return check();
     }
 
+    function clear() {
+        rowsInput.value = '';
+        if (namePatternInput) namePatternInput.value = '';
+        hadRows = false;
+        setEnabled(false);
+        return check();
+    }
+
     fileButton?.addEventListener('click', () => fileInput?.click());
     fileInput?.addEventListener('change', async () => {
         const file = fileInput.files && fileInput.files[0];
@@ -258,15 +266,23 @@ export function createBatchPanel({
             fill(JSON.stringify(rows, null, 2));
         },
         /**
+         * Empties the box and the run name pattern and switches the batch off.
+         * The section stays open or collapsed as it was.
+         */
+        clear,
+        /**
          * Restores the rows from a loaded config, and whether the batch is
-         * enabled (on, for a config saved before that was recorded).
+         * enabled (on, for a config saved before that was recorded). A config
+         * without a batch empties the section: loading replaces the batch, it
+         * does not add to it.
          */
         setBatchFromConfig(batch) {
-            if (!batch || typeof batch !== 'object') return;
             let text;
-            if (typeof batch.rowsText === 'string') text = batch.rowsText;
-            else if (Array.isArray(batch.rows)) text = JSON.stringify(batch.rows, null, 2);
-            else return;
+            if (batch && typeof batch === 'object') {
+                if (typeof batch.rowsText === 'string') text = batch.rowsText;
+                else if (Array.isArray(batch.rows)) text = JSON.stringify(batch.rows, null, 2);
+            }
+            if (text === undefined) return clear();
             if (namePatternInput) namePatternInput.value = typeof batch.namePattern === 'string' ? batch.namePattern : '';
             fill(text);
             if (batch.enabled === false) {

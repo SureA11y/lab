@@ -224,7 +224,9 @@ export function createConfigIO(deps) {
         }
 
         applyShareableState(state, callback);
-        if (cfg.batch && typeof setBatch === 'function') setBatch(cfg.batch);
+        // Loading replaces the batch too: one saved without a batch empties
+        // the section rather than leaving the previous rows in place.
+        if (typeof setBatch === 'function') setBatch(cfg.batch || null);
         // Last, so the sections end as they were saved whatever opened them
         // on the way (rows in the batch, for one).
         if (cfg.sections && typeof setSections === 'function') setSections(cfg.sections);

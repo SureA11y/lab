@@ -283,4 +283,26 @@ describe('batch panel', () => {
         assert.equal($('content').hidden, false);
         assert.equal(runLabelFor(last()), 'Run batch (2 runs)');
     });
+
+    test('a loaded config without a batch empties the section and switches the batch off', () => {
+        const {p, last} = panel();
+        p.setBatchFromConfig({rows: JSON.parse(twoRows), namePattern: 'P {var:name}'});
+        p.setBatchFromConfig(null);
+        assert.equal($('rows').value, '');
+        assert.equal($('pattern').value, '');
+        assert.equal($('use').textContent, 'Enable batch');
+        assert.equal(last().active, false);
+        assert.equal(last().state, 'empty');
+        assert.equal(runLabelFor(last()), null);
+        assert.equal(p.getBatchForConfig(), null);
+    });
+
+    test('rows typed after the section was emptied by a load switch the batch on again', async () => {
+        const {p, last} = panel();
+        p.setBatchFromConfig({rows: JSON.parse(twoRows)});
+        p.setBatchFromConfig(undefined);
+        type(twoRows);
+        await tick();
+        assert.equal(last().active, true);
+    });
 });
