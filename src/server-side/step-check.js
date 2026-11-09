@@ -13,7 +13,7 @@ const { VIEWPORT_PRESETS } = require('../shared/scan-inputs.js');
 const runSpec = require('../shared/run-spec.js');
 const { buildRunSpecSchema, buildAppConfigSchema, buildBatchSpecSchema, checkSpecActions } = require('../shared/run-spec-schema.js');
 const { checkAgainstSchema } = require('../shared/json-schema-check.js');
-const { checkScanSteps } = require('./scan-step-check');
+const { checkScanSteps, mergedScanNestingProblems } = require('./scan-step-check');
 const { describeEngine } = require('./a11y-engine');
 const { selectorSyntaxProblem } = require('../shared/selector-syntax.js');
 
@@ -241,6 +241,7 @@ function checkWorkflowSteps({ actions, customSteps, wording = 'paths' } = {}) {
     const errors = steps.errors.slice();
     errors.push(...stepFieldProblems(doc.actions, '$.actions'));
     doc.customSteps.forEach((c, i) => errors.push(...stepFieldProblems(c && c.actions, `$.customSteps[${i}].actions`)));
+    errors.push(...mergedScanNestingProblems(doc.actions, doc.customSteps));
     const warnings = steps.warnings.filter((w) => !OWNED_BY_SCAN_CHECK.test(w));
     if (wording === 'steps') {
         const context = { actions: doc.actions, customSteps: doc.customSteps };
@@ -255,4 +256,14 @@ function checkWorkflowSteps({ actions, customSteps, wording = 'paths' } = {}) {
     return { errors, warnings };
 }
 
-module.exports = { runSpecSchema, appConfigSchema, batchSpecSchema, checkWorkflowSteps, MAX_STEP_DEPTH };
+/**
+ * Problems said with paths ("$.actions[2] needs ...") said as the builder
+ * names the steps ("Step 3 - Click: needs ..."), for the app; a problem
+ * that names no step is kept as it is.
+ */
+function problemsInStepWords(problems, { actions, customSteps } = {}) {
+    const context = { actions: Array.isArray(actions) ? actions : [], customSteps: customStepsList(customSteps) };
+    return (Array.isArray(problems) ? problems : []).map((p) => inStepWords(String(p), context));
+}
+
+module.exports = { runSpecSchema, appConfigSchema, batchSpecSchema, checkWorkflowSteps, problemsInStepWords, MAX_STEP_DEPTH };

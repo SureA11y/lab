@@ -157,9 +157,9 @@ export function createRunWorkflowUi(app) {
                     app.setUiState('cancelled', 'Cancelled');
                 } else if (s === 'done') {
                     app.setUiState('done', 'Finished');
-                } else if (s === 'error') {
-                    app.setUiState('error', 'Workflow failed');
                 }
+                // A failed run is said once, with its reason, when its
+                // result is read (handleTerminalResult).
             },
             onProgress: (prog) => {
                 if (prog && Array.isArray(prog.logs) && prog.logs.length) {
@@ -171,6 +171,12 @@ export function createRunWorkflowUi(app) {
         // Get final result payload
         const final = await fetchWorkflowResult(runId);
         const finalStatus = final && typeof final.status === 'string' ? final.status : 'error';
+        if (finalStatus === 'error') {
+            // The log already ends with the failure and its reason (the
+            // server's last lines): the status line says it, the log not again.
+            const why = final?.error?.details || final?.payload?.errorDetails?.message || '';
+            app.setUiState('error', why ? `Workflow failed: ${why}` : 'Workflow failed', {log: false});
+        }
         return {ok: finalStatus === 'done' || finalStatus === 'cancelled', final};
     }
 
@@ -505,8 +511,12 @@ export function createRunWorkflowUi(app) {
         let statusMessage = 'Scan failed. Server responded with status ' + response.status + '.';
         try {
             const json = JSON.parse(text);
-            if (json && (json.details || json.error)) {
-                const detail = json.details || json.error;
+            // A refused run's problems as the builder names the steps, when given.
+            const steps = json && Array.isArray(json.steps) && json.steps.length ? json.steps : null;
+            if (steps || (json && (json.details || json.error))) {
+                const detail = steps
+                    ? (steps.length === 1 ? steps[0] : `${steps.length} problems: ${steps.join('; ')}`)
+                    : (json.details || json.error);
                 statusMessage = 'Scan failed (HTTP ' + response.status + '): ' + detail;
             }
         } catch {

@@ -210,6 +210,18 @@ The first public release.
   Cancel, or Open and Download, come first and Run again and Delete after,
   with an empty place for any a row does not have, and the columns line
   up down the table.
+- **A Merged scan inside another is refused before the run starts.** One
+  reached through a custom step (a Merged scan running a custom step that
+  holds a Merged scan of its own) failed only when the run got there, after
+  the page had loaded and the steps before it had run. Now the run is
+  refused at once, naming the step to change as the builder numbers it
+  (*Step 3.1 - Custom step*), the custom step and both Merged scans; a
+  refusal from `POST /workflow-start` says each problem that way in
+  `steps`, beside `problems`. `--check` finds it too.
+- **A run's log ends with how it ended.** *Workflow failed* (and
+  *Finished*) were logged before the last steps the run reported, and a
+  failed run said *Workflow failed* twice. Now the log says it once, after
+  those steps, and the status line keeps the reason.
 - **Load config replaces the batch, and Append config adds to it.** A
   config saved without batch rows left the rows, run name pattern and
   on/off state already in the Batch section, so the next Run could run an

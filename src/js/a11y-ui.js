@@ -2226,12 +2226,14 @@ function storeActiveMode(mode) {
     logCopyLastBtn?.addEventListener('click', () => copyLogLines(30));
     logCopyAllBtn?.addEventListener('click', () => copyLogLines());
 
-    function setStatusRun(message, type) {
+    // log: false when the log has said it already (a failed run's reason,
+    // which the server's log ends with).
+    function setStatusRun(message, type, {log = true} = {}) {
         if (!statusRunEl) return;
         statusRunEl.textContent = message || '';
         statusRunEl.className = 'status';
         if (type) statusRunEl.classList.add(type);
-        appendLog(message, type);
+        if (log) appendLog(message, type);
     }
 
     function setStatusReport(message, type) {
@@ -2245,7 +2247,7 @@ function storeActiveMode(mode) {
      * Unified UI state setter.
      * Keeps behavior, centralizes button states and status messaging.
      */
-    function setUiState(state, message = '') {
+    function setUiState(state, message = '', {log = true} = {}) {
         const st = String(state || '').toLowerCase();
 
         if (st === 'running') {
@@ -2321,7 +2323,7 @@ function storeActiveMode(mode) {
         }
 
         if (st === 'error') {
-            if (message) setStatusRun(message, STATUS.ERROR);
+            if (message) setStatusRun(message, STATUS.ERROR, {log});
             scanButton.setAttribute('aria-disabled', 'false');
             dryRunButton?.setAttribute('aria-disabled', 'false');
             cancelButton.setAttribute('aria-disabled', 'true');
