@@ -606,14 +606,16 @@ describe('run queue', () => {
             (err) => err.statusCode === 400 && /every hidden value/.test(err.message));
         assert.equal(next.calls.length, 0);
 
-        const values = { [fields[0].key]: 'hunter2', [fields[1].key]: '4321' };
+        // Values that cannot turn up in batch.json by chance, as digits
+        // alone could, inside one of its random ids.
+        const values = { [fields[0].key]: 'hunter2', [fields[1].key]: 'PIN 4321' };
         assert.deepEqual(restarted.resumeSession(sessionId, { values }), { sessionId, resumed: 2, stillWaiting: 0 });
         const spec = next.calls[0].spec;
         assert.equal(spec.actions[1].children[0].value, 'hunter2');
-        assert.equal(spec.customSteps[0].actions[0].value, '4321');
+        assert.equal(spec.customSteps[0].actions[0].value, 'PIN 4321');
 
         const manifestText = fs.readFileSync(path.join(baseDir, sessionId, 'batch.json'), 'utf8');
-        assert.ok(!manifestText.includes('hunter2') && !manifestText.includes('4321'), 'values never reach batch.json');
+        assert.ok(!manifestText.includes('hunter2') && !manifestText.includes('PIN 4321'), 'values never reach batch.json');
 
         await settle(restarted, next.calls[0], { status: 'done', payload: payloadWith({ extra: { actions: spec.actions } }) });
         const saved = fs.readdirSync(path.join(baseDir, sessionId))

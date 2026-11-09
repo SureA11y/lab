@@ -1828,7 +1828,7 @@ const ACTION_DEFINITIONS = {
     mergedScan: {
         label: "Merged scan",
         category: "composition",
-        description: "Report the A11y scans inside it as one scan: the same view scanned in several contexts (light and dark theme, desktop and mobile width) counts once. Each scan inside is a context, named by its label; a failure lists the contexts it occurs in, and one whose result differs between contexts (a different contrast ratio, a different size) is listed once per result. The merged scan holds every context's screenshot. Variables set inside stay available after it. A Merged scan cannot contain another.",
+        description: "Report the A11y scans inside it as one scan: the same view scanned in several contexts (light and dark theme, desktop and mobile width) counts once. Each scan inside is a context, named by its label; a failure lists the contexts it occurs in, and one whose result differs between contexts (a different contrast ratio, a different size) is listed once per result. The merged scan holds every context's screenshot. Variables set inside stay available after it. A Merged scan inside another (directly, or through a custom step) adds its scans to the outer one as more contexts: it all reports as one scan.",
         fields: {
             label: {
                 type: "string",

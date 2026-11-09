@@ -2092,12 +2092,35 @@ describe('page-driving actions (mocked Puppeteer page)', () => {
             assert.equal(localVars.inside ?? (ctx.vars && ctx.vars.inside), 'yes', 'not scoped to the step');
         });
 
-        test('one inside another is refused, naming the outer one', async () => {
-            const { ctx } = scanSpy();
-            await assert.rejects(() => run(ctx, [
-                { type: 'mergedScan', label: 'Outer', actions: [{ type: 'mergedScan', label: 'Inner', actions: [{ type: 'a11yScan' }] }] },
-            ]), /A Merged scan cannot run inside another Merged scan \("Outer"\)/);
-            assert.equal(ctx._mergedScan, null, 'left as it was');
+        test('one inside another joins it: its scans are more contexts of the outer scan', async () => {
+            const { ctx, seen } = scanSpy();
+            const ended = [];
+            ctx.onMergedScanEnd = (key) => ended.push(key);
+            await run(ctx, [
+                { type: 'mergedScan', label: 'Outer', scanTags: ['cookies'], actions: [
+                    { type: 'a11yScan', label: 'Banner' },
+                    { type: 'group', actions: [
+                        { type: 'mergedScan', label: 'Inner', scanTags: ['viewports'], actions: [{ type: 'a11yScan', label: 'Desktop' }, { type: 'a11yScan', label: 'Mobile' }] },
+                    ] },
+                ] },
+            ]);
+            assert.deepEqual(seen.map((s) => s.label), ['Banner', 'Desktop', 'Mobile']);
+            assert.equal(new Set(seen.map((s) => s.mergedScan.key)).size, 1, 'one scan');
+            assert.deepEqual(seen.map((s) => s.mergedScan.label), ['Outer', 'Outer', 'Outer']);
+            assert.deepEqual(seen[2].mergedScan.scanTags, ['cookies']);
+            assert.deepEqual(ended, [seen[0].mergedScan.key], 'ended once, by the outer one');
+            assert.equal(ctx._mergedScan, null);
+            assert.ok(ctx.runLogs.some((l) => /merged scan: Inner, part of the merged scan "Outer"/.test(l.message)));
+        });
+
+        test('one reached through a custom step joins the outer one too', async () => {
+            const { ctx, seen } = scanSpy();
+            ctx.customSteps = { mv: { id: 'mv', actions: [
+                { type: 'mergedScan', label: 'Multi-viewport a11y scan', actions: [{ type: 'a11yScan', label: 'Desktop' }, { type: 'a11yScan', label: 'Mobile' }] },
+            ] } };
+            await run(ctx, [{ type: 'mergedScan', label: '4 - Scan cookies and close', actions: [{ type: 'runCustomStep', customStepId: 'mv' }] }]);
+            assert.deepEqual(seen.map((s) => [s.label, s.mergedScan.label]), [['Desktop', '4 - Scan cookies and close'], ['Mobile', '4 - Scan cookies and close']]);
+            assert.equal(seen[0].mergedScan.key, seen[1].mergedScan.key);
         });
     });
 

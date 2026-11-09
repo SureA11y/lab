@@ -3,7 +3,7 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { scanStepsOf, checkScanSteps, mergedScanNestingProblems } = require('./scan-step-check');
+const { scanStepsOf, checkScanSteps } = require('./scan-step-check');
 
 // The engines as the facade describes them; the default one for no id. The
 // two others are made up, to cover the other ways an engine selects rules.
@@ -90,42 +90,5 @@ describe('checkScanSteps with several profiles', () => {
     test('leaves a variable for the run to check', () => {
         assert.doesNotThrow(check([{ type: 'a11yScan', profile: '{var:profiles}' }]));
         assert.doesNotThrow(check([{ type: 'a11yScan', profile: ['wcag22-aa', '{var:standard}'] }]));
-    });
-});
-
-describe('mergedScanNestingProblems', () => {
-    const scan = { type: 'a11yScan', label: 'Desktop' };
-    const merged = (label, actions) => ({ type: 'mergedScan', label, actions });
-    const multi = { id: 'mv', name: 'Multi-viewport', actions: [merged('Viewports', [scan])] };
-
-    test('a Merged scan inside another, at any depth, names both', () => {
-        const problems = mergedScanNestingProblems([
-            merged('Outer', [{ type: 'group', actions: [merged('Inner', [scan])] }]),
-        ], []);
-        assert.equal(problems.length, 1);
-        assert.match(problems[0], /^\$\.actions\[0\]\.actions\[0\]\.actions\[0\] is the Merged scan "Inner", inside the Merged scan "Outer"\./);
-    });
-
-    test('through a custom step, at the Run custom step, naming the custom step', () => {
-        const problems = mergedScanNestingProblems([
-            { type: 'wait', ms: 10 },
-            merged('4 - Scan cookies and close', [{ type: 'runCustomStep', customStepId: 'mv' }]),
-        ], [multi]);
-        assert.deepEqual(problems, ['$.actions[1].actions[0] runs the custom step "Multi-viewport" inside the Merged scan "4 - Scan cookies and close", and that custom step holds the Merged scan "Viewports". A Merged scan cannot hold another: run the custom step outside the Merged scan, or take the Merged scan out of the custom step.']);
-    });
-
-    test('through custom steps calling custom steps, and inside a custom step itself', () => {
-        const outer = { id: 'outer', actions: [{ type: 'runCustomStep', customStepId: 'mv' }] };
-        assert.equal(mergedScanNestingProblems([merged('A', [{ type: 'runCustomStep', customStepId: 'outer' }])], [outer, multi]).length, 1);
-        const own = { id: 'own', actions: [merged('A', [merged('B', [scan])])] };
-        assert.match(mergedScanNestingProblems([], [own])[0], /^\$\.customSteps\[0\]\.actions\[0\]\.actions\[0\] is the Merged scan "B"/);
-    });
-
-    test('a custom step with a Merged scan run outside one, a disabled step, a {var:...} id and a cycle pass', () => {
-        assert.deepEqual(mergedScanNestingProblems([{ type: 'runCustomStep', customStepId: 'mv' }, merged('A', [scan])], [multi]), []);
-        assert.deepEqual(mergedScanNestingProblems([merged('A', [{ ...merged('B', [scan]), disabled: true }])], []), []);
-        assert.deepEqual(mergedScanNestingProblems([merged('A', [{ type: 'runCustomStep', customStepId: '{var:step}' }])], [multi]), []);
-        const loop = { id: 'loop', actions: [{ type: 'runCustomStep', customStepId: 'loop' }] };
-        assert.deepEqual(mergedScanNestingProblems([merged('A', [{ type: 'runCustomStep', customStepId: 'loop' }])], [loop]), []);
     });
 });
