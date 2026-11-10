@@ -2228,6 +2228,66 @@ export function createRenderer({
             .map((m) => String(m?.label || m?.id || '') + (m?.includedInReport === false ? ' (excluded)' : ''))
             .join('; ')
             + (excluded ? `. The ${excluded === 1 ? 'one' : excluded} excluded ${excluded === 1 ? 'is' : 'are'} left out of it.` : '.'));
+        // Its pages as a strip of their pictures, each opening that page in
+        // the review (scan-review-ui.js): the first ones, and how many more.
+        const withShots = members.filter((m) => m && m.shot);
+        if (!withShots.length) return p;
+        const SHOWN = 8;
+        const box = document.createElement('div');
+        const strip = document.createElement('ul');
+        strip.className = 'scan-filmstrip';
+        strip.setAttribute('aria-label', `Pages of ${group.name || group.pattern || 'the group'}`);
+        for (const m of withShots.slice(0, SHOWN)) {
+            const li = document.createElement('li');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'scan-filmstrip__page';
+            btn.dataset.srFilm = m.id;
+            btn.dataset.srGroup = group.key || '';
+            // An excluded page is in the group but not in the merged scan.
+            const excluded = m.includedInReport === false;
+            if (excluded) btn.classList.add('scan-filmstrip__page--excluded');
+            btn.setAttribute('aria-label', `See ${m.label || m.id}${excluded ? ', excluded' : ''}`);
+            const img = document.createElement('img');
+            img.src = m.shot;
+            img.alt = '';
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            btn.append(img);
+            li.append(btn);
+            strip.append(li);
+        }
+        if (withShots.length > SHOWN) {
+            const li = document.createElement('li');
+            li.className = 'scan-filmstrip__more';
+            const more = document.createElement('button');
+            more.type = 'button';
+            more.className = 'link-button';
+            more.dataset.srOpenGroup = group.key || '';
+            more.textContent = `and ${withShots.length - SHOWN} more`;
+            li.append(more);
+            strip.append(li);
+        }
+        box.append(p, strip);
+        return box;
+    }
+
+    /**
+     * The group a scan is part of (§11.2), on its card: "In Product pages · 3
+     * of 23", the name opening the review on that group.
+     */
+    function buildReviewGroupLine(scan) {
+        const g = scan?.reviewGroup;
+        if (!g || !g.key) return null;
+        const p = document.createElement('p');
+        p.className = 'scan-review-group';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'link-button';
+        btn.dataset.srOpenGroup = g.key;
+        btn.textContent = g.name || 'its group';
+        btn.setAttribute('aria-label', `${g.name || 'Its group'}: review its scans`);
+        p.append('In ', btn, ` · ${g.index} of ${g.total}`);
         return p;
     }
 
@@ -2273,6 +2333,8 @@ export function createRenderer({
             scanResultsWrapper.appendChild(scanResultsMeta);
             const contextsEl = buildMergedContexts(scan);
             if (contextsEl) scanResultsWrapper.appendChild(contextsEl);
+            const groupEl = buildReviewGroupLine(scan);
+            if (groupEl) scanResultsWrapper.appendChild(groupEl);
             // Below the one-line meta row, full width: a note can run long.
             const noticesEl = buildScanNotices(scan);
             if (noticesEl) scanResultsWrapper.appendChild(noticesEl);

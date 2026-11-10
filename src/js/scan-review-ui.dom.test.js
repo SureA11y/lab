@@ -238,3 +238,22 @@ describe('what the run merged', () => {
         assert.equal('scanGrouping' in payload, false);
     });
 });
+
+describe('in the report', () => {
+    test('each scan in a group says which, the narrowest; a merged scan and the rest do not', () => {
+        const {app, payload} = setup(['/', '/blog/a/1', '/blog/a/2', '/blog/b/3', '/blog/b/4', '/about'],
+            {scanGrouping: {patterns: [{key: 'url:shop.example.com/blog/a/{*}', name: 'Posts of a'}]}});
+        const view = app.runSummaryUi.viewPayload(payload);
+        assert.deepEqual(view.scans.map((s) => s.reviewGroup && [s.reviewGroup.name, s.reviewGroup.index, s.reviewGroup.total]), [
+            undefined, ['Posts of a', 1, 2], ['Posts of a', 2, 2], ['/blog/b/{id}', 1, 2], ['/blog/b/{id}', 2, 2], undefined,
+        ]);
+        // Copies: the report's own scans are not changed.
+        assert.equal('reviewGroup' in payload.scans[1], false);
+    });
+
+    test('a group by hand is said before a pattern', () => {
+        const {app, payload} = setup(SHOP, {scanGrouping: {patterns: [{key: 'manual:1', name: 'Picks', members: ['s1', 's4']}]}});
+        const s1 = app.runSummaryUi.viewPayload(payload).scans.find((s) => s.id === 's1');
+        assert.deepEqual([s1.reviewGroup.key, s1.reviewGroup.index, s1.reviewGroup.total], ['manual:1', 1, 2]);
+    });
+});

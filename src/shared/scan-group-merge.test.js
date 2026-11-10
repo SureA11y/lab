@@ -336,3 +336,12 @@ describe('the template is what most pages fail (§11.2)', () => {
         assert.deepEqual(r.content.map((e) => e.ruleId), ['image-alt']);
     });
 });
+
+test('a merged scan\'s members carry their first picture, for the strip on its card', () => {
+    const scans = shop();
+    scans[1].screenshots = [{ name: 'Page', dataUrl: 'data:image/png;base64,AA' }];
+    scans[2].screenshots = ['https://shop.example.com/shot-b.png'];
+    scans[3].screenshots = [];
+    const merged = shown(scans, [{ key: PRODUCTS, merge: true }]).scans[1];
+    assert.deepEqual(merged.mergedGroup.members.map((m) => m.shot), ['data:image/png;base64,AA', 'https://shop.example.com/shot-b.png', null]);
+});

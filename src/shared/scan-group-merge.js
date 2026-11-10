@@ -97,6 +97,15 @@
         }
     }
 
+    // A scan's first picture, as a report keeps it: a URL, or an entry with
+    // its public URL or data URL. Null without one.
+    function firstShotOf(scan) {
+        const first = scan && Array.isArray(scan.screenshots) ? scan.screenshots[0] : null;
+        if (typeof first === 'string') return first;
+        if (first && typeof first === 'object') return first.publicUrl || first.dataUrl || null;
+        return null;
+    }
+
     function summaryOf(canonical) {
         const count = (o) => canonical.findings.filter((f) => f && f.outcome === o).length;
         const occurrenceCount = canonical.findings
@@ -177,6 +186,8 @@
                     label: s.label || s.id,
                     url: s.url || null,
                     includedInReport: isIncluded(s),
+                    // For the strip of its pages on the merged scan's card.
+                    shot: firstShotOf(s),
                 })),
             },
         };
