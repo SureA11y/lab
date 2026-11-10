@@ -313,12 +313,12 @@ describe('What a group\'s scans fail (step 6)', () => {
         return payload;
     }
 
-    test('a chosen group says what fails on every scan and what on some, naming them', () => {
+    test('a chosen group says what fails on most scans and what on some, naming them', () => {
         const {$, payload, write} = setup(SHOP, {scanGrouping: {patterns: [{key: PRODUCTS, name: 'Products'}]}});
         withFindings(payload);
         write();
         const box = $(`[data-sg-key="issues:${PRODUCTS}"]`);
-        assert.equal(box.querySelector('summary').textContent, 'What its scans fail: 1 rule on every scan, 1 rule on some');
+        assert.equal(box.querySelector('summary').textContent, 'What its scans fail: 1 rule on most scans, 1 rule on some');
         const items = [...box.querySelectorAll('li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim());
         assert.deepEqual(items, [
             'button-name title button-name · serious · 1 element',

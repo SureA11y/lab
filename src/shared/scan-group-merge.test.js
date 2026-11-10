@@ -293,3 +293,46 @@ describe('what the run merged (step 9)', () => {
         assert.equal(run(scans, [{ key: 'run:m1', merge: false }]).scans[0], old);
     });
 });
+
+describe('the template is what most pages fail (§11.2)', () => {
+    // Five products failing the cart button and the price badge's contrast,
+    // but one, a gift card, built otherwise: no price badge, a bigger page.
+    function products() {
+        const badge = (path) => occ(path, { target: '.price-badge', html: '<b class="price-badge"></b>' });
+        return ['/p/a', '/p/b', '/p/c', '/p/d', '/p/gift'].map((path, i) => {
+            const s = scan(i, path, { elements: path === '/p/gift' ? 300 : 100 + i });
+            if (path !== '/p/gift') s.canonical.findings.push(finding('color-contrast', [badge(path)]));
+            if (path === '/p/b') s.canonical.findings.push(finding('image-alt', [occ(path, { target: '.photo', html: '<img class="photo">' })]));
+            return s;
+        });
+    }
+
+    test('one page built otherwise does not turn the template into content', () => {
+        const r = M.groupIssues(products(), deps);
+        assert.deepEqual(r.template.map((e) => [e.ruleId, e.scans.length]), [['button-name', 5], ['color-contrast', 4]]);
+        assert.deepEqual(r.content.map((e) => [e.ruleId, e.scans]), [['image-alt', ['s1']]]);
+        assert.equal(M.TEMPLATE_SHARE, 0.6);
+    });
+
+    test('each page says how it differs: its own failures, the template\'s it lacks, its size', () => {
+        const { byScan } = M.groupIssues(products(), deps);
+        const gift = byScan.get('s4');
+        assert.deepEqual(gift.missing.map((r) => r.ruleId), ['color-contrast']);
+        assert.equal(gift.size, true);
+        assert.equal(gift.unlike, true);
+        assert.deepEqual(byScan.get('s1').own.map((r) => r.ruleId), ['image-alt']);
+        assert.equal(byScan.get('s1').unlike, false);
+        // The others are alike: nothing of their own, nothing missing.
+        for (const id of ['s0', 's2', 's3']) {
+            const d = byScan.get(id);
+            assert.deepEqual([d.own.length, d.missing.length, d.unlike], [0, 0, false], id);
+        }
+    });
+
+    test('in a group of two, the template is what both fail', () => {
+        const two = products().slice(0, 2);
+        const r = M.groupIssues(two, deps);
+        assert.deepEqual(r.template.map((e) => e.ruleId), ['button-name', 'color-contrast']);
+        assert.deepEqual(r.content.map((e) => e.ruleId), ['image-alt']);
+    });
+});
