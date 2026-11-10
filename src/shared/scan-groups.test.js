@@ -39,7 +39,7 @@ describe('findGroups — without groups', () => {
     });
 
     test('empty or odd input does not throw', () => {
-        assert.deepEqual(G.findGroups(null), { groups: [], ungrouped: [] });
+        assert.deepEqual(G.findGroups(null), { groups: [], ungrouped: [], ids: [] });
         assert.deepEqual(G.findGroups([null, {}, { id: 's0' }]).ungrouped, ['s0']);
     });
 });
@@ -183,5 +183,58 @@ describe('findGroups — more than one source', () => {
             sources: [fixed('a', { g: { members: ['s0', 's1'], evidence } })],
         });
         assert.equal(r.groups[0].evidence, evidence);
+    });
+});
+
+describe('chooseGroups', () => {
+    // all ⊃ mid ⊃ small, and other beside them.
+    const result = () => G.findGroups(items(8), {
+        sources: [fixed('a', {
+            all: ['s0', 's1', 's2', 's3', 's4'],
+            mid: ['s0', 's1', 's2'],
+            small: ['s0', 's1'],
+            other: ['s5', 's6'],
+        })],
+    });
+    const tree = (level) => level.map((n) => [n.key, n.own, tree(n.children)]);
+
+    test('nothing chosen: no groups, every item ungrouped', () => {
+        const c = G.chooseGroups(result(), []);
+        assert.deepEqual(c.groups, []);
+        assert.deepEqual(c.ungrouped, ['s0', 's1', 's2', 's3', 's4', 's5', 's6', 's7']);
+        assert.deepEqual(c.missing, []);
+    });
+
+    test('an item is listed under the most specific chosen group', () => {
+        const c = G.chooseGroups(result(), ['a:all', 'a:small']);
+        assert.deepEqual(tree(c.groups), [
+            ['a:all', ['s2', 's3', 's4'], [['a:small', ['s0', 's1'], []]]],
+        ]);
+        assert.deepEqual(c.groups[0].members, ['s0', 's1', 's2', 's3', 's4']);
+        assert.deepEqual(c.ungrouped, ['s5', 's6', 's7']);
+    });
+
+    test('an unchosen group in between is skipped over', () => {
+        const c = G.chooseGroups(result(), ['a:small', 'a:all']);
+        assert.equal(c.groups[0].children[0].key, 'a:small');
+    });
+
+    test('a chosen child alone is a root', () => {
+        const c = G.chooseGroups(result(), ['a:mid', 'a:other']);
+        assert.deepEqual(tree(c.groups), [
+            ['a:mid', ['s0', 's1', 's2'], []],
+            ['a:other', ['s5', 's6'], []],
+        ]);
+        assert.deepEqual(c.ungrouped, ['s3', 's4', 's7']);
+    });
+
+    test('keys the result does not have are missing, not groups', () => {
+        const c = G.chooseGroups(result(), ['a:gone', 'a:mid', 'a:mid']);
+        assert.deepEqual(c.missing, ['a:gone']);
+        assert.deepEqual(c.groups.map((g) => g.key), ['a:mid']);
+    });
+
+    test('odd input does not throw', () => {
+        assert.deepEqual(G.chooseGroups(null, null), { groups: [], ungrouped: [], missing: [] });
     });
 });

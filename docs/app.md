@@ -118,8 +118,15 @@ A group needs several different pages sharing the shape of their address
 under a fixed part of it, on one host; a run whose URLs repeat nothing gets
 no groups, and the section says so. Each group says how many of its scans
 are included in the report, and lists them with a link to each; a group
-inside another lists only the scans no smaller group holds. The section only
-shows the groups: include or exclude scans from the list above it.
+inside another lists only the scans no smaller group holds. Tick the
+patterns to group by, at any level, and they appear under **Your groups**,
+each scan under the narrowest group you chose that holds it. A group can be
+given a name, and its scans taken out of the report or put back at once:
+**Exclude all**, **Include all**, or **Keep one**, which leaves the first
+included scan to stand for its template and takes the rest out. Each acts on
+the groups inside it too. The groups you chose, and their names, are saved
+with the report; its download leaves the excluded scans out, as it always
+does.
 
 ```json
 [
