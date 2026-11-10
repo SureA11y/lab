@@ -409,7 +409,7 @@
     /* Drawn by painting background-color through a mask, so the forced surface
        colour hides them against the surface they sit on. */
     .legend-toggle::before,
-    .config-toggle-word::after {
+    .config-header-row::before {
         background-color: ButtonText;
     }
 

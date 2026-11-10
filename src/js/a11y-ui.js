@@ -1626,10 +1626,6 @@ function storeActiveMode(mode) {
 
         configToggleDisableActionBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         configContentEl.hidden = !expanded;
-
-        // The whole header row is the button; only the affordance word changes.
-        const word = configToggleDisableActionBtn.querySelector('.config-toggle-word');
-        if (word) word.textContent = expanded ? 'Collapse' : 'Expand';
     }
 
     function setCustomStepsExpanded(expanded) {
