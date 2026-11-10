@@ -1,5 +1,5 @@
 // What a person does in the "Scan groups" section of the run summary
-// (docs/design/scan-grouping-design.md §6, §9 step 3): choose the patterns to
+// (docs/design/scan-grouping-design.md §6, §10 step 3): choose the patterns to
 // group by, name a chosen group, and include or exclude a group's scans.
 //
 // The choice is saved in the report (`scanGrouping`, scan-group-choice.js),

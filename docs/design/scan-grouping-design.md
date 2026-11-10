@@ -1,10 +1,10 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Steps 1 to 3 built** (§9): the grouping facade and the URL
+> Status: **Steps 1 to 3 built** (§10): the grouping facade and the URL
 > source, and the "Scan groups" section under a run's scans list, where
-> patterns are chosen, named, and their scans included or excluded. The other
-> steps are planned, in the order §9 lists them; each one is useful and
-> testable on its own.
+> patterns are chosen, named, and their scans included or excluded. Merging
+> a group's scans into one (§9) and the other steps are planned, in the order
+> §10 lists them; each one is useful and testable on its own.
 
 ## 1. Motivation
 
@@ -21,6 +21,12 @@ drop the rest from the report), and still look inside it when it matters.
 
 Nobody knows in advance which templates a site has, so the app proposes the
 groups from the URLs of the run's scans, and the person decides.
+
+What they decide is not only what to leave out. A group is something to act
+on: exclude every product but one, or **merge** the scans of all the products
+into one scan that stands for the template, where an issue of the template is
+one failure "on all 500 pages" and an issue of one product's content stays
+that product's (§9).
 
 ## 2. Decisions
 
@@ -60,6 +66,12 @@ groups from the URLs of the run's scans, and the person decides.
   side (`/about`, `/contact`) are not. A run without such repetition gets no
   patterns at all, and the app says so rather than offering groups that mean
   nothing (§5.3).
+- **D10: merging is a view, and it can be undone.** Merging a group does not
+  replace its scans in the report. The report keeps every scan and records
+  that the group is merged; the merged scan is built from them whenever the
+  report is shown, as the groups themselves are (D4). Unmerging gives the
+  scans back as they were, a download keeps them, and the person can group
+  them another way later (§9).
 
 ## 3. What already exists
 
@@ -178,7 +190,7 @@ to set them against.
 The defaults are `minUrls` 2 and `minVariants` 2: two products under
 `/products/` are already a template, because the literal anchor carries the
 evidence that `/about` and `/contact` lack. They are parameters of the
-module, checked by the tests on real URL lists (§9 step 1), which include
+module, checked by the tests on real URL lists (§10 step 1), which include
 runs that must come out with no patterns.
 
 The paths are bucketed in one pass, and each candidate pattern is checked
@@ -254,7 +266,8 @@ report's scan order, which issue dispersion and the exports follow
   in them.
 - The chosen patterns and their names, so the person finds their grouping
   again when the report is reopened: a run-level field,
-  `scanGrouping: { patterns: [{ key, name }] }`, `key` being the group's key
+  `scanGrouping: { patterns: [{ key, name, merge }] }` (`merge`, true for a
+  merged group, comes with §9), `key` being the group's key
   (`url:shop.example.com/products/{*}`), in the order they were chosen. It is
   in the report schema (v3 and v4) and kept by every download. Reports opened
   together and merged into one carry every group any of them chose, the
@@ -275,9 +288,96 @@ URL ("Dark · mobile" across all merged scans). It needs groundwork first:
 today the merged scan keeps, per context, only its outcome counts, so leaving
 a context out after the run means keeping each context's findings and folding
 again without it (`mergedScan`'s folding is pure, so folding again is cheap).
-That storage change is its own step (§9 step 5) and its own design note.
+That storage change is its own step (§10 step 7) and its own design note.
 
-## 9. Steps
+## 9. Merging a group
+
+### 9.1 What it is for
+
+A run that scanned 500 product pages has one template to fix and, perhaps, a
+few products whose content is broken. Excluding all but one product shows the
+template, but hides the content issues of the other 499. Merging the group
+shows both: one scan, "Product pages", in which a failure of the template is
+listed once, on all 500 pages, and a failure of one product's description is
+listed on that product's page alone. The report counts the group as one scan,
+so the template stops weighing 500 times in the totals, the dispersion and the
+comparisons, and the content issues are still there to read.
+
+### 9.2 What the person does
+
+A chosen group gets a **Merge** switch beside its actions. On, the group's
+scans are shown as one merged scan, in the scans list and in the report, named
+by the group's name (or its pattern). Off, they are back as they were. The
+choice is saved with the others (`merge: true`, §7).
+
+### 9.3 How the scans are folded
+
+The fold is the one a Merged scan step already does at the end of a run
+(`merged-scan-design.md` §4), with **pages** where that one has contexts. It
+needs one change. There, two occurrences are the same failure when they are on
+the same page, of the same element, failing for the same reasons; across the
+pages of a template the page always differs, so nothing would join. Here the
+page is left out of that identity and kept beside it instead:
+
+- **An occurrence with the same result on several pages is one failure on
+  those pages**, listed with them ("On all 500 pages", "On 3 of 500 pages"),
+  as a merged scan's occurrence lists its contexts. The same result is what it
+  is there: the same element (its target and shadow hosts, ids set aside as
+  they are there), the same outcome, summary, hint, uncertainty and measured
+  values. So a contrast failure of the price badge at 2.1:1 everywhere is one
+  failure on every page, and a product photo whose caption is unreadable on
+  one page is a failure on that page.
+- **A check counts once, with the worst outcome any page gave it**, so the
+  merged scan's rules and criteria read as the worst page does.
+- **Outcome counts, coverage and the accessibility summary** are worked out
+  again from the merged findings, with the functions a single scan uses.
+- **Occurrence ids** are per page (they hash the page's path), so a merged
+  occurrence keeps the ids of every page it is on, and each page's failure
+  can still be traced to it.
+- **Members that are merged scans themselves** (a product scanned in light and
+  dark) keep their contexts: an occurrence then says both where and under
+  what conditions it fails ("On 3 of 500 pages, in Dark · mobile").
+
+The fold is pure, and it moves from `src/server-side/merged-scan.js` to
+`src/shared/`, so the runner and the report view use the same code: the runner
+for contexts, the report view for pages.
+
+### 9.4 Rules
+
+- **Only the group's included scans are merged.** Excluding and merging are
+  two ways to reduce a group, and they combine: exclude the products that do
+  not matter, merge the rest. A merged group none of whose scans is included
+  is shown as one excluded scan.
+- **A scan is in one merged scan at most.** Merged groups can be chosen inside
+  one another; the outermost merged group wins, and a merged group inside it
+  is shown as merged into it, its switch kept, so unmerging the outer one
+  brings the inner one back merged.
+- **Including and excluding the merged scan** from the scans list acts on all
+  its scans, as Include all and Exclude all do.
+- **Renaming the merged scan** renames its group.
+- **Its place** in the report's order is its first scan's. Moving it moves
+  that scan, so it stays where the person put it once unmerged.
+- **Its id** is the group's key, so it is the same in every redraw and every
+  download, and a link to it, or a comparison with another run merged the
+  same way, finds it.
+
+### 9.5 One list of scans for everything
+
+Every part of the report that reads the scans (the summary and its totals,
+issue dispersion, the conformance report, the exports, the comparisons) reads
+them through one function: the report's scans **as shown**, with each merged
+group in place of its scans. It is the same idea as the Profiles selector's
+view of a scan (`viewScan`), one level up. Nothing reads `payload.scans`
+directly to count, so a merged group cannot be counted as one scan in one
+place and as 500 in another. The grouping itself keeps reading the scans as
+they are, so its groups do not change when one of them is merged.
+
+A download holds the scans as they are and the choice to merge (D10). The lab
+shows it merged again when it is opened; a reader that does not know
+`scanGrouping` sees the scans as they were, which is still a true report of
+the run.
+
+## 10. Steps
 
 1. **Grouping facade and URL source** (built). `src/shared/scan-groups.js`
    and `src/shared/scan-url-groups.js` (§5.5): signatures (§4) and the pattern
@@ -312,15 +412,23 @@ That storage change is its own step (§9 step 5) and its own design note.
    (`refreshScanGroups`), as renaming and moving a scan now do. Focus comes
    back to the same control after every redraw (`data-sg-focus`). Events are
    handled in `src/js/scan-groups-ui.js`.
-4. **Shared and unique issues per group.** For each group, the rules failing in
-   all its scans (the template's) and those failing in only some (the
-   content's), so the person sees what excluding would hide.
-5. **Per-context findings in merged scans.** Keep them, then fold again when a
+4. **The fold across pages** (§9.3). The Merged scan step's fold moved to
+   `src/shared/`, with pages as a second dimension beside contexts and the
+   page left out of an occurrence's identity when folding pages. Tested on
+   its own, with the runner's own tests still passing unchanged. No UI.
+5. **Merging a group** (§9.2, §9.4, §9.5). The scans as shown, one function
+   every reader goes through; the Merge switch on a chosen group; `merge`
+   saved in `scanGrouping`.
+6. **Shared and unique issues per group.** For each group, the issues on all
+   its pages (the template's) and those on only some (the content's), so the
+   person sees what excluding would hide and what merging would keep. Read
+   off the same fold, without merging.
+7. **Per-context findings in merged scans.** Keep them, then fold again when a
    context is left out.
-6. **Grouping by context.** The same view and actions over the contexts of
+8. **Grouping by context.** The same view and actions over the contexts of
    merged scans.
 
-## 10. Open questions
+## 11. Open questions
 
 - **Locale prefixes.** `/en/products/{*}` and `/es/productos/{*}` are one
   template in two languages. They stay two patterns (they differ in literal
@@ -329,11 +437,19 @@ That storage change is its own step (§9 step 5) and its own design note.
   different sets of scans. This is already true of card-by-card exclusion;
   grouping makes it easier to do at scale, so the comparison views may need to
   say how many scans each side excluded.
+- **What a merged group scores.** A Merged scan step divides by its largest
+  context's DOM metrics, as its contexts are one page. A group's pages are
+  different pages of one template; the largest page is the likely choice
+  again (the template, as fully as any page shows it), but a score that
+  should stand for the template is to be settled with real runs in step 5.
+- **Comparing a merged run with an unmerged one.** The merged scan has its own
+  id, so it matches nothing on the other side. The comparison may need to
+  match it with the scans it was made from.
 - **Where the view lives** (settled in step 2): a section of the run summary
   under the scans list, as it is about scans, not findings. Step 3 may turn
   it into a mode of the scans list, once its rows carry actions.
 
-## 11. Rejected alternatives
+## 12. Rejected alternatives
 
 - **A new exclusion layer next to the results.** The per-scan flag exists,
   is saved, and every aggregate honours it (D3). A second mechanism would have
@@ -354,5 +470,13 @@ That storage change is its own step (§9 step 5) and its own design note.
   from this one (D9).
 - **A group for every scan when nothing repeats.** It makes the view look
   busy without saying anything; no patterns is the honest result (§5.3).
+- **Merging by replacing the scans.** Folding a group into one scan for good,
+  in the report itself, would spare every reader the scans-as-shown function,
+  but it is one way only: the pages' own scans would be gone from the report
+  and its downloads, the group could not be unmerged or grouped another way,
+  and a later run could not be compared page by page (D10).
+- **Reusing the Merged scan step's fold unchanged.** Its identity includes the
+  page, which is right for contexts of one page and joins nothing across the
+  pages of a template (§9.3).
 - **Excluding automatically.** A group of near-identical pages can still hold
   one page's real issues; only the person can decide they are noise (D2).
