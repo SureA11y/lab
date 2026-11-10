@@ -162,6 +162,26 @@ export function createRunSummaryUi(app) {
         return groupingMemo.result;
     }
 
+    // What a group's scans fail together and apart, kept while its scans
+    // are the same objects: the Profiles selector reads them anew (viewScan),
+    // and nothing else in the report changes their findings.
+    const issuesMemo = new Map();
+
+    function groupIssuesOf(scans, group) {
+        const api = globalThis.A11Y_SCAN_GROUP_MERGE;
+        const fold = globalThis.A11Y_SCAN_FOLD;
+        if (!api || !fold || !group || typeof api.groupIssues !== 'function') return null;
+        const ids = new Set(group.members);
+        const members = scans.filter((s) => s && ids.has(s.id));
+        const known = issuesMemo.get(group.key);
+        if (known && known.members.length === members.length && known.members.every((m, i) => m === members[i])) {
+            return known.value;
+        }
+        const value = api.groupIssues(members, {fold});
+        issuesMemo.set(group.key, {members, value});
+        return value;
+    }
+
     // The scans as shown are worked out again only when what they depend on
     // changes: the scans and their order, which are included, their labels
     // and tags, and the groups merged.
@@ -230,6 +250,7 @@ export function createRunSummaryUi(app) {
             openKeys: state.openKeys,
             choice: choiceApi.readChoice(data),
             maxName: choiceApi.MAX_NAME,
+            issuesOf: (group) => groupIssuesOf(scans, group),
         });
     }
 

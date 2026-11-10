@@ -1,9 +1,10 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Steps 1 to 5 built** (§10): the grouping facade and the URL
+> Status: **Steps 1 to 6 built** (§10): the grouping facade and the URL
 > source; the "Scan groups" section under a run's scans list, where patterns
 > are chosen, named, their scans included or excluded, and merged into one
-> scan (§9); and the shared fold that merges them. The other steps are
+> scan (§9), each saying what its scans fail together and apart; and the
+> shared fold that merges them. The other steps are
 > planned, in the order §10 lists them; each one is useful and testable on
 > its own.
 
@@ -515,10 +516,15 @@ the run.
    `merge: true` is saved in `scanGrouping` and in the report schema.
    The conformance report, the checklist and the comparisons are made from
    the scans as saved (§11).
-6. **Shared and unique issues per group.** For each group, the issues on all
-   its pages (the template's) and those on only some (the content's), so the
-   person sees what excluding would hide and what merging would keep. Read
-   off the same fold, without merging.
+6. **Shared and unique issues per group** (built). For each chosen group,
+   "What its scans fail": the rules failing on every scan (the template's)
+   and those failing on some only (their content's), each with its elements
+   and, for the second, which scans, so the person sees what excluding would
+   hide and what merging would keep. `groupIssues` in
+   `src/shared/scan-group-merge.js` reads it off the same fold by scans,
+   without merging; failures only, as issue dispersion counts them, and every
+   scan of the group, excluded ones too. Kept per group while its scans are
+   the same objects (`run-summary-ui.js`).
 7. **Changing a merged group by hand** (§9.2, §9.4). Add scans to a merged
    group and remove them; groups by hand from scans chosen in the scans
    list, through the `manual` source; `add`, `remove` and `members` saved in

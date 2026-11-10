@@ -235,7 +235,56 @@
         return { scans: out, merges };
     }
 
+    /**
+     * What a group's scans fail together and apart (docs/design/
+     * scan-grouping-design.md §10 step 6): its scans folded by page, without
+     * merging them, and each failing element sorted by where it fails.
+     * - template: on every scan of the group, the template's to fix once;
+     * - content: on some of them only, each scan's own content.
+     * Failures only, as issue dispersion counts them; every scan of the
+     * group, excluded ones too, so the person sees what excluding hides.
+     * Each entry is a rule: { ruleId, title, severity, elements, scans }
+     * (`scans`: the ids of the scans it fails on, report order). Null for
+     * fewer than two scans with findings.
+     */
+    function groupIssues(members, deps) {
+        const parts = (Array.isArray(members) ? members : []).filter((s) => s && s.canonical);
+        if (parts.length < 2 || !deps || !deps.fold) return null;
+        const order = new Map(parts.map((s, i) => [s.id, i]));
+        const canonical = deps.fold.mergeCanonicals(
+            parts.map((s) => ({ canonical: s.canonical, context: s.id, name: s.label || s.id })),
+            parts.length,
+            { dimension: 'scans' },
+        );
+        const template = new Map();
+        const content = new Map();
+        for (const f of canonical.findings) {
+            if (!f || f.outcome !== 'fail') continue;
+            for (const occ of Array.isArray(f.occurrences) ? f.occurrences : []) {
+                if (!occ || (occ.occurrenceOutcome || occ.outcome || 'fail') !== 'fail') continue;
+                const on = Array.isArray(occ.scans) ? occ.scans : [];
+                const into = on.length >= parts.length ? template : content;
+                const id = f.ruleId || f.id;
+                let entry = into.get(id);
+                if (!entry) {
+                    entry = { ruleId: id, title: f.title || f.help || id, severity: f.severity || 'unknown', elements: 0, scans: new Set() };
+                    into.set(id, entry);
+                }
+                entry.elements += 1;
+                for (const scanId of on) entry.scans.add(scanId);
+            }
+        }
+        const SEVERITY = { critical: 0, serious: 1, moderate: 2, minor: 3 };
+        const listOf = (map) => [...map.values()]
+            .map((e) => ({ ...e, scans: [...e.scans].sort((a, b) => order.get(a) - order.get(b)) }))
+            .sort((a, b) => (SEVERITY[a.severity] ?? 4) - (SEVERITY[b.severity] ?? 4)
+                || b.scans.length - a.scans.length
+                || String(a.title).localeCompare(String(b.title)));
+        return { scansTotal: parts.length, template: listOf(template), content: listOf(content) };
+    }
+
     return {
+        groupIssues,
         mergedScanId,
         scansAsShown,
     };

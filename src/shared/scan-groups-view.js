@@ -123,6 +123,43 @@
 
     // ---------------------------------------------------------- your groups
 
+    // Scans named by label, three at most, the rest counted.
+    function scanNames(ids, scansById) {
+        const names = ids.map((id) => {
+            const s = scansById.get(id);
+            return (s && (s.label || s.id)) || id;
+        });
+        return names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')} and ${names.length - 3} more`;
+    }
+
+    // What a group's scans fail together and apart (§10 step 6): the
+    // template's failures, on every scan, and their content's, on some.
+    function issuesHTML(key, issues, ctx) {
+        if (!issues) return '';
+        const k = `issues:${key}`;
+        const t = issues.template.length;
+        const c = issues.content.length;
+        const summary = !t && !c
+            ? 'What its scans fail: <span class="sg-counts">nothing</span>'
+            : `What its scans fail: <span class="sg-counts">${esc([
+                t ? `${plural(t, 'rule')} on every scan` : '',
+                c ? `${plural(c, 'rule')} on some` : '',
+            ].filter(Boolean).join(', '))}</span>`;
+        const rule = (e, where) => `<li><span class="sg-rule">${esc(e.title)}</span> `
+            + `<span class="sg-url">${esc(`${e.ruleId} · ${e.severity} · ${plural(e.elements, 'element')}${where ? ` · ${where}` : ''}`)}</span></li>`;
+        const body = (t
+            ? `<p class="sg-caption">On every scan, so the template's, fixed once for all of them:</p>`
+                + `<ul class="sg-members">${issues.template.map((e) => rule(e, '')).join('')}</ul>`
+            : '<p class="sg-caption">Nothing fails on every scan.</p>')
+            + (c
+                ? `<p class="sg-caption">On some scans only, so their own content's, which excluding them hides:</p>`
+                    + `<ul class="sg-members">${issues.content.map((e) => rule(e,
+                        `on ${e.scans.length} of ${issues.scansTotal}: ${scanNames(e.scans, ctx.scansById)}`)).join('')}</ul>`
+                : '<p class="sg-caption">Nothing fails on some scans only.</p>');
+        return `<details class="sg-group sg-issues" data-sg-key="${esc(k)}"${openAttr(ctx, k)}>`
+            + `<summary>${summary}</summary>${body}</details>`;
+    }
+
     function chosenHTML(node, ctx) {
         const key = node.key;
         const name = ctx.names.get(key) || null;
@@ -152,7 +189,8 @@
             + `<span class="sg-merge"><input type="checkbox" id="${mergeId}" data-sg-merge="${esc(key)}" data-sg-focus="merge:${esc(key)}"${merged ? ' checked' : ''}>`
             + ` <label for="${mergeId}">Merge into one scan</label></span>`
             + `</div>`
-            + (into ? `<p class="sg-caption sg-merged-into">Shown merged into ${esc(into)}, the larger merged group it is in.</p>` : '');
+            + (into ? `<p class="sg-caption sg-merged-into">Shown merged into ${esc(into)}, the larger merged group it is in.</p>` : '')
+            + issuesHTML(key, ctx.issuesOf(node.group), ctx);
 
         const children = node.children.length
             ? `<ul class="sg-tree">${node.children.map((c) => `<li>${chosenHTML(c, ctx)}</li>`).join('')}</ul>`
@@ -175,7 +213,9 @@
      * - opts.choice: the chosen groups, [{ key, name }] (readChoice); keys the
      *   result does not have are ignored;
      * - opts.open: the section starts open; opts.openKeys: the data-sg-key of
-     *   the groups to start open (those open before the summary was redrawn).
+     *   the groups to start open (those open before the summary was redrawn);
+     * - opts.issuesOf(group): what a chosen group's scans fail together and
+     *   apart (scan-group-merge.js groupIssues), or null.
      * Empty for fewer than two scans: there is nothing to group.
      */
     function sectionHTML(result, scans, opts) {
@@ -195,6 +235,7 @@
             names: new Map(choice.filter((p) => p.name).map((p) => [p.key, p.name])),
             mergedKeys: new Set(choice.filter((p) => p.merge === true).map((p) => p.key)),
             mergedInto: () => null,
+            issuesOf: typeof o.issuesOf === 'function' ? o.issuesOf : () => null,
             maxName: Number.isFinite(o.maxName) ? o.maxName : 200,
             nextId: 0,
         };
