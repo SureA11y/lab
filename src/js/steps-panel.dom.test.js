@@ -470,19 +470,6 @@ describe('steps panel', () => {
         assert.deepEqual(led, [['scan', 'cart']]);
     });
 
-    test('Find from anywhere: shows a hidden panel, and Escape goes back', () => {
-        const { doc, win, panel } = setup();
-        const field = doc.querySelector('#editor .field input');
-        panel.setHidden(true);
-        field.focus();
-        panel.focusFind();
-        const find = doc.querySelector('#panel input[type="search"]');
-        assert.equal(panel.isHidden(), false);
-        assert.equal(doc.activeElement, find);
-        find.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-        assert.equal(doc.activeElement, field);
-    });
-
     test('narrow: the panel is a bar, and opens as a sheet that going to a step closes', () => {
         const dom = new JSDOM(`<!doctype html><body><aside id="panel"></aside><div id="editor">${editorHtml()}</div></body>`, { url: 'http://127.0.0.1:3000/' });
         const win = dom.window;

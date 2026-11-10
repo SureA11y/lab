@@ -368,6 +368,36 @@ test('a focused control shows its whole focus ring, over what is beside it', asy
     // On a narrow screen Export config wraps under Load config.
     await page.setViewport({ width: 420, height: 900 });
     assert.ok(await ringShown(page, '#save-config-button') > 0.95, '#save-config-button');
+    // A button with aria-disabled keeps focus: faded, but not its ring.
+    await page.setViewport({ width: 1280, height: 900 });
+    await page.click('#mode-queue');
+    assert.equal(await page.$eval('#queue-cancel-all', (el) => el.getAttribute('aria-disabled')), 'true');
+    assert.ok(await ringShown(page, '#queue-cancel-all') > 0.95, '#queue-cancel-all');
+    assert.deepEqual(errors, []);
+    await page.close();
+});
+
+test('with no custom step chosen, its editor takes neither a click nor the keyboard, until one is', async () => {
+    const { page, errors } = await openApp();
+    await page.click('#mode-run');
+    await page.click('#custom-steps-toggle');
+    await page.waitForSelector('#custom-step-toolbar button');
+    assert.equal(await page.$eval('#custom-step-actions-builder', (el) => el.classList.contains('is-disabled')), true);
+    // Not even focus() reaches its buttons.
+    const reachable = await page.$$eval('#custom-step-toolbar button', (buttons) => buttons.filter((b) => {
+        b.focus();
+        return document.activeElement === b;
+    }).length);
+    assert.equal(reachable, 0);
+    assert.equal(await page.$$eval('#custom-step-actions-container .line', (lines) => lines.length), 0);
+    // Once there is one, its toolbar adds steps from the keyboard.
+    await page.click('button[aria-label="Add custom step"]');
+    await page.waitForFunction(() => !document.querySelector('#custom-step-actions-builder').classList.contains('is-disabled'));
+    const scan = await page.evaluateHandle(() => [...document.querySelectorAll('#custom-step-toolbar button')].find((b) => b.textContent.trim() === 'A11y scan'));
+    await scan.focus();
+    assert.equal(await page.evaluate((b) => document.activeElement === b, scan), true);
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.querySelectorAll('#custom-step-actions-container .line').length === 1);
     assert.deepEqual(errors, []);
     await page.close();
 });

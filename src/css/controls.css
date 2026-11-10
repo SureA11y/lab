@@ -221,6 +221,25 @@ button[aria-disabled=true] {
     box-shadow: none;
 }
 
+/* One with aria-disabled keeps focus, and opacity would fade its focus ring
+   with it, below the contrast a ring needs. Focused, it is drawn whole and
+   faded by a veil of the surface instead: the veil covers the button, the
+   ring is drawn outside it. */
+button[aria-disabled=true]:focus-visible {
+    opacity: 1;
+    position: relative;
+}
+
+button[aria-disabled=true]:focus-visible::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: var(--surface-1);
+    opacity: .58;
+    pointer-events: none;
+}
+
 /* Primary buttons, keep your markup but bring reference look */
 button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.legend-toggle):not(.config-header-row):not(.scan-tag-filter__chip):not(.scan-tag-filter__mode-btn):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.steps-panel__select):not(.steps-panel__done):not(.steps-panel-bar__btn):not(.steps-panel-bar__edit):not(.steps-panel-edit__more):not(.steps-panel-edit__clear):not(.steps-panel-edit__apply):not(.runcustomstep-open):not(.run-setting-chip):not(.dsp-link):not(.back-to-top) {
     background: var(--accent-soft);
