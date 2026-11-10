@@ -832,16 +832,6 @@
 }
 :is(.steps-panel__hide, .steps-panel__show):hover { background: var(--surface-hover); color: var(--text-main); }
 
-/* The section's own controls (Custom steps: add, paste, undo, redo). */
-.steps-panel__actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    padding: var(--space-1) var(--space-4) var(--space-1);
-}
-.steps-panel__actions .history-management { display: inline-flex; gap: 6px; margin-left: auto; }
-
 /* Find, chips and status */
 .steps-panel__controls { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2) var(--space-4) var(--space-3); border-bottom: 1px solid var(--border-soft); }
 .steps-panel__find-label { font-size: var(--fs-xs); font-weight: 600; color: var(--text-main); }

@@ -264,10 +264,19 @@ button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
     padding-left: 14px;
 }
 
+/* Add, paste, undo and redo for the section, at the start of the toolbar. */
+.custom-step-panel-toolbar__start {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-right: auto;
+}
+
 /* Per-step actions (copy/delete) live at the top of the editor panel and act
    on the step whose tab is active, replacing the old per-tab icon buttons. */
 .custom-step-panel-toolbar {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: var(--space-2);
     padding-bottom: 8px;

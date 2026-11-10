@@ -36,10 +36,12 @@ Worked out on clickable prototypes before any code:
    Matches are bold; their parent containers stay, dimmed, so each match shows
    where it lives. Previous and next go through the matches.
 4. **Hidden to a rail.** `‹` collapses the panel to a narrow rail at the left
-   that keeps the way back, where you are and the number of matches. The choice
-   is kept **in the browser, for each section**, like the theme and the last
-   tab, never in the config: a config is a file people share and commit, and
-   where one person keeps a panel is not part of it.
+   that keeps the way back, where you are and the number of matches. The
+   panel is for finding and filtering steps only: Custom steps' add, paste,
+   undo and redo are in its editor's toolbar, in reach whatever the panel.
+   Both panels **start in their rail each time the app loads**: the app opens with one
+   step, and a panel open beside it is in the way. Shown or hidden is not
+   kept, in the browser or in the config.
 5. **Selecting is a mode.** A Select button turns on checkboxes; Done turns
    them off and clears the selection. Ticking a container selects that
    container only, never the steps inside it.
@@ -254,8 +256,8 @@ and the later steps of the work keep to them too:
 ## Order of the work
 
 1. **Workflow steps panel, navigating** (done): the tree, find and chips, previous and
-   next, going to a step, following the scroll, hiding to the rail and
-   remembering it. The Step tree dialog stays until step 2 covers custom steps.
+   next, going to a step, following the scroll, hiding to the rail. The
+   Step tree dialog stays until step 2 covers custom steps.
 2. **Custom steps panel** (done): the same panel, with the definitions as the top
    level (replacing the list of definitions), where each is used, the links
    between calls and definitions, and the "N more in …" links between the two

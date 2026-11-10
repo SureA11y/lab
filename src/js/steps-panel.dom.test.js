@@ -5,11 +5,10 @@ const assert = require('node:assert/strict');
 const { JSDOM } = require('jsdom');
 
 let createStepsPanel;
-let readPanelHidden;
 let readStepNodes;
 let readActionNodes;
 before(async () => {
-    ({ createStepsPanel, readPanelHidden, readStepNodes, readActionNodes } = await import('./steps-panel.js'));
+    ({ createStepsPanel, readStepNodes, readActionNodes } = await import('./steps-panel.js'));
 });
 
 // Lines shaped as the actions builder draws them: a header with the
@@ -50,16 +49,7 @@ function editorHtml() {
     ].join('');
 }
 
-function memoryStorage(initial = {}) {
-    const data = { ...initial };
-    return {
-        data,
-        getItem: (k) => (k in data ? data[k] : null),
-        setItem: (k, v) => { data[k] = String(v); }
-    };
-}
-
-function setup({ storage = memoryStorage(), rects = null } = {}) {
+function setup({ rects = null, startHidden = false } = {}) {
     const dom = new JSDOM(`<!doctype html><html><body>
         <aside id="panel"></aside><div id="editor">${editorHtml()}</div></body></html>`, { url: 'http://127.0.0.1:3000/' });
     const win = dom.window;
@@ -73,7 +63,7 @@ function setup({ storage = memoryStorage(), rects = null } = {}) {
         sectionKey: 'workflow',
         title: 'Workflow steps',
         goToLine: (lineEl, opts) => went.push({ path: lineEl.dataset.actionIndexPath, focus: opts.focus }),
-        storage,
+        startHidden,
         win,
         isLineShown: () => true,
         isEditorShown: () => true,
@@ -83,7 +73,7 @@ function setup({ storage = memoryStorage(), rects = null } = {}) {
     const rowText = (r) => `${r.querySelector('.steps-panel__num').textContent} ${r.querySelector('.steps-panel__name').firstChild.data}`;
     const chip = (kind) => doc.querySelector(`#panel button[data-kind="${kind}"]`);
     const status = () => doc.querySelector('#panel .steps-panel__status-text').textContent;
-    return { win, doc, panel, went, rows, rowText, chip, status, storage };
+    return { win, doc, panel, went, rows, rowText, chip, status };
 }
 
 describe('steps panel', () => {
@@ -268,7 +258,7 @@ describe('steps panel', () => {
         const calls = [];
         createStepsPanel({
             host: doc.getElementById('panel'), editorEl: doc.getElementById('editor'), sectionKey: 'workflow', title: 'Workflow steps',
-            goToLine: () => {}, storage: null, win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
+            goToLine: () => {}, win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
             barHost: doc.getElementById('bar'),
             setDisabled: (entries, on) => {
                 const lines = entries.map((e) => e.line);
@@ -333,39 +323,23 @@ describe('steps panel', () => {
         assert.equal(rows().filter((r) => r.getAttribute('tabindex') === '0').length, 1);
     });
 
-    test('hides to a rail, which the browser remembers for the section', () => {
-        const storage = memoryStorage();
-        const { doc, panel } = setup({ storage });
+    test('hides to a rail and shows again, with focus on the other button', () => {
+        const { doc, panel } = setup();
         doc.querySelector('#panel .steps-panel__hide').click();
         assert.equal(panel.isHidden(), true);
         assert.equal(doc.querySelector('#panel .steps-panel__full').hidden, true);
         assert.equal(doc.querySelector('#panel .steps-panel__rail').hidden, false);
         assert.equal(doc.activeElement, doc.querySelector('#panel .steps-panel__show'));
-        assert.equal(readPanelHidden(storage, 'workflow'), true);
-
-        const again = setup({ storage });
-        assert.equal(again.panel.isHidden(), true);
-        again.doc.querySelector('#panel .steps-panel__show').click();
-        assert.equal(readPanelHidden(storage, 'workflow'), false);
-    });
-
-    test('starts hidden with startHidden, until the browser keeps a choice', () => {
-        const storage = memoryStorage();
-        assert.equal(readPanelHidden(storage, 'workflow', true), true);
-        storage.setItem('a11y-lab-steps-panel-workflow', 'shown');
-        assert.equal(readPanelHidden(storage, 'workflow', true), false);
-        storage.setItem('a11y-lab-steps-panel-workflow', 'hidden');
-        assert.equal(readPanelHidden(storage, 'workflow', false), true);
-        const blocked = { getItem() { throw new Error('blocked'); } };
-        assert.equal(readPanelHidden(blocked, 'workflow', true), true);
-    });
-
-    test('works when the browser keeps nothing', () => {
-        const broken = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } };
-        const { doc, panel } = setup({ storage: broken });
+        doc.querySelector('#panel .steps-panel__show').click();
         assert.equal(panel.isHidden(), false);
-        doc.querySelector('#panel .steps-panel__hide').click();
+        assert.equal(doc.activeElement, doc.querySelector('#panel .steps-panel__hide'));
+    });
+
+    test('with startHidden, starts in its rail', () => {
+        const { doc, panel } = setup({ startHidden: true });
         assert.equal(panel.isHidden(), true);
+        assert.equal(doc.querySelector('#panel .steps-panel__full').hidden, true);
+        assert.equal(doc.querySelector('#panel .steps-panel__rail').hidden, false);
     });
 
     test('the rail says how many steps match the filter', () => {
@@ -443,7 +417,7 @@ describe('steps panel', () => {
         const step = { id: 'd1/2|', key: '2|', path: '2', depth: 1, parentId: 'd1', container: false, type: 'click', typeTitle: 'Click', name: 'Submit', disabled: false, searchText: 'submit' };
         const panel = createStepsPanel({
             host: doc.getElementById('p'), editorEl: doc.getElementById('ed'), sectionKey: 'custom', title: 'Custom steps',
-            storage: null, win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
+            win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
             read: () => ({ nodes: [head, step], lineById: opened ? new Map([[step.id, lineOf]]) : new Map() }),
             open: (node) => { opened = node.id; },
             goToLine: (line, { node }) => went.push({ line, id: node.id })
@@ -466,7 +440,7 @@ describe('steps panel', () => {
         const led = [];
         const panel = createStepsPanel({
             host: doc.getElementById('p'), editorEl: doc.getElementById('ed'), sectionKey: 'w', title: 'Workflow steps',
-            storage: null, win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
+            win, isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 }),
             read: () => ({ nodes: [], lineById: new Map() }),
             goToLine: () => {},
             elsewhere: { label: 'Custom steps', count: (kind) => (kind === 'scan' ? 3 : 0), go: (kind, query) => led.push([kind, query]) }
@@ -490,7 +464,7 @@ describe('steps panel', () => {
         const went = [];
         const panel = createStepsPanel({
             host: doc.getElementById('panel'), editorEl: doc.getElementById('editor'), sectionKey: 'workflow', title: 'Workflow steps',
-            goToLine: (line) => went.push(line.dataset.actionIndexPath), storage: null, win,
+            goToLine: (line) => went.push(line.dataset.actionIndexPath), win,
             isLineShown: () => true, isEditorShown: () => true, rectOf: () => ({ top: 0, bottom: 0 })
         });
         const sheet = doc.querySelector('#panel .steps-panel__sheet');

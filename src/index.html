@@ -410,39 +410,42 @@
                             <div class="custom-steps-panel">
                                 <div class="custom-steps-list-panel">
                                     <!-- The steps panel lists the custom steps and their steps
-                                         (steps-panel.js); the controls below go into it. -->
+                                         (steps-panel.js), to find and filter them. -->
                                     <aside id="custom-steps-steps-panel" class="steps-panel"></aside>
-                                        <div id="custom-steps-list-actions" class="custom-steps-list-actions">
-                                            <button
-                                                    type="button"
-                                                    id="custom-step-add-btn"
-                                                    class="secondary-button icon-button"
-                                                    aria-label="Add custom step"
-                                                    title="Add custom step"
-                                            >
-                                                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" class="add">
-                                                    <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                                                    <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                                                </svg>
-                                            </button>
-                                            <button
-                                                    type="button"
-                                                    id="custom-step-paste-btn"
-                                                    class="secondary-button icon-button"
-                                                    aria-label="Paste custom step"
-                                                    title="Paste custom step"
-                                                    disabled
-                                            >
-                                                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-                                                    <path d="M8 4h8v3h3v13H5V7h3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
-                                                    <rect x="9" y="2" width="6" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="2"></rect>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    <span id="custom-steps-history-management" class="history-management"></span>
                                 </div>
                                 <div id="custom-steps-tabpanel" class="custom-steps-editor-panel" role="region" aria-label="Custom step">
                                     <div class="custom-step-panel-toolbar">
+                                        <!-- Add, paste, undo and redo: the section's, in reach whatever the panel. -->
+                                        <div class="custom-step-panel-toolbar__start">
+                                            <div id="custom-steps-list-actions" class="custom-steps-list-actions">
+                                                <button
+                                                        type="button"
+                                                        id="custom-step-add-btn"
+                                                        class="secondary-button icon-button"
+                                                        aria-label="Add custom step"
+                                                        title="Add custom step"
+                                                >
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" class="add">
+                                                        <path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                                        <path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                        type="button"
+                                                        id="custom-step-paste-btn"
+                                                        class="secondary-button icon-button"
+                                                        aria-label="Paste custom step"
+                                                        title="Paste custom step"
+                                                        disabled
+                                                >
+                                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                                        <path d="M8 4h8v3h3v13H5V7h3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                                                        <rect x="9" y="2" width="6" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <span id="custom-steps-history-management" class="history-management"></span>
+                                        </div>
                                         <button
                                                 type="button"
                                                 id="custom-step-copy-btn"

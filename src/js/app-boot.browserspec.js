@@ -402,26 +402,26 @@ test('with no custom step chosen, its editor takes neither a click nor the keybo
     await page.close();
 });
 
-test("the Workflow's steps panel starts collapsed, until shown, and then stays as left", async () => {
+test('both steps panels start collapsed on every load, Add custom step in reach outside them', async () => {
     const { page, errors } = await openApp();
-    await page.evaluate(() => localStorage.clear());
-    await page.reload({ waitUntil: 'networkidle0' });
     await page.click('#mode-run');
     await page.waitForSelector('#workflow-steps-panel .steps-panel__show');
     const hidden = () => page.evaluate(() => ['#workflow-steps-panel', '#custom-steps-steps-panel'].map((id) => {
         const host = document.querySelector(id);
         return host.querySelector('.steps-panel__full').hidden && !host.querySelector('.steps-panel__rail').hidden;
     }));
-    // The app opens with its one scan step, and the Workflow's panel as a
-    // rail; the Custom steps one, with Add custom step in it, open.
+    // The app opens with its one scan step, and both panels as a rail.
     assert.equal(await page.$$eval('#actionsContainer > .line', (lines) => lines.length), 1);
-    assert.deepEqual(await hidden(), [true, false]);
-    // Shown, the Workflow's stays shown after a reload.
+    assert.deepEqual(await hidden(), [true, true]);
+    // Add custom step is in the editor's toolbar, not in the panel.
+    await page.click('#custom-steps-toggle');
+    assert.equal(await page.$eval('#custom-step-add-btn', (b) => !b.closest('.steps-panel') && !!b.closest('.custom-step-panel-toolbar') && b.offsetParent !== null), true);
+    // Shown, and the page loaded again: folded again.
     await page.click('#workflow-steps-panel .steps-panel__show');
+    assert.deepEqual(await hidden(), [false, true]);
     await page.reload({ waitUntil: 'networkidle0' });
-    await page.waitForSelector('#workflow-steps-panel .steps-panel__hide');
-    assert.deepEqual(await hidden(), [false, false]);
-    await page.evaluate(() => localStorage.clear());
+    await page.waitForSelector('#workflow-steps-panel .steps-panel__show');
+    assert.deepEqual(await hidden(), [true, true]);
     assert.deepEqual(errors, []);
     await page.close();
 });

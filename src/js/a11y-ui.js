@@ -326,7 +326,6 @@ function storeActiveMode(mode) {
     const customStepsInput = $('#custom-steps-json');
     const customStepsCountBadgeEl = $('#custom-steps-count-badge');
     const customStepsPanelEl = $('#custom-steps-tabpanel');
-    const customStepsListActionsEl = $('#custom-steps-list-actions');
     const customStepPasteBtn = $('#custom-step-paste-btn');
     const customStepAddBtn = $('#custom-step-add-btn');
     const customStepCopyBtn = $('#custom-step-copy-btn');
@@ -2020,8 +2019,7 @@ function storeActiveMode(mode) {
             editorEl: actionsBar,
             sectionKey: 'workflow',
             title: 'Workflow steps',
-            // The app opens with one step: the panel waits until shown. Not
-            // the Custom steps one, which holds Add custom step.
+            // Folded each time the app loads, whatever it was before.
             startHidden: true,
             goToLine: goToWorkflowLine,
             callName: customStepName,
@@ -2051,12 +2049,12 @@ function storeActiveMode(mode) {
         stepDefs = defs;
         const host = $('#custom-steps-steps-panel');
         if (!host || !customStepActionsEl || customStepsPanel) return;
-        const history = $('#custom-steps-history-management');
         customStepsPanel = createStepsPanel({
             host,
             editorEl: customStepActionsEl,
             sectionKey: 'custom-steps',
             title: 'Custom steps',
+            startHidden: true,
             read: readCustomStepNodes,
             open: openCustomStepOf,
             goToLine: goToCustomStepLine,
@@ -2096,7 +2094,6 @@ function storeActiveMode(mode) {
                     return `These steps are in custom steps, so every place that runs them gets the change: ${parts.join('; ')}.`;
                 }
             },
-            actions: [customStepsListActionsEl, history].filter(Boolean),
             elsewhere: {
                 label: 'the Workflow',
                 count: (kind, query) => workflowStepsPanel?.countMatches(kind, query) || 0,
