@@ -304,6 +304,19 @@
             .map((s) => ({ label: str(s.label).replace(/^Scan:\s*/, ''), url: str(s.url) }));
     }
 
+    // The groups the lab's report view shows merged, each as one scan
+    // (docs/design/scan-grouping-design.md §9), told apart from what this
+    // report counts: it counts the pages as they were scanned. Given by the
+    // view as `shownMerges`, [{ name, scans }]; '' when none is merged.
+    function pagesNoteOf(report) {
+        const merges = asArray(report && report.shownMerges).filter((m) => m && str(m.name) && Number(m.scans) > 1);
+        if (!merges.length) return '';
+        const named = merges.map((m) => `${str(m.name)} (${Number(m.scans)} scans)`);
+        const list = named.length === 1 ? named[0] : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
+        return `In the lab's report view, ${list} ${merges.length === 1 ? 'is' : 'are each'} shown as one merged scan. `
+            + 'This report counts them page by page, as they were scanned.';
+    }
+
     function engineOf(report) {
         for (const s of asArray(report && report.scans)) {
             const e = asArray(s && s.canonical && s.canonical.engines)[0];
@@ -548,6 +561,9 @@
             evaluation: {
                 engine,
                 pages: evaluatedPages(report),
+                // Only when the view shows groups merged: a report without
+                // any is described as it always was.
+                ...(pagesNoteOf(report) ? { pagesNote: pagesNoteOf(report) } : {}),
                 reviewer: str(review && review.reviewer),
                 methods: str(review && review.methods),
                 // How many checks a person answered, on how many criteria.

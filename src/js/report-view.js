@@ -613,6 +613,27 @@ export function createReportView(app) {
         return prepareDataForReport(cloned);
     }
 
+    /**
+     * The conformance report and the checklist count a report's pages as they
+     * were scanned, merged groups page by page (docs/design/
+     * scan-grouping-design.md §11); they say which groups the view shows
+     * merged, from this: [{ name, scans }], each merged group shown and how
+     * many of its included scans it stands for. On the copy made for them
+     * only: it is not saved.
+     */
+    function withShownMerges(exportPayload) {
+        const raw = app.getActiveBucket()?.payload;
+        if (!exportPayload || !raw) return exportPayload;
+        const merges = app.runSummaryUi.shownScans(raw).scans
+            .filter((scan) => scan && scan.mergedGroup && scan.includedInReport !== false)
+            .map((scan) => ({
+                name: scan.label,
+                scans: scan.mergedGroup.members.filter((m) => m.includedInReport !== false).length,
+            }))
+            .filter((m) => m.scans > 1);
+        return merges.length ? {...exportPayload, shownMerges: merges} : exportPayload;
+    }
+
     function createVisualizationPanel(data) {
         const containerEl = document.createElement('div');
         containerEl.className = 'inline-actions results-visualization';
@@ -787,20 +808,20 @@ export function createReportView(app) {
                     id: 'conformance',
                     label: 'Conformance report',
                     description: 'A VPAT 2.5 report (WCAG and EN 301 549), drafted from these results',
-                    onSelect: () => downloadConformanceReport(buildExportPayload(app.getActiveBucket()?.payload || data, {includedOnly: true})),
+                    onSelect: () => downloadConformanceReport(withShownMerges(buildExportPayload(app.getActiveBucket()?.payload || data, {includedOnly: true}))),
                 },
                 {
                     id: 'conformance-docx',
                     label: 'Conformance report (Word)',
                     description: 'The same report as a .docx, to edit and sign in Word',
-                    onSelect: () => downloadConformanceReportDocx(buildExportPayload(app.getActiveBucket()?.payload || data, {includedOnly: true})),
+                    onSelect: () => downloadConformanceReportDocx(withShownMerges(buildExportPayload(app.getActiveBucket()?.payload || data, {includedOnly: true}))),
                 },
                 // Only where the server's core has the procedures it lists.
                 ...(proceduresKnownAvailable() ? [{
                     id: 'manual-checklist',
                     label: 'Manual review checklist',
                     description: 'What a person still has to check, criterion by criterion, with the steps',
-                    onSelect: () => downloadManualChecklist(buildExportPayload(app.getActiveBucket()?.payload || data, {includedOnly: true})),
+                    onSelect: () => downloadManualChecklist(withShownMerges(buildExportPayload(app.getActiveBucket()?.payload || data, {includedOnly: true}))),
                 }] : []),
                 ...(app.resultsState.activeMode === 'run' ? [{
                     id: 'config',

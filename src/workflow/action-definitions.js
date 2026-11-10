@@ -1853,11 +1853,18 @@ const ACTION_DEFINITIONS = {
                 alias: "Actions",
                 description: "The steps to run, with an A11y scan for each context. A scan with no label is named by its place, as \"Scan 2 of 4\".",
                 placeholder: [{type: "a11yScan", label: "Light · desktop"}]
+            },
+            keepContexts: {
+                type: "boolean",
+                required: false,
+                default: true,
+                alias: "Keep each context's scan",
+                description: "Save each context's own scan inside the merged scan, so the report can show the merged scan as its contexts, or take a context out of it, after the run. It makes the report bigger: about 30% more for each context of the scans merged. Turn it off for very large runs that will not be unmerged."
             }
         },
         fieldOrder: {
             primary: ["label", "scanTags", "actions"],
-            secondary: []
+            secondary: ["keepContexts"]
         },
         examples: [
             {

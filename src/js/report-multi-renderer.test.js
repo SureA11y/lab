@@ -903,3 +903,16 @@ describe('multi-report renderer — the reports compared', () => {
         assert.match(html, /dash-col-name">UI-SDK v22\.3\.0 · Oct 21</, 'the charts, with no date beside them, keep the day');
     });
 });
+
+describe('groups merged in the reports\' view (scan-grouping-design.md §11)', () => {
+    test('the note is shown after the reports strip, only when given', async () => {
+        const { comparisonSeriesHTML } = await load();
+        const series = diffReportSeries([
+            report({ runId: 'a', timestamp: '2026-01-01T00:00:00Z', name: 'v1' }),
+            report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z', name: 'v2' }),
+            report({ runId: 'c', timestamp: '2026-03-01T00:00:00Z', name: 'v3' }),
+        ], { mode: 'trend' });
+        assert.match(comparisonSeriesHTML(series, { mergedNote: 'Merged here' }), /<p class="cmp2-note">Merged here<\/p>/);
+        assert.doesNotMatch(comparisonSeriesHTML(series), /cmp2-note/);
+    });
+});

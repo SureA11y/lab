@@ -159,7 +159,7 @@ export function buildManualChecklistHTML({ acr, procedures, enProcedures = null,
 <main>
 <h1>${esc(name)}: manual review checklist</h1>
 <p class="meta">${esc(target)}: ${esc(counted)}; ${checks} checks for a person.${isText(product.date) ? ` Report of ${esc(product.date)}.` : ''}</p>
-<p>What the automated checks of this report could not decide, criterion by criterion: what the scans found, then each check a person makes, with its steps and what passing and failing look like. Results already recorded in the report's conformance review are ticked. This page does not keep what you tick: record your answers and verdicts in the app's Review conformance, which keeps them in the report.</p>
+${isText(acr.evaluation && acr.evaluation.pagesNote) ? `<p class="meta">${esc(acr.evaluation.pagesNote)}</p>\n` : ''}<p>What the automated checks of this report could not decide, criterion by criterion: what the scans found, then each check a person makes, with its steps and what passing and failing look like. Results already recorded in the report's conformance review are ticked. This page does not keep what you tick: record your answers and verdicts in the app's Review conformance, which keeps them in the report.</p>
 ${body}
 </main>
 </body>

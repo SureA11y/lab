@@ -2895,6 +2895,11 @@
           "items": {
             "$ref": "#/$defs/action"
           }
+        },
+        "keepContexts": {
+          "description": "Save each context's own scan inside the merged scan, so the report can show the merged scan as its contexts, or take a context out of it, after the run. It makes the report bigger: about 30% more for each context of the scans merged. Turn it off for very large runs that will not be unmerged.",
+          "default": true,
+          "type": "boolean"
         }
       },
       "additionalProperties": false

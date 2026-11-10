@@ -61,7 +61,14 @@ async function stepMergedScan(page, action, ctx, localVars, depth, actionPathPre
     root._mergedScanSeq = (root._mergedScanSeq || 0) + 1;
     pushLog(ctx, 'info', `merged scan${label ? `: ${label}` : ''}`);
     const key = `merged-${root._mergedScanSeq}`;
-    ctx._mergedScan = {key, label: label || null, scanTags: interpolateScanTags(action.scanTags, {localVars, ctx})};
+    ctx._mergedScan = {
+        key,
+        label: label || null,
+        scanTags: interpolateScanTags(action.scanTags, {localVars, ctx}),
+        // Off only when asked: each context's scan is kept for the report
+        // to unmerge (docs/design/scan-grouping-design.md §8).
+        keepContexts: action.keepContexts !== false,
+    };
     try {
         // Unlike a group, its variables are not scoped: it only says
         // which scans are one.

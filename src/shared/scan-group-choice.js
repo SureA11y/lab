@@ -201,6 +201,43 @@
     }
 
     /**
+     * The choice with its scan ids renamed by `rename(id)` (which returns the
+     * id unchanged, or its new one): the scans added, taken out or grouped by
+     * hand, and the run's merged scans its `run:` keys name. For reports
+     * opened as one, whose scans are renamed where another report has the
+     * same id. Keys of patterns name no scan and stay as they are.
+     */
+    function renameScanIds(choice, rename) {
+        const to = (id) => {
+            const next = typeof rename === 'function' ? rename(id) : id;
+            return typeof next === 'string' && next ? next : id;
+        };
+        const list = (field, p) => (Array.isArray(p[field]) ? { [field]: p[field].map(to) } : {});
+        return normalize(normalize(choice).map((p) => ({
+            ...p,
+            ...(isRun(p.key) ? { key: runKey(to(p.key.slice(RUN.length))) } : {}),
+            ...list('add', p),
+            ...list('remove', isRun(p.key) ? {} : p),
+            ...list('members', p),
+        })));
+    }
+
+    /**
+     * The groups a report shows merged in its view, by name: the name given,
+     * else the pattern of its key ("/products/{*}"), else "a group by hand".
+     * For what reads the report's scans as saved (a comparison), to say so.
+     */
+    function mergedGroupNames(payload) {
+        return readChoice(payload).filter((p) => p.merge === true).map((p) => {
+            if (p.name) return p.name;
+            if (isManual(p.key)) return 'a group by hand';
+            const pattern = p.key.replace(/^[a-z]+:/, '');
+            const slash = pattern.indexOf('/');
+            return slash >= 0 ? pattern.slice(slash) : pattern;
+        });
+    }
+
+    /**
      * The groups by hand of a choice, as a group source for findGroups
      * (scan-groups.js): id `manual`, so their keys are the entries' own. They
      * say more than any pattern about their scans, which the person named.
@@ -271,8 +308,24 @@
     function mergeChoices(payloads) {
         const merged = [];
         const byKey = new Map();
+        const taken = new Set();
         for (const payload of Array.isArray(payloads) ? payloads : []) {
-            for (const p of readChoice(payload)) {
+            const entries = readChoice(payload);
+            // Groups by hand are numbered within their report: another
+            // report's "manual:1" is another group. Those already taken by an
+            // earlier report are renumbered, clear of this report's own.
+            const own = new Set(entries.filter((p) => isManual(p.key)).map((p) => p.key));
+            const renumber = new Map();
+            let n = 1;
+            for (const key of own) {
+                if (!taken.has(key)) continue;
+                while (taken.has(`${MANUAL}${n}`) || own.has(`${MANUAL}${n}`)) n += 1;
+                renumber.set(key, `${MANUAL}${n}`);
+                n += 1;
+            }
+            for (const q of entries) {
+                const p = renumber.has(q.key) ? { ...q, key: renumber.get(q.key) } : q;
+                if (isManual(p.key)) taken.add(p.key);
                 const known = byKey.get(p.key);
                 if (!known) {
                     const entry = { ...p };
@@ -342,6 +395,8 @@
         isManual,
         isRun,
         runKey,
+        mergedGroupNames,
+        renameScanIds,
         setRunMerged,
         setRunContextOut,
         setRunContextExcluded,

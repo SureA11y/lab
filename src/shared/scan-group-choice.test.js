@@ -234,3 +234,51 @@ describe('what the run merged (§8, step 9)', () => {
         assert.ok(C.isRun('run:s9') && !C.isRun('url:x'));
     });
 });
+
+describe('mergedGroupNames', () => {
+    test('the merged groups, by name, else pattern, else "a group by hand"', () => {
+        assert.deepEqual(C.mergedGroupNames({ scanGrouping: { patterns: [
+            { key: 'url:shop.example.com/products/{*}', name: 'Products', merge: true },
+            { key: 'url:shop.example.com/blog/{*}/{*}', merge: true },
+            { key: 'url:shop.example.com/search?q', name: 'Search' },
+            { key: 'manual:1', members: ['a', 'b'], merge: true },
+            { key: 'run:s1', merge: false },
+        ] } }), ['Products', '/blog/{*}/{*}', 'a group by hand']);
+        assert.deepEqual(C.mergedGroupNames({}), []);
+    });
+});
+
+describe('renameScanIds (reports opened as one, §11)', () => {
+    test('renames the scans a choice names, not the patterns', () => {
+        const choice = [
+            { key: 'url:shop/p/{*}', merge: true, add: ['s1'], remove: ['s2'] },
+            { key: 'manual:1', members: ['s1', 's3'], merge: true },
+            { key: 'run:s4', merge: false, exclude: ['0'] },
+        ];
+        const rename = (id) => ({ s1: 's1__imp001', s4: 's4__imp001' })[id] || id;
+        assert.deepEqual(C.renameScanIds(choice, rename), [
+            { key: 'url:shop/p/{*}', name: null, merge: true, add: ['s1__imp001'], remove: ['s2'] },
+            { key: 'manual:1', name: null, merge: true, members: ['s1__imp001', 's3'] },
+            { key: 'run:s4__imp001', merge: false, exclude: ['0'] },
+        ]);
+    });
+
+    test('a run entry\'s context indexes are not scan ids', () => {
+        const out = C.renameScanIds([{ key: 'run:s4', remove: ['1'] }], () => 'x');
+        assert.deepEqual(out, [{ key: 'run:x', remove: ['1'] }]);
+    });
+});
+
+test('merging reports: each report\'s groups by hand stay apart, renumbered', () => {
+    const merged = C.mergeChoices([
+        { scanGrouping: { patterns: [{ key: 'manual:1', name: 'A', members: ['a1', 'a2'] }] } },
+        { scanGrouping: { patterns: [{ key: 'manual:1', name: 'B', members: ['b1', 'b2'] }, { key: 'manual:2', members: ['b3', 'b4'] }] } },
+    ]);
+    // B's "manual:1" is renumbered clear of A's and of B's own "manual:2",
+    // which keeps its number.
+    assert.deepEqual(merged.map((p) => [p.key, p.name, p.members]), [
+        ['manual:1', 'A', ['a1', 'a2']],
+        ['manual:3', 'B', ['b1', 'b2']],
+        ['manual:2', null, ['b3', 'b4']],
+    ]);
+});

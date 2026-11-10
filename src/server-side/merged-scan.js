@@ -126,7 +126,8 @@ function mergeGroup(entries, { buildCoverageAwareSummary, buildA11ySummary, auto
 
     const contexts = entries.map((e, i) => {
         const counts = e.canonical ? outcomeCounts(Array.isArray(e.canonical.findings) ? e.canonical.findings : []) : null;
-        const scan = contextScanOf(e, names[i]);
+        // Unless the step said not to (keepContexts: false).
+        const scan = group.keepContexts === false ? null : contextScanOf(e, names[i]);
         return {
             name: names[i],
             url: e.url || null,

@@ -583,36 +583,49 @@ the run.
   different sets of scans. This is already true of card-by-card exclusion;
   grouping makes it easier to do at scale, so the comparison views may need to
   say how many scans each side excluded.
-- **What a merged group scores.** A Merged scan step divides by its largest
-  context's DOM metrics, as its contexts are one page. A group's pages are
-  different pages of one template; the largest page is the likely choice
-  again (the template, as fully as any page shows it), but a score that
-  should stand for the template is to be settled with real runs in step 5.
-- **The size of a report that keeps its contexts' scans.** Measured in step 8:
-  about 30% more per context for the scans that are merged, the rule
-  catalogue being kept once. Screenshots, the largest part of a report with
-  pictures, are not doubled (§8). If it is too much, a context could keep
-  only its failing and undecided findings, and its coverage be made again
-  from the merged scan's, as a merged group's is (§9.3).
-- **Keeping the contexts' scans by default.** Step 8 keeps them for every
-  Merged scan step. A workflow whose merges are never undone pays for them;
-  an option on the step could leave them out.
-- **Scan ids after reports are merged.** What was added, removed or merged
-  by hand is saved by scan id, and opening several reports as one renames a
-  scan whose id another report already uses (`ensureUniqueImportedScanIds`).
-  The ids saved by a report then have to be renamed with its scans, or they
-  name nothing (and are ignored, as a pattern that matches nothing is).
-- **Downloads made from the scans as saved.** The conformance report, the
-  manual checklist and the comparisons read the report's scans, not the
-  scans as shown: a merged group counts there as its pages. The report's own
-  download shows it merged (its page is drawn as shown) and keeps the scans
-  and the choice (D10).
+- **What a merged group scores** (decided: as built, to be checked on real
+  runs). It is scored as one page of its template: divided by its largest
+  page's DOM metrics, each failing element once, as a Merged scan step
+  scores its contexts. A page's content issues weigh less than across the
+  separate scans; the average of its pages' scores, or a range beside the
+  template's score, were weighed and left until real runs say how the
+  number is read.
 - **Comparing a merged run with an unmerged one.** The merged scan has its own
   id, so it matches nothing on the other side. The comparison may need to
   match it with the scans it was made from.
 - **Where the view lives** (settled in step 2): a section of the run summary
   under the scans list, as it is about scans, not findings. Step 3 may turn
   it into a mode of the scans list, once its rows carry actions.
+
+### 11.1 Decided after building
+
+- **Keeping the contexts' scans** (step 8): by default, with an option on
+  the Merged scan step, **Keep each context's scan** (`keepContexts`, on
+  unless set to false), for very large runs that will not be unmerged.
+  Kept, they cost about 30% more report size per context of the scans
+  merged, the rule catalogue being kept once; screenshots, the largest part
+  of a report with pictures, are not doubled (§8). Unmerging is usually
+  wanted while reviewing, after the run, which is why it is on by default.
+- **Downloads made from the scans as saved**: the conformance report (HTML
+  and Word), the manual checklist and the comparisons count the report's
+  scans as saved, a merged group page by page, the honest basis for a
+  conformance claim and what lets comparisons match page by page. Each says
+  so when the report shows groups merged: the conformance report and the
+  checklist name them under the evaluated pages (`evaluation.pagesNote`,
+  from `shownMerges` the report view sets on the copy it hands them, never
+  saved), and a comparison names the groups its reports merged
+  (`mergedGroupNames`) under the reports it compares. The report's own
+  download shows them merged (its page is drawn as shown) and keeps the
+  scans and the choice (D10).
+- **Scan ids after reports are merged**: renamed with the scans. Opening
+  several reports as one renames a scan whose id another report already
+  uses (`ensureUniqueImportedScanIds`, which keeps `_originalId` and
+  `_importSourceIndex`); each report's choice has its scan ids renamed the
+  same way (`renameScanIds`: what was added, taken out or grouped by hand,
+  and the `run:` keys) before the choices are put together, so they still
+  name their scans. Groups by hand are numbered within their report: one
+  whose number an earlier report already uses is renumbered, clear of the
+  report's own, so two reports' groups by hand stay two.
 
 ## 12. Rejected alternatives
 

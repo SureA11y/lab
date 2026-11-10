@@ -1446,7 +1446,7 @@ function dispersionSection(d, dispersion) {
 // table at the foot, which has every detail of every report.
 const SOURCES_ID = 'cmp-sources';
 
-export function comparisonSeriesHTML(d, { dispersion } = {}) {
+export function comparisonSeriesHTML(d, { dispersion, mergedNote } = {}) {
     if (!d || typeof d !== 'object' || !Array.isArray(d.columns)) {
         return '<div class="cmp2"><p>No comparison data.</p></div>';
     }
@@ -1467,6 +1467,8 @@ export function comparisonSeriesHTML(d, { dispersion } = {}) {
     return `<div class="cmp2 cmp2--dash" data-mode="${esc(d.mode)}">`
         + mastheadHTML(d.document, { sourcesHref: `#${SOURCES_ID}` })
         + reportsStripHTML(sourceRows(d), { sourcesHref: `#${SOURCES_ID}` })
+        // Groups merged in the reports' view, counted here page by page.
+        + (mergedNote ? `<p class="cmp2-note">${esc(mergedNote)}</p>` : '')
         + hero + numbers + trustCards(d) + change
         + seriesProfilesHTML(d.profiles, { labels: d.columns.map((c) => label(c)) })
         + dispersionSection(d, dispersion)

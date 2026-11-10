@@ -333,3 +333,13 @@ describe('comparison: room before failing', () => {
         assert.doesNotMatch(comparisonDiffHTML(diffReports(A(), B())), /Room before failing/);
     });
 });
+
+describe('groups merged in the reports\' view (scan-grouping-design.md §11)', () => {
+    test('the note is shown under the reports compared, escaped, and only when given', async () => {
+        const { comparisonDiffHTML, diffReports } = await load();
+        const d = diffReports(A(), B(), { mode: 'evolution' });
+        assert.match(comparisonDiffHTML(d, { mergedNote: 'Product <pages> merged' }),
+            /<div class="subject">[\s\S]*?<\/div><p class="cmp2-note">Product &lt;pages&gt; merged<\/p>/);
+        assert.doesNotMatch(comparisonDiffHTML(d), /cmp2-note/);
+    });
+});

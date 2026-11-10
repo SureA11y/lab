@@ -453,11 +453,13 @@ function dispersionSection(d, dispersion) {
         + `<span class="layer">by scan</span></div>${view.pairBodyHTML(dispersion, labels)}</section>`;
 }
 
-export function comparisonDiffHTML(d, { dispersion } = {}) {
+export function comparisonDiffHTML(d, { dispersion, mergedNote } = {}) {
     if (!d || typeof d !== 'object') return '<div class="cmp2"><p>No comparison data.</p></div>';
     return `<div class="cmp2" data-mode="${esc(d.mode)}">`
         + mastheadHTML(d.document)
         + `<div class="subject">${reportsRow(d)}</div>`
+        // Groups merged in the reports' view, counted here page by page.
+        + (mergedNote ? `<p class="cmp2-note">${esc(mergedNote)}</p>` : '')
         + verdictHero(d)
         + `<section class="cmp2-sec"><div class="sec-head"><h3>${d.mode === 'ab' ? 'Standings at a glance' : 'Executive deltas'}</h3>`
         + `<span class="layer">globals</span></div>${kpis(d)}</section>`
