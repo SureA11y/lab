@@ -72,6 +72,13 @@ that product's (§9).
   report is shown, as the groups themselves are (D4). Unmerging gives the
   scans back as they were, a download keeps them, and the person can group
   them another way later (§9).
+- **D11: what the run merged stays merged, for now.** A scan a Merged scan
+  step made (one view in several contexts) is one scan for grouping and
+  merging too: it can be a member of a group and of a merged group, and its
+  contexts come with it, but they are not split apart, and none of them is
+  left out on its own. What can be undone is what was merged in the report
+  view (§8, §9.4). Unmerging what the run merged may come in a later
+  iteration (§11).
 
 ## 3. What already exists
 
@@ -212,8 +219,9 @@ the last: the markup a scan's page was built from, or anything else, may
 follow. So the grouping is two layers:
 
 - **The facade**, `src/shared/scan-groups.js` (`findGroups`), knows nothing
-  about URLs. It takes the items to group (the run's scans; later, the
-  contexts of merged scans) and a list of **sources**, asks each one for the
+  about URLs. It takes the items to group (the run's scans; it reads them by
+  id, so other items could be grouped too) and a list of **sources**, asks
+  each one for the
   groups it sees, and puts them together: it drops what cannot be a group
   (fewer than two members), keeps one group of any two with the same members
   (the more specific, naming the other as its equivalent), nests them by
@@ -266,9 +274,12 @@ report's scan order, which issue dispersion and the exports follow
   in them.
 - The chosen patterns and their names, so the person finds their grouping
   again when the report is reopened: a run-level field,
-  `scanGrouping: { patterns: [{ key, name, merge }] }` (`merge`, true for a
-  merged group, comes with §9), `key` being the group's key
-  (`url:shop.example.com/products/{*}`), in the order they were chosen. It is
+  `scanGrouping: { patterns: [{ key, name, merge, add, remove, members }] }`,
+  `key` being the group's key
+  (`url:shop.example.com/products/{*}`), in the order they were chosen. With
+  §9: `merge`, true for a merged group; `add` and `remove`, the ids of the
+  scans added to it and taken out of it by hand; `members`, the scan ids of a
+  group by hand (key `manual:…`), which has no pattern to find them by. It is
   in the report schema (v3 and v4) and kept by every download. Reports opened
   together and merged into one carry every group any of them chose, the
   first name given to it kept. A key that matches none of the scans (a
@@ -282,13 +293,13 @@ A merged scan is one scan and is grouped by its `url`. Its contexts nearly
 always share that URL; when they do not (a redirect to an `m.` site), the scan
 already carries a note saying so, and it is grouped by the first context's.
 
-Including or excluding a **context** of a merged scan is a separate feature
-that will use the same grouping view, grouping by context name instead of by
-URL ("Dark · mobile" across all merged scans). It needs groundwork first:
-today the merged scan keeps, per context, only its outcome counts, so leaving
-a context out after the run means keeping each context's findings and folding
-again without it (`mergedScan`'s folding is pure, so folding again is cheap).
-That storage change is its own step (§10 step 7) and its own design note.
+Its contexts stay as the run merged them (D11). Including or excluding a
+context on its own, or splitting a merged scan back into its contexts, is not
+offered in this work: the merged scan keeps, per context, only its outcome
+counts, and what the person shapes after the run is the set of scans merged in
+the report view, which keeps everything it needs to be undone (§9). Splitting
+a run's merged scan would need each context's findings kept, and folding
+again without the one left out; it is a later iteration (§11).
 
 ## 9. Merging a group
 
@@ -309,6 +320,23 @@ A chosen group gets a **Merge** switch beside its actions. On, the group's
 scans are shown as one merged scan, in the scans list and in the report, named
 by the group's name (or its pattern). Off, they are back as they were. The
 choice is saved with the others (`merge: true`, §7).
+
+Once merged, a group's scans can be changed by hand:
+
+- **Add scans.** Any scan of the run can be added to a merged group, whether
+  its URL matches the pattern or not: the template page at another address,
+  a product reached through a search.
+- **Remove scans.** Any scan of a merged group can be taken out of it, and is
+  shown as its own scan again. A scan removed from a merged group is still in
+  the pattern's group, for choosing and for the other actions; it is only no
+  longer in the merged scan.
+- **Unmerge** gives back every scan, the added ones included, as they were.
+
+And scans can be merged without a pattern: choosing scans in the scans list
+and merging them makes a **group by hand**, named by the person, that is then
+like any other merged group. A group by hand comes from a source of its own
+(§5.5), `manual`, which proposes the groups the report saved, so it nests and
+shows beside the URL groups without either knowing the other.
 
 ### 9.3 How the scans are folded
 
@@ -352,6 +380,13 @@ for contexts, the report view for pages.
   one another; the outermost merged group wins, and a merged group inside it
   is shown as merged into it, its switch kept, so unmerging the outer one
   brings the inner one back merged.
+- **A scan added to a merged group leaves any other merged group it was in**,
+  so the last place it was put is where it is. Adding a scan says which group
+  it came from.
+- **What the person added or removed is kept apart from the pattern.** A
+  merged group's scans are the pattern's, plus those added, minus those
+  removed; a later run of the same workflow, grouped by the same pattern,
+  gets the new pages of the pattern without the person adding them.
 - **Including and excluding the merged scan** from the scans list acts on all
   its scans, as Include all and Exclude all do.
 - **Renaming the merged scan** renames its group.
@@ -423,10 +458,10 @@ the run.
    its pages (the template's) and those on only some (the content's), so the
    person sees what excluding would hide and what merging would keep. Read
    off the same fold, without merging.
-7. **Per-context findings in merged scans.** Keep them, then fold again when a
-   context is left out.
-8. **Grouping by context.** The same view and actions over the contexts of
-   merged scans.
+7. **Changing a merged group by hand** (§9.2, §9.4). Add scans to a merged
+   group and remove them; groups by hand from scans chosen in the scans
+   list, through the `manual` source; `add`, `remove` and `members` saved in
+   `scanGrouping`.
 
 ## 11. Open questions
 
@@ -442,6 +477,17 @@ the run.
   different pages of one template; the largest page is the likely choice
   again (the template, as fully as any page shows it), but a score that
   should stand for the template is to be settled with real runs in step 5.
+- **Unmerging what the run merged** (a later iteration). Splitting a Merged
+  scan step's scan back into its contexts, or leaving one context out, needs
+  each context's findings kept in the report (today only its outcome counts
+  are) and the fold run again without it; the fold is pure and shared once
+  step 4 moves it (§9.3), so the second half is cheap. Until then, what the
+  run merged is left as it is (D11).
+- **Scan ids after reports are merged.** What was added, removed or merged
+  by hand is saved by scan id, and opening several reports as one renames a
+  scan whose id another report already uses (`ensureUniqueImportedScanIds`).
+  The ids saved by a report then have to be renamed with its scans, or they
+  name nothing (and are ignored, as a pattern that matches nothing is).
 - **Comparing a merged run with an unmerged one.** The merged scan has its own
   id, so it matches nothing on the other side. The comparison may need to
   match it with the scans it was made from.
