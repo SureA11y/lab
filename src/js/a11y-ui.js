@@ -27,6 +27,7 @@ import {createQueueRunWatch} from './queue-run-watch.js';
 import {createCompareTab} from './compare-tab.js';
 import {createGroupingUi} from './grouping-ui.js';
 import {createScreenshotsUi} from './screenshots-ui.js';
+import {createScanGroupsUi} from './scan-groups-ui.js';
 import {createRunQueueUi} from './run-queue-ui.js';
 import {createLiveUi} from './live-ui.js';
 import {createRunSummaryUi} from './run-summary-ui.js';
@@ -103,6 +104,7 @@ function storeActiveMode(mode) {
         get screenshotsDialog() { return screenshotsDialog; },
         get summaryEl() { return summaryEl; },
         get toggleScanIncludedInReport() { return toggleScanIncludedInReport; },
+        get applyScanInclusion() { return applyScanInclusion; },
         get updateScanTags() { return updateScanTags; },
         get $() { return $; },
         get afterConfigLoaded() { return afterConfigLoaded; },
@@ -825,6 +827,35 @@ function storeActiveMode(mode) {
         }
     }
 
+    /**
+     * Puts scans in and out of the summary report at once: what a scan
+     * group's Include all, Exclude all and Keep one do (scan-groups-ui.js).
+     * `plan` is { include: [ids], exclude: [ids] }; the report is worked out
+     * and drawn again once, and focus goes back to the control that had it.
+     */
+    function applyScanInclusion(plan, message) {
+        const payload = getActiveBucket()?.payload;
+        if (!payload || !Array.isArray(payload.scans)) return;
+
+        const include = new Set(plan?.include || []);
+        const exclude = new Set(plan?.exclude || []);
+        const focusToken = runSummaryUi.captureGroupsFocus();
+        for (const scan of payload.scans) {
+            if (!scan || !scan.id) continue;
+            if (include.has(scan.id)) scan.includedInReport = true;
+            else if (exclude.has(scan.id)) scan.includedInReport = false;
+        }
+
+        recomputeDerivedReportData(payload);
+        reportView.refreshDerivedReportUi();
+        runSummaryUi.restoreGroupsFocus(focusToken);
+
+        if (message) {
+            if (resultsState.activeMode === 'report') setStatusReport(message, STATUS.OK);
+            else setStatusRun(message, STATUS.OK);
+        }
+    }
+
     // Which move buttons are dead ends changes whenever the order does, and the
     // cards are not rebuilt, so the states are refreshed in place. One sweep of
     // the document: a query per scan would be hundreds of full-tree searches.
@@ -971,8 +1002,10 @@ function storeActiveMode(mode) {
             applyAdjacentScanSwapToDom(scans, movedId, displacedId, targetIdx, idx);
         }
 
-        // The one derived view that follows scan order.
+        // The derived views that follow scan order: dispersion, and the scans
+        // listed in each scan group (and which one Keep one keeps).
         scheduleDispersionRefresh();
+        runSummaryUi.refreshScanGroups(payload);
 
         const movedScan = scans[targetIdx];
         const label = movedScan?.label || movedScan?.id || 'Scan';
@@ -1010,6 +1043,8 @@ function storeActiveMode(mode) {
 
         // Hotspots and the strip's tooltips name scans by label.
         scheduleDispersionRefresh();
+        // Scan groups list scans by label.
+        runSummaryUi.refreshScanGroups(payload);
 
         const message = `Scan renamed from "${previousLabel}" to "${displayLabel}".`;
 
@@ -2316,6 +2351,7 @@ function storeActiveMode(mode) {
 
     // In screenshots-ui.js.
     const screenshotsUi = createScreenshotsUi(app);
+    createScanGroupsUi(app);
 
     // ---- Scan sorting ----
     // Sort is a stable ordering of every scan card, applied by the shared module

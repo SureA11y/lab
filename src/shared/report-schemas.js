@@ -77,6 +77,26 @@
                 screenshots: { type: 'array', items: { type: 'object' } },
                 metrics: { type: 'object', description: 'Scores and page metrics. Open: it grows with the lab.' },
                 runDiagnostics: { type: 'object' },
+                scanGrouping: {
+                    type: 'object',
+                    description: 'The scan groups a person chose in the report view (docs/design/scan-grouping-design.md §7): '
+                        + '`patterns`, in the order they were chosen, each a group `key` (its source and the pattern, '
+                        + '`url:shop.example.com/products/{*}`) and the `name` given to it, or null. The groups themselves are '
+                        + 'found again from the scans whenever the report is shown; a key that matches none of them is ignored.',
+                    properties: {
+                        patterns: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                required: ['key'],
+                                properties: {
+                                    key: { ...text, minLength: 1 },
+                                    name: textOrNull,
+                                },
+                            },
+                        },
+                    },
+                },
                 conformanceReview: {
                     type: 'object',
                     description: 'A reviewer\'s conformance verdicts over the automated draft (docs/design/conformance-report-design.md): '

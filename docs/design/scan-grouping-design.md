@@ -1,9 +1,10 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Steps 1 and 2 built** (§9): the grouping facade and the URL
-> source, and the read-only "Scan groups" section under a run's scans list.
-> The other steps are planned, in the order §9 lists them; each one is useful
-> and testable on its own.
+> Status: **Steps 1 to 3 built** (§9): the grouping facade and the URL
+> source, and the "Scan groups" section under a run's scans list, where
+> patterns are chosen, named, and their scans included or excluded. The other
+> steps are planned, in the order §9 lists them; each one is useful and
+> testable on its own.
 
 ## 1. Motivation
 
@@ -235,8 +236,10 @@ nodes can be chosen, at any levels:
   action on a scan wins.
 - A group shows how many of its scans are included: all, none or some ("31 of
   58 included"), so a mixed group after card-by-card changes is visible.
-- **Keep one**: excludes every scan of the group but the first in report
-  order, the usual way to keep a template represented once.
+- **Keep one**: excludes every scan of the group but one, the usual way to
+  keep a template represented once. The one kept is the first in report
+  order that is already included, so a page picked by hand to stand for the
+  template stays; with none included, the first comes back.
 
 Grouping is a view: it orders and nests the scan cards but does not change the
 report's scan order, which issue dispersion and the exports follow
@@ -244,12 +247,21 @@ report's scan order, which issue dispersion and the exports follow
 
 ## 7. What is saved
 
-- The exclusions, as `includedInReport` already is.
+- The exclusions, as the scans list's Exclude already saves them: a download
+  of the report **leaves the excluded scans out** (its package holds the
+  included scans only), so excluding is what a download makes final. A
+  report reopened from it has fewer scans, and a pattern may no longer repeat
+  in them.
 - The chosen patterns and their names, so the person finds their grouping
-  again when the report is reopened. This is a small run-level field
-  (`scanGrouping: { patterns: [{ key, name }] }`, where `key` is the pattern
-  written out), added in the step that adds the choosing (§9 step 3). Patterns
-  that no longer match anything after a merge of reports are dropped quietly.
+  again when the report is reopened: a run-level field,
+  `scanGrouping: { patterns: [{ key, name }] }`, `key` being the group's key
+  (`url:shop.example.com/products/{*}`), in the order they were chosen. It is
+  in the report schema (v3 and v4) and kept by every download. Reports opened
+  together and merged into one carry every group any of them chose, the
+  first name given to it kept. A key that matches none of the scans (a
+  pattern that no longer repeats, after a merge or a download that left
+  scans out) is not shown, but stays in the field: merged with a report that
+  has those scans again, the group comes back.
 
 ## 8. Merged scans and their contexts
 
@@ -286,8 +298,20 @@ That storage change is its own step (§9 step 5) and its own design note.
    again only when the scans' ids or URLs change. No actions; this is where
    the thresholds are checked on real runs. Not yet in the exported report
    or the extension's panel.
-3. **Choosing and acting.** Choose patterns, name them, include, exclude and
-   keep one, through `includedInReport`. Save the choice (§7).
+3. **Choosing and acting** (built). The section has two parts. "Patterns
+   found" is the tree of step 2 with a checkbox per pattern. "Your groups",
+   once one is chosen, lists each scan under the narrowest chosen group
+   holding it (`chooseGroups` in the facade, by keys only), each group with a
+   name field (Enter or leaving it saves, Escape puts back the saved name)
+   and Include all, Exclude all and Keep one. The actions are planned in
+   `src/shared/scan-group-choice.js` (`planAction`, only the scans whose state
+   changes) and applied by `applyScanInclusion` in `src/js/a11y-ui.js`, which
+   sets `includedInReport` and draws the report once; an action with nothing
+   to change says so and leaves the report alone, so its button never has to
+   be disabled. Choosing and naming draw only the section again
+   (`refreshScanGroups`), as renaming and moving a scan now do. Focus comes
+   back to the same control after every redraw (`data-sg-focus`). Events are
+   handled in `src/js/scan-groups-ui.js`.
 4. **Shared and unique issues per group.** For each group, the rules failing in
    all its scans (the template's) and those failing in only some (the
    content's), so the person sees what excluding would hide.

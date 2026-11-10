@@ -16,6 +16,7 @@ before(async () => {
     globalThis.document = dom.window.document;
     globalThis.A11Y_SCAN_GROUPS = require('../shared/scan-groups.js');
     globalThis.A11Y_SCAN_URL_GROUPS = require('../shared/scan-url-groups.js');
+    globalThis.A11Y_SCAN_GROUP_CHOICE = require('../shared/scan-group-choice.js');
     globalThis.A11Y_SCAN_GROUPS_VIEW = require('../shared/scan-groups-view.js');
     ({createRunSummaryUi} = await import('./run-summary-ui.js'));
 });
@@ -64,7 +65,8 @@ describe('Scan groups in the run summary', () => {
         const {summaryEl, write} = setup();
         const data = run(['/', '/products/a', '/products/b']);
         write(data);
-        const counts = () => summaryEl.querySelector('[data-sg-key="url:shop.example.com/products/{*}"] .sg-counts').textContent;
+        const counts = () => summaryEl.querySelector('[data-sg-choose="url:shop.example.com/products/{*}"]')
+            .closest('.sg-choose').querySelector('.sg-counts').textContent;
         assert.equal(counts(), '2 scans · both included');
         data.scans[1].includedInReport = false;
         write(data);
@@ -90,8 +92,8 @@ describe('Scan groups in the run summary', () => {
         const data = run(['/products/a', '/products/b', '/products/c']);
         data.scans[2].skipped = true;
         write(data);
-        const group = summaryEl.querySelector('[data-sg-key="url:shop.example.com/products/{*}"]');
-        assert.match(group.querySelector('.sg-counts').textContent, /^2 scans/);
+        const row = summaryEl.querySelector('[data-sg-choose="url:shop.example.com/products/{*}"]').closest('.sg-choose');
+        assert.match(row.querySelector('.sg-counts').textContent, /^2 scans/);
         assert.match(summaryEl.querySelector('[data-sg-key="not-grouped"]').textContent, /Scan 3/);
     });
 

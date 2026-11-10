@@ -577,8 +577,73 @@
 
 .sg-url { overflow-wrap: anywhere; }
 
-/* "Not grouped" is not a pattern, so it is not set as one. */
-.sg-ungrouped .sg-label { font-family: inherit; }
+/* "In no pattern" is not a pattern, so it is not set as one. */
+.sg-ungrouped .sg-label,
+.sg-plain { font-family: inherit; }
+
+/* Your groups, then the patterns found: two parts, each with its heading. */
+.sg-part + .sg-part {
+    margin-top: .75rem;
+    padding-top: .5rem;
+    border-top: 1px solid var(--border-soft);
+}
+
+.sg-h {
+    margin: .5rem 0 .25rem;
+    font-size: var(--fs-md);
+}
+
+/* A pattern found: its checkbox and label on one line, its scans and the
+   narrower patterns under it, a step in. */
+.sg-pattern { margin: .3rem 0; }
+
+.sg-choose {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 .4rem;
+}
+
+.sg-choose input[type="checkbox"] { align-self: center; }
+
+.sg-choose label { cursor: pointer; }
+
+.sg-pattern > .sg-scans,
+.sg-pattern > .sg-tree { margin-left: 1.6rem; }
+
+.sg-scans > summary {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+
+/* A chosen group: its name and what to do with its scans, above them. */
+.sg-name { font-weight: 600; }
+
+.sg-pattern-of { font-weight: 400; font-size: var(--fs-sm); }
+
+.sg-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .75rem;
+    margin: .3rem 0 .4rem;
+}
+
+.sg-name-field {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.sg-name-field input {
+    width: min(18rem, 60vw);
+}
+
+.sg-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+}
 
 .summary .sg-members {
     margin-top: .2rem;

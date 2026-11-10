@@ -583,6 +583,16 @@ export function createOpenReportStaging(app) {
      * Loads the staged files into the open report tab, listing its steps in
      * the activity panel's `task`.
      */
+    // The scan groups each report chose, carried into the report they are
+    // merged into (docs/design/scan-grouping-design.md §7): every group any
+    // of them chose, the first name given to it kept. A group that matches
+    // none of the merged scans is not shown.
+    function carryScanGrouping(payload, reports) {
+        const api = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        if (!api || !payload) return;
+        api.writeChoice(payload, api.mergeChoices(reports));
+    }
+
     async function loadStagedReportsIntoOpenReport(task) {
         const okItems = stagedReportFiles.filter(x => x.ok && x.parsed);
         const refuse = (message) => {
@@ -830,6 +840,7 @@ export function createOpenReportStaging(app) {
                 });
 
                 PAYLOAD.finalizeWorkflowPayload(payload);
+                carryScanGrouping(payload, parsedObjects);
 
                 // Restore tokenized scan screenshot dataUrls
                 restoreScanDataUrls(payload, scanDataUrlMap);
@@ -864,6 +875,7 @@ export function createOpenReportStaging(app) {
             const payload = data.payload;
 
             restoreScanDataUrls(payload, scanDataUrlMap);
+            carryScanGrouping(payload, parsedObjects);
 
             // Validate merged payload too
             validateReportOrThrow(payload, 'merged');

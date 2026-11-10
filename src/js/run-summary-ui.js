@@ -140,39 +140,90 @@ export function createRunSummaryUi(app) {
 
     /** Write the main summary panel HTML */
     // The grouping depends only on the scans' ids and URLs, so it is kept
-    // while they stay the same: excluding or renaming a scan redraws the
-    // summary without finding the groups again.
+    // while they stay the same: excluding a scan, or choosing a group, draws
+    // the section again without finding the groups again.
     let groupingMemo = {key: null, result: null};
 
-    /**
-     * "Scan groups" (docs/design/scan-grouping-design.md §9 step 2): the run's
-     * scans grouped by the patterns their URLs repeat, under the scans list.
-     * Over every scan, excluded ones too, so a group can say how many of its
-     * scans are included. Empty when the shared modules are not loaded.
-     */
-    function scanGroupsHtml(scans) {
+    // A skipped scan was not scanned, so its URL says nothing of a page.
+    const groupingUrlOf = (scan) => (scan && !scan.skipped && !scan.skipInfo ? scan.url : null);
+
+    /** The groups of these scans (scan-groups.js findGroups), or null without the shared modules. */
+    function findScanGroups(scans) {
         const grouping = globalThis.A11Y_SCAN_GROUPS;
         const urlGroups = globalThis.A11Y_SCAN_URL_GROUPS;
-        const view = globalThis.A11Y_SCAN_GROUPS_VIEW;
-        if (!grouping || !urlGroups || !view || !Array.isArray(scans)) return '';
-
-        // A skipped scan was not scanned, so its URL says nothing of a page.
-        const urlOf = (scan) => (scan && !scan.skipped && !scan.skipInfo ? scan.url : null);
-        const key = JSON.stringify(scans.map((scan) => [scan?.id, urlOf(scan)]));
+        if (!grouping || !urlGroups || !Array.isArray(scans)) return null;
+        const key = JSON.stringify(scans.map((scan) => [scan?.id, groupingUrlOf(scan)]));
         if (groupingMemo.key !== key) {
             const result = grouping.findGroups(scans, {
-                sources: [urlGroups.createUrlGroupSource({getUrl: urlOf})],
+                sources: [urlGroups.createUrlGroupSource({getUrl: groupingUrlOf})],
             });
             groupingMemo = {key, result};
         }
+        return groupingMemo.result;
+    }
 
-        // Redrawing the summary keeps what was open.
-        const previous = app.summaryEl ? app.summaryEl.querySelector('[data-sg-section]') : null;
+    function groupsSectionEl() {
+        return app.summaryEl ? app.summaryEl.querySelector('[data-sg-section]') : null;
+    }
+
+    /**
+     * "Scan groups" (docs/design/scan-grouping-design.md §6, §9 steps 2 and 3):
+     * the run's scans grouped by the patterns their URLs repeat, under the
+     * scans list, with the groups chosen in `data` (its scanGrouping). Over
+     * every scan, excluded ones too, so a group can say how many of its scans
+     * are included. Empty when the shared modules are not loaded.
+     */
+    function scanGroupsHtml(scans, data) {
+        const view = globalThis.A11Y_SCAN_GROUPS_VIEW;
+        const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        const result = findScanGroups(scans);
+        if (!view || !choiceApi || !result) return '';
+
+        // Drawing it again keeps what was open.
+        const previous = groupsSectionEl();
         const openKeys = previous
             ? [...previous.querySelectorAll('details[data-sg-key]')]
                 .filter((el) => el.open).map((el) => el.getAttribute('data-sg-key'))
             : [];
-        return view.sectionHTML(groupingMemo.result, scans, {open: !!previous?.open, openKeys});
+        return view.sectionHTML(result, scans, {
+            open: !!previous?.open,
+            openKeys,
+            choice: choiceApi.readChoice(data),
+            maxName: choiceApi.MAX_NAME,
+        });
+    }
+
+    /** Which control of the section has focus, to give it back after a redraw. */
+    function captureGroupsFocus() {
+        const active = document.activeElement;
+        const section = groupsSectionEl();
+        if (!active || !section || !section.contains(active)) return null;
+        return active.getAttribute('data-sg-focus') || null;
+    }
+
+    function restoreGroupsFocus(token) {
+        if (!token) return;
+        const section = groupsSectionEl();
+        const target = section && [...section.querySelectorAll('[data-sg-focus]')]
+            .find((el) => el.getAttribute('data-sg-focus') === token);
+        if (target && typeof target.focus === 'function') target.focus();
+    }
+
+    /**
+     * Draws the section again in place, from the report itself: after a
+     * group is chosen or named, or a scan renamed or moved, when nothing
+     * else of the summary changes. Focus stays on the same control.
+     */
+    function refreshScanGroups(payload) {
+        const section = groupsSectionEl();
+        if (!section) return;
+        const token = captureGroupsFocus();
+        const html = scanGroupsHtml(getScansFromPayload(payload), payload);
+        const holder = document.createElement('div');
+        holder.innerHTML = html;
+        const next = holder.firstElementChild;
+        if (next) section.replaceWith(next); else section.remove();
+        restoreGroupsFocus(token);
     }
 
     function writeSummaryHtml({data, fallbackUrl, totals, scansListHtml, scansCount, headerText, allScansButtonHtml = ''}) {
@@ -191,7 +242,7 @@ export function createRunSummaryUi(app) {
             (scansCount === 1 ? '' : 's') +
             '.';
 
-        const groupsHtml = scanGroupsHtml(getScansFromPayload(data));
+        const groupsHtml = scanGroupsHtml(getScansFromPayload(data), data);
 
         // Sort, hide-excluded and the "View all scans" trigger cluster at the end
         // of the header line.
@@ -212,7 +263,11 @@ export function createRunSummaryUi(app) {
 
     return {
         buildScansListHtml,
+        captureGroupsFocus,
+        findScanGroups,
         getScansFromPayload,
+        refreshScanGroups,
+        restoreGroupsFocus,
         writeSummaryHtml,
     };
 }

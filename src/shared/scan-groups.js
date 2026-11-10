@@ -85,6 +85,7 @@
      *   groups dropped for having exactly its members (the same group seen
      *   another way, by another source or another pattern).
      * - ungrouped: the ids of the items in no group, in item order.
+     * - ids: the ids of every item, in item order.
      */
     function findGroups(items, options = {}) {
         const list = Array.isArray(items) ? items : [];
@@ -184,9 +185,56 @@
         };
 
         const grouped = new Set(kept.flatMap((g) => g.members));
-        const ungrouped = [...position.keys()].filter((id) => !grouped.has(id));
+        const ids = [...position.keys()];
+        const ungrouped = ids.filter((id) => !grouped.has(id));
 
-        return { groups: sortTree(roots), ungrouped };
+        return { groups: sortTree(roots), ungrouped, ids };
+    }
+
+    /**
+     * The groups a person chose to group by, out of a findGroups result
+     * (design notes §6). `chosenKeys` are group keys; those the result does
+     * not have (a pattern gone after a merge of reports) are left out and
+     * listed in `missing`.
+     *
+     * Returns { groups, ungrouped, missing }:
+     * - groups: the chosen groups, each { key, label, group, members, own,
+     *   children }, nested under their nearest chosen ancestor, in the
+     *   result's order. `group` is the findGroups node; `members` all its
+     *   items; `own` those no chosen group inside it holds, so each item is
+     *   listed under the most specific chosen group that has it.
+     * - ungrouped: the items in no chosen group, in item order.
+     */
+    function chooseGroups(result, chosenKeys) {
+        const groups = result && Array.isArray(result.groups) ? result.groups : [];
+        const all = flattenGroups(groups);
+        const byKey = new Map(all.map((g) => [g.key, g]));
+        const wanted = [...new Set(Array.isArray(chosenKeys) ? chosenKeys : [])];
+        const chosen = new Set(wanted.filter((k) => byKey.has(k)));
+        const missing = wanted.filter((k) => !byKey.has(k));
+
+        const nodes = new Map();
+        const roots = [];
+        for (const g of all) {
+            if (!chosen.has(g.key)) continue;
+            const node = { key: g.key, label: g.label, group: g, members: g.members, own: [], children: [] };
+            nodes.set(g.key, node);
+            let up = g.parentKey ? byKey.get(g.parentKey) : null;
+            while (up && !chosen.has(up.key)) up = up.parentKey ? byKey.get(up.parentKey) : null;
+            // Parents come before their children in `all`, so the chosen
+            // ancestor's node already exists.
+            if (up) nodes.get(up.key).children.push(node); else roots.push(node);
+        }
+        for (const node of nodes.values()) {
+            const inChildren = new Set(node.children.flatMap((c) => c.members));
+            node.own = node.members.filter((id) => !inChildren.has(id));
+        }
+
+        const covered = new Set([...nodes.values()].flatMap((n) => n.members));
+        const order = result && Array.isArray(result.ids)
+            ? result.ids
+            : [...new Set([...all.flatMap((g) => g.members), ...(result && result.ungrouped || [])])];
+        return { groups: roots, ungrouped: order.filter((id) => !covered.has(id)), missing };
     }
 
     /** Every group of a findGroups result, parents before their children. */
@@ -201,5 +249,6 @@
         DEFAULTS,
         findGroups,
         flattenGroups,
+        chooseGroups,
     };
 }));

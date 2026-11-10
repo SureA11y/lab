@@ -538,6 +538,9 @@ export function prepareDataForReport(data) {
     // A reviewer's conformance verdicts (conformance-review.js): kept with
     // the report, so its downloads and a later opening carry them.
     requiredProperties.push('conformanceReview');
+    // The scan groups chosen and named (scan-group-choice.js,
+    // docs/design/scan-grouping-design.md §7): kept with the report likewise.
+    requiredProperties.push('scanGrouping');
 
     const updatedData = keepOnlyKeys(data, requiredProperties);
 

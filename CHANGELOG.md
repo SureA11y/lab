@@ -31,7 +31,10 @@ The first public release.
   URLs repeat a pattern, as pages made from one template do
   (`/products/{slug}`), nested where one pattern narrows another, with how
   many of each group's scans are included. A run whose URLs repeat nothing
-  gets no groups.
+  gets no groups. Choose the patterns to group by, name them, and take a
+  group's scans out of the report or put them back at once (Exclude all,
+  Include all, Keep one); the groups chosen are saved with the report
+  (`scanGrouping`) and carried when reports are merged.
   A report's scans can be filtered by tag, and, when the report has more
   than one profile, shown by profile: every profile is shown until it is
   turned off, several at once if wanted. A scan whose profiles are all off
