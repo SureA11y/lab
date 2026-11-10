@@ -139,6 +139,42 @@ export function createRunSummaryUi(app) {
     }
 
     /** Write the main summary panel HTML */
+    // The grouping depends only on the scans' ids and URLs, so it is kept
+    // while they stay the same: excluding or renaming a scan redraws the
+    // summary without finding the groups again.
+    let groupingMemo = {key: null, result: null};
+
+    /**
+     * "Scan groups" (docs/design/scan-grouping-design.md §9 step 2): the run's
+     * scans grouped by the patterns their URLs repeat, under the scans list.
+     * Over every scan, excluded ones too, so a group can say how many of its
+     * scans are included. Empty when the shared modules are not loaded.
+     */
+    function scanGroupsHtml(scans) {
+        const grouping = globalThis.A11Y_SCAN_GROUPS;
+        const urlGroups = globalThis.A11Y_SCAN_URL_GROUPS;
+        const view = globalThis.A11Y_SCAN_GROUPS_VIEW;
+        if (!grouping || !urlGroups || !view || !Array.isArray(scans)) return '';
+
+        // A skipped scan was not scanned, so its URL says nothing of a page.
+        const urlOf = (scan) => (scan && !scan.skipped && !scan.skipInfo ? scan.url : null);
+        const key = JSON.stringify(scans.map((scan) => [scan?.id, urlOf(scan)]));
+        if (groupingMemo.key !== key) {
+            const result = grouping.findGroups(scans, {
+                sources: [urlGroups.createUrlGroupSource({getUrl: urlOf})],
+            });
+            groupingMemo = {key, result};
+        }
+
+        // Redrawing the summary keeps what was open.
+        const previous = app.summaryEl ? app.summaryEl.querySelector('[data-sg-section]') : null;
+        const openKeys = previous
+            ? [...previous.querySelectorAll('details[data-sg-key]')]
+                .filter((el) => el.open).map((el) => el.getAttribute('data-sg-key'))
+            : [];
+        return view.sectionHTML(groupingMemo.result, scans, {open: !!previous?.open, openKeys});
+    }
+
     function writeSummaryHtml({data, fallbackUrl, totals, scansListHtml, scansCount, headerText, allScansButtonHtml = ''}) {
         const header = headerText != null
             ? headerText
@@ -155,6 +191,8 @@ export function createRunSummaryUi(app) {
             (scansCount === 1 ? '' : 's') +
             '.';
 
+        const groupsHtml = scanGroupsHtml(getScansFromPayload(data));
+
         // Sort, hide-excluded and the "View all scans" trigger cluster at the end
         // of the header line.
         app.summaryEl.innerHTML =
@@ -163,7 +201,8 @@ export function createRunSummaryUi(app) {
                 '<span class="summary-controls">' + app.buildSummaryControlsHtml() + allScansButtonHtml + '</span>' +
             '</div>' +
             rgaaRateHtml(getScansFromPayload(data, {includedOnly: true})) +
-            (scansListHtml || '');
+            (scansListHtml || '') +
+            groupsHtml;
 
         if (app.runResultToStatus && app.resultsState.activeMode === 'run' && headerText == null) {
             app.runResultToStatus = false;

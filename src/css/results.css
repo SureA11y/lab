@@ -527,6 +527,65 @@
     display: none;
 }
 
+/* Scan groups (docs/design/scan-grouping-design.md): the run's scans grouped by
+   the patterns of their URLs, under the scans list. The tree is as tall as its
+   open groups; a long list of one group's scans scrolls as the scans list does. */
+.summary .sg-tree {
+    max-height: none;
+    overflow: visible;
+    list-style: none;
+    margin-top: .25rem;
+    margin-bottom: 0;
+    padding-left: 0;
+}
+
+.sg-intro,
+.sg-caption {
+    margin: .4rem 0;
+    color: var(--text-main);
+}
+
+.sg-group { margin: .2rem 0; }
+
+/* What a group holds sits under its summary, a step in. */
+.sg-group > :not(summary) { margin-left: 1.1rem; }
+
+.sg-group > summary {
+    cursor: pointer;
+    padding: .1rem 0;
+}
+
+.sg-group > summary:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-sm);
+}
+
+.sg-label {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.sg-host,
+.sg-counts,
+.sg-url {
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+}
+
+.sg-url { overflow-wrap: anywhere; }
+
+/* "Not grouped" is not a pattern, so it is not set as one. */
+.sg-ungrouped .sg-label { font-family: inherit; }
+
+.summary .sg-members {
+    margin-top: .2rem;
+    margin-bottom: .4rem;
+    padding-left: 1.6rem;
+}
+
 #results h3 { border-bottom: 1px solid var(--border-soft); padding-bottom: 5px; margin-bottom: 0; }
 #results img { max-width: 100%; }
 
