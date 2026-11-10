@@ -162,6 +162,49 @@ export function createRunSummaryUi(app) {
         return groupingMemo.result;
     }
 
+    // The scans as shown are worked out again only when what they depend on
+    // changes: the scans and their order, which are included, their labels
+    // and tags, and the groups merged.
+    let shownMemo = {payload: null, key: null, value: null};
+
+    /**
+     * The report's scans as shown (docs/design/scan-grouping-design.md §9.5):
+     * each merged group in place of its scans (scan-group-merge.js), the
+     * others as they are. { scans, merges }, merges by merged scan id. Every
+     * part of the report that counts or lists scans reads them through this;
+     * the grouping, the downloads and the edits read the scans themselves.
+     */
+    function shownScans(payload) {
+        const scans = Array.isArray(payload?.scans) ? payload.scans : [];
+        const mergeApi = globalThis.A11Y_SCAN_GROUP_MERGE;
+        const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        const fold = globalThis.A11Y_SCAN_FOLD;
+        const none = {scans, merges: new Map()};
+        if (!mergeApi || !choiceApi || !fold) return none;
+        const choice = choiceApi.readChoice(payload);
+        if (!choice.some((p) => p.merge)) return none;
+
+        const key = JSON.stringify([
+            choice,
+            scans.map((s) => [s?.id, s?.includedInReport !== false, s?.label || null, s?.scanTags || null, groupingUrlOf(s)]),
+        ]);
+        if (shownMemo.payload === payload && shownMemo.key === key) return shownMemo.value;
+        const value = mergeApi.scansAsShown(scans, findScanGroups(scans), choice, {
+            fold,
+            buildA11ySummary: globalThis.A11Y_SUMMARY?.buildA11ySummary,
+            buildCoverageAwareSummary: globalThis.A11Y_COVERAGE_SUMMARY?.buildCoverageAwareSummary,
+        });
+        shownMemo = {payload, key, value};
+        return value;
+    }
+
+    /** The report as shown: itself, with its scans as shown (shownScans). */
+    function viewPayload(payload) {
+        if (!payload || typeof payload !== 'object') return payload;
+        const {scans} = shownScans(payload);
+        return scans === payload.scans ? payload : {...payload, scans};
+    }
+
     function groupsSectionEl() {
         return app.summaryEl ? app.summaryEl.querySelector('[data-sg-section]') : null;
     }
@@ -179,18 +222,36 @@ export function createRunSummaryUi(app) {
         const result = findScanGroups(scans);
         if (!view || !choiceApi || !result) return '';
 
-        // Drawing it again keeps what was open.
-        const previous = groupsSectionEl();
-        const openKeys = previous
-            ? [...previous.querySelectorAll('details[data-sg-key]')]
-                .filter((el) => el.open).map((el) => el.getAttribute('data-sg-key'))
-            : [];
+        // Drawing it again keeps what was open, also across a redraw of the
+        // whole report, which clears the summary first (holdGroupsState).
+        const state = readGroupsState() || heldState || {open: false, openKeys: []};
         return view.sectionHTML(result, scans, {
-            open: !!previous?.open,
-            openKeys,
+            open: state.open,
+            openKeys: state.openKeys,
             choice: choiceApi.readChoice(data),
             maxName: choiceApi.MAX_NAME,
         });
+    }
+
+    function readGroupsState() {
+        const section = groupsSectionEl();
+        if (!section) return null;
+        return {
+            open: !!section.open,
+            openKeys: [...section.querySelectorAll('details[data-sg-key]')]
+                .filter((el) => el.open).map((el) => el.getAttribute('data-sg-key')),
+            focus: captureGroupsFocus(),
+        };
+    }
+
+    // What the section looked like before the whole report is drawn again
+    // (a group merged or unmerged, its scans included or excluded): kept until
+    // the summary is written, which opens the same groups. Focus is given back
+    // by whoever drew it again, once the results are shown.
+    let heldState = null;
+
+    function holdGroupsState() {
+        heldState = readGroupsState();
     }
 
     /** Which control of the section has focus, to give it back after a redraw. */
@@ -242,7 +303,10 @@ export function createRunSummaryUi(app) {
             (scansCount === 1 ? '' : 's') +
             '.';
 
-        const groupsHtml = scanGroupsHtml(getScansFromPayload(data), data);
+        // Grouped as the scans are, not as shown: a merged group's scans
+        // stay in their groups (§9.5).
+        const raw = (typeof app.getActiveBucket === 'function' && app.getActiveBucket()?.payload) || data;
+        const groupsHtml = scanGroupsHtml(getScansFromPayload(raw), raw);
 
         // Sort, hide-excluded and the "View all scans" trigger cluster at the end
         // of the header line.
@@ -254,6 +318,8 @@ export function createRunSummaryUi(app) {
             rgaaRateHtml(getScansFromPayload(data, {includedOnly: true})) +
             (scansListHtml || '') +
             groupsHtml;
+        // Used once: the next drawing of the summary reads the section itself.
+        heldState = null;
 
         if (app.runResultToStatus && app.resultsState.activeMode === 'run' && headerText == null) {
             app.runResultToStatus = false;
@@ -266,8 +332,11 @@ export function createRunSummaryUi(app) {
         captureGroupsFocus,
         findScanGroups,
         getScansFromPayload,
+        holdGroupsState,
         refreshScanGroups,
         restoreGroupsFocus,
+        shownScans,
+        viewPayload,
         writeSummaryHtml,
     };
 }

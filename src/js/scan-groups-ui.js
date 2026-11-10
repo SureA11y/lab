@@ -10,7 +10,7 @@ import {STATUS} from './ui-constants.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * (applyScanInclusion, getActiveBucket, resultsState, runSummaryUi, setStatusReport, setStatusRun, summaryEl, updateResults).
+ * (applyScanInclusion, getActiveBucket, redrawAsShown, resultsState, runSummaryUi, setStatusReport, setStatusRun, summaryEl, updateResults).
  */
 export function createScanGroupsUi(app) {
     const choiceApi = () => globalThis.A11Y_SCAN_GROUP_CHOICE;
@@ -46,6 +46,22 @@ export function createScanGroupsUi(app) {
         const found = groupOf(payload, key);
         const label = found ? found.group.label : key;
         status(chosen ? `Grouping the scans by ${label}.` : `No longer grouping the scans by ${label}.`);
+    }
+
+    // Merging or unmerging changes which scans the report shows, so it is
+    // drawn again whole (docs/design/scan-grouping-design.md §9.2).
+    function merge(key, merged) {
+        const payload = payloadOf();
+        if (!payload) return;
+        const api = choiceApi();
+        api.writeChoice(payload, api.setMerged(api.readChoice(payload), key, merged));
+        app.redrawAsShown(payload);
+        const found = groupOf(payload, key);
+        const name = found ? found.name : key;
+        const count = found ? found.group.size : 0;
+        status(merged
+            ? `${name}: its ${plural(count, 'scan')} shown as one merged scan.`
+            : `${name}: its ${plural(count, 'scan')} shown each on its own again.`);
     }
 
     function rename(key, raw) {
@@ -106,6 +122,11 @@ export function createScanGroupsUi(app) {
             choose(box.getAttribute('data-sg-choose'), box.checked);
             return;
         }
+        const toMerge = e.target.closest('input[data-sg-merge]');
+        if (toMerge) {
+            merge(toMerge.getAttribute('data-sg-merge'), toMerge.checked);
+            return;
+        }
         const name = e.target.closest('input[data-sg-name]');
         if (name) rename(name.getAttribute('data-sg-name'), name.value);
     });
@@ -136,5 +157,5 @@ export function createScanGroupsUi(app) {
         app.updateResults(btn, () => act(key, action));
     });
 
-    return {choose, rename, act};
+    return {choose, merge, rename, act};
 }

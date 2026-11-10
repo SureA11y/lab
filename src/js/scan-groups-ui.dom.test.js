@@ -21,6 +21,8 @@ before(async () => {
     globalThis.A11Y_SCAN_URL_GROUPS = require('../shared/scan-url-groups.js');
     globalThis.A11Y_SCAN_GROUP_CHOICE = require('../shared/scan-group-choice.js');
     globalThis.A11Y_SCAN_GROUPS_VIEW = require('../shared/scan-groups-view.js');
+    globalThis.A11Y_SCAN_FOLD = require('../shared/scan-fold.js');
+    globalThis.A11Y_SCAN_GROUP_MERGE = require('../shared/scan-group-merge.js');
     ({createRunSummaryUi} = await import('./run-summary-ui.js'));
     ({createScanGroupsUi} = await import('./scan-groups-ui.js'));
 });
@@ -40,6 +42,7 @@ function setup(paths, payloadExtra = {}) {
     };
     const statuses = [];
     const inclusions = [];
+    const redraws = [];
     const app = {
         summaryEl,
         resultsState: {activeMode: 'report'},
@@ -51,6 +54,15 @@ function setup(paths, payloadExtra = {}) {
         buildSummaryControlsHtml: () => '',
         isScanIncludedInReport: (scan) => scan.includedInReport !== false,
         scanMatchesActiveFilters: () => true,
+        // What a11y-ui.js does: hold the section, draw the report again.
+        redrawAsShown(p) {
+            redraws.push(p);
+            const token = app.runSummaryUi.captureGroupsFocus();
+            app.runSummaryUi.holdGroupsState();
+            summaryEl.textContent = '';
+            write();
+            app.runSummaryUi.restoreGroupsFocus(token);
+        },
         applyScanInclusion(plan, message) {
             inclusions.push(plan);
             const token = app.runSummaryUi.captureGroupsFocus();
@@ -72,7 +84,7 @@ function setup(paths, payloadExtra = {}) {
     summaryEl.querySelector('[data-sg-section]').open = true;
     createScanGroupsUi(app);
     const $ = (sel) => summaryEl.querySelector(sel);
-    return {payload, summaryEl, statuses, inclusions, $, write, runSummaryUi: app.runSummaryUi};
+    return {payload, summaryEl, statuses, inclusions, redraws, $, write, runSummaryUi: app.runSummaryUi};
 }
 
 function check(box, on) {
@@ -223,5 +235,64 @@ describe('Redrawing the section', () => {
         assert.match($(`[data-sg-key="${PRODUCTS}"]`).textContent, /Red shirt/);
         assert.equal($(`[data-sg-key="${PRODUCTS}"]`).open, true);
         assert.equal($('[data-sg-section]').open, true);
+    });
+});
+
+describe('Merging a group (§9)', () => {
+    const chosen = () => ({scanGrouping: {patterns: [{key: PRODUCTS, name: 'Products'}]}});
+
+    test('the switch saves the merge, draws the report again, and keeps focus and what was open', () => {
+        const {payload, $, statuses, redraws} = setup(SHOP, chosen());
+        $(`[data-sg-key="chosen:${PRODUCTS}"]`).open = true;
+        const box = $(`[data-sg-merge="${PRODUCTS}"]`);
+        assert.equal(box.checked, false);
+        assert.equal(document.querySelector(`label[for="${box.id}"]`).textContent, 'Merge into one scan');
+        box.focus();
+        check(box, true);
+        assert.deepEqual(payload.scanGrouping.patterns, [{key: PRODUCTS, name: 'Products', merge: true}]);
+        assert.equal(redraws.length, 1);
+        assert.equal(statuses.at(-1), 'Products: its 3 scans shown as one merged scan.');
+        assert.equal(document.activeElement.getAttribute('data-sg-focus'), `merge:${PRODUCTS}`);
+        assert.equal(document.activeElement.checked, true);
+        assert.equal($(`[data-sg-key="chosen:${PRODUCTS}"]`).open, true);
+        assert.equal($('[data-sg-section]').open, true);
+    });
+
+    test('unmerging keeps the group and its name', () => {
+        const {payload, $, statuses} = setup(SHOP, {scanGrouping: {patterns: [{key: PRODUCTS, name: 'Products', merge: true}]}});
+        check($(`[data-sg-merge="${PRODUCTS}"]`), false);
+        assert.deepEqual(payload.scanGrouping.patterns, [{key: PRODUCTS, name: 'Products'}]);
+        assert.equal(statuses.at(-1), 'Products: its 3 scans shown each on its own again.');
+    });
+
+    test('a group inside a merged one says it is shown merged into it', () => {
+        const blog = ['/', '/blog/a11y/a', '/blog/a11y/b', '/blog/news/c', '/blog/news/d'];
+        const outer = 'url:shop.example.com/blog/{*}/{*}';
+        const inner = 'url:shop.example.com/blog/a11y/{*}';
+        const {$} = setup(blog, {scanGrouping: {patterns: [{key: outer, name: 'Posts', merge: true}, {key: inner, merge: true}]}});
+        assert.equal($(`[data-sg-key="chosen:${inner}"] .sg-merged-into`).textContent,
+            'Shown merged into Posts, the larger merged group it is in.');
+        assert.equal($(`[data-sg-key="chosen:${outer}"]`).querySelector(':scope > .sg-merged-into'), null);
+        assert.equal($(`[data-sg-merge="${inner}"]`).checked, true);
+    });
+
+    test('the scans as shown: one merged scan for the report, the scans themselves for the groups', () => {
+        const {payload, $, runSummaryUi} = setup(SHOP, {scanGrouping: {patterns: [{key: PRODUCTS, name: 'Products', merge: true}]}});
+        const {scans, merges} = runSummaryUi.shownScans(payload);
+        assert.deepEqual(scans.map((s) => s.label), ['Scan 1', 'Products']);
+        assert.deepEqual([...merges.values()][0].members, ['s1', 's2', 's3']);
+        const view = runSummaryUi.viewPayload(payload);
+        assert.notEqual(view, payload);
+        assert.equal(view.scans, scans);
+        assert.equal(payload.scans.length, 4);
+        // Worked out once while nothing changes.
+        assert.equal(runSummaryUi.shownScans(payload), runSummaryUi.shownScans(payload));
+        // The groups still hold the products one by one.
+        assert.match($(`[data-sg-key="chosen:${PRODUCTS}"] > summary`).textContent, /3 scans/);
+    });
+
+    test('nothing merged: the report as it is', () => {
+        const {payload, runSummaryUi} = setup(SHOP, chosen());
+        assert.equal(runSummaryUi.viewPayload(payload), payload);
     });
 });

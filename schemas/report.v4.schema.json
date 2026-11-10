@@ -68,7 +68,7 @@
     },
     "scanGrouping": {
       "type": "object",
-      "description": "The scan groups a person chose in the report view (docs/design/scan-grouping-design.md §7): `patterns`, in the order they were chosen, each a group `key` (its source and the pattern, `url:shop.example.com/products/{*}`) and the `name` given to it, or null. The groups themselves are found again from the scans whenever the report is shown; a key that matches none of them is ignored.",
+      "description": "The scan groups a person chose in the report view (docs/design/scan-grouping-design.md §7): `patterns`, in the order they were chosen, each a group `key` (its source and the pattern, `url:shop.example.com/products/{*}`), the `name` given to it, or null, and `merge`, true when its scans are shown as one merged scan. The groups and merged scans are made again from the scans whenever the report is shown, and the scans are kept as they are; a key that matches none of them is ignored.",
       "properties": {
         "patterns": {
           "type": "array",
@@ -87,6 +87,9 @@
                   "string",
                   "null"
                 ]
+              },
+              "merge": {
+                "type": "boolean"
               }
             }
           }

@@ -36,7 +36,10 @@
         for (const p of Array.isArray(list) ? list : []) {
             if (!p || typeof p.key !== 'string' || !p.key || seen.has(p.key)) continue;
             seen.add(p.key);
-            out.push({ key: p.key, name: cleanName(p.name) });
+            const entry = { key: p.key, name: cleanName(p.name) };
+            // Merged into one scan (§9): only said when it is.
+            if (p.merge === true) entry.merge = true;
+            out.push(entry);
         }
         return out;
     }
@@ -65,7 +68,24 @@
 
     /** The choice with `key`'s name set; an empty name puts the pattern back. */
     function setName(choice, key, name) {
-        return normalize(choice).map((p) => (p.key === key ? { key, name: cleanName(name) } : p));
+        return normalize(choice).map((p) => (p.key === key ? { ...p, name: cleanName(name) } : p));
+    }
+
+    /**
+     * The choice with `key`'s scans merged into one (docs/design/
+     * scan-grouping-design.md §9) or not. Merging a group not chosen yet
+     * chooses it.
+     */
+    function setMerged(choice, key, merged) {
+        const list = normalize(choice);
+        if (!list.some((p) => p.key === key)) {
+            return merged ? [...list, { key, name: null, merge: true }] : list;
+        }
+        return list.map((p) => {
+            if (p.key !== key) return p;
+            const { merge: _was, ...rest } = p;
+            return merged ? { ...rest, merge: true } : rest;
+        });
     }
 
     /**
@@ -83,8 +103,10 @@
                     const entry = { ...p };
                     byKey.set(p.key, entry);
                     merged.push(entry);
-                } else if (!known.name && p.name) {
-                    known.name = p.name;
+                } else {
+                    if (!known.name && p.name) known.name = p.name;
+                    // Merged in any of them, merged in the report they make.
+                    if (p.merge) known.merge = true;
                 }
             }
         }
@@ -129,6 +151,7 @@
         writeChoice,
         setChosen,
         setName,
+        setMerged,
         mergeChoices,
         planAction,
     };

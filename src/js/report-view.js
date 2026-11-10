@@ -103,7 +103,8 @@ export function createReportView(app) {
         const bucket = app.getActiveBucket();
         if (!bucket?.payload) return;
 
-        const data = prepareDataForReport(bucket.payload);
+        // The scans as shown: a merged group is the one scan it is drawn as.
+        const data = prepareDataForReport(app.runSummaryUi.viewPayload(bucket.payload));
         const fallbackUrl = data.url || app.urlInput?.value?.trim() || '';
 
         const allScans = app.runSummaryUi.getScansFromPayload(data);

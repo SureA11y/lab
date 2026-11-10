@@ -40,7 +40,11 @@ export const SCAN_FIELDS = Object.freeze([
     // A Merged scan step's scans as one (docs/design/merged-scan-design.md): the flag
     // and the contexts it was made from, which its card lists.
     'mergedScan',
-    'contexts'
+    'contexts',
+    // A merged group shown as one scan (docs/design/scan-grouping-design.md
+    // §9): its group and the scans it was folded from. Made when the report
+    // is shown, never saved: the report keeps the scans themselves.
+    'mergedGroup'
 ]);
 
 export const FINDING_FIELDS = Object.freeze([

@@ -1,11 +1,11 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Steps 1 to 4 built** (§10): the grouping facade and the URL
-> source, and the "Scan groups" section under a run's scans list, where
-> patterns are chosen, named, and their scans included or excluded; and the
-> shared fold that will merge a group's scans into one (§9.3). Merging itself
-> and the other steps are planned, in the order §10 lists them; each one is
-> useful and testable on its own.
+> Status: **Steps 1 to 5 built** (§10): the grouping facade and the URL
+> source; the "Scan groups" section under a run's scans list, where patterns
+> are chosen, named, their scans included or excluded, and merged into one
+> scan (§9); and the shared fold that merges them. The other steps are
+> planned, in the order §10 lists them; each one is useful and testable on
+> its own.
 
 ## 1. Motivation
 
@@ -427,9 +427,15 @@ contexts only: the report view has none to fold.
   gets the new pages of the pattern without the person adding them.
 - **Including and excluding the merged scan** from the scans list acts on all
   its scans, as Include all and Exclude all do.
-- **Renaming the merged scan** renames its group.
-- **Its place** in the report's order is its first scan's. Moving it moves
-  that scan, so it stays where the person put it once unmerged.
+- **Renaming the merged scan** renames its group. **Its tags** are its scans'
+  together, and editing them sets them on each of its scans.
+- **Its place** in the report's order is its first scan's. With merged groups
+  in a report, scans move in the order as shown: a merged scan moves with all
+  its scans as one block, and a scan moved past a merged scan goes past all
+  of it. The scans of a merged group then sit together in the report's order,
+  where it is shown, so they stay there once unmerged.
+- **Its pictures** are its first scan's: a template looks the same on every
+  page.
 - **Its id** is the group's key, so it is the same in every redraw and every
   download, and a link to it, or a comparison with another run merged the
   same way, finds it.
@@ -493,9 +499,22 @@ the run.
    takes a dimension, `contexts` or `scans`; folding scans, the page leaves
    an occurrence's identity and the contexts of a member already merged by
    its run join it. Tested on its own (`scan-fold.test.js`). No UI.
-5. **Merging a group** (§9.2, §9.4, §9.5). The scans as shown, one function
-   every reader goes through; the Merge switch on a chosen group; `merge`
-   saved in `scanGrouping`.
+5. **Merging a group** (built, §9.2, §9.4, §9.5). `scansAsShown` in
+   `src/shared/scan-group-merge.js` builds a merged scan per merged group
+   (the fold by scans, the score on the member with the most elements,
+   coverage made again with each criterion's automation from the saved
+   summary, the occurrences' `pageUrls` and `pagesTotal`); `shownScans` and
+   `viewPayload` in `src/js/run-summary-ui.js` keep it while nothing it
+   depends on changes. The report's totals, global findings, metrics, issue
+   dispersion, scans list and cards read the view; the grouping, the edits
+   and the downloads read the scans themselves. A change to a merged group's
+   scans draws the report again whole, the Scan groups section keeping what
+   was open and focus going back to the control that had it. An occurrence
+   says "On all 5 pages" or "On 2 of 5 pages" and lists them; the card says
+   which scans it was merged from. The Merge switch is in each chosen group;
+   `merge: true` is saved in `scanGrouping` and in the report schema.
+   The conformance report, the checklist and the comparisons are made from
+   the scans as saved (§11).
 6. **Shared and unique issues per group.** For each group, the issues on all
    its pages (the template's) and those on only some (the content's), so the
    person sees what excluding would hide and what merging would keep. Read
@@ -540,6 +559,11 @@ the run.
   scan whose id another report already uses (`ensureUniqueImportedScanIds`).
   The ids saved by a report then have to be renamed with its scans, or they
   name nothing (and are ignored, as a pattern that matches nothing is).
+- **Downloads made from the scans as saved.** The conformance report, the
+  manual checklist and the comparisons read the report's scans, not the
+  scans as shown: a merged group counts there as its pages. The report's own
+  download shows it merged (its page is drawn as shown) and keeps the scans
+  and the choice (D10).
 - **Comparing a merged run with an unmerged one.** The merged scan has its own
   id, so it matches nothing on the other side. The comparison may need to
   match it with the scans it was made from.

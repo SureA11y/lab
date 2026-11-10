@@ -645,6 +645,14 @@
     gap: .3rem;
 }
 
+.sg-merge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+}
+
+.sg-merge label { cursor: pointer; }
+
 .summary .sg-members {
     margin-top: .2rem;
     margin-bottom: .4rem;

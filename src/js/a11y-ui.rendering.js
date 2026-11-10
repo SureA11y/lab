@@ -437,7 +437,10 @@ export function createRenderer({
                 target: Array.isArray(occ?.target) ? occ.target : [],
                 html: htmlSnippet,
                 failureSummary,
-                urls: pageUrl ? [pageUrl] : [],
+                // A merged group's occurrence: every page it is on, and of how
+                // many (docs/design/scan-grouping-design.md §9.3).
+                urls: Array.isArray(occ?.pageUrls) && occ.pageUrls.length ? occ.pageUrls.map(String) : (pageUrl ? [pageUrl] : []),
+                ...(Array.isArray(occ?.pageUrls) && Number(occ.pagesTotal) > 1 ? {pagesTotal: Number(occ.pagesTotal)} : {}),
                 sourceAtomicRules,
                 sourceContributors: contributors,
                 lang: typeof f?.lang === 'string' ? f.lang : '',
@@ -562,6 +565,14 @@ export function createRenderer({
 
         return Array.from(map.values());
     };
+
+    /** On how many of a merged group's pages an occurrence is: "On all 3 pages", "On 2 of 3 pages". */
+    function pagesLabel(n) {
+        const total = Number(n?.pagesTotal) || 0;
+        const count = Array.isArray(n?.urls) ? n.urls.length : 0;
+        if (total < 2 || !count) return '';
+        return count >= total ? `On all ${total} pages` : `On ${count} of ${total} pages`;
+    }
 
     /** Where a merged scan's occurrence was found: "In: Dark · desktop, Dark · mobile". */
     function contextsLabel(n) {
@@ -884,7 +895,7 @@ export function createRenderer({
                 // whatever the addresses are like (occurrence-pages.js).
                 const pages = occurrencePagesHtml(n.urls);
                 const instanceLabel = type === 'fail' ? 'Occurrence' : 'Instance';
-                const inContexts = contextsLabel(n);
+                const inContexts = [pagesLabel(n), contextsLabel(n)].filter(Boolean).join(' · ');
 
                 const selectorPart = selector
                     ? '<div class="example-node-header">' +
@@ -2173,6 +2184,7 @@ export function createRenderer({
      * ran: "Merged from 4 contexts: Light · desktop, Dark · desktop, ...".
      */
     function buildMergedContexts(scan) {
+        if (scan?.mergedGroup) return buildMergedGroup(scan.mergedGroup);
         const contexts = scan?.mergedScan === true && Array.isArray(scan.contexts) ? scan.contexts : [];
         if (!contexts.length) return null;
         const p = document.createElement('p');
@@ -2187,6 +2199,25 @@ export function createRenderer({
                 return String(c?.name || '') + (notes.length ? ` (${notes.join(', ')})` : '');
             })
             .join('; '));
+        return p;
+    }
+
+    /**
+     * A merged group's scans (docs/design/scan-grouping-design.md §9): "Merged
+     * from 3 scans of /products/{slug}: Red shirt, Blue shirt (excluded), ...".
+     */
+    function buildMergedGroup(group) {
+        const members = Array.isArray(group?.members) ? group.members : [];
+        if (!members.length) return null;
+        const p = document.createElement('p');
+        p.className = 'scan-contexts';
+        const lead = document.createElement('strong');
+        lead.textContent = `Merged from ${members.length} scan${members.length === 1 ? '' : 's'} of ${group.pattern || 'a group'}:`;
+        const excluded = members.filter((m) => m && m.includedInReport === false).length;
+        p.append(lead, ' ' + members
+            .map((m) => String(m?.label || m?.id || '') + (m?.includedInReport === false ? ' (excluded)' : ''))
+            .join('; ')
+            + (excluded ? `. The ${excluded === 1 ? 'one' : excluded} excluded ${excluded === 1 ? 'is' : 'are'} left out of it.` : '.'));
         return p;
     }
 

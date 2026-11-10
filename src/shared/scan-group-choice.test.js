@@ -105,3 +105,32 @@ describe('a group that matches no scan', () => {
         assert.deepEqual(c, [{ key: 'url:gone', name: 'Old' }, { key: 'url:a', name: 'A' }]);
     });
 });
+
+describe('merging a group (§9)', () => {
+    test('the merge flag is kept, and only said when true', () => {
+        assert.deepEqual(C.readChoice({ scanGrouping: { patterns: [
+            { key: 'url:a', name: null, merge: true }, { key: 'url:b', merge: false }, { key: 'url:c', merge: 'yes' },
+        ] } }), [{ key: 'url:a', name: null, merge: true }, { key: 'url:b', name: null }, { key: 'url:c', name: null }]);
+    });
+
+    test('setMerged turns it on and off, and chooses a group not chosen yet', () => {
+        let c = C.setMerged([], 'url:a', true);
+        assert.deepEqual(c, [{ key: 'url:a', name: null, merge: true }]);
+        c = C.setName(c, 'url:a', 'Products');
+        assert.deepEqual(c, [{ key: 'url:a', name: 'Products', merge: true }]);
+        c = C.setMerged(c, 'url:a', false);
+        assert.deepEqual(c, [{ key: 'url:a', name: 'Products' }]);
+        assert.deepEqual(C.setMerged([], 'url:z', false), []);
+    });
+
+    test('unchoosing a merged group takes the merge away with it', () => {
+        assert.deepEqual(C.setChosen([{ key: 'url:a', name: 'A', merge: true }], 'url:a', false), []);
+    });
+
+    test('merging reports: merged in any of them is merged', () => {
+        assert.deepEqual(C.mergeChoices([
+            { scanGrouping: { patterns: [{ key: 'url:a' }] } },
+            { scanGrouping: { patterns: [{ key: 'url:a', merge: true }] } },
+        ]), [{ key: 'url:a', name: null, merge: true }]);
+    });
+});
