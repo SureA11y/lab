@@ -375,6 +375,9 @@ button.src-dialog-close:focus-visible {
 
 .split-button__action:focus-visible,
 .split-button__chevron:focus-visible {
+    /* The halves touch, and the chevron is painted after the action, so the
+       action's ring would run under it: lift the focused half above the other. */
+    z-index: 1;
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
     box-shadow: var(--focus-ring);
