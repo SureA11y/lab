@@ -247,6 +247,16 @@ button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-di
     border-color: color-mix(in srgb, var(--ok) 88%, black);
 }
 
+/* A focused control's ring is drawn outside it, over its neighbours. One
+   painted later, or positioned (a sticky panel, a step's card, the other
+   half of a split button), would otherwise cover part of it. This lifts the
+   focused control above them: z-index acts on a flex or grid item or a
+   positioned element, and does nothing elsewhere. Zero specificity, so a
+   control that sets its own z-index keeps it. */
+:where(:focus-visible) {
+    z-index: 1;
+}
+
 button:focus-visible,
 .secondary-button:focus-visible,
 .copy-selector-btn:focus-visible,
@@ -375,9 +385,6 @@ button.src-dialog-close:focus-visible {
 
 .split-button__action:focus-visible,
 .split-button__chevron:focus-visible {
-    /* The halves touch, and the chevron is painted after the action, so the
-       action's ring would run under it: lift the focused half above the other. */
-    z-index: 1;
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
     box-shadow: var(--focus-ring);

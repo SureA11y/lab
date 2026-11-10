@@ -21,6 +21,7 @@ const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
 const puppeteer = require('puppeteer');
+const sharp = require('sharp');
 
 const { executeWorkflowRun } = require('../server-side/workflow-run');
 const { closeBrowser } = require('../server-side/a11y-runner');
@@ -314,6 +315,59 @@ test('appending a config clears the filters of both steps panels', async () => {
         state: { 'actions-workflow': [{ type: 'a11yScan', label: 'Appended' }] }
     });
     assert.deepEqual(await panelFilters(page), STEPS_PANELS.map(() => ({ query: '', kind: 'all' })));
+    assert.deepEqual(errors, []);
+    await page.close();
+});
+
+/**
+ * How much of a focused control's outline shows: the share of points along
+ * the middle of its straight edges whose colour on screen is the outline's.
+ * Something painted over the ring lowers it.
+ */
+async function ringShown(page, selector) {
+    // After a key press, focus() counts as the keyboard's: :focus-visible.
+    await page.keyboard.press('Shift');
+    await page.$eval(selector, (el) => {
+        el.scrollIntoView({ block: 'center' });
+        el.focus();
+    });
+    const ring = await page.$eval(selector, (el) => {
+        const cs = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return {
+            focused: document.activeElement === el,
+            x: r.x, y: r.y, w: r.width, h: r.height,
+            width: parseFloat(cs.outlineWidth), offset: parseFloat(cs.outlineOffset),
+            radius: parseFloat(cs.borderTopLeftRadius) || 0,
+            colour: cs.outlineColor.match(/[\d.]+/g).slice(0, 3).map(Number)
+        };
+    });
+    assert.ok(ring.focused, `${selector} takes focus`);
+    const m = ring.offset + ring.width / 2;
+    const inset = ring.radius + ring.offset + ring.width + 3;
+    const points = [];
+    for (let px = ring.x + inset; px <= ring.x + ring.w - inset; px += 2) points.push([px, ring.y - m], [px, ring.y + ring.h + m]);
+    for (let py = ring.y + inset; py <= ring.y + ring.h - inset; py += 2) points.push([ring.x - m, py], [ring.x + ring.w + m, py]);
+    const { data, info } = await sharp(await page.screenshot({ type: 'png' })).raw().toBuffer({ resolveWithObject: true });
+    const shown = points.filter(([px, py]) => {
+        const i = (Math.floor(py) * info.width + Math.floor(px)) * info.channels;
+        return Math.abs(data[i] - ring.colour[0]) + Math.abs(data[i + 1] - ring.colour[1]) + Math.abs(data[i + 2] - ring.colour[2]) <= 60;
+    });
+    return shown.length / points.length;
+}
+
+test('a focused control shows its whole focus ring, over what is beside it', async () => {
+    const { page, errors } = await openApp();
+    await page.click('#mode-run');
+    await page.waitForSelector('#actionsContainer .line');
+    // The Workflow heading's toggles, over the steps panel and the first step
+    // below them; Load config, over the chevron beside it.
+    for (const selector of ['#workflow-toggle', '#workflow-collapse-all-toggle', '.split-button__action']) {
+        assert.ok(await ringShown(page, selector) > 0.95, selector);
+    }
+    // On a narrow screen Export config wraps under Load config.
+    await page.setViewport({ width: 420, height: 900 });
+    assert.ok(await ringShown(page, '#save-config-button') > 0.95, '#save-config-button');
     assert.deepEqual(errors, []);
     await page.close();
 });
