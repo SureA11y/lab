@@ -368,17 +368,32 @@
         return { scans: out, merges, contexts: run.contexts };
     }
 
+    // A failure is the template's when this share of a group's scans have it,
+    // not every one: one page built otherwise (a gift card among products,
+    // without their price badge) must not turn the template's failures into
+    // content, and every page into one that differs (docs/design/
+    // scan-grouping-design.md §11.2).
+    const TEMPLATE_SHARE = 0.6;
+    // A page this much bigger or smaller than the group's median is built
+    // unlike the others.
+    const SIZE_SPREAD = 0.3;
+
     /**
-     * What a group's scans fail together and apart (docs/design/
-     * scan-grouping-design.md §10 step 6): its scans folded by page, without
-     * merging them, and each failing element sorted by where it fails.
-     * - template: on every scan of the group, the template's to fix once;
-     * - content: on some of them only, each scan's own content.
+     * What a group's scans fail together and apart (§10 step 6, §11.2): its
+     * scans folded by page, without merging them, and each failing element
+     * sorted by how many of them fail it.
+     * - template: on most of the group's scans (TEMPLATE_SHARE), the
+     *   template's to fix once;
+     * - content: on fewer, each page's own content.
+     * Each entry is a rule: { ruleId, title, severity, elements, scans }
+     * (`scans`: the ids of the scans it fails on, report order).
+     * - byScan: how each scan differs from the others, by id: `own`, the
+     *   rules it fails that few others do; `missing`, the template's rules it
+     *   does not fail (it is built otherwise); `size`, whether its page is far
+     *   bigger or smaller than the others'; `unlike`, either of the last two.
      * Failures only, as issue dispersion counts them; every scan of the
      * group, excluded ones too, so the person sees what excluding hides.
-     * Each entry is a rule: { ruleId, title, severity, elements, scans }
-     * (`scans`: the ids of the scans it fails on, report order). Null for
-     * fewer than two scans with findings.
+     * Null for fewer than two scans with findings.
      */
     function groupIssues(members, deps) {
         const parts = (Array.isArray(members) ? members : []).filter((s) => s && s.canonical);
@@ -389,23 +404,44 @@
             parts.length,
             { dimension: 'scans' },
         );
+        const common = (count) => count / parts.length >= TEMPLATE_SHARE;
         const template = new Map();
         const content = new Map();
+        const byScan = new Map(parts.map((s) => [s.id, { own: new Map(), missing: new Map(), size: false, unlike: false }]));
+        const ruleOf = (f) => ({ ruleId: f.ruleId || f.id, title: f.title || f.help || f.ruleId || f.id, severity: f.severity || 'unknown' });
         for (const f of canonical.findings) {
             if (!f || f.outcome !== 'fail') continue;
             for (const occ of Array.isArray(f.occurrences) ? f.occurrences : []) {
                 if (!occ || (occ.occurrenceOutcome || occ.outcome || 'fail') !== 'fail') continue;
                 const on = Array.isArray(occ.scans) ? occ.scans : [];
-                const into = on.length >= parts.length ? template : content;
-                const id = f.ruleId || f.id;
-                let entry = into.get(id);
+                const isTemplate = common(on.length);
+                const into = isTemplate ? template : content;
+                const rule = ruleOf(f);
+                let entry = into.get(rule.ruleId);
                 if (!entry) {
-                    entry = { ruleId: id, title: f.title || f.help || id, severity: f.severity || 'unknown', elements: 0, scans: new Set() };
-                    into.set(id, entry);
+                    entry = { ...rule, elements: 0, scans: new Set() };
+                    into.set(rule.ruleId, entry);
                 }
                 entry.elements += 1;
                 for (const scanId of on) entry.scans.add(scanId);
+                // Each scan: what it fails that few do, what it lacks of the template.
+                const onSet = new Set(on);
+                for (const [scanId, d] of byScan) {
+                    if (isTemplate && !onSet.has(scanId)) d.missing.set(rule.ruleId, rule);
+                    if (!isTemplate && onSet.has(scanId)) d.own.set(rule.ruleId, rule);
+                }
             }
+        }
+        const sizes = parts.map((s) => s.metrics && s.metrics.domMetrics && s.metrics.domMetrics.totalElements)
+            .filter((n) => typeof n === 'number' && n > 0).sort((a, b) => a - b);
+        const median = sizes.length ? sizes[Math.floor(sizes.length / 2)] : null;
+        const out = new Map();
+        for (const s of parts) {
+            const d = byScan.get(s.id);
+            const total = s.metrics && s.metrics.domMetrics && s.metrics.domMetrics.totalElements;
+            const size = !!median && typeof total === 'number' && Math.abs(total - median) / median > SIZE_SPREAD;
+            const missing = [...d.missing.values()];
+            out.set(s.id, { own: [...d.own.values()], missing, size, unlike: size || missing.length > 0 });
         }
         const SEVERITY = { critical: 0, serious: 1, moderate: 2, minor: 3 };
         const listOf = (map) => [...map.values()]
@@ -413,10 +449,11 @@
             .sort((a, b) => (SEVERITY[a.severity] ?? 4) - (SEVERITY[b.severity] ?? 4)
                 || b.scans.length - a.scans.length
                 || String(a.title).localeCompare(String(b.title)));
-        return { scansTotal: parts.length, template: listOf(template), content: listOf(content) };
+        return { scansTotal: parts.length, template: listOf(template), content: listOf(content), byScan: out };
     }
 
     return {
+        TEMPLATE_SHARE,
         expandRunMerges,
         groupIssues,
         mergedScanId,

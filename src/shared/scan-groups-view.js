@@ -143,7 +143,7 @@
     }
 
     // What a group's scans fail together and apart (§10 step 6): the
-    // template's failures, on every scan, and their content's, on some.
+    // template's failures, on most scans, and their content's, on a few.
     function issuesHTML(key, issues, ctx) {
         if (!issues) return '';
         const k = `issues:${key}`;
@@ -152,17 +152,17 @@
         const summary = !t && !c
             ? 'What its scans fail: <span class="sg-counts">nothing</span>'
             : `What its scans fail: <span class="sg-counts">${esc([
-                t ? `${plural(t, 'rule')} on every scan` : '',
+                t ? `${plural(t, 'rule')} on most scans` : '',
                 c ? `${plural(c, 'rule')} on some` : '',
             ].filter(Boolean).join(', '))}</span>`;
         const rule = (e, where) => `<li><span class="sg-rule">${esc(e.title)}</span> `
             + `<span class="sg-url">${esc(`${e.ruleId} · ${e.severity} · ${plural(e.elements, 'element')}${where ? ` · ${where}` : ''}`)}</span></li>`;
         const body = (t
-            ? `<p class="sg-caption">On every scan, so the template's, fixed once for all of them:</p>`
+            ? `<p class="sg-caption">On most scans, so the template's, fixed once for all of them:</p>`
                 + `<ul class="sg-members">${issues.template.map((e) => rule(e, '')).join('')}</ul>`
-            : '<p class="sg-caption">Nothing fails on every scan.</p>')
+            : '<p class="sg-caption">Nothing fails on most scans.</p>')
             + (c
-                ? `<p class="sg-caption">On some scans only, so their own content's, which excluding them hides:</p>`
+                ? `<p class="sg-caption">On a few scans, so their own content's, which excluding them hides:</p>`
                     + `<ul class="sg-members">${issues.content.map((e) => rule(e,
                         `on ${e.scans.length} of ${issues.scansTotal}: ${scanNames(e.scans, ctx.scansById)}`)).join('')}</ul>`
                 : '<p class="sg-caption">Nothing fails on some scans only.</p>');
