@@ -21,8 +21,8 @@
 // It is the source's job to propose only groups that mean something
 // (design notes D9); this module only drops what cannot be a group at all.
 //
-// Items are what is grouped: the scans of a run, or later the contexts of
-// merged scans. Their ids are read with `getId`.
+// Items are what is grouped: the scans of a run, or anything else with an
+// id. Their ids are read with `getId`.
 //
 // Pure and DOM-free. Nothing here is stored: groups are worked out again
 // whenever they are shown.
