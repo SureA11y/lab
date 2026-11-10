@@ -1,12 +1,13 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Built** (§10, steps 1 to 9): the grouping facade and the URL
-> source; the "Scan groups" section under a run's scans list, where patterns
-> are chosen, named, their scans included or excluded, and merged into one
-> scan (§9), each saying what its scans fail together and apart, merged
-> groups changed by hand and groups made by hand; the shared fold that
-> merges them; and what the run merged, unmerged or with a context taken
-> out (§8). §11 keeps what is still open.
+> Status: **Built** (§10, steps 1 to 9, and §11.2): the grouping facade and
+> the URL source; the **Review scans** workspace, opened from a card at the
+> top of the summary, where every pattern is a group, its pages are shown by
+> their screenshots, those that differ first, and groups are named, merged
+> into one scan, changed or made by hand, their scans included or excluded,
+> every change can be undone; the shared fold that merges them; what the run
+> merged, unmerged or with a context taken out (§8); and the report showing
+> the groups and the merged scans' pages. §11 keeps what is still open.
 
 ## 1. Motivation
 
@@ -627,34 +628,53 @@ the run.
   whose number an earlier report already uses is renumbered, clear of the
   report's own, so two reports' groups by hand stay two.
 
-### 11.2 The review, proposed (mockup)
+### 11.2 The review (built from the mockup)
 
-`docs/design/mockups/scan-review.html` proposes the next form of these
-features, following a person through what they do after a run: a card at
-the top of the summary saying how much of the run repeats a template; a
-**Review scans** workspace (the groups, a grid of their pages' screenshots
-with those that differ first, the group's failures and actions, an impact
-preview before merging, undo for every action); the report reading the
-scans as reviewed (a merged scan with a strip of its pages' pictures, a
-scan in a group saying which); and a download of every scan, or merged and
-smaller, for good. Fake data; not built. What it proposes beyond what is
-built:
+`docs/design/mockups/scan-review.html` proposed the next form of these
+features, following a person through what they do after a run; it is built:
 
-- **Every pattern is a group**, without a choosing step: acting on one is
-  what makes it the person's.
-- **The rest** (scans in no group) can be shown alone, grouped by hand, or
-  excluded after a confirmation listing them; never merged, as unrelated
-  pages are not a template. Grouping the rest by pattern is not offered: the
-  patterns are all in the tree already.
+- **A card at the top of the summary** (`summaryCardHTML`) says how much of
+  the run repeats a template, with a bar of the templates and a stack of the
+  largest one's pictures, and opens **Review scans**.
+- **Review scans** is a dialog over the report (`src/js/scan-review-ui.js`,
+  drawn by `src/shared/scan-review-view.js`): every pattern as a group, the
+  groups by hand, the scans in no group and the run's merged scans on the
+  left; the selected group's pages as their screenshots (the scan's first,
+  as View all scans shows it; its address when it has none) in the middle,
+  those that differ first, each to see large, select (Shift for a range),
+  take out, exclude, include, add to another group or group by hand; and the
+  group's name, failures and actions on the right. Merging shows what it
+  changes (`impactOf`) before it is applied, the switch showing the change
+  asked for until applied or cancelled. Every change is kept to undo
+  (`includedInReport`, `scanGrouping` and the group shown alone, before it).
+  Being a dialog, it is not drawn again with the report, and keeps its own
+  focus: the save and restore of the section's state across a redraw went.
+- **Every pattern is a group**, without a choosing step: acting on one saves
+  it in `scanGrouping`. The step 3 checkboxes, "Your groups" and the Scan
+  groups section are gone.
+- **The rest** can be shown alone, grouped by hand, or excluded after a
+  confirmation listing it; never merged. Grouping the rest by pattern is not
+  offered: every pattern is in the tree already.
+- **Showing one group alone** is a view of the report, like the tag filter
+  (`inGroupFocus`, in `scanMatchesActiveFilters`): a merged scan is in it when
+  its scans are, nothing is excluded, it is not saved, and a line in the
+  summary shows every scan again.
 - **A failure is the template's when most of the group's scans have it**
-  (60% in the mockup), not every one. With "every one", as step 6 is built,
-  one page built otherwise (a gift card among products, without the price
-  badge) turns the template's failures into content and marks every page
-  as different. A page then differs by the failures few others have, or by
-  the template's it does not have, or by its size.
-- **A merged download**: each merged group saved as one scan, much smaller
-  (the screenshots are most of a report), but final: it cannot be unmerged,
-  compared page by page, or counted page by page in a conformance report.
+  (`TEMPLATE_SHARE`, 60%), not every one, in `groupIssues`, which also says
+  how each scan differs (`byScan`: its own failures, the template's it lacks,
+  a size 30% from the median). With "every one", one page built otherwise
+  (a gift card among products, without the price badge) turned the
+  template's failures into content and every page into one that differs.
+- **In the report**, a scan in a group says which on its card ("In Product
+  pages · 3 of 23", `reviewGroup`, the narrowest group, one by hand first),
+  its name opening the review there; a merged scan's card shows its pages as
+  a strip of pictures (`mergedGroup.members[].shot`), excluded ones dimmed,
+  each opening that page large in the review.
+- **Download merged**, offered while groups are merged: each merged group
+  saved as the one scan it is shown as, its pages named but not pictured, the
+  saved choice without what the scans now are, and " (merged)" in the file's
+  name. A conformance report made from it lists each page a saved merged
+  scan stands for. The usual download keeps every scan.
 
 ## 12. Rejected alternatives
 

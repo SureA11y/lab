@@ -298,10 +298,15 @@
         return { wcagVersion, level, en301549 };
     }
 
+    // A scan saved merged from a group's pages (docs/design/
+    // scan-grouping-design.md §11.2) stands for each of them: they were all
+    // evaluated, and are listed one by one.
     function evaluatedPages(report) {
         return asArray(report && report.scans)
             .filter((s) => s && s.includedInReport !== false)
-            .map((s) => ({ label: str(s.label).replace(/^Scan:\s*/, ''), url: str(s.url) }));
+            .flatMap((s) => (s.mergedGroup && Array.isArray(s.mergedGroup.members)
+                ? s.mergedGroup.members.filter((m) => m && m.includedInReport !== false).map((m) => ({ label: str(m.label), url: str(m.url) }))
+                : [{ label: str(s.label).replace(/^Scan:\s*/, ''), url: str(s.url) }]));
     }
 
     // The groups the lab's report view shows merged, each as one scan

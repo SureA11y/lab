@@ -111,39 +111,52 @@ as a JSON file: a list of groups, each naming its requirements in WCAG or
 EN 301 549 terms, or those of another installed standard, by its name as its
 findings give it.
 
-Under the list of scans, **Scan groups** shows which scans' URLs repeat a
-pattern, as pages made from one template do: `/products/{slug}`,
-`/blog/accessibility/{slug}` inside `/blog/{slug}/{slug}`, `/product.php?id=…`.
-A group needs several different pages sharing the shape of their address
-under a fixed part of it, on one host; a run whose URLs repeat nothing gets
-no groups, and the section says so. Each group says how many of its scans
-are included in the report, and lists them with a link to each; a group
-inside another lists only the scans no smaller group holds. Tick the
-patterns to group by, at any level, and they appear under **Your groups**,
-each scan under the narrowest group you chose that holds it. A group can be
-given a name, and its scans taken out of the report or put back at once:
-**Exclude all**, **Include all**, or **Keep one**, which leaves the first
-included scan to stand for its template and takes the rest out. Each acts on
-the groups inside it too. **What its scans fail** tells the template's
-failures, on every scan of the group, from those of some pages' content,
-which excluding them would hide. **Merge into one scan** shows a group's included
-scans as one scan instead: a failure of the template is listed once, "On all
-5 pages", and a failure of one page's content stays on that page ("On 2 of 5
-pages"), so the template stops weighing once per page in the totals and the
-issue dispersion. The report keeps every scan: unmerging shows them as they
-were. A merged group's scans can be taken out of it one by one and other
-scans added, and **Group scans by hand** groups, and merges, scans no pattern
-finds together. A scan the run merged from several contexts (a Merged scan
-step) can be shown as its contexts, each a scan of its own, or have a
-context taken out of it, under **Merged by the run**; reports saved before
-the lab kept the contexts' own scans say they can't, and so do runs whose
-Merged scan step had **Keep each context's scan** turned off, which keeps
-the report smaller. The conformance report, the manual checklist and the
-comparisons count a merged group page by page, as it was scanned, and say
-which groups the report view shows merged. The groups you chose or
-made, their names, which are merged and what you changed in them are saved
-with the report; its download leaves
-the excluded scans out, as it always does.
+At the top of the summary, a card says how much of the run is pages of a
+template ("42 of 46 scans are pages of 5 templates"), with a bar of the
+templates and their pages' pictures, and **Review scans** opens the review
+over the report. On the left, every pattern the scans' URLs repeat is a
+group, nested where one narrows another (`/blog/accessibility/{slug}` inside
+`/blog/{slug}/{slug}`): a group needs several different pages sharing the
+shape of their address under a fixed part of it, on one host, and a run
+whose URLs repeat nothing has none. Below them, the groups made by hand, the
+scans in no group, and the scans a Merged scan step made.
+
+In the middle, the selected group's pages are a grid of their screenshots,
+those that differ from the others first and outlined: a page with failures
+few others have (its own content's), or that lacks the template's failures,
+or much bigger or smaller than the others (built otherwise, perhaps another
+template). Select a picture to see it large with what it fails like the
+others and on its own. Tick pages (Shift selects a range) to take them out
+of the group, exclude or include them, add them to another group, or group
+them by hand.
+
+On the right, the group's name, what its scans fail on most of them (the
+template's, fixed once) and on a few (their content's), and what to do with
+them: **Keep one**, **Exclude all**, **Include all**, **Show only these in
+the report** (a view, like the tag filter: nothing is excluded, and a line
+in the summary shows every scan again), and **Merge into one scan**, which
+first shows what it changes ("Scans in the report 45 → 24") before you apply
+it. Merged, a failure of the template is listed once, "On all 5 pages", a
+page's own failure stays on that page ("On 2 of 5 pages"), and the report
+counts the group once in its totals and the issue dispersion; its card shows
+its pages as a strip of pictures, and every scan in a group says which on
+its card ("In Product pages · 3 of 23"), the name opening the review there.
+The report keeps every scan: unmerging shows them as they were. The scans in
+no group can be shown alone, grouped by hand, or excluded after a
+confirmation that lists them; they are never merged, as unrelated pages are
+not a template. A scan the run merged from several contexts can be shown as
+its contexts, or have a context taken out; reports saved before the lab kept
+the contexts' own scans say they can't, and so do runs whose Merged scan
+step had **Keep each context's scan** turned off, which keeps the report
+smaller. Every change can be undone.
+
+What you group, name, merge and change is saved with the report; its
+download leaves the excluded scans out, as it always does, and keeps the
+merged groups' scans, so they can be unmerged and compared page by page.
+**Download merged** instead saves each merged group as the one scan it is
+shown as: smaller, but for good. The conformance report, the manual
+checklist and the comparisons count a merged group page by page, as it was
+scanned, and say which groups the report view shows merged.
 
 ```json
 [
