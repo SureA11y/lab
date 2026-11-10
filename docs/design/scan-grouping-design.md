@@ -1,8 +1,9 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Step 1 built** (§9): the grouping facade and the URL source, with
-> their tests, used by nothing yet. The other steps are planned, in the order
-> §9 lists them; each one is useful and testable on its own.
+> Status: **Steps 1 and 2 built** (§9): the grouping facade and the URL
+> source, and the read-only "Scan groups" section under a run's scans list.
+> The other steps are planned, in the order §9 lists them; each one is useful
+> and testable on its own.
 
 ## 1. Motivation
 
@@ -274,9 +275,17 @@ That storage change is its own step (§9 step 5) and its own design note.
    tracking keys, and small sites with no repetition, which must come out
    with no patterns. The facade is tested with stand-in sources, to hold it
    to knowing nothing about URLs. No UI.
-2. **Read-only grouping view.** The proposed tree shown on a finished run, with
-   the members of each pattern. No actions; this is where the thresholds are
-   checked on real runs.
+2. **Read-only grouping view** (built). "Scan groups", a section of the run
+   summary under its scans list (`src/js/run-summary-ui.js`), drawn by
+   `src/shared/scan-groups-view.js` from the facade's result: the tree, each
+   group's scans, distinct URLs and how many are included, its scans linked
+   to their cards (a parent lists only those no child holds), and the scans
+   in no group. Closed to start with; what was open stays open when the
+   summary is redrawn (a scan excluded, renamed or moved). Over every scan,
+   excluded ones too; a skipped scan is not grouped. The grouping is found
+   again only when the scans' ids or URLs change. No actions; this is where
+   the thresholds are checked on real runs. Not yet in the exported report
+   or the extension's panel.
 3. **Choosing and acting.** Choose patterns, name them, include, exclude and
    keep one, through `includedInReport`. Save the choice (§7).
 4. **Shared and unique issues per group.** For each group, the rules failing in
@@ -296,8 +305,9 @@ That storage change is its own step (§9 step 5) and its own design note.
   different sets of scans. This is already true of card-by-card exclusion;
   grouping makes it easier to do at scale, so the comparison views may need to
   say how many scans each side excluded.
-- **Where the view lives.** A mode of the scans list, or a panel of its own
-  beside it. To be settled with a mockup in step 2.
+- **Where the view lives** (settled in step 2): a section of the run summary
+  under the scans list, as it is about scans, not findings. Step 3 may turn
+  it into a mode of the scans list, once its rows carry actions.
 
 ## 11. Rejected alternatives
 

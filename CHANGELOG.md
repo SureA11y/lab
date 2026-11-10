@@ -27,6 +27,11 @@ The first public release.
   element, the same in every run) or a standalone HTML page.
   A report's time reads in the reader's own time zone, named; scans see the
   machine's zone unless `A11Y_TZ` names one.
+  Under a report's list of scans, **Scan groups** shows the scans whose
+  URLs repeat a pattern, as pages made from one template do
+  (`/products/{slug}`), nested where one pattern narrows another, with how
+  many of each group's scans are included. A run whose URLs repeat nothing
+  gets no groups.
   A report's scans can be filtered by tag, and, when the report has more
   than one profile, shown by profile: every profile is shown until it is
   turned off, several at once if wanted. A scan whose profiles are all off

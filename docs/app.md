@@ -111,6 +111,16 @@ as a JSON file: a list of groups, each naming its requirements in WCAG or
 EN 301 549 terms, or those of another installed standard, by its name as its
 findings give it.
 
+Under the list of scans, **Scan groups** shows which scans' URLs repeat a
+pattern, as pages made from one template do: `/products/{slug}`,
+`/blog/accessibility/{slug}` inside `/blog/{slug}/{slug}`, `/product.php?id=…`.
+A group needs several different pages sharing the shape of their address
+under a fixed part of it, on one host; a run whose URLs repeat nothing gets
+no groups, and the section says so. Each group says how many of its scans
+are included in the report, and lists them with a link to each; a group
+inside another lists only the scans no smaller group holds. The section only
+shows the groups: include or exclude scans from the list above it.
+
 ```json
 [
   { "group": "Images", "WCAG": ["1.1.1"] },
