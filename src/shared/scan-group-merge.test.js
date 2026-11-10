@@ -225,3 +225,71 @@ describe('merged groups changed by hand (step 7)', () => {
         assert.deepEqual(byKey.get('manual:1'), ['s1', 's4']);
     });
 });
+
+describe('what the run merged (step 9)', () => {
+    // A run's merged scan of Light and Dark, as a report keeps it: folded by
+    // contexts, each context with its own scan and no rule catalogue.
+    function runMerged(id = 'm1') {
+        const ctxCanonical = (extra) => ({ findings: [finding('button-name', [occ('/p')]), ...extra], bestPractices: [], notices: [], margins: [] });
+        const light = ctxCanonical([]);
+        const dark = ctxCanonical([finding('color-contrast', [occ('/p', { target: '.price', html: '<b class="price"></b>' })])]);
+        const canonical = F.mergeCanonicals([{ canonical: light, context: 'Light' }, { canonical: dark, context: 'Dark' }], 2);
+        canonical.rules = [{ id: 'button-name' }];
+        return {
+            id, label: 'Product page', url: `${SHOP}/p`, mergedScan: true,
+            profile: { id: 'wcag22-aa', label: 'WCAG 2.2 AA' }, wcag: { version: '2.2', level: 'AA' },
+            canonical,
+            metrics: { domMetrics: { totalElements: 100 }, metricDefs: { x: 1 } },
+            screenshots: [{ name: 'Light', label: 'Light' }, { name: 'Dark', label: 'Dark' }],
+            contexts: [
+                { name: 'Light', url: `${SHOP}/p`, scan: { url: `${SHOP}/p`, canonical: light, metrics: { domMetrics: { totalElements: 100 } } } },
+                { name: 'Dark', url: `${SHOP}/p`, scan: { url: `${SHOP}/p`, canonical: dark, metrics: { domMetrics: { totalElements: 90 } } } },
+            ],
+        };
+    }
+    const run = (scans, choice) => M.scansAsShown(scans, G.findGroups(scans, { sources: [] }), choice, deps);
+
+    test('as the run made it until changed', () => {
+        const scans = [runMerged()];
+        assert.equal(run(scans, []).scans, scans);
+    });
+
+    test('unmerged: each context a scan of its own, with the merged scan\'s catalogue and its own pictures', () => {
+        const { scans, contexts } = run([scan(0, '/'), runMerged()], [{ key: 'run:m1', merge: false }]);
+        assert.deepEqual(scans.map((s) => s.label), ['Scan 0', 'Product page · Light', 'Product page · Dark']);
+        const dark = scans[2];
+        assert.equal(dark.id, 'm1~1');
+        assert.deepEqual(dark.runContext, { scanId: 'm1', index: 1, name: 'Dark', of: 'Product page' });
+        assert.deepEqual(dark.canonical.findings.map((f) => f.ruleId), ['button-name', 'color-contrast']);
+        assert.deepEqual(dark.canonical.rules, [{ id: 'button-name' }]);
+        assert.deepEqual(dark.screenshots, [{ name: 'Dark', label: 'Dark' }]);
+        assert.deepEqual(dark.metrics.metricDefs, { x: 1 });
+        assert.deepEqual(contexts.get('m1~0'), { scanId: 'm1', index: 0 });
+    });
+
+    test('unmerged, a context excluded is excluded; the merged scan excluded, all are', () => {
+        const shown = run([runMerged()], [{ key: 'run:m1', merge: false, exclude: ['0'] }]).scans;
+        assert.deepEqual(shown.map((s) => s.includedInReport), [false, true]);
+        const off = { ...runMerged(), includedInReport: false };
+        assert.deepEqual(run([off], [{ key: 'run:m1', merge: false }]).scans.map((s) => s.includedInReport), [false, false]);
+    });
+
+    test('a context taken out: the merged scan folded again from the others, the context after it', () => {
+        const { scans } = run([runMerged()], [{ key: 'run:m1', remove: ['1'] }]);
+        assert.deepEqual(scans.map((s) => s.label), ['Product page', 'Product page · Dark']);
+        const merged = scans[0];
+        assert.equal(merged.id, 'm1');
+        assert.deepEqual(merged.canonical.findings.map((f) => f.ruleId), ['button-name']);
+        assert.deepEqual(merged.canonical.findings[0].occurrences[0].contexts, ['Light']);
+        assert.deepEqual(merged.contexts.map((c) => !!c.takenOut), [false, true]);
+        assert.deepEqual(merged.screenshots, [{ name: 'Light', label: 'Light' }]);
+        assert.equal(merged.summary.failCount, 1);
+    });
+
+    test('a merged scan whose contexts were not kept stays as it is', () => {
+        const old = runMerged();
+        old.contexts = old.contexts.map(({ scan: _s, ...c }) => c);
+        const scans = [old];
+        assert.equal(run(scans, [{ key: 'run:m1', merge: false }]).scans[0], old);
+    });
+});

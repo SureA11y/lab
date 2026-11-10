@@ -133,8 +133,12 @@ pages"), so the template stops weighing once per page in the totals and the
 issue dispersion. The report keeps every scan: unmerging shows them as they
 were. A merged group's scans can be taken out of it one by one and other
 scans added, and **Group scans by hand** groups, and merges, scans no pattern
-finds together. The groups you chose or made, their names, which are merged
-and what you changed in them are saved with the report; its download leaves
+finds together. A scan the run merged from several contexts (a Merged scan
+step) can be shown as its contexts, each a scan of its own, or have a
+context taken out of it, under **Merged by the run**; reports saved before
+the lab kept the contexts' own scans say they can't. The groups you chose or
+made, their names, which are merged and what you changed in them are saved
+with the report; its download leaves
 the excluded scans out, as it always does.
 
 ```json

@@ -416,3 +416,72 @@ describe('Changing groups by hand (step 7)', () => {
         assert.deepEqual(included(payload), [true, true, false, false, false]);
     });
 });
+
+describe('What the run merged (step 9)', () => {
+    // A report whose second scan the run merged from Light and Dark, each
+    // context with its own scan.
+    function withRunMerge(payload, {kept = true} = {}) {
+        const ctxScan = () => ({url: 'https://shop.example.com/p', canonical: {findings: [], bestPractices: [], notices: [], margins: []}});
+        payload.scans = payload.scans.map((s) => (s.id === 's1'
+            ? {...s, label: 'Product page', mergedScan: true, canonical: {findings: [], bestPractices: [], notices: [], margins: []},
+                contexts: [{name: 'Light', ...(kept ? {scan: ctxScan()} : {})}, {name: 'Dark', ...(kept ? {scan: ctxScan()} : {})}]}
+            : s));
+        return payload;
+    }
+
+    test('lists the merged scan with its switch and contexts to take out', () => {
+        const {$, payload, write} = setup(['/', '/p']);
+        withRunMerge(payload);
+        write();
+        const box = $('[data-sg-key="run:s1"]');
+        assert.equal(box.querySelector('summary').textContent, 'Product page 2 contexts · merged as the run made it');
+        const sw = box.querySelector('input[data-sg-run-merge="s1"]');
+        assert.equal(sw.checked, true);
+        assert.equal(document.querySelector(`label[for="${sw.id}"]`).textContent, 'Merged into one scan');
+        assert.deepEqual([...box.querySelectorAll('button[data-sg-run-out]')].map((b) => b.getAttribute('aria-label')), ['Take out Light', 'Take out Dark']);
+    });
+
+    test('unmerging saves it, draws the report again, and keeps focus on the switch', () => {
+        const {$, payload, write, statuses, redraws} = setup(['/', '/p']);
+        withRunMerge(payload);
+        write();
+        const sw = $('input[data-sg-run-merge="s1"]');
+        sw.focus();
+        check(sw, false);
+        assert.deepEqual(payload.scanGrouping.patterns, [{key: 'run:s1', merge: false}]);
+        assert.equal(redraws.length, 1);
+        assert.equal(statuses.at(-1), 'Product page shown as its contexts, each a scan of its own.');
+        assert.equal(document.activeElement.getAttribute('data-sg-focus'), 'run-merge:s1');
+        check($('input[data-sg-run-merge="s1"]'), true);
+        assert.equal('scanGrouping' in payload, false);
+    });
+
+    test('a context taken out, then put back; the last one left cannot be', () => {
+        const {$, payload, write, statuses} = setup(['/', '/p']);
+        withRunMerge(payload);
+        write();
+        $('button[data-sg-run-out="s1"][data-sg-context="1"]').click();
+        assert.deepEqual(payload.scanGrouping.patterns, [{key: 'run:s1', remove: ['1']}]);
+        assert.equal(statuses.at(-1), 'Dark taken out of Product page, and shown on its own.');
+        assert.equal(document.activeElement.getAttribute('data-sg-focus'), 'run-back:s1:1');
+        assert.equal($('button[data-sg-run-out="s1"][data-sg-context="0"]'), null);
+        $('button[data-sg-run-back="s1"][data-sg-context="1"]').click();
+        assert.equal('scanGrouping' in payload, false);
+    });
+
+    test('a report that did not keep its contexts says why', () => {
+        const {$, payload, write} = setup(['/', '/p']);
+        withRunMerge(payload, {kept: false});
+        write();
+        assert.match($('[data-sg-key="run:s1"]').textContent, /did not keep its contexts' own scans/);
+        assert.equal($('input[data-sg-run-merge]'), null);
+    });
+
+    test('shown for a report of one scan, when the run merged it', () => {
+        const {$, payload, write} = setup(['/p', '/x']);
+        payload.scans = payload.scans.slice(0, 1).map((s) => ({...s, id: 's1'}));
+        withRunMerge(payload);
+        write();
+        assert.ok($('[data-sg-key="run:s1"]'));
+    });
+});

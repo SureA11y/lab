@@ -1,13 +1,12 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Steps 1 to 8 built** (§10): the grouping facade and the URL
+> Status: **Built** (§10, steps 1 to 9): the grouping facade and the URL
 > source; the "Scan groups" section under a run's scans list, where patterns
 > are chosen, named, their scans included or excluded, and merged into one
 > scan (§9), each saying what its scans fail together and apart, merged
 > groups changed by hand and groups made by hand; the shared fold that
-> merges them; and the run keeping each merged scan's contexts' scans. The other steps are
-> planned, in the order §10 lists them; each one is useful and testable on
-> its own.
+> merges them; and what the run merged, unmerged or with a context taken
+> out (§8). §11 keeps what is still open.
 
 ## 1. Motivation
 
@@ -326,7 +325,16 @@ merged group whose members are its contexts, with the key `run:` and its scan
 id. Unmerged or with a context removed, its contexts' scans are folded again,
 by the same shared fold (§9.3), without the one left out. The choice is saved
 in `scanGrouping` as any other (`{ key: 'run:…', merge: false }`, or
-`remove` naming contexts by their index).
+`remove` naming contexts by their index), and only once changed: merged as
+the run made it, a scan has no entry. Unmerged, a context can be excluded
+on its own (`exclude`, by index); its name and tags are its run's, and
+renaming or tagging it says so.
+
+The section lists these under **Merged by the run**, each with a Merged
+into one scan switch and its contexts to take out or put back; the last
+context left in it stays. A context shown on its own says whose context it
+is; the merged scan's contexts line says which are taken out. Moving a
+context moves its merged scan, as the order as shown is kept (§9.4).
 
 A report saved before the run kept its contexts' scans can't be unmerged:
 the merged scan says, where Unmerge would be, that this report did not keep
@@ -553,10 +561,18 @@ the run.
    a run whose one scan is merged from two contexts saves a payload 59%
    larger (460 KB to 733 KB): each context's findings, passes and
    not-applicable ones included, and its coverage.
-9. **Unmerging what the run merged** (§8, D11). A run's merged scan as a
-   merged group of its contexts in the scans as shown: Unmerge, Remove a
-   context, Merge again; a report without its contexts' scans says why it
-   can't.
+9. **Unmerging what the run merged** (built, §8, D11). `expandRunMerges` in
+   `src/shared/scan-group-merge.js`, run first in the scans as shown: a
+   run's merged scan unmerged into its contexts' scans (ids `<scan id>~<n>`,
+   with the merged scan's rule catalogue and the pictures of their
+   context), or folded again by contexts without those taken out, which
+   follow it, scored as a merged group is. A group merged here holds a
+   run's merged scan as it is shown. The rules (`setRunMerged`,
+   `setRunContextOut`, `setRunContextExcluded`) are in
+   `src/shared/scan-group-choice.js`; the section's Merged by the run part is
+   drawn even for a report of one scan, which the run merged. Tried on a real
+   run's report of the demo site: unmerged, a context excluded, merged
+   again, a context taken out, saved and opened again.
 
 ## 11. Open questions
 

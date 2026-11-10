@@ -175,6 +175,49 @@ export function createScanGroupsUi(app) {
         status(`${name} made of ${plural(members.length, 'scan')}${merge ? ', shown as one merged scan' : ''}.`);
     }
 
+    // What the run merged (§8): shown as its contexts or merged, a context
+    // taken out of it or put back. The report is drawn again each time.
+    function runChange(scanId, change, message, focusToken) {
+        const payload = payloadOf();
+        if (!payload) return;
+        const api = choiceApi();
+        api.writeChoice(payload, change(api.readChoice(payload)));
+        app.redrawAsShown(payload);
+        const section = app.summaryEl.querySelector('[data-sg-section]');
+        const box = section && [...section.querySelectorAll('details[data-sg-key]')].find((el) => el.getAttribute('data-sg-key') === `run:${scanId}`);
+        if (box) box.open = true;
+        if (focusToken) app.runSummaryUi.restoreGroupsFocus(focusToken);
+        status(message);
+    }
+
+    const runLabel = (payload, scanId) => scanLabel(payload, scanId);
+    const contextName = (payload, scanId, index) => {
+        const s = payload.scans.find((x) => x && x.id === scanId);
+        const c = s && Array.isArray(s.contexts) ? s.contexts[Number(index)] : null;
+        return (c && c.name) || `context ${Number(index) + 1}`;
+    };
+
+    function runMerge(scanId, merged) {
+        const payload = payloadOf();
+        if (!payload) return;
+        runChange(scanId, (c) => choiceApi().setRunMerged(c, scanId, merged),
+            merged
+                ? `${runLabel(payload, scanId)} merged again, as the run made it.`
+                : `${runLabel(payload, scanId)} shown as its contexts, each a scan of its own.`,
+            `run-merge:${scanId}`);
+    }
+
+    function runContextOut(scanId, index, out) {
+        const payload = payloadOf();
+        if (!payload) return;
+        const name = contextName(payload, scanId, index);
+        runChange(scanId, (c) => choiceApi().setRunContextOut(c, scanId, index, out),
+            out
+                ? `${name} taken out of ${runLabel(payload, scanId)}, and shown on its own.`
+                : `${name} put back in ${runLabel(payload, scanId)}.`,
+            `${out ? 'run-back' : 'run-out'}:${scanId}:${index}`);
+    }
+
     function rename(key, raw) {
         const payload = payloadOf();
         if (!payload) return;
@@ -233,6 +276,11 @@ export function createScanGroupsUi(app) {
             choose(box.getAttribute('data-sg-choose'), box.checked);
             return;
         }
+        const runSwitch = e.target.closest('input[data-sg-run-merge]');
+        if (runSwitch) {
+            runMerge(runSwitch.getAttribute('data-sg-run-merge'), runSwitch.checked);
+            return;
+        }
         const toMerge = e.target.closest('input[data-sg-merge]');
         if (toMerge) {
             merge(toMerge.getAttribute('data-sg-merge'), toMerge.checked);
@@ -271,6 +319,8 @@ export function createScanGroupsUi(app) {
             return void app.updateResults(b, () => addTo(key, select ? select.value : ''));
         }
         if ((b = by('data-sg-delete'))) return void app.updateResults(b, () => removeGroup(b.getAttribute('data-sg-delete')));
+        if ((b = by('data-sg-run-out'))) return void app.updateResults(b, () => runContextOut(b.getAttribute('data-sg-run-out'), b.getAttribute('data-sg-context'), true));
+        if ((b = by('data-sg-run-back'))) return void app.updateResults(b, () => runContextOut(b.getAttribute('data-sg-run-back'), b.getAttribute('data-sg-context'), false));
         if ((b = by('data-sg-new-group'))) return void app.updateResults(b, () => makeGroup(b.closest('details')));
         const btn = e.target.closest('button[data-sg-action]');
         if (!btn) return;
@@ -279,5 +329,5 @@ export function createScanGroupsUi(app) {
         app.updateResults(btn, () => act(key, action));
     });
 
-    return {choose, merge, rename, act, takeOut, putBack, addTo, removeGroup, makeGroup};
+    return {choose, merge, rename, act, takeOut, putBack, addTo, removeGroup, makeGroup, runMerge, runContextOut};
 }

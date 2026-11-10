@@ -273,6 +273,54 @@
         return html;
     }
 
+    // What the run merged (§8): each merged scan of a Merged scan step, to
+    // show as its contexts or to take a context out of. A report saved
+    // before the run kept its contexts' scans says why it cannot.
+    function runMergesHTML(list, ctx) {
+        const merged = list.filter((sc) => sc.mergedScan === true && Array.isArray(sc.contexts) && sc.contexts.length);
+        if (!merged.length) return '';
+        const items = merged.map((sc) => {
+            const entry = ctx.entries.get(`run:${sc.id}`) || {};
+            const kept = sc.contexts.map((c, i) => ({ c, i })).filter(({ c }) => c && c.scan);
+            const out = new Set(entry.remove || []);
+            const unmerged = entry.merge === false;
+            const k = `run:${sc.id}`;
+            const counts = [plural(sc.contexts.length, 'context'),
+                unmerged ? 'shown each on its own' : (out.size ? `${out.size} taken out` : 'merged as the run made it')];
+            let body;
+            if (!kept.length) {
+                body = '<p class="sg-caption">This report did not keep its contexts\' own scans: the lab that saved it did not yet, '
+                    + 'so it can only be shown merged.</p>';
+            } else {
+                const switchId = `sg-run-${ctx.nextId++}`;
+                body = `<div class="sg-controls"><span class="sg-merge"><input type="checkbox" id="${switchId}" data-sg-run-merge="${esc(sc.id)}"`
+                    + ` data-sg-focus="run-merge:${esc(sc.id)}"${unmerged ? '' : ' checked'}> <label for="${switchId}">Merged into one scan</label></span></div>`;
+                if (unmerged) {
+                    body += `<p class="sg-caption">Shown as its ${plural(kept.length, 'context')}, each a scan of its own in the list above.</p>`;
+                } else {
+                    const stay = kept.filter(({ i }) => !out.has(String(i))).length;
+                    body += `<ul class="sg-members">${kept.map(({ c, i }) => {
+                        const isOut = out.has(String(i));
+                        const kind = isOut ? 'run-back' : 'run-out';
+                        const text = isOut ? 'Put back' : 'Take out';
+                        // The last context left stays: a merged scan of none is unmerged.
+                        const button = !isOut && stay < 2 ? '' : ` <button type="button" class="secondary-button sg-scan-btn" data-sg-${kind}="${esc(sc.id)}"`
+                            + ` data-sg-context="${i}" data-sg-focus="${kind}:${esc(sc.id)}:${i}" aria-label="${esc(`${text} ${c.name}`)}">${text}</button>`;
+                        return `<li>${esc(c.name)}${isOut ? ' <span class="sg-host">taken out, shown on its own</span>' : ''}${button}</li>`;
+                    }).join('')}</ul>`;
+                }
+            }
+            return `<li><details class="sg-group sg-run" data-sg-key="${esc(k)}"${openAttr(ctx, k)}>`
+                + `<summary><span class="sg-name">${esc(sc.label || sc.id)}</span> <span class="sg-counts">${esc(counts.join(' · '))}</span></summary>`
+                + body + `</details></li>`;
+        }).join('');
+        return `<section class="sg-part" aria-labelledby="sg-run-h">`
+            + `<h4 class="sg-h" id="sg-run-h">Merged by the run</h4>`
+            + `<p class="sg-intro">Scans a Merged scan step made of one view in several contexts (a theme, a width). `
+            + 'Each can be shown as its contexts, each a scan of its own, or have a context taken out of it.</p>'
+            + `<ul class="sg-tree sg-roots">${items}</ul></section>`;
+    }
+
     // Scans grouped by hand (§9.2): a name, the scans, and whether to merge
     // them, for groups no URL pattern finds.
     function manualFormHTML(list, ctx) {
@@ -312,12 +360,15 @@
      *   the groups to start open (those open before the summary was redrawn);
      * - opts.issuesOf(group): what a chosen group's scans fail together and
      *   apart (scan-group-merge.js groupIssues), or null.
-     * Empty for fewer than two scans: there is nothing to group.
+     * Empty for fewer than two scans, unless the run merged one: there is
+     * nothing to group, nor to unmerge.
      */
     function sectionHTML(result, scans, opts) {
         const o = opts || {};
         const list = Array.isArray(scans) ? scans.filter(Boolean) : [];
-        if (list.length < 2 || !result) return '';
+        // Nothing to group in one scan, unless the run merged it from contexts.
+        const runMerged = list.some((sc) => sc.mergedScan === true && Array.isArray(sc.contexts) && sc.contexts.length);
+        if ((list.length < 2 && !runMerged) || !result) return '';
         const scansById = new Map(list.map((s) => [s.id, s]));
         const groups = Array.isArray(result.groups) ? result.groups : [];
         const choice = Array.isArray(o.choice) ? o.choice.filter((p) => p && typeof p.key === 'string') : [];
@@ -396,6 +447,7 @@
                     : '')
                 + `</section>`;
         }
+        body += runMergesHTML(list, ctx);
         body += manualFormHTML(list, ctx);
         return `<details class="a11y-details sg" data-sg-section${o.open ? ' open' : ''}>`
             + `<summary>Scan groups</summary>${body}</details>`;
