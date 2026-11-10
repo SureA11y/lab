@@ -6,15 +6,15 @@
    ========================================================================== */
 
 /* Configuration is the DS Disclosure panel variant: a bordered card whose
-   heading is read first and whose mechanism sits at the far right. */
+   heading leads with its chevron, as Batch, Custom steps and Workflow do. */
 #config-section {
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
     background: var(--surface-raised);
 }
 
-/* The h2 wraps the header button (accessible accordion pattern: heading landmark
-   preserved, whole button clickable). It adds no box of its own. */
+/* The h2 wraps the header button (accessible accordion pattern: the heading
+   stays one, and the button in it is the control). */
 .config-heading {
     margin: 0;
     padding: 0;
@@ -66,6 +66,12 @@ body.is-running #config-section .inline-actions {
 .config-header .config-heading {
     flex: 1 1 16rem;
     min-width: 0;
+    display: flex;
+    align-items: center;
+    min-height: 52px;
+    /* The chevron starts where the card's content does; the button's own
+       padding makes up the rest. */
+    padding: 0 var(--space-5) 0 calc(var(--space-5) - var(--space-2));
 }
 
 .config-header .config-actions {
@@ -79,80 +85,61 @@ body.is-running .config-header .config-actions {
     display: none;
 }
 
-/* Panel disclosure: the ENTIRE 52px header is the toggle — heading on the left,
-   the "Expand/Collapse" word + chevron at the far right. Clicking anywhere on
-   the row collapses the block (the DS rule that the whole header is the control). */
+/* Panel disclosure: the chevron and the heading are the toggle, as wide as
+   they are, so the row's empty middle beside the actions isn't a place to
+   click by mistake. The chevron points right, and down when open. */
 .config-header-row {
-    display: flex;
-    /* "Collapse" goes under the heading when the two don't fit on one line
-       (a 320px screen with text spacing). */
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-    width: 100%;
-    min-height: 52px;
-    padding: 0 var(--space-5);
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    cursor: pointer;
-    text-align: left;
-    transition: background-color var(--duration-instant) var(--ease-standard);
-}
-
-.config-header-row:hover:not(:disabled, [aria-disabled=true]) {
-    background: var(--surface-hover);
-}
-
-.config-header-row:active:not(:disabled, [aria-disabled=true]) {
-    background: var(--surface-press);
-}
-
-.config-header-row:focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: calc(var(--focus-outline-offset) * -1);
-    box-shadow: var(--focus-ring);
-}
-
-/* Right-hand affordance: the word plus a chevron pointing down that rotates
-   180° when open. Muted at rest, strong when the header is hovered/focused. */
-.config-toggle-word {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    flex: 0 0 auto;
-    font-family: var(--font-mono);
-    font-size: var(--fs-xs);
-    font-weight: 600;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 36px;
+    padding: var(--space-1) var(--space-2);
+    margin: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    box-shadow: none;
     color: var(--text-muted);
-    transition: color var(--duration-instant) var(--ease-standard);
+    cursor: pointer;
+    text-align: left;
+    transition: background-color var(--duration-instant) var(--ease-standard), color var(--duration-instant) var(--ease-standard);
 }
 
-.config-header-row:hover .config-toggle-word,
-.config-header-row:focus-visible .config-toggle-word {
-    color: var(--text-main);
-}
-
-.config-toggle-word::after {
+.config-header-row::before {
     content: "";
     flex: 0 0 auto;
     width: 16px;
     height: 16px;
     background: currentColor;
-    -webkit-mask: var(--chevron-down) center / 16px 16px no-repeat;
-    mask: var(--chevron-down) center / 16px 16px no-repeat;
+    -webkit-mask: var(--chevron-right) center / 16px 16px no-repeat;
+    mask: var(--chevron-right) center / 16px 16px no-repeat;
     transition: transform var(--duration-fast) var(--ease-standard);
 }
 
-.config-header-row[aria-expanded="true"] .config-toggle-word::after {
-    transform: rotate(180deg);
+.config-header-row[aria-expanded="true"]::before {
+    transform: rotate(90deg);
 }
 
-body.is-running .config-header-row .config-toggle-word {
-    text-decoration: underline;
+.config-header-row:hover:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-hover);
+    color: var(--text-main);
+}
+
+.config-header-row:active:not(:disabled, [aria-disabled=true]) {
+    background: var(--surface-press);
+    color: var(--text-main);
+}
+
+.config-header-row:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    box-shadow: var(--focus-ring);
+}
+
+.config-header-row .config-title {
+    min-width: 0;
 }
 
 /* Panel content: inset on all sides, with the header divider showing only while
@@ -216,7 +203,7 @@ button {
     box-shadow: none;
 }
 
-button:hover:not(:disabled, [aria-disabled=true], .screenshot-btn, .legend-toggle, .collapse-all-toggle, .section-end-toggle, .link-button, .dsp-filter-btn, .dsp-chip, .steps-panel__chip, .steps-panel__select, .steps-panel__done, .steps-panel-bar__btn, .steps-panel-bar__edit, .steps-panel-edit__more, .steps-panel-edit__clear, .steps-panel-edit__apply, .runcustomstep-open, .dsp-link, .run-setting-chip) {
+button:hover:not(:disabled, [aria-disabled=true], .screenshot-btn, .legend-toggle, .config-header-row, .collapse-all-toggle, .section-end-toggle, .link-button, .dsp-filter-btn, .dsp-chip, .steps-panel__chip, .steps-panel__select, .steps-panel__done, .steps-panel-bar__btn, .steps-panel-bar__edit, .steps-panel-edit__more, .steps-panel-edit__clear, .steps-panel-edit__apply, .runcustomstep-open, .dsp-link, .run-setting-chip) {
     background: var(--surface-5);
     border-color: var(--accent-border);
 }
