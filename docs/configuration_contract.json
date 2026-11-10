@@ -6,7 +6,7 @@
     "AI agents"
   ],
   "purpose": "Generate valid run specs (the workflow files the headless runner takes and other tools exchange) and app configuration files, including custom steps.",
-  "generatedAt": "2026-11-09T15:14:48.981Z",
+  "generatedAt": "2026-11-10T15:47:52.781Z",
   "sourceOfTruth": {
     "actionDefinitionsFile": "src/workflow/action-definitions.js",
     "workflowEngineFile": "src/workflow/workflow-engine.js",
@@ -2409,6 +2409,13 @@
           "required": true,
           "label": "Actions",
           "description": "The steps to run, with an A11y scan for each context. A scan with no label is named by its place, as \"Scan 2 of 4\"."
+        },
+        "keepContexts": {
+          "type": "boolean",
+          "required": false,
+          "label": "Keep each context's scan",
+          "description": "Save each context's own scan inside the merged scan, so the report can show the merged scan as its contexts, or take a context out of it, after the run. It makes the report bigger: about 30% more for each context of the scans merged. Turn it off for very large runs that will not be unmerged.",
+          "default": true
         }
       },
       "examples": [

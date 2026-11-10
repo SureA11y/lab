@@ -42,7 +42,11 @@ The first public release.
   by hand where no pattern finds them together. A scan a Merged scan step
   made can be unmerged into its contexts, or have one taken out: runs now
   keep each context's own scan in the merged scan for that, which makes a
-  merged scan of two contexts about 60% larger in the saved report. The
+  merged scan of two contexts about 60% larger in the saved report; turn
+  off the step's **Keep each context's scan** for very large runs that will
+  not be unmerged. The conformance report, the checklist and the
+  comparisons count merged groups page by page and say so; reports opened
+  together keep what was changed by hand in each. The
   groups chosen are saved with the report (`scanGrouping`) and carried when
   reports are merged.
   A report's scans can be filtered by tag, and, when the report has more

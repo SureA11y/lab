@@ -425,3 +425,23 @@ test('the target does not depend on the order of the scans, and a WAI-ARIA scan 
     assert.deepEqual(buildConformanceReport(withScans([a22, en3])).target, { wcagVersion: '2.1', level: 'AA', en301549: 'V3.2.1' });
     assert.deepEqual(buildConformanceReport(withScans([en3, a22])).target, buildConformanceReport(withScans([a22, en3])).target);
 });
+
+describe('groups the report view shows merged (scan-grouping-design.md §11)', () => {
+    const C = require('./conformance-report.js');
+    const H = require('./conformance-report-html.js');
+    const base = { url: 'https://shop.test/', scans: [{ id: 's1', label: 'Red', url: 'https://shop.test/p/red', canonical: { findings: [] } }] };
+
+    test('say they are counted page by page', () => {
+        const one = C.buildConformanceReport({ ...base, shownMerges: [{ name: 'Product pages', scans: 6 }] });
+        assert.equal(one.evaluation.pagesNote,
+            "In the lab's report view, Product pages (6 scans) is shown as one merged scan. This report counts them page by page, as they were scanned.");
+        const two = C.buildConformanceReport({ ...base, shownMerges: [{ name: 'Products', scans: 6 }, { name: 'Posts', scans: 3 }] });
+        assert.match(two.evaluation.pagesNote, /Products \(6 scans\) and Posts \(3 scans\) are each shown as one merged scan/);
+        assert.match(H.conformanceReportHTML(one), /<p class="pages-note">In the lab&#39;s report view, Product pages \(6 scans\)/);
+    });
+
+    test('say nothing when none is merged', () => {
+        assert.equal('pagesNote' in C.buildConformanceReport(base).evaluation, false);
+        assert.doesNotMatch(H.conformanceReportHTML(C.buildConformanceReport(base)), /pages-note/);
+    });
+});

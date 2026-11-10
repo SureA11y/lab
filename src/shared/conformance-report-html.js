@@ -109,9 +109,11 @@ a { color: #3b2db3; }
         const e = acr.evaluation;
         const t = acr.target;
         const title = `${p.name}${p.version ? ` ${p.version}` : ''}: Accessibility Conformance Report`;
-        const pages = e.pages.length
+        const pages = (e.pages.length
             ? `<ul class="pages">${e.pages.map((pg) => `<li>${esc(pg.label || pg.url)}${pg.url && pg.label ? `: ${esc(pg.url)}` : ''}</li>`).join('')}</ul>`
-            : '';
+            : '')
+            // Groups the lab's view shows merged, counted here page by page.
+            + (e.pagesNote ? `<p class="pages-note">${esc(e.pagesNote)}</p>` : '');
         const methods = esc(acr.evaluation.methodsText);
         const drafts = acr.totals.draftsLeft;
         const wcagTables = acr.tables.filter((tb) => tb.standard === 'wcag');

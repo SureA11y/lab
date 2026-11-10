@@ -2035,7 +2035,12 @@ async function runA11yWorkflow(url, tags, options = {}) {
             viewport: callerViewport,
             // The Merged scan step this scan runs inside, if any.
             mergedScan: (ctx && ctx._mergedScan && ctx._mergedScan.key)
-                ? {key: ctx._mergedScan.key, label: ctx._mergedScan.label || null, scanTags: ctx._mergedScan.scanTags || null}
+                ? {
+                    key: ctx._mergedScan.key,
+                    label: ctx._mergedScan.label || null,
+                    scanTags: ctx._mergedScan.scanTags || null,
+                    keepContexts: ctx._mergedScan.keepContexts !== false,
+                }
                 : null,
             scanId: s.scanId || null,
             orderKey: s.orderKey || null,

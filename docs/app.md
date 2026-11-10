@@ -136,7 +136,11 @@ scans added, and **Group scans by hand** groups, and merges, scans no pattern
 finds together. A scan the run merged from several contexts (a Merged scan
 step) can be shown as its contexts, each a scan of its own, or have a
 context taken out of it, under **Merged by the run**; reports saved before
-the lab kept the contexts' own scans say they can't. The groups you chose or
+the lab kept the contexts' own scans say they can't, and so do runs whose
+Merged scan step had **Keep each context's scan** turned off, which keeps
+the report smaller. The conformance report, the manual checklist and the
+comparisons count a merged group page by page, as it was scanned, and say
+which groups the report view shows merged. The groups you chose or
 made, their names, which are merged and what you changed in them are saved
 with the report; its download leaves
 the excluded scans out, as it always does.

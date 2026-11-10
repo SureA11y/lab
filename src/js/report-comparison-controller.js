@@ -198,6 +198,18 @@ export function createComparisonController({ setHTML, onState } = {}) {
         return CONTEXT_BY_ID[contextId()];
     }
 
+    // The groups the compared reports show merged in their report view: the
+    // comparison reads their scans as saved, page by page, and says so
+    // (docs/design/scan-grouping-design.md §11). '' when none is merged.
+    function mergedNote(reports) {
+        const api = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        if (!api || typeof api.mergedGroupNames !== 'function') return '';
+        const names = [...new Set(reports.flatMap((r) => api.mergedGroupNames(r)))];
+        if (!names.length) return '';
+        const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+        return `The reports compared show ${list} merged in their report view; this comparison counts their scans page by page, as they were scanned.`;
+    }
+
     function pairHTML() {
         const [a, b] = displayEntries();
         const d = diffApi().diffReports(a.report, b.report, {
@@ -212,7 +224,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
         // Where the failures are, in the reports as compared: read on the
         // profiles they share, like the rest of the comparison.
         const [first, second] = d.compared || (d.swapped ? [b.report, a.report] : [a.report, b.report]);
-        return comparisonDiffHTML(d, { dispersion: pairDispersion(first, second) });
+        return comparisonDiffHTML(d, { dispersion: pairDispersion(first, second), mergedNote: mergedNote([first, second]) });
     }
 
     function seriesHTML() {
@@ -231,6 +243,7 @@ export function createComparisonController({ setHTML, onState } = {}) {
             ? series.ordering.source : list.map((_, i) => i);
         return comparisonSeriesHTML(series, {
             dispersion: seriesDispersion(series.compared || source.map((i) => list[i].report)),
+            mergedNote: mergedNote(list.map((e) => e.report)),
         });
     }
 

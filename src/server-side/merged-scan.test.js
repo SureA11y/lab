@@ -713,3 +713,13 @@ describe('the contexts\' own scans (docs/design/scan-grouping-design.md §8)', (
         assert.deepEqual(merged.contexts.map((c) => c.name), ['Light', 'Dark']);
     });
 });
+
+test('a Merged scan step told not to keep its contexts\' scans keeps none', () => {
+    const off = (label, findings) => scan(label, findings, { fields: { mergedScan: { key: 'g1', label: 'Product page', keepContexts: false } } });
+    const [merged] = foldMergedScans([
+        off('Light', [finding('fail', 'contrast', [occ()])]),
+        off('Dark', [finding('fail', 'contrast', [occ()])]),
+    ], deps);
+    assert.deepEqual(merged.contexts.map((c) => 'scan' in c), [false, false]);
+    assert.deepEqual(merged.canonical.findings[0].occurrences[0].contexts, ['Light', 'Dark']);
+});

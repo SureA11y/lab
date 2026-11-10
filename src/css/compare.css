@@ -379,6 +379,8 @@ body.queue-mode-active #screenshots-container { display: none; }
 .cmp2 h2, .cmp2 h3, .cmp2 h4 { font-family: var(--font-display); margin: 0; letter-spacing: -.01em; }
 .cmp2 .num { font-variant-numeric: tabular-nums; }
 .cmp2-sec { margin-top: var(--space-8); }
+/* The groups the compared reports show merged, counted here page by page. */
+.cmp2-note { margin: var(--space-3) 0 0; color: var(--text-muted); }
 .cmp2 .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
 .cmp2 .sec-head h3 { font-size: var(--fs-lg); font-weight: 600; }
 .cmp2 .sec-head .layer { font-family: var(--font-mono); font-size: var(--fs-xxs); letter-spacing: .1em; text-transform: uppercase; color: var(--text-soft); }

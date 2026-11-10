@@ -586,11 +586,25 @@ export function createOpenReportStaging(app) {
     // The scan groups each report chose, carried into the report they are
     // merged into (docs/design/scan-grouping-design.md §7): every group any
     // of them chose, the first name given to it kept. A group that matches
-    // none of the merged scans is not shown.
-    function carryScanGrouping(payload, reports) {
+    // none of the merged scans is not shown. A scan renamed because another
+    // report has its id is renamed in its report's choice too, so what was
+    // added, taken out or grouped by hand still names it (§11).
+    function carryScanGrouping(payload, reports, scans = payload?.scans) {
         const api = globalThis.A11Y_SCAN_GROUP_CHOICE;
         if (!api || !payload) return;
-        api.writeChoice(payload, api.mergeChoices(reports));
+        const renames = new Map();
+        for (const scan of Array.isArray(scans) ? scans : []) {
+            if (!scan || scan._originalId == null || !Number.isFinite(Number(scan._importSourceIndex))) continue;
+            const source = Number(scan._importSourceIndex);
+            if (!renames.has(source)) renames.set(source, new Map());
+            renames.get(source).set(String(scan._originalId), scan.id);
+        }
+        const renamed = reports.map((report, i) => {
+            const map = renames.get(i);
+            if (!map || !report) return report;
+            return {scanGrouping: {patterns: api.renameScanIds(api.readChoice(report), (id) => map.get(id) || id)}};
+        });
+        api.writeChoice(payload, api.mergeChoices(renamed));
     }
 
     async function loadStagedReportsIntoOpenReport(task) {
@@ -840,7 +854,7 @@ export function createOpenReportStaging(app) {
                 });
 
                 PAYLOAD.finalizeWorkflowPayload(payload);
-                carryScanGrouping(payload, parsedObjects);
+                carryScanGrouping(payload, parsedObjects, mergedScans);
 
                 // Restore tokenized scan screenshot dataUrls
                 restoreScanDataUrls(payload, scanDataUrlMap);

@@ -2049,6 +2049,15 @@ describe('page-driving actions (mocked Puppeteer page)', () => {
             assert.deepEqual(seen[0].mergedScan.scanTags, ['checkout', 'shop']);
         });
 
+        test('it keeps its contexts\' scans unless told not to', async () => {
+            const { ctx, seen } = scanSpy();
+            await run(ctx, [
+                { type: 'mergedScan', label: 'Kept', actions: [{ type: 'a11yScan', label: 'A' }] },
+                { type: 'mergedScan', label: 'Not kept', keepContexts: false, actions: [{ type: 'a11yScan', label: 'B' }] },
+            ]);
+            assert.deepEqual(seen.map((s) => s.mergedScan.keepContexts), [true, false]);
+        });
+
         test('the runner hears when each run of the step ends, after its scans, even when it fails', async () => {
             const { ctx, seen } = scanSpy();
             const events = [];

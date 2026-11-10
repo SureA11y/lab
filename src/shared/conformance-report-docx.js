@@ -85,6 +85,8 @@
             ['Contact', p.contact],
             ['Evaluation methods', methods],
             ['Evaluated', e.pages.map((pg) => (pg.url && pg.label ? `${pg.label}: ${pg.url}` : (pg.label || pg.url))).join('; ')],
+            // Groups the lab's view shows merged, counted here page by page.
+            ['Merged in the report view', e.pagesNote],
             ['Notes', p.notes],
         ].filter(([, v]) => v);
         const drafts = acr.totals.draftsLeft;
