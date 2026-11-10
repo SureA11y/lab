@@ -68,8 +68,8 @@ The first public release.
   A rule that lists only some of the elements it found (surea11y's contrast
   rules list 50) has all of them counted.
 - **A steps panel** beside the workflow and beside the custom steps: every
-  step as a tree, however deep, with Find (Ctrl+Shift+F, ⌘⇧F on a Mac) and
-  filters by kind (scans, clicks, containers, disabled steps). Going to a
+  step as a tree, however deep, with Find and filters by kind (scans,
+  clicks, containers, disabled steps). Going to a
   step opens the containers it is in. Select steps (or ⌘/Ctrl-click them)
   to turn them off or on together, or to change the fields they share in
   one go, with one Undo. On a narrow screen the panel opens as a sheet.
