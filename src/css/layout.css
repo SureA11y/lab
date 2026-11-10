@@ -385,6 +385,17 @@ input[type="checkbox"] {
 
 .config-file label { margin: 5px 0; }
 
+/* Undo, redo, Load config and Export config: flex items, not inline boxes,
+   so a focused one is lifted over the others (controls.css) and, wrapped on
+   a narrow screen, the rows keep apart instead of one's ring running under
+   the other. 4px across, as the spaces between them were. */
+.config-actions > span {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) 4px;
+}
+
 /* The Run settings button at the end of the URL line: its own width, its
    bottom on the fields' bottoms, as tall as they are. */
 .field-inline > .run-settings-cell {
