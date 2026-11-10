@@ -1,10 +1,11 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Steps 1 to 3 built** (§10): the grouping facade and the URL
+> Status: **Steps 1 to 4 built** (§10): the grouping facade and the URL
 > source, and the "Scan groups" section under a run's scans list, where
-> patterns are chosen, named, and their scans included or excluded. Merging
-> a group's scans into one (§9) and the other steps are planned, in the order
-> §10 lists them; each one is useful and testable on its own.
+> patterns are chosen, named, and their scans included or excluded; and the
+> shared fold that will merge a group's scans into one (§9.3). Merging itself
+> and the other steps are planned, in the order §10 lists them; each one is
+> useful and testable on its own.
 
 ## 1. Motivation
 
@@ -387,16 +388,25 @@ page is left out of that identity and kept beside it instead:
   merged scan's rules and criteria read as the worst page does.
 - **Outcome counts, coverage and the accessibility summary** are worked out
   again from the merged findings, with the functions a single scan uses.
-- **Occurrence ids** are per page (they hash the page's path), so a merged
-  occurrence keeps the ids of every page it is on, and each page's failure
-  can still be traced to it.
+- **Occurrence ids** are per page (they hash the page's path). A merged
+  occurrence keeps its first page's; the others stay with their own scans,
+  which the report keeps (D10), and the scans it lists lead to them.
 - **Members that are merged scans themselves** (a product scanned in light and
   dark) keep their contexts: an occurrence then says both where and under
   what conditions it fails ("On 3 of 500 pages, in Dark · mobile").
 
-The fold is pure, and it moves from `src/server-side/merged-scan.js` to
-`src/shared/`, so the runner and the report view use the same code: the runner
-for contexts, the report view for pages.
+The fold is pure and shared, `src/shared/scan-fold.js` (`mergeCanonicals`),
+so the runner and the report view use the same code. Its `dimension` says
+which fold it is: `contexts` for the runner (the default, as before), `scans`
+for a merged group. What an occurrence lists is then the **scans** it is on,
+by id (`scans`, `scansTotal`, and `scanTargets` for an element whose ids
+differ by page), not page URLs: two scans can be of one page, reached in two
+flows, and are two members. "On all 500 pages" is what the view makes of it,
+counting the pages of those scans. A picture says which scan it was taken in
+(`elementScreenshot.scan`), as it says its context.
+
+surea11y's own result, which only the CLI's exports read, is folded by
+contexts only: the report view has none to fold.
 
 ### 9.4 Rules
 
@@ -475,10 +485,14 @@ the run.
    (`refreshScanGroups`), as renaming and moving a scan now do. Focus comes
    back to the same control after every redraw (`data-sg-focus`). Events are
    handled in `src/js/scan-groups-ui.js`.
-4. **The fold across pages** (§9.3). The Merged scan step's fold moved to
-   `src/shared/`, with pages as a second dimension beside contexts and the
-   page left out of an occurrence's identity when folding pages. Tested on
-   its own, with the runner's own tests still passing unchanged. No UI.
+4. **The fold across pages** (built, §9.3). The pure fold moved from
+   `src/server-side/merged-scan.js` to `src/shared/scan-fold.js`, which loads
+   in a page with nothing else; the runner keeps what only it needs (its
+   collected scans, screenshots as buffers, the live counts) and re-exports
+   what its callers imported, so they and its tests run unchanged. The fold
+   takes a dimension, `contexts` or `scans`; folding scans, the page leaves
+   an occurrence's identity and the contexts of a member already merged by
+   its run join it. Tested on its own (`scan-fold.test.js`). No UI.
 5. **Merging a group** (§9.2, §9.4, §9.5). The scans as shown, one function
    every reader goes through; the Merge switch on a chosen group; `merge`
    saved in `scanGrouping`.

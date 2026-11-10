@@ -62,7 +62,8 @@ outside a Merged scan.
 ## 4. Merging
 
 When the last scan of a Merged scan has been collected, its contexts are folded
-into one scan record (`mergeScans` in `src/server-side/merged-scan.js`, pure
+into one scan record (`foldMergedScans` in `src/server-side/merged-scan.js`, over the
+shared fold of `src/shared/scan-fold.js`, pure
 and tested on its own):
 
 - **Findings** are unioned by finding uid (engine, outcome, rule), as findings
