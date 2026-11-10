@@ -677,3 +677,39 @@ describe('merged scans: surea11y\'s raw result', () => {
         assert.equal(withCore.coreResult.checksResults[0].occurrences[0].hint, 'Darken the text. In all 2 contexts.');
     });
 });
+
+describe('the contexts\' own scans (docs/design/scan-grouping-design.md §8)', () => {
+    test('each context keeps its scan: what it found and measured, without pictures or raw output', () => {
+        const light = scan('Light', [finding('fail', 'contrast', [occ()])], { elements: 120 });
+        light.coreResult = { checksResults: [] };
+        light.results = { raw: true };
+        const [merged] = foldMergedScans([light, scan('Dark', [finding('pass', 'contrast')])], deps);
+        const [first, second] = merged.contexts;
+        assert.equal(first.scan.label, 'Light');
+        assert.equal(first.scan.canonical, light.canonical);
+        assert.deepEqual(first.scan.domMetrics, { totalElements: 120 });
+        assert.equal(first.scan.url, 'https://example.com/product');
+        for (const field of ['screenshot', 'extraScreenshots', 'coreResult', 'results', 'mergedScan']) {
+            assert.equal(field in first.scan, false, field);
+        }
+        assert.equal(second.scan.canonical.findings[0].outcome, 'pass');
+    });
+
+    test('a skipped context keeps none', () => {
+        const [merged] = foldMergedScans([
+            scan('Light', [finding('fail', 'contrast', [occ()])]),
+            { ...scan('Dark', []), skipped: true, canonical: null },
+        ], deps);
+        assert.ok(merged.contexts[0].scan);
+        assert.equal('scan' in merged.contexts[1], false);
+    });
+
+    test('the merged scan itself is as it was', () => {
+        const [merged] = foldMergedScans([
+            scan('Light', [finding('fail', 'contrast', [occ()])]),
+            scan('Dark', [finding('fail', 'contrast', [occ()])]),
+        ], deps);
+        assert.deepEqual(merged.canonical.findings[0].occurrences[0].contexts, ['Light', 'Dark']);
+        assert.deepEqual(merged.contexts.map((c) => c.name), ['Light', 'Dark']);
+    });
+});

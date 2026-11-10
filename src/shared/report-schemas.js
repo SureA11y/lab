@@ -157,6 +157,14 @@
                         label: textOrNull,
                         url: text,
                         skipped: { type: 'boolean' },
+                        contexts: {
+                            type: 'array',
+                            items: { type: 'object' },
+                            description: 'A merged scan\'s contexts, in the order they ran (docs/design/merged-scan-design.md): each its '
+                                + '`name`, `url`, `scanTags`, whether it was `skipped` and its outcome counts, and, from runs that keep '
+                                + 'them, its own `scan` as a scan of the report is, without an id, pictures or rule catalogue, which are '
+                                + 'the merged scan\'s (docs/design/scan-grouping-design.md §8).',
+                        },
                         context: textOrNull,
                         exclude: {
                             anyOf: [text, { type: 'array', items: text }, { type: 'null' }],

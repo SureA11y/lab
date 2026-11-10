@@ -499,6 +499,23 @@
             return rest;
         }
 
+        // A context of a merged scan as the report keeps it, its scan made as
+        // any scan is, less what the merged scan already says: no id of its
+        // own (it is the merged scan's), no pictures, no metric definitions,
+        // and no rule catalogue, which is its merged scan's (one run, the
+        // same engines) and the largest part of a scan by far.
+        function contextPayload(context) {
+            if (!context || typeof context !== 'object' || !context.scan || typeof context.scan !== 'object') return context;
+            const built = buildScanPayload(context.scan);
+            const { id: _id, scanId: _scanId, orderKey: _orderKey, iterationIndex: _it, scanIndex: _ix, ...scan } = built;
+            if (scan.metrics) delete scan.metrics.metricDefs;
+            if (scan.canonical && typeof scan.canonical === 'object') {
+                const { rules: _rules, rulesCatalog: _catalog, ...canonical } = scan.canonical;
+                scan.canonical = canonical;
+            }
+            return { ...context, scan };
+        }
+
         function buildScanPayload(scan, { debugNative = false } = {}) {
             const isSkipped = !!scan.skipped || !!scan.skipInfo;
 
@@ -543,8 +560,11 @@
                 ...(debugNative ? { native: scan.results || null } : {}),
                 // A Merged scan step's scans as one (docs/design/merged-scan-design.md):
                 // the contexts it was made from, in the order they ran.
+                // Each with its own scan when the run kept it, as a report keeps
+                // a scan, so the report view can unmerge it
+                // (docs/design/scan-grouping-design.md §8).
                 ...(scan.mergedScan === true
-                    ? { mergedScan: true, contexts: Array.isArray(scan.contexts) ? scan.contexts : [] }
+                    ? { mergedScan: true, contexts: Array.isArray(scan.contexts) ? scan.contexts.map(contextPayload) : [] }
                     : {}),
             };
 

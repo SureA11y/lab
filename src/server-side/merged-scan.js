@@ -93,6 +93,27 @@ function contextShot(shot, name, viewportRatio) {
 }
 
 
+/**
+ * A context's scan as the report keeps it inside its merged scan: what it
+ * found and measured, against what. Not its screenshots, which the merged
+ * scan holds, each named by its context; not the engines' raw output or
+ * surea11y's own result, which only the run's exports read. None for a
+ * context that was skipped or found nothing to hold.
+ */
+function contextScanOf(e, name) {
+    if (!e || e.skipped || !e.canonical) return null;
+    return {
+        ...pickSettings(e),
+        label: name,
+        scanTags: Array.isArray(e.scanTags) && e.scanTags.length ? e.scanTags : null,
+        canonical: e.canonical,
+        domMetrics: e.domMetrics || null,
+        a11ySummary: e.a11ySummary || null,
+        coverageSummary: e.coverageSummary || null,
+        byEngineMetrics: e.byEngineMetrics || null,
+    };
+}
+
 /** One merged scan from the collected scans of one Merged scan step, in run order. */
 function mergeGroup(entries, { buildCoverageAwareSummary, buildA11ySummary, automationCoverageForEngines } = {}) {
     const total = entries.length;
@@ -105,6 +126,7 @@ function mergeGroup(entries, { buildCoverageAwareSummary, buildA11ySummary, auto
 
     const contexts = entries.map((e, i) => {
         const counts = e.canonical ? outcomeCounts(Array.isArray(e.canonical.findings) ? e.canonical.findings : []) : null;
+        const scan = contextScanOf(e, names[i]);
         return {
             name: names[i],
             url: e.url || null,
@@ -113,6 +135,10 @@ function mergeGroup(entries, { buildCoverageAwareSummary, buildA11ySummary, auto
             failCount: counts ? counts.fail : 0,
             reviewCount: counts ? counts.cantTell : 0,
             passesCount: counts ? counts.pass : 0,
+            // The context's own scan, so the report view can show it apart
+            // from the others, or fold the scan again without it
+            // (docs/design/scan-grouping-design.md §8, D11).
+            ...(scan ? { scan } : {}),
         };
     });
 
