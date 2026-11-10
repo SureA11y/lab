@@ -627,6 +627,35 @@ the run.
   whose number an earlier report already uses is renumbered, clear of the
   report's own, so two reports' groups by hand stay two.
 
+### 11.2 The review, proposed (mockup)
+
+`docs/design/mockups/scan-review.html` proposes the next form of these
+features, following a person through what they do after a run: a card at
+the top of the summary saying how much of the run repeats a template; a
+**Review scans** workspace (the groups, a grid of their pages' screenshots
+with those that differ first, the group's failures and actions, an impact
+preview before merging, undo for every action); the report reading the
+scans as reviewed (a merged scan with a strip of its pages' pictures, a
+scan in a group saying which); and a download of every scan, or merged and
+smaller, for good. Fake data; not built. What it proposes beyond what is
+built:
+
+- **Every pattern is a group**, without a choosing step: acting on one is
+  what makes it the person's.
+- **The rest** (scans in no group) can be shown alone, grouped by hand, or
+  excluded after a confirmation listing them; never merged, as unrelated
+  pages are not a template. Grouping the rest by pattern is not offered: the
+  patterns are all in the tree already.
+- **A failure is the template's when most of the group's scans have it**
+  (60% in the mockup), not every one. With "every one", as step 6 is built,
+  one page built otherwise (a gift card among products, without the price
+  badge) turns the template's failures into content and marks every page
+  as different. A page then differs by the failures few others have, or by
+  the template's it does not have, or by its size.
+- **A merged download**: each merged group saved as one scan, much smaller
+  (the screenshots are most of a report), but final: it cannot be unmerged,
+  compared page by page, or counted page by page in a conformance report.
+
 ## 12. Rejected alternatives
 
 - **A new exclusion layer next to the results.** The per-scan flag exists,

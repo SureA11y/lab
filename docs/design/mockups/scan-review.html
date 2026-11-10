@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Scan Review Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mockup only: fake data, no product code (docs/design/scan-grouping-design.md).
+   Tokens mirror the app's light and dark themes, as the other mockups do. */
+:root {
+    color-scheme: light;
+    --font-display: "Space Grotesk", system-ui, sans-serif;
+    --font-sans: "Public Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+    --brand-rgb: 91, 57, 196;
+    --bg: #f7f8f6;
+    --bg-elevated: #ffffff;
+    --bg-subtle: #f1f3f0;
+    --border-subtle: rgba(var(--brand-rgb), .18);
+    --border-strong: rgba(var(--brand-rgb), .28);
+    --text-main: #31352f;
+    --text-muted: #4e5651;
+    --text-soft: #646b66;
+    --accent: #5b39c4;
+    --accent-soft: #ede6fa;
+    --danger: #b3271a;
+    --danger-soft: #fbe4e1;
+    --ok: #0b6e4c;
+    --ok-soft: #e1f3ea;
+    --warn: #7a5a08;
+    --warn-soft: #fbf3dc;
+    --na-soft: #eef0ed;
+    /* the drawn page thumbnails */
+    --pg-bg: #ffffff;
+    --pg-ink: #c9cec9;
+    --pg-ink-strong: #8d958f;
+    --pg-head: #2f3b45;
+}
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --brand-rgb: 196, 166, 255;
+    --bg: #101413;
+    --bg-elevated: #171b19;
+    --bg-subtle: #141917;
+    --border-subtle: rgba(var(--brand-rgb), .10);
+    --border-strong: rgba(var(--brand-rgb), .18);
+    --text-main: #c7d2cb;
+    --text-muted: #9ba69f;
+    --text-soft: #8b958f;
+    --accent: #c4a6ff;
+    --accent-soft: #2a2140;
+    --danger: #ff8a7a;
+    --danger-soft: #3a211d;
+    --ok: #3bc98f;
+    --ok-soft: #163c2e;
+    --warn: #e8c15c;
+    --warn-soft: #3a2f12;
+    --na-soft: #262b29;
+    --pg-bg: #e9ece9;
+    --pg-ink: #b9c0ba;
+    --pg-ink-strong: #7f8882;
+    --pg-head: #2f3b45;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) {
+        color-scheme: dark;
+        --brand-rgb: 196, 166, 255;
+        --bg: #101413;
+        --bg-elevated: #171b19;
+        --bg-subtle: #141917;
+        --border-subtle: rgba(var(--brand-rgb), .10);
+        --border-strong: rgba(var(--brand-rgb), .18);
+        --text-main: #c7d2cb;
+        --text-muted: #9ba69f;
+        --text-soft: #8b958f;
+        --accent: #c4a6ff;
+        --accent-soft: #2a2140;
+        --danger: #ff8a7a;
+        --danger-soft: #3a211d;
+        --ok: #3bc98f;
+        --ok-soft: #163c2e;
+        --warn: #e8c15c;
+        --warn-soft: #3a2f12;
+        --na-soft: #262b29;
+        --pg-bg: #e9ece9;
+        --pg-ink: #b9c0ba;
+        --pg-ink-strong: #7f8882;
+        --pg-head: #2f3b45;
+    }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text-main); font-family: var(--font-sans); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 24px 16px 80px; }
+h1, h2, h3, h4 { font-family: var(--font-display); color: var(--text-main); line-height: 1.2; }
+h1 { font-size: 1.9rem; margin: 0 0 6px; }
+h2 { font-size: 1.35rem; margin: 0 0 4px; }
+h3 { font-size: 1.05rem; margin: 0 0 6px; }
+h4 { font-size: .95rem; margin: 12px 0 4px; }
+p { margin: 0 0 10px; }
+code, .mono { font-family: var(--font-mono); font-size: .86em; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.eyebrow { font-family: var(--font-mono); font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-soft); margin-bottom: 4px; }
+.lede { color: var(--text-muted); max-width: 78ch; }
+.seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 4px; overflow: hidden; }
+.seg button { font: inherit; font-size: .85rem; padding: 6px 12px; border: 0; background: var(--bg-elevated); color: var(--text-main); cursor: pointer; border-right: 1px solid var(--border-subtle); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--bg-elevated); font-weight: 600; }
+
+.decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin: 16px 0 8px; }
+.decision { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 10px 12px; font-size: .86rem; color: var(--text-muted); }
+.decision strong { display: block; color: var(--text-main); font-family: var(--font-display); font-size: .93rem; margin-bottom: 2px; }
+
+section.step { margin-top: 40px; }
+.step-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.step-num { font-family: var(--font-mono); font-size: .8rem; color: var(--bg-elevated); background: var(--accent); border-radius: 999px; padding: 1px 9px; }
+.step-head p { color: var(--text-muted); margin: 0; flex-basis: 100%; }
+
+button.btn, .btn { font: inherit; font-size: .86rem; font-weight: 600; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--text-main); cursor: pointer; }
+button.btn:hover { border-color: var(--accent); }
+button.btn.primary { background: var(--accent); color: var(--bg-elevated); border-color: var(--accent); }
+button.btn.danger { color: var(--danger); }
+button.btn:disabled { opacity: .55; cursor: not-allowed; }
+button.link { font: inherit; background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; }
+
+/* ---- 1: the summary card ---- */
+.summary { background: var(--accent-soft); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px 16px; }
+.summary-line { font-weight: 600; margin-bottom: 10px; }
+.found { display: flex; gap: 18px; align-items: center; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px 14px; flex-wrap: wrap; }
+.stack { position: relative; width: 132px; height: 92px; flex: none; }
+.stack svg { position: absolute; width: 96px; height: 72px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.18); border: 1px solid var(--border-subtle); }
+.found-text { flex: 1 1 280px; }
+.found-text strong { font-family: var(--font-display); font-size: 1.05rem; }
+.found-text p { margin: 2px 0 0; color: var(--text-muted); font-size: .9rem; }
+.bar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; margin: 8px 0 4px; background: var(--na-soft); }
+.bar span { display: block; height: 100%; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .8rem; color: var(--text-muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+/* ---- 2-4: the workspace ---- */
+.workspace { background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 10px; overflow: hidden; }
+.ws-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); flex-wrap: wrap; }
+.ws-head h3 { margin: 0; }
+.stats { display: flex; gap: 8px; flex-wrap: wrap; }
+.stat { background: var(--bg-subtle); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 3px 10px; font-size: .82rem; color: var(--text-muted); }
+.stat b { color: var(--text-main); font-family: var(--font-display); font-size: .95rem; }
+.stat.changed b { color: var(--accent); }
+.focusbar, .undobar { display: flex; gap: 10px; align-items: center; padding: 8px 16px; font-size: .88rem; border-bottom: 1px solid var(--border-subtle); flex-wrap: wrap; }
+.focusbar { background: var(--warn-soft); }
+.undobar { background: var(--ok-soft); }
+.focusbar[hidden], .undobar[hidden] { display: none; }
+.ws-body { display: grid; grid-template-columns: 270px minmax(0, 1fr) 320px; min-height: 560px; }
+.ws-col { min-width: 0; }
+.tree { border-right: 1px solid var(--border-subtle); padding: 10px 8px; background: var(--bg-subtle); }
+.tree h4 { font-size: .74rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .07em; color: var(--text-soft); margin: 12px 8px 4px; }
+.tree h4:first-child { margin-top: 2px; }
+.tree ul { list-style: none; margin: 0; padding: 0; }
+.tree ul ul { padding-left: 14px; }
+.node { display: flex; width: 100%; align-items: center; gap: 6px; font: inherit; font-size: .88rem; text-align: left; background: none; border: 0; border-radius: 5px; padding: 5px 8px; color: var(--text-main); cursor: pointer; }
+.node:hover { background: var(--accent-soft); }
+.node[aria-current="true"] { background: var(--accent); color: var(--bg-elevated); }
+.node[aria-current="true"] .node-count, .node[aria-current="true"] .node-badge { color: var(--bg-elevated); border-color: var(--bg-elevated); }
+.node-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.node-label .mono { font-size: .8rem; }
+.node-count { font-size: .76rem; color: var(--text-soft); }
+.node-badge { font-size: .68rem; font-weight: 600; border: 1px solid var(--accent); color: var(--accent); border-radius: 99px; padding: 0 6px; }
+
+.grid-col { padding: 12px 16px; }
+.grid-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.grid-head h3 { margin: 0; }
+.grid-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: .85rem; }
+select { font: inherit; font-size: .85rem; padding: 4px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-main); }
+.selbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: var(--accent-soft); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; font-size: .86rem; }
+.selbar[hidden] { display: none; }
+.tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.tile { position: relative; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-elevated); overflow: hidden; }
+.tile.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.tile.excluded .thumb { opacity: .45; }
+.thumb { display: block; width: 100%; padding: 0; border: 0; background: var(--na-soft); cursor: zoom-in; }
+.thumb svg { display: block; width: 100%; height: auto; }
+.tile-body { padding: 6px 8px 8px; font-size: .8rem; }
+.tile-top { display: flex; gap: 6px; align-items: flex-start; }
+.tile-top input { margin: 2px 0 0; accent-color: var(--accent); }
+.tile-name { font-weight: 600; overflow-wrap: anywhere; }
+.tile-path { color: var(--text-soft); font-family: var(--font-mono); font-size: .72rem; overflow-wrap: anywhere; }
+.badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.badge { font-size: .68rem; font-weight: 600; border-radius: 99px; padding: 0 7px; border: 1px solid; }
+.badge.differs { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+.badge.excl { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
+.badge.out { color: var(--text-muted); border-color: var(--border-strong); }
+.badge.size { color: var(--text-muted); border-color: var(--border-strong); }
+.empty { color: var(--text-muted); padding: 20px 4px; }
+
+.detail { border-left: 1px solid var(--border-subtle); padding: 12px 14px; background: var(--bg-subtle); }
+.detail h3 { margin-bottom: 2px; overflow-wrap: anywhere; }
+.detail .muted { color: var(--text-muted); font-size: .85rem; }
+.field { display: flex; flex-direction: column; gap: 3px; margin: 10px 0; font-size: .85rem; }
+.field input[type=text] { font: inherit; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-main); }
+.fails { list-style: none; margin: 0; padding: 0; font-size: .84rem; }
+.fails li { display: flex; gap: 8px; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--border-subtle); }
+.fails li span:last-child { color: var(--text-soft); white-space: nowrap; }
+.sev { font-size: .7rem; font-weight: 600; text-transform: uppercase; }
+.sev.serious, .sev.critical { color: var(--danger); }
+.sev.moderate { color: var(--warn); }
+.card { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
+.switch { display: flex; gap: 8px; align-items: flex-start; font-size: .9rem; font-weight: 600; }
+.switch input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--accent); }
+.switch small { display: block; font-weight: 400; color: var(--text-muted); font-size: .8rem; }
+.impact { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 12px; margin: 8px 0; font-size: .86rem; }
+.impact[hidden] { display: none; }
+.impact .row { display: flex; justify-content: space-between; gap: 8px; }
+.impact .row b { font-family: var(--font-display); }
+.impact .arrow { color: var(--accent); font-weight: 700; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+/* ---- 5: in the report ---- */
+.report { background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 10px; padding: 14px 16px; }
+.report-totals { font-weight: 600; margin-bottom: 10px; }
+.cards { display: grid; gap: 10px; }
+.rcard { border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 12px; display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 12px; align-items: start; }
+.rcard svg { width: 120px; height: auto; border-radius: 4px; border: 1px solid var(--border-subtle); }
+.rcard h4 { margin: 0 0 2px; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 600; border-radius: 99px; padding: 0 8px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--border-subtle); margin-left: 6px; vertical-align: 2px; }
+.film { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.film button { padding: 0; border: 1px solid var(--border-subtle); border-radius: 3px; background: none; cursor: pointer; }
+.film svg { width: 54px; height: auto; display: block; border: 0; border-radius: 3px; }
+.film .more { font-size: .78rem; color: var(--text-muted); align-self: center; }
+.rcard .counts { font-size: .84rem; color: var(--text-muted); }
+.onall { font-size: .78rem; color: var(--text-soft); }
+
+/* ---- 6: download ---- */
+.dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.dl label { display: block; border: 1px solid var(--border-strong); border-radius: 8px; padding: 12px; background: var(--bg-elevated); cursor: pointer; }
+.dl label:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.dl strong { font-family: var(--font-display); }
+.dl .size { font-family: var(--font-display); font-size: 1.2rem; color: var(--accent); }
+.dl p { color: var(--text-muted); font-size: .86rem; margin: 4px 0 0; }
+
+/* ---- dialogs ---- */
+dialog { border: 1px solid var(--border-strong); border-radius: 10px; padding: 0; background: var(--bg-elevated); color: var(--text-main); max-width: min(760px, calc(100vw - 32px)); width: 100%; }
+dialog::backdrop { background: rgba(16, 20, 19, .55); }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); }
+.dlg-head h3 { margin: 0; overflow-wrap: anywhere; }
+.dlg-body { padding: 14px 16px; }
+.dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border-subtle); flex-wrap: wrap; }
+.preview { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+.preview svg { width: 100%; height: auto; border: 1px solid var(--border-subtle); border-radius: 6px; }
+.excl-list { max-height: 240px; overflow: auto; margin: 8px 0 0; padding-left: 20px; font-size: .88rem; }
+
+@media (max-width: 1000px) {
+    .ws-body { grid-template-columns: 1fr; }
+    .tree { border-right: 0; border-bottom: 1px solid var(--border-subtle); }
+    .detail { border-left: 0; border-top: 1px solid var(--border-subtle); }
+}
+@media (max-width: 640px) {
+    .preview { grid-template-columns: 1fr; }
+    .rcard { grid-template-columns: 1fr; }
+    .tiles { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <header class="topbar">
+        <div>
+            <div class="eyebrow">Mockup · scan grouping</div>
+            <h1>Reviewing a run's scans</h1>
+            <p class="lede">What a person does after a workflow has run, step by step: see how much of the run repeats a
+                template, check each group by its pictures, decide what to merge, take out or exclude, see the report as it
+                will read, and download it. Fake data: a shop of 46 scans. Everything below can be clicked; nothing is saved.</p>
+        </div>
+        <div class="seg" role="group" aria-label="Theme">
+            <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+            <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+            <button type="button" data-theme-set="auto" aria-pressed="true">System</button>
+        </div>
+    </header>
+
+    <div class="decisions">
+        <div class="decision"><strong>Every pattern is a group</strong>No choosing step: the tree lists every pattern found. Acting on one (naming, merging, excluding) is what makes it the person's.</div>
+        <div class="decision"><strong>Pictures first</strong>Each group is a grid of its pages' screenshots, those that differ from the template first: what to take out shows at a glance.</div>
+        <div class="decision"><strong>See before doing</strong>Merging shows what it changes (scans, failures) before it is applied; every action can be undone at once.</div>
+        <div class="decision"><strong>The rest, safely</strong>Scans in no group can be shown alone, grouped by hand or excluded after a confirmation that lists them. They are never merged: unrelated pages are not a template.</div>
+    </div>
+
+    <!-- 1 -->
+    <section class="step" aria-labelledby="s1">
+        <div class="step-head"><span class="step-num">1</span><h2 id="s1">After the run: what repeats</h2>
+            <p>At the top of the summary, a card says how much of the run is pages of a template, and opens the review.</p></div>
+        <div class="summary">
+            <div class="summary-line" id="summary-line"></div>
+            <div class="found">
+                <div class="stack" id="stack" aria-hidden="true"></div>
+                <div class="found-text">
+                    <strong id="found-title"></strong>
+                    <p id="found-sub"></p>
+                    <div class="bar" id="found-bar" role="img"></div>
+                    <div class="legend" id="found-legend"></div>
+                </div>
+                <a class="btn primary" href="#s2">Review scans</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2-4 -->
+    <section class="step" aria-labelledby="s2">
+        <div class="step-head"><span class="step-num">2–4</span><h2 id="s2">Review scans</h2>
+            <p>Pick a group on the left, check its pages in the middle (the ones that differ come first; click a picture to see it large), and decide on the right.</p></div>
+        <div class="workspace">
+            <div class="ws-head">
+                <h3>Review scans</h3>
+                <div class="stats" id="stats" aria-live="polite"></div>
+            </div>
+            <div class="focusbar" id="focusbar" hidden></div>
+            <div class="undobar" id="undobar" hidden></div>
+            <div class="ws-body">
+                <nav class="ws-col tree" aria-label="Groups" id="tree"></nav>
+                <div class="ws-col grid-col" id="grid-col"></div>
+                <aside class="ws-col detail" aria-label="The group" id="detail"></aside>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="step" aria-labelledby="s5">
+        <div class="step-head"><span class="step-num">5</span><h2 id="s5">In the report</h2>
+            <p>The report reads the scans as reviewed: a merged group is one card with its pages as a strip of pictures, and a scan in a group says which.</p></div>
+        <div class="report" id="report"></div>
+    </section>
+
+    <!-- 6 -->
+    <section class="step" aria-labelledby="s6">
+        <div class="step-head"><span class="step-num">6</span><h2 id="s6">Download</h2>
+            <p>The report is downloaded with every scan, so its merges can be undone and its pages compared with the next run; or merged, smaller, for good.</p></div>
+        <fieldset class="dl" style="border:0;padding:0;margin:0">
+            <legend class="sr-only">What to download</legend>
+            <label><input type="radio" name="dl" value="full" checked> <strong>Report, every scan</strong>
+                <div class="size" id="size-full"></div>
+                <p>Every scan and picture, with the groups and merges as reviewed. Merges can be undone when it is opened again; the next run can be compared page by page; a conformance report counts every page.</p></label>
+            <label><input type="radio" name="dl" value="merged"> <strong>Merged report, smaller</strong>
+                <div class="size" id="size-merged"></div>
+                <p>Each merged group saved as the one scan it is shown as, with its first page's pictures. Cannot be unmerged, and its pages cannot be compared one by one with another run.</p></label>
+        </fieldset>
+    </section>
+</div>
+
+<div class="sr-only" aria-live="polite" id="live"></div>
+
+<dialog id="preview-dlg" aria-labelledby="preview-title">
+    <div class="dlg-head"><h3 id="preview-title"></h3><button type="button" class="btn" data-close>Close</button></div>
+    <div class="dlg-body preview" id="preview-body"></div>
+    <div class="dlg-foot" id="preview-foot"></div>
+</dialog>
+
+<dialog id="confirm-dlg" aria-labelledby="confirm-title">
+    <div class="dlg-head"><h3 id="confirm-title"></h3></div>
+    <div class="dlg-body" id="confirm-body"></div>
+    <div class="dlg-foot"><button type="button" class="btn" data-close>Cancel</button><button type="button" class="btn primary" id="confirm-ok"></button></div>
+</dialog>
+
+<script>
+'use strict';
+// ------------------------------------------------------------------ data
+const SITE = 'shop.example.com';
+const RULES = {
+    'button-name': { title: 'Buttons must have discernible text', sev: 'serious' },
+    'color-contrast': { title: 'Elements must meet minimum colour contrast', sev: 'serious' },
+    'image-alt': { title: 'Images must have alternative text', sev: 'critical' },
+    'link-name': { title: 'Links must have discernible text', sev: 'serious' },
+    'label': { title: 'Form elements must have labels', sev: 'critical' },
+    'heading-order': { title: 'Heading levels should only increase by one', sev: 'moderate' },
+    'list': { title: 'Lists must only contain list items', sev: 'serious' },
+    'region': { title: 'All page content should be in landmarks', sev: 'moderate' },
+};
+const scans = [];
+function add(path, label, kind, o = {}) {
+    scans.push({
+        id: `s${scans.length}`, path, url: `https://${SITE}${path}`, label, kind,
+        initiallyIncluded: o.included !== false, fails: o.fails || [], elements: o.elements || 900,
+        hue: o.hue ?? [...path].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7),
+        variant: o.variant || null, contexts: o.contexts || null,
+    });
+}
+const f = (rule, el) => ({ rule, el });
+add('/', 'Home', 'home', { fails: [f('color-contrast', '.hero .cta'), f('region', '.promo')], contexts: ['Light', 'Dark'], elements: 1400 });
+add('/about', 'About us', 'text', { fails: [f('heading-order', 'main h4')] });
+add('/contact', 'Contact', 'form', { fails: [f('label', '#email')] });
+add('/cart', 'Cart', 'form', { fails: [f('button-name', '.qty-plus')] });
+add('/checkout/shipping', 'Shipping', 'form', { fails: [f('label', '#zip'), f('label', '#city')] });
+add('/checkout/payment', 'Payment', 'form', { fails: [f('label', '#card')] });
+const PRODUCTS = ['red-shirt', 'blue-shirt', 'green-hat', 'wool-scarf', 'linen-dress', 'rain-coat', 'denim-jacket', 'silk-tie',
+    'canvas-bag', 'leather-belt', 'cotton-socks', 'summer-hat', 'winter-gloves', 'yoga-pants', 'running-shoes', 'beach-towel',
+    'sun-glasses', 'travel-mug', 'phone-case', 'desk-lamp', 'gift-card', 'wall-clock', 'tea-set'];
+const TEMPLATE_P = [f('button-name', '.add-to-cart'), f('color-contrast', '.price-badge')];
+PRODUCTS.forEach((slug, i) => {
+    const name = slug.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+    const fails = [...TEMPLATE_P];
+    let variant = null;
+    let elements = 820 + (i * 37) % 120;
+    if (['green-hat', 'silk-tie', 'tea-set'].includes(slug)) fails.push(f('image-alt', '.gallery img:nth-child(3)'));
+    if (slug === 'running-shoes') { fails.push(f('link-name', '.promo a')); variant = 'promo'; }
+    if (slug === 'gift-card') { fails.length = 0; fails.push(f('label', '#amount'), f('label', '#message'), f('button-name', '.add-to-cart')); variant = 'giftcard'; elements = 1450; }
+    add(`/products/${slug}`, name, 'product', { fails, variant, elements, included: slug !== 'wool-scarf' });
+});
+add('/blog/accessibility', 'Blog: Accessibility', 'list', { fails: [f('list', '.posts')] });
+add('/blog/news', 'Blog: News', 'list', { fails: [f('list', '.posts')] });
+const POSTS = [['accessibility', 'alt-text'], ['accessibility', 'contrast'], ['accessibility', 'focus'], ['accessibility', 'forms'], ['accessibility', 'headings'],
+    ['news', 'launch'], ['news', 'new-store'], ['news', 'summer-sale'], ['news', 'team'], ['news', 'awards'], ['news', 'app'], ['news', 'recap']];
+POSTS.forEach(([cat, slug]) => {
+    const fails = [f('heading-order', 'article h4')];
+    if (slug === 'launch' || slug === 'awards') fails.push(f('image-alt', 'article figure img'));
+    add(`/blog/${cat}/${slug}`, `Post: ${slug.replace('-', ' ')}`, 'post', { fails, variant: slug === 'recap' ? 'video' : null });
+});
+['shoes', 'hats', 'gifts'].forEach((q) => add(`/search?q=${q}`, `Search: ${q}`, 'search', { fails: [f('region', '.results')] }));
+
+// The groups the URLs repeat (as the URL source finds them).
+const byPath = (re) => scans.filter((s) => re.test(s.path)).map((s) => s.id);
+const GROUPS = [
+    { id: 'products', label: 'Product pages', pattern: '/products/{slug}', members: byPath(/^\/products\//) },
+    { id: 'posts', label: 'Blog posts', pattern: '/blog/{slug}/{slug}', members: byPath(/^\/blog\/[^/]+\/[^/]+$/), children: [
+        { id: 'posts-a11y', label: 'Accessibility posts', pattern: '/blog/accessibility/{slug}', members: byPath(/^\/blog\/accessibility\/.+/) },
+        { id: 'posts-news', label: 'News posts', pattern: '/blog/news/{slug}', members: byPath(/^\/blog\/news\/.+/) },
+    ] },
+    { id: 'cats', label: 'Blog categories', pattern: '/blog/{slug}', members: byPath(/^\/blog\/[^/]+$/) },
+    { id: 'search', label: 'Search results', pattern: '/search?q=…', members: byPath(/^\/search/) },
+    { id: 'checkout', label: 'Checkout', pattern: '/checkout/{slug}', members: byPath(/^\/checkout\//) },
+];
+const allGroups = () => {
+    const out = [];
+    const walk = (list, parent) => list.forEach((g) => { g.parent = parent; out.push(g); if (g.children) walk(g.children, g); });
+    walk(GROUPS, null);
+    return [...out, ...state.byHand];
+};
+const scanById = new Map(scans.map((s) => [s.id, s]));
+
+// ------------------------------------------------------------------ state
+let state = { sel: 'products', merged: [], out: {}, names: {}, byHand: [], focus: null, selected: [], sort: 'differs',
+    excluded: scans.filter((s) => !s.initiallyIncluded).map((s) => s.id) };
+// Whether a scan is included is read from the state, so undo brings it back.
+scans.forEach((s) => Object.defineProperty(s, 'included', {
+    get: () => !state.excluded.includes(s.id),
+    set: (v) => { state.excluded = v ? state.excluded.filter((x) => x !== s.id) : [...new Set([...state.excluded, s.id])]; },
+}));
+const history = [];
+const groupOf = (id) => allGroups().find((g) => g.id === id) || null;
+const membersOf = (g) => (g.byHand ? g.members : g.members.filter((id) => !(state.out[g.id] || []).includes(id)));
+const nameOf = (g) => state.names[g.id] || g.label;
+function snapshot(message) {
+    history.push({ state: JSON.parse(JSON.stringify(state, (k, v) => (k === 'parent' ? undefined : v))), message });
+}
+function restoreLast() {
+    const last = history.pop();
+    if (!last) return;
+    const keep = { sel: state.sel };
+    state = last.state;
+    state.byHand.forEach((g) => { g.byHand = true; });
+    if (!groupOf(state.sel) && !['rest', 'run-home'].includes(state.sel)) state.sel = keep.sel;
+    say(`Undone: ${last.message}`);
+    render();
+}
+
+// ------------------------------------------------------------------ what a group's scans fail
+// A failure is the template's when MOST of the group's scans have it, not
+// every one: one page built otherwise (the gift card) must not turn the whole
+// template into "content" and outline every page as different.
+const TEMPLATE_SHARE = 0.6;
+const key = (x) => `${x.rule}|${x.el}`;
+function issuesOf(ids) {
+    const list = ids.map((id) => scanById.get(id));
+    const count = new Map();
+    list.forEach((s) => new Set(s.fails.map(key)).forEach((k) => count.set(k, (count.get(k) || 0) + 1)));
+    const common = (n) => list.length > 1 && n / list.length >= TEMPLATE_SHARE;
+    const template = new Map();
+    const content = new Map();
+    for (const [k, n] of count) {
+        const [rule] = k.split('|');
+        const on = list.filter((s) => s.fails.some((x) => key(x) === k)).map((s) => s.id);
+        const into = common(n) ? template : content;
+        into.set(rule, [...new Set([...(into.get(rule) || []), ...on])]);
+    }
+    return { template, content, templateKeys: new Set([...count].filter(([, n]) => common(n)).map(([k]) => k)) };
+}
+// How one scan of a group differs: failures few others have (its own
+// content), the template's failures it does not have (built otherwise), and
+// a page much bigger or smaller than the others.
+function differences(id, g) {
+    const ids = membersOf(g);
+    const { templateKeys } = issuesOf(ids);
+    const s = scanById.get(id);
+    const mine = new Set(s.fails.map(key));
+    const own = s.fails.filter((x) => !templateKeys.has(key(x)));
+    const missing = [...templateKeys].filter((k) => !mine.has(k));
+    const sizes = ids.map((x) => scanById.get(x).elements).sort((a, b) => a - b);
+    const median = sizes[Math.floor(sizes.length / 2)];
+    const size = Math.abs(s.elements - median) / median > 0.3;
+    return { own, missing, size, unlike: size || missing.length > 0 };
+}
+
+// ------------------------------------------------------------------ the report as shown
+function topMerged() {
+    // The larger merged group first: a merged group inside it is merged into it.
+    const taken = new Set();
+    const out = [];
+    allGroups().filter((g) => state.merged.includes(g.id)).sort((a, b) => membersOf(b).length - membersOf(a).length).forEach((g) => {
+        const ids = membersOf(g).filter((id) => !taken.has(id));
+        if (ids.length < 2) return;
+        ids.forEach((id) => taken.add(id));
+        out.push({ g, ids });
+    });
+    return out;
+}
+function shown() {
+    const merged = topMerged();
+    const inMerged = new Map();
+    merged.forEach((m) => m.ids.forEach((id) => inMerged.set(id, m)));
+    const focusIds = state.focus ? new Set(state.focus === 'rest' ? restIds() : membersOf(groupOf(state.focus))) : null;
+    const out = [];
+    const placed = new Set();
+    for (const s of scans) {
+        if (focusIds && !focusIds.has(s.id)) continue;
+        const m = inMerged.get(s.id);
+        if (!m) { out.push({ kind: 'scan', s, included: s.included }); continue; }
+        if (placed.has(m.g.id)) continue;
+        placed.add(m.g.id);
+        const inc = m.ids.filter((id) => scanById.get(id).included);
+        out.push({ kind: 'merged', g: m.g, ids: m.ids, inc, included: inc.length > 0 });
+    }
+    return out;
+}
+function failures(list) {
+    return list.filter((x) => x.included).reduce((n, x) => {
+        if (x.kind === 'scan') return n + x.s.fails.length;
+        return n + new Set(x.inc.flatMap((id) => scanById.get(id).fails.map(key))).size;
+    }, 0);
+}
+function restIds() {
+    const grouped = new Set(allGroups().flatMap((g) => membersOf(g)));
+    return scans.filter((s) => !grouped.has(s.id)).map((s) => s.id);
+}
+
+// ------------------------------------------------------------------ pictures of pages
+const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function pageSvg(s, { mark = null } = {}) {
+    const W = 160, H = 120;
+    const ink = 'var(--pg-ink)', strong = 'var(--pg-ink-strong)';
+    const pic = `hsl(${s.hue} 55% 62%)`;
+    let body = '';
+    const lines = (x, y, n, w) => Array.from({ length: n }, (_, i) => `<rect x="${x}" y="${y + i * 7}" width="${w - (i % 3) * 10}" height="3" rx="1.5" fill="${ink}"/>`).join('');
+    if (s.kind === 'product') {
+        if (s.variant === 'giftcard') {
+            body = `<rect x="12" y="26" width="64" height="40" rx="6" fill="${pic}"/><text x="44" y="51" font-size="10" text-anchor="middle" fill="#fff" font-family="sans-serif">GIFT</text>`
+                + `<rect x="86" y="26" width="62" height="10" rx="2" fill="none" stroke="${strong}"/><rect x="86" y="42" width="62" height="10" rx="2" fill="none" stroke="${strong}"/><rect x="86" y="58" width="62" height="18" rx="2" fill="none" stroke="${strong}"/>`
+                + `<rect x="86" y="84" width="40" height="11" rx="3" fill="${strong}"/>` + lines(12, 76, 4, 60);
+        } else {
+            body = `<rect x="12" y="24" width="64" height="58" rx="3" fill="${pic}"/>`
+                + `<rect x="12" y="86" width="19" height="14" rx="2" fill="${pic}" opacity=".75"/><rect x="34" y="86" width="19" height="14" rx="2" fill="${pic}" opacity=".55"/><rect x="56" y="86" width="20" height="14" rx="2" fill="${pic}" opacity=".35"/>`
+                + `<rect x="86" y="26" width="58" height="6" rx="3" fill="${strong}"/>` + lines(86, 38, 4, 60)
+                + `<rect x="86" y="68" width="24" height="9" rx="4" fill="#d8a400"/><rect x="86" y="84" width="46" height="12" rx="3" fill="${strong}"/>`;
+            if (s.variant === 'promo') body += `<rect x="0" y="104" width="${W}" height="16" fill="hsl(14 80% 60%)"/><rect x="40" y="110" width="80" height="4" rx="2" fill="#fff"/>`;
+        }
+    } else if (s.kind === 'post') {
+        body = `<rect x="22" y="24" width="116" height="7" rx="3" fill="${strong}"/>` + lines(22, 38, 2, 110)
+            + (s.variant === 'video' ? `<rect x="22" y="54" width="116" height="40" rx="3" fill="#222"/><path d="M76 66 l12 8 l-12 8z" fill="#fff"/>` : `<rect x="22" y="54" width="116" height="34" rx="3" fill="${pic}"/>`)
+            + lines(22, 96, 3, 110);
+    } else if (s.kind === 'list') {
+        body = `<rect x="12" y="24" width="80" height="7" rx="3" fill="${strong}"/>` + [0, 1, 2].map((i) => `<rect x="12" y="${38 + i * 26}" width="34" height="20" rx="2" fill="hsl(${(s.hue + i * 40) % 360} 50% 66%)"/>` + lines(52, 40 + i * 26, 2, 90)).join('');
+    } else if (s.kind === 'search') {
+        body = `<rect x="12" y="24" width="136" height="11" rx="5" fill="none" stroke="${strong}"/>` + [0, 1, 2, 3].map((i) => `<rect x="12" y="${42 + i * 18}" width="14" height="14" rx="2" fill="hsl(${(s.hue + i * 60) % 360} 50% 66%)"/>` + lines(32, 44 + i * 18, 2, 100)).join('');
+    } else if (s.kind === 'form') {
+        body = `<rect x="30" y="24" width="70" height="7" rx="3" fill="${strong}"/>` + [0, 1, 2].map((i) => lines(30, 38 + i * 20, 1, 40) + `<rect x="30" y="${43 + i * 20}" width="100" height="9" rx="2" fill="none" stroke="${strong}"/>`).join('')
+            + `<rect x="30" y="102" width="44" height="11" rx="3" fill="${strong}"/>`;
+    } else if (s.kind === 'home') {
+        body = `<rect x="0" y="20" width="${W}" height="46" fill="${pic}"/><rect x="18" y="32" width="70" height="7" rx="3" fill="#fff"/><rect x="18" y="46" width="34" height="10" rx="4" fill="#fff" opacity=".85"/>`
+            + [0, 1, 2].map((i) => `<rect x="${12 + i * 48}" y="74" width="40" height="30" rx="3" fill="hsl(${(s.hue + 50 + i * 40) % 360} 50% 66%)"/>`).join('');
+    } else {
+        body = `<rect x="22" y="24" width="90" height="7" rx="3" fill="${strong}"/>` + lines(22, 40, 9, 116);
+    }
+    const ring = mark ? `<rect x="1.5" y="1.5" width="${W - 3}" height="${H - 3}" rx="3" fill="none" stroke="${mark}" stroke-width="3"/>` : '';
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(`Screenshot of ${s.label}`)}">`
+        + `<rect width="${W}" height="${H}" fill="var(--pg-bg)"/><rect width="${W}" height="16" fill="var(--pg-head)"/>`
+        + `<rect x="8" y="5" width="22" height="6" rx="2" fill="#fff" opacity=".8"/><rect x="${W - 54}" y="6" width="44" height="4" rx="2" fill="#fff" opacity=".45"/>`
+        + body + ring + `</svg>`;
+}
+
+// ------------------------------------------------------------------ rendering
+const $ = (id) => document.getElementById(id);
+const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || `${one}s`)}`;
+function say(message) {
+    $('live').textContent = message;
+}
+
+function renderSummary() {
+    const repeat = new Set(GROUPS.flatMap((g) => g.members)).size;
+    const list = shown();
+    $('summary-line').textContent = `Workflow scan: ${plural(failures(list), 'failure')} across ${plural(list.filter((x) => x.included).length, 'scan')}.`;
+    $('found-title').textContent = `${repeat} of ${scans.length} scans are pages of ${GROUPS.length} templates`;
+    const product = groupOf('products');
+    const ifMerged = GROUPS.length + (scans.length - repeat);
+    $('found-sub').textContent = `Product pages alone are ${membersOf(product).length} scans. Merged, each template counts once: the report would read ${ifMerged} scans instead of ${scans.length}.`;
+    const colours = ['var(--accent)', 'hsl(160 45% 42%)', 'hsl(30 70% 50%)', 'hsl(200 55% 50%)', 'hsl(330 45% 55%)'];
+    $('found-bar').innerHTML = GROUPS.map((g, i) => `<span style="width:${(g.members.length / scans.length) * 100}%;background:${colours[i]}"></span>`).join('');
+    $('found-bar').setAttribute('aria-label', GROUPS.map((g) => `${g.label}: ${g.members.length}`).join(', ') + `, in no group: ${scans.length - repeat}`);
+    $('found-legend').innerHTML = GROUPS.map((g, i) => `<span><i style="background:${colours[i]}"></i>${esc(g.label)} ${g.members.length}</span>`).join('')
+        + `<span><i style="background:var(--na-soft);border:1px solid var(--border-strong)"></i>In no group ${scans.length - repeat}</span>`;
+    $('stack').innerHTML = product.members.slice(0, 4).map((id, i) => `<div style="position:absolute;left:${i * 12}px;top:${i * 6}px">${pageSvg(scanById.get(id))}</div>`).join('');
+}
+
+function renderStats() {
+    const list = shown();
+    const before = scans.filter((s) => s.included).length;
+    const nowScans = list.filter((x) => x.included).length;
+    const excluded = scans.filter((s) => !s.included).length;
+    $('stats').innerHTML = `<span class="stat ${nowScans !== before ? 'changed' : ''}">In the report <b>${nowScans}</b> scans</span>`
+        + `<span class="stat">Failures <b>${failures(list)}</b></span>`
+        + `<span class="stat">Merged <b>${topMerged().length}</b></span>`
+        + `<span class="stat">Excluded <b>${excluded}</b></span>`;
+    const fb = $('focusbar');
+    if (state.focus) {
+        const what = state.focus === 'rest' ? 'the scans in no group' : nameOf(groupOf(state.focus));
+        fb.hidden = false;
+        fb.innerHTML = `<span>The report shows only <strong>${esc(what)}</strong>. Nothing is excluded: the others are only hidden.</span><button type="button" class="btn" id="unfocus">Show every scan</button>`;
+    } else fb.hidden = true;
+    const ub = $('undobar');
+    const last = history[history.length - 1];
+    if (last) {
+        ub.hidden = false;
+        ub.innerHTML = `<span>${esc(last.message)}</span><button type="button" class="btn" id="undo">Undo</button>${history.length > 1 ? `<span class="muted" style="color:var(--text-muted)">${history.length - 1} more to undo</span>` : ''}`;
+    } else ub.hidden = true;
+}
+
+function treeNode(g) {
+    const ids = membersOf(g);
+    const merged = topMerged().some((m) => m.g.id === g.id);
+    const badge = merged ? '<span class="node-badge">merged</span>' : '';
+    const kids = g.children ? `<ul>${g.children.map((c) => `<li>${treeNode(c)}</li>`).join('')}</ul>` : '';
+    return `<button type="button" class="node" data-node="${g.id}" aria-current="${state.sel === g.id}">`
+        + `<span class="node-label">${esc(nameOf(g))}<br><span class="mono">${esc(g.byHand ? 'by hand' : g.pattern)}</span></span>`
+        + `${badge}<span class="node-count">${ids.length}</span></button>${kids}`;
+}
+function renderTree() {
+    const rest = restIds();
+    $('tree').innerHTML = `<h4>Templates found</h4><ul>${GROUPS.map((g) => `<li>${treeNode(g)}</li>`).join('')}</ul>`
+        + (state.byHand.length ? `<h4>Grouped by hand</h4><ul>${state.byHand.map((g) => `<li>${treeNode(g)}</li>`).join('')}</ul>` : '')
+        + `<h4>The rest</h4><ul><li><button type="button" class="node" data-node="rest" aria-current="${state.sel === 'rest'}"><span class="node-label">In no group</span><span class="node-count">${rest.length}</span></button></li></ul>`
+        + `<h4>Merged by the run</h4><ul><li><button type="button" class="node" data-node="run-home" aria-current="${state.sel === 'run-home'}"><span class="node-label">Home<br><span class="mono">Light · Dark</span></span><span class="node-badge">run</span></button></li></ul>`;
+}
+
+function currentIds() {
+    if (state.sel === 'rest') return restIds();
+    if (state.sel === 'run-home') return ['s0'];
+    return membersOf(groupOf(state.sel));
+}
+function renderGrid() {
+    const col = $('grid-col');
+    const g = groupOf(state.sel);
+    let ids = currentIds();
+    const title = state.sel === 'rest' ? 'In no group' : state.sel === 'run-home' ? 'Home, merged by the run' : nameOf(g);
+    const info = new Map(ids.map((id) => [id, g ? differences(id, g) : { own: [], missing: [], size: false, unlike: false }]));
+    if (state.sort === 'differs' && g) {
+        const weight = (id) => info.get(id).own.length + (info.get(id).unlike ? 2 : 0);
+        ids = [...ids].sort((a, b) => weight(b) - weight(a));
+    }
+    const differ = g ? ids.filter((id) => info.get(id).own.length || info.get(id).unlike).length : 0;
+    const out = g && !g.byHand ? (state.out[g.id] || []) : [];
+    const sel = state.selected.filter((id) => ids.includes(id));
+    const tile = (id, takenOut = false) => {
+        const s = scanById.get(id);
+        const d = info.get(id) || { own: [], missing: [], size: false, unlike: false };
+        const badges = [
+            d.own.length ? `<span class="badge differs">${plural(d.own.length, 'own failure')}</span>` : '',
+            d.unlike ? '<span class="badge size">built unlike the others</span>' : '',
+            !s.included ? '<span class="badge excl">excluded</span>' : '',
+            takenOut ? '<span class="badge out">taken out</span>' : '',
+        ].join('');
+        return `<li class="tile ${sel.includes(id) ? 'selected' : ''} ${s.included ? '' : 'excluded'}">`
+            + `<button type="button" class="thumb" data-preview="${id}" aria-label="${esc(`Show ${s.label} large`)}">${pageSvg(s, { mark: d.own.length || d.unlike ? 'var(--warn)' : null })}</button>`
+            + `<div class="tile-body"><div class="tile-top">${takenOut ? '' : `<input type="checkbox" data-pick="${id}" id="pick-${id}" ${sel.includes(id) ? 'checked' : ''}>`}`
+            + `<label for="pick-${id}" class="tile-name">${esc(s.label)}</label></div>`
+            + `<div class="tile-path">${esc(s.path)}</div><div class="badges">${badges}</div>`
+            + (takenOut ? `<button type="button" class="link" data-putback="${id}" style="font-size:.78rem">Put back</button>` : '')
+            + `</div></li>`;
+    };
+    col.innerHTML = `<div class="grid-head"><h3>${esc(title)}</h3><div class="grid-tools">`
+        + (g ? `<label>Order <select id="sort"><option value="differs" ${state.sort === 'differs' ? 'selected' : ''}>Those that differ first</option><option value="report" ${state.sort === 'report' ? 'selected' : ''}>As in the report</option></select></label>` : '')
+        + `<button type="button" class="btn" id="select-all">${sel.length === ids.length && ids.length ? 'Select none' : 'Select all'}</button></div></div>`
+        + (g ? `<p class="muted" style="color:var(--text-muted);font-size:.86rem">${plural(ids.length, 'scan')}${differ ? `; <strong>${differ}</strong> differ from the rest, outlined, first.` : ', all alike.'} Click a picture to see it large.</p>` : '')
+        + `<div class="selbar" ${sel.length ? '' : 'hidden'}><strong>${plural(sel.length, 'scan')} selected</strong>`
+        + (g && !g.byHand ? '<button type="button" class="btn" data-bulk="out">Take out of the group</button>' : '')
+        + (g && g.byHand ? '<button type="button" class="btn" data-bulk="out">Take out of the group</button>' : '')
+        + '<button type="button" class="btn" data-bulk="exclude">Exclude</button><button type="button" class="btn" data-bulk="include">Include</button>'
+        + '<button type="button" class="btn" data-bulk="byhand">Group by hand</button></div>'
+        + (ids.length ? `<ul class="tiles" aria-label="${esc(`Scans of ${title}`)}">${ids.map((id) => tile(id)).join('')}</ul>` : '<p class="empty">No scan here.</p>')
+        + (out.length ? `<h4>Taken out of the group, shown on their own</h4><ul class="tiles">${out.map((id) => tile(id, true)).join('')}</ul>` : '');
+}
+
+function impactOf(g, merge) {
+    const now = shown();
+    const was = state.merged;
+    state.merged = merge ? [...was, g.id] : was.filter((x) => x !== g.id);
+    const next = shown();
+    state.merged = was;
+    return { scans: [now.filter((x) => x.included).length, next.filter((x) => x.included).length], fails: [failures(now), failures(next)] };
+}
+
+function renderDetail() {
+    const el = $('detail');
+    if (state.sel === 'run-home') {
+        el.innerHTML = `<h3>Home</h3><p class="muted">Merged by the run from 2 contexts, Light and Dark: each failure says which contexts it is in.</p>`
+            + `<div class="card"><label class="switch"><input type="checkbox" checked disabled> <span>Merged into one scan<small>Unmerge to see Light and Dark as scans of their own, or take one out. (Works on runs that kept each context's scan.)</small></span></label></div>`
+            + `<div class="card"><h4 style="margin-top:0">Contexts</h4><ul class="fails"><li><span>Light</span><span>2 failures</span></li><li><span>Dark</span><span>2 failures, 1 only in Dark</span></li></ul></div>`;
+        return;
+    }
+    if (state.sel === 'rest') {
+        const ids = restIds();
+        el.innerHTML = `<h3>In no group</h3><p class="muted">${plural(ids.length, 'scan')} no pattern finds together: pages of their own, not of a template. They are not merged; these act on all of them.</p>`
+            + `<div class="card"><div class="actions" style="flex-direction:column;align-items:stretch">`
+            + `<button type="button" class="btn" data-rest="focus">Show only these in the report</button>`
+            + `<button type="button" class="btn" data-rest="byhand">Group them by hand…</button>`
+            + `<button type="button" class="btn danger" data-rest="exclude">Exclude them from the report…</button></div></div>`
+            + `<p class="muted">Showing only some scans changes what the report shows, not what it counts once it is shown whole; excluding takes them out of its totals and of its download.</p>`;
+        return;
+    }
+    const g = groupOf(state.sel);
+    const ids = membersOf(g);
+    const { template, content } = issuesOf(ids);
+    const merged = state.merged.includes(g.id);
+    const absorbed = !merged ? null : (g.parent && state.merged.includes(g.parent.id) ? g.parent : null);
+    const included = ids.filter((id) => scanById.get(id).included).length;
+    const im = impactOf(g, !merged);
+    const rule = (r) => `<span>${esc(RULES[r].title)} <span class="sev ${RULES[r].sev}">${RULES[r].sev}</span></span>`;
+    const pagesWithContent = new Set([...content.values()].flat()).size;
+    el.innerHTML = `<h3>${esc(nameOf(g))}</h3><p class="muted mono" style="font-family:var(--font-mono)">${esc(g.byHand ? 'Grouped by hand' : g.pattern)} · ${plural(ids.length, 'scan')}, ${included} included</p>`
+        + `<label class="field">Name<input type="text" id="gname" value="${esc(state.names[g.id] || '')}" placeholder="" autocomplete="off"></label>`
+        + `<div class="card"><label class="switch"><input type="checkbox" id="merge" ${merged ? 'checked' : ''}> <span>Merge into one scan<small>A failure of the template is listed once, on all its pages; a page's own failure stays on that page. Can be undone.</small></span></label>`
+        + (absorbed ? `<p class="muted" style="margin:6px 0 0">Shown merged into ${esc(nameOf(absorbed))}, the larger merged group it is in.</p>` : '')
+        + `<div class="impact" id="impact" hidden><div class="row"><span>Scans in the report</span><span><b>${im.scans[0]}</b> <span class="arrow">→</span> <b>${im.scans[1]}</b></span></div>`
+        + `<div class="row"><span>Failures listed</span><span><b>${im.fails[0]}</b> <span class="arrow">→</span> <b>${im.fails[1]}</b></span></div>`
+        + `<p style="margin:6px 0">${merged ? 'Unmerging shows each page again.' : `What the template fails is listed once; what ${plural(pagesWithContent, 'page')} ${pagesWithContent === 1 ? 'fails' : 'fail'} on ${pagesWithContent === 1 ? 'its' : 'their'} own stays on ${pagesWithContent === 1 ? 'it' : 'them'}.`}</p>`
+        + `<div class="actions"><button type="button" class="btn primary" id="apply-merge">${merged ? 'Unmerge' : 'Merge'}</button><button type="button" class="btn" id="cancel-merge">Cancel</button></div></div></div>`
+        + `<div class="card"><h4 style="margin-top:0">On most scans: the template's</h4>`
+        + (template.size ? `<ul class="fails">${[...template].map(([r, on]) => `<li>${rule(r)}<span>${on.length} of ${ids.length} · fix once</span></li>`).join('')}</ul>` : '<p class="muted">Nothing fails on most scans.</p>')
+        + `<h4>On a few scans: their own content's</h4>`
+        + (content.size ? `<ul class="fails">${[...content].map(([r, on]) => `<li>${rule(r)}<span>${on.length} of ${ids.length}</span></li>`).join('')}</ul>` : '<p class="muted">Nothing fails on a few scans only.</p>')
+        + `</div>`
+        + `<div class="card"><h4 style="margin-top:0">Its scans</h4><div class="actions">`
+        + `<button type="button" class="btn" data-act="keep">Keep one</button><button type="button" class="btn" data-act="exclude">Exclude all</button><button type="button" class="btn" data-act="include">Include all</button></div>`
+        + `<div class="actions"><button type="button" class="btn" data-act="focus">${state.focus === g.id ? 'Show every scan' : 'Show only these in the report'}</button>`
+        + (g.byHand ? '<button type="button" class="btn danger" data-act="remove">Remove group</button>' : '') + `</div></div>`;
+}
+
+function renderReport() {
+    const list = shown();
+    const inc = list.filter((x) => x.included);
+    const groupChip = (s) => {
+        const g = allGroups().find((x) => !x.children && membersOf(x).includes(s.id)) || allGroups().find((x) => membersOf(x).includes(s.id));
+        if (!g) return '';
+        const ids = membersOf(g);
+        return `<span class="chip">${esc(nameOf(g))} · ${ids.indexOf(s.id) + 1} of ${ids.length}</span>`;
+    };
+    const card = (x) => {
+        if (x.kind === 'merged') {
+            const firsts = x.inc.slice(0, 6);
+            const keys = new Set(x.inc.flatMap((id) => scanById.get(id).fails.map(key)));
+            const { templateKeys } = issuesOf(x.inc);
+            return `<article class="rcard"><div>${pageSvg(scanById.get(x.inc[0] || x.ids[0]))}</div><div>`
+                + `<h4>${esc(nameOf(x.g))} <span class="chip">merged · ${plural(x.inc.length, 'page')}</span></h4>`
+                + `<div class="counts">${plural(keys.size, 'failure')}: <strong>${templateKeys.size}</strong> on all ${x.inc.length} pages, ${keys.size - templateKeys.size} on some</div>`
+                + `<div class="film" aria-label="Its pages">${firsts.map((id) => `<button type="button" data-preview="${id}" aria-label="${esc(`Show ${scanById.get(id).label}`)}">${pageSvg(scanById.get(id))}</button>`).join('')}`
+                + (x.inc.length > firsts.length ? `<span class="more">and ${x.inc.length - firsts.length} more</span>` : '') + `</div></div></article>`;
+        }
+        return `<article class="rcard"><div>${pageSvg(x.s)}</div><div><h4>${esc(x.s.label)}${groupChip(x.s)}</h4>`
+            + `<div class="counts">${plural(x.s.fails.length, 'failure')} · <span class="mono">${esc(x.s.path)}</span></div></div></article>`;
+    };
+    const sample = [...inc.filter((x) => x.kind === 'merged'), ...inc.filter((x) => x.kind === 'scan')].slice(0, 5);
+    $('report').innerHTML = `<div class="report-totals">${plural(failures(list), 'failure')} across ${plural(inc.length, 'scan')}${topMerged().length ? `, ${plural(topMerged().length, 'merged group')} counted once each` : ''}.</div>`
+        + `<div class="cards">${sample.map(card).join('')}</div>`
+        + `<p class="muted" style="color:var(--text-muted);margin-top:8px;font-size:.86rem">${inc.length > sample.length ? `And ${plural(inc.length - sample.length, 'more scan')}.` : ''} Merge Product pages above to see a merged card here.</p>`;
+    const mb = 1.1;
+    $('size-full').textContent = `about ${Math.round(scans.filter((s) => s.included).length * mb)} MB`;
+    $('size-merged').textContent = `about ${Math.round(inc.length * mb)} MB`;
+}
+
+function render() {
+    renderSummary();
+    renderStats();
+    renderTree();
+    renderGrid();
+    renderDetail();
+    renderReport();
+}
+
+// ------------------------------------------------------------------ actions
+function act(message, change) {
+    snapshot(message);
+    change();
+    say(message);
+    render();
+}
+function previewScan(id) {
+    const s = scanById.get(id);
+    const g = groupOf(state.sel);
+    const d = g ? differences(id, g) : { own: [], missing: [], size: false, unlike: false };
+    const ids = currentIds();
+    const i = ids.indexOf(id);
+    $('preview-title').textContent = s.label;
+    $('preview-body').innerHTML = `<div>${pageSvg(s, { mark: d.own.length || d.unlike ? 'var(--warn)' : null })}<p class="mono" style="margin-top:6px">${esc(s.url)}</p></div>`
+        + `<div><h4 style="margin-top:0">Fails like the others</h4><ul class="fails">${s.fails.filter((x) => !d.own.includes(x)).map((x) => `<li><span>${esc(RULES[x.rule].title)}</span><span class="mono">${esc(x.el)}</span></li>`).join('') || '<li>Nothing</li>'}</ul>`
+        + `<h4>Fails on its own</h4><ul class="fails">${d.own.map((x) => `<li><span>${esc(RULES[x.rule].title)}</span><span class="mono">${esc(x.el)}</span></li>`).join('') || '<li>Nothing: it is like the others</li>'}</ul>`
+        + (d.missing && d.missing.length ? `<h4>Does not have the template's</h4><ul class="fails">${d.missing.map((k) => { const [r, el] = k.split('|'); return `<li><span>${esc(RULES[r].title)}</span><span class="mono">${esc(el)}</span></li>`; }).join('')}</ul>` : '')
+        + (d.unlike ? '<p class="muted" style="margin-top:8px">It is built unlike the others: it may be another template, to take out of this group.</p>' : '') + `</div>`;
+    $('preview-foot').innerHTML = `<button type="button" class="btn" data-nav="${ids[i - 1] || ''}" ${i > 0 ? '' : 'disabled'}>Previous</button>`
+        + `<button type="button" class="btn" data-nav="${ids[i + 1] || ''}" ${i >= 0 && i < ids.length - 1 ? '' : 'disabled'}>Next</button>`
+        + (g && !g.byHand ? `<button type="button" class="btn" data-dlg-out="${id}">Take out of ${esc(nameOf(g))}</button>` : '')
+        + `<button type="button" class="btn" data-dlg-toggle="${id}">${s.included ? 'Exclude from the report' : 'Include in the report'}</button>`;
+    const dlg = $('preview-dlg');
+    if (!dlg.open) dlg.showModal();
+}
+function confirmDialog(title, bodyHTML, okText, onOk) {
+    $('confirm-title').textContent = title;
+    $('confirm-body').innerHTML = bodyHTML;
+    $('confirm-ok').textContent = okText;
+    $('confirm-ok').onclick = () => { $('confirm-dlg').close(); onOk(); };
+    $('confirm-dlg').showModal();
+}
+function groupByHand(ids) {
+    confirmDialog(`Group ${plural(ids.length, 'scan')} by hand`,
+        `<label class="field">Name<input type="text" id="hand-name" value="" autocomplete="off"></label>`
+        + `<ul class="excl-list">${ids.map((id) => `<li>${esc(scanById.get(id).label)} <span class="mono">${esc(scanById.get(id).path)}</span></li>`).join('')}</ul>`,
+        'Make the group',
+        () => {
+            const name = $('hand-name').value.trim();
+            act(`Grouped ${plural(ids.length, 'scan')} by hand as ${name || 'a new group'}.`, () => {
+                const id = `hand-${state.byHand.length + 1}`;
+                state.byHand.push({ id, label: name || `Group ${state.byHand.length + 1}`, byHand: true, members: ids });
+                state.sel = id;
+                state.selected = [];
+            });
+        });
+    setTimeout(() => $('hand-name')?.focus(), 0);
+}
+
+document.addEventListener('click', (e) => {
+    const t = e.target.closest('button, [data-preview]');
+    if (!t) return;
+    const d = t.dataset;
+    if (d.themeSet) {
+        document.querySelectorAll('[data-theme-set]').forEach((b) => b.setAttribute('aria-pressed', String(b === t)));
+        if (d.themeSet === 'auto') document.documentElement.removeAttribute('data-theme');
+        else document.documentElement.setAttribute('data-theme', d.themeSet);
+        return;
+    }
+    if (d.node) { state.sel = d.node; state.selected = []; render(); document.querySelector(`[data-node="${d.node}"]`).focus(); return; }
+    if (d.preview) { previewScan(d.preview); return; }
+    if (d.nav) { previewScan(d.nav); return; }
+    if ('close' in d) { t.closest('dialog').close(); return; }
+    if (t.id === 'undo') { restoreLast(); return; }
+    if (t.id === 'unfocus') { act('Showing every scan again.', () => { state.focus = null; }); return; }
+    if (t.id === 'select-all') {
+        const ids = currentIds();
+        const all = state.selected.filter((id) => ids.includes(id)).length === ids.length;
+        state.selected = all ? [] : [...ids];
+        render();
+        return;
+    }
+    if (t.id === 'apply-merge') {
+        const g = groupOf(state.sel);
+        const on = !state.merged.includes(g.id);
+        act(on ? `Merged ${nameOf(g)} into one scan.` : `Unmerged ${nameOf(g)}.`, () => {
+            state.merged = on ? [...state.merged, g.id] : state.merged.filter((x) => x !== g.id);
+        });
+        document.getElementById('merge')?.focus();
+        return;
+    }
+    if (t.id === 'cancel-merge') { $('impact').hidden = true; $('merge').checked = state.merged.includes(state.sel); $('merge').focus(); return; }
+    if (d.putback) {
+        const g = groupOf(state.sel);
+        act(`Put ${scanById.get(d.putback).label} back in ${nameOf(g)}.`, () => { state.out[g.id] = (state.out[g.id] || []).filter((x) => x !== d.putback); });
+        return;
+    }
+    if (d.bulk) {
+        const g = groupOf(state.sel);
+        const ids = state.selected.filter((id) => currentIds().includes(id));
+        if (!ids.length) return;
+        if (d.bulk === 'byhand') { groupByHand(ids); return; }
+        if (d.bulk === 'out') {
+            act(`Took ${plural(ids.length, 'scan')} out of ${nameOf(g)}.`, () => {
+                if (g.byHand) g.members = g.members.filter((x) => !ids.includes(x));
+                else state.out[g.id] = [...new Set([...(state.out[g.id] || []), ...ids])];
+                state.selected = [];
+            });
+            return;
+        }
+        const inc = d.bulk === 'include';
+        act(`${inc ? 'Included' : 'Excluded'} ${plural(ids.length, 'scan')}.`, () => { ids.forEach((id) => { scanById.get(id).included = inc; }); state.selected = []; });
+        return;
+    }
+    if (d.dlgOut) {
+        const g = groupOf(state.sel);
+        $('preview-dlg').close();
+        act(`Took ${scanById.get(d.dlgOut).label} out of ${nameOf(g)}.`, () => { state.out[g.id] = [...new Set([...(state.out[g.id] || []), d.dlgOut])]; });
+        return;
+    }
+    if (d.dlgToggle) {
+        const s = scanById.get(d.dlgToggle);
+        act(`${s.included ? 'Excluded' : 'Included'} ${s.label}.`, () => { s.included = !s.included; });
+        previewScan(d.dlgToggle);
+        return;
+    }
+    if (d.act) {
+        const g = groupOf(state.sel);
+        const ids = membersOf(g);
+        if (d.act === 'keep') {
+            const keep = ids.find((id) => scanById.get(id).included) || ids[0];
+            act(`Kept ${scanById.get(keep).label} of ${nameOf(g)}; excluded the other ${ids.length - 1}.`, () => ids.forEach((id) => { scanById.get(id).included = id === keep; }));
+        } else if (d.act === 'exclude' || d.act === 'include') {
+            const inc = d.act === 'include';
+            act(`${inc ? 'Included' : 'Excluded'} the ${plural(ids.length, 'scan')} of ${nameOf(g)}.`, () => ids.forEach((id) => { scanById.get(id).included = inc; }));
+        } else if (d.act === 'focus') {
+            const on = state.focus !== g.id;
+            act(on ? `The report shows only ${nameOf(g)}.` : 'Showing every scan again.', () => { state.focus = on ? g.id : null; });
+        } else if (d.act === 'remove') {
+            act(`Removed the group ${nameOf(g)}.`, () => { state.byHand = state.byHand.filter((x) => x.id !== g.id); state.merged = state.merged.filter((x) => x !== g.id); state.sel = 'rest'; });
+        }
+        return;
+    }
+    if (d.rest) {
+        const ids = restIds();
+        if (d.rest === 'focus') { act('The report shows only the scans in no group.', () => { state.focus = 'rest'; }); return; }
+        if (d.rest === 'byhand') { groupByHand(ids); return; }
+        if (d.rest === 'exclude') {
+            confirmDialog(`Exclude ${plural(ids.length, 'scan')} from the report?`,
+                `<p>They leave the report's totals and its download. Scans you group later stay as they are now: excluding is done once, scan by scan.</p>`
+                + `<ul class="excl-list">${ids.map((id) => `<li>${esc(scanById.get(id).label)} <span class="mono">${esc(scanById.get(id).path)}</span></li>`).join('')}</ul>`,
+                `Exclude ${plural(ids.length, 'scan')}`,
+                () => act(`Excluded the ${plural(ids.length, 'scan')} in no group.`, () => ids.forEach((id) => { scanById.get(id).included = false; })));
+        }
+    }
+});
+document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.dataset.pick) {
+        state.selected = t.checked ? [...new Set([...state.selected, t.dataset.pick])] : state.selected.filter((x) => x !== t.dataset.pick);
+        renderGrid();
+        document.getElementById(`pick-${t.dataset.pick}`)?.focus();
+        return;
+    }
+    if (t.id === 'sort') { state.sort = t.value; renderGrid(); $('sort').focus(); return; }
+    if (t.id === 'merge') { $('impact').hidden = false; $('apply-merge').focus(); return; }
+    if (t.id === 'gname') {
+        const g = groupOf(state.sel);
+        act(t.value.trim() ? `Named the group ${t.value.trim()}.` : `Group shown by its pattern again.`, () => { state.names[g.id] = t.value.trim(); });
+    }
+});
+
+state.byHand.forEach((g) => { g.byHand = true; });
+render();
+</script>
+</body>
+</html>
