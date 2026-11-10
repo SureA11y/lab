@@ -296,3 +296,45 @@ describe('Merging a group (§9)', () => {
         assert.equal(runSummaryUi.viewPayload(payload), payload);
     });
 });
+
+describe('What a group\'s scans fail (step 6)', () => {
+    // Products a, b and c fail the cart button; b also fails its image.
+    function withFindings(payload) {
+        const fail = (ruleId, target, page) => ({
+            uid: `surea11y|surea11y:fail:${ruleId}`, ruleId, id: ruleId, title: `${ruleId} title`, outcome: 'fail', severity: 'serious',
+            occurrences: [{pageUrl: page, target: [target], html: `<i class="${target}"></i>`, failureSummary: 'x', occurrenceOutcome: 'fail'}],
+        });
+        // New scan objects, as a report opened again would give: findings
+        // are never changed in place.
+        payload.scans = payload.scans.map((s) => {
+            const own = s.id === 's2' ? [fail('image-alt', '.photo', s.url)] : [];
+            return {...s, canonical: {findings: [fail('button-name', '.cart', s.url), ...own], bestPractices: [], notices: [], margins: []}};
+        });
+        return payload;
+    }
+
+    test('a chosen group says what fails on every scan and what on some, naming them', () => {
+        const {$, payload, write} = setup(SHOP, {scanGrouping: {patterns: [{key: PRODUCTS, name: 'Products'}]}});
+        withFindings(payload);
+        write();
+        const box = $(`[data-sg-key="issues:${PRODUCTS}"]`);
+        assert.equal(box.querySelector('summary').textContent, 'What its scans fail: 1 rule on every scan, 1 rule on some');
+        const items = [...box.querySelectorAll('li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim());
+        assert.deepEqual(items, [
+            'button-name title button-name · serious · 1 element',
+            'image-alt title image-alt · serious · 1 element · on 1 of 3: Scan 3',
+        ]);
+    });
+
+    test('nothing fails: said so', () => {
+        const {$, payload, write} = setup(SHOP, {scanGrouping: {patterns: [{key: PRODUCTS}]}});
+        payload.scans = payload.scans.map((s) => ({...s, canonical: {findings: [], bestPractices: [], notices: [], margins: []}}));
+        write();
+        assert.equal($(`[data-sg-key="issues:${PRODUCTS}"] > summary`).textContent, 'What its scans fail: nothing');
+    });
+
+    test('scans without findings: nothing to compare, nothing shown', () => {
+        const {$} = setup(SHOP, {scanGrouping: {patterns: [{key: PRODUCTS}]}});
+        assert.equal($(`[data-sg-key="issues:${PRODUCTS}"]`), null);
+    });
+});

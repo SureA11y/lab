@@ -124,7 +124,9 @@ each scan under the narrowest group you chose that holds it. A group can be
 given a name, and its scans taken out of the report or put back at once:
 **Exclude all**, **Include all**, or **Keep one**, which leaves the first
 included scan to stand for its template and takes the rest out. Each acts on
-the groups inside it too. **Merge into one scan** shows a group's included
+the groups inside it too. **What its scans fail** tells the template's
+failures, on every scan of the group, from those of some pages' content,
+which excluding them would hide. **Merge into one scan** shows a group's included
 scans as one scan instead: a failure of the template is listed once, "On all
 5 pages", and a failure of one page's content stays on that page ("On 2 of 5
 pages"), so the template stops weighing once per page in the totals and the

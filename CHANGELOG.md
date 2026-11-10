@@ -33,7 +33,9 @@ The first public release.
   many of each group's scans are included. A run whose URLs repeat nothing
   gets no groups. Choose the patterns to group by, name them, and take a
   group's scans out of the report or put them back at once (Exclude all,
-  Include all, Keep one), or merge them into one scan, where a failure of
+  Include all, Keep one) after seeing which failures are on every scan of
+  the group (the template's) and which on some only, or merge them into one
+  scan, where a failure of
   the template is listed once on all its pages and a page's own failure on
   that page; the report keeps every scan, so a merge can be undone. The
   groups chosen are saved with the report (`scanGrouping`) and carried when

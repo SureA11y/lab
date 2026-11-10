@@ -151,3 +151,40 @@ describe('scansAsShown', () => {
         assert.notEqual(M.mergedScanId(PRODUCTS), M.mergedScanId('url:shop.example.com/blog/…'));
     });
 });
+
+describe('groupIssues (step 6)', () => {
+    const products = () => shop().slice(1, 4);
+
+    test('a failure on every page is the template\'s; one on some pages is their content\'s', () => {
+        const r = M.groupIssues(products(), deps);
+        assert.equal(r.scansTotal, 3);
+        assert.deepEqual(r.template.map((e) => [e.ruleId, e.elements, e.scans]), [['button-name', 1, ['s1', 's2', 's3']]]);
+        assert.deepEqual(r.content.map((e) => [e.ruleId, e.elements, e.scans]), [['image-alt', 1, ['s1']]]);
+    });
+
+    test('excluded scans count: the person sees what excluding hides', () => {
+        const scans = products();
+        scans[0].includedInReport = false;
+        assert.deepEqual(M.groupIssues(scans, deps).content.map((e) => e.scans), [['s1']]);
+    });
+
+    test('a rule failing on some pages, on several elements, counts its elements and joins its pages', () => {
+        const scans = products();
+        scans[2].canonical.findings.push(finding('image-alt', [occ('/products/green', { target: '.x', html: '<img class="x">' })]));
+        const img = M.groupIssues(scans, deps).content.find((e) => e.ruleId === 'image-alt');
+        assert.equal(img.elements, 2);
+        assert.deepEqual(img.scans, ['s1', 's3']);
+    });
+
+    test('fewer than two scans: nothing to compare', () => {
+        assert.equal(M.groupIssues(products().slice(0, 1), deps), null);
+        assert.equal(M.groupIssues([], deps), null);
+    });
+
+    test('the scans are not changed', () => {
+        const scans = products();
+        const before = JSON.stringify(scans);
+        M.groupIssues(scans, deps);
+        assert.equal(JSON.stringify(scans), before);
+    });
+});
