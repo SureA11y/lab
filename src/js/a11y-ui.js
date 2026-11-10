@@ -2730,6 +2730,10 @@ function storeActiveMode(mode) {
                     setUiState('error', String(e?.message || e));
                 }
             }
+            // A filter typed for the steps before belongs to them, not to
+            // the ones just loaded: both steps panels list everything again.
+            workflowStepsPanel?.setFilter('all', '');
+            customStepsPanel?.setFilter('all', '');
             clearLogsPanel();
             clearResults();
             clearScreenshots();

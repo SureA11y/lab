@@ -264,3 +264,40 @@ test("Ctrl+Z in the workflow keeps focus in the steps it rebuilds, the Profile p
     assert.deepEqual(errors, []);
     await page.close();
 });
+
+test('loading a config clears the filters of both steps panels', async () => {
+    const { page, errors } = await openApp();
+    await page.click('#mode-run');
+    const panels = ['#workflow-steps-panel', '#custom-steps-steps-panel'];
+    await page.waitForSelector('#workflow-steps-panel .steps-panel__find');
+    // A kind and some text in each panel's filter.
+    const filters = () => page.evaluate((ids) => ids.map((id) => {
+        const host = document.querySelector(id);
+        return {
+            query: host.querySelector('.steps-panel__find').value,
+            kind: host.querySelector('.steps-panel__chip[aria-pressed="true"]')?.dataset.kind
+        };
+    }), panels);
+    await page.evaluate((ids) => ids.forEach((id) => {
+        const host = document.querySelector(id);
+        host.querySelector('.steps-panel__chip[data-kind="scan"]').click();
+        const find = host.querySelector('.steps-panel__find');
+        find.value = 'cart';
+        find.dispatchEvent(new Event('input', { bubbles: true }));
+    }), panels);
+    assert.deepEqual(await filters(), panels.map(() => ({ query: 'cart', kind: 'scan' })));
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'app-boot-config-'));
+    const file = path.join(dir, 'config.json');
+    fs.writeFileSync(file, JSON.stringify({ url: siteUrl, state: {} }));
+    try {
+        const input = await page.$('#config-file');
+        await input.uploadFile(file);
+        await page.waitForFunction(() => /^Configuration loaded/.test(document.querySelector('#statusRun').textContent.trim()));
+        assert.deepEqual(await filters(), panels.map(() => ({ query: '', kind: 'all' })));
+    } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
+    assert.deepEqual(errors, []);
+    await page.close();
+});
