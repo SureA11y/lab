@@ -86,3 +86,33 @@ test('a scan\'s picture that was clipped says so in the payload', () => {
     assert.equal(payload.scans[0].screenshots[0].clipped, true);
     assert.equal('clipped' in payload.scans[1].screenshots[0], false);
 });
+
+test('a merged scan\'s contexts keep their scans as a report keeps a scan, without an id or metric definitions', () => {
+    // As the runner builds each scan of a run's payload.
+    const built = builder().buildScanPayload({
+            id: 's1',
+            url: 'https://example.com/a',
+            wcagLevel: 'AA',
+            wcagVersion: '2.2',
+            mergedScan: true,
+            canonical: { findings: [{ ruleId: 'image-alt', outcome: 'fail', occurrences: [{ target: ['img'], contexts: ['Light', 'Dark'] }] }] },
+            contexts: [
+                { name: 'Light', url: 'https://example.com/a', skipped: false, failCount: 1,
+                    scan: { label: 'Light', url: 'https://example.com/a', wcagLevel: 'AA', wcagVersion: '2.2',
+                        canonical: { rules: [{ id: 'image-alt' }], findings: [{ ruleId: 'image-alt', outcome: 'fail', occurrences: [{ target: ['img'] }] }] },
+                        domMetrics: { totalElements: 50 } } },
+                { name: 'Dark', url: 'https://example.com/a', skipped: true, failCount: 0 },
+            ],
+    });
+    assert.equal(built.id, 's1');
+    const [light, dark] = built.contexts;
+    assert.equal(light.name, 'Light');
+    assert.equal(light.scan.label, 'Light');
+    assert.equal(light.scan.summary.failCount, 1);
+    assert.deepEqual(light.scan.metrics.domMetrics, { totalElements: 50 });
+    assert.equal('metricDefs' in light.scan.metrics, false);
+    assert.equal('id' in light.scan, false);
+    // The rule catalogue is the merged scan's, kept once.
+    assert.equal('rules' in light.scan.canonical, false);
+    assert.equal(dark.scan, undefined);
+});

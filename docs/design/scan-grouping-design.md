@@ -1,11 +1,11 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Steps 1 to 7 built** (§10): the grouping facade and the URL
+> Status: **Steps 1 to 8 built** (§10): the grouping facade and the URL
 > source; the "Scan groups" section under a run's scans list, where patterns
 > are chosen, named, their scans included or excluded, and merged into one
 > scan (§9), each saying what its scans fail together and apart, merged
-> groups changed by hand and groups made by hand; and the shared fold that
-> merges them. The other steps are
+> groups changed by hand and groups made by hand; the shared fold that
+> merges them; and the run keeping each merged scan's contexts' scans. The other steps are
 > planned, in the order §10 lists them; each one is useful and testable on
 > its own.
 
@@ -542,10 +542,17 @@ the run.
    hand. `add`, `remove` and `members` are saved in `scanGrouping` and the
    report schema; reports merged together carry what any of them changed.
    Unchoosing a merged group now draws the report again, as it unmerges it.
-8. **The run keeps its contexts' scans** (§8). A Merged scan step saves each
-   context's scan in the merged scan (`contexts[i].scan`), without its
-   screenshots; the report schema says so. The merged scan and the CLI's
-   exports are unchanged, which the runner's tests hold.
+8. **The run keeps its contexts' scans** (built, §8). A Merged scan step
+   saves each context's scan in the merged scan (`contexts[i].scan`,
+   `contextScanOf` in `src/server-side/merged-scan.js`), made by the payload
+   builder as any scan is (`contextPayload`), less what the merged scan
+   already holds: no id, pictures, metric definitions or rule catalogue (one
+   run, the same engines; the catalogue was three quarters of a context's
+   scan). The report schema says so. The merged scan and the CLI's exports
+   are unchanged, which the runner's tests hold. Measured on the demo site,
+   a run whose one scan is merged from two contexts saves a payload 59%
+   larger (460 KB to 733 KB): each context's findings, passes and
+   not-applicable ones included, and its coverage.
 9. **Unmerging what the run merged** (§8, D11). A run's merged scan as a
    merged group of its contexts in the scans as shown: Unmerge, Remove a
    context, Merge again; a report without its contexts' scans says why it
@@ -565,11 +572,12 @@ the run.
   different pages of one template; the largest page is the likely choice
   again (the template, as fully as any page shows it), but a score that
   should stand for the template is to be settled with real runs in step 5.
-- **The size of a report that keeps its contexts' scans.** A merged scan of
-  four contexts holds its findings five times: once merged, once per context.
-  Screenshots, the largest part of a report, are not doubled (§8), but a long
-  run of merged scans grows. To be measured in step 8; if it is too much, a
-  context could keep only what the merged scan does not already hold.
+- **The size of a report that keeps its contexts' scans.** Measured in step 8:
+  about 30% more per context for the scans that are merged, the rule
+  catalogue being kept once. Screenshots, the largest part of a report with
+  pictures, are not doubled (§8). If it is too much, a context could keep
+  only its failing and undecided findings, and its coverage be made again
+  from the merged scan's, as a merged group's is (§9.3).
 - **Keeping the contexts' scans by default.** Step 8 keeps them for every
   Merged scan step. A workflow whose merges are never undone pays for them;
   an option on the step could leave them out.
