@@ -147,17 +147,23 @@ export function createRunSummaryUi(app) {
     // A skipped scan was not scanned, so its URL says nothing of a page.
     const groupingUrlOf = (scan) => (scan && !scan.skipped && !scan.skipInfo ? scan.url : null);
 
-    /** The groups of these scans (scan-groups.js findGroups), or null without the shared modules. */
-    function findScanGroups(scans) {
+    /**
+     * The groups of these scans (scan-groups.js findGroups): the patterns
+     * their URLs repeat, and the groups the person made by hand in `choice`
+     * (the manual source). Null without the shared modules.
+     */
+    function findScanGroups(scans, choice = []) {
         const grouping = globalThis.A11Y_SCAN_GROUPS;
         const urlGroups = globalThis.A11Y_SCAN_URL_GROUPS;
+        const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
         if (!grouping || !urlGroups || !Array.isArray(scans)) return null;
-        const key = JSON.stringify(scans.map((scan) => [scan?.id, groupingUrlOf(scan)]));
+        const manual = choiceApi ? choiceApi.readChoice({scanGrouping: {patterns: choice}})
+            .filter((p) => choiceApi.isManual(p.key)).map((p) => [p.key, p.name, p.members]) : [];
+        const key = JSON.stringify([scans.map((scan) => [scan?.id, groupingUrlOf(scan)]), manual]);
         if (groupingMemo.key !== key) {
-            const result = grouping.findGroups(scans, {
-                sources: [urlGroups.createUrlGroupSource({getUrl: groupingUrlOf})],
-            });
-            groupingMemo = {key, result};
+            const sources = [urlGroups.createUrlGroupSource({getUrl: groupingUrlOf})];
+            if (choiceApi) sources.push(choiceApi.createManualGroupSource(choice));
+            groupingMemo = {key, result: grouping.findGroups(scans, {sources})};
         }
         return groupingMemo.result;
     }
@@ -209,7 +215,7 @@ export function createRunSummaryUi(app) {
             scans.map((s) => [s?.id, s?.includedInReport !== false, s?.label || null, s?.scanTags || null, groupingUrlOf(s)]),
         ]);
         if (shownMemo.payload === payload && shownMemo.key === key) return shownMemo.value;
-        const value = mergeApi.scansAsShown(scans, findScanGroups(scans), choice, {
+        const value = mergeApi.scansAsShown(scans, findScanGroups(scans, choice), choice, {
             fold,
             buildA11ySummary: globalThis.A11Y_SUMMARY?.buildA11ySummary,
             buildCoverageAwareSummary: globalThis.A11Y_COVERAGE_SUMMARY?.buildCoverageAwareSummary,
@@ -239,7 +245,7 @@ export function createRunSummaryUi(app) {
     function scanGroupsHtml(scans, data) {
         const view = globalThis.A11Y_SCAN_GROUPS_VIEW;
         const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
-        const result = findScanGroups(scans);
+        const result = choiceApi ? findScanGroups(scans, choiceApi.readChoice(data)) : null;
         if (!view || !choiceApi || !result) return '';
 
         // Drawing it again keeps what was open, also across a redraw of the

@@ -1,10 +1,11 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Steps 1 to 6 built** (§10): the grouping facade and the URL
+> Status: **Steps 1 to 7 built** (§10): the grouping facade and the URL
 > source; the "Scan groups" section under a run's scans list, where patterns
 > are chosen, named, their scans included or excluded, and merged into one
-> scan (§9), each saying what its scans fail together and apart; and the
-> shared fold that merges them. The other steps are
+> scan (§9), each saying what its scans fail together and apart, merged
+> groups changed by hand and groups made by hand; and the shared fold that
+> merges them. The other steps are
 > planned, in the order §10 lists them; each one is useful and testable on
 > its own.
 
@@ -362,9 +363,11 @@ Once merged, a group's scans can be changed by hand:
   longer in the merged scan.
 - **Unmerge** gives back every scan, the added ones included, as they were.
 
-And scans can be merged without a pattern: choosing scans in the scans list
-and merging them makes a **group by hand**, named by the person, that is then
-like any other merged group. A group by hand comes from a source of its own
+And scans can be merged without a pattern: choosing scans in **Group scans by
+hand**, at the end of the Scan groups section, makes a **group by hand**, named
+by the person, merged into one scan unless they say not to, that is then like
+any other merged group. It is removed with its own Remove group, having no
+pattern to unchoose, and goes when fewer than two of its scans are left. A group by hand comes from a source of its own
 (§5.5), `manual`, which proposes the groups the report saved, so it nests and
 shows beside the URL groups without either knowing the other.
 
@@ -525,10 +528,20 @@ the run.
    without merging; failures only, as issue dispersion counts them, and every
    scan of the group, excluded ones too. Kept per group while its scans are
    the same objects (`run-summary-ui.js`).
-7. **Changing a merged group by hand** (§9.2, §9.4). Add scans to a merged
-   group and remove them; groups by hand from scans chosen in the scans
-   list, through the `manual` source; `add`, `remove` and `members` saved in
-   `scanGrouping`.
+7. **Changing a merged group by hand** (built, §9.2, §9.4). A merged group
+   lists its scans as left by hand, each with Take out; those taken out, with
+   Put back; and Add a scan, a list of the run's other scans. Groups by hand
+   are made in a form of the Scan groups section rather than from the scans
+   list, beside the other actions on groups and without the list growing
+   checkboxes; they come through the `manual` source
+   (`createManualGroupSource` in `src/shared/scan-group-choice.js`), whose
+   groups say more than any pattern about their scans, and show under Your
+   groups, not among the patterns found. The rules (`membersOf`, `addScan`,
+   `removeScan`, `putBack`, `addManualGroup`) are pure and shared; Include
+   all, Exclude all, Keep one and the counts act on the scans as left by
+   hand. `add`, `remove` and `members` are saved in `scanGrouping` and the
+   report schema; reports merged together carry what any of them changed.
+   Unchoosing a merged group now draws the report again, as it unmerges it.
 8. **The run keeps its contexts' scans** (§8). A Merged scan step saves each
    context's scan in the merged scan (`contexts[i].scan`), without its
    screenshots; the report schema says so. The merged scan and the CLI's

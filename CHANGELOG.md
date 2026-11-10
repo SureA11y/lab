@@ -37,7 +37,9 @@ The first public release.
   the group (the template's) and which on some only, or merge them into one
   scan, where a failure of
   the template is listed once on all its pages and a page's own failure on
-  that page; the report keeps every scan, so a merge can be undone. The
+  that page; the report keeps every scan, so a merge can be undone. Scans
+  can be taken out of a merged group or added to it, and grouped and merged
+  by hand where no pattern finds them together. The
   groups chosen are saved with the report (`scanGrouping`) and carried when
   reports are merged.
   A report's scans can be filtered by tag, and, when the report has more

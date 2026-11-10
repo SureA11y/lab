@@ -60,12 +60,14 @@ describe('Scan groups section', () => {
         assert.equal(V.sectionHTML(null, scans(['/a', '/b'])), '');
     });
 
-    test('says so when the URLs repeat no pattern, and offers nothing to choose', () => {
+    test('says so when the URLs repeat no pattern, offers no pattern, and offers grouping by hand', () => {
         const doc = dom(html(scans(['/', '/about', '/contact'])));
         assert.equal(text(doc.querySelector('summary')), 'Scan groups');
-        assert.match(text(doc.querySelector('.sg-intro')), /The URLs of these 3 scans repeat no pattern, so there are no groups\./);
-        assert.equal(doc.querySelector('input'), null);
+        assert.match(text(doc.querySelector('.sg-intro')), /The URLs of these 3 scans repeat no pattern, so there are no groups to choose\..*Scans can still be grouped by hand\./);
+        assert.equal(doc.querySelector('[data-sg-choose]'), null);
         assert.equal(doc.querySelector('h4'), null);
+        assert.equal(text(doc.querySelector('[data-sg-key="group-by-hand"] > summary')), 'Group scans by hand');
+        assert.equal(doc.querySelectorAll('[data-sg-new-member]').length, 3);
     });
 
     test('starts closed; open and openKeys restore what was open', () => {
@@ -225,5 +227,66 @@ describe('Your groups', () => {
         const doc = dom(V.sectionHTML(result, list, { choice: [{ key: 'markup:t', name: null }] }));
         assert.deepEqual(patterns(doc), [['Product template', '2 scans · both included', true]]);
         assert.deepEqual(yours(doc), [['Product template 2 scans · both included', ['Scan 1', 'Scan 3']]]);
+    });
+});
+
+describe('Changing groups by hand (step 7)', () => {
+    const C = require('./scan-group-choice.js');
+    // The URL groups and the groups by hand, as the app finds them.
+    function htmlWith(list, choice) {
+        const result = G.findGroups(list, { sources: [U.createUrlGroupSource(), C.createManualGroupSource(choice)] });
+        return V.sectionHTML(result, list, { choice: C.readChoice({ scanGrouping: { patterns: choice } }) });
+    }
+    const SHOP = ['/', '/p/a', '/p/b', '/p/c', '/about'];
+    const P = KEY('/p/{*}');
+
+    test('a merged group lists its scans to take out, those taken out to put back, and the others to add', () => {
+        const doc = dom(htmlWith(scans(SHOP), [{ key: P, merge: true, remove: ['s2'], add: ['s4'] }]));
+        const group = doc.querySelector(`[data-sg-key="${V.CHOSEN_PREFIX}${P}"]`);
+        const lists = group.querySelectorAll(':scope > ul.sg-members');
+        const row = (li) => [text(li.querySelector('a')), li.querySelector('button').textContent, li.querySelector('button').getAttribute('aria-label')];
+        assert.deepEqual([...lists[0].children].map(row), [
+            ['Scan 2', 'Take out', 'Take out Scan 2'],
+            ['Scan 4', 'Take out', 'Take out Scan 4'],
+            ['Scan 5', 'Take out', 'Take out Scan 5'],
+        ]);
+        assert.equal(text(lists[0].children[2].querySelector('.sg-host')), 'added by hand');
+        assert.deepEqual([...lists[1].children].map(row), [['Scan 3', 'Put back', 'Put back Scan 3']]);
+        const select = group.querySelector('select[data-sg-add-select]');
+        assert.equal(text(doc.querySelector(`label[for="${select.id}"]`)), `Add a scan to /p/{slug}`);
+        assert.deepEqual([...select.options].map((o) => o.value), ['', 's0']);
+        assert.equal(group.querySelector('button[data-sg-add]').getAttribute('data-sg-add'), P);
+    });
+
+    test('a group by hand shows under Your groups, not among the patterns found', () => {
+        const { choice } = C.addManualGroup([], { name: 'Info pages', members: ['s0', 's4'] });
+        const doc = dom(htmlWith(scans(SHOP), choice));
+        assert.match(text(doc.querySelector('[data-sg-key="chosen:manual:1"] > summary')), /^Info pages 2 scans/);
+        assert.equal(doc.querySelector('[data-sg-choose="manual:1"]'), null);
+        assert.deepEqual(patterns(doc).map((p) => p[0]), ['/p/{slug}']);
+    });
+
+    test('the form for a group by hand: a labelled name, every scan to pick, and merge on', () => {
+        const doc = dom(htmlWith(scans(SHOP), []));
+        const form = doc.querySelector('[data-sg-key="group-by-hand"]');
+        const name = form.querySelector('[data-sg-new-name]');
+        assert.equal(text(doc.querySelector(`label[for="${name.id}"]`)), 'Name');
+        assert.equal(text(form.querySelector('legend')), 'Scans');
+        assert.deepEqual([...form.querySelectorAll('[data-sg-new-member]')].map((i) => i.getAttribute('data-sg-new-member')), ['s0', 's1', 's2', 's3', 's4']);
+        assert.equal(form.querySelector('[data-sg-new-merge]').checked, true);
+        assert.equal(text(form.querySelector('[data-sg-new-group]')), 'Make the group');
+        const ids = [...doc.querySelectorAll('[id]')].map((el) => el.id);
+        assert.equal(new Set(ids).size, ids.length);
+    });
+});
+
+describe('the counts of a group changed by hand', () => {
+    const C = require('./scan-group-choice.js');
+    test('count the scans as left by hand', () => {
+        const list = scans(['/', '/p/a', '/p/b', '/p/c', '/about']);
+        const choice = [{ key: KEY('/p/{*}'), merge: true, remove: ['s1', 's2'], add: ['s4'] }];
+        const result = G.findGroups(list, { sources: [U.createUrlGroupSource(), C.createManualGroupSource(choice)] });
+        const doc = dom(V.sectionHTML(result, list, { choice: C.readChoice({ scanGrouping: { patterns: choice } }) }));
+        assert.match(text(doc.querySelector(`[data-sg-key="${V.CHOSEN_PREFIX}${KEY('/p/{*}')}"] > summary`)), /2 scans · both included$/);
     });
 });

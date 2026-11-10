@@ -208,11 +208,30 @@
             .filter((x) => x.group)
             .sort((a, b) => b.group.size - a.group.size || a.i - b.i);
 
+        // A group's scans as the person left them (§9.2): its own for a group
+        // by hand, else the pattern's without those taken out, with those
+        // added. A scan put in a group by hand is that group's before any
+        // pattern's: the last place it was put is where it is (§9.4).
+        const membersOf = (entry, group) => {
+            if (Array.isArray(entry.members)) return entry.members;
+            const removed = new Set(entry.remove || []);
+            const out = group.members.filter((id) => !removed.has(id));
+            for (const id of entry.add || []) if (!out.includes(id)) out.push(id);
+            return out;
+        };
+        const reserved = new Map();
+        for (const { entry } of order) {
+            for (const id of [...(entry.members || []), ...(entry.add || [])]) {
+                if (!reserved.has(id)) reserved.set(id, entry.key);
+            }
+        }
+
         const taken = new Map();
         const built = new Map();
         for (const { entry, group } of order) {
-            const members = group.members
+            const members = membersOf(entry, group)
                 .filter((id) => position.has(id) && !taken.has(id))
+                .filter((id) => !reserved.has(id) || reserved.get(id) === entry.key)
                 .sort((a, b) => position.get(a) - position.get(b))
                 .map((id) => list[position.get(id)]);
             if (members.length < 2) continue;

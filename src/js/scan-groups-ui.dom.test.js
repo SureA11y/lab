@@ -338,3 +338,81 @@ describe('What a group\'s scans fail (step 6)', () => {
         assert.equal($(`[data-sg-key="issues:${PRODUCTS}"]`), null);
     });
 });
+
+describe('Changing groups by hand (step 7)', () => {
+    const merged = () => ({scanGrouping: {patterns: [{key: PRODUCTS, name: 'Products', merge: true}]}});
+    const SHOP5 = ['/', '/products/a', '/products/b', '/products/c', '/about'];
+
+    test('Take out: saved, the report drawn again, focus on the scan\'s Put back', () => {
+        const {payload, $, statuses, redraws} = setup(SHOP5, merged());
+        $(`[data-sg-key="chosen:${PRODUCTS}"]`).open = true;
+        $(`button[data-sg-take-out="${PRODUCTS}"][data-sg-scan="s2"]`).click();
+        assert.deepEqual(payload.scanGrouping.patterns[0].remove, ['s2']);
+        assert.equal(redraws.length, 1);
+        assert.equal(statuses.at(-1), 'Scan 3 taken out of Products, and shown on its own.');
+        assert.equal(document.activeElement.getAttribute('data-sg-focus'), `put-back:${PRODUCTS}:s2`);
+    });
+
+    test('Put back undoes it, focus back on Take out', () => {
+        const {payload, $, statuses} = setup(SHOP5, {scanGrouping: {patterns: [{key: PRODUCTS, name: 'Products', merge: true, remove: ['s2']}]}});
+        $(`button[data-sg-put-back="${PRODUCTS}"][data-sg-scan="s2"]`).click();
+        assert.equal('remove' in payload.scanGrouping.patterns[0], false);
+        assert.equal(statuses.at(-1), 'Scan 3 put back in Products.');
+        assert.equal(document.activeElement.getAttribute('data-sg-focus'), `take-out:${PRODUCTS}:s2`);
+    });
+
+    test('Add: the scan picked is added; nothing picked is said', () => {
+        const {payload, $, statuses} = setup(SHOP5, merged());
+        $(`button[data-sg-add="${PRODUCTS}"]`).click();
+        assert.equal(statuses.at(-1), 'Choose a scan to add first.');
+        $(`select[data-sg-add-select="${PRODUCTS}"]`).value = 's4';
+        $(`button[data-sg-add="${PRODUCTS}"]`).click();
+        assert.deepEqual(payload.scanGrouping.patterns[0].add, ['s4']);
+        assert.equal(statuses.at(-1), 'Scan 5 added to Products.');
+        assert.ok($(`button[data-sg-take-out="${PRODUCTS}"][data-sg-scan="s4"]`));
+    });
+
+    test('a group by hand: made from the form, merged, opened with focus on its name', () => {
+        const {payload, $, statuses, redraws} = setup(SHOP5);
+        $('[data-sg-key="group-by-hand"]').open = true;
+        for (const id of ['s0', 's4']) $(`[data-sg-new-member="${id}"]`).checked = true;
+        $('[data-sg-new-name]').value = 'Info pages';
+        $('[data-sg-new-group]').click();
+        assert.deepEqual(payload.scanGrouping.patterns, [{key: 'manual:1', name: 'Info pages', members: ['s0', 's4'], merge: true}]);
+        assert.equal(redraws.length, 1);
+        assert.equal(statuses.at(-1), 'Info pages made of 2 scans, shown as one merged scan.');
+        assert.equal($('[data-sg-key="chosen:manual:1"]').open, true);
+        assert.equal(document.activeElement.getAttribute('data-sg-focus'), 'name:manual:1');
+    });
+
+    test('a group by hand needs two scans', () => {
+        const {payload, $, statuses} = setup(SHOP5);
+        $('[data-sg-new-member="s0"]').checked = true;
+        $('[data-sg-new-group]').click();
+        assert.equal('scanGrouping' in payload, false);
+        assert.equal(statuses.at(-1), 'Choose two scans or more to group.');
+    });
+
+    test('Remove group gives its scans back, and taking out the last but one removes it too', () => {
+        const {payload, $, statuses} = setup(SHOP5, {scanGrouping: {patterns: [{key: 'manual:1', name: 'Info', members: ['s0', 's4'], merge: true}]}});
+        $('button[data-sg-take-out="manual:1"][data-sg-scan="s0"]').click();
+        assert.equal('scanGrouping' in payload, false);
+        assert.equal(statuses.at(-1), 'Scan 1 taken out of Info, which had no other scan to group: the group is gone.');
+        const again = setup(SHOP5, {scanGrouping: {patterns: [{key: 'manual:1', name: 'Info', members: ['s0', 's4'], merge: true}]}});
+        again.$('button[data-sg-delete="manual:1"]').click();
+        assert.equal('scanGrouping' in again.payload, false);
+        assert.equal(again.statuses.at(-1), 'Group Info removed; its scans are shown as they were.');
+    });
+
+    test('unchoosing a merged group draws the report again', () => {
+        const {$, redraws} = setup(SHOP5, merged());
+        check($(`[data-sg-choose="${PRODUCTS}"]`), false);
+        assert.equal(redraws.length, 1);
+    });
+
+    test('the group actions act on the scans as left by hand', () => {
+        const {payload, $} = setup(SHOP5, {scanGrouping: {patterns: [{key: PRODUCTS, name: 'Products', remove: ['s1'], add: ['s4']}]}});
+        $(`[data-sg-action="exclude"][data-sg-group="${PRODUCTS}"]`).click();
+        assert.deepEqual(included(payload), [true, true, false, false, false]);
+    });
+});

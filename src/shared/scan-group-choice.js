@@ -30,18 +30,132 @@
         return text || null;
     }
 
+    // A list of scan ids, each once, in the order given; empty is none.
+    function ids(list) {
+        const out = [...new Set((Array.isArray(list) ? list : []).filter((id) => typeof id === 'string' && id))];
+        return out.length ? out : null;
+    }
+
+    const MANUAL = 'manual:';
+    const isManual = (key) => typeof key === 'string' && key.startsWith(MANUAL);
+
     function normalize(list) {
         const seen = new Set();
         const out = [];
         for (const p of Array.isArray(list) ? list : []) {
             if (!p || typeof p.key !== 'string' || !p.key || seen.has(p.key)) continue;
+            // A group by hand is its scans: without two, it is none.
+            const members = isManual(p.key) ? ids(p.members) : null;
+            if (isManual(p.key) && (!members || members.length < 2)) continue;
             seen.add(p.key);
             const entry = { key: p.key, name: cleanName(p.name) };
             // Merged into one scan (§9): only said when it is.
             if (p.merge === true) entry.merge = true;
+            // Changed by hand (§9.2): the scans added to the pattern's and
+            // taken out of them; a group by hand lists its own.
+            if (members) entry.members = members;
+            else {
+                const add = ids(p.add);
+                const remove = ids(p.remove);
+                if (add) entry.add = add;
+                if (remove) entry.remove = remove.filter((id) => !add || !add.includes(id));
+                if (entry.remove && !entry.remove.length) delete entry.remove;
+            }
             out.push(entry);
         }
         return out;
+    }
+
+    /**
+     * A group's scans as the person left them (§9.2, §9.4): a group by hand's
+     * own; a pattern's, with the scans added to it and without those taken
+     * out. Ids in the order given: the group's, then those added.
+     */
+    function membersOf(group, entry) {
+        if (entry && Array.isArray(entry.members)) return entry.members.slice();
+        const base = group && Array.isArray(group.members) ? group.members : [];
+        const removed = new Set(entry && entry.remove ? entry.remove : []);
+        const out = base.filter((id) => !removed.has(id));
+        for (const id of (entry && entry.add) || []) if (!out.includes(id) && !removed.has(id)) out.push(id);
+        return out;
+    }
+
+    function update(choice, key, change) {
+        return normalize(normalize(choice).map((p) => (p.key === key ? change({ ...p }) : p)));
+    }
+
+    /**
+     * The choice with scan `id` added to group `key`. It leaves any other
+     * group it was added to, so the last place it was put is where it is
+     * (§9.4); a scan taken out of `key` before is put back.
+     */
+    function addScan(choice, key, id) {
+        const list = normalize(choice).map((p) => {
+            if (p.key === key || !p.add || !p.add.includes(id)) return p;
+            const add = p.add.filter((x) => x !== id);
+            const { add: _was, ...rest } = p;
+            return add.length ? { ...rest, add } : rest;
+        });
+        return update(list, key, (p) => {
+            if (p.members) return { ...p, members: [...p.members, id] };
+            if (p.remove && p.remove.includes(id)) return { ...p, remove: p.remove.filter((x) => x !== id) };
+            return { ...p, add: [...(p.add || []), id] };
+        });
+    }
+
+    /**
+     * The choice with scan `id` taken out of group `key`: out of a group by
+     * hand's scans (which goes when fewer than two are left), out of those
+     * added to a pattern's, or noted as taken out of the pattern's.
+     */
+    function removeScan(choice, key, id) {
+        return update(choice, key, (p) => {
+            if (p.members) return { ...p, members: p.members.filter((x) => x !== id) };
+            if (p.add && p.add.includes(id)) return { ...p, add: p.add.filter((x) => x !== id) };
+            return { ...p, remove: [...(p.remove || []), id] };
+        });
+    }
+
+    /** The choice with scan `id`, taken out of group `key` before, back in it. */
+    function putBack(choice, key, id) {
+        return update(choice, key, (p) => (p.remove ? { ...p, remove: p.remove.filter((x) => x !== id) } : p));
+    }
+
+    /**
+     * The choice with a group by hand made of `members` (scan ids, two at
+     * least), named `name`, merged into one scan or not. { choice, key },
+     * key null when it could not be made.
+     */
+    function addManualGroup(choice, { name, members, merge = true } = {}) {
+        const list = normalize(choice);
+        const scans = ids(members);
+        if (!scans || scans.length < 2) return { choice: list, key: null };
+        let n = 1;
+        const taken = new Set(list.map((p) => p.key));
+        while (taken.has(`${MANUAL}${n}`)) n += 1;
+        const key = `${MANUAL}${n}`;
+        const entry = { key, name: cleanName(name), members: scans };
+        if (merge) entry.merge = true;
+        return { choice: normalize([...list, entry]), key };
+    }
+
+    /**
+     * The groups by hand of a choice, as a group source for findGroups
+     * (scan-groups.js): id `manual`, so their keys are the entries' own. They
+     * say more than any pattern about their scans, which the person named.
+     */
+    function createManualGroupSource(choice) {
+        const groups = normalize(choice).filter((p) => isManual(p.key) && p.members);
+        return {
+            id: 'manual',
+            propose: () => groups.map((p) => ({
+                key: p.key.slice(MANUAL.length),
+                label: p.name || `Group by hand ${p.key.slice(MANUAL.length)}`,
+                members: p.members,
+                specificity: 1000,
+                evidence: { kind: 'manual' },
+            })),
+        };
     }
 
     /** The chosen groups a report holds: [{ key, name }], name null when unnamed. */
@@ -107,10 +221,15 @@
                     if (!known.name && p.name) known.name = p.name;
                     // Merged in any of them, merged in the report they make.
                     if (p.merge) known.merge = true;
+                    // What any of them added or took out by hand, together.
+                    for (const field of ['add', 'remove', 'members']) {
+                        if (p[field]) known[field] = [...new Set([...(known[field] || []), ...p[field]])];
+                    }
                 }
             }
         }
-        return merged;
+        // A scan both added and taken out by different reports stays added.
+        return normalize(merged);
     }
 
     const isIncluded = (scan) => !!scan && scan.includedInReport !== false;
@@ -153,6 +272,13 @@
         setName,
         setMerged,
         mergeChoices,
+        membersOf,
+        addScan,
+        removeScan,
+        putBack,
+        addManualGroup,
+        createManualGroupSource,
+        isManual,
         planAction,
     };
 }));
