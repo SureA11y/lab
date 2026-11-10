@@ -167,7 +167,7 @@ export function createRunSummaryUi(app) {
     }
 
     /**
-     * "Scan groups" (docs/design/scan-grouping-design.md §6, §9 steps 2 and 3):
+     * "Scan groups" (docs/design/scan-grouping-design.md §6, §10 steps 2 and 3):
      * the run's scans grouped by the patterns their URLs repeat, under the
      * scans list, with the groups chosen in `data` (its scanGrouping). Over
      * every scan, excluded ones too, so a group can say how many of its scans

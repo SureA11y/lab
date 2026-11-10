@@ -1,7 +1,7 @@
 'use strict';
 
 // "Scan groups" under the run summary's scans list (run-summary-ui.js,
-// docs/design/scan-grouping-design.md §9 step 2): drawn from every scan, kept
+// docs/design/scan-grouping-design.md §10 step 2): drawn from every scan, kept
 // open across redraws, and up to date with the scans' exclusions.
 
 const {test, describe, before} = require('node:test');

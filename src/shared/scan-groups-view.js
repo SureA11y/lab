@@ -1,6 +1,6 @@
 'use strict';
 
-// The words for scan groups (docs/design/scan-grouping-design.md §6, §9 steps
+// The words for scan groups (docs/design/scan-grouping-design.md §6, §10 steps
 // 2 and 3): the "Scan groups" section under a run's scans list, as an HTML
 // string built from a findGroups result (scan-groups.js) and the groups the
 // person chose (scan-group-choice.js).
