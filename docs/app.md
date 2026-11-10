@@ -131,8 +131,11 @@ scans as one scan instead: a failure of the template is listed once, "On all
 5 pages", and a failure of one page's content stays on that page ("On 2 of 5
 pages"), so the template stops weighing once per page in the totals and the
 issue dispersion. The report keeps every scan: unmerging shows them as they
-were. The groups you chose, their names and which are merged are saved with
-the report; its download leaves the excluded scans out, as it always does.
+were. A merged group's scans can be taken out of it one by one and other
+scans added, and **Group scans by hand** groups, and merges, scans no pattern
+finds together. The groups you chose or made, their names, which are merged
+and what you changed in them are saved with the report; its download leaves
+the excluded scans out, as it always does.
 
 ```json
 [

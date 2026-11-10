@@ -134,3 +134,75 @@ describe('merging a group (§9)', () => {
         ]), [{ key: 'url:a', name: null, merge: true }]);
     });
 });
+
+describe('changing a group by hand (§9.2, step 7)', () => {
+    const group = { key: 'url:p', members: ['s1', 's2', 's3'] };
+
+    test('the scans of a group: the pattern\'s, with those added, without those taken out', () => {
+        assert.deepEqual(C.membersOf(group, null), ['s1', 's2', 's3']);
+        assert.deepEqual(C.membersOf(group, { key: 'url:p', add: ['s9'], remove: ['s2'] }), ['s1', 's3', 's9']);
+        assert.deepEqual(C.membersOf(null, { key: 'manual:1', members: ['a', 'b'] }), ['a', 'b']);
+    });
+
+    test('adding, taking out and putting back', () => {
+        let c = [{ key: 'url:p', name: null, merge: true }];
+        c = C.addScan(c, 'url:p', 's9');
+        assert.deepEqual(c[0].add, ['s9']);
+        c = C.removeScan(c, 'url:p', 's9');
+        assert.equal('add' in c[0], false, 'taking out what was added undoes the add');
+        c = C.removeScan(c, 'url:p', 's2');
+        assert.deepEqual(c[0].remove, ['s2']);
+        c = C.addScan(c, 'url:p', 's2');
+        assert.equal('remove' in c[0], false, 'adding a scan taken out puts it back');
+        c = C.removeScan(c, 'url:p', 's3');
+        c = C.putBack(c, 'url:p', 's3');
+        assert.deepEqual(c, [{ key: 'url:p', name: null, merge: true }]);
+    });
+
+    test('a scan added to a group leaves any group it was added to before', () => {
+        let c = [{ key: 'url:a', merge: true }, { key: 'url:b', merge: true }];
+        c = C.addScan(c, 'url:a', 's9');
+        c = C.addScan(c, 'url:b', 's9');
+        assert.equal('add' in c[0], false);
+        assert.deepEqual(c[1].add, ['s9']);
+    });
+
+    test('a group by hand: made with two scans or more, numbered, merged by default', () => {
+        const none = C.addManualGroup([], { name: 'x', members: ['s1'] });
+        assert.equal(none.key, null);
+        const made = C.addManualGroup([{ key: 'manual:1', members: ['a', 'b'] }], { name: ' Checkout ', members: ['s1', 's2', 's1'] });
+        assert.equal(made.key, 'manual:2');
+        assert.deepEqual(made.choice[1], { key: 'manual:2', name: 'Checkout', members: ['s1', 's2'], merge: true });
+        assert.equal(C.addManualGroup([], { members: ['a', 'b'], merge: false }).choice[0].merge, undefined);
+    });
+
+    test('a group by hand gains and loses scans in its own list, and goes below two', () => {
+        let c = C.addManualGroup([], { members: ['a', 'b'] }).choice;
+        c = C.addScan(c, 'manual:1', 'c');
+        assert.deepEqual(c[0].members, ['a', 'b', 'c']);
+        c = C.removeScan(c, 'manual:1', 'a');
+        c = C.removeScan(c, 'manual:1', 'b');
+        assert.deepEqual(c, []);
+    });
+
+    test('read from a report: what makes no sense is dropped', () => {
+        assert.deepEqual(C.readChoice({ scanGrouping: { patterns: [
+            { key: 'manual:1', members: ['a'] },
+            { key: 'url:p', add: ['x', 'x', 3], remove: ['x', 'y'] },
+        ] } }), [{ key: 'url:p', name: null, add: ['x'], remove: ['y'] }]);
+    });
+
+    test('the manual source proposes the groups by hand, by their own keys', () => {
+        const G = require('./scan-groups.js');
+        const c = C.addManualGroup([], { name: 'Checkout', members: ['s1', 's3'] }).choice;
+        const r = G.findGroups([{ id: 's1' }, { id: 's2' }, { id: 's3' }], { sources: [C.createManualGroupSource(c)] });
+        assert.deepEqual(r.groups.map((g) => [g.key, g.label, g.members]), [['manual:1', 'Checkout', ['s1', 's3']]]);
+    });
+
+    test('merging reports: what was added or taken out in any of them', () => {
+        assert.deepEqual(C.mergeChoices([
+            { scanGrouping: { patterns: [{ key: 'url:p', add: ['a'] }] } },
+            { scanGrouping: { patterns: [{ key: 'url:p', add: ['b'], remove: ['a', 'c'] }] } },
+        ]), [{ key: 'url:p', name: null, add: ['a', 'b'], remove: ['c'] }]);
+    });
+});

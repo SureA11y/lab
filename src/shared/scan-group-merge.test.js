@@ -188,3 +188,40 @@ describe('groupIssues (step 6)', () => {
         assert.equal(JSON.stringify(scans), before);
     });
 });
+
+describe('merged groups changed by hand (step 7)', () => {
+    const C = require('./scan-group-choice.js');
+    // The URL groups and the groups by hand of a choice, as the app finds them.
+    function shownWith(scans, choice) {
+        const result = G.findGroups(scans, { sources: [U.createUrlGroupSource(), C.createManualGroupSource(choice)] });
+        return M.scansAsShown(scans, result, C.readChoice({ scanGrouping: { patterns: choice } }), deps);
+    }
+
+    test('a scan added to a merged group is merged with it, wherever it is', () => {
+        const { scans, merges } = shownWith(shop(), [{ key: PRODUCTS, merge: true, add: ['s4'] }]);
+        assert.deepEqual([...merges.values()][0].members, ['s1', 's2', 's3', 's4']);
+        // About (s4) is merged into the products, unnamed: shown by its pattern.
+        assert.deepEqual(scans.map((s) => s.label), ['Home', '/products/{slug}']);
+    });
+
+    test('a scan taken out of a merged group is shown on its own', () => {
+        const { scans, merges } = shownWith(shop(), [{ key: PRODUCTS, merge: true, remove: ['s2'] }]);
+        assert.deepEqual([...merges.values()][0].members, ['s1', 's3']);
+        assert.deepEqual(scans.map((s) => s.label), ['Home', '/products/{slug}', 'Blue', 'About']);
+    });
+
+    test('a group by hand is merged from its own scans, named by the person', () => {
+        const { choice } = C.addManualGroup([], { name: 'Info pages', members: ['s0', 's4'] });
+        const { scans } = shownWith(shop(), choice);
+        assert.deepEqual(scans.map((s) => s.label), ['Info pages', 'Red', 'Blue', 'Green']);
+        assert.deepEqual(scans[0].mergedGroup.members.map((m) => m.id), ['s0', 's4']);
+    });
+
+    test('a scan put in a group by hand is that group\'s, not its pattern\'s', () => {
+        const { choice } = C.addManualGroup([{ key: PRODUCTS, merge: true }], { name: 'Picks', members: ['s1', 's4'] });
+        const { merges } = shownWith(shop(), choice);
+        const byKey = new Map([...merges.values()].map((m) => [m.key, m.members]));
+        assert.deepEqual(byKey.get(PRODUCTS), ['s2', 's3']);
+        assert.deepEqual(byKey.get('manual:1'), ['s1', 's4']);
+    });
+});

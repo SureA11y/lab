@@ -653,6 +653,14 @@
 
 .sg-merge label { cursor: pointer; }
 
+/* Adding a scan to a merged group: the list as wide as its longest name. */
+.sg-add select {
+    width: auto;
+    max-width: 100%;
+}
+
+.sg-scan-btn { margin-left: .4rem; }
+
 .summary .sg-members {
     margin-top: .2rem;
     margin-bottom: .4rem;

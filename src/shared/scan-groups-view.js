@@ -123,6 +123,16 @@
 
     // ---------------------------------------------------------- your groups
 
+    // A group with its scans as the person left them (§9.2): its count is
+    // of those, and its distinct URLs are no longer the pattern's to tell.
+    function withEditedMembers(group, entry) {
+        if (!entry || (!entry.add && !entry.remove)) return group;
+        const removed = new Set(entry.remove || []);
+        const members = group.members.filter((id) => !removed.has(id));
+        for (const id of entry.add || []) if (!members.includes(id)) members.push(id);
+        return { ...group, members, size: members.length, evidence: null };
+    }
+
     // Scans named by label, three at most, the rest counted.
     function scanNames(ids, scansById) {
         const names = ids.map((id) => {
@@ -166,9 +176,10 @@
         const shown = name || node.label;
         const host = ctx.showHosts ? hostOf(node.group) : null;
         const summary = `<span class="${name ? 'sg-name' : 'sg-label'}">${esc(shown)}</span>`
-            + (name ? ` <span class="sg-label sg-pattern-of">${esc(node.label)}</span>` : '')
+            // The pattern beside its name; a group by hand has none to show.
+            + (name && node.group.source !== 'manual' ? ` <span class="sg-label sg-pattern-of">${esc(node.label)}</span>` : '')
             + (host ? ` <span class="sg-host">on ${esc(host)}</span>` : '')
-            + ` <span class="sg-counts">${esc(countsText(node.group, ctx.scansById))}</span>`;
+            + ` <span class="sg-counts">${esc(countsText(withEditedMembers(node.group, ctx.entries.get(key)), ctx.scansById))}</span>`;
 
         const nameId = `sg-name-${ctx.nextId++}`;
         const mergeId = `sg-merge-${ctx.nextId++}`;
@@ -188,6 +199,11 @@
             + `</span>`
             + `<span class="sg-merge"><input type="checkbox" id="${mergeId}" data-sg-merge="${esc(key)}" data-sg-focus="merge:${esc(key)}"${merged ? ' checked' : ''}>`
             + ` <label for="${mergeId}">Merge into one scan</label></span>`
+            // A group by hand has no pattern to unchoose: it is removed here.
+            + (node.group.source === 'manual'
+                ? `<button type="button" class="secondary-button" data-sg-delete="${esc(key)}" data-sg-focus="delete:${esc(key)}"`
+                    + ` aria-label="${esc(`Remove the group ${shown}`)}">Remove group</button>`
+                : '')
             + `</div>`
             + (into ? `<p class="sg-caption sg-merged-into">Shown merged into ${esc(into)}, the larger merged group it is in.</p>` : '')
             + issuesHTML(key, ctx.issuesOf(node.group), ctx);
@@ -195,12 +211,92 @@
         const children = node.children.length
             ? `<ul class="sg-tree">${node.children.map((c) => `<li>${chosenHTML(c, ctx)}</li>`).join('')}</ul>`
             : '';
-        const own = membersHTML(node.own, ctx.scansById, node.children.length && node.own.length
-            ? `${plural(node.own.length, 'scan')} in no narrower group you chose:` : '');
+        // A merged group lists its scans as the person left them, each to
+        // take out, and the scans to add (§9.2); another lists its own.
+        const own = merged
+            ? editableMembersHTML(node, ctx)
+            : membersHTML(node.own, ctx.scansById, node.children.length && node.own.length
+                ? `${plural(node.own.length, 'scan')} in no narrower group you chose:` : '');
 
         const k = CHOSEN_PREFIX + key;
         return `<details class="sg-group sg-chosen" data-sg-key="${esc(k)}"${openAttr(ctx, k)}>`
             + `<summary>${summary}</summary>${controls}${children}${own}</details>`;
+    }
+
+    // A merged group's scans as the person left them (§9.2): the pattern's
+    // without those taken out, with those added, each with Take out; those
+    // taken out, each with Put back; and a scan of the run to add.
+    function editableMembersHTML(node, ctx) {
+        const key = node.key;
+        const entry = ctx.entries.get(key) || {};
+        const byHand = Array.isArray(entry.members);
+        const removed = byHand ? [] : (entry.remove || []).filter((id) => ctx.scansById.has(id));
+        const added = new Set(byHand ? [] : entry.add || []);
+        const position = new Map(ctx.scanOrder.map((id, i) => [id, i]));
+        const inGroup = new Set(byHand ? entry.members : node.members.filter((id) => !removed.includes(id)));
+        for (const id of added) inGroup.add(id);
+        const members = [...inGroup].filter((id) => position.has(id)).sort((a, b) => position.get(a) - position.get(b));
+        const shown = ctx.names.get(key) || node.label;
+
+        const button = (kind, id, text, scanLabel) => `<button type="button" class="secondary-button sg-scan-btn" data-sg-${kind}="${esc(key)}"`
+            + ` data-sg-scan="${esc(id)}" data-sg-focus="${kind}:${esc(key)}:${esc(id)}"`
+            + ` aria-label="${esc(`${text} ${scanLabel}`)}">${text}</button>`;
+        const labelOf = (id) => {
+            const sc = ctx.scansById.get(id);
+            return (sc && (sc.label || sc.id)) || id;
+        };
+        const item = (id, kind, text) => {
+            const sc = ctx.scansById.get(id) || {};
+            const included = !sc || sc.includedInReport !== false;
+            return `<li class="${included ? '' : 'scan-summary-excluded'}">`
+                + `<a href="#sc-${esc(id)}">${esc(labelOf(id))}</a>`
+                + (included ? '' : ' <span class="scan-excluded-badge">Excluded</span>')
+                + (added.has(id) ? ' <span class="sg-host">added by hand</span>' : '')
+                + (typeof sc.url === 'string' && sc.url !== labelOf(id) ? ` <span class="sg-url">${esc(sc.url)}</span>` : '')
+                + ` ${button(kind, id, text, labelOf(id))}</li>`;
+        };
+
+        let html = `<ul class="sg-members">${members.map((id) => item(id, 'take-out', 'Take out')).join('')}</ul>`;
+        if (removed.length) {
+            html += `<p class="sg-caption">Taken out by hand, shown on their own:</p>`
+                + `<ul class="sg-members">${removed.map((id) => item(id, 'put-back', 'Put back')).join('')}</ul>`;
+        }
+        const others = ctx.scanOrder.filter((id) => !inGroup.has(id) && !removed.includes(id));
+        if (others.length) {
+            const selectId = `sg-add-${ctx.nextId++}`;
+            html += `<p class="sg-add"><label for="${selectId}">Add a scan to ${esc(shown)}</label> `
+                + `<select id="${selectId}" data-sg-add-select="${esc(key)}" data-sg-focus="add-select:${esc(key)}">`
+                + `<option value="">Choose a scan</option>`
+                + others.map((id) => `<option value="${esc(id)}">${esc(labelOf(id))}</option>`).join('')
+                + `</select> <button type="button" class="secondary-button" data-sg-add="${esc(key)}" data-sg-focus="add:${esc(key)}">Add</button></p>`;
+        }
+        return html;
+    }
+
+    // Scans grouped by hand (§9.2): a name, the scans, and whether to merge
+    // them, for groups no URL pattern finds.
+    function manualFormHTML(list, ctx) {
+        const k = 'group-by-hand';
+        const nameId = `sg-new-name-${ctx.nextId++}`;
+        const mergeId = `sg-new-merge-${ctx.nextId++}`;
+        const items = list.map((sc) => {
+            const id = `sg-new-${ctx.nextId++}`;
+            return `<li><input type="checkbox" id="${id}" data-sg-new-member="${esc(sc.id)}" data-sg-focus="new-member:${esc(sc.id)}">`
+                + ` <label for="${id}">${esc(sc.label || sc.id)}</label>`
+                + (typeof sc.url === 'string' && sc.url ? ` <span class="sg-url">${esc(sc.url)}</span>` : '')
+                + `</li>`;
+        }).join('');
+        return `<details class="sg-group sg-by-hand" data-sg-key="${k}"${openAttr(ctx, k)}>`
+            + `<summary>Group scans by hand</summary>`
+            + `<p class="sg-caption">For scans no pattern finds together: the template at other addresses, the pages of one flow. `
+            + 'Choose two scans or more.</p>'
+            + `<div class="sg-controls"><span class="sg-name-field"><label for="${nameId}">Name</label> `
+            + `<input type="text" id="${nameId}" data-sg-new-name data-sg-focus="new-name" maxlength="${ctx.maxName}" autocomplete="off"></span>`
+            + `<span class="sg-merge"><input type="checkbox" id="${mergeId}" data-sg-new-merge data-sg-focus="new-merge" checked>`
+            + ` <label for="${mergeId}">Merge them into one scan</label></span></div>`
+            + `<fieldset class="sg-pick"><legend>Scans</legend><ul class="sg-members">${items}</ul></fieldset>`
+            + `<button type="button" class="secondary-button" data-sg-new-group data-sg-focus="new-group">Make the group</button>`
+            + `</details>`;
     }
 
     // ------------------------------------------------------------- section
@@ -224,7 +320,6 @@
         if (list.length < 2 || !result) return '';
         const scansById = new Map(list.map((s) => [s.id, s]));
         const groups = Array.isArray(result.groups) ? result.groups : [];
-        const ungrouped = Array.isArray(result.ungrouped) ? result.ungrouped : [];
         const choice = Array.isArray(o.choice) ? o.choice.filter((p) => p && typeof p.key === 'string') : [];
         const hosts = new Set(groups.map(hostOf).filter(Boolean));
         const ctx = {
@@ -235,60 +330,73 @@
             names: new Map(choice.filter((p) => p.name).map((p) => [p.key, p.name])),
             mergedKeys: new Set(choice.filter((p) => p.merge === true).map((p) => p.key)),
             mergedInto: () => null,
+            entries: new Map(),
             issuesOf: typeof o.issuesOf === 'function' ? o.issuesOf : () => null,
             maxName: Number.isFinite(o.maxName) ? o.maxName : 200,
             nextId: 0,
         };
 
-        let body;
-        if (!groups.length) {
-            body = `<p class="sg-intro">The URLs of these ${plural(list.length, 'scan')} repeat no pattern, so there are no groups. `
-                + 'A group needs several different pages that share the shape of their address, as pages made from one template do '
-                + '(<code>/products/red-shirt</code> and <code>/products/blue-hat</code>).</p>';
-        } else {
-            body = '';
-            const chosen = grouping.chooseGroups(result, choice.map((p) => p.key));
-            // The nearest merged group above a chosen one, by name, if any.
-            const byKey = new Map(grouping.flattenGroups(groups).map((g) => [g.key, g]));
-            ctx.mergedInto = (node) => {
-                let up = node.group.parentKey ? byKey.get(node.group.parentKey) : null;
-                let found = null;
-                while (up) {
-                    if (ctx.mergedKeys.has(up.key)) found = up;
-                    up = up.parentKey ? byKey.get(up.parentKey) : null;
-                }
-                return found ? (ctx.names.get(found.key) || found.label) : null;
-            };
-            if (chosen.groups.length) {
-                body += `<section class="sg-part" aria-labelledby="sg-yours-h">`
-                    + `<h4 class="sg-h" id="sg-yours-h">Your groups</h4>`
-                    + `<p class="sg-intro">Each scan is listed under the narrowest group you chose that holds it. `
-                    + 'Include all, Exclude all and Keep one act on every scan of a group, those of the groups inside it too; '
-                    + 'Keep one leaves the first included scan in the report and takes the rest out.</p>'
-                    + `<ul class="sg-tree sg-roots">${chosen.groups.map((n) => `<li>${chosenHTML(n, ctx)}</li>`).join('')}</ul>`
-                    + (chosen.ungrouped.length
-                        ? listDetailsHTML(NOT_CHOSEN,
-                            `<span class="sg-label sg-plain">Not in your groups</span> <span class="sg-counts">${esc(plural(chosen.ungrouped.length, 'scan'))}</span>`,
-                            membersHTML(chosen.ungrouped, scansById, ''), ctx, 'sg-ungrouped')
-                        : '')
-                    + `</section>`;
-            }
+        // Groups by hand are the person's, not patterns the URLs repeat: they
+        // show under Your groups, and the patterns found are the others.
+        const withoutManual = (level) => level.flatMap((g) => (g.source === 'manual'
+            ? withoutManual(g.children)
+            : [{ ...g, children: withoutManual(g.children) }]));
+        const patterns = withoutManual(groups);
+        const inPatterns = new Set(grouping.flattenGroups(patterns).flatMap((g) => g.members));
+        const noPattern = list.map((sc) => sc.id).filter((id) => !inPatterns.has(id));
+        ctx.entries = new Map(choice.map((p) => [p.key, p]));
+        ctx.scanOrder = list.map((sc) => sc.id);
 
-            const total = grouping.flattenGroups(groups).length;
-            const grouped = list.length - ungrouped.length;
+        let body = '';
+        const chosen = grouping.chooseGroups(result, choice.map((p) => p.key));
+        // The nearest merged group above a chosen one, by name, if any.
+        const byKey = new Map(grouping.flattenGroups(groups).map((g) => [g.key, g]));
+        ctx.mergedInto = (node) => {
+            let up = node.group.parentKey ? byKey.get(node.group.parentKey) : null;
+            let found = null;
+            while (up) {
+                if (ctx.mergedKeys.has(up.key)) found = up;
+                up = up.parentKey ? byKey.get(up.parentKey) : null;
+            }
+            return found ? (ctx.names.get(found.key) || found.label) : null;
+        };
+        if (chosen.groups.length) {
+            body += `<section class="sg-part" aria-labelledby="sg-yours-h">`
+                + `<h4 class="sg-h" id="sg-yours-h">Your groups</h4>`
+                + `<p class="sg-intro">Each scan is listed under the narrowest group you chose that holds it. `
+                + 'Include all, Exclude all and Keep one act on every scan of a group, those of the groups inside it too; '
+                + 'Keep one leaves the first included scan in the report and takes the rest out. '
+                + 'A merged group\'s scans can be taken out of it, and other scans added.</p>'
+                + `<ul class="sg-tree sg-roots">${chosen.groups.map((n) => `<li>${chosenHTML(n, ctx)}</li>`).join('')}</ul>`
+                + (chosen.ungrouped.length
+                    ? listDetailsHTML(NOT_CHOSEN,
+                        `<span class="sg-label sg-plain">Not in your groups</span> <span class="sg-counts">${esc(plural(chosen.ungrouped.length, 'scan'))}</span>`,
+                        membersHTML(chosen.ungrouped, scansById, ''), ctx, 'sg-ungrouped')
+                    : '')
+                + `</section>`;
+        }
+
+        if (!patterns.length) {
+            body += `<p class="sg-intro">The URLs of these ${plural(list.length, 'scan')} repeat no pattern, so there are no groups to choose. `
+                + 'A group needs several different pages that share the shape of their address, as pages made from one template do '
+                + '(<code>/products/red-shirt</code> and <code>/products/blue-hat</code>). Scans can still be grouped by hand.</p>';
+        } else {
+            const total = grouping.flattenGroups(patterns).length;
+            const grouped = list.length - noPattern.length;
             body += `<section class="sg-part" aria-labelledby="sg-found-h">`
                 + `<h4 class="sg-h" id="sg-found-h">Patterns found</h4>`
                 + `<p class="sg-intro">${plural(total, 'pattern')} that the scans' URLs repeat, as pages made from one template do, `
                 + `holding ${plural(grouped, 'scan')} of ${list.length}. A pattern inside another is a narrower one; `
                 + 'a scan is in every pattern on its way down. Choose the patterns to group the scans by.</p>'
-                + `<ul class="sg-tree sg-roots">${groups.map((g) => patternHTML(g, ctx)).join('')}</ul>`
-                + (ungrouped.length
+                + `<ul class="sg-tree sg-roots">${patterns.map((g) => patternHTML(g, ctx)).join('')}</ul>`
+                + (noPattern.length
                     ? listDetailsHTML(NOT_GROUPED,
-                        `<span class="sg-label sg-plain">In no pattern</span> <span class="sg-counts">${esc(plural(ungrouped.length, 'scan'))}</span>`,
-                        membersHTML(ungrouped, scansById, ''), ctx, 'sg-ungrouped')
+                        `<span class="sg-label sg-plain">In no pattern</span> <span class="sg-counts">${esc(plural(noPattern.length, 'scan'))}</span>`,
+                        membersHTML(noPattern, scansById, ''), ctx, 'sg-ungrouped')
                     : '')
                 + `</section>`;
         }
+        body += manualFormHTML(list, ctx);
         return `<details class="a11y-details sg" data-sg-section${o.open ? ' open' : ''}>`
             + `<summary>Scan groups</summary>${body}</details>`;
     }
