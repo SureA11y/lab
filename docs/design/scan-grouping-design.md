@@ -72,13 +72,14 @@ that product's (§9).
   report is shown, as the groups themselves are (D4). Unmerging gives the
   scans back as they were, a download keeps them, and the person can group
   them another way later (§9).
-- **D11: what the run merged stays merged, for now.** A scan a Merged scan
-  step made (one view in several contexts) is one scan for grouping and
-  merging too: it can be a member of a group and of a merged group, and its
-  contexts come with it, but they are not split apart, and none of them is
-  left out on its own. What can be undone is what was merged in the report
-  view (§8, §9.4). Unmerging what the run merged may come in a later
-  iteration (§11).
+- **D11: what the run merged can be unmerged too.** A scan a Merged scan step
+  made (one view in several contexts) is one scan for grouping and merging:
+  it can be a member of a group and of a merged group, its contexts with it.
+  In the report view it is also a merged group of its own, whose members are
+  its contexts: it can be unmerged into them, and a context can be taken out
+  of it, as a group merged in the report view can (§8). For that the run
+  keeps each context's findings in the merged scan; a report saved before it
+  did keeps its merged scans as they are, and says why.
 
 ## 3. What already exists
 
@@ -279,7 +280,10 @@ report's scan order, which issue dispersion and the exports follow
   (`url:shop.example.com/products/{*}`), in the order they were chosen. With
   §9: `merge`, true for a merged group; `add` and `remove`, the ids of the
   scans added to it and taken out of it by hand; `members`, the scan ids of a
-  group by hand (key `manual:…`), which has no pattern to find them by. It is
+  group by hand (key `manual:…`), which has no pattern to find them by. A
+  run's merged scan (key `run:…`, §8) is saved only once the person changes
+  it: `merge: false` when unmerged, `remove` with the indexes of the contexts
+  taken out. It is
   in the report schema (v3 and v4) and kept by every download. Reports opened
   together and merged into one carry every group any of them chose, the
   first name given to it kept. A key that matches none of the scans (a
@@ -293,13 +297,37 @@ A merged scan is one scan and is grouped by its `url`. Its contexts nearly
 always share that URL; when they do not (a redirect to an `m.` site), the scan
 already carries a note saying so, and it is grouped by the first context's.
 
-Its contexts stay as the run merged them (D11). Including or excluding a
-context on its own, or splitting a merged scan back into its contexts, is not
-offered in this work: the merged scan keeps, per context, only its outcome
-counts, and what the person shapes after the run is the set of scans merged in
-the report view, which keeps everything it needs to be undone (§9). Splitting
-a run's merged scan would need each context's findings kept, and folding
-again without the one left out; it is a later iteration (§11).
+What the run merged can be undone in the report view (D11), with the same
+actions as a group merged there (§9.2, §9.4):
+
+- **Unmerge** shows the merged scan's contexts as scans of their own, each
+  named by its context ("Product page · Dark · mobile"), in the merged scan's
+  place and in context order. They can then be excluded, grouped and merged
+  again like any scan; their URLs are one page's, so they form no URL pattern
+  (D9), but they can be merged by hand.
+- **Remove a context** leaves one context out of the merged scan, which is
+  folded again from the others.
+- **Merge again** puts the scan back as the run made it.
+
+**What the run keeps.** Today a merged scan keeps, per context, only its
+name, URL, tags, whether it was skipped, and its outcome counts. It will also
+keep each context's scan as it was collected, its findings and metrics
+(`contexts[i].scan`), without its screenshots, which the merged scan already
+holds, each labelled by its context. The merged scan itself, its findings, its
+counts and its place in the report, does not change: every reader that does
+not know about contexts still sees one scan, and the CLI's exports are
+written from it as before.
+
+**How it is shown.** A run's merged scan is, in the scans as shown (§9.5), a
+merged group whose members are its contexts, with the key `run:` and its scan
+id. Unmerged or with a context removed, its contexts' scans are folded again,
+by the same shared fold (§9.3), without the one left out. The choice is saved
+in `scanGrouping` as any other (`{ key: 'run:…', merge: false }`, or
+`remove` naming contexts by their index).
+
+A report saved before the run kept its contexts' scans can't be unmerged:
+the merged scan says, where Unmerge would be, that this report did not keep
+its contexts.
 
 ## 9. Merging a group
 
@@ -462,6 +490,14 @@ the run.
    group and remove them; groups by hand from scans chosen in the scans
    list, through the `manual` source; `add`, `remove` and `members` saved in
    `scanGrouping`.
+8. **The run keeps its contexts' scans** (§8). A Merged scan step saves each
+   context's scan in the merged scan (`contexts[i].scan`), without its
+   screenshots; the report schema says so. The merged scan and the CLI's
+   exports are unchanged, which the runner's tests hold.
+9. **Unmerging what the run merged** (§8, D11). A run's merged scan as a
+   merged group of its contexts in the scans as shown: Unmerge, Remove a
+   context, Merge again; a report without its contexts' scans says why it
+   can't.
 
 ## 11. Open questions
 
@@ -477,12 +513,14 @@ the run.
   different pages of one template; the largest page is the likely choice
   again (the template, as fully as any page shows it), but a score that
   should stand for the template is to be settled with real runs in step 5.
-- **Unmerging what the run merged** (a later iteration). Splitting a Merged
-  scan step's scan back into its contexts, or leaving one context out, needs
-  each context's findings kept in the report (today only its outcome counts
-  are) and the fold run again without it; the fold is pure and shared once
-  step 4 moves it (§9.3), so the second half is cheap. Until then, what the
-  run merged is left as it is (D11).
+- **The size of a report that keeps its contexts' scans.** A merged scan of
+  four contexts holds its findings five times: once merged, once per context.
+  Screenshots, the largest part of a report, are not doubled (§8), but a long
+  run of merged scans grows. To be measured in step 8; if it is too much, a
+  context could keep only what the merged scan does not already hold.
+- **Keeping the contexts' scans by default.** Step 8 keeps them for every
+  Merged scan step. A workflow whose merges are never undone pays for them;
+  an option on the step could leave them out.
 - **Scan ids after reports are merged.** What was added, removed or merged
   by hand is saved by scan id, and opening several reports as one renames a
   scan whose id another report already uses (`ensureUniqueImportedScanIds`).
@@ -521,6 +559,12 @@ the run.
   but it is one way only: the pages' own scans would be gone from the report
   and its downloads, the group could not be unmerged or grouped another way,
   and a later run could not be compared page by page (D10).
+- **Writing a run's contexts as scans of their own** in the report, with the
+  merge as a `scanGrouping` choice, as the report view saves its own merges.
+  It would make the two kinds of merge one, but every reader that does not
+  know `scanGrouping` (the CLI's diff, older versions of the lab, other
+  tools) would read four scans where the run made one. The merged scan stays
+  as it is, and holds its contexts (§8).
 - **Reusing the Merged scan step's fold unchanged.** Its identity includes the
   page, which is right for contexts of one page and joins nothing across the
   pages of a template (§9.3).
