@@ -1,7 +1,8 @@
 # Scan Grouping by URL Pattern — Design Notes
 
-> Status: **Planned.** Nothing here is built yet. §9 lists the steps in the
-> order they are meant to ship; each one is useful and testable on its own.
+> Status: **Step 1 built** (§9): the grouping facade and the URL source, with
+> their tests, used by nothing yet. The other steps are planned, in the order
+> §9 lists them; each one is useful and testable on its own.
 
 ## 1. Motivation
 
@@ -155,8 +156,15 @@ From the signatures, per host and query-key set:
    - of two patterns with the same members, the less specific one, as the
      more specific one says more (`/blog/accessibility/{*}` over
      `/blog/{*}/{*}` when accessibility is the only category scanned);
-   - a pattern that holds every grouped URL of its host, when that host has
-     other patterns too: it adds a level without adding a distinction.
+   - a pattern **seen sideways**: `/products/a/{*}` over `/products/a/reviews`
+     and `/products/a/specs`, when the other products have reviews and specs
+     too. Its wildcard runs over a fixed vocabulary, not over content; the
+     template is `/products/{*}/reviews`, and keeping it would give one group
+     per product. A pattern is dropped when every value its wildcard takes
+     also appears under another parent at that place. `/blog/a11y/{*}` stays
+     as long as some of its posts are its own;
+   - a prefix that holds every URL of its host: it is the host, which is not
+     a group (§5.1).
 
 **No patterns is a normal answer.** Five scans of `/`, `/about`, `/contact`,
 `/pricing` and `/blog/hello` give none: no two of them share a shape under a
@@ -171,8 +179,10 @@ evidence that `/about` and `/contact` lack. They are parameters of the
 module, checked by the tests on real URL lists (§9 step 1), which include
 runs that must come out with no patterns.
 
-The trie is built in one pass over the scans and every step walks it once, so
-a run of thousands of scans is grouped in milliseconds.
+The paths are bucketed in one pass, and each candidate pattern is checked
+against the paths of its own host and query keys. A run of a few thousand
+scans is grouped in well under a tenth of a second, and tens of thousands in
+about a second; a test holds a 4 000-scan run to that order.
 
 ### 5.4 Labels
 
@@ -180,6 +190,34 @@ A wildcard is shown as `{*}` by default. When every value at a position is a
 number it reads `{id}`, and when every value is a lowercase hyphenated word it
 reads `{slug}`, which tells the person at a glance what varies. The person can
 rename a pattern ("Product pages"); the name is the run's (§7).
+
+### 5.5 Built to take other ways of telling
+
+URL patterns are the first way of telling which scans belong together, not
+the last: the markup a scan's page was built from, or anything else, may
+follow. So the grouping is two layers:
+
+- **The facade**, `src/shared/scan-groups.js` (`findGroups`), knows nothing
+  about URLs. It takes the items to group (the run's scans; later, the
+  contexts of merged scans) and a list of **sources**, asks each one for the
+  groups it sees, and puts them together: it drops what cannot be a group
+  (fewer than two members), keeps one group of any two with the same members
+  (the more specific, naming the other as its equivalent), nests them by
+  their members alone (a group's parent is the smallest group holding all of
+  it), and lists the items in no group. A group from one source can sit
+  inside a group from another.
+- **Sources**, each `{ id, propose(items, context) }`, returning
+  `[{ key, label, members, specificity, evidence }]`. A source owns its rules
+  of what is a group (D9) and its thresholds. The URL source,
+  `src/shared/scan-url-groups.js` (`createUrlGroupSource`), is the first; its
+  thresholds and tracking keys are options, so the noise can be tuned without
+  touching the rules, and the URL it reads is `getUrl(item)`, so contexts can
+  be grouped by their own URLs.
+
+The view, and the saved choice of groups (§7), only ever see the facade's
+result, so a new source adds groups without changing them. A group's key is
+its source id and the source's own key (`url:shop.example.com/products/{*}`),
+stable across reloads, which is what a saved choice is stored by.
 
 ## 6. Grouping with levels
 
@@ -228,11 +266,14 @@ That storage change is its own step (§9 step 5) and its own design note.
 
 ## 9. Steps
 
-1. **Pattern module.** `src/shared/scan-url-patterns.js`: signatures (§4) and
-   the pattern tree (§5), pure, with unit tests on fixture URL lists: a shop,
-   a blog with categories, a query-string router (`product.php?id=`), a
-   hash-routed single-page app, several hosts, tracking keys, and small sites
-   with no repetition, which must come out with no patterns. No UI.
+1. **Grouping facade and URL source** (built). `src/shared/scan-groups.js`
+   and `src/shared/scan-url-groups.js` (§5.5): signatures (§4) and the pattern
+   tree (§5), pure, with unit tests on fixture URL lists: a shop, a blog with
+   categories, sub-pages under every product, a query-string router
+   (`product.php?id=`), a hash-routed single-page app, several hosts,
+   tracking keys, and small sites with no repetition, which must come out
+   with no patterns. The facade is tested with stand-in sources, to hold it
+   to knowing nothing about URLs. No UI.
 2. **Read-only grouping view.** The proposed tree shown on a finished run, with
    the members of each pattern. No actions; this is where the thresholds are
    checked on real runs.
@@ -269,9 +310,10 @@ That storage change is its own step (§9 step 5) and its own design note.
   to read, and the person does not know the site's URL scheme in advance. The
   proposed patterns can be renamed; editing them by hand may come later if
   the proposals fall short.
-- **Grouping by page structure** (a fingerprint of the DOM). It finds templates
-  whose URLs say nothing, but needs data the scans do not keep and is far
-  harder to explain. URL patterns come first; structure may complement them.
+- **Grouping by page structure** (a fingerprint of the DOM), as the first
+  way. It finds templates whose URLs say nothing, but needs data the scans do
+  not keep and is far harder to explain. URL patterns come first; structure
+  may follow as another source (§5.5).
 - **A pattern for one URL scanned several times** (a single-page app's states,
   a page visited in several flows). It is one page, not a template: its scans
   differ by state, not by content, and grouping them is a different question
