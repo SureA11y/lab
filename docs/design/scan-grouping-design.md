@@ -48,8 +48,15 @@ groups from the URLs of the run's scans, and the person decides.
   whatever level suits the site (§5, §6).
 - **D8: the final URL.** A scan records the URL it ended on, after redirects
   (`url`, set in `src/server-side/a11y-runner.js`). That is the page that was
-  scanned, so it is what is grouped. A run whose scans redirect to a login or
-  error page will show them as one group, which is the truth about that run.
+  scanned, so it is what is grouped. Scans that all redirect to one login or
+  error page share one URL, so they form no pattern (D9) and stay ungrouped.
+- **D9: a pattern is a repetition, or it is nothing.** A pattern is only
+  proposed when several different URLs share a shape under a common, literal
+  part of the path: the evidence of a template. One scan is never a pattern,
+  several scans of one URL are not either, and pages that merely sit side by
+  side (`/about`, `/contact`) are not. A run without such repetition gets no
+  patterns at all, and the app says so rather than offering groups that mean
+  nothing (§5.3).
 
 ## 3. What already exists
 
@@ -91,15 +98,13 @@ has no signature and goes to the "Not grouped" bucket (§5).
 A pattern is a host, a sequence of segments each either literal or a wildcard
 `{*}`, a set of query keys, and a kind:
 
-- **exact** (`/products/red-shirt`): one URL. Only proposed when several scans
-  share it, as a single-page app's states or a page scanned in several flows
-  do.
 - **shape** (`/blog/{*}/{*}`): URLs with exactly that many segments, matching
   the literal ones.
 - **prefix** (`/blog/…`): every URL below a path, at any depth. It is what
   holds `/blog/{*}` (the categories) and `/blog/{*}/{*}` (the posts) together.
 
-The host alone is the root prefix of its tree.
+The host heads its tree but is not itself a pattern: "everything on this
+site" is not a template, and is not offered as a group.
 
 ### 5.2 Containment
 
@@ -129,24 +134,45 @@ about accessibility is in `/blog/accessibility/{*}`, `/blog/{*}/{*}`,
 
 From the signatures, per host and query-key set:
 
-1. Build a trie of the literal path segments, counting the scans below each
-   node and at each depth below it.
-2. **Shape patterns**: at a node with at least `minVariants` (2) distinct
+1. Build a trie of the literal path segments, counting the distinct URLs
+   below each node and at each depth below it. Scans are counted too, but it
+   is distinct URLs that make a pattern (D9).
+2. **Shape patterns**: at a node with at least `minVariants` distinct
    children, propose `node/{*}` and, for each depth below it reached by at
-   least `minMembers` (2) scans, `node/{*}/{*}…`. A segment at a fixed position
-   that all members share stays literal (`/products/{*}/reviews`).
-3. **Prefix patterns**: at a node whose scans reach more than one depth below
-   it, propose `node/…`.
-4. **Exact patterns**: a signature shared by at least `minMembers` scans.
-5. **Prune**: drop a pattern with fewer than `minMembers` scans, and of two
-   patterns with the same members keep the more specific one, which says more
-   (`/blog/accessibility/{*}` over `/blog/{*}/{*}` when accessibility is the
-   only category scanned).
+   least `minUrls` distinct URLs, `node/{*}/{*}…`. A segment at a fixed
+   position that all members share stays literal (`/products/{*}/reviews`).
+3. **Prefix patterns**: `node/…` only when it holds at least two shape
+   patterns that survive pruning (the blog's categories and its posts).
+   A prefix with one pattern under it is that pattern, and a prefix with none
+   is a bag of unrelated pages.
+4. **Prune**, until nothing changes:
+   - a pattern with fewer than `minUrls` distinct URLs;
+   - a pattern **without a literal anchor**: a wildcard must sit under at
+     least one literal path segment (`/products/{*}`), or be followed by one
+     (`/{*}/reviews`), or the pattern must carry query keys
+     (`product.php?id=…`, where the file name is the anchor). `/{*}` alone,
+     which every top-level page matches, is never proposed;
+   - of two patterns with the same members, the less specific one, as the
+     more specific one says more (`/blog/accessibility/{*}` over
+     `/blog/{*}/{*}` when accessibility is the only category scanned);
+   - a pattern that holds every grouped URL of its host, when that host has
+     other patterns too: it adds a level without adding a distinction.
+
+**No patterns is a normal answer.** Five scans of `/`, `/about`, `/contact`,
+`/pricing` and `/blog/hello` give none: no two of them share a shape under a
+literal segment. The view then says the run's URLs show no repeated pattern
+and offers no grouping, rather than one group per scan. Scans outside every
+pattern are listed as "Not grouped" only when there is at least one pattern
+to set them against.
+
+The defaults are `minUrls` 2 and `minVariants` 2: two products under
+`/products/` are already a template, because the literal anchor carries the
+evidence that `/about` and `/contact` lack. They are parameters of the
+module, checked by the tests on real URL lists (§9 step 1), which include
+runs that must come out with no patterns.
 
 The trie is built in one pass over the scans and every step walks it once, so
-a run of thousands of scans is grouped in milliseconds. The thresholds are
-parameters of the module, set by the tests on real URL lists rather than
-fixed in this note.
+a run of thousands of scans is grouped in milliseconds.
 
 ### 5.4 Labels
 
@@ -205,7 +231,8 @@ That storage change is its own step (§9 step 5) and its own design note.
 1. **Pattern module.** `src/shared/scan-url-patterns.js`: signatures (§4) and
    the pattern tree (§5), pure, with unit tests on fixture URL lists: a shop,
    a blog with categories, a query-string router (`product.php?id=`), a
-   hash-routed single-page app, several hosts, tracking keys. No UI.
+   hash-routed single-page app, several hosts, tracking keys, and small sites
+   with no repetition, which must come out with no patterns. No UI.
 2. **Read-only grouping view.** The proposed tree shown on a finished run, with
    the members of each pattern. No actions; this is where the thresholds are
    checked on real runs.
@@ -245,5 +272,11 @@ That storage change is its own step (§9 step 5) and its own design note.
 - **Grouping by page structure** (a fingerprint of the DOM). It finds templates
   whose URLs say nothing, but needs data the scans do not keep and is far
   harder to explain. URL patterns come first; structure may complement them.
+- **A pattern for one URL scanned several times** (a single-page app's states,
+  a page visited in several flows). It is one page, not a template: its scans
+  differ by state, not by content, and grouping them is a different question
+  from this one (D9).
+- **A group for every scan when nothing repeats.** It makes the view look
+  busy without saying anything; no patterns is the honest result (§5.3).
 - **Excluding automatically.** A group of near-identical pages can still hold
   one page's real issues; only the person can decide they are noise (D2).
