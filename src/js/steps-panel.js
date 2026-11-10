@@ -441,15 +441,10 @@ export function createStepsPanel(o) {
     const narrowQuery = win?.matchMedia ? win.matchMedia('(max-width: 900px)') : null;
     let narrow = !!narrowQuery?.matches;
     let sheetOpen = false;
-    // Where focus was when Find steps was pressed, to go back to on Escape.
-    let cameFrom = null;
 
     function openSheet() {
         if (sheetOpen) return;
         sheetOpen = true;
-        // Opened from its bar, it gives focus back to the bar; Find steps
-        // (focusFind) says where it came from after.
-        cameFrom = null;
         sheet.append(full);
         full.hidden = false;
         if (typeof sheet.showModal === 'function') sheet.showModal();
@@ -474,10 +469,7 @@ export function createStepsPanel(o) {
         hideBtn.title = 'Hide the steps panel';
         hideBtn.replaceChildren(icon(doc, CHEVRON_LEFT));
         drawHidden();
-        // Opened with Find steps from a field: back to that field.
-        const back = cameFrom?.isConnected ? cameFrom : null;
-        cameFrom = null;
-        if (returnFocus) (back || showBtn).focus();
+        if (returnFocus) showBtn.focus();
     }
     // Escape, or the browser closing it: put the panel back.
     sheet.addEventListener('close', () => afterSheetClosed(true));
@@ -1389,11 +1381,6 @@ export function createStepsPanel(o) {
             findInput.value = '';
             state.query = '';
             draw();
-        } else if (event.key === 'Escape' && cameFrom?.isConnected && !sheetOpen) {
-            event.preventDefault();
-            const back = cameFrom;
-            cameFrom = null;
-            back.focus();
         }
     });
     chipsEl.addEventListener('click', (event) => {
@@ -1651,18 +1638,6 @@ export function createStepsPanel(o) {
     };
     narrowQuery?.addEventListener?.('change', onNarrowChange);
 
-    // ---- Find steps from anywhere ----
-    // Where focus was when the shortcut brought it to Find: Escape in an
-    // empty Find takes it back there.
-    function focusFind() {
-        const before = doc.activeElement;
-        if (narrow) openSheet();
-        else if (state.hidden) setHidden(false);
-        cameFrom = before && before !== doc.body && !host.contains(before) ? before : null;
-        findInput.focus();
-        findInput.select();
-    }
-
     setHidden(state.hidden, {remember: false});
     rebuild();
 
@@ -1676,7 +1651,6 @@ export function createStepsPanel(o) {
         setHidden,
         setFilter,
         /** Takes focus to Find, showing the panel (or its sheet) first: the "Find steps" shortcut. */
-        focusFind,
         /** Narrow screens: whether the panel shows as a sheet now. */
         get isSheetOpen() { return sheetOpen; },
         /** For tests and the app: whether selecting, and what is selected. */

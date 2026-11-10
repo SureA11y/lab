@@ -328,11 +328,6 @@ button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
     opacity: 0.6;
 }
 
-#custom-step-actions-builder.is-disabled #custom-step-toolbar,
-#custom-step-actions-builder.is-disabled #custom-step-actions-container {
-    pointer-events: none;
-}
-
 @media (max-width: 980px) {
     .custom-steps-panel {
         grid-template-columns: 1fr;

@@ -209,6 +209,12 @@ export function createCustomStepsUi(app) {
         if (app.customStepActionsBuilderEl) {
             app.customStepActionsBuilderEl.classList.toggle('is-disabled', !enabled);
             app.customStepActionsBuilderEl.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+            // With no custom step chosen, its steps and toolbar take neither a
+            // click nor focus: a step added then would belong to none.
+            for (const id of ['custom-step-toolbar', 'custom-step-actions-container']) {
+                const part = app.customStepActionsBuilderEl.querySelector('#' + id);
+                if (part) part.inert = !enabled;
+            }
         }
     }
 

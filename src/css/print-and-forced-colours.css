@@ -443,6 +443,11 @@
         border-color: GrayText;
     }
 
+    /* GrayText says it already: no veil over it when focused. */
+    button[aria-disabled="true"]:focus-visible::after {
+        display: none;
+    }
+
     /* The one overlay that floats on a shadow rather than a border. */
     .paged-dialog {
         border: 1px solid CanvasText;
