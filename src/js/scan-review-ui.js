@@ -580,6 +580,21 @@ export function createScanReviewUi(app) {
         }
     }
 
+    // In the report: a scan's group, and a merged scan's pages, open the
+    // review there.
+    if (app.results) {
+        app.results.addEventListener('click', (e) => {
+            const film = e.target.closest('[data-sr-film]');
+            if (film) {
+                open(film.getAttribute('data-sr-group') || null);
+                preview(film.getAttribute('data-sr-film'));
+                return;
+            }
+            const group = e.target.closest('[data-sr-open-group]');
+            if (group) open(group.getAttribute('data-sr-open-group') || null);
+        });
+    }
+
     // The card's button, and the line that shows every scan again.
     const root = app.summaryEl;
     if (root) {

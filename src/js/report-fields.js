@@ -47,7 +47,10 @@ export const SCAN_FIELDS = Object.freeze([
     'mergedGroup',
     // A context of a run's merged scan shown on its own (§8): which merged
     // scan and context it is. Made when the report is shown, never saved.
-    'runContext'
+    'runContext',
+    // The group a scan is part of, for its card to say (§11.2). Made when
+    // the report is shown, never saved.
+    'reviewGroup'
 ]);
 
 export const FINDING_FIELDS = Object.freeze([

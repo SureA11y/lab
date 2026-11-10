@@ -228,11 +228,36 @@ export function createRunSummaryUi(app) {
         return value;
     }
 
-    /** The report as shown: itself, with its scans as shown (shownScans). */
+    // The narrowest group of two scans or more holding each scan, a group by
+    // hand before a pattern: what its card says it is part of.
+    function groupsByScan(payload) {
+        const model = reviewModelOf(payload);
+        const out = new Map();
+        if (!model) return out;
+        const flat = (list) => list.flatMap((n) => [n, ...flat(n.children || [])]);
+        const nodes = [...model.byHand, ...flat(model.patterns)].filter((n) => n.ids.length > 1);
+        for (const n of nodes) {
+            n.ids.forEach((id, i) => {
+                const known = out.get(id);
+                if (!known || (!known.byHand && (n.byHand || n.ids.length < known.total))) {
+                    out.set(id, {key: n.key, name: n.name, index: i + 1, total: n.ids.length, byHand: n.byHand});
+                }
+            });
+        }
+        return out;
+    }
+
+    /**
+     * The report as shown: itself, with its scans as shown (shownScans), each
+     * scan in a group saying which (`reviewGroup`: { key, name, index,
+     * total }), for its card. Copies: the report's scans are not changed.
+     */
     function viewPayload(payload) {
         if (!payload || typeof payload !== 'object') return payload;
         const {scans} = shownScans(payload);
-        return scans === payload.scans ? payload : {...payload, scans};
+        const groups = groupsByScan(payload);
+        if (!groups.size) return scans === payload.scans ? payload : {...payload, scans};
+        return {...payload, scans: scans.map((s) => (s && !s.mergedGroup && groups.has(s.id) ? {...s, reviewGroup: groups.get(s.id)} : s))};
     }
 
     // ---------------------------------------------------------------- review
