@@ -828,11 +828,11 @@ async function createReportZip(html, reportFileName, { reportJson = null, task =
     }, (metadata) => onCompress(metadata.percent));
 }
 
-async function downloadReport({ includeFilteredOut = false, getReportPayload = null, task = null } = {}) {
+async function downloadReport({ includeFilteredOut = false, getReportPayload = null, task = null, nameSuffix = '' } = {}) {
     const reportName = getReportNameFromUi();
 
     const fileName = safeBaseName(
-        reportName || 'accessibility-report'
+        (reportName || 'accessibility-report') + nameSuffix
     );
 
     const html = await buildReport({ includeFilteredOut, task });
@@ -925,7 +925,7 @@ async function downloadReportAsSingleHtml({ includeFilteredOut = false, task = n
  * single-file item fires; returning `false` aborts that action (used by the
  * caller to prompt for a report name and let the user cancel).
  */
-export function createDownloadReportSplitButton({onBeforeAction, extraItems = [], getReportPayload = null} = {}) {
+export function createDownloadReportSplitButton({onBeforeAction, extraItems = [], getReportPayload = null, getMergedReportPayload = null} = {}) {
     let current = null;
     const failure = 'The report could not be made.';
     const named = (what) => {
@@ -967,6 +967,15 @@ export function createDownloadReportSplitButton({onBeforeAction, extraItems = []
                 guard: onBeforeAction ? () => onBeforeAction('zip-all') : undefined,
                 onSelect: asTask('Download report with all scans', zip(true))
             },
+            // With groups merged in the view: each saved as the one scan it
+            // is shown as (docs/design/scan-grouping-design.md §11.2).
+            ...(getMergedReportPayload ? [{
+                id: 'zip-merged',
+                label: 'Download merged',
+                description: 'Each merged group saved as one scan: smaller, but it cannot be unmerged',
+                guard: onBeforeAction ? () => onBeforeAction('zip-merged') : undefined,
+                onSelect: asTask('Download report merged', (task) => downloadReport({getReportPayload: getMergedReportPayload, task, nameSuffix: ' (merged)'})),
+            }] : []),
             ...extraItems
         ]
     });

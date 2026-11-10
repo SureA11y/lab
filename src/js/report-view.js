@@ -634,6 +634,33 @@ export function createReportView(app) {
         return merges.length ? {...exportPayload, shownMerges: merges} : exportPayload;
     }
 
+    /**
+     * The report as shown, saved as such (the "Download merged" choice): each
+     * merged group the one scan it is shown as, folded for good, and each run's
+     * merged scan as it was left. Its pages' own scans are not in it, so the
+     * merged scans keep their pages' names and addresses but not their
+     * pictures, and the saved choice drops what the scans now are.
+     */
+    function buildMergedExportPayload(raw) {
+        const shown = app.runSummaryUi.viewPayload(raw);
+        const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        const keep = choiceApi
+            ? choiceApi.readChoice(raw).filter((p) => p.merge !== true && !choiceApi.isRun(p.key))
+            : [];
+        const scans = shown.scans.map((s) => {
+            if (!s || typeof s !== 'object') return s;
+            const {reviewGroup: _group, ...rest} = s;
+            if (rest.mergedGroup) {
+                rest.mergedGroup = {...rest.mergedGroup, members: rest.mergedGroup.members.map(({shot: _shot, ...m}) => m)};
+            }
+            return rest;
+        });
+        const source = {...shown, scans};
+        delete source.scanGrouping;
+        if (keep.length) source.scanGrouping = {patterns: keep};
+        return buildExportPayload(source, {includedOnly: true});
+    }
+
     function createVisualizationPanel(data) {
         const containerEl = document.createElement('div');
         containerEl.className = 'inline-actions results-visualization';
@@ -784,6 +811,10 @@ export function createReportView(app) {
         containerEl.appendChild(createVisualizationPanel(data));
 
         const downloadReportSplitBtn = createDownloadReportSplitButton({
+            // Offered while groups are merged: the report as shown, for good.
+            getMergedReportPayload: app.runSummaryUi.shownScans(app.getActiveBucket()?.payload || data).merges.size
+                ? () => buildMergedExportPayload(app.getActiveBucket()?.payload || data)
+                : null,
             // The zip carries the report as JSON too, with the same scans as
             // its HTML, so it loads back into the app with its pictures.
             getReportPayload: ({includeFilteredOut}) => buildExportPayload(app.getActiveBucket()?.payload || data, {

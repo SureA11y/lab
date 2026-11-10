@@ -445,3 +445,17 @@ describe('groups the report view shows merged (scan-grouping-design.md §11)', (
         assert.doesNotMatch(H.conformanceReportHTML(C.buildConformanceReport(base)), /pages-note/);
     });
 });
+
+test('a scan saved merged lists each of its pages as evaluated (§11.2)', () => {
+    const C = require('./conformance-report.js');
+    const report = { url: 'https://shop.test/', scans: [
+        { id: 'home', label: 'Home', url: 'https://shop.test/', canonical: { findings: [] } },
+        { id: 'merged-1', label: 'Products', url: 'https://shop.test/p/a', canonical: { findings: [] },
+            mergedGroup: { key: 'url:shop.test/p/{*}', members: [
+                { id: 'a', label: 'A', url: 'https://shop.test/p/a', includedInReport: true },
+                { id: 'b', label: 'B', url: 'https://shop.test/p/b', includedInReport: false },
+                { id: 'c', label: 'C', url: 'https://shop.test/p/c', includedInReport: true },
+            ] } },
+    ] };
+    assert.deepEqual(C.buildConformanceReport(report).evaluation.pages.map((p) => p.label), ['Home', 'A', 'C']);
+});

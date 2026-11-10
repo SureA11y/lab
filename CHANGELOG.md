@@ -27,28 +27,27 @@ The first public release.
   element, the same in every run) or a standalone HTML page.
   A report's time reads in the reader's own time zone, named; scans see the
   machine's zone unless `A11Y_TZ` names one.
-  Under a report's list of scans, **Scan groups** shows the scans whose
-  URLs repeat a pattern, as pages made from one template do
-  (`/products/{slug}`), nested where one pattern narrows another, with how
-  many of each group's scans are included. A run whose URLs repeat nothing
-  gets no groups. Choose the patterns to group by, name them, and take a
-  group's scans out of the report or put them back at once (Exclude all,
-  Include all, Keep one) after seeing which failures are on every scan of
-  the group (the template's) and which on some only, or merge them into one
-  scan, where a failure of
-  the template is listed once on all its pages and a page's own failure on
-  that page; the report keeps every scan, so a merge can be undone. Scans
-  can be taken out of a merged group or added to it, and grouped and merged
-  by hand where no pattern finds them together. A scan a Merged scan step
-  made can be unmerged into its contexts, or have one taken out: runs now
-  keep each context's own scan in the merged scan for that, which makes a
-  merged scan of two contexts about 60% larger in the saved report; turn
-  off the step's **Keep each context's scan** for very large runs that will
-  not be unmerged. The conformance report, the checklist and the
-  comparisons count merged groups page by page and say so; reports opened
-  together keep what was changed by hand in each. The
-  groups chosen are saved with the report (`scanGrouping`) and carried when
-  reports are merged.
+  At the top of a report's summary, a card says how much of the run is
+  pages of a template and opens **Review scans**: every pattern the URLs
+  repeat is a group, with its pages as their screenshots, those that differ
+  from the others first; see a page large, take pages out, exclude them,
+  add them to another group or group them by hand; see what a group fails
+  on most pages (the template's) and on a few (their content's); and Keep
+  one, Exclude all, Include all, Show only these, or merge the group into
+  one scan after seeing what it changes. Merged, a template's failure is
+  listed once on all its pages and a page's own failure on that page, the
+  merged scan's card shows its pages as pictures, and every scan in a group
+  says which. The report keeps every scan, so a merge can be undone, and
+  every change can be undone in the review. A scan a Merged scan step made
+  can be unmerged into its contexts, or have one taken out: runs now keep
+  each context's own scan in the merged scan for that, which makes a merged
+  scan of two contexts about 60% larger in the saved report; turn off the
+  step's **Keep each context's scan** for very large runs that will not be
+  unmerged. **Download merged** saves the merged groups as one scan each,
+  for good. The conformance report, the checklist and the comparisons
+  count merged groups page by page and say so. What is grouped, named,
+  merged and changed is saved with the report (`scanGrouping`) and carried
+  when reports are opened together.
   A report's scans can be filtered by tag, and, when the report has more
   than one profile, shown by profile: every profile is shown until it is
   turned off, several at once if wanted. A scan whose profiles are all off
