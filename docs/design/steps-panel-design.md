@@ -206,16 +206,15 @@ behind it; while selecting it stays open until closed. Widening the window
 puts the panel back beside the editor. Where fingers point, rows and chips
 are larger targets.
 
-## Find steps from anywhere
+## No shortcut to Find steps
 
 The spec had Ctrl+K open a box to go to any step. Ctrl/⌘+K was already the
 Add step palette's, and a second search over the steps would have
-repeated the panel's. Instead, **Ctrl+Shift+F** (⌘⇧F on a Mac) takes focus
-to Find in the panel of the section focus is in, opening the section, the
-panel or its sheet as needed; Escape in an empty Find takes focus back to
-where it was. A single-key shortcut ("/") was left out: WCAG 2.1.4 asks
-that those can be turned off. The field says its shortcut to screen readers
-(`aria-keyshortcuts`) and shows it beside its label.
+repeated the panel's. Ctrl+Shift+F (⌘⇧F on a Mac) went to Find for a time,
+in the panel of the section focus was in; with a panel beside each of two
+sections, the one key reached only one of them, so it was taken out. Find
+is reached by Tab like the panel's other controls. A single-key shortcut
+("/") was left out: WCAG 2.1.4 asks that those can be turned off.
 
 ## What a thousand steps taught
 
@@ -266,8 +265,7 @@ and the later steps of the work keep to them too:
 4. **Edit together** (done): the bar, the shared fields, the previews on the
    cards, Apply with one Undo, the warning for custom steps.
 5. **Narrow screens and Find steps** (done): below 900 px the panel is a
-   bar at the top of its section that opens it as a sheet; Ctrl+Shift+F
-   (⌘⇧F) goes to Find from anywhere.
+   bar at the top of its section that opens it as a sheet.
 
 The prototypes these come from are kept with the design work, outside the
 repository.

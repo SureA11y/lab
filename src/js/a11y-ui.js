@@ -2022,7 +2022,6 @@ function storeActiveMode(mode) {
             title: 'Workflow steps',
             goToLine: goToWorkflowLine,
             callName: customStepName,
-            findShortcut: true,
             barHost: $('#workflow-selection-bar'),
             setDisabled: (entries, on) => actionsBuilder?.setStepsDisabled(entries.map((e) => e.line).filter(Boolean), on) || 0,
             edit: {
@@ -2045,23 +2044,6 @@ function storeActiveMode(mode) {
         });
     }
 
-    // Ctrl+Shift+F (⌘⇧F on a Mac), from anywhere in the app: Find in the
-    // steps panel of the section focus is in (Custom steps, or else the
-    // Workflow), opening it if needed. Ctrl/⌘+K is the Add step palette's.
-    document.addEventListener('keydown', (event) => {
-        const mac = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgentData?.platform || navigator.platform || '');
-        if (!(mac ? event.metaKey : event.ctrlKey) || !event.shiftKey || event.altKey) return;
-        if (String(event.key).toLowerCase() !== 'f') return;
-        const inCustom = !!(customStepsContentEl && customStepsContentEl.contains(document.activeElement));
-        const panel = inCustom ? customStepsPanel : workflowStepsPanel;
-        if (!panel) return;
-        event.preventDefault();
-        setConfigExpanded(true);
-        if (inCustom) setCustomStepsExpanded(true);
-        else setWorkflowExpanded(true);
-        panel.focusFind();
-    });
-
     function initCustomStepsPanel(defs) {
         stepDefs = defs;
         const host = $('#custom-steps-steps-panel');
@@ -2076,7 +2058,6 @@ function storeActiveMode(mode) {
             open: openCustomStepOf,
             goToLine: goToCustomStepLine,
             callName: customStepName,
-            findShortcut: true,
             barHost: $('#custom-steps-selection-bar'),
             // Steps of every custom step can be selected, open in the editor
             // or not: they are changed in the custom steps' saved steps.

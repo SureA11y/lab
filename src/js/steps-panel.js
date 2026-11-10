@@ -295,7 +295,6 @@ function icon(doc, d) {
  * @param {{count: (kind: string, query: string) => number, label: string, go: (kind: string, query: string) => void}} [o.elsewhere]
  *        Says how many steps match in the other section, and leads there.
  * @param {() => void} [o.onRead]   Told each time the panel has read the steps again.
- * @param {boolean} [o.findShortcut]  The app takes Ctrl+Shift+F (⌘⇧F on a Mac) to Find: say so.
  * @param {(id: string) => string} [o.callName]  The name of the custom step a call runs.
  * @param {Element} [o.barHost]     Where the selection bar goes, above the editor.
  * @param {(entries: {node: object, line: Element|null}[], on: boolean) => number} [o.setDisabled]
@@ -371,11 +370,6 @@ export function createStepsPanel(o) {
         placeholder: 'Label, selector, URL, {var:…}', autocomplete: 'off', spellcheck: 'false'
     });
     const findLabel = el(doc, 'label', {for: `${baseId}-find`, className: 'steps-panel__find-label', text: 'Find steps'});
-    if (o.findShortcut) {
-        // Said to screen readers by aria-keyshortcuts; shown beside the label.
-        findInput.setAttribute('aria-keyshortcuts', isMac ? 'Meta+Shift+F' : 'Control+Shift+F');
-        findLabel.append(' ', el(doc, 'kbd', {className: 'steps-panel__shortcut', 'aria-hidden': 'true', text: isMac ? '⌘⇧F' : 'Ctrl+Shift+F'}));
-    }
     const chipsEl = el(doc, 'div', {className: 'steps-panel__chips', role: 'group', 'aria-label': 'Show only'});
     // The count stands out, where it is among the matches does not:
     // "5 matches · 2 of 5". Read out whole as one status.
