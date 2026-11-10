@@ -124,9 +124,13 @@ each scan under the narrowest group you chose that holds it. A group can be
 given a name, and its scans taken out of the report or put back at once:
 **Exclude all**, **Include all**, or **Keep one**, which leaves the first
 included scan to stand for its template and takes the rest out. Each acts on
-the groups inside it too. The groups you chose, and their names, are saved
-with the report; its download leaves the excluded scans out, as it always
-does.
+the groups inside it too. **Merge into one scan** shows a group's included
+scans as one scan instead: a failure of the template is listed once, "On all
+5 pages", and a failure of one page's content stays on that page ("On 2 of 5
+pages"), so the template stops weighing once per page in the totals and the
+issue dispersion. The report keeps every scan: unmerging shows them as they
+were. The groups you chose, their names and which are merged are saved with
+the report; its download leaves the excluded scans out, as it always does.
 
 ```json
 [

@@ -105,6 +105,7 @@ function storeActiveMode(mode) {
         get summaryEl() { return summaryEl; },
         get toggleScanIncludedInReport() { return toggleScanIncludedInReport; },
         get applyScanInclusion() { return applyScanInclusion; },
+        get redrawAsShown() { return redrawAsShown; },
         get updateScanTags() { return updateScanTags; },
         get $() { return $; },
         get afterConfigLoaded() { return afterConfigLoaded; },
@@ -804,10 +805,38 @@ function storeActiveMode(mode) {
 
         if (!payload || !Array.isArray(payload.scans)) return;
 
+        // A merged scan's Exclude takes all its scans out, its Include puts
+        // them all back (docs/design/scan-grouping-design.md §9.4).
+        const merge = mergedScanOf(payload, scanId);
+        if (merge) {
+            const shown = runSummaryUi.shownScans(payload).scans.find((s) => s.id === scanId);
+            const label = shown?.label || 'Merged scan';
+            const ids = merge.members;
+            const focusInfo = captureScanControlFocus();
+            if (shown?.includedInReport !== false) {
+                applyScanInclusion({include: [], exclude: ids}, `${label} excluded from summary report (its ${ids.length} scans).`);
+            } else {
+                applyScanInclusion({include: ids, exclude: []}, `${label} included in summary report (its ${ids.length} scans).`);
+            }
+            restoreScanControlFocus(focusInfo);
+            return;
+        }
+
         const scan = payload.scans.find((s) => s && s.id === scanId);
         if (!scan) return;
 
         const focusInfo = captureScanControlFocus();
+
+        // A scan of a merged group: what the merged scan holds changes.
+        if (touchesMergedScan(payload, [scanId])) {
+            scan.includedInReport = scan.includedInReport === false;
+            redrawAsShown(payload);
+            restoreScanControlFocus(focusInfo);
+            const label = scan.label || scan.id || 'Scan';
+            const say = resultsState.activeMode === 'report' ? setStatusReport : setStatusRun;
+            say(scan.includedInReport === false ? `${label} excluded from summary report.` : `${label} included in summary report.`, STATUS.OK);
+            return;
+        }
 
         scan.includedInReport = scan.includedInReport === false;
 
@@ -839,6 +868,9 @@ function storeActiveMode(mode) {
 
         const include = new Set(plan?.include || []);
         const exclude = new Set(plan?.exclude || []);
+        // Read before the change: a scan merged now is one whose inclusion
+        // changes what its merged scan holds.
+        const merged = touchesMergedScan(payload, [...include, ...exclude]);
         const focusToken = runSummaryUi.captureGroupsFocus();
         for (const scan of payload.scans) {
             if (!scan || !scan.id) continue;
@@ -846,9 +878,13 @@ function storeActiveMode(mode) {
             else if (exclude.has(scan.id)) scan.includedInReport = false;
         }
 
-        recomputeDerivedReportData(payload);
-        reportView.refreshDerivedReportUi();
-        runSummaryUi.restoreGroupsFocus(focusToken);
+        if (merged) {
+            redrawAsShown(payload);
+        } else {
+            recomputeDerivedReportData(payload);
+            reportView.refreshDerivedReportUi();
+            runSummaryUi.restoreGroupsFocus(focusToken);
+        }
 
         if (message) {
             if (resultsState.activeMode === 'report') setStatusReport(message, STATUS.OK);
@@ -986,6 +1022,14 @@ function storeActiveMode(mode) {
 
         if (!payload || !Array.isArray(payload.scans)) return;
 
+        // With merged groups, scans move in the order as shown: a merged scan
+        // and its scans as one block, and a scan past a merged neighbour as
+        // a whole (docs/design/scan-grouping-design.md §9.4).
+        if (runSummaryUi.shownScans(payload).merges.size) {
+            moveScanAsShown(payload, scanId, direction);
+            return;
+        }
+
         const scans = payload.scans;
         const idx = scans.findIndex((s) => s && s.id === scanId);
         if (idx === -1) return;
@@ -1018,11 +1062,40 @@ function storeActiveMode(mode) {
         }
     }
 
+    function moveScanAsShown(payload, scanId, direction) {
+        const {scans: shown, merges} = runSummaryUi.shownScans(payload);
+        const idx = shown.findIndex((s) => s && s.id === scanId);
+        const targetIdx = idx + (direction < 0 ? -1 : 1);
+        if (idx === -1 || targetIdx < 0 || targetIdx >= shown.length) return;
+
+        const order = shown.map((s) => s.id);
+        [order[idx], order[targetIdx]] = [order[targetIdx], order[idx]];
+        // Each shown scan back to the scans it stands for, in their order:
+        // a merged group's scans then sit together where it is shown.
+        const byId = new Map(payload.scans.map((s) => [s?.id, s]));
+        const next = order.flatMap((id) => (merges.has(id) ? merges.get(id).members : [id])).map((id) => byId.get(id));
+        if (next.length !== payload.scans.length || next.some((s) => !s)) return;
+        payload.scans.splice(0, payload.scans.length, ...next);
+
+        redrawAsShown(payload);
+        const moved = runSummaryUi.shownScans(payload).scans.find((s) => s.id === scanId);
+        const label = moved?.label || moved?.id || 'Scan';
+        const say = resultsState.activeMode === 'report' ? setStatusReport : setStatusRun;
+        say(direction < 0 ? `${label} moved up.` : `${label} moved down.`, STATUS.OK);
+    }
+
     function renameScan(scanId, newLabelRaw) {
         const bucket = getActiveBucket();
         const payload = bucket?.payload;
 
         if (!payload || !Array.isArray(payload.scans)) return;
+
+        // A merged scan is named by its group (§9.4).
+        const merge = mergedScanOf(payload, scanId);
+        if (merge) {
+            renameMergedScan(payload, merge, newLabelRaw);
+            return;
+        }
 
         const scan = payload.scans.find((s) => s && s.id === scanId);
         if (!scan) return;
@@ -1053,6 +1126,24 @@ function storeActiveMode(mode) {
         } else {
             setStatusRun(message, STATUS.OK);
         }
+    }
+
+    function renameMergedScan(payload, merge, newLabelRaw) {
+        const api = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        if (!api) return;
+        const before = runSummaryUi.shownScans(payload).scans.find((s) => s.id === merge.id);
+        api.writeChoice(payload, api.setName(api.readChoice(payload), merge.key, newLabelRaw));
+        const after = runSummaryUi.shownScans(payload).scans.find((s) => s.id === merge.id);
+        const displayLabel = after?.label || 'Merged scan';
+        const idSel = CSS.escape(merge.id);
+        const summaryText = summaryEl?.querySelector(`.scan-name-text[data-scan-id="${idSel}"]`);
+        if (summaryText) summaryText.textContent = displayLabel;
+        const detailText = results?.querySelector(`[data-scan-id="${idSel}"] .scan-name-text`);
+        if (detailText) detailText.textContent = displayLabel;
+        scheduleDispersionRefresh();
+        runSummaryUi.refreshScanGroups(payload);
+        const say = resultsState.activeMode === 'report' ? setStatusReport : setStatusRun;
+        say(`Scan renamed from "${before?.label || 'Merged scan'}" to "${displayLabel}".`, STATUS.OK);
     }
 
     // Tags already in use across the open report, offered while editing a scan.
@@ -1089,7 +1180,18 @@ function storeActiveMode(mode) {
     function updateScanTags(scanId, rawTags) {
         const payload = getActiveBucket()?.payload;
 
-        const edit = applyScanTagsEdit(payload, scanId, rawTags);
+        // A merged scan's tags are its scans' together: set on each of them.
+        const merge = mergedScanOf(payload, scanId);
+        let edit;
+        if (merge) {
+            const before = runSummaryUi.shownScans(payload).scans.find((s) => s.id === scanId);
+            const previous = Array.isArray(before?.scanTags) ? before.scanTags.slice() : [];
+            for (const id of merge.members) applyScanTagsEdit(payload, id, rawTags);
+            const scan = runSummaryUi.shownScans(payload).scans.find((s) => s.id === scanId);
+            edit = scan ? {scan, previous, next: Array.isArray(scan.scanTags) ? scan.scanTags : []} : null;
+        } else {
+            edit = applyScanTagsEdit(payload, scanId, rawTags);
+        }
         if (!edit) return;
 
         const {scan, previous, next} = edit;
@@ -1098,8 +1200,9 @@ function storeActiveMode(mode) {
 
         // The filter bar re-derives its chips from the scans and prunes any
         // selection that no longer exists, so an edited-away tag drops out.
-        reportView.renderScanFilters(payload);
-        reportView.applyScanFilterVisibility(payload.scans);
+        const shown = runSummaryUi.viewPayload(payload);
+        reportView.renderScanFilters(shown);
+        reportView.applyScanFilterVisibility(shown.scans);
         applyScanSort();
 
         const label = scan.label || scan.id || 'Scan';
@@ -1222,7 +1325,8 @@ function storeActiveMode(mode) {
             //   : 'No run results yet.';
             return;
         }
-        const data = prepareDataForReport(bucket.payload);
+        // The scans as shown: a merged group drawn as the one scan it is.
+        const data = prepareDataForReport(runSummaryUi.viewPayload(bucket.payload));
 
         // Important: use the same shape you expect from final payload.
         // If the stored object is exactly the final payload, call renderFinalPayload directly:
@@ -1626,9 +1730,41 @@ function storeActiveMode(mode) {
         return !!scan && scan.includedInReport !== false && scanMatchesActiveFilters(scan);
     }
 
+    // Read as shown: a merged group is one scan here, as everywhere the
+    // report counts scans (docs/design/scan-grouping-design.md §9.5).
     function getIncludedScans(payload) {
-        const scans = Array.isArray(payload?.scans) ? payload.scans : [];
+        const scans = payload && typeof payload === 'object' ? runSummaryUi.shownScans(payload).scans : [];
         return scans.filter(isScanIncludedInReport).map(viewScan);
+    }
+
+    // The merged scan `scanId` is, as shown, or null for a scan of the report.
+    function mergedScanOf(payload, scanId) {
+        if (!payload || !scanId) return null;
+        return runSummaryUi.shownScans(payload).merges.get(scanId) || null;
+    }
+
+    // Whether these scans are in a merged group: a change to them changes
+    // what the merged scan holds, so the report is drawn again whole.
+    function touchesMergedScan(payload, ids) {
+        const {merges} = runSummaryUi.shownScans(payload);
+        if (!merges.size) return false;
+        const inMerged = new Set([...merges.values()].flatMap((m) => [m.id, ...m.members]));
+        return ids.some((id) => inMerged.has(id));
+    }
+
+    // The whole report drawn again from the scans as shown, the Scan groups
+    // section keeping what was open and the control that had focus.
+    function redrawAsShown(payload) {
+        // Focus is given back once the redraw has shown the results again:
+        // they are hidden while it clears them, and a hidden control cannot
+        // take it.
+        const groupsFocus = runSummaryUi.captureGroupsFocus();
+        const scanFocus = captureScanControlFocus();
+        runSummaryUi.holdGroupsState();
+        recomputeDerivedReportData(payload);
+        renderActiveBucket();
+        if (groupsFocus) runSummaryUi.restoreGroupsFocus(groupsFocus);
+        else if (scanFocus) restoreScanControlFocus(scanFocus);
     }
 
     function recomputeDerivedReportData(payload) {

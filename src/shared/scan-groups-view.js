@@ -134,6 +134,12 @@
             + ` <span class="sg-counts">${esc(countsText(node.group, ctx.scansById))}</span>`;
 
         const nameId = `sg-name-${ctx.nextId++}`;
+        const mergeId = `sg-merge-${ctx.nextId++}`;
+        const merged = ctx.mergedKeys.has(key);
+        // Merged into a larger merged group, it shows as part of that one
+        // (docs/design/scan-grouping-design.md §9.4); its switch stays, for
+        // when that one is unmerged.
+        const into = ctx.mergedInto(node);
         const controls = `<div class="sg-controls">`
             + `<span class="sg-name-field"><label for="${nameId}">Name</label> `
             + `<input type="text" id="${nameId}" data-sg-name="${esc(key)}" data-sg-focus="name:${esc(key)}"`
@@ -142,7 +148,11 @@
             + [['include', 'Include all'], ['exclude', 'Exclude all'], ['keepOne', 'Keep one']].map(([action, text]) =>
                 `<button type="button" class="secondary-button" data-sg-action="${action}" data-sg-group="${esc(key)}"`
                 + ` data-sg-focus="${action}:${esc(key)}">${text}</button>`).join('')
-            + `</span></div>`;
+            + `</span>`
+            + `<span class="sg-merge"><input type="checkbox" id="${mergeId}" data-sg-merge="${esc(key)}" data-sg-focus="merge:${esc(key)}"${merged ? ' checked' : ''}>`
+            + ` <label for="${mergeId}">Merge into one scan</label></span>`
+            + `</div>`
+            + (into ? `<p class="sg-caption sg-merged-into">Shown merged into ${esc(into)}, the larger merged group it is in.</p>` : '');
 
         const children = node.children.length
             ? `<ul class="sg-tree">${node.children.map((c) => `<li>${chosenHTML(c, ctx)}</li>`).join('')}</ul>`
@@ -183,6 +193,8 @@
             showHosts: hosts.size > 1,
             chosenKeys: new Set(choice.map((p) => p.key)),
             names: new Map(choice.filter((p) => p.name).map((p) => [p.key, p.name])),
+            mergedKeys: new Set(choice.filter((p) => p.merge === true).map((p) => p.key)),
+            mergedInto: () => null,
             maxName: Number.isFinite(o.maxName) ? o.maxName : 200,
             nextId: 0,
         };
@@ -195,6 +207,17 @@
         } else {
             body = '';
             const chosen = grouping.chooseGroups(result, choice.map((p) => p.key));
+            // The nearest merged group above a chosen one, by name, if any.
+            const byKey = new Map(grouping.flattenGroups(groups).map((g) => [g.key, g]));
+            ctx.mergedInto = (node) => {
+                let up = node.group.parentKey ? byKey.get(node.group.parentKey) : null;
+                let found = null;
+                while (up) {
+                    if (ctx.mergedKeys.has(up.key)) found = up;
+                    up = up.parentKey ? byKey.get(up.parentKey) : null;
+                }
+                return found ? (ctx.names.get(found.key) || found.label) : null;
+            };
             if (chosen.groups.length) {
                 body += `<section class="sg-part" aria-labelledby="sg-yours-h">`
                     + `<h4 class="sg-h" id="sg-yours-h">Your groups</h4>`
