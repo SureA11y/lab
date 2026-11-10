@@ -68,7 +68,7 @@
     },
     "scanGrouping": {
       "type": "object",
-      "description": "The scan groups a person chose in the report view (docs/design/scan-grouping-design.md §7): `patterns`, in the order they were chosen, each a group `key` (its source and the pattern, `url:shop.example.com/products/{*}`), the `name` given to it, or null, and `merge`, true when its scans are shown as one merged scan; `add` and `remove`, the ids of the scans added to a group and taken out of it by hand; and for a group made by hand (key `manual:` and a number), its scans' ids in `members`. The groups and merged scans are made again from the scans whenever the report is shown, and the scans are kept as they are; a key that matches none of them is ignored.",
+      "description": "The scan groups a person chose in the report view (docs/design/scan-grouping-design.md §7): `patterns`, in the order they were chosen, each a group `key` (its source and the pattern, `url:shop.example.com/products/{*}`), the `name` given to it, or null, and `merge`, true when its scans are shown as one merged scan; `add` and `remove`, the ids of the scans added to a group and taken out of it by hand; and for a group made by hand (key `manual:` and a number), its scans' ids in `members`. A run's merged scan the person changed has the key `run:` and its id, with `merge: false` when shown as its contexts, `remove` the indexes of contexts taken out of it and `exclude` those excluded unmerged. The groups and merged scans are made again from the scans whenever the report is shown, and the scans are kept as they are; a key that matches none of them is ignored.",
       "properties": {
         "patterns": {
           "type": "array",
@@ -104,6 +104,12 @@
                 }
               },
               "members": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "exclude": {
                 "type": "array",
                 "items": {
                   "type": "string"

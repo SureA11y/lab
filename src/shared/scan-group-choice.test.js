@@ -206,3 +206,31 @@ describe('changing a group by hand (§9.2, step 7)', () => {
         ]), [{ key: 'url:p', name: null, add: ['a', 'b'], remove: ['c'] }]);
     });
 });
+
+describe('what the run merged (§8, step 9)', () => {
+    test('saved only once changed: unmerged, contexts taken out or excluded', () => {
+        assert.deepEqual(C.readChoice({ scanGrouping: { patterns: [
+            { key: 'run:s1' },
+            { key: 'run:s2', merge: false, exclude: [1, '1', 'x'] },
+            { key: 'run:s3', merge: true, remove: ['0'] },
+        ] } }), [{ key: 'run:s2', merge: false, exclude: ['1'] }, { key: 'run:s3', remove: ['0'] }]);
+    });
+
+    test('unmerging and merging again', () => {
+        let c = C.setRunMerged([], 's1', false);
+        assert.deepEqual(c, [{ key: 'run:s1', merge: false }]);
+        c = C.setRunContextExcluded(c, 's1', 2, true);
+        assert.deepEqual(c, [{ key: 'run:s1', merge: false, exclude: ['2'] }]);
+        // Merged again, as the run made it: nothing left to save.
+        assert.deepEqual(C.setRunMerged(c, 's1', true), []);
+    });
+
+    test('taking a context out and putting it back', () => {
+        let c = C.setRunContextOut([{ key: 'url:a', merge: true }], 's1', 0, true);
+        assert.deepEqual(c, [{ key: 'url:a', name: null, merge: true }, { key: 'run:s1', remove: ['0'] }]);
+        c = C.setRunContextOut(c, 's1', 0, false);
+        assert.deepEqual(c, [{ key: 'url:a', name: null, merge: true }]);
+        assert.equal(C.runKey('s9'), 'run:s9');
+        assert.ok(C.isRun('run:s9') && !C.isRun('url:x'));
+    });
+});

@@ -195,8 +195,10 @@ export function createRunSummaryUi(app) {
 
     /**
      * The report's scans as shown (docs/design/scan-grouping-design.md §9.5):
-     * each merged group in place of its scans (scan-group-merge.js), the
-     * others as they are. { scans, merges }, merges by merged scan id. Every
+     * each merged group in place of its scans (scan-group-merge.js), each
+     * run's merged scan as the person left it (§8), the others as they are.
+     * { scans, merges, contexts }: merges by merged scan id, contexts by the
+     * id of a context shown on its own ({ scanId, index }). Every
      * part of the report that counts or lists scans reads them through this;
      * the grouping, the downloads and the edits read the scans themselves.
      */
@@ -205,10 +207,11 @@ export function createRunSummaryUi(app) {
         const mergeApi = globalThis.A11Y_SCAN_GROUP_MERGE;
         const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
         const fold = globalThis.A11Y_SCAN_FOLD;
-        const none = {scans, merges: new Map()};
+        const none = {scans, merges: new Map(), contexts: new Map()};
         if (!mergeApi || !choiceApi || !fold) return none;
         const choice = choiceApi.readChoice(payload);
-        if (!choice.some((p) => p.merge)) return none;
+        // Nothing merged here, nothing the run merged changed.
+        if (!choice.some((p) => p.merge || choiceApi.isRun(p.key))) return none;
 
         const key = JSON.stringify([
             choice,

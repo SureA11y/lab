@@ -2185,6 +2185,15 @@ export function createRenderer({
      */
     function buildMergedContexts(scan) {
         if (scan?.mergedGroup) return buildMergedGroup(scan.mergedGroup);
+        // A context of a run's merged scan, shown on its own (§8).
+        if (scan?.runContext) {
+            const p = document.createElement('p');
+            p.className = 'scan-contexts';
+            const lead = document.createElement('strong');
+            lead.textContent = 'A context of a merged scan:';
+            p.append(lead, ` ${scan.runContext.name}, of ${scan.runContext.of}, shown on its own.`);
+            return p;
+        }
         const contexts = scan?.mergedScan === true && Array.isArray(scan.contexts) ? scan.contexts : [];
         if (!contexts.length) return null;
         const p = document.createElement('p');
@@ -2195,7 +2204,8 @@ export function createRenderer({
         // scan: "Dark · mobile (mobile, dark)".
         p.append(lead, ' ' + contexts
             .map((c) => {
-                const notes = [...(Array.isArray(c?.scanTags) ? c.scanTags.map(String) : []), ...(c?.skipped ? ['skipped'] : [])];
+                const notes = [...(Array.isArray(c?.scanTags) ? c.scanTags.map(String) : []), ...(c?.skipped ? ['skipped'] : []),
+                    ...(c?.takenOut ? ['taken out, shown on its own'] : [])];
                 return String(c?.name || '') + (notes.length ? ` (${notes.join(', ')})` : '');
             })
             .join('; '));

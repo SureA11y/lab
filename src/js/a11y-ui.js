@@ -805,6 +805,20 @@ function storeActiveMode(mode) {
 
         if (!payload || !Array.isArray(payload.scans)) return;
 
+        // A context of a run's merged scan, shown on its own: excluded or
+        // included apart from the others (§8).
+        const runContext = runContextOf(payload, scanId);
+        const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        if (runContext && choiceApi) {
+            const shown = runSummaryUi.shownScans(payload).scans.find((s) => s.id === scanId);
+            const exclude = shown?.includedInReport !== false;
+            choiceApi.writeChoice(payload, choiceApi.setRunContextExcluded(choiceApi.readChoice(payload), runContext.scanId, runContext.index, exclude));
+            redrawAsShown(payload);
+            const say = resultsState.activeMode === 'report' ? setStatusReport : setStatusRun;
+            say(`${shown?.label || 'The context'} ${exclude ? 'excluded from' : 'included in'} summary report.`, STATUS.OK);
+            return;
+        }
+
         // A merged scan's Exclude takes all its scans out, its Include puts
         // them all back (docs/design/scan-grouping-design.md §9.4).
         const merge = mergedScanOf(payload, scanId);
@@ -1025,7 +1039,8 @@ function storeActiveMode(mode) {
         // With merged groups, scans move in the order as shown: a merged scan
         // and its scans as one block, and a scan past a merged neighbour as
         // a whole (docs/design/scan-grouping-design.md §9.4).
-        if (runSummaryUi.shownScans(payload).merges.size) {
+        const asShown = runSummaryUi.shownScans(payload);
+        if (asShown.merges.size || asShown.contexts.size) {
             moveScanAsShown(payload, scanId, direction);
             return;
         }
@@ -1063,7 +1078,7 @@ function storeActiveMode(mode) {
     }
 
     function moveScanAsShown(payload, scanId, direction) {
-        const {scans: shown, merges} = runSummaryUi.shownScans(payload);
+        const {scans: shown, merges, contexts} = runSummaryUi.shownScans(payload);
         const idx = shown.findIndex((s) => s && s.id === scanId);
         const targetIdx = idx + (direction < 0 ? -1 : 1);
         if (idx === -1 || targetIdx < 0 || targetIdx >= shown.length) return;
@@ -1073,7 +1088,13 @@ function storeActiveMode(mode) {
         // Each shown scan back to the scans it stands for, in their order:
         // a merged group's scans then sit together where it is shown.
         const byId = new Map(payload.scans.map((s) => [s?.id, s]));
-        const next = order.flatMap((id) => (merges.has(id) ? merges.get(id).members : [id])).map((id) => byId.get(id));
+        // A context of a run's merged scan stands for that scan, which goes
+        // where its first context is shown.
+        const seen = new Set();
+        const next = order
+            .flatMap((id) => (merges.has(id) ? merges.get(id).members : [contexts.has(id) ? contexts.get(id).scanId : id]))
+            .filter((id) => !seen.has(id) && seen.add(id))
+            .map((id) => byId.get(id));
         if (next.length !== payload.scans.length || next.some((s) => !s)) return;
         payload.scans.splice(0, payload.scans.length, ...next);
 
@@ -1089,6 +1110,11 @@ function storeActiveMode(mode) {
         const payload = bucket?.payload;
 
         if (!payload || !Array.isArray(payload.scans)) return;
+
+        if (runContextOf(payload, scanId)) {
+            sayRunContextIsNamedByRun();
+            return;
+        }
 
         // A merged scan is named by its group (§9.4).
         const merge = mergedScanOf(payload, scanId);
@@ -1179,6 +1205,11 @@ function storeActiveMode(mode) {
 
     function updateScanTags(scanId, rawTags) {
         const payload = getActiveBucket()?.payload;
+
+        if (runContextOf(payload, scanId)) {
+            sayRunContextIsNamedByRun();
+            return;
+        }
 
         // A merged scan's tags are its scans' together: set on each of them.
         const merge = mergedScanOf(payload, scanId);
@@ -1746,10 +1777,25 @@ function storeActiveMode(mode) {
     // Whether these scans are in a merged group: a change to them changes
     // what the merged scan holds, so the report is drawn again whole.
     function touchesMergedScan(payload, ids) {
-        const {merges} = runSummaryUi.shownScans(payload);
-        if (!merges.size) return false;
+        const {merges, contexts} = runSummaryUi.shownScans(payload);
+        if (!merges.size && !contexts.size) return false;
         const inMerged = new Set([...merges.values()].flatMap((m) => [m.id, ...m.members]));
+        // A run's merged scan the person changed, and its contexts shown on
+        // their own, whose inclusion follows it.
+        for (const [id, c] of contexts) inMerged.add(id).add(c.scanId);
         return ids.some((id) => inMerged.has(id));
+    }
+
+    // The context of a run's merged scan `scanId` is, shown on its own
+    // (docs/design/scan-grouping-design.md §8), or null.
+    function runContextOf(payload, scanId) {
+        if (!payload || !scanId) return null;
+        return runSummaryUi.shownScans(payload).contexts.get(scanId) || null;
+    }
+
+    function sayRunContextIsNamedByRun() {
+        const say = resultsState.activeMode === 'report' ? setStatusReport : setStatusRun;
+        say('A context of a merged scan is named and tagged by its run: rename or tag the merged scan, merged again.', STATUS.OK);
     }
 
     // The whole report drawn again from the scans as shown, the Scan groups

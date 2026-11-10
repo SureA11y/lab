@@ -84,6 +84,8 @@
                         + '`url:shop.example.com/products/{*}`), the `name` given to it, or null, and `merge`, true when its scans '
                         + 'are shown as one merged scan; `add` and `remove`, the ids of the scans added to a group and taken out of '
                         + 'it by hand; and for a group made by hand (key `manual:` and a number), its scans\' ids in `members`. '
+                        + 'A run\'s merged scan the person changed has the key `run:` and its id, with `merge: false` when shown '
+                        + 'as its contexts, `remove` the indexes of contexts taken out of it and `exclude` those excluded unmerged. '
                         + 'The groups and merged scans are made again from the scans whenever the '
                         + 'report is shown, and the scans are kept as they are; a key that matches none of them is ignored.',
                     properties: {
@@ -99,6 +101,7 @@
                                     add: { type: 'array', items: text },
                                     remove: { type: 'array', items: text },
                                     members: { type: 'array', items: text },
+                                    exclude: { type: 'array', items: text },
                                 },
                             },
                         },

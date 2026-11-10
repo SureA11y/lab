@@ -39,7 +39,10 @@ The first public release.
   the template is listed once on all its pages and a page's own failure on
   that page; the report keeps every scan, so a merge can be undone. Scans
   can be taken out of a merged group or added to it, and grouped and merged
-  by hand where no pattern finds them together. The
+  by hand where no pattern finds them together. A scan a Merged scan step
+  made can be unmerged into its contexts, or have one taken out: runs now
+  keep each context's own scan in the merged scan for that, which makes a
+  merged scan of two contexts about 60% larger in the saved report. The
   groups chosen are saved with the report (`scanGrouping`) and carried when
   reports are merged.
   A report's scans can be filtered by tag, and, when the report has more

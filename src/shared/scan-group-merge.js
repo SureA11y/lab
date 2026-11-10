@@ -182,6 +182,117 @@
         };
     }
 
+    // ----------------------------------------------- what the run merged (§8)
+
+    // A context of a run's merged scan as a scan of its own: the scan the run
+    // kept for it (contexts[i].scan), with what the merged scan holds for all
+    // of them, its rule catalogue and the pictures taken in this context.
+    function contextAsScan(raw, context, index, included) {
+        const own = context.scan;
+        const canonical = { ...own.canonical };
+        if (raw.canonical && raw.canonical.rules && !canonical.rules) canonical.rules = raw.canonical.rules;
+        if (raw.canonical && raw.canonical.rulesCatalog != null && canonical.rulesCatalog == null) canonical.rulesCatalog = raw.canonical.rulesCatalog;
+        const metricDefs = raw.metrics && raw.metrics.metricDefs;
+        const shots = (Array.isArray(raw.screenshots) ? raw.screenshots : [])
+            .filter((shot) => shot && (shot.name === context.name || shot.label === context.name));
+        return {
+            ...own,
+            id: `${raw.id}~${index}`,
+            label: `${raw.label || raw.id} · ${context.name}`,
+            url: context.url || own.url || raw.url || null,
+            canonical,
+            metrics: { ...(own.metrics || {}), ...(metricDefs ? { metricDefs } : {}) },
+            screenshots: shots,
+            includedInReport: included,
+            runContext: { scanId: raw.id, index, name: context.name, of: raw.label || raw.id },
+        };
+    }
+
+    // A run's merged scan folded again from the contexts kept in it, as the
+    // runner folds it (scan-fold.js, contexts), scored as a merged group is.
+    function refoldRunMerge(raw, kept, out, deps) {
+        const canonical = deps.fold.mergeCanonicals(
+            kept.map((s) => ({ canonical: s.canonical, context: s.runContext.name })),
+            kept.length,
+        );
+        if (raw.canonical && raw.canonical.rules) canonical.rules = raw.canonical.rules;
+        if (raw.canonical && raw.canonical.rulesCatalog != null) canonical.rulesCatalog = raw.canonical.rulesCatalog;
+        const domMetrics = kept
+            .map((s) => s.metrics && s.metrics.domMetrics)
+            .filter((d) => d && typeof d.totalElements === 'number')
+            .sort((a, b) => b.totalElements - a.totalElements)[0] || (raw.metrics && raw.metrics.domMetrics) || null;
+        const coverageSummary = coverageOf(canonical, kept, deps);
+        let a11ySummary = raw.metrics && raw.metrics.a11ySummary || null;
+        if (domMetrics && typeof deps.buildA11ySummary === 'function') {
+            try {
+                a11ySummary = deps.buildA11ySummary({
+                    canonical: deps.fold.scoringView(canonical),
+                    domMetrics,
+                    coverageSummary,
+                    profiles: deps.fold.sharedScanProfiles(kept),
+                });
+            } catch {
+                // Keep the run's.
+            }
+        }
+        const keptNames = new Set(kept.map((s) => s.runContext.name));
+        return {
+            ...raw,
+            canonical,
+            summary: { ...(raw.summary || {}), ...summaryOf(canonical) },
+            metrics: {
+                ...(raw.metrics || {}),
+                ...(domMetrics ? { domMetrics } : {}),
+                ...(coverageSummary ? { coverageSummary } : {}),
+                ...(a11ySummary ? { a11ySummary } : {}),
+            },
+            screenshots: (Array.isArray(raw.screenshots) ? raw.screenshots : [])
+                .filter((shot) => !shot || !(shot.name || shot.label) || keptNames.has(shot.name) || keptNames.has(shot.label)),
+            contexts: raw.contexts.map((c, i) => (out.has(String(i)) ? { ...c, takenOut: true } : c)),
+        };
+    }
+
+    /**
+     * The report's scans with each run's merged scan as the person left it
+     * (docs/design/scan-grouping-design.md §8): unmerged into its contexts,
+     * each a scan of its own; or folded again without the contexts taken
+     * out, which follow it, each on its own; or as the run made it. Only a
+     * merged scan whose contexts' scans the run kept can be changed.
+     * Returns { scans, contexts }: contexts by shown id, { scanId, index }.
+     */
+    function expandRunMerges(scans, choice, deps) {
+        const list = Array.isArray(scans) ? scans : [];
+        const contexts = new Map();
+        const byScan = new Map((Array.isArray(choice) ? choice : [])
+            .filter((p) => p && typeof p.key === 'string' && p.key.startsWith('run:'))
+            .map((p) => [p.key.slice(4), p]));
+        if (!byScan.size) return { scans: list, contexts };
+
+        const out = [];
+        for (const raw of list) {
+            const entry = raw && byScan.get(String(raw.id));
+            const kept = raw && raw.mergedScan === true && Array.isArray(raw.contexts)
+                ? raw.contexts.map((c, i) => ({ c, i })).filter(({ c }) => c && c.scan && c.scan.canonical)
+                : [];
+            if (!entry || kept.length < 1) { out.push(raw); continue; }
+            const included = isIncluded(raw);
+            const asScans = kept.map(({ c, i }) => contextAsScan(raw, c, i, included));
+            asScans.forEach((s) => contexts.set(s.id, { scanId: raw.id, index: s.runContext.index }));
+
+            if (entry.merge === false) {
+                const excluded = new Set(entry.exclude || []);
+                for (const s of asScans) out.push({ ...s, includedInReport: included && !excluded.has(String(s.runContext.index)) });
+                continue;
+            }
+            const removed = new Set(entry.remove || []);
+            const stay = asScans.filter((s) => !removed.has(String(s.runContext.index)));
+            const left = asScans.filter((s) => removed.has(String(s.runContext.index)));
+            if (stay.length && deps && deps.fold) out.push(refoldRunMerge(raw, stay, removed, deps));
+            out.push(...left);
+        }
+        return { scans: out, contexts };
+    }
+
     /**
      * The report's scans as shown: each group the person merged (`choice`
      * entries with `merge`, readChoice) in place of its scans, at the place
@@ -196,10 +307,13 @@
      * { id, key, members } (member ids, report order).
      */
     function scansAsShown(scans, result, choice, deps) {
-        const list = Array.isArray(scans) ? scans : [];
+        // What the run merged, as the person left it, first: a group merged
+        // here then holds a run's merged scan as it is shown.
+        const run = expandRunMerges(scans, choice, deps);
+        const list = run.scans;
         const wanted = (Array.isArray(choice) ? choice : []).filter((p) => p && p.merge === true);
         const merges = new Map();
-        if (!wanted.length || !result || !deps || !deps.fold) return { scans: list, merges };
+        if (!wanted.length || !result || !deps || !deps.fold) return { scans: list, merges, contexts: run.contexts };
 
         const byKey = new Map(flatten(result.groups).map((g) => [g.key, g]));
         const position = new Map(list.map((s, i) => [s && s.id, i]));
@@ -240,7 +354,7 @@
             built.set(merged.id, merged);
             merges.set(merged.id, { id: merged.id, key: group.key, members: members.map((s) => s.id) });
         }
-        if (!built.size) return { scans: list, merges };
+        if (!built.size) return { scans: list, merges, contexts: run.contexts };
 
         const out = [];
         const placed = new Set();
@@ -251,7 +365,7 @@
             placed.add(mergedId);
             out.push(built.get(mergedId));
         }
-        return { scans: out, merges };
+        return { scans: out, merges, contexts: run.contexts };
     }
 
     /**
@@ -303,6 +417,7 @@
     }
 
     return {
+        expandRunMerges,
         groupIssues,
         mergedScanId,
         scansAsShown,

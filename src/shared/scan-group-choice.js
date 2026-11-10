@@ -38,12 +38,37 @@
 
     const MANUAL = 'manual:';
     const isManual = (key) => typeof key === 'string' && key.startsWith(MANUAL);
+    // A scan a Merged scan step made, by its id (docs/design/
+    // scan-grouping-design.md §8): saved only once the person changes it.
+    const RUN = 'run:';
+    const isRun = (key) => typeof key === 'string' && key.startsWith(RUN);
+    const runKey = (scanId) => `${RUN}${scanId}`;
+    // Contexts are named by their index in the merged scan, as text.
+    const indexes = (list) => {
+        const out = [...new Set((Array.isArray(list) ? list : []).map(String).filter((x) => /^\d+$/.test(x)))];
+        return out.length ? out : null;
+    };
 
     function normalize(list) {
         const seen = new Set();
         const out = [];
         for (const p of Array.isArray(list) ? list : []) {
             if (!p || typeof p.key !== 'string' || !p.key || seen.has(p.key)) continue;
+            if (isRun(p.key)) {
+                // Unmerged, or with contexts taken out or excluded; as the run
+                // made it otherwise, which is not saved.
+                const entry = { key: p.key };
+                if (p.merge === false) entry.merge = false;
+                const remove = indexes(p.remove);
+                const exclude = indexes(p.exclude);
+                if (remove) entry.remove = remove;
+                if (exclude) entry.exclude = exclude;
+                if (Object.keys(entry).length > 1) {
+                    seen.add(p.key);
+                    out.push(entry);
+                }
+                continue;
+            }
             // A group by hand is its scans: without two, it is none.
             const members = isManual(p.key) ? ids(p.members) : null;
             if (isManual(p.key) && (!members || members.length < 2)) continue;
@@ -137,6 +162,42 @@
         const entry = { key, name: cleanName(name), members: scans };
         if (merge) entry.merge = true;
         return { choice: normalize([...list, entry]), key };
+    }
+
+    // A run's merged scan, as the person changed it: the choice with its
+    // entry made by `change`, or gone when back as the run made it.
+    function updateRun(choice, scanId, change) {
+        const key = runKey(scanId);
+        const list = normalize(choice);
+        const known = list.find((p) => p.key === key) || { key };
+        const next = normalize([change({ ...known })]);
+        return [...list.filter((p) => p.key !== key), ...next];
+    }
+
+    /** The run's merged scan `scanId` merged as the run made it, or shown as its contexts. */
+    function setRunMerged(choice, scanId, merged) {
+        return updateRun(choice, scanId, (p) => {
+            const { merge: _was, exclude: _ex, ...rest } = p;
+            return merged ? rest : { ...rest, merge: false };
+        });
+    }
+
+    /** Its context `index` taken out of it (shown on its own), or put back. */
+    function setRunContextOut(choice, scanId, index, out) {
+        const i = String(index);
+        return updateRun(choice, scanId, (p) => {
+            const remove = (p.remove || []).filter((x) => x !== i);
+            return { ...p, remove: out ? [...remove, i] : remove };
+        });
+    }
+
+    /** Unmerged, its context `index` excluded from the report or included. */
+    function setRunContextExcluded(choice, scanId, index, excluded) {
+        const i = String(index);
+        return updateRun(choice, scanId, (p) => {
+            const exclude = (p.exclude || []).filter((x) => x !== i);
+            return { ...p, exclude: excluded ? [...exclude, i] : exclude };
+        });
     }
 
     /**
@@ -279,6 +340,11 @@
         addManualGroup,
         createManualGroupSource,
         isManual,
+        isRun,
+        runKey,
+        setRunMerged,
+        setRunContextOut,
+        setRunContextExcluded,
         planAction,
     };
 }));

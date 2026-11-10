@@ -44,7 +44,10 @@ export const SCAN_FIELDS = Object.freeze([
     // A merged group shown as one scan (docs/design/scan-grouping-design.md
     // §9): its group and the scans it was folded from. Made when the report
     // is shown, never saved: the report keeps the scans themselves.
-    'mergedGroup'
+    'mergedGroup',
+    // A context of a run's merged scan shown on its own (§8): which merged
+    // scan and context it is. Made when the report is shown, never saved.
+    'runContext'
 ]);
 
 export const FINDING_FIELDS = Object.freeze([
