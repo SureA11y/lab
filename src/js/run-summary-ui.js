@@ -5,6 +5,7 @@
 import {escapeAttr, escapeHtml, svgIcon} from './a11y-ui.utils.js';
 import {failureFreeScansNote, isFailureFreeScan} from './scan-failures.js';
 import {optInRulesLabel} from './report-fields.js';
+import {scanCardThumbnail} from './all-scans-data.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
@@ -234,87 +235,125 @@ export function createRunSummaryUi(app) {
         return scans === payload.scans ? payload : {...payload, scans};
     }
 
-    function groupsSectionEl() {
-        return app.summaryEl ? app.summaryEl.querySelector('[data-sg-section]') : null;
-    }
+    // ---------------------------------------------------------------- review
 
     /**
-     * "Scan groups" (docs/design/scan-grouping-design.md §6, §10 steps 2 and 3):
-     * the run's scans grouped by the patterns their URLs repeat, under the
-     * scans list, with the groups chosen in `data` (its scanGrouping). Over
-     * every scan, excluded ones too, so a group can say how many of its scans
-     * are included. Empty when the shared modules are not loaded.
+     * What the review of the scans shows (scan-review-view.js reviewModel):
+     * the report's scans as they are, their groups (every pattern, the groups
+     * by hand), the scans in no group, the run's merges, and the totals as
+     * shown. Null without the shared modules.
      */
-    function scanGroupsHtml(scans, data) {
-        const view = globalThis.A11Y_SCAN_GROUPS_VIEW;
+    function reviewModelOf(payload) {
+        const view = globalThis.A11Y_SCAN_REVIEW_VIEW;
         const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
-        const result = choiceApi ? findScanGroups(scans, choiceApi.readChoice(data)) : null;
-        if (!view || !choiceApi || !result) return '';
-
-        // Drawing it again keeps what was open, also across a redraw of the
-        // whole report, which clears the summary first (holdGroupsState).
-        const state = readGroupsState() || heldState || {open: false, openKeys: []};
-        return view.sectionHTML(result, scans, {
-            open: state.open,
-            openKeys: state.openKeys,
-            choice: choiceApi.readChoice(data),
-            maxName: choiceApi.MAX_NAME,
-            issuesOf: (group) => groupIssuesOf(scans, group),
-        });
+        if (!view || !choiceApi || !payload) return null;
+        const scans = getScansFromPayload(payload);
+        const choice = choiceApi.readChoice(payload);
+        const result = findScanGroups(scans, choice);
+        if (!result) return null;
+        return view.reviewModel({scans, result, choice, shown: shownScans(payload), membersOf: choiceApi.membersOf});
     }
 
-    function readGroupsState() {
-        const section = groupsSectionEl();
-        if (!section) return null;
-        return {
-            open: !!section.open,
-            openKeys: [...section.querySelectorAll('details[data-sg-key]')]
-                .filter((el) => el.open).map((el) => el.getAttribute('data-sg-key')),
-            focus: captureGroupsFocus(),
-        };
-    }
-
-    // What the section looked like before the whole report is drawn again
-    // (a group merged or unmerged, its scans included or excluded): kept until
-    // the summary is written, which opens the same groups. Focus is given back
-    // by whoever drew it again, once the results are shown.
-    let heldState = null;
-
-    function holdGroupsState() {
-        heldState = readGroupsState();
-    }
-
-    /** Which control of the section has focus, to give it back after a redraw. */
-    function captureGroupsFocus() {
-        const active = document.activeElement;
-        const section = groupsSectionEl();
-        if (!active || !section || !section.contains(active)) return null;
-        return active.getAttribute('data-sg-focus') || null;
-    }
-
-    function restoreGroupsFocus(token) {
-        if (!token) return;
-        const section = groupsSectionEl();
-        const target = section && [...section.querySelectorAll('[data-sg-focus]')]
-            .find((el) => el.getAttribute('data-sg-focus') === token);
-        if (target && typeof target.focus === 'function') target.focus();
+    // How many scans the report shows, and failures it lists, for these scans
+    // as shown: what a merge changes.
+    function shownTotals(scans) {
+        const included = scans.filter((s) => s && s.includedInReport !== false);
+        const fails = (s) => (s.canonical && Array.isArray(s.canonical.findings) ? s.canonical.findings.filter((f) => f && f.outcome === 'fail').length : 0);
+        return {scans: included.length, failures: included.reduce((n, s) => n + fails(s), 0)};
     }
 
     /**
-     * Draws the section again in place, from the report itself: after a
-     * group is chosen or named, or a scan renamed or moved, when nothing
-     * else of the summary changes. Focus stays on the same control.
+     * What merging group `key` would change, or unmerging it when it is
+     * merged: { scans: [now, then], failures: [now, then] }, the report's
+     * scans and failures as shown. Shown to the person before they apply it.
+     */
+    function impactOf(payload, key) {
+        const mergeApi = globalThis.A11Y_SCAN_GROUP_MERGE;
+        const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        const fold = globalThis.A11Y_SCAN_FOLD;
+        if (!mergeApi || !choiceApi || !fold || !payload) return null;
+        const scans = Array.isArray(payload.scans) ? payload.scans : [];
+        const choice = choiceApi.readChoice(payload);
+        const merged = choice.some((p) => p.key === key && p.merge);
+        const next = choiceApi.setMerged(choice, key, !merged);
+        const deps = {fold, buildA11ySummary: globalThis.A11Y_SUMMARY?.buildA11ySummary, buildCoverageAwareSummary: globalThis.A11Y_COVERAGE_SUMMARY?.buildCoverageAwareSummary};
+        const now = shownTotals(shownScans(payload).scans);
+        const then = shownTotals(mergeApi.scansAsShown(scans, findScanGroups(scans, next), next, deps).scans);
+        return {scans: [now.scans, then.scans], failures: [now.failures, then.failures]};
+    }
+
+    // ------------------------------------------------- showing only a group
+
+    // The group the report shows alone ("Show only these in the report"),
+    // by key: a view, as the tag filter is, kept for the report open and
+    // not saved. Its scans are worked out again when the groups change.
+    let focus = {payload: null, key: null};
+    let focusMemo = {sig: null, ids: null};
+
+    function groupFocus(payload) {
+        return focus.payload === payload ? focus.key : null;
+    }
+
+    function setGroupFocus(payload, key) {
+        focus = {payload, key: key || null};
+        focusMemo = {sig: null, ids: null};
+    }
+
+    // The ids of the scans the focused group holds, as they are.
+    function focusIds(payload) {
+        const key = groupFocus(payload);
+        if (!key) return null;
+        const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        const sig = JSON.stringify([key, choiceApi ? choiceApi.readChoice(payload) : null, (payload.scans || []).map((s) => s && s.id)]);
+        if (focusMemo.sig === sig) return focusMemo.ids;
+        const model = reviewModelOf(payload);
+        const view = globalThis.A11Y_SCAN_REVIEW_VIEW;
+        const node = model && view ? view.nodeOf(model, key) : null;
+        const ids = new Set(node ? node.ids : []);
+        focusMemo = {sig, ids};
+        return ids;
+    }
+
+    /**
+     * Whether a scan as shown is in the group the report shows alone: true
+     * when no group is; a merged scan when one of its scans is, a context of
+     * a run's merged scan when that scan is.
+     */
+    function inGroupFocus(payload, scan) {
+        if (!payload || !scan) return true;
+        const ids = focusIds(payload);
+        if (!ids) return true;
+        if (scan.mergedGroup && Array.isArray(scan.mergedGroup.members)) return scan.mergedGroup.members.some((m) => ids.has(m.id));
+        if (scan.runContext) return ids.has(scan.runContext.scanId);
+        return ids.has(scan.id);
+    }
+
+    // The card at the top of the summary (scan-review-view.js), and the line
+    // that says the report shows one group alone.
+    function reviewCardHtml(payload) {
+        const view = globalThis.A11Y_SCAN_REVIEW_VIEW;
+        const model = reviewModelOf(payload);
+        if (!view || !model) return '';
+        let html = '';
+        const key = groupFocus(payload);
+        if (key) {
+            const node = view.nodeOf(model, key);
+            const name = node ? (node.rest ? 'the scans in no group' : node.name) : 'one group';
+            html += `<p class="sr-focusbar">The report shows only <strong>${escapeHtml(name)}</strong>: the other scans are hidden, not excluded. `
+                + `<button type="button" class="secondary-button" data-sr-unfocus data-sr-focus="unfocus">Show every scan</button></p>`;
+        }
+        return html + view.summaryCardHTML(model, {thumbOf: scanCardThumbnail});
+    }
+
+    /**
+     * Draws the card again in place, from the report itself: after a scan is
+     * renamed or moved, when nothing else of the summary changes. The review,
+     * when open, is drawn again too.
      */
     function refreshScanGroups(payload) {
-        const section = groupsSectionEl();
-        if (!section) return;
-        const token = captureGroupsFocus();
-        const html = scanGroupsHtml(getScansFromPayload(payload), payload);
-        const holder = document.createElement('div');
-        holder.innerHTML = html;
-        const next = holder.firstElementChild;
-        if (next) section.replaceWith(next); else section.remove();
-        restoreGroupsFocus(token);
+        const slot = app.summaryEl ? app.summaryEl.querySelector('[data-sr-card-slot]') : null;
+        if (slot) slot.innerHTML = reviewCardHtml(payload);
+        if (app.scanReview && typeof app.scanReview.refresh === 'function') app.scanReview.refresh();
     }
 
     function writeSummaryHtml({data, fallbackUrl, totals, scansListHtml, scansCount, headerText, allScansButtonHtml = ''}) {
@@ -333,10 +372,10 @@ export function createRunSummaryUi(app) {
             (scansCount === 1 ? '' : 's') +
             '.';
 
-        // Grouped as the scans are, not as shown: a merged group's scans
+        // Reviewed as the scans are, not as shown: a merged group's scans
         // stay in their groups (§9.5).
         const raw = (typeof app.getActiveBucket === 'function' && app.getActiveBucket()?.payload) || data;
-        const groupsHtml = scanGroupsHtml(getScansFromPayload(raw), raw);
+        const cardHtml = reviewCardHtml(raw);
 
         // Sort, hide-excluded and the "View all scans" trigger cluster at the end
         // of the header line.
@@ -345,11 +384,11 @@ export function createRunSummaryUi(app) {
                 '<span class="summary-header-text">' + header + '</span>' +
                 '<span class="summary-controls">' + app.buildSummaryControlsHtml() + allScansButtonHtml + '</span>' +
             '</div>' +
+            // Under the header: how much of the run repeats a template, and
+            // the way into reviewing it (docs/design/scan-grouping-design.md §11.2).
+            '<div data-sr-card-slot>' + cardHtml + '</div>' +
             rgaaRateHtml(getScansFromPayload(data, {includedOnly: true})) +
-            (scansListHtml || '') +
-            groupsHtml;
-        // Used once: the next drawing of the summary reads the section itself.
-        heldState = null;
+            (scansListHtml || '');
 
         if (app.runResultToStatus && app.resultsState.activeMode === 'run' && headerText == null) {
             app.runResultToStatus = false;
@@ -359,12 +398,15 @@ export function createRunSummaryUi(app) {
 
     return {
         buildScansListHtml,
-        captureGroupsFocus,
         findScanGroups,
         getScansFromPayload,
-        holdGroupsState,
+        groupFocus,
+        groupIssuesOf,
+        impactOf,
+        inGroupFocus,
         refreshScanGroups,
-        restoreGroupsFocus,
+        reviewModelOf,
+        setGroupFocus,
         shownScans,
         viewPayload,
         writeSummaryHtml,

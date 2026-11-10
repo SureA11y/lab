@@ -153,7 +153,8 @@ describe('the workspace', () => {
         const issues = M.groupIssues(node.ids.map((id) => m.byId.get(id)), { fold: F });
         const doc = dom(V.detailHTML(m, node, { issues, impact: { scans: [5, 2], failures: [6, 3] }, impactOpen: true }));
         assert.equal(text(doc.querySelector('label[for="sr-name"]')), 'Name');
-        assert.equal(doc.querySelector('[data-sr-merge]').checked, false);
+        // While what it changes is shown, the switch shows the change asked for.
+        assert.equal(doc.querySelector('[data-sr-merge]').checked, true);
         assert.deepEqual([...doc.querySelectorAll('.sr-impact-row')].map(text), ['Scans in the report 5 → 2', 'Failures listed 6 → 3']);
         assert.match(text(doc.querySelector('.sr-impact')), /what 1 page fails on its own stays on it/);
         assert.deepEqual([...doc.querySelectorAll('.sr-fails li')].map(text), [

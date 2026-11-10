@@ -27,7 +27,7 @@ import {createQueueRunWatch} from './queue-run-watch.js';
 import {createCompareTab} from './compare-tab.js';
 import {createGroupingUi} from './grouping-ui.js';
 import {createScreenshotsUi} from './screenshots-ui.js';
-import {createScanGroupsUi} from './scan-groups-ui.js';
+import {createScanReviewUi} from './scan-review-ui.js';
 import {createRunQueueUi} from './run-queue-ui.js';
 import {createLiveUi} from './live-ui.js';
 import {createRunSummaryUi} from './run-summary-ui.js';
@@ -106,6 +106,7 @@ function storeActiveMode(mode) {
         get toggleScanIncludedInReport() { return toggleScanIncludedInReport; },
         get applyScanInclusion() { return applyScanInclusion; },
         get redrawAsShown() { return redrawAsShown; },
+        get scanReview() { return scanReviewUi; },
         get updateScanTags() { return updateScanTags; },
         get $() { return $; },
         get afterConfigLoaded() { return afterConfigLoaded; },
@@ -369,8 +370,13 @@ function storeActiveMode(mode) {
     let activeProfileSelection = [];
     let activeProfileFilter = makeProfileFilter(activeProfileSelection);
 
+    // Set once the run summary exists: whether a scan is in the group the
+    // report shows alone (scan-review-ui.js, "Show only these in the report").
+    let groupFocusCheck = null;
+
     function scanMatchesActiveFilters(scan) {
-        return scanMatchesTagFilter(scan, activeTagFilter) && scanMatchesProfileFilter(scan, activeProfileFilter);
+        return scanMatchesTagFilter(scan, activeTagFilter) && scanMatchesProfileFilter(scan, activeProfileFilter)
+            && (!groupFocusCheck || groupFocusCheck(scan));
     }
 
     // A scan as the Profiles selector shows it: read on the profiles of it
@@ -872,7 +878,7 @@ function storeActiveMode(mode) {
 
     /**
      * Puts scans in and out of the summary report at once: what a scan
-     * group's Include all, Exclude all and Keep one do (scan-groups-ui.js).
+     * group's Include all, Exclude all and Keep one do (scan-review-ui.js).
      * `plan` is { include: [ids], exclude: [ids] }; the report is worked out
      * and drawn again once, and focus goes back to the control that had it.
      */
@@ -885,7 +891,6 @@ function storeActiveMode(mode) {
         // Read before the change: a scan merged now is one whose inclusion
         // changes what its merged scan holds.
         const merged = touchesMergedScan(payload, [...include, ...exclude]);
-        const focusToken = runSummaryUi.captureGroupsFocus();
         for (const scan of payload.scans) {
             if (!scan || !scan.id) continue;
             if (include.has(scan.id)) scan.includedInReport = true;
@@ -897,7 +902,7 @@ function storeActiveMode(mode) {
         } else {
             recomputeDerivedReportData(payload);
             reportView.refreshDerivedReportUi();
-            runSummaryUi.restoreGroupsFocus(focusToken);
+            scanReviewUi?.refresh();
         }
 
         if (message) {
@@ -1798,19 +1803,21 @@ function storeActiveMode(mode) {
         say('A context of a merged scan is named and tagged by its run: rename or tag the merged scan, merged again.', STATUS.OK);
     }
 
-    // The whole report drawn again from the scans as shown, the Scan groups
-    // section keeping what was open and the control that had focus.
+    // The whole report drawn again from the scans as shown, the control that
+    // had focus in the scans list given it back, and the review of the scans,
+    // when open, drawn again over it (it keeps its own focus).
     function redrawAsShown(payload) {
         // Focus is given back once the redraw has shown the results again:
         // they are hidden while it clears them, and a hidden control cannot
         // take it.
-        const groupsFocus = runSummaryUi.captureGroupsFocus();
         const scanFocus = captureScanControlFocus();
-        runSummaryUi.holdGroupsState();
+        const cardFocus = document.activeElement && summaryEl?.contains(document.activeElement)
+            ? document.activeElement.getAttribute('data-sr-focus') : null;
         recomputeDerivedReportData(payload);
         renderActiveBucket();
-        if (groupsFocus) runSummaryUi.restoreGroupsFocus(groupsFocus);
+        if (cardFocus) summaryEl?.querySelector(`[data-sr-focus="${cardFocus}"]`)?.focus();
         else if (scanFocus) restoreScanControlFocus(scanFocus);
+        scanReviewUi?.refresh();
     }
 
     function recomputeDerivedReportData(payload) {
@@ -2533,7 +2540,7 @@ function storeActiveMode(mode) {
 
     // In screenshots-ui.js.
     const screenshotsUi = createScreenshotsUi(app);
-    createScanGroupsUi(app);
+    const scanReviewUi = createScanReviewUi(app);
 
     // ---- Scan sorting ----
     // Sort is a stable ordering of every scan card, applied by the shared module
@@ -3388,6 +3395,7 @@ function storeActiveMode(mode) {
 
     // In run-summary-ui.js.
     const runSummaryUi = createRunSummaryUi(app);
+    groupFocusCheck = (scan) => runSummaryUi.inGroupFocus(getActiveBucket()?.payload, scan);
 
     /* ==================== "View all scans" grid dialog ==================== */
 

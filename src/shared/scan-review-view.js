@@ -257,7 +257,8 @@
     /**
      * The middle of the workspace: the selected group's pages as a grid of
      * their screenshots. view: { sel, selected (Set of ids), sort ('differs'
-     * or 'report'), issues (groupIssues of the group, or null), thumbOf }.
+     * or 'report'), issues (groupIssues of the group, or null), thumbOf,
+     * targets ([{ key, name }], the groups selected pages can be added to) }.
      */
     function gridHTML(model, node, view) {
         const v = view || {};
@@ -300,7 +301,14 @@
                 + (group ? '<button type="button" class="secondary-button" data-sr-bulk="out" data-sr-focus="bulk:out">Take out of the group</button>' : '')
                 + '<button type="button" class="secondary-button" data-sr-bulk="exclude" data-sr-focus="bulk:exclude">Exclude</button>'
                 + '<button type="button" class="secondary-button" data-sr-bulk="include" data-sr-focus="bulk:include">Include</button>'
-                + '<button type="button" class="secondary-button" data-sr-bulk="byhand" data-sr-focus="bulk:byhand">Group by hand</button></div>';
+                + '<button type="button" class="secondary-button" data-sr-bulk="byhand" data-sr-focus="bulk:byhand">Group by hand</button>'
+                // Into another group, merged or not, whatever its pattern.
+                + (Array.isArray(v.targets) && v.targets.length
+                    ? `<span class="sr-add"><label for="sr-add-target">Add to</label> <select id="sr-add-target" data-sr-add-target data-sr-focus="add-target">`
+                        + `<option value="">a group…</option>${v.targets.map((t) => `<option value="${esc(t.key)}">${esc(t.name)}</option>`).join('')}</select>`
+                        + ` <button type="button" class="secondary-button" data-sr-bulk="add" data-sr-focus="bulk:add">Add</button></span>`
+                    : '')
+                + '</div>';
         }
         html += ids.length
             ? `<ul class="sr-tiles" aria-labelledby="sr-grid-h">${ids.map((id) => tile(id, false)).join('')}</ul>`
@@ -352,7 +360,9 @@
         return `<h3>${esc(node.name)}</h3>`
             + `<p class="sr-note sr-mono">${esc(node.byHand ? 'Grouped by hand' : node.pattern)} · ${plural(total, 'scan')}, ${node.included} included</p>`
             + `<p class="sr-field"><label for="${nameId}">Name</label><input type="text" id="${nameId}" data-sr-name="${esc(node.key)}" data-sr-focus="name" value="${esc(node.entry && node.entry.name ? node.entry.name : '')}" maxlength="200" autocomplete="off"></p>`
-            + `<div class="sr-box"><label class="sr-switch"><input type="checkbox" data-sr-merge="${esc(node.key)}" data-sr-focus="merge"${node.merged ? ' checked' : ''}> <span>Merge into one scan<small>A failure of the template is listed once, on all its pages; a page's own failure stays on that page. Can be undone.</small></span></label>`
+            // While what it changes is shown, the switch shows the change asked
+            // for: applying makes it so, Cancel puts it back.
+            + `<div class="sr-box"><label class="sr-switch"><input type="checkbox" data-sr-merge="${esc(node.key)}" data-sr-focus="merge"${(v.impactOpen ? !node.merged : node.merged) ? ' checked' : ''}> <span>Merge into one scan<small>A failure of the template is listed once, on all its pages; a page's own failure stays on that page. Can be undone.</small></span></label>`
             + (node.mergedInto ? `<p class="sr-note">Shown merged into ${esc(node.mergedInto)}, the larger merged group it is in.</p>` : '')
             + (im && v.impactOpen ? `<div class="sr-impact" role="group" aria-label="What it changes"><p class="sr-impact-row"><span>Scans in the report</span> <span><b>${im.scans[0]}</b> → <b>${im.scans[1]}</b></span></p>`
                 + `<p class="sr-impact-row"><span>Failures listed</span> <span><b>${im.failures[0]}</b> → <b>${im.failures[1]}</b></span></p>`
