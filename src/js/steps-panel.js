@@ -1,8 +1,8 @@
 // The steps panel: a map of a section's steps beside its editor, to find
 // them and go to them (docs/design/steps-panel-design.md). It reads the
 // steps from the editor's lines, draws them as a tree with a filter, follows
-// the editor as it scrolls, and folds away to a rail, which the browser
-// remembers for the section. What it lists and matches is the model's
+// the editor as it scrolls, and folds away to a rail, where it starts.
+// What it lists and matches is the model's
 // (steps-panel-model.js); this draws it and wires it.
 
 import {getDirectActionLines, getDirectNestedActionContainers} from './action-tree.js';
@@ -11,33 +11,10 @@ import {
     KINDS, ancestorIds, applyFilter, countKinds, foldRows, isOfKind, matchPosition, siblingPositions, stepThroughMatches
 } from './steps-panel-model.js';
 
-const STORAGE_PREFIX = 'a11y-lab-steps-panel-';
 const REBUILD_DELAY_MS = 200;
 // How far below the top of the window a step counts as the one in view: below
 // the sticky mode bar, with some room to read it.
 const IN_VIEW_LINE_PX = 120;
-
-/**
- * Whether the panel starts hidden for a section: as the browser remembers it,
- * or `fallback` when it remembers nothing.
- */
-export function readPanelHidden(storage, sectionKey, fallback = false) {
-    try {
-        const kept = storage?.getItem(STORAGE_PREFIX + sectionKey);
-        return kept === 'hidden' || kept === 'shown' ? kept === 'hidden' : fallback;
-    } catch {
-        return fallback;
-    }
-}
-
-export function writePanelHidden(storage, sectionKey, hidden) {
-    try {
-        storage?.setItem(STORAGE_PREFIX + sectionKey, hidden ? 'hidden' : 'shown');
-    } catch {
-        // Private windows and blocked storage: the panel still works, it just
-        // is not remembered.
-    }
-}
 
 /** The fields of a line that are its own, not those of the steps nested in it. */
 function ownFields(line) {
@@ -278,13 +255,12 @@ function icon(doc, d) {
  * @param {object} o
  * @param {Element} o.host          The panel's element, an <aside>.
  * @param {Element} o.editorEl      The section's list of steps.
- * @param {string}  o.sectionKey    Names it in storage: "workflow".
+ * @param {string}  o.sectionKey    Names its ids: "workflow".
  * @param {string}  o.title         "Workflow steps".
  * @param {(line: Element, opts: {focus: boolean}) => void} o.goToLine
  *        Opens the line and the containers it is in, scrolls to it and, with
  *        `focus`, moves focus to it.
- * @param {Storage} [o.storage]     Where hidden or shown is kept.
- * @param {boolean} [o.startHidden] Hidden until shown, when the browser keeps no choice.
+ * @param {boolean} [o.startHidden] Folded to its rail until shown, each time the page loads.
  * @param {Window}  [o.win]
  * @param {(line: Element) => boolean} [o.isLineShown]  Whether a line is drawn (tests replace it).
  * @param {(line: Element) => DOMRect} [o.rectOf]       Its place on screen (tests replace it).
@@ -296,7 +272,6 @@ function icon(doc, d) {
  * @param {(node: object) => void} [o.open]
  *        Brings a step that has no line yet into the editor (opens its
  *        custom step), before the panel goes to it.
- * @param {Element[]} [o.actions]   Controls of the section's own, shown under the title.
  * @param {{count: (kind: string, query: string) => number, label: string, go: (kind: string, query: string) => void}} [o.elsewhere]
  *        Says how many steps match in the other section, and leads there.
  * @param {() => void} [o.onRead]   Told each time the panel has read the steps again.
@@ -317,7 +292,6 @@ export function createStepsPanel(o) {
     const {host, editorEl, sectionKey, title, goToLine} = o;
     const doc = host.ownerDocument;
     const win = o.win || doc.defaultView;
-    const storage = 'storage' in o ? o.storage : win?.localStorage;
     const isLineShown = o.isLineShown || ((line) => line.offsetParent !== null);
     const rectOf = o.rectOf || ((line) => line.getBoundingClientRect());
     const isEditorShown = o.isEditorShown || (() => editorEl.offsetParent !== null);
@@ -333,7 +307,7 @@ export function createStepsPanel(o) {
         currentId: null,
         inViewId: null,
         focusId: null,
-        hidden: readPanelHidden(storage, sectionKey, !!o.startHidden),
+        hidden: !!o.startHidden,
         nodes: [],
         lineById: new Map(),
         view: {active: false, rows: [], matches: []},
@@ -418,7 +392,6 @@ export function createStepsPanel(o) {
             el(doc, 'h3', {className: 'steps-panel__title', text: title}),
             el(doc, 'div', {className: 'steps-panel__head-actions'}, [selectBtn, doneBtn, hideBtn])
         ]),
-        o.actions?.length ? el(doc, 'div', {className: 'steps-panel__actions'}, o.actions) : null,
         el(doc, 'div', {className: 'steps-panel__controls'}, [findLabel, findField, chipsEl, statusEl, linksEl, selectRow]),
         treeEl,
         emptyEl,
@@ -1610,9 +1583,8 @@ export function createStepsPanel(o) {
         if (target) focusRow(target.dataset.stepId);
     });
 
-    function setHidden(hidden, {remember = true, moveFocus = false} = {}) {
+    function setHidden(hidden, {moveFocus = false} = {}) {
         state.hidden = !!hidden;
-        if (remember) writePanelHidden(storage, sectionKey, state.hidden);
         hideBtn.setAttribute('aria-expanded', state.hidden ? 'false' : 'true');
         showBtn.setAttribute('aria-expanded', state.hidden ? 'false' : 'true');
         drawHidden();
@@ -1643,7 +1615,7 @@ export function createStepsPanel(o) {
     };
     narrowQuery?.addEventListener?.('change', onNarrowChange);
 
-    setHidden(state.hidden, {remember: false});
+    setHidden(state.hidden);
     rebuild();
 
     return {
