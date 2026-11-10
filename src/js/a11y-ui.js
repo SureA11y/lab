@@ -2020,6 +2020,9 @@ function storeActiveMode(mode) {
             editorEl: actionsBar,
             sectionKey: 'workflow',
             title: 'Workflow steps',
+            // The app opens with one step: the panel waits until shown. Not
+            // the Custom steps one, which holds Add custom step.
+            startHidden: true,
             goToLine: goToWorkflowLine,
             callName: customStepName,
             barHost: $('#workflow-selection-bar'),

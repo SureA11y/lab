@@ -349,6 +349,17 @@ describe('steps panel', () => {
         assert.equal(readPanelHidden(storage, 'workflow'), false);
     });
 
+    test('starts hidden with startHidden, until the browser keeps a choice', () => {
+        const storage = memoryStorage();
+        assert.equal(readPanelHidden(storage, 'workflow', true), true);
+        storage.setItem('a11y-lab-steps-panel-workflow', 'shown');
+        assert.equal(readPanelHidden(storage, 'workflow', true), false);
+        storage.setItem('a11y-lab-steps-panel-workflow', 'hidden');
+        assert.equal(readPanelHidden(storage, 'workflow', false), true);
+        const blocked = { getItem() { throw new Error('blocked'); } };
+        assert.equal(readPanelHidden(blocked, 'workflow', true), true);
+    });
+
     test('works when the browser keeps nothing', () => {
         const broken = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } };
         const { doc, panel } = setup({ storage: broken });

@@ -17,12 +17,16 @@ const REBUILD_DELAY_MS = 200;
 // the sticky mode bar, with some room to read it.
 const IN_VIEW_LINE_PX = 120;
 
-/** Whether the browser remembers the panel as hidden for a section. */
-export function readPanelHidden(storage, sectionKey) {
+/**
+ * Whether the panel starts hidden for a section: as the browser remembers it,
+ * or `fallback` when it remembers nothing.
+ */
+export function readPanelHidden(storage, sectionKey, fallback = false) {
     try {
-        return storage?.getItem(STORAGE_PREFIX + sectionKey) === 'hidden';
+        const kept = storage?.getItem(STORAGE_PREFIX + sectionKey);
+        return kept === 'hidden' || kept === 'shown' ? kept === 'hidden' : fallback;
     } catch {
-        return false;
+        return fallback;
     }
 }
 
@@ -280,6 +284,7 @@ function icon(doc, d) {
  *        Opens the line and the containers it is in, scrolls to it and, with
  *        `focus`, moves focus to it.
  * @param {Storage} [o.storage]     Where hidden or shown is kept.
+ * @param {boolean} [o.startHidden] Hidden until shown, when the browser keeps no choice.
  * @param {Window}  [o.win]
  * @param {(line: Element) => boolean} [o.isLineShown]  Whether a line is drawn (tests replace it).
  * @param {(line: Element) => DOMRect} [o.rectOf]       Its place on screen (tests replace it).
@@ -328,7 +333,7 @@ export function createStepsPanel(o) {
         currentId: null,
         inViewId: null,
         focusId: null,
-        hidden: readPanelHidden(storage, sectionKey),
+        hidden: readPanelHidden(storage, sectionKey, !!o.startHidden),
         nodes: [],
         lineById: new Map(),
         view: {active: false, rows: [], matches: []},

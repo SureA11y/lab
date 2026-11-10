@@ -401,3 +401,27 @@ test('with no custom step chosen, its editor takes neither a click nor the keybo
     assert.deepEqual(errors, []);
     await page.close();
 });
+
+test("the Workflow's steps panel starts collapsed, until shown, and then stays as left", async () => {
+    const { page, errors } = await openApp();
+    await page.evaluate(() => localStorage.clear());
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.click('#mode-run');
+    await page.waitForSelector('#workflow-steps-panel .steps-panel__show');
+    const hidden = () => page.evaluate(() => ['#workflow-steps-panel', '#custom-steps-steps-panel'].map((id) => {
+        const host = document.querySelector(id);
+        return host.querySelector('.steps-panel__full').hidden && !host.querySelector('.steps-panel__rail').hidden;
+    }));
+    // The app opens with its one scan step, and the Workflow's panel as a
+    // rail; the Custom steps one, with Add custom step in it, open.
+    assert.equal(await page.$$eval('#actionsContainer > .line', (lines) => lines.length), 1);
+    assert.deepEqual(await hidden(), [true, false]);
+    // Shown, the Workflow's stays shown after a reload.
+    await page.click('#workflow-steps-panel .steps-panel__show');
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.waitForSelector('#workflow-steps-panel .steps-panel__hide');
+    assert.deepEqual(await hidden(), [false, false]);
+    await page.evaluate(() => localStorage.clear());
+    assert.deepEqual(errors, []);
+    await page.close();
+});
