@@ -2722,6 +2722,13 @@ function storeActiveMode(mode) {
             saveBlobAsJSON
         });
 
+        // A filter typed for the steps before belongs to them, not to the
+        // ones a loaded or appended config brings: both steps panels list
+        // every step again.
+        const resetStepsPanelFilters = () => {
+            workflowStepsPanel?.setFilter('all', '');
+            customStepsPanel?.setFilter('all', '');
+        };
         afterConfigLoaded = () => {
             if (customStepActionsBuilder) {
                 try {
@@ -2730,10 +2737,7 @@ function storeActiveMode(mode) {
                     setUiState('error', String(e?.message || e));
                 }
             }
-            // A filter typed for the steps before belongs to them, not to
-            // the ones just loaded: both steps panels list everything again.
-            workflowStepsPanel?.setFilter('all', '');
-            customStepsPanel?.setFilter('all', '');
+            resetStepsPanelFilters();
             clearLogsPanel();
             clearResults();
             clearScreenshots();
@@ -2750,7 +2754,7 @@ function storeActiveMode(mode) {
         // Append is an additive edit on top of the current config, so — unlike
         // load — it must stay undoable (the actions builder and custom-steps
         // list each pushed their own history entry). Don't reset the baseline.
-        cfgIO.setupConfigAppender();
+        cfgIO.setupConfigAppender(resetStepsPanelFilters);
         cfgIO.setupConfigSaver($('#save-config-button'));
 
         cfgIO.autoApplyFromQuery();
