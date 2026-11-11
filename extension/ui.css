@@ -601,7 +601,7 @@ input:focus, textarea:focus, select:focus{
 .btn:active{ background: var(--surface-5); }
 .btn:focus-visible{ outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
 
-.btn[disabled]{ opacity: .42; cursor: not-allowed; }
+.btn[disabled]{ opacity: .55; cursor: not-allowed; }
 
 /* The one primary action per view — a true solid fill, not a tint. */
 .btn-primary{
@@ -1002,7 +1002,7 @@ input:focus, textarea:focus, select:focus{
 .src-dialog-trigger:focus-visible,
 .src-dialog-close:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
 .src-dialog-trigger[disabled],
-.src-dialog-close[disabled] { opacity: .42; cursor: not-allowed; }
+.src-dialog-close[disabled] { opacity: .55; cursor: not-allowed; }
 
 /* Dialogs */
 .src-dialog {

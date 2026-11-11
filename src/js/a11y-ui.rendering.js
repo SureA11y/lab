@@ -1370,7 +1370,8 @@ export function createRenderer({
             '<td role="cell" data-label="Severity" class="' +
             impactClass +
             '">' +
-            escapeHtml(issue.impact || 'unknown') +
+            // The same severity everywhere: a dot of its colour, then its word.
+            '<span class="sev sev--' + escapeAttr(issue.impact || 'unknown') + '">' + escapeHtml(issue.impact || 'unknown') + '</span>' +
             '</td>' +
             '<td role="cell" data-label="Description">' +
             withLang(escapeHtml(issue.help || issue.description || ''), issue.titleLang || issue.lang) +
