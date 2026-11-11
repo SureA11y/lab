@@ -487,10 +487,11 @@ export function createStepFields(builder) {
             "button",
             {
                 type: "button",
-                className: "secondary-button icon-button",
+                className: "secondary-button icon-button action-array__add",
                 "aria-label": "Add nested action"
             },
-            svgIcon("add")
+            // Its word shows only where the shortcuts beside it do not.
+            [svgIcon("add"), createEl("span", {className: "action-array__add-word", "aria-hidden": "true"}, "Add step")]
         );
 
         addBtn.addEventListener("click", () => {

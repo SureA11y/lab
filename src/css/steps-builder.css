@@ -1528,3 +1528,14 @@
         padding-left: 0;
     }
 }
+
+/* A list's add row, by default the add button (an icon) and shortcuts to the
+   steps most added. At phone width the shortcuts went on two ragged rows
+   under every list; there the add button alone stays, with its word, and
+   its menu still holds every step. */
+.action-array__add-word { display: none; }
+@media (max-width: 600px) {
+    .action-array__footer .action-shortcut { display: none; }
+    .action-array__footer .action-array__add { width: auto; padding-inline: var(--space-3); gap: var(--space-2); }
+    .action-array__footer .action-array__add .action-array__add-word { display: inline; }
+}
