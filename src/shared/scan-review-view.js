@@ -366,30 +366,83 @@
         const merged = t.merged + t.runMerged;
         return `<span class="sr-stat${changed ? ' sr-stat--changed' : ''}">In the report <b>${t.inReport}</b> ${t.inReport === 1 ? 'scan' : 'scans'}</span>`
             + `<span class="sr-stat" title="Each rule a scan in the report fails, counted once per scan">Failures listed <b>${t.failures}</b></span>`
-            + `<span class="sr-stat">Merged <b>${merged}</b> ${merged === 1 ? 'scan' : 'scans'}${t.runMerged ? ` (${t.runMerged === merged ? 'by the run' : `${t.runMerged} by the run`})` : ''}</span>`
+            // Who merged them, said apart: "303 by the run" alone read as
+            // 303 scans merged into something.
+            + `<span class="sr-stat">Merged <b>${merged}</b> ${merged === 1 ? 'scan' : 'scans'}${t.runMerged ? ` (${t.runMerged} by the run, ${t.merged} by you)` : ''}</span>`
             + `<span class="sr-stat">Excluded <b>${t.excluded}</b> ${t.excluded === 1 ? 'scan' : 'scans'}</span>`;
     }
 
-    function treeHTML(model, sel) {
-        const item = (n) => `<li><button type="button" class="sr-node" data-sr-node="${esc(n.key)}" data-sr-focus="node:${esc(n.key)}" aria-current="${sel === n.key ? 'true' : 'false'}" title="${esc(n.pattern && n.pattern !== n.name ? `${n.name}: ${n.pattern}` : n.name)}">`
+    /**
+     * The groups as a tree whose branches fold: a group with groups in it has
+     * a button before it that shows or hides them (aria-expanded), and each
+     * section of the list ("Templates found", "Merged by the run") folds the
+     * same way. view: { collapsed: Set of the keys folded (a group's key, or
+     * a section's: sec:templates, sec:byhand, sec:rest, sec:run) }. The
+     * branch and section holding the selected group stay open whatever the set
+     * says, so the selection is never folded out of sight.
+     */
+    function treeHTML(model, sel, view) {
+        const collapsed = view && view.collapsed instanceof Set ? view.collapsed : new Set();
+        const holds = (n) => n.key === sel || (n.children || []).some(holds);
+        const domId = (key) => `sr-sub-${String(key).replace(/[^A-Za-z0-9_-]/g, '_')}`;
+        const chevron = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        const nodeButton = (n) => `<button type="button" class="sr-node" data-sr-node="${esc(n.key)}" data-sr-focus="node:${esc(n.key)}" aria-current="${sel === n.key ? 'true' : 'false'}" title="${esc(n.pattern && n.pattern !== n.name ? `${n.name}: ${n.pattern}` : n.name)}">`
             // The pattern under a name given to it; an unnamed group is its
             // pattern, an address, in the code font.
             + `<span class="sr-node-label${isAddress(n) ? ' sr-url' : ''}">${esc(n.name)}${n.pattern && n.pattern !== n.name ? ` <span class="sr-node-pattern sr-url">${esc(n.pattern)}</span>` : (n.byHand ? ' <span class="sr-node-pattern">by hand</span>' : '')}</span>`
             + (n.merged ? ' <span class="sr-node-badge">merged</span>' : '')
-            + ` <span class="sr-node-count">${n.ids.length}</span></button>`
-            + (n.children && n.children.length ? `<ul>${n.children.map(item).join('')}</ul>` : '') + `</li>`;
+            + ` <span class="sr-node-count">${n.ids.length}</span></button>`;
+        const item = (n) => {
+            const kids = n.children || [];
+            if (!kids.length) return `<li class="sr-leaf">${nodeButton(n)}</li>`;
+            const open = !collapsed.has(n.key) || kids.some(holds);
+            return `<li class="sr-branch"><span class="sr-row">`
+                + `<button type="button" class="sr-twisty" data-sr-toggle="${esc(n.key)}" data-sr-focus="toggle:${esc(n.key)}" aria-expanded="${open}" aria-controls="${domId(n.key)}" aria-label="${esc(`${open ? 'Hide' : 'Show'} the ${plural(kids.length, 'group')} in ${n.name}`)}">${chevron}</button>`
+                + nodeButton(n) + `</span>`
+                + `<ul id="${domId(n.key)}"${open ? '' : ' hidden'}>${kids.map(item).join('')}</ul></li>`;
+        };
+        // A section of the list, its heading a button that folds it.
+        const section = (key, title, count, inner, holdsSel) => {
+            const open = !collapsed.has(key) || holdsSel;
+            return `<h3 class="sr-tree-h"><button type="button" class="sr-tree-toggle" data-sr-toggle="${key}" data-sr-focus="toggle:${key}" aria-expanded="${open}" aria-controls="${domId(key)}">`
+                + `${chevron}<span>${esc(title)}</span> <span class="sr-tree-count">${count}</span></button></h3>`
+                + `<div id="${domId(key)}"${open ? '' : ' hidden'}>${inner}</div>`;
+        };
         let html = '';
-        if (model.patterns.length) html += `<h3 class="sr-tree-h">Templates found</h3><ul>${model.patterns.map(item).join('')}</ul>`;
-        else html += `<p class="sr-tree-none">The URLs of these scans repeat no pattern.</p>`;
-        if (model.byHand.length) html += `<h3 class="sr-tree-h">Grouped by hand</h3><ul>${model.byHand.map(item).join('')}</ul>`;
-        html += `<h3 class="sr-tree-h">The rest</h3><ul><li><button type="button" class="sr-node" data-sr-node="${REST}" data-sr-focus="node:${REST}" aria-current="${sel === REST ? 'true' : 'false'}">`
-            + `<span class="sr-node-label">In no group</span> <span class="sr-node-count">${model.rest.length}</span></button></li></ul>`;
+        if (model.patterns.length) {
+            html += section('sec:templates', 'Templates found', model.patterns.length, `<ul>${model.patterns.map(item).join('')}</ul>`, model.patterns.some(holds));
+        } else {
+            html += `<p class="sr-tree-none">The URLs of these scans repeat no pattern.</p>`;
+        }
+        if (model.byHand.length) html += section('sec:byhand', 'Grouped by hand', model.byHand.length, `<ul>${model.byHand.map(item).join('')}</ul>`, model.byHand.some(holds));
+        html += section('sec:rest', 'The rest', model.rest.length, `<ul><li class="sr-leaf"><button type="button" class="sr-node" data-sr-node="${REST}" data-sr-focus="node:${REST}" aria-current="${sel === REST ? 'true' : 'false'}">`
+            + `<span class="sr-node-label">In no group</span> <span class="sr-node-count">${model.rest.length}</span></button></li></ul>`, sel === REST);
         if (model.runMerges.length) {
-            html += `<h3 class="sr-tree-h">Merged by the run</h3><ul>${model.runMerges.map((r) => `<li><button type="button" class="sr-node" data-sr-node="${esc(r.key)}" data-sr-focus="node:${esc(r.key)}" aria-current="${sel === r.key ? 'true' : 'false'}">`
+            html += section('sec:run', 'Merged by the run', model.runMerges.length, `<ul>${model.runMerges.map((r) => `<li class="sr-leaf"><button type="button" class="sr-node" data-sr-node="${esc(r.key)}" data-sr-focus="node:${esc(r.key)}" aria-current="${sel === r.key ? 'true' : 'false'}">`
                 + `<span class="sr-node-label">${esc(r.name)} <span class="sr-node-pattern">${esc(r.contexts.map((c) => c.name).join(' · '))}</span></span>`
-                + ` <span class="sr-node-badge">${r.unmerged ? 'unmerged' : 'run'}</span></button></li>`).join('')}</ul>`;
+                + ` <span class="sr-node-badge">${r.unmerged ? 'unmerged' : 'run'}</span></button></li>`).join('')}</ul>`, model.runMerges.some((r) => r.key === sel));
         }
         return html;
+    }
+
+    // Up to this many of the run's merged scans, their section starts open.
+    const RUN_MERGES_OPEN = 8;
+
+    /**
+     * What the tree starts with folded: an overview, the top-level groups with
+     * the ones directly in them, deeper groups folded; and the run's merged
+     * scans' section when it is long, the templates being what the tree is
+     * for. -> Set of keys, for treeHTML's view.collapsed.
+     */
+    function initiallyFolded(model) {
+        const deeper = (nodes, depth) => nodes.flatMap((n) => [
+            ...((n.children || []).length && depth >= 1 ? [n.key] : []),
+            ...deeper(n.children || [], depth + 1),
+        ]);
+        return new Set([
+            ...deeper([...(model.patterns || []), ...(model.byHand || [])], 0),
+            ...((model.runMerges || []).length > RUN_MERGES_OPEN ? ['sec:run'] : []),
+        ]);
     }
 
     // A group named by its URL pattern, not by a person.
@@ -454,7 +507,8 @@
                 + `</span></li>`;
         };
         const title = node.rest ? 'In no group' : node.name;
-        let html = `<div class="sr-grid-head"><h3 id="sr-grid-h"${!node.rest && !node.run && isAddress(node) ? ' class="sr-url"' : ''}>${esc(title)}</h3><span class="sr-grid-tools">`
+        // The column says what it shows, above the group's name.
+        let html = `<div class="sr-grid-head"><div class="sr-grid-title"><p class="sr-pane-label">Pages</p><h3 id="sr-grid-h"${!node.rest && !node.run && isAddress(node) ? ' class="sr-url"' : ''}>${esc(title)}</h3></div><span class="sr-grid-tools">`
             + (group ? `<label>Order <select data-sr-sort data-sr-focus="sort"><option value="differs"${v.sort !== 'report' ? ' selected' : ''}>Those that differ first</option><option value="report"${v.sort === 'report' ? ' selected' : ''}>As in the report</option></select></label>` : '')
             + (ids.length ? `<button type="button" class="secondary-button" data-sr-select-all data-sr-focus="select-all">${picked.length === ids.length ? 'Select none' : 'Select all'}</button>` : '')
             + `</span></div>`;
@@ -497,7 +551,7 @@
     function ruleListHTML(rules, total, fixOnce) {
         return `<ul class="sr-fails sr-fails--rules">${rules.map((r) => `<li><span class="sr-fail-name">${esc(r.title)}</span>`
             + ` <span class="sr-sev sr-sev--${esc(r.severity)}">${esc(r.severity)}</span>`
-            + ` <span class="sr-fails-on">${r.scans.length} of ${total}${fixOnce ? '<small><span class="visually-hidden"> · </span>fix once</small>' : ''}</span></li>`).join('')}</ul>`;
+            + ` <span class="sr-fails-on">${r.scans.length} of ${plural(total, "page")}${fixOnce ? '<small><span class="visually-hidden"> · </span>fix once</small>' : ''}</span></li>`).join('')}</ul>`;
     }
 
     /**
@@ -509,7 +563,8 @@
     function mergeBoxHTML({ key, state, note, button, apply, impact, open, outcome }) {
         return `<div class="sr-box sr-merge"><p class="sr-merge-state">${state}</p>`
             + (note ? `<p class="sr-note">${note}</p>` : '')
-            + (button ? `<button type="button" class="secondary-button" data-sr-merge="${esc(key)}" data-sr-focus="merge" aria-expanded="${open ? 'true' : 'false'}" aria-controls="sr-impact">${esc(button)}</button>` : '')
+            // The group's main action, until it is open: then Apply is.
+            + (button ? `<button type="button" class="secondary-button${open ? '' : ' sr-primary'}" data-sr-merge="${esc(key)}" data-sr-focus="merge" aria-expanded="${open ? 'true' : 'false'}" aria-controls="sr-impact">${esc(button)}</button>` : '')
             + (impact && open ? `<div class="sr-impact" id="sr-impact" role="group" aria-labelledby="sr-impact-h"><h4 class="sr-sub" id="sr-impact-h">What it changes</h4>`
                 + `<p class="sr-impact-row"><span>Scans in the report</span> <span><b>${impact.scans[0]}</b> → <b>${impact.scans[1]}</b></span></p>`
                 + `<p class="sr-impact-row"><span>Failures listed</span> <span><b>${impact.failures[0]}</b> → <b>${impact.failures[1]}</b></span></p>`
@@ -602,10 +657,14 @@
             + `<button type="button" class="secondary-button" data-sr-act="focus" data-sr-focus="act:focus">${v.focus === node.key ? 'Show every scan' : 'Show only these'}</button>`
             + (node.byHand ? `<button type="button" class="secondary-button" data-sr-act="remove" data-sr-focus="act:remove">Remove group</button>` : '')
             + `</span></div>`
-            + (issues ? `<div class="sr-box"><h4 class="sr-sub">On most scans: the template's</h4>`
-                + (issues.template.length ? ruleListHTML(issues.template, issues.scansTotal, true) : '<p class="sr-note">Nothing fails on most scans.</p>')
-                + `<h4 class="sr-sub">On a few scans: their own content's</h4>`
-                + (issues.content.length ? ruleListHTML(issues.content, issues.scansTotal, false) : '<p class="sr-note">Nothing fails on a few scans only.</p>')
+            // A failure is the template's when the same element fails on most
+            // pages; one on other elements, page by page, is their content's,
+            // however many pages have one (a rule can fail on every page, on
+            // a different element on each).
+            + (issues ? `<div class="sr-box"><h4 class="sr-sub">The same element on most pages: the template's</h4>`
+                + (issues.template.length ? ruleListHTML(issues.template, issues.scansTotal, true) : '<p class="sr-note">No element fails on most pages.</p>')
+                + `<h4 class="sr-sub">Elements of each page's own</h4>`
+                + (issues.content.length ? ruleListHTML(issues.content, issues.scansTotal, false) : '<p class="sr-note">No page fails on an element of its own.</p>')
                 + `</div>` : '');
     }
 
@@ -656,6 +715,7 @@
         summaryCardHTML,
         statsHTML,
         treeHTML,
+        initiallyFolded,
         gridHTML,
         detailHTML,
         previewHTML,

@@ -28,7 +28,9 @@ export function createScanReviewUi(app) {
     const sessions = new WeakMap();
     function session(payload) {
         if (!sessions.has(payload)) {
-            sessions.set(payload, {sel: null, selected: new Set(), anchor: null, sort: 'differs', impactOpen: false, moreOpen: false, history: []});
+            // collapsed: the tree's folded branches and sections (null until
+            // the first drawing decides what starts folded).
+            sessions.set(payload, {sel: null, selected: new Set(), anchor: null, sort: 'differs', impactOpen: false, moreOpen: false, history: [], collapsed: null});
         }
         return sessions.get(payload);
     }
@@ -138,9 +140,15 @@ export function createScanReviewUi(app) {
         const targets = flat([...model.patterns, ...model.byHand]).filter((n) => n.key !== s.sel).map((n) => ({key: n.key, name: n.name}));
 
         dialog.querySelector('.sr-stats').innerHTML = v.statsHTML(model, s.baseInReport);
-        dialog.querySelector('.sr-tree').innerHTML = v.treeHTML(model, s.sel);
+        // The tree starts as an overview: the top-level groups with the ones
+        // directly in them; deeper groups folded (the selected one's branch
+        // stays open, whatever is folded). A long list of the run's merged
+        // scans starts folded too: the templates are what the tree is for.
+        if (!s.collapsed) s.collapsed = v.initiallyFolded(model);
+        dialog.querySelector('.sr-tree').innerHTML = v.treeHTML(model, s.sel, {collapsed: s.collapsed});
         dialog.querySelector('.sr-grid').innerHTML = v.gridHTML(model, node, {selected: s.selected, sort: s.sort, issues, thumbOf, targets, moreOpen: s.moreOpen});
-        dialog.querySelector('.sr-detail').innerHTML = v.detailHTML(model, node, {issues, impact, impactOpen: s.impactOpen, focus});
+        // The column says what it is, above the group's name: what to do with it.
+        dialog.querySelector('.sr-detail').innerHTML = '<p class="sr-pane-label">This group</p>' + v.detailHTML(model, node, {issues, impact, impactOpen: s.impactOpen, focus});
         const undo = dialog.querySelector('.sr-undobar');
         const last = s.history[s.history.length - 1];
         undo.hidden = !last;
@@ -592,6 +600,15 @@ export function createScanReviewUi(app) {
         const d = t.dataset;
         if ('srClose' in d) { dialog.close(); return; }
         if ('srUndo' in d) { undo(); return; }
+        // A branch or section of the tree folded or unfolded; focus stays on
+        // its button.
+        if (d.srToggle) {
+            if (!s.collapsed) s.collapsed = new Set();
+            if (t.getAttribute('aria-expanded') === 'true') s.collapsed.add(d.srToggle);
+            else s.collapsed.delete(d.srToggle);
+            render(`toggle:${d.srToggle}`);
+            return;
+        }
         if (d.srNode) {
             s.sel = d.srNode;
             s.selected.clear();

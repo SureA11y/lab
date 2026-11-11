@@ -191,8 +191,8 @@ describe('the workspace', () => {
         assert.deepEqual([...doc.querySelectorAll('.sr-impact-row')].map(text), ['Scans in the report 5 → 2', 'Failures listed 6 → 3']);
         assert.match(text(doc.querySelector('.sr-impact')), /what 1 page fails on its own stays on it/);
         assert.deepEqual([...doc.querySelectorAll('.sr-fails li')].map(text), [
-            'button-name title serious 4 of 4 · fix once',
-            'image-alt title serious 1 of 4',
+            'button-name title serious 4 of 4 pages · fix once',
+            'image-alt title serious 1 of 4 pages',
         ]);
         // The group's actions right under merging, before its failures.
         assert.deepEqual([...doc.querySelectorAll('[data-sr-act]')].map((b) => text(b)), ['Keep one page, exclude the rest…', 'Exclude all', 'Include all', 'Show only these']);
@@ -221,7 +221,7 @@ describe('the workspace', () => {
         assert.equal(text(doc.querySelector('[data-sr-apply-merge]')), 'Unmerge into 2 scans');
         assert.equal(m.totals.runMerged, 1);
         // The header counts it, said apart.
-        assert.match(text(dom(V.statsHTML(m)).body), /Merged 1 scan \(by the run\)/);
+        assert.match(text(dom(V.statsHTML(m)).body), /Merged 1 scan \(1 by the run, 0 by you\)/);
     });
 
     test('the header: each count with its unit', () => {
@@ -305,5 +305,73 @@ describe('names from the pages\' titles', () => {
         const result = G.findGroups(list, { sources: [U.createUrlGroupSource()] });
         const names = [...V.suggestNames(list, result.groups).values()];
         assert.ok(names.includes('Product pages · x'), names.join(', '));
+    });
+});
+
+describe('the tree of groups', () => {
+    const model = {
+        patterns: [{ key: 'a', name: 'Product pages', pattern: '/p/…', ids: ['1', '2', '3'], children: [
+            { key: 'b', name: 'Shoes', pattern: '/p/shoes/{slug}', ids: ['1', '2'], children: [] },
+        ] }],
+        byHand: [],
+        rest: ['9'],
+        runMerges: Array.from({ length: 3 }, (_, i) => ({ key: `run:r${i}`, name: `Run ${i}`, contexts: [{ name: 'desktop' }, { name: 'mobile' }] })),
+    };
+    const tree = (sel, collapsed) => dom(V.treeHTML(model, sel, { collapsed: new Set(collapsed) })).body;
+
+    test('a group with groups in it has a button that folds them, named for what it shows or hides', () => {
+        const open = tree('a', []);
+        const twisty = open.querySelector('[data-sr-toggle="a"]');
+        assert.equal(twisty.getAttribute('aria-expanded'), 'true');
+        assert.equal(twisty.getAttribute('aria-label'), 'Hide the 1 group in Product pages');
+        const list = open.querySelector(`#${twisty.getAttribute('aria-controls')}`);
+        assert.equal(list.hidden, false);
+        assert.ok(list.querySelector('[data-sr-node="b"]'));
+
+        const folded = tree('a', ['a']);
+        const t2 = folded.querySelector('[data-sr-toggle="a"]');
+        assert.equal(t2.getAttribute('aria-expanded'), 'false');
+        assert.equal(t2.getAttribute('aria-label'), 'Show the 1 group in Product pages');
+        assert.equal(folded.querySelector(`#${t2.getAttribute('aria-controls')}`).hidden, true);
+        assert.equal(folded.querySelector('[data-sr-toggle="b"]'), null, 'a group with none in it has nothing to fold');
+    });
+
+    test('the branch and section holding the selected group stay open, folded or not', () => {
+        const body = tree('b', ['a', 'sec:templates']);
+        assert.equal(body.querySelector('[data-sr-toggle="a"]').getAttribute('aria-expanded'), 'true');
+        assert.equal(body.querySelector('[data-sr-toggle="sec:templates"]').getAttribute('aria-expanded'), 'true');
+    });
+
+    test('each section folds by its heading, which says how many it holds', () => {
+        const body = tree('a', ['sec:run']);
+        const run = body.querySelector('[data-sr-toggle="sec:run"]');
+        assert.equal(run.closest('h3').className, 'sr-tree-h');
+        assert.equal(text(run), 'Merged by the run 3');
+        assert.equal(run.getAttribute('aria-expanded'), 'false');
+        assert.equal(body.querySelector(`#${run.getAttribute('aria-controls')}`).hidden, true);
+        assert.equal(body.querySelector('[data-sr-toggle="sec:templates"]').getAttribute('aria-expanded'), 'true');
+    });
+});
+
+describe('the tree as it starts', () => {
+    const leaf = (key) => ({ key, name: key, ids: ['1', '2'], children: [] });
+    test('shows the top-level groups and the ones directly in them, deeper ones folded', () => {
+        const model = {
+            patterns: [
+                { key: 'top', name: 'top', ids: ['1'], children: [
+                    { key: 'mid', name: 'mid', ids: ['1'], children: [leaf('deep')] },
+                    leaf('mid-leaf'),
+                ] },
+                leaf('alone'),
+            ],
+            byHand: [], rest: [], runMerges: [],
+        };
+        assert.deepEqual([...V.initiallyFolded(model)], ['mid']);
+    });
+
+    test('folds a long list of the run\'s merged scans, not a short one', () => {
+        const runs = (n) => Array.from({ length: n }, (_, i) => ({ key: `run:${i}` }));
+        assert.equal(V.initiallyFolded({ patterns: [], byHand: [], runMerges: runs(8) }).has('sec:run'), false);
+        assert.equal(V.initiallyFolded({ patterns: [], byHand: [], runMerges: runs(9) }).has('sec:run'), true);
     });
 });

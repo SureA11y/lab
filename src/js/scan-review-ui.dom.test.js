@@ -324,3 +324,18 @@ describe('in the report', () => {
         assert.deepEqual([s1.reviewGroup.key, s1.reviewGroup.index, s1.reviewGroup.total], ['manual:1', 1, 2]);
     });
 });
+
+describe('the tree of groups in the workspace', () => {
+    test('a section folds and unfolds by its heading, focus staying on it', () => {
+        const {summaryEl, $} = setup();
+        summaryEl.querySelector('[data-sr-open]').click();
+        const toggle = () => $('[data-sr-toggle="sec:rest"]');
+        assert.equal(toggle().getAttribute('aria-expanded'), 'true');
+        toggle().click();
+        assert.equal(toggle().getAttribute('aria-expanded'), 'false');
+        assert.equal($(`#${toggle().getAttribute('aria-controls')}`).hidden, true);
+        assert.equal(focusKey(), 'toggle:sec:rest');
+        toggle().click();
+        assert.equal(toggle().getAttribute('aria-expanded'), 'true');
+    });
+});
