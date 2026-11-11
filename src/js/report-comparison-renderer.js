@@ -172,32 +172,43 @@ function abKpiSingle(name, val, win, tag) {
         + `<div class="single num">${show(val)}</div>`
         + `<div class="tag">${esc(tag)}</div></div>`;
 }
+// A score with no scale beside it reads as a count: "3" next to failures in
+// the thousands looks like a small number, not a low mark.
+const SCORE_NAME = 'Accessibility score (out of 100)';
+
 function kpis(d) {
     const s = d.stats;
+    // When every failure on both sides is serious or critical, that card would
+    // repeat Failures figure for figure, so it is left out and the section's
+    // note says why.
+    const allSerious = s.seriousCriticalA === s.failuresA && s.seriousCriticalB === s.failuresB;
     let cards;
     if (d.mode === 'ab') {
         cards = [
-            abKpiPair('Accessibility', s.scoreA, s.scoreB, 'up'),
+            abKpiPair(SCORE_NAME, s.scoreA, s.scoreB, 'up'),
             abKpiPair('Failures', s.failuresA, s.failuresB, 'down'),
             abKpiPair('Broken elements', s.elementsA, s.elementsB, 'down'),
-            abKpiPair('Serious + critical', s.seriousCriticalA, s.seriousCriticalB, 'down'),
+            allSerious ? '' : abKpiPair('Serious or critical', s.seriousCriticalA, s.seriousCriticalB, 'down'),
             abKpiPair('Kinds of problem', s.rulesA, s.rulesB, 'down'),
             abKpiSingle('Fails only on A', d.verdict.aOnly, 'a', "A's gaps"),
             abKpiSingle('Fails only on B', d.verdict.bOnly, 'b', "B's gaps"),
         ];
     } else {
         cards = [
-            evoKpi('Accessibility', s.scoreA, s.scoreB, 'up', '/100'),
+            evoKpi(SCORE_NAME, s.scoreA, s.scoreB, 'up', 'points'),
             evoKpi('Failures', s.failuresA, s.failuresB, 'down', 'failures'),
             evoKpi('Broken elements', s.elementsA, s.elementsB, 'down', 'elements'),
-            evoKpi('Serious + critical', s.seriousCriticalA, s.seriousCriticalB, 'down', 'failures'),
+            allSerious ? '' : evoKpi('Serious or critical', s.seriousCriticalA, s.seriousCriticalB, 'down', 'failures'),
             evoKpi('Kinds of problem', s.rulesA, s.rulesB, 'down', 'kinds'),
-            evoKpi('Confidence', s.confidenceA, s.confidenceB, 'up', '/100'),
+            evoKpi('Confidence in the score', s.confidenceA, s.confidenceB, 'up', 'points'),
         ];
     }
-    // Seven standings cards, four to a row: the counts, then what only one
-    // side fails. The six evolution cards go three to a row.
-    return `<div class="kpis${d.mode === 'ab' ? ' kpis-ab' : ''}">${cards.join('')}</div>`;
+    // The standings cards go four to a row: the counts, then what only one
+    // side fails. The evolution cards go three to a row.
+    const note = allSerious && s.failuresA + s.failuresB > 0
+        ? '<p class="dash-sub">Every failure here is serious or critical.</p>'
+        : '';
+    return `${note}<div class="kpis${d.mode === 'ab' ? ' kpis-ab' : ''}">${cards.join('')}</div>`;
 }
 
 // ---------- dumbbell chart ----------
@@ -288,8 +299,7 @@ function dumbbellSvg(d) {
 function narrativePanel(d) {
     const paras = (d.narrative || []).map((p) => `<p>${esc(p)}</p>`).join('');
     return `<div class="panel narrative"><h4>Reading the ${d.mode === 'ab' ? 'standings' : 'change'}</h4>`
-        + paras
-        + `<div class="det">// generated deterministically from the finding-level diff</div></div>`;
+        + paras + `</div>`;
 }
 
 // ---------- finding diff ----------
@@ -470,8 +480,8 @@ export function comparisonDiffHTML(d, { dispersion, mergedNote } = {}) {
         // Groups merged in the reports' view, counted here page by page.
         + (mergedNote ? `<p class="cmp2-note">${esc(mergedNote)}</p>` : '')
         + verdictHero(d)
-        + `<section class="cmp2-sec"><div class="sec-head"><h3>${d.mode === 'ab' ? 'Standings at a glance' : 'Executive deltas'}</h3>`
-        + `<span class="layer">globals</span></div>${kpis(d)}</section>`
+        + `<section class="cmp2-sec"><div class="sec-head"><h3>${d.mode === 'ab' ? 'Standings at a glance' : 'What changed, in numbers'}</h3>`
+        + `</div>${kpis(d)}</section>`
         + `<section class="cmp2-sec"><div class="sec-head"><h3>Where ${d.mode === 'ab' ? 'they differ' : 'it moved'}</h3></div>`
         + `<div class="split"><div class="panel">${dumbbellSvg(d)}</div>${narrativePanel(d)}</div></section>`
         + pairProfilesHTML(d.profiles, { mode: d.mode, sides: d.mode === 'ab' ? ['A', 'B'] : ['Baseline', 'Latest'] })

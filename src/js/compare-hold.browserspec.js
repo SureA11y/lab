@@ -347,6 +347,21 @@ describe('a change to the comparison is drawn without freezing the page', () => 
             await waitFor(() => document.querySelector('#compare-profiles [data-compare-profile="wai-aria-1.2"]'), 'the profile switches');
             await loadIdle();
 
+            // Once the comparison is drawn, the setup is folded into
+            // Settings, the loading hint is gone, and the reader is taken to
+            // the comparison's title.
+            const landed = await page.evaluate(() => ({
+                settings: document.querySelector('#compare-settings').open,
+                hint: document.querySelector('#compare-hint').hidden,
+                focus: document.activeElement && document.activeElement.classList.contains('doc-title'),
+                inView: document.querySelector('#run-comparison .doc-title').getBoundingClientRect().top < window.innerHeight,
+            }));
+            assert.deepEqual(landed, { settings: false, hint: true, focus: true, inView: true });
+
+            // The profiles are in Settings, opened as a reader would.
+            await page.$eval('#compare-settings > summary', (s) => s.click());
+            assert.equal(await page.$eval('#compare-settings', (d) => d.open), true);
+
             // The next frames wait, so the state before the redraw can be read.
             await page.evaluate(() => {
                 window.__raf = window.requestAnimationFrame;

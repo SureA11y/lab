@@ -305,6 +305,19 @@ The first public release.
   with a note that it is updating in view; the control pressed shows a
   spinner, the tab's other controls wait, the status line says so, and the
   activity panel lists the change when it takes a moment.
+- **The dashboard's headline follows where failures are heading now.** It
+  compared only the first run with the last, so a site that fell to its
+  best and climbed back read "3% lower than 3 months ago, improving". It
+  now leads with the latest move, then how the latest run stands against
+  the best and the first ("down 17 since Sep 1; 566 above Aug 1, the best;
+  3% below Jul 1"), and its status says Improving or Getting worse by that
+  latest move. The figures' pills say what the latest run changed and
+  since when, and a figure that would repeat another one exactly (serious
+  or critical, when every failure is) is said in words or left out.
+- **Compare starts with the comparison.** Once two reports are loaded, the
+  setup (what the reports are, profiles, path prefixes, the name) folds
+  into **Settings**, and the page goes to the comparison's title. On a
+  phone, Baseline and Latest stack, each the full width.
 - **Ignore path prefixes** in the Compare tab, and `--ignore-path-prefix`
   in the runner, compare one site served under two paths page by page:
   `/v1, /v2` makes `/v1/cart.html` and `/v2/cart.html` one page. When each
