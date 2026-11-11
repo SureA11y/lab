@@ -2222,16 +2222,33 @@ export function createRenderer({
         const p = document.createElement('p');
         p.className = 'scan-contexts';
         const lead = document.createElement('strong');
-        lead.textContent = `Merged from ${members.length} scan${members.length === 1 ? '' : 's'} of ${group.pattern || 'a group'}:`;
         const excluded = members.filter((m) => m && m.includedInReport === false).length;
-        p.append(lead, ' ' + members
-            .map((m) => String(m?.label || m?.id || '') + (m?.includedInReport === false ? ' (excluded)' : ''))
-            .join('; ')
-            + (excluded ? `. The ${excluded === 1 ? 'one' : excluded} excluded ${excluded === 1 ? 'is' : 'are'} left out of it.` : '.'));
+        const nameOf = (m) => String(m?.label || m?.id || '') + (m?.includedInReport === false ? ' (excluded)' : '');
+        const leftOut = excluded ? ` The ${excluded === 1 ? 'one' : excluded} excluded ${excluded === 1 ? 'is' : 'are'} left out of it.` : '';
+        // A few pages are named in the sentence; more, and the sentence says
+        // how many, its pages listed under a disclosure, a name and an address
+        // a line, rather than a paragraph of every title.
+        if (members.length <= FEW_MEMBERS) {
+            lead.textContent = `Merged from ${members.length} scan${members.length === 1 ? '' : 's'} of ${group.pattern || 'a group'}:`;
+            p.append(lead, ' ' + members.map(nameOf).join('; ') + '.' + leftOut);
+        } else {
+            lead.textContent = `Merged from ${members.length} scans of `;
+            const pattern = document.createElement('code');
+            pattern.className = 'scan-members__pattern';
+            pattern.textContent = group.pattern || 'a group';
+            lead.append(pattern);
+            p.append(lead, leftOut);
+        }
+        const list = members.length > FEW_MEMBERS ? buildMemberList(members, nameOf) : null;
         // Its pages as a strip of their pictures, each opening that page in
         // the review (scan-review-ui.js): the first ones, and how many more.
         const withShots = members.filter((m) => m && m.shot);
-        if (!withShots.length) return p;
+        if (!withShots.length) {
+            if (!list) return p;
+            const only = document.createElement('div');
+            only.append(p, list);
+            return only;
+        }
         const SHOWN = 8;
         const box = document.createElement('div');
         const strip = document.createElement('ul');
@@ -2269,7 +2286,50 @@ export function createRenderer({
             strip.append(li);
         }
         box.append(p, strip);
+        if (list) box.append(list);
         return box;
+    }
+
+    // As many pages of a merged group as its sentence names.
+    const FEW_MEMBERS = 5;
+
+    /** A merged group's pages, closed: each its name and its address. */
+    function buildMemberList(members, nameOf) {
+        const details = document.createElement('details');
+        details.className = 'scan-members';
+        const summary = document.createElement('summary');
+        summary.textContent = `List its ${members.length} pages`;
+        const ol = document.createElement('ul');
+        ol.className = 'scan-members__list';
+        for (const m of members) {
+            const li = document.createElement('li');
+            const name = document.createElement('span');
+            name.className = 'scan-members__name';
+            name.textContent = nameOf(m);
+            li.append(name);
+            const path = pathOfUrl(m?.url);
+            if (path) {
+                const code = document.createElement('code');
+                code.className = 'scan-members__path';
+                code.textContent = path;
+                code.title = path;
+                li.append(code);
+            }
+            if (m?.includedInReport === false) li.classList.add('scan-members__item--excluded');
+            ol.append(li);
+        }
+        details.append(summary, ol);
+        return details;
+    }
+
+    function pathOfUrl(url) {
+        if (!url) return '';
+        try {
+            const u = new URL(String(url));
+            return u.pathname + u.search;
+        } catch {
+            return String(url);
+        }
     }
 
     /**
