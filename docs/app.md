@@ -63,7 +63,14 @@ whose scans are reported as one. [The step reference](step-definitions.html)
 lists every step and field.
 
 - A step can be folded, switched off without removing it, and given its own
-  title. Its fields check themselves as you type, and the workflow is checked
+  title; a step with a title of its own shows its kind as a small pill
+  before it (*Set variable* · *1 - The start locale*). A card shows its
+  Collapse button and a ⋯; its other buttons (info, switch off, move up and
+  down, copy, remove) show when the pointer is on the card or focus is in
+  it, and are in the ⋯ menu on a touch screen or a narrow card. A
+  condition's branches read **Then** and **Otherwise (optional)**, and an
+  empty list says *Nothing runs here.* with one **Add step** button.
+  Its fields check themselves as you type, and the workflow is checked
   again before it runs, so a mistake shows at the step, not halfway through
   a run.
 - **Variables** carry values between steps: read a page's text or count its

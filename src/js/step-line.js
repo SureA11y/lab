@@ -4,7 +4,7 @@
 // createActionsBuilder; what it shares with the rest of the editor it reaches
 // through `builder`.
 
-import {createEl, iconButton} from './a11y-ui.utils.js';
+import {createEl, iconButton, svgIcon} from './a11y-ui.utils.js';
 import {setClipboardAction} from './actions-builder.module.js';
 
 /**
@@ -147,7 +147,7 @@ export function createStepLine(builder) {
 
         const controls = createEl("div", {className: "line-controls"}, [infoBtn, toggleDisableActionBtn, upBtn, downBtn, copyBtn, removeBtn, toggleActionBtn]);
 
-        return {controls, infoDialog}
+        return {controls, infoDialog, collapseBtn: toggleActionBtn}
     }
 
     function makeLine(actionKey, actionDef, onMove) {
@@ -177,7 +177,11 @@ export function createStepLine(builder) {
             iconName: "edit"
         });
 
-        const titleActionTypeText = createEl("div", {className: "line-title-action-type", id: titleId}, `- "${baseTitle}"`);
+        // What kind of step it is, as a small pill before a title of the
+        // step's own ("Set variable", before "1 - The start locale"): in the
+        // same place on every card, whatever the title's length, and never
+        // wrapped. A step titled by its kind has none: it would say it twice.
+        const titleActionTypeText = createEl("span", {className: "line-title-action-type"}, baseTitle);
         titleActionTypeText.hidden = true;
 
         // helpers
@@ -275,24 +279,40 @@ export function createStepLine(builder) {
 
         const titleLine = createEl("div", {className: "line-title-wrapper"}, [
             action,
+            titleActionTypeText,
             titleText,
             titleInput,
-            editTitleBtn,
-            titleActionTypeText
+            editTitleBtn
         ]);
 
         line.setAttribute("aria-labelledby", titleId);
 
-        const {controls, infoDialog} = createActionControls(actionKey, actionDef, line, onMove);
+        const {controls, infoDialog, collapseBtn} = createActionControls(actionKey, actionDef, line, onMove);
         const header = createEl("div", {className: "line-header"}, [titleLine, controls]);
 
+        // A card shows Collapse and a menu of the rest, as on a phone, so
+        // forty steps are not 280 buttons. With a mouse, the rest show in
+        // place of the menu while the pointer is on the card, and for the
+        // keyboard while focus is in it (steps-builder.css): they stay in
+        // the tab order and are named all the while. Without a mouse (a
+        // touch screen), or with no room for them, they are in the menu.
+        const noHover = typeof window !== "undefined" && window.matchMedia
+            ? window.matchMedia("(hover: none)")
+            : null;
         builder.createResponsiveActionsMenu({
             containerEl: controls,
             collapseAtPx: 480,
+            collapseIfFn: () => !!noHover?.matches,
             measureEl: header,
             triggerAriaLabel: "Actions",
-            triggerClassName: "secondary-button"
+            triggerClassName: "secondary-button",
+            keepInline: [collapseBtn]
         });
+        // Where the buttons show on hover, a sign that there is more, in the
+        // menu button's place: drawn only, as the buttons themselves are
+        // what the keyboard and a screen reader reach.
+        const moreSign = createEl("span", {className: "line-controls__more", "aria-hidden": "true"}, svgIcon("menu"));
+        controls.insertBefore(moreSign, collapseBtn);
 
         const fieldsWrap = createEl("div", {className: "fields"});
 

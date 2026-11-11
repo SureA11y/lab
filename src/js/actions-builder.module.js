@@ -1381,6 +1381,7 @@ export function createActionsBuilder ({
                     line.setAttribute("aria-labelledby", titleId);
                 }
                 const titleActionTypeEl = line.querySelector(":scope > .line-header .line-title-action-type");
+                // The kind of step, when the title is the step's own.
                 if (titleActionTypeEl) titleActionTypeEl.hidden = !alias;
 
                 // Recurse into any nested actions-subcontainer under this line
@@ -1465,6 +1466,11 @@ export function createActionsBuilder ({
         const items = $$(subContainer, ":scope > .line");
         const names = items.map((l) => l.dataset.actionType);
         summaryEl.textContent = `(${items.length})${names.length ? " " + names.join(" · ") : ""}`;
+        // An empty list says "Nothing runs here." with one add button, not
+        // its row of shortcuts (step-fields.js); a list of one kind of step
+        // (a switch's cases) has a single button already.
+        const list = subContainer.closest(".action-array");
+        if (list && list.querySelector(":scope > .action-array__empty")) list.classList.toggle("is-empty", items.length === 0);
     }
 
     // In step-info.js.

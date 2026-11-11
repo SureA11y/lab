@@ -51,6 +51,9 @@ export function createStepActionsMenu(builder) {
      * @param {string} [opts.triggerClassName]
      * @param {string} [opts.menuClassName]
      * @param {string} [opts.menuIconName]
+     * @param {HTMLButtonElement[]} [opts.keepInline] Buttons that stay beside the menu
+     *        button, never in the menu: a step's Collapse, which is what a
+     *        folded step shows.
      * @returns {{ destroy(): void, update(): void, setCollapsed(v:boolean): void }}
      */
     function createResponsiveActionsMenu({
@@ -61,7 +64,8 @@ export function createStepActionsMenu(builder) {
                                              triggerAriaLabel = "Open actions menu",
                                              triggerClassName = "secondary-button",
                                              menuClassName = "flyout-menu",
-                                             menuIconName = "menu"
+                                             menuIconName = "menu",
+                                             keepInline = []
                                          } = {}) {
         if (!containerEl) throw new Error("createResponsiveActionsMenu: containerEl is required");
         if (!Number.isFinite(collapseAtPx) || collapseAtPx <= 0) {
@@ -76,8 +80,9 @@ export function createStepActionsMenu(builder) {
 
         // Collect source buttons once (these are the ones we will move around)
         // Important: only the direct children that are buttons, avoid picking up future flyout elements.
+        const kept = new Set(keepInline);
         const actionButtons = Array.from(containerEl.children).filter(
-            (n) => n instanceof HTMLButtonElement
+            (n) => n instanceof HTMLButtonElement && !kept.has(n)
         );
 
         if (!actionButtons.length) throw new Error("createResponsiveActionsMenu: no action buttons found");
@@ -109,6 +114,8 @@ export function createStepActionsMenu(builder) {
         flyoutRoot.append(trigger, menu);
 
         containerEl.appendChild(flyoutRoot);
+        // After the menu button, at the row's end, where they always are.
+        keepInline.forEach((b) => containerEl.appendChild(b));
 
         let isOpen = false;
         let isCollapsed = false;
@@ -210,6 +217,8 @@ export function createStepActionsMenu(builder) {
         function setCollapsed(nextCollapsed) {
             if (nextCollapsed === isCollapsed) return;
             isCollapsed = nextCollapsed;
+            // Styles tell the row with its buttons from the row with a menu.
+            containerEl.classList.toggle("is-menu", isCollapsed);
 
             if (isCollapsed) {
                 // Move buttons into menu
