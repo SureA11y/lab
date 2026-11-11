@@ -180,9 +180,11 @@ export function createAdvancedDialog({
     dialog.innerHTML = '';
     dialog.appendChild(shell);
 
-    // Click outside image closes
-    dialog.addEventListener('click', (e) => {
-        if (e.target === dialog) close();
+    // Escape, and a click on the backdrop (dialog-backdrop.js), close it
+    // through close(), which clears it and tells its item.
+    dialog.addEventListener('cancel', (e) => {
+        e.preventDefault();
+        close();
     });
 
     // ---- state ----

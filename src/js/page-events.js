@@ -128,9 +128,6 @@ export function createPageEvents(app) {
             // Its occurrences may not be drawn yet (lazy-dialogs.js): a long
             // list opens on a skeleton and is drawn a frame later.
             if (dlg && typeof dlg.showModal === 'function') openLazyDialog(dlg, {afterPaint});
-            dlg?.addEventListener('click', (e) => {
-                if (e.target === dlg) dlg.close();
-            });
             dlg?.querySelector('.src-dialog-body')?.scrollTo({top: 0});
             return;
         }

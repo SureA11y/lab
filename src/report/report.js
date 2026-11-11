@@ -98,9 +98,11 @@ function createAdvancedDialog({
     dialog.innerHTML = '';
     dialog.appendChild(shell);
 
-    // Click outside image closes
-    dialog.addEventListener('click', (e) => {
-        if (e.target === dialog) close();
+    // Escape, and a click on the backdrop (dialog-backdrop.js), close it
+    // through close(), which clears it and tells its item.
+    dialog.addEventListener('cancel', (e) => {
+        e.preventDefault();
+        close();
     });
 
     // ---- state ----
@@ -341,10 +343,8 @@ function viewDetailsDialogButtons() {
             })();
 
         if (dialog && typeof dialog.showModal === 'function') {
+            // A click on its backdrop closes it (dialog-backdrop.js).
             trigger.addEventListener('click', () => dialog.showModal());
-            dialog.addEventListener('click', (e) => {
-                if (e.target === dialog) dialog.close();
-            });
             dialog.querySelector('.src-dialog-body')?.scrollTo({top: 0});
 
             dialog.querySelectorAll('.src-dialog-close').forEach(closeBtn => {
@@ -841,8 +841,7 @@ function initAllScansDialog() {
             return;
         }
 
-        // Backdrop click.
-        if (e.target === dialog && dialog.open) dialog.close();
+        // A click on the backdrop closes it (dialog-backdrop.js).
     });
 }
 
@@ -1074,6 +1073,8 @@ function initScanSort() {
 }
 
 initScanSort();
+// Every dialog closes on a click on its backdrop, as with Escape.
+if (globalThis.A11Y_DIALOG_BACKDROP) globalThis.A11Y_DIALOG_BACKDROP.installBackdropClose(document);
 // "Where the failures are": tooltips and the keyboard-readable scan strips.
 // The module ships in report.min.js; the markup carries everything it reads.
 if (globalThis.A11Y_ISSUE_DISPERSION_VIEW) globalThis.A11Y_ISSUE_DISPERSION_VIEW.installDispersionInteractions(document);

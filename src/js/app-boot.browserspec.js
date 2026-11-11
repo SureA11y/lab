@@ -592,3 +592,38 @@ test('Run settings closes with Done, which says the settings are kept as they ch
     assert.deepEqual(errors, []);
     await page.close();
 });
+
+test('a dialog closes on a click on its backdrop, not on one in its own padding', async () => {
+    const { page, errors } = await openApp();
+    await page.click('#mode-run');
+    await page.evaluate(() => {
+        const toggle = document.querySelector('#config-toggle');
+        if (toggle && toggle.getAttribute('aria-expanded') === 'false') toggle.click();
+    });
+    await page.waitForSelector('#run-settings-button', { visible: true });
+    await page.click('#run-settings-button');
+    await page.waitForSelector('#run-settings-dialog[open]');
+    const box = await page.$eval('#run-settings-dialog', (d) => { const r = d.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; });
+    // Just inside its box: its padding, still the dialog.
+    await page.mouse.click(box.left + 3, box.top + 3);
+    assert.equal(await page.$eval('#run-settings-dialog', (d) => d.open), true, 'a click inside its box keeps it open');
+    // Pressed inside, released on the backdrop: a drag, not a click outside.
+    await page.mouse.move(box.left + 40, box.top + 40);
+    await page.mouse.down();
+    await page.mouse.move(5, 5);
+    await page.mouse.up();
+    assert.equal(await page.$eval('#run-settings-dialog', (d) => d.open), true, 'a drag out of it keeps it open');
+    await page.mouse.click(5, 5);
+    await page.waitForFunction(() => !document.querySelector('#run-settings-dialog').open);
+
+    // A finding's details, in the report.
+    await page.click('#mode-open');
+    await (await page.$('#resultsFiles')).uploadFile(reportFile);
+    await page.waitForSelector('#results .src-dialog-trigger', { timeout: 30000 });
+    await page.$eval('#results .src-dialog-trigger', (b) => { b.scrollIntoView({ block: 'center' }); b.click(); });
+    await page.waitForFunction(() => document.querySelector('dialog.src-dialog[open]'));
+    await page.mouse.click(5, 5);
+    await page.waitForFunction(() => !document.querySelector('dialog.src-dialog[open]'));
+    assert.deepEqual(errors, []);
+    await page.close();
+});

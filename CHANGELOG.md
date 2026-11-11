@@ -9,6 +9,22 @@ The first public release.
 
 ### The lab
 
+- **The review of scan groups reads as three parts**: the groups on a
+  deeper surface, the selected one joined to its pages like a tab; the pages
+  on the brightest, under a band naming the group that stays in view; what
+  to do with it in cards, Merge its first action. The groups are a tree whose
+  branches fold, opening as an overview (the top-level groups and the ones in
+  them; the selected group's branch always open; a long list of the run's
+  merged scans folded). A group's failures are listed as "The same element
+  on most pages: the template's" and "Elements of each page's own", with
+  their pages counted ("75 of 75 pages"): a rule failing on every page on a
+  different element on each was listed as "On a few scans". The header says
+  who merged: "Merged 303 scans (303 by the run, 0 by you)".
+- **A click on a dialog's backdrop closes it**, as Escape does, in every
+  dialog of the app and of the downloaded report: when the press and the
+  release are both outside it, so a drag out of a dialog or a click in its
+  margin keeps it open. Stacked dialogs close one at a time.
+
 - **Workflows.** Build a workflow in the browser (open a page, accept the
   cookie banner, log in, add to cart, scan each state on the way) and run
   it with Puppeteer: steps to navigate, click, type, wait, branch on a

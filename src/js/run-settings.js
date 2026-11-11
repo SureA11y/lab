@@ -116,10 +116,7 @@ export function setupRunSettings(doc = document) {
     closeButton?.addEventListener('click', () => dialog.close());
     // Done says the settings are set: they were kept as they changed.
     doc.getElementById('run-settings-done')?.addEventListener('click', () => dialog.close());
-    // A click on the backdrop (the dialog element itself, outside its box) closes it.
-    dialog.addEventListener('click', (e) => {
-        if (e.target === dialog) dialog.close();
-    });
+    // A click on the backdrop closes it (dialog-backdrop.js).
     dialog.addEventListener('change', sync);
     dialog.addEventListener('input', sync);
     dialog.addEventListener('close', () => {

@@ -114,10 +114,7 @@ export function createRunDialog({document: doc = globalThis.document, className 
         }
     });
     closeBtn.addEventListener('click', () => close());
-    // A click on the backdrop lands on the dialog element itself.
-    dialog.addEventListener('click', (e) => {
-        if (e.target === dialog) close();
-    });
+    // A click on the backdrop closes it (dialog-backdrop.js), as Escape does.
 
     return {
         dialog,
