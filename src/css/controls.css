@@ -203,7 +203,7 @@ button {
     box-shadow: none;
 }
 
-button:hover:not(:disabled, [aria-disabled=true], .screenshot-btn, .legend-toggle, .config-header-row, .collapse-all-toggle, .section-end-toggle, .link-button, .dsp-filter-btn, .dsp-chip, .steps-panel__chip, .steps-panel__select, .steps-panel__done, .steps-panel-bar__btn, .steps-panel-bar__edit, .steps-panel-edit__more, .steps-panel-edit__clear, .steps-panel-edit__apply, .runcustomstep-open, .dsp-link, .run-setting-chip, .scan-filmstrip__page) {
+button:hover:not(:disabled, [aria-disabled=true], .screenshot-btn, .legend-toggle, .config-header-row, .collapse-all-toggle, .section-end-toggle, .link-button, .dsp-filter-btn, .dsp-chip, .steps-panel__chip, .steps-panel__select, .steps-panel__done, .steps-panel-bar__btn, .steps-panel-bar__edit, .steps-panel-edit__more, .steps-panel-edit__clear, .steps-panel-edit__apply, .runcustomstep-open, .dsp-link, .run-setting-chip, .scan-filmstrip__page, .sr-tree-toggle, .sr-twisty) {
     background: var(--surface-5);
     border-color: var(--accent-border);
 }
@@ -241,13 +241,13 @@ button[aria-disabled=true]:focus-visible::after {
 }
 
 /* Primary buttons, keep your markup but bring reference look */
-button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.legend-toggle):not(.config-header-row):not(.scan-tag-filter__chip):not(.scan-tag-filter__mode-btn):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.steps-panel__select):not(.steps-panel__done):not(.steps-panel-bar__btn):not(.steps-panel-bar__edit):not(.steps-panel-edit__more):not(.steps-panel-edit__clear):not(.steps-panel-edit__apply):not(.runcustomstep-open):not(.run-setting-chip):not(.dsp-link):not(.back-to-top):not(.sr-node):not(.sr-thumb):not(.sr-link):not(.scan-filmstrip__page) {
+button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.legend-toggle):not(.config-header-row):not(.scan-tag-filter__chip):not(.scan-tag-filter__mode-btn):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.steps-panel__select):not(.steps-panel__done):not(.steps-panel-bar__btn):not(.steps-panel-bar__edit):not(.steps-panel-edit__more):not(.steps-panel-edit__clear):not(.steps-panel-edit__apply):not(.runcustomstep-open):not(.run-setting-chip):not(.dsp-link):not(.back-to-top):not(.sr-node):not(.sr-tree-toggle):not(.sr-twisty):not(.sr-thumb):not(.sr-link):not(.scan-filmstrip__page) {
     background: var(--accent-soft);
     border-color: var(--accent-border);
     --focus-ring: var(--focus-ring-soft);
 }
 
-button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.legend-toggle):not(.config-header-row):not(.scan-tag-filter__chip):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.steps-panel__select):not(.steps-panel__done):not(.steps-panel-bar__btn):not(.steps-panel-bar__edit):not(.steps-panel-edit__more):not(.steps-panel-edit__clear):not(.steps-panel-edit__apply):not(.runcustomstep-open):not(.run-setting-chip):not(.dsp-link):not(.back-to-top):not(.sr-node):not(.sr-thumb):not(.sr-link):not(.scan-filmstrip__page):hover:not(:disabled, [aria-disabled=true]) {
+button:not(.secondary-button):not(.mode-tab):not(.copy-selector-btn):not(.src-dialog-trigger):not(.sb-palette-btn):not(.screenshot-btn):not(.axd-nav):not(.axd-close):not(.legend-toggle):not(.config-header-row):not(.scan-tag-filter__chip):not(.ctx-opt):not(.seg):not(.live-totals-disclosure):not(.live-totals-dismiss):not(.link-button):not(.activity-plain):not(.dsp-filter-btn):not(.dsp-chip):not(.steps-panel__chip):not(.steps-panel__select):not(.steps-panel__done):not(.steps-panel-bar__btn):not(.steps-panel-bar__edit):not(.steps-panel-edit__more):not(.steps-panel-edit__clear):not(.steps-panel-edit__apply):not(.runcustomstep-open):not(.run-setting-chip):not(.dsp-link):not(.back-to-top):not(.sr-node):not(.sr-tree-toggle):not(.sr-twisty):not(.sr-thumb):not(.sr-link):not(.scan-filmstrip__page):hover:not(:disabled, [aria-disabled=true]) {
     background: color-mix(in srgb, var(--accent) 22%, transparent);
     border-color: color-mix(in srgb, var(--accent) 50%, transparent);
 }
