@@ -122,6 +122,74 @@ export function withPasswordStepTypeDeep(actions) {
     return out;
 }
 
+// ---- What a loaded step does not use ----
+// A step keeps only the keys its fields and lists of steps read: anything
+// else in a file (a switch's cases under "actions", "selector" on an if) is
+// gone once the step is loaded, and would be gone from the file once saved
+// again. These are what the editor says it left out, so the loss is not
+// silent. Besides its fields, a step keeps these of its own.
+const STEP_OWN_KEYS = new Set(["type", "alias", "disabled", "collapsed"]);
+
+/** How many steps a value holds, those nested in them too. */
+function countStepsIn(value) {
+    if (Array.isArray(value)) return value.reduce((n, v) => n + countStepsIn(v), 0);
+    if (!value || typeof value !== "object") return 0;
+    const self = typeof value.type === "string" ? 1 : 0;
+    return self + Object.values(value).reduce((n, v) => n + (Array.isArray(v) ? countStepsIn(v) : 0), 0);
+}
+
+/**
+ * The keys of a list of steps, and of the steps nested in them, that the
+ * editor does not use: [{path, type, label, key, steps}], `path` numbered by
+ * the step's place in the list ("3", "3.1" for the first step nested in it),
+ * `steps` the steps the key held, which are left out with it. A step of a
+ * type the editor does not have is not looked into: it is left out whole,
+ * and said so elsewhere. Empty values (null, "") lose nothing.
+ */
+export function unusedStepKeys(actions, defs, prefix = "") {
+    const out = [];
+    (Array.isArray(actions) ? actions : []).forEach((action, i) => {
+        if (!action || typeof action !== "object") return;
+        const path = prefix ? `${prefix}.${i + 1}` : String(i + 1);
+        const def = defs && defs[action.type];
+        if (!def) return;
+        const fields = def.fields || {};
+        for (const [key, value] of Object.entries(action)) {
+            if (value === undefined || value === null || value === "") continue;
+            if (STEP_OWN_KEYS.has(key) || Object.prototype.hasOwnProperty.call(fields, key)) continue;
+            if (key.endsWith(MASKED_FLAG_SUFFIX) && Object.prototype.hasOwnProperty.call(fields, key.slice(0, -MASKED_FLAG_SUFFIX.length))) continue;
+            out.push({path, type: action.type, label: def.label || action.type, key, steps: countStepsIn(value)});
+        }
+        for (const [key, fieldDef] of Object.entries(fields)) {
+            if (String(fieldDef?.type || "").toLowerCase().includes("action[]") && Array.isArray(action[key])) {
+                out.push(...unusedStepKeys(action[key], defs, path));
+            }
+        }
+    });
+    return out;
+}
+
+/**
+ * The keys unusedStepKeys() found, a sentence per step, in the order of the
+ * file: "Step 8 (Switch): 'actions' was not used, so 6 nested steps were
+ * left out". `where` names the list ("Custom step “login”, step") for steps
+ * that are not the workflow's.
+ */
+export function describeUnusedStepKeys(unused, where = "Step") {
+    const byStep = new Map();
+    for (const u of Array.isArray(unused) ? unused : []) {
+        if (!byStep.has(u.path)) byStep.set(u.path, {label: u.label, keys: []});
+        byStep.get(u.path).keys.push(u);
+    }
+    return Array.from(byStep, ([path, {label, keys}]) => {
+        const said = keys.map((k) => {
+            const lost = k.steps ? `, so ${k.steps === 1 ? "1 nested step was" : `${k.steps} nested steps were`} left out` : "";
+            return `'${k.key}' was not used${lost}`;
+        });
+        return `${where} ${path} (${label}): ${said.join("; ")}`;
+    });
+}
+
 /** Strips every masked field flagged by maskedFlagKey() from an action tree,
  *  for callers holding plain action objects rather than a live builder (custom
  *  steps, which keep their values in memory so runs from the app still work). */
@@ -1406,6 +1474,22 @@ export function createActionsBuilder ({
     }
 
     /**
+     * Marks every field in error now, as a run would, without opening a step
+     * or moving focus: after a config is loaded, a required field it left
+     * empty shows so at once, not only when Run is pressed. A password left
+     * empty because it is never saved is not an error here: it is asked for
+     * on its own (the steps say "Needs password").
+     */
+    function showFieldErrors() {
+        secretsOptional = true;
+        try {
+            return validate({reveal: false});
+        } finally {
+            secretsOptional = false;
+        }
+    }
+
+    /**
      * `reveal: false` checks without opening the failing steps, collapsing the
      * others or moving focus: saving a config must keep the steps as the user
      * left them.
@@ -1495,7 +1579,9 @@ export function createActionsBuilder ({
 
         pushHistory("api:appendActions");
 
-        return {added, errors};
+        // What the steps held that their fields do not take, left out with
+        // them: the caller says so (a config loaded).
+        return {added, errors, unused: unusedStepKeys(actions, defs)};
     }
 
     function loadActions(actions = [], {
@@ -1531,6 +1617,10 @@ export function createActionsBuilder ({
 
     return {
         validate,
+        showFieldErrors,
+        // Steps' keys this editor would leave out (unusedStepKeys), for steps
+        // kept elsewhere until opened in it: the custom steps.
+        unusedKeys: (actions) => unusedStepKeys(withPasswordStepTypeDeep(actions), defs),
         getValue,
         addAction,
         appendActions,

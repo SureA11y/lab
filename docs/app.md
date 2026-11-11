@@ -84,7 +84,11 @@ downloads the workflow, with the form as you left it, as a `*.a11y-config.json`
 file. **Load config** opens one, or a run spec written by
 hand or by a tool; **Append config** adds one's steps to the workflow you
 have. A link with the workflow in it (`?state=`) opens it in someone else's
-app.
+app. What a file's steps hold that the app does not use, a key no field of
+the step reads (a switch's cases under `actions`, an `if` with `selector`), is
+left out, and the load says so as a warning, step by step: *Step 8 (Switch):
+'actions' was not used, so 6 nested steps were left out*. The rest loads, and
+a required field the file left empty shows as one at once.
 
 ## Reading a report
 

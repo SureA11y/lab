@@ -161,4 +161,49 @@ describe('Load config with a run spec', () => {
         assert.match(lastStatus().message, /steps the app does not have, left out: "save" \(step 1 in the file\), "nope" \(step 3\.2 in the file\)\. Saving now would drop them for good\./);
         assert.equal(lastStatus().tone, 'warning');
     });
+
+    test('says, step by step, what the steps hold that the app does not use, as a warning', async () => {
+        const { unusedStepKeys } = await import('./actions-builder.module.js');
+        const { ACTION_DEFINITIONS } = require('../workflow/action-definitions.js');
+        const workflow = [
+            { type: 'a11yScan' },
+            // A switch's cases under "actions" rather than "cases", and an if
+            // with "selector" rather than "selectorExists".
+            { type: 'switch', var: 'locale', actions: [{ type: 'case', equals: 'en', actions: [{ type: 'click', selector: 'a' }] }] },
+            { type: 'group', actions: [{ type: 'if', selector: '#otp', actions: [] }] },
+        ];
+        calls.loadResult = { added: [], errors: [], unused: unusedStepKeys(workflow, ACTION_DEFINITIONS) };
+        let shown = 0;
+        const input = win.document.getElementById('config-file');
+        const io = createConfigIO({
+            form: win.document.getElementById('scan-form'),
+            urlInput: win.document.getElementById('url-input'),
+            configFileEl: input,
+            actionsBuilder: {
+                loadActions: () => calls.loadResult,
+                showFieldErrors: () => { shown += 1; },
+                unusedKeys: (actions) => unusedStepKeys(actions, ACTION_DEFINITIONS),
+            },
+            setCustomSteps: () => {},
+            setStatusRun: (message, tone) => calls.status.push({ message, tone }),
+            STATUS: { OK: 'ok', ERROR: 'error', INFO: 'info', WARNING: 'warning' },
+        });
+        await new Promise((resolve) => {
+            io.setupConfigLoader(() => resolve());
+            const config = { version: 1, type: 'a11y-ui-src-config', state: {
+                'actions-workflow': workflow,
+                'custom-steps-json': JSON.stringify([{ id: 'banners', name: 'Dismiss banners', actions: [{ type: 'keyboard', key: 'Escape' }] }]),
+            } };
+            Object.defineProperty(input, 'files', { value: [new win.File([JSON.stringify(config)], 'c.json')], configurable: true });
+            input.dispatchEvent(new win.Event('change'));
+        });
+        const { message, tone } = lastStatus();
+        assert.equal(tone, 'warning');
+        assert.match(message, /^Configuration loaded from file\./);
+        assert.match(message, /Step 2 \(Switch\): 'actions' was not used, so 2 nested steps were left out/);
+        assert.match(message, /Step 3\.1 \(Condition\): 'selector' was not used/);
+        assert.match(message, /Custom step “Dismiss banners”, step 1 \(Keyboard input\): 'key' was not used/);
+        assert.match(message, /Saving now would drop it for good\./);
+        assert.equal(shown, 1, 'the empty required fields show as such once loaded');
+    });
 });

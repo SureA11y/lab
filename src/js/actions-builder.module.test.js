@@ -190,3 +190,43 @@ describe('filterTagSuggestions', () => {
         assert.deepEqual(filterTagSuggestions(undefined), []);
     });
 });
+
+// Loading a config keeps only what each step's fields take: the rest is said,
+// step by step, rather than dropped without a word.
+describe('unusedStepKeys and describeUnusedStepKeys', () => {
+    const { unusedStepKeys, describeUnusedStepKeys } = require('./actions-builder.module.js');
+    const { ACTION_DEFINITIONS } = require('../workflow/action-definitions.js');
+
+    test('names each key a step does not use, where it is, and the steps it held', () => {
+        const unused = unusedStepKeys([
+            { type: 'a11yScan', label: 'Home', alias: 'Scan', disabled: false, collapsed: true },
+            { type: 'switch', var: 'locale', actions: [{ type: 'case', equals: 'en', actions: [{ type: 'click', selector: 'a' }, { type: 'click', selector: 'b' }] }] },
+            { type: 'group', actions: [{ type: 'if', selector: '#otp', actions: [{ type: 'setPassword', selector: '#p', valueMasked: true }] }] },
+        ], ACTION_DEFINITIONS);
+        assert.deepEqual(unused.map(({ path, key, steps }) => [path, key, steps]), [
+            ['2', 'actions', 3],
+            ['3.1', 'selector', 0],
+        ]);
+    });
+
+    test('leaves out empty values, steps of a type the app does not have, and anything not a step', () => {
+        assert.deepEqual(unusedStepKeys([
+            { type: 'click', selector: 'a', note: '', other: null },
+            { type: 'nope', whatever: 1 },
+            null,
+            'click',
+        ], ACTION_DEFINITIONS), []);
+    });
+
+    test('says them a sentence a step, in plain words', () => {
+        const lines = describeUnusedStepKeys([
+            { path: '8', label: 'Switch', key: 'actions', steps: 6 },
+            { path: '8', label: 'Switch', key: 'cases2', steps: 1 },
+            { path: '7.6', label: 'Condition', key: 'selector', steps: 0 },
+        ], 'Step');
+        assert.deepEqual(lines, [
+            "Step 8 (Switch): 'actions' was not used, so 6 nested steps were left out; 'cases2' was not used, so 1 nested step was left out",
+            "Step 7.6 (Condition): 'selector' was not used",
+        ]);
+    });
+});
