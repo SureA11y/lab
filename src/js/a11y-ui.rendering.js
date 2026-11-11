@@ -3,7 +3,7 @@
 /**
  * Rendering helpers for a11y-ui.
  */
-import {occurrencePagesHtml} from './occurrence-pages.js';
+import {occurrencePagesParts} from './occurrence-pages.js';
 import {elementCountText} from './occurrence-elements.js';
 import {generateA11yMetricsContents} from './a11y-metrics-renderer.js';
 import {iconButton, scanTagChipsHtml, untitledLabel} from './a11y-ui.utils.js';
@@ -671,7 +671,8 @@ export function createRenderer({
         return list.every((n) => JSON.stringify(n.howToCheck) === key) ? list[0].howToCheck : null;
     }
 
-    function buildOccurrenceGuidanceHtml(n, {stepsShown = false} = {}) {
+    // `hintShown` when the hint is said once for every occurrence, above them.
+    function buildOccurrenceGuidanceHtml(n, {stepsShown = false, hintShown = false} = {}) {
         const hint = typeof n?.hint === 'string' ? n.hint.trim() : '';
         const u = n?.uncertainty && typeof n.uncertainty === 'object' ? n.uncertainty : null;
         const code = u && typeof u.code === 'string' ? u.code.trim() : '';
@@ -686,7 +687,7 @@ export function createRenderer({
                 '</div>';
         }
         if (!stepsShown) out += buildHowToCheckHtml(n.howToCheck, {lang: n.lang});
-        if (hint) {
+        if (hint && !hintShown) {
             out += '<div class="node-detail node-hint"><strong>How to fix:</strong> ' + withLang(escapeHtml(hint), n.lang) + '</div>';
         }
         return out;
@@ -875,6 +876,26 @@ export function createRenderer({
         return '<div class="node-screenshots">' + parts.join('') + '</div>';
     }
 
+    // Why an occurrence has no picture, when that is all its picture part
+    // says: the same note on many occurrences ("the scan reached its limit")
+    // is said once, above them. '' when it has a picture, or more than one.
+    function pictureNoteOf(n) {
+        const shot = n?.elementScreenshot;
+        const inStates = Array.isArray(n?.elementStateScreenshots) ? n.elementStateScreenshots : [];
+        return shot && !shot.url && !inStates.length ? screenshotSkipText(shot) : '';
+    }
+
+    // The part every one of `parts` has, alike, or '' (with fewer than two,
+    // there is nothing to say once for all).
+    function sharedPart(parts) {
+        return parts.length > 1 && parts[0] && parts.every((x) => x === parts[0]) ? parts[0] : '';
+    }
+
+    // The occurrences of a finding, as its "View details" dialog lists them.
+    // What every occurrence shares (what is wrong, how to fix it, the check,
+    // why there is no picture) is said once, at the top; the occurrences
+    // follow, grouped by the page they were found on, each with its element
+    // and the selector "Copy selector" copies.
     function buildInstancesListHtml(nodes, type = 'fail') {
         const list = dedupeWithUrlMerge(nodes);
         // Questions in the order a review takes them: likely failures first.
@@ -883,64 +904,132 @@ export function createRenderer({
                 .sort((a, b) => (REVIEW_GROUP_RANK[reviewGroupOfNode(a.n)] - REVIEW_GROUP_RANK[reviewGroupOfNode(b.n)]) || (a.i - b.i))
                 .map((x) => x.n)
             : list;
-        // Steps every question shares are shown once, above them.
-        const shared = type === 'cantTell' ? sharedHowToCheck(ordered) : null;
-        return (shared ? buildHowToCheckHtml(shared, {lang: ordered[0].lang, forAll: true}) : '') + ordered
-            .map((n, nodeIndex) => {
-                const selector = Array.isArray(n.target) ? n.target.join(', ') : '';
-                const rawHtml = (n.html || '').replace(/\s+/g, ' ').trim();
-                const shortHtml = rawHtml.length > 250 ? rawHtml.slice(0, 247) + '…' : rawHtml;
-                const failure = (n.failureSummary || '').trim();
-                // Where it was found: under the heading, never in it, short
-                // whatever the addresses are like (occurrence-pages.js).
-                const pages = occurrencePagesHtml(n.urls);
-                const instanceLabel = type === 'fail' ? 'Occurrence' : 'Instance';
-                const inContexts = [pagesLabel(n), contextsLabel(n)].filter(Boolean).join(' · ');
+        const instanceLabel = type === 'fail' ? 'Occurrence' : 'Instance';
+        const plural = type === 'fail' ? 'occurrences' : 'instances';
 
-                const selectorPart = selector
-                    ? '<div class="example-node-header">' +
-                    '<h2>' + instanceLabel + ' ' + (nodeIndex + 1) +
-                    (inContexts ? ' <span class="node-contexts">' + escapeHtml(inContexts) + '</span>' : '') +
-                    (n.lean ? ' ' + leanBadgeHtml(reviewGroupOfNode(n)) : '') + '</h2>' +
-                    pages +
-                    '<code hidden="hidden">' + escapeHtml(selector) + '</code>' +
-                    '</div>'
-                    : '<div class="example-node-header"><h2>Instance ' +
-                    (nodeIndex + 1) +
-                    (inContexts ? ' <span class="node-contexts">' + escapeHtml(inContexts) + '</span>' : '') +
-                    '</h2>' + pages + '<code>(no target selector)</code></div>';
+        const failureOf = (n) => {
+            const failure = (n.failureSummary || '').trim();
+            return failure
+                ? '<div class="node-detail"' + langAttr(n.lang) + '>' + convertIndentedBlockToHtml(escapeAngleBrackets(failure)) + '</div>'
+                : '';
+        };
+        const hintOf = (n) => {
+            const hint = typeof n?.hint === 'string' ? n.hint.trim() : '';
+            return hint ? '<div class="node-detail node-hint"><strong>How to fix:</strong> ' + withLang(escapeHtml(hint), n.lang) + '</div>' : '';
+        };
+        const checksOf = (n) => {
+            const sourceAtomicRules = normalizeStringListUnique(n?.sourceAtomicRules);
+            const sourceAtomicFromContrib = normalizeStringListUnique(
+                (Array.isArray(n?.sourceContributors) ? n.sourceContributors : []).map((c) => c?.testId)
+            );
+            const resolved = sourceAtomicRules.length ? sourceAtomicRules : sourceAtomicFromContrib;
+            return resolved.length
+                ? '<div class="node-detail"><strong>' + (resolved.length === 1 ? 'Check' : 'Checks') + ':</strong> <code>' +
+                escapeHtml(resolved.join(', ')) + '</code></div>'
+                : '';
+        };
 
-                const htmlPart = shortHtml
-                    ? '<div class="example-node-code"><div class="example-node-html"><code>' + escapeHtml(shortHtml) + '</code><button type="button" class="copy-selector-btn" data-selector="' + escapeAttr(selector) + '">Copy selector</button></div></div>'
-                    : '';
+        // Said once for all, when every occurrence says the same.
+        const failureForAll = sharedPart(ordered.map(failureOf));
+        const hintForAll = sharedPart(ordered.map(hintOf));
+        const checksForAll = sharedPart(ordered.map(checksOf));
+        const stepsForAll = type === 'cantTell' ? sharedHowToCheck(ordered) : null;
+        // The commonest reason for no picture, when two or more share it.
+        const notes = new Map();
+        for (const n of ordered) {
+            const note = pictureNoteOf(n);
+            if (note) notes.set(note, (notes.get(note) || 0) + 1);
+        }
+        const [pictureNoteForAll, pictureNoteCount] = [...notes.entries()].sort((a, b) => b[1] - a[1])[0] || ['', 0];
+        const hoistPictureNote = pictureNoteCount > 1;
 
-                // The same element, numbered otherwise by the page in another
-                // context: its selector there, to find it in that context.
-                const contextSelectorsPart = Array.isArray(n.contextTargets) && n.contextTargets.length
-                    ? n.contextTargets.map(([context, sel]) => '<div class="node-detail node-context-selector"><strong>Selector in ' + escapeHtml(context) +
-                        ':</strong> <code>' + escapeHtml(sel) + '</code> <button type="button" class="copy-selector-btn" data-selector="' + escapeAttr(sel) +
-                        '" aria-label="Copy selector in ' + escapeAttr(context) + '">Copy selector</button></div>').join('')
-                    : '';
+        const common = [
+            failureForAll,
+            hintForAll,
+            checksForAll,
+            hoistPictureNote
+                ? '<div class="node-detail node-screenshot-none"><strong>No picture' +
+                (pictureNoteCount === ordered.length ? '' : ' for ' + formatCount(pictureNoteCount) + ' of them') + ':</strong> ' +
+                escapeHtml(pictureNoteForAll) + '</div>'
+                : ''
+        ].join('');
+        const commonHtml = (common || stepsForAll)
+            ? '<section class="occurrences-common">' +
+            '<h2 class="occurrences-common__title">' +
+            (ordered.length > 1 ? 'For all ' + formatCount(ordered.length) + ' ' + plural : 'For this ' + instanceLabel.toLowerCase()) + '</h2>' +
+            (stepsForAll ? buildHowToCheckHtml(stepsForAll, {lang: ordered[0].lang, forAll: true}) : '') +
+            common +
+            '</section>'
+            : '';
 
-                const failurePart = failure
-                    ? '<div class="node-detail"' + langAttr(n.lang) + '>' + convertIndentedBlockToHtml(escapeAngleBrackets(failure)) + '</div>'
-                    : '';
+        // Grouped by the pages each was found on, in the order they come.
+        const groups = new Map();
+        for (const n of ordered) {
+            const urls = [...new Set((Array.isArray(n.urls) ? n.urls : []).map((u) => String(u || '').trim()).filter(Boolean))];
+            const key = JSON.stringify(urls);
+            if (!groups.has(key)) groups.set(key, {urls, nodes: []});
+            groups.get(key).nodes.push(n);
+        }
 
-                const sourceAtomicRules = normalizeStringListUnique(n?.sourceAtomicRules);
-                const sourceAtomicFromContrib = normalizeStringListUnique(
-                    (Array.isArray(n?.sourceContributors) ? n.sourceContributors : []).map((c) => c?.testId)
-                );
-                const resolvedAtomicRules = sourceAtomicRules.length ? sourceAtomicRules : sourceAtomicFromContrib;
-                const sourceLine = resolvedAtomicRules.length
-                    ? '<div class="node-detail"><strong>' + (resolvedAtomicRules.length === 1 ? 'Check' : 'Checks') + ':</strong> <code>' +
-                    escapeHtml(resolvedAtomicRules.join(', ')) +
-                    '</code></div>'
-                    : '';
+        let number = 0;
+        const occurrenceHtml = (n) => {
+            number += 1;
+            const selector = Array.isArray(n.target) ? n.target.join(', ') : '';
+            const rawHtml = (n.html || '').replace(/\s+/g, ' ').trim();
+            const shortHtml = rawHtml.length > 250 ? rawHtml.slice(0, 247) + '…' : rawHtml;
+            const inContexts = contextsLabel(n);
+            const name = (selector ? instanceLabel : 'Instance') + ' ' + number;
 
-                const picture = buildElementScreenshotHtml(n, (selector ? instanceLabel : 'Instance') + ' ' + (nodeIndex + 1));
-                return '<div class="example-node">' + selectorPart + htmlPart + contextSelectorsPart + picture + failurePart + buildOccurrenceDetailsHtml(n) + buildOccurrenceGuidanceHtml(n, {stepsShown: !!shared}) + sourceLine + '</div>';
-            })
-            .join('');
+            const header = '<div class="example-node-header">' +
+                '<h3>' + escapeHtml(name) +
+                (inContexts ? ' <span class="node-contexts">' + escapeHtml(inContexts) + '</span>' : '') +
+                (n.lean ? ' ' + leanBadgeHtml(reviewGroupOfNode(n)) : '') + '</h3>' +
+                '</div>';
+
+            const htmlPart = shortHtml
+                ? '<div class="example-node-code"><div class="example-node-html"><code>' + escapeHtml(shortHtml) + '</code></div></div>'
+                : '';
+            // The selector it copies, shown beside the button.
+            const selectorPart = selector
+                ? '<div class="node-detail node-selector"><strong>Selector:</strong> <code>' + escapeHtml(selector) + '</code> ' +
+                '<button type="button" class="copy-selector-btn" data-selector="' + escapeAttr(selector) + '" aria-label="Copy selector of ' + escapeAttr(name) + '">Copy selector</button></div>'
+                : '<div class="node-detail node-selector"><strong>Selector:</strong> none recorded.</div>';
+
+            // The same element, numbered otherwise by the page in another
+            // context: its selector there, to find it in that context.
+            const contextSelectorsPart = Array.isArray(n.contextTargets) && n.contextTargets.length
+                ? n.contextTargets.map(([context, sel]) => '<div class="node-detail node-context-selector"><strong>Selector in ' + escapeHtml(context) +
+                    ':</strong> <code>' + escapeHtml(sel) + '</code> <button type="button" class="copy-selector-btn" data-selector="' + escapeAttr(sel) +
+                    '" aria-label="Copy selector in ' + escapeAttr(context) + '">Copy selector</button></div>').join('')
+                : '';
+
+            const picture = hoistPictureNote && pictureNoteOf(n) === pictureNoteForAll ? '' : buildElementScreenshotHtml(n, name);
+            return '<div class="example-node">' + header + htmlPart + selectorPart + contextSelectorsPart + picture +
+                (failureForAll ? '' : failureOf(n)) +
+                buildOccurrenceDetailsHtml(n) +
+                buildOccurrenceGuidanceHtml(n, {stepsShown: !!stepsForAll, hintShown: !!hintForAll}) +
+                (checksForAll ? '' : checksOf(n)) +
+                '</div>';
+        };
+
+        const groupsHtml = [...groups.values()].map((group) => {
+            const pages = occurrencePagesParts(group.urls);
+            const count = group.nodes.length;
+            const countText = formatCount(count) + ' ' + (count === 1 ? instanceLabel.toLowerCase() : plural);
+            const head = pages
+                ? '<div class="occurrence-group__head">' +
+                '<h2 class="occurrence-group__title"><span class="node-pages-label">' +
+                (pages.count === 1 ? 'Found on' : 'Found on ' + pages.count + ' pages:') + '</span> ' + pages.named +
+                ' <span class="occurrence-group__count">· ' + escapeHtml(countText) + '</span></h2>' +
+                pages.copy + pages.more +
+                '</div>'
+                : '<div class="occurrence-group__head"><h2 class="occurrence-group__title">' +
+                (groups.size > 1 ? 'Page not recorded' : '') +
+                ' <span class="occurrence-group__count">' + (groups.size > 1 ? '· ' : '') + escapeHtml(countText) + '</span></h2></div>';
+            return '<section class="occurrence-group">' + head + group.nodes.map(occurrenceHtml).join('') + '</section>';
+        }).join('');
+
+        return commonHtml + groupsHtml;
     }
 
     // Body of the "View details" dialog for a can't-tell rollup that matched no
@@ -1077,6 +1166,22 @@ export function createRenderer({
         return Number(n).toLocaleString('en-US');
     }
 
+    // A finding's dialog heading: the rule's name in plain words, as the
+    // results table shows it, and under it the rule id and `metaHtml`
+    // (impact, counts). The rule id is the title only when there is no name.
+    function findingDialogHeadingHtml(issue, dialogId, ruleId, metaHtml) {
+        const name = String(issue?.help || issue?.description || '').trim();
+        const ruleIdText = String(ruleId || '').replaceAll(',', ', ');
+        return '<div class="src-dialog-heading">' +
+            '<p id="' + dialogId + '-title" class="lab-dialog-title src-dialog-title">' +
+            (name ? withLang(escapeHtml(name), issue.titleLang || issue.lang) : '<code>' + escapeHtml(ruleIdText) + '</code>') +
+            '</p>' +
+            '<p class="src-dialog-meta">' +
+            (name && ruleIdText ? 'Rule <code>' + escapeHtml(ruleIdText) + '</code> · ' : '') + metaHtml +
+            '</p>' +
+            '</div>';
+    }
+
     function buildInstancesCellHtmlForIssue({issue, nodes, nodeCount, index, rowIndex, ruleId, impact, type}) {
         if (!nodeCount) {
             const hints = (issue && issue.reviewHints && typeof issue.reviewHints === 'object')
@@ -1113,22 +1218,13 @@ export function createRenderer({
                 reviewDialogId +
                 '-title">' +
                 '<div class="src-dialog-header">' +
-                '<p id="' +
-                reviewDialogId +
-                '-title" class="lab-dialog-title"><code>' +
-                escapeHtml(ruleId || '') +
-                '</code></p>' +
-                '<p class="src-dialog-meta">Impact: ' +
-                escapeHtml(impact || 'unknown') +
-                (partly ? ' · Partly checked</p>' : ' · Needs manual review</p>') +
+                findingDialogHeadingHtml(issue, reviewDialogId, ruleId,
+                    'Impact: ' + escapeHtml(impact || 'unknown') + (partly ? ' · Partly checked' : ' · Needs manual review')) +
                 '<button type="button" class="src-dialog-close" aria-label="Close dialog">Close</button>' +
                 '</div>' +
                 '<div class="src-dialog-body">' +
                 guideRefHtml(issue) +
                 buildReviewHintsBodyHtml(hints) +
-                '</div>' +
-                '<div class="src-dialog-footer">' +
-                '<button type="button" class="src-dialog-close">Close</button>' +
                 '</div>' +
                 '</dialog>'
             );
@@ -1179,30 +1275,20 @@ export function createRenderer({
             dialogId +
             '-title">' +
             '<div class="src-dialog-header">' +
-            '<p id="' +
-            dialogId +
-            `-title" class="lab-dialog-title"><code>` +
-            escapeHtml(ruleId || '') +
-            '</code></p>' +
-            '<p class="src-dialog-meta">Impact: ' +
-            escapeHtml(impact || 'unknown') +
-            ' · ' +
-            formatCount(total) +
-            ' ' + instanceLabel +
-            (total === 1 ? '' : 's') +
-            escapeHtml(elements) +
-            '</p>' +
+            findingDialogHeadingHtml(issue, dialogId, ruleId,
+                'Impact: ' + escapeHtml(impact || 'unknown') + ' · ' + formatCount(total) + ' ' + instanceLabel +
+                (total === 1 ? '' : 's') + escapeHtml(elements)) +
             '<button type="button" class="src-dialog-close" aria-label="Close dialog">Close</button>' +
             '</div>' +
             '<div class="src-dialog-body" data-lazy-body="' + lazyBodyId + '" data-lazy-count="' + nodeCount + '"></div>' +
-            '<div class="src-dialog-footer">' +
-            '<span class="src-dialog-meta">' +
+            // One close, in the header; Escape closes too. The footer only
+            // says how many are listed when the engine listed fewer than it
+            // found.
             (unlisted
-                ? formatCount(nodeCount) + ' of ' + formatCount(total) + ' ' + instanceLabel + 's listed: the engine lists the first ' + formatCount(nodeCount) + ' a rule finds, and counts every one.'
-                : nodeCount + ' ' + instanceLabel + (nodeCount === 1 ? '' : 's') + ' listed.') +
-            '</span>' +
-            '<button type="button" class="src-dialog-close">Close</button>' +
-            '</div>' +
+                ? '<div class="src-dialog-footer"><span class="src-dialog-meta">' +
+                formatCount(nodeCount) + ' of ' + formatCount(total) + ' ' + instanceLabel + 's listed: the engine lists the first ' + formatCount(nodeCount) + ' a rule finds, and counts every one.' +
+                '</span></div>'
+                : '') +
             '</dialog>'
         );
     }

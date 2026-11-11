@@ -164,8 +164,8 @@
     max-height: min(70vh, 680px);
     overflow: auto;
 
+    /* The same on both sides: the scrollbar takes its own room. */
     padding: .9rem 1.1rem 1.0rem;
-    padding-right: .25rem;
 
     scrollbar-width: thin;
     scrollbar-color: rgba(185,195,209,.55) transparent;
@@ -249,6 +249,45 @@ button.src-dialog-close:focus-visible {
     white-space: nowrap;
     border: 0;
 }
+
+/* A finding's dialog heading (a11y-ui.rendering.js): the rule's name in plain
+   words, and under it its id, impact and counts. */
+.src-dialog-heading { min-width: 0; }
+.src-dialog .src-dialog-heading .src-dialog-title { margin: 0; font-size: var(--fs-18); font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; }
+.src-dialog .src-dialog-heading .src-dialog-meta { margin: .25rem 0 0; font-size: var(--fs-sm); }
+.src-dialog-heading .src-dialog-meta code { overflow-wrap: anywhere; }
+
+/* What every occurrence of a finding shares (what is wrong, how to fix it,
+   the check, why there is no picture), said once above them. */
+.occurrences-common {
+    margin: 0 0 1rem;
+    padding: .75rem .85rem;
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+}
+.src-dialog .occurrences-common__title,
+.src-dialog .occurrence-group__title { margin: 0 0 .35rem; font-size: var(--fs-lg); font-weight: 600; line-height: 1.35; }
+
+/* The occurrences, grouped by the page they were found on: the page heads
+   its group, with Copy URL, and is not repeated on each occurrence. */
+.occurrence-group + .occurrence-group { margin-top: 1.25rem; }
+.occurrence-group__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; margin: 0 0 .6rem; }
+.src-dialog .occurrence-group__title { flex: 1 1 18rem; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.occurrence-group__count { font-weight: normal; font-size: var(--fs-sm); color: var(--text-muted); }
+.occurrence-group__head .copy-urls-btn { margin: 0; }
+.occurrence-group__head .node-pages-more { flex: 1 1 100%; font-size: var(--fs-sm); }
+.occurrence-group__head .node-pages-more summary { cursor: pointer; min-height: 24px; }
+.occurrence-group__head .node-pages-more ul { margin: .25rem 0 0; padding-left: 1.2rem; overflow-wrap: anywhere; }
+.occurrence-group__head .node-pages-more li a { display: inline-block; min-height: 24px; line-height: 24px; }
+.src-dialog .example-node-header h3 { margin: 0; font-size: var(--fs-lg); line-height: 1.35; }
+.example-node-header h3 span { font-weight: normal; font-size: var(--fs-sm); }
+.example-node-header h3 span.node-contexts { color: var(--text-muted); }
+
+/* The selector "Copy selector" copies, shown beside it. */
+.node-selector code { overflow-wrap: anywhere; }
+.src-dialog .node-selector .copy-selector-btn { margin: 0 0 0 .25rem; }
 
 /* Instance list layout */
 .example-node {

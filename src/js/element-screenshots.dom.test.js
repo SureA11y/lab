@@ -96,8 +96,10 @@ describe('element screenshots', () => {
         assert.equal(nodes[0].querySelector('.node-screenshot img').getAttribute('src'), 'blob:http://lab.test/3f2a');
         for (const node of nodes.slice(1)) {
             assert.equal(node.querySelector('img'), null);
-            assert.equal(node.querySelector('.node-screenshot-none').textContent, 'No picture: it is not included with this copy of the report.');
+            assert.equal(node.querySelector('.node-screenshot-none'), null, 'said once, above the occurrences');
         }
+        assert.equal(resultsEl.querySelector('.occurrences-common .node-screenshot-none').textContent,
+            'No picture for 2 of them: it is not included with this copy of the report.');
     });
 
     test('in a merged scan, says which context the picture shows, when the occurrence is in more than one', () => {

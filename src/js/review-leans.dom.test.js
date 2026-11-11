@@ -72,7 +72,7 @@ describe('questions that lean', () => {
         const lean = node.querySelector('.node-lean');
         assert.ok(lean.classList.contains('node-lean-fail'));
         assert.equal(lean.textContent, 'Likely fails: The heading skips a level. (right in 9 of 10 known cases)Caution: A visual design may intend it.');
-        assert.equal(node.querySelector('h2 .lean-badge').textContent, 'likely fails');
+        assert.equal(node.querySelector('h3 .lean-badge').textContent, 'likely fails');
 
         const how = node.querySelector('.node-how-to-check');
         assert.deepEqual(Array.from(how.querySelectorAll('li')).map((li) => li.textContent), STEPS.steps);
@@ -102,7 +102,7 @@ describe('questions that lean', () => {
         assert.deepEqual(rows.map((r) => r.classList.contains('lean-fail')), [true, false, false]);
 
         // In the row's list, the likely failures come first.
-        const headers = Array.from(rows[0].querySelectorAll('.example-node h2')).map((h) => h.querySelector('.lean-badge')?.textContent || '');
+        const headers = Array.from(rows[0].querySelectorAll('.example-node h3')).map((h) => h.querySelector('.lean-badge')?.textContent || '');
         assert.deepEqual(headers, ['likely fails', 'likely fails', '']);
     });
 
@@ -131,7 +131,8 @@ describe('steps every question shares', () => {
         const body = resultsEl.querySelector('tr.cantTell .src-dialog-body');
         const all = body.querySelectorAll('.node-how-to-check');
         assert.equal(all.length, 1);
-        assert.equal(all[0].parentElement, body, 'above the instances, not inside one');
+        assert.ok(all[0].closest('.occurrences-common'), 'above the instances, with what they all share');
+        assert.equal(all[0].closest('.example-node'), null, 'not inside one');
         assert.equal(all[0].querySelector('summary').textContent, 'How to check (2 steps), for every instance');
     });
 

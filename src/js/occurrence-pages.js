@@ -72,14 +72,18 @@ function link(url, label) {
         : `<span title="${esc(raw)}">${text}</span>`;
 }
 
-/** The pages line of an occurrence, or '' without any. */
-export function occurrencePagesHtml(urls) {
+/**
+ * The parts of the pages line, to lay out otherwise (the details of a
+ * finding head each page's group of occurrences with them): `named` the
+ * pages named inline, `copy` its Copy URL(s) button, `more` the rest of a
+ * long list to open, `count` how many pages. Null without any.
+ */
+export function occurrencePagesParts(urls) {
     const list = [...new Set((Array.isArray(urls) ? urls : []).map((u) => String(u || '').trim()).filter(Boolean))];
-    if (!list.length) return '';
+    if (!list.length) return null;
     const labels = labelsFor(list);
     const shown = list.slice(0, SHOWN).map((u) => link(u, labels.get(u)));
     const rest = list.slice(SHOWN);
-    const lead = list.length === 1 ? 'Found on' : `Found on ${list.length} pages:`;
     const named = rest.length
         ? `${shown.join(', ')} and ${rest.length} more`
         : (shown.length > 1 ? `${shown.slice(0, -1).join(', ')} and ${shown[shown.length - 1]}` : shown[0]);
@@ -88,5 +92,13 @@ export function occurrencePagesHtml(urls) {
             + `<ul>${rest.map((u) => `<li>${link(u, labels.get(u))}</li>`).join('')}</ul></details>`
         : '';
     const copy = `<button type="button" class="copy-selector-btn copy-urls-btn" data-copy="${esc(list.join('\n'))}">${list.length === 1 ? 'Copy URL' : 'Copy URLs'}</button>`;
-    return `<div class="node-pages"><p class="node-pages-line"><span class="node-pages-label">${esc(lead)}</span> ${named}</p>${copy}${more}</div>`;
+    return {named, copy, more, count: list.length};
+}
+
+/** The pages line of an occurrence, or '' without any. */
+export function occurrencePagesHtml(urls) {
+    const parts = occurrencePagesParts(urls);
+    if (!parts) return '';
+    const lead = parts.count === 1 ? 'Found on' : `Found on ${parts.count} pages:`;
+    return `<div class="node-pages"><p class="node-pages-line"><span class="node-pages-label">${esc(lead)}</span> ${parts.named}</p>${parts.copy}${parts.more}</div>`;
 }
