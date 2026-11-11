@@ -71,34 +71,35 @@ export function createRunSummaryUi(app) {
         const sortAttrs = globalThis.A11Y_SCAN_SORT
             ? ' ' + globalThis.A11Y_SCAN_SORT.scanSortAttrs(scan, index)
             : '';
-        let item = `<li class="${liClasses}" data-scan-id="${scanIdAttr}"${sortAttrs}>`;
-        item +=
-            nameWrapperHtml +
-            excludedBadgeHtml +
-            (isSkipped
-                ? `: <a href="#sc-${scan.id}" title="go to the report">skipped, ` +
+        // A row of columns, lined up with the rows above and below it: its
+        // name, and under it what it found; its tags; its buttons.
+        const metaBits = isSkipped
+            ? [`<a href="#sc-${scan.id}" title="go to the report">skipped, ` +
                 escapeHtml(scan.skipInfo?.reason || 'reason not provided') +
                 (scan.skipInfo?.estimatedNodes != null && scan.skipInfo?.threshold != null
-                    ? ' · ' +
-                    escapeHtml(`estimated nodes: ${scan.skipInfo.estimatedNodes} (threshold: ${scan.skipInfo.threshold})`)
-                    : '')
-                : `: <a href="#sc-${scan.id}" title="go to the report">` +
-                count +
-                ' failure' +
-                (count === 1 ? '' : 's') +
-                (perScanNodes > 0 ? ' in ' + perScanNodes + ' element' + (perScanNodes === 1 ? '' : 's') : '')) +
-            '</a>' +
-            (isSkipped ? ''
-                : globalThis.A11Y_REPORT_SCAN?.scanProfilesLabel(scan)
-                    ? ' <small>(' + escapeHtml(globalThis.A11Y_REPORT_SCAN.scanProfilesLabel(scan)) + ')</small>' : '') +
-            (!isSkipped && optInRulesLabel(scan) ? ' <small>(plus ' + escapeHtml(optInRulesLabel(scan)) + ')</small>' : '') +
-            // A note can explain a count, such as no failures on a scope
-            // that matched nothing, so the list points to it.
-            (!isSkipped && Array.isArray(scan?.canonical?.notices) && scan.canonical.notices.length
-                ? ' <small class="scan-has-notes">· <a href="#sc-' + escapeAttr(scan.id || '') + '">' +
-                    (scan.canonical.notices.length === 1 ? 'see the note' : 'see the notes') + '</a></small>'
-                : '') +
-            app.buildScanTagChipsHtml(scan) +
+                    ? ' · ' + escapeHtml(`estimated nodes: ${scan.skipInfo.estimatedNodes} (threshold: ${scan.skipInfo.threshold})`)
+                    : '') + '</a>']
+            : [`<a href="#sc-${scan.id}" title="go to the report">` +
+                count + ' failure' + (count === 1 ? '' : 's') +
+                (perScanNodes > 0 ? ' in ' + perScanNodes + ' element' + (perScanNodes === 1 ? '' : 's') : '') + '</a>'];
+        if (!isSkipped && globalThis.A11Y_REPORT_SCAN?.scanProfilesLabel(scan)) {
+            metaBits.push(escapeHtml(globalThis.A11Y_REPORT_SCAN.scanProfilesLabel(scan)));
+        }
+        if (!isSkipped && optInRulesLabel(scan)) metaBits.push('plus ' + escapeHtml(optInRulesLabel(scan)));
+        // A note can explain a count, such as no failures on a scope that
+        // matched nothing, so the list points to it.
+        if (!isSkipped && Array.isArray(scan?.canonical?.notices) && scan.canonical.notices.length) {
+            metaBits.push('<span class="scan-has-notes"><a href="#sc-' + escapeAttr(scan.id || '') + '">' +
+                (scan.canonical.notices.length === 1 ? 'see the note' : 'see the notes') + '</a></span>');
+        }
+        let item = `<li class="${liClasses}" data-scan-id="${scanIdAttr}"${sortAttrs}>`;
+        item +=
+            '<span class="scan-summary-main">' +
+                '<span class="scan-summary-name">' + nameWrapperHtml + excludedBadgeHtml + '</span>' +
+                // Heard as one sentence: "Main menu: 7 failures in 20 elements, ..."
+                '<span class="scan-summary-meta"><span class="visually-hidden">: </span>' + metaBits.join('<span aria-hidden="true"> · </span><span class="visually-hidden">, </span>') + '</span>' +
+            '</span>' +
+            '<span class="scan-summary-tags">' + app.buildScanTagChipsHtml(scan) + '</span>' +
             controlsHtml;
 
         item += '</li>';
@@ -116,7 +117,11 @@ export function createRunSummaryUi(app) {
         // accounted for instead of silently missing.
         const note = failureFreeScansNote(scans);
         const noteHtml = note ? '<p class="failure-free-scans-note">' + escapeHtml(note) + '</p>' : '';
-        return noteHtml + '<ol>' + items + '</ol>';
+        // Its own titled, framed box that scrolls, so the rows past its height
+        // are seen to be there; focusable, to scroll it from the keyboard.
+        const shown = (items.match(/<li /g) || []).length;
+        return noteHtml + '<p class="scan-summary-list-h" id="scan-summary-list-h">' + shown + ' scan' + (shown === 1 ? '' : 's') + ' in this list</p>' +
+            '<ol class="scan-summary-list" tabindex="0" aria-labelledby="scan-summary-list-h">' + items + '</ol>';
     }
 
     /**

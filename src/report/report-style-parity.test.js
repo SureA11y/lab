@@ -26,7 +26,7 @@ const RENDERER_SOURCES = [
 
 // Only the families the export is expected to style; interactive app chrome is
 // stripped from the exported markup and deliberately has no report styling.
-const EXPORTED_PREFIXES = ['a11y-cov-', 'a11y-review-signals', 'a11y-score-caveat', 'a11y-chip-unevaluated', 'issues-group-coverage', 'issues-group-empty', 'scoreGauge', 'dsp', 'scan-notices', 'a11y-margins', 'node-details-list', 'node-screenshot', 'node-lean', 'node-how-to-check', 'lean-badge', 'instances-lean', 'scan-contexts', 'scan-members', 'scan-filmstrip', 'scan-review-group', 'sr-focusbar'];
+const EXPORTED_PREFIXES = ['a11y-cov-', 'a11y-review-signals', 'a11y-score-caveat', 'a11y-chip-unevaluated', 'issues-group-coverage', 'issues-group-empty', 'scoreGauge', 'dsp', 'scan-notices', 'a11y-margins', 'node-details-list', 'node-screenshot', 'node-lean', 'node-how-to-check', 'lean-badge', 'instances-lean', 'scan-contexts', 'scan-members', 'scan-filmstrip', 'scan-review-group', 'sr-focusbar', 'scan-summary-list', 'scan-summary-main', 'scan-summary-name', 'scan-summary-meta', 'scan-summary-tags'];
 
 function classesEmittedByRenderers() {
     const found = new Set();
