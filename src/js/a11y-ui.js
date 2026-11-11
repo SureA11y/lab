@@ -2319,8 +2319,11 @@ function storeActiveMode(mode) {
             editorEl: actionsBar,
             sectionKey: 'workflow',
             title: 'Workflow steps',
-            // Folded each time the app loads, whatever it was before.
-            startHidden: true,
+            // Open beside the steps where there is room for both (1280px and
+            // up), as their outline: the way around a deep workflow, and where
+            // steps are ticked to select them. Folded to its rail on a
+            // narrower screen. Each time the app loads, whatever it was before.
+            startHidden: !window.matchMedia?.('(min-width: 1280px)')?.matches,
             goToLine: goToWorkflowLine,
             callName: customStepName,
             barHost: $('#workflow-selection-bar'),

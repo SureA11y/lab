@@ -1267,6 +1267,14 @@
 .steps-panel-bar .steps-panel-bar__btn:focus-visible,
 .line .runcustomstep-open:focus-visible { color: var(--accent-on-soft); }
 .steps-panel-bar .steps-panel-bar__btn:disabled { opacity: .55; cursor: default; }
+/* Nothing selected yet: Disable, Enable and Edit together are off, and read
+   as off, an outline, not the filled buttons they become. */
+.steps-panel-bar .steps-panel-bar__btn:disabled,
+.steps-panel-bar .steps-panel-bar__edit:disabled {
+    background: transparent;
+    color: var(--bg-elevated);
+    border-color: color-mix(in srgb, var(--bg-elevated) 60%, transparent);
+}
 .steps-panel-bar__empty {
     margin: 0 0 var(--space-3);
     padding: var(--space-6);
@@ -1276,7 +1284,8 @@
     color: var(--text-muted);
 }
 /* While selecting, adding steps waits: the editor shows only the selection. */
-.steps-panel-barhost.is-selecting ~ .actions-builder-actions { display: none; }
+/* As specific as the row's own rule, which shows it (display: flex). */
+:is(#actions-builder, #custom-step-actions-builder) .steps-panel-barhost.is-selecting ~ .actions-builder-actions { display: none; }
 
 /* The selection view: only the selected steps, and the containers they are
    in as one-line headers that say where they are. No card is opened or

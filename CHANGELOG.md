@@ -322,6 +322,13 @@ The first public release.
   workflow and the custom steps. Fix the file and load it again before
   saving over it. Required fields the file left empty show as errors once
   it is loaded, not only at Run.
+- **The Workflow's steps panel is open where there is room.** On a screen
+  1280px wide or more it opens beside the steps each time the app loads,
+  an outline that stays in view, the way around a deep workflow; narrower,
+  it starts as its rail. Selecting steps opens it, since steps are ticked
+  there (it could start folded away). While selecting with none ticked,
+  Disable, Enable and Edit together read as off, and the row that adds
+  steps is hidden, as it was meant to be.
 - **Step fields fit what they hold.** A step's fields were fixed columns of
   about 200px, so a long URL or selector was cut short beside an empty row.
   They now share the row (as many columns of at least 14rem as fit), and a
