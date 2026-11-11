@@ -6,6 +6,7 @@
 
 import {createEl, iconButton, svgIcon} from './a11y-ui.utils.js';
 import {setClipboardAction} from './actions-builder.module.js';
+import {inputLabelOf} from './custom-step-inputs-table.js';
 
 /**
  * builder: accessors for what the rest shares with this part
@@ -535,7 +536,9 @@ export function createStepLine(builder) {
                     const value = currentArgs[name] != null ? String(currentArgs[name]) : "";
 
                     const row = createEl("div", {className: "runcustomstep-dynamic-input-row"});
-                    const label = createEl("label", {htmlFor: inputId}, name);
+                    // Its label, or its name in words ("Element screenshots"
+                    // for elementScreenshots): what it is, not the variable.
+                    const label = createEl("label", {htmlFor: inputId}, inputLabelOf(def));
                     if (required) label.append(" ", createEl("span", {className: "req-badge", title: "Required"}, "*"));
                     row.append(label);
 

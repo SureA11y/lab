@@ -84,6 +84,13 @@ lists every step and field.
   elements into one, and use it as `{var:name}` in any field.
 - **Custom steps** are workflows of your own, with inputs, used as one step:
   "log in", "accept the cookie banner", "open the product called {var:name}".
+  Above the custom step editor, every custom step is a button, the one being
+  edited marked: choose another to edit it. A custom step's **Inputs** are a
+  table, a row each: its **Name** (what its steps read, as `{var:name}`), a
+  **Label** (what a call to it shows for the input; left empty, the name in
+  words: *Element screenshots* for `elementScreenshots`) and whether a call
+  must give it (**Required**), with **Add input** and a remove button per
+  row. They are saved as `inputs: [{name, required, label}]`.
 - A password goes in **Set password value**: it is hidden on screen and never
   saved. For runs nobody watches, the step can read it from an environment
   variable instead ([the runner's guide](scheduled-scans-guide.md#passwords)).

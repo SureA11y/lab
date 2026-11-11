@@ -595,12 +595,13 @@ export function createStepsPanel(o) {
                 node.path ? el(doc, 'span', {className: 'steps-panel__num', text: node.path}) : null,
                 el(doc, 'span', {className: 'steps-panel__name'}, [
                     node.name,
-                    node.disabled ? el(doc, 'span', {className: 'steps-panel__flag', text: ' (disabled)'}) : null
+                    node.disabled ? el(doc, 'span', {className: 'steps-panel__flag', text: ' (disabled)'}) : null,
+                    // After the name, flowing with it. A comma first for a
+                    // screen reader, which reads the row as one name.
+                    node.needsPassword ? el(doc, 'span', {className: 'steps-panel__badge'}, [
+                        el(doc, 'span', {className: 'visually-hidden', text: ', '}), 'Needs password'
+                    ]) : null
                 ]),
-                // A comma first for a screen reader, which reads the row as one name.
-                node.needsPassword ? el(doc, 'span', {className: 'steps-panel__badge'}, [
-                    el(doc, 'span', {className: 'visually-hidden', text: ', '}), 'Needs password'
-                ]) : null,
                 node.note ? el(doc, 'span', {className: 'steps-panel__note', text: node.note}) : null,
                 row.context ? el(doc, 'span', {className: 'visually-hidden', text: ', holds matches'}) : null
             ]);

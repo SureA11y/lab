@@ -14,6 +14,9 @@ export function normalizeCustomStepInputs(rawInputs) {
         seen.add(name);
         const normalized = {name};
         if (item.required === true) normalized.required = true;
+        // What a call shows for it, in place of its name (custom-step-inputs-table.js).
+        const label = typeof item.label === 'string' ? item.label.trim() : '';
+        if (label) normalized.label = label;
         if (Object.prototype.hasOwnProperty.call(item, 'default')) normalized.default = item.default;
         out.push(normalized);
     }

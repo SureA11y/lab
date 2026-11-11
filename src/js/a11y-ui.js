@@ -240,7 +240,8 @@ function storeActiveMode(mode) {
         get customStepCopyBtn() { return customStepCopyBtn; },
         get customStepDeleteBtn() { return customStepDeleteBtn; },
         get customStepIdInput() { return customStepIdInput; },
-        get customStepInputsTextarea() { return customStepInputsTextarea; },
+        get customStepInputsHost() { return customStepInputsHost; },
+        get customStepsChooserEl() { return customStepsChooserEl; },
         get customStepNameInput() { return customStepNameInput; },
         get customStepPasteBtn() { return customStepPasteBtn; },
         get customStepToolbarEl() { return customStepToolbarEl; },
@@ -343,7 +344,8 @@ function storeActiveMode(mode) {
     const customStepDeleteBtn = $('#custom-step-delete-btn');
     const customStepIdInput = $('#custom-step-id');
     const customStepNameInput = $('#custom-step-name');
-    const customStepInputsTextarea = $('#custom-step-inputs');
+    const customStepInputsHost = $('#custom-step-inputs');
+    const customStepsChooserEl = $('#custom-steps-chooser');
     const customStepToolbarEl = $('#custom-step-toolbar');
     const customStepActionsEl = $('#custom-step-actions-container');
     const customStepActionsBuilderEl = $('#custom-step-actions-builder');

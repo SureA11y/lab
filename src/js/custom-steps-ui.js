@@ -5,13 +5,18 @@
 
 import {createActionsBuilder, redactMaskedFieldsDeep, withPasswordStepTypeDeep} from './actions-builder.module.js';
 import {createEl} from './a11y-ui.utils.js';
-import {cloneCustomStepValue, collectUsedCustomStepIds, deepRemapCustomStepIds, formatCustomStepInputsText, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepInputsText, parseCustomStepsJson} from './custom-steps-data.js';
+import {cloneCustomStepValue, collectUsedCustomStepIds, deepRemapCustomStepIds, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepsJson} from './custom-steps-data.js';
+import {createInputsTable} from './custom-step-inputs-table.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * (actionsBuilder, copiedCustomStep, createCustomStepActionsHistoryButtons, createCustomStepsListHistoryButtons, customStepActionsBuilder, customStepActionsBuilderEl, customStepActionsEl, customStepAddBtn, customStepCopyBtn, customStepDeleteBtn, customStepIdInput, customStepInputsTextarea, customStepNameInput, customStepPasteBtn, customStepToolbarEl, customStepsCountBadgeEl, customStepsData, customStepsInput, customStepsPanelEl, onCustomStepsListChanged, pushCustomStepsHistory, resetCustomStepsHistory, rulesCatalog, scheduleCustomStepsHistoryPush, selectedCustomStepIndex, setCustomStepActionsHistoryBaselineToCurrent, setCustomStepsExpanded, setUiState, syncingCustomStepEditor).
+ * (actionsBuilder, copiedCustomStep, createCustomStepActionsHistoryButtons, createCustomStepsListHistoryButtons, customStepActionsBuilder, customStepActionsBuilderEl, customStepActionsEl, customStepAddBtn, customStepCopyBtn, customStepDeleteBtn, customStepIdInput, customStepInputsHost, customStepNameInput, customStepsChooserEl, customStepPasteBtn, customStepToolbarEl, customStepsCountBadgeEl, customStepsData, customStepsInput, customStepsPanelEl, onCustomStepsListChanged, pushCustomStepsHistory, resetCustomStepsHistory, rulesCatalog, scheduleCustomStepsHistoryPush, selectedCustomStepIndex, setCustomStepActionsHistoryBaselineToCurrent, setCustomStepsExpanded, setUiState, syncingCustomStepEditor).
  */
 export function createCustomStepsUi(app) {
+    // The open custom step's inputs, as a table (custom-step-inputs-table.js),
+    // made when the section is set up.
+    let inputsTable = null;
+
     function getCustomStepSelectChoices() {
         const out = [{ value: '', label: 'Select custom step...' }];
         app.customStepsData.forEach((step) => {
@@ -198,7 +203,6 @@ export function createCustomStepsUi(app) {
         const controls = [
             app.customStepIdInput,
             app.customStepNameInput,
-            app.customStepInputsTextarea,
             app.customStepCopyBtn,
             app.customStepDeleteBtn
         ];
@@ -206,6 +210,7 @@ export function createCustomStepsUi(app) {
             if (!el) return;
             el.disabled = !enabled;
         });
+        inputsTable?.setDisabled(!enabled);
         if (app.customStepActionsBuilderEl) {
             app.customStepActionsBuilderEl.classList.toggle('is-disabled', !enabled);
             app.customStepActionsBuilderEl.setAttribute('aria-disabled', enabled ? 'false' : 'true');
@@ -277,8 +282,44 @@ export function createCustomStepsUi(app) {
         app.customStepsPanelEl?.setAttribute('aria-label', selected
             ? `Custom step: ${selected.name || selected.id}`
             : 'Custom step');
+        renderCustomStepsChooser();
         syncCustomStepPasteButtonState();
         app.onCustomStepsListChanged?.();
+    }
+
+    // Above the editor, every custom step as a button, the one open in it
+    // marked (aria-current): which one is being edited, and the way to
+    // another, whatever the steps panel shows.
+    let chooserDrawn = '';
+    function renderCustomStepsChooser() {
+        const host = app.customStepsChooserEl;
+        if (!host) return;
+        const names = app.customStepsData.map((step, i) => String(step?.name || step?.id || `Custom step ${i + 1}`));
+        const want = JSON.stringify([names, app.selectedCustomStepIndex]);
+        if (want === chooserDrawn) return;
+        chooserDrawn = want;
+        // Drawn again: focus goes back to the same custom step's button.
+        const focused = host.contains(document.activeElement) ? Number(document.activeElement.dataset.index) : -1;
+        host.textContent = '';
+        host.hidden = names.length === 0;
+        if (!names.length) return;
+        const list = createEl('ul', {className: 'custom-steps-chooser__list'});
+        names.forEach((name, i) => {
+            const current = i === app.selectedCustomStepIndex;
+            const btn = createEl('button', {
+                type: 'button',
+                className: `secondary-button custom-steps-chooser__item${current ? ' is-current' : ''}`,
+                dataset: {index: String(i)}
+            }, name);
+            if (current) btn.setAttribute('aria-current', 'true');
+            btn.addEventListener('click', () => {
+                if (i !== app.selectedCustomStepIndex) selectCustomStep(i);
+            });
+            list.append(createEl('li', {}, btn));
+        });
+        host.append(createEl('span', {className: 'custom-steps-chooser__title', id: 'custom-steps-chooser-title'}, 'Custom step to edit:'), list);
+        host.setAttribute('aria-labelledby', 'custom-steps-chooser-title');
+        if (focused >= 0) host.querySelector(`[data-index="${focused}"]`)?.focus();
     }
 
     function removeCustomStepAt(index) {
@@ -339,7 +380,7 @@ export function createCustomStepsUi(app) {
             if (!selected) {
                 if (app.customStepIdInput) app.customStepIdInput.value = '';
                 if (app.customStepNameInput) app.customStepNameInput.value = '';
-                if (app.customStepInputsTextarea) app.customStepInputsTextarea.value = '';
+                inputsTable?.setInputs([]);
                 if (app.customStepActionsBuilder) app.customStepActionsBuilder.clear();
                 setCustomStepEditorEnabled(false);
                 return;
@@ -348,7 +389,7 @@ export function createCustomStepsUi(app) {
             setCustomStepEditorEnabled(true);
             if (app.customStepIdInput) app.customStepIdInput.value = selected.id || '';
             if (app.customStepNameInput) app.customStepNameInput.value = selected.name || '';
-            if (app.customStepInputsTextarea) app.customStepInputsTextarea.value = formatCustomStepInputsText(selected.inputs);
+            inputsTable?.setInputs(normalizeCustomStepInputs(selected.inputs));
             if (app.customStepActionsBuilder) {
                 app.customStepActionsBuilder.loadActions(Array.isArray(selected.actions) ? selected.actions : [], {
                     clearFirst: true,
@@ -370,7 +411,7 @@ export function createCustomStepsUi(app) {
         if (!selected) return;
         selected.id = String(app.customStepIdInput?.value || '').trim();
         selected.name = String(app.customStepNameInput?.value || '').trim() || selected.id;
-        selected.inputs = parseCustomStepInputsText(app.customStepInputsTextarea?.value || '');
+        if (inputsTable) selected.inputs = inputsTable.getInputs();
         renderCustomStepsList();
         syncCustomStepsHiddenInput();
         refreshRunCustomStepSelectors();
@@ -408,6 +449,9 @@ export function createCustomStepsUi(app) {
     }
 
     function initCustomStepsUi(defs) {
+        if (app.customStepInputsHost && !inputsTable) {
+            inputsTable = createInputsTable({host: app.customStepInputsHost, onChange: syncSelectedCustomStepMetaFromEditor});
+        }
         if (!app.customStepActionsEl || !app.customStepToolbarEl) return;
         if (!app.customStepActionsBuilder) {
             app.customStepActionsBuilder = createActionsBuilder({
@@ -459,7 +503,7 @@ export function createCustomStepsUi(app) {
             });
         }
 
-        [app.customStepIdInput, app.customStepNameInput, app.customStepInputsTextarea].forEach((el) => {
+        [app.customStepIdInput, app.customStepNameInput].forEach((el) => {
             if (!el) return;
             el.addEventListener('input', syncSelectedCustomStepMetaFromEditor);
             el.addEventListener('change', syncSelectedCustomStepMetaFromEditor);

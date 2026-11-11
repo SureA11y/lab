@@ -322,6 +322,15 @@ The first public release.
   workflow and the custom steps. Fix the file and load it again before
   saving over it. Required fields the file left empty show as errors once
   it is loaded, not only at Run.
+- **The custom step editor says which one is open, and its inputs are a
+  table.** Every custom step is a button above the editor, the one being
+  edited marked, to switch between them. Inputs were a textarea of one name
+  a line with `*` for required; they are now a table (name, label,
+  required) with Add input and a remove button per row. An input can have a
+  **label**, which a call to the custom step shows in place of its
+  camelCase name (left out, the name in words). Saved custom steps load as
+  before; `inputs` takes `label` in configurations and run specs
+  (`schemas/run-spec.v1.schema.json`).
 - **The Workflow's steps panel is open where there is room.** On a screen
   1280px wide or more it opens beside the steps each time the app loads,
   an outline that stays in view, the way around a deep workflow; narrower,
