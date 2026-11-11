@@ -3,8 +3,10 @@
 // shows, and whether a call must give it; a button to add a row and one to
 // remove each. It replaced a textarea of one name a line, with "*" for
 // required, that nobody could guess. What it reads and writes is the format
-// custom steps are saved in, [{name, required?, label?, default?}]: a
-// default, which the table does not show, is kept with its input.
+// custom steps are saved in, [{name, required?, label?, default?}]. A
+// default is what a call that leaves the input out gives it; it is shown
+// and edited as text, and a default that is not text (from a file written
+// by hand) is kept as it is until it is edited.
 
 import {createEl, svgIcon} from './a11y-ui.utils.js';
 
@@ -52,10 +54,11 @@ export function createInputsTable({host, onChange = () => {}}) {
     const titleId = ids('title');
     const title = createEl('div', {className: 'custom-step-inputs__title', id: titleId}, 'Inputs');
     const help = createEl('p', {className: 'custom-step-inputs__help', id: ids('help')},
-        'What a call to this custom step gives it. Its steps read each as {var:name}. The label is what the call shows; left empty, the name in words.');
+        'What a call to this custom step gives it. Its steps read each as {var:name}. The label is what the call shows; left empty, the name in words. The default is used when a call leaves the input out.');
     const head = createEl('tr', {}, [
         createEl('th', {scope: 'col', id: ids('name')}, 'Name'),
         createEl('th', {scope: 'col', id: ids('label')}, 'Label'),
+        createEl('th', {scope: 'col', id: ids('default')}, 'Default'),
         createEl('th', {scope: 'col', id: ids('required')}, 'Required'),
         createEl('th', {scope: 'col'}, createEl('span', {className: 'visually-hidden'}, 'Remove'))
     ]);
@@ -84,7 +87,11 @@ export function createInputsTable({host, onChange = () => {}}) {
         const out = {name};
         if (required) out.required = true;
         if (label) out.label = label;
-        if (tr._hasDefault) out.default = tr._default;
+        // Its field as typed; a default that is not text stays as it came
+        // until the field is edited, and an empty field is no default.
+        const dflt = tr.querySelector('.custom-step-inputs__default');
+        if (tr._defaultKept) out.default = tr._default;
+        else if (dflt.value !== '') out.default = dflt.value;
         return out;
     }
 
@@ -108,6 +115,7 @@ export function createInputsTable({host, onChange = () => {}}) {
             const n = i + 1;
             tr.querySelector('.custom-step-inputs__name').setAttribute('aria-label', `Input ${n} name`);
             tr.querySelector('.custom-step-inputs__label').setAttribute('aria-label', `Input ${n} label`);
+            tr.querySelector('.custom-step-inputs__default').setAttribute('aria-label', `Input ${n} default`);
             tr.querySelector('.custom-step-inputs__required').setAttribute('aria-label', `Input ${n} required`);
             const name = tr.querySelector('.custom-step-inputs__name').value.trim();
             const remove = tr.querySelector('.custom-step-inputs__remove');
@@ -151,16 +159,26 @@ export function createInputsTable({host, onChange = () => {}}) {
         uid += 1;
         const name = createEl('input', {type: 'text', className: 'custom-step-inputs__name', value: String(input.name || ''), spellcheck: false, autocomplete: 'off', placeholder: 'e.g. viewLabel'});
         const label = createEl('input', {type: 'text', className: 'custom-step-inputs__label', value: String(input.label || ''), autocomplete: 'off', placeholder: inputLabelOf({name: input.name}) || 'e.g. View label'});
+        const hasDefault = Object.prototype.hasOwnProperty.call(input, 'default');
+        const shown = !hasDefault ? '' : (typeof input.default === 'string' ? input.default : JSON.stringify(input.default));
+        const dflt = createEl('input', {type: 'text', className: 'custom-step-inputs__default', value: shown, autocomplete: 'off', placeholder: 'None'});
         const required = createEl('input', {type: 'checkbox', className: 'custom-step-inputs__required', checked: input.required === true});
         const remove = createEl('button', {type: 'button', className: 'secondary-button icon-button custom-step-inputs__remove'}, svgIcon('trash'));
         const tr = createEl('tr', {}, [
             createEl('td', {}, name),
             createEl('td', {}, label),
+            createEl('td', {}, dflt),
             createEl('td', {className: 'custom-step-inputs__check'}, required),
             createEl('td', {}, remove)
         ]);
-        tr._hasDefault = Object.prototype.hasOwnProperty.call(input, 'default');
+        // A default that is not text (a number, a list) is kept as it came
+        // until its field is edited.
+        tr._defaultKept = hasDefault && typeof input.default !== 'string';
         tr._default = input.default;
+        dflt.addEventListener('input', () => {
+            tr._defaultKept = false;
+            changed();
+        });
         // The label's example is the words a call shows without one.
         name.addEventListener('input', () => {
             label.placeholder = inputLabelOf({name: name.value}) || 'e.g. View label';
@@ -177,7 +195,7 @@ export function createInputsTable({host, onChange = () => {}}) {
             const next = rowsNow()[Math.min(at, rowsNow().length - 1)];
             (next ? next.querySelector('.custom-step-inputs__name') : addBtn).focus();
         });
-        [name, label, required, remove].forEach((el) => { el.disabled = disabled; });
+        [name, label, dflt, required, remove].forEach((el) => { el.disabled = disabled; });
         return tr;
     }
 

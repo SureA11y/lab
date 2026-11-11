@@ -548,7 +548,7 @@ export function createStepLine(builder) {
                     const multiline = value.includes("\n");
                     const input = multiline
                         ? createEl("textarea", {id: inputId, rows: Math.min(value.split("\n").length, 12), spellcheck: false})
-                        : createEl("input", {type: "text", id: inputId, value, placeholder: required ? "Required" : ""});
+                        : createEl("input", {type: "text", id: inputId, value, placeholder: inputPlaceholder(def, required)});
                     if (multiline) {
                         input.value = value;
                         input.addEventListener("input", () => {
@@ -566,6 +566,16 @@ export function createStepLine(builder) {
 
             customStepSelect.addEventListener("change", rebuild);
             rebuild();
+        }
+
+        // What an empty input gets: its custom step's default, said as such,
+        // or that it must be given.
+        function inputPlaceholder(def, required) {
+            if (def && Object.prototype.hasOwnProperty.call(def, "default")) {
+                const d = def.default;
+                return `Default: ${typeof d === "string" ? d : JSON.stringify(d)}`;
+            }
+            return required ? "Required" : "";
         }
 
         function wireScanEngine(lineEl) {
