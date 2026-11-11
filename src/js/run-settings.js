@@ -7,22 +7,20 @@
 // The fields stay in the form (the dialog is inside .config-data), so a saved
 // configuration, undo and the run spec read them as before.
 
-// Each setting: its field, its short name, what its chip says ({ value, text }
-// are the field's value and its option's text) and whether that is its default.
+// Each setting: its field, its name, what its chip says ({ value, text } are
+// the field's value and its option's text) and whether that is its default.
+// A chip says a setting in the dialog's own words, its label and the option
+// chosen ("Colors: Browser default"): two wordings for one setting read as two
+// settings.
+const optionText = ({ text }) => text;
 const SETTINGS = [
-    {
-        id: 'viewport-preset',
-        name: 'Viewport',
-        say: ({ value, text }) => (!value || value === 'default' ? String(text || '').replace(/^Default \((.*)\)$/, '$1') : text),
-        isDefault: ({ value }) => !value || value === 'default',
-    },
-    { id: 'run-color-scheme', name: 'Colors', say: ({ value, text }) => (value ? text : 'Default'), isDefault: ({ value }) => !value },
-    { id: 'run-high-contrast', name: 'Contrast', say: ({ value }) => (value === 'on' ? 'High' : 'Off'), isDefault: ({ value }) => value !== 'on' },
+    { id: 'viewport-preset', name: 'Viewport', say: optionText, isDefault: ({ value }) => !value || value === 'default' },
+    { id: 'run-color-scheme', name: 'Colors', say: optionText, isDefault: ({ value }) => !value },
+    { id: 'run-high-contrast', name: 'High contrast', say: optionText, isDefault: ({ value }) => value !== 'on' },
     {
         id: 'run-language',
         name: 'Language',
         say: ({ value, text }, values) => {
-            if (!value) return 'Default';
             if (value !== 'other') return text;
             return String((values['run-language-other'] || {}).value || '').trim() || 'Other, not typed yet';
         },
@@ -31,7 +29,7 @@ const SETTINGS = [
     {
         id: 'run-untrusted-certs',
         name: 'Certificates',
-        say: ({ value }) => (value === 'on' ? 'Untrusted accepted' : 'Trusted only'),
+        say: optionText,
         isDefault: ({ value }) => value !== 'on',
         warn: true,
     },

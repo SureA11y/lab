@@ -493,6 +493,10 @@ button.run-setting-chip.is-warn {
     padding: var(--space-4) var(--space-5) var(--space-5);
 }
 
+/* A line of help longer than about 65 characters is hard to follow back to
+   the start of the next one. */
+.run-settings-dialog .hint { max-width: 65ch; }
+
 .hint {
     margin-top: .2rem;
     font-size: var(--fs-sm);

@@ -219,7 +219,7 @@ describe('hostile pages', () => {
             };
             const refused = await timedRun(spec);
             assert.equal(refused.status, 'error');
-            assert.match(refused.payload.errorDetails.message, /ERR_CERT_AUTHORITY_INVALID.*does not trust this site's certificate.*Untrusted certificates to Accept/s);
+            assert.match(refused.payload.errorDetails.message, /ERR_CERT_AUTHORITY_INVALID.*does not trust this site's certificate.*Certificates to Accept untrusted/s);
             assert.ok(!(refused.payload.runDiagnostics || {}).untrustedCertsAccepted);
 
             const log = [];
