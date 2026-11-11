@@ -176,6 +176,12 @@ groupings group EN 301 549 scans too. An issue no group takes
 goes to "Not in WCAG" when it corresponds to no WCAG criterion, and to
 "Others" otherwise.
 
+A finding's **View details** is titled with the rule's name, its rule id
+under it. What all its occurrences share (what is wrong, how to fix it, the
+check, why there is no picture) is said once at the top; the occurrences
+follow, grouped by the page they were found on, each with its element and
+the selector **Copy selector** copies.
+
 ## Downloading and sharing
 
 **Download report** gives a package: the report as a page to read, its JSON to
@@ -186,13 +192,27 @@ package. A link can open a report in the app directly:
 `http://127.0.0.1:3000/?report=<url of its JSON or zip>`
 ([how](http-api.md#opening-reports-in-the-app-by-address)).
 
+**Download as a single file** gives the report as one HTML page. It keeps
+the controls that still work without the app, as the reader's own: **Sort
+scans**, **View all scans** and **Show in each scan** (findings, findings
+and analysis, or failures only). Its contents list the scans by name, and
+it follows the reader's light or dark scheme until they choose one with its
+theme button.
+
+**Close report**, beside the Download menu, takes the report off the screen,
+once you confirm: changes made to it in the app go with it, unless it was
+downloaded first.
+
 ## A conformance report
 
 **Conformance report**, in the Download menu, gives an Accessibility
 Conformance Report in the layout of the VPAT 2.5 (WCAG and EU edition), as
 one HTML file: a table per WCAG level and the EN 301 549 chapters.
 **Conformance report (Word)** gives the same as a `.docx`, to edit and sign
-in Word. It starts
+in Word. The HTML file opens with what was evaluated in a sentence (how many
+pages, and the address patterns most of them share), with every page,
+linked, in an appendix at its end; it follows the reader's light or dark
+scheme on screen, and prints light. It starts
 as a draft from the report's scans, which never says "Supports": a failure is
 "Does Not Support", nothing to apply to is "Not Applicable", and the rest is
 "Not Evaluated", with what the scans asked a person to check.
@@ -271,8 +291,11 @@ the lab's.
 The **open report** tab opens reports saved before: their JSON, or a
 package's zip. What you add opens at once; several are merged into one
 report with all their scans, and stay listed, to choose which scans and
-screenshots of each to keep and **Load selected** again. Reports saved by
-older versions of the lab open as they always did.
+screenshots of each to keep and load again (**Load 2 reports**). A file that
+is not a report does not hold the others back: it is skipped, and its row in
+the list says why in plain words ("This file is not a surea11y report: it
+has no page address."). Reports saved by older versions of the lab open as
+they always did.
 
 The pictures of a report from **Download report** are in its zip, not in its
 JSON. A JSON taken out of the zip and opened on its own says so, in the
