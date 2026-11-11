@@ -132,7 +132,7 @@
     line-height: 1.5;
 }
 .line-badge[hidden] { display: none; }
-.steps-panel__badge { margin-left: var(--space-1); }
+.steps-panel__badge { display: inline-block; margin-left: var(--space-1); }
 
 /* How many passwords a run still needs, at the top of the Workflow. */
 .passwords-banner {

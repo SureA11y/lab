@@ -389,3 +389,68 @@ button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
     }
     #results .results-visualization select { min-width: 0; width: 100%; }
 }
+
+/* Every custom step, above the editor, the one open in it marked
+   (custom-steps-ui.js): its name in bold on the accent's wash with an
+   accent bar, not by colour alone. */
+.custom-steps-chooser {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-3);
+}
+.custom-steps-chooser[hidden] { display: none; }
+.custom-steps-chooser__title { font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); }
+.custom-steps-chooser__list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+button.secondary-button.custom-steps-chooser__item {
+    min-height: 32px;
+    max-width: 30ch;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    line-height: 1.3;
+    text-align: left;
+    white-space: normal;
+    color: var(--text-main);
+}
+button.secondary-button.custom-steps-chooser__item.is-current {
+    border-color: var(--accent);
+    box-shadow: inset 3px 0 0 var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-on-soft);
+    font-weight: 700;
+}
+@media (forced-colors: active) {
+    button.secondary-button.custom-steps-chooser__item.is-current { border: 2px solid Highlight; }
+}
+
+/* A custom step's inputs, a row each (custom-step-inputs-table.js). */
+.custom-step-inputs { margin-bottom: var(--space-4); }
+.custom-step-inputs__title { font-size: var(--fs-sm); font-weight: 600; color: var(--text-main); }
+.custom-step-inputs__help { margin: 2px 0 var(--space-2); max-width: 65ch; font-size: var(--fs-xs); color: var(--text-muted); }
+.custom-step-inputs__table { width: 100%; max-width: 48rem; border-collapse: collapse; font-size: var(--fs-sm); }
+.custom-step-inputs__table[hidden] { display: none; }
+.custom-step-inputs__table th {
+    padding: 0 var(--space-2) var(--space-1) 0;
+    text-align: left;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.custom-step-inputs__table td { padding: 0 var(--space-2) var(--space-2) 0; vertical-align: middle; }
+.custom-step-inputs__table th:nth-child(3), .custom-step-inputs__check { width: 5.5rem; text-align: center; }
+.custom-step-inputs__table th:last-child, .custom-step-inputs__table td:last-child { width: 40px; padding-right: 0; }
+.custom-step-inputs__table input[type="text"] { width: 100%; min-height: 32px; box-sizing: border-box; }
+/* The label left empty shows what a call will show: the name in words,
+   in italics, so it does not read as typed. */
+.custom-step-inputs__table .custom-step-inputs__label::placeholder { font-style: italic; }
+.custom-step-inputs__table input[aria-invalid="true"] { border-color: var(--danger); }
+.custom-step-inputs__check input { width: 18px; height: 18px; margin: 0; }
+.custom-step-inputs__table .custom-step-inputs__remove { min-width: 32px; min-height: 32px; padding: 0; justify-content: center; }
+.custom-step-inputs__empty { margin: 0 0 var(--space-2); font-size: var(--fs-sm); color: var(--text-muted); }
+.custom-step-inputs__empty[hidden], .custom-step-inputs__error[hidden] { display: none; }
+.custom-step-inputs__error { margin: 0 0 var(--space-2); font-size: var(--fs-xs); color: var(--danger); }
+button.secondary-button.custom-step-inputs__add { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 12px; }

@@ -246,6 +246,7 @@
                                     properties: {
                                         name: { type: 'string', minLength: 1 },
                                         required: { type: 'boolean' },
+                                        label: { type: 'string', description: 'What a call to the custom step shows for this input, in place of its name. Left out, its name split into words.' },
                                         default: {},
                                     },
                                     additionalProperties: false,

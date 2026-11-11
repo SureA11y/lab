@@ -414,6 +414,9 @@
                                     <aside id="custom-steps-steps-panel" class="steps-panel"></aside>
                                 </div>
                                 <div id="custom-steps-tabpanel" class="custom-steps-editor-panel" role="region" aria-label="Custom step">
+                                    <!-- Every custom step, the one open marked: which one is
+                                         being edited, and the way to another (custom-steps-ui.js). -->
+                                    <div id="custom-steps-chooser" class="custom-steps-chooser" role="group" hidden></div>
                                     <div class="custom-step-panel-toolbar">
                                         <!-- Add, paste, undo and redo: the section's, in reach whatever the panel. -->
                                         <div class="custom-step-panel-toolbar__start">
@@ -483,12 +486,9 @@
                                             <input type="text" id="custom-step-name" placeholder="Desktop + Mobile scan"/>
                                         </div>
                                     </div>
-                                    <div class="field-row">
-                                        <div>
-                                            <label for="custom-step-inputs">Inputs (one per line, add * for required)</label>
-                                            <textarea id="custom-step-inputs" rows="4" placeholder="viewLabel*&#10;section"></textarea>
-                                        </div>
-                                    </div>
+                                    <!-- The custom step's inputs, a row each: name, label,
+                                         required (custom-step-inputs-table.js). -->
+                                    <div id="custom-step-inputs" class="custom-step-inputs"></div>
                                     <div class="interaction-workflow">
                                         <fieldset class="actions-builder" id="custom-step-actions-builder">
                                             <legend class="actions-builder-header">Custom step actions</legend>
