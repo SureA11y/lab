@@ -30,17 +30,27 @@ The first public release.
   work, and keeps what each merged scan stands for.
   A report's time reads in the reader's own time zone, named; scans see the
   machine's zone unless `A11Y_TZ` names one.
-  At the top of a report's summary, a card says how much of the run is
-  pages of a template and opens **Review scans**: every pattern the URLs
-  repeat is a group, with its pages as their screenshots, those that differ
-  from the others first; see a page large, take pages out, exclude them,
-  add them to another group or group them by hand; see what a group fails
-  on most pages (the template's) and on a few (their content's); and Keep
-  one, Exclude all, Include all, Show only these, or merge the group into
-  one scan after seeing what it changes. Merged, a template's failure is
-  listed once on all its pages and a page's own failure on that page, the
-  merged scan's card shows its pages as pictures, and every scan in a group
-  says which. The report keeps every scan, so a merge can be undone, and
+  At the top of a report's summary, a card says how much of the run shares
+  a layout ("61 of 62 pages share a layout, in 10 templates (largest:
+  41).") and how much merging the largest template would shorten the
+  report, or, once merged, what the report is now, and opens **Review
+  scans**: every pattern the URLs repeat is a group, named from its pages'
+  titles where they share something ("Product pages", its pattern under
+  it; a name you give wins), with its pages as their screenshots, those
+  that differ from the others first; see a page large with what it shares
+  with the template, what is only on it and what of the template it lacks;
+  select pages to exclude, include, take out, add to another group or group
+  by hand, from one row of actions; see what a group fails on most pages
+  (the template's) and on a few (their content's); and Keep one page
+  (after a confirmation), Exclude all, Include all, Show only these, or
+  merge the group into one scan: "Not merged · Merge all 41 pages…" shows
+  what it changes before you apply it, and afterwards the review says
+  "Merged · Shown as 1 scan in the report · 41 pages", with Unmerge….
+  Merged, a template's failure is listed once on all its pages and a page's
+  own failure on that page, the merged scan's card shows its pages as
+  pictures, says of each failure on how many pages it is ("On 40 of 41
+  pages") and has **Review this group** and **Unmerge…**, and every scan in
+  a group says which. The report keeps every scan, so a merge can be undone, and
   every change can be undone in the review. A scan a Merged scan step made
   can be unmerged into its contexts, or have one taken out: runs now keep
   each context's own scan in the merged scan for that, which makes a merged

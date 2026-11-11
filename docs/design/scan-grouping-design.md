@@ -331,9 +331,11 @@ the run made it, a scan has no entry. Unmerged, a context can be excluded
 on its own (`exclude`, by index); its name and tags are its run's, and
 renaming or tagging it says so.
 
-The section lists these under **Merged by the run**, each with a Merged
-into one scan switch and its contexts to take out or put back; the last
-context left in it stays. A context shown on its own says whose context it
+The section lists these under **Merged by the run**, each saying so ("Merged
+by the run · Shown as 1 scan in the report · 6 contexts") with an
+**Unmerge…** button that shows what it changes first, as a group's merge
+does (§11.3), and its contexts to take out or put back; the last context
+left in it stays. A context shown on its own says whose context it
 is; the merged scan's contexts line says which are taken out. Moving a
 context moves its merged scan, as the order as shown is kept (§9.4).
 
@@ -356,10 +358,13 @@ comparisons, and the content issues are still there to read.
 
 ### 9.2 What the person does
 
-A chosen group gets a **Merge** switch beside its actions. On, the group's
-scans are shown as one merged scan, in the scans list and in the report, named
-by the group's name (or its pattern). Off, they are back as they were. The
-choice is saved with the others (`merge: true`, §7).
+A group says whether it is merged, in words, with a button that says what
+it covers ("Not merged · Merge all 41 pages…"). The button shows what merging
+changes, to apply or cancel (§11.3). Merged, the group's scans are shown as
+one merged scan, in the scans list and in the report, named by the group's
+name (or the name its pages' titles suggest, or its pattern). Unmerged, they
+are back as they were. The choice is saved with the others (`merge: true`,
+§7).
 
 Once merged, a group's scans can be changed by hand:
 
@@ -429,7 +434,7 @@ contexts only: the report view has none to fold.
   is shown as one excluded scan.
 - **A scan is in one merged scan at most.** Merged groups can be chosen inside
   one another; the outermost merged group wins, and a merged group inside it
-  is shown as merged into it, its switch kept, so unmerging the outer one
+  is shown as merged into it, its own merge kept, so unmerging the outer one
   brings the inner one back merged.
 - **A scan added to a merged group leaves any other merged group it was in**,
   so the last place it was put is where it is. Adding a scan says which group
@@ -524,7 +529,7 @@ the run.
    scans draws the report again whole, the Scan groups section keeping what
    was open and focus going back to the control that had it. An occurrence
    says "On all 5 pages" or "On 2 of 5 pages" and lists them; the card says
-   which scans it was merged from. The Merge switch is in each chosen group;
+   which scans it was merged from. Merging is in each group (§11.3);
    `merge: true` is saved in `scanGrouping` and in the report schema.
    The conformance report, the checklist and the comparisons are made from
    the scans as saved (§11).
@@ -643,9 +648,9 @@ features, following a person through what they do after a run; it is built:
   as View all scans shows it; its address when it has none) in the middle,
   those that differ first, each to see large, select (Shift for a range),
   take out, exclude, include, add to another group or group by hand; and the
-  group's name, failures and actions on the right. Merging shows what it
-  changes (`impactOf`) before it is applied, the switch showing the change
-  asked for until applied or cancelled. Every change is kept to undo
+  group's name, merging and actions on the right, then its failures. Merging
+  shows what it changes (`impactOf`) before it is applied (§11.3). Every
+  change is kept to undo
   (`includedInReport`, `scanGrouping` and the group shown alone, before it).
   Being a dialog, it is not drawn again with the report, and keeps its own
   focus: the save and restore of the section's state across a redraw went.
@@ -675,6 +680,79 @@ features, following a person through what they do after a run; it is built:
   saved choice without what the scans now are, and " (merged)" in the file's
   name. A conformance report made from it lists each page a saved merged
   scan stands for. The usual download keeps every scan.
+
+### 11.3 After a design review of the review
+
+A review of the workspace over a large run (62 scans, 41 pages of one
+template, a merged scan of six contexts) found it unclear what merging acts
+on and what it did, and the counts and names hard to read. Changed:
+
+- **Merging is a state and a button, not a checkbox.** A checkbox ticked
+  before anything happened read as done. The panel says "Not merged · Each
+  page is a scan of its own in the report" and the button what it covers,
+  "Merge all 41 pages…" (its included pages when some are excluded): the
+  whole group, not the selected pages. It opens what it changes, with Apply
+  ("Merge 41 pages") and Cancel, focus on Apply, then back on the button.
+  Applied, the selection is cleared (it was for pages now shown as one),
+  the panel says "Merged · Shown as 1 scan in the report · 41 pages" with
+  **Unmerge…**, the grid's note says "shown as 1 merged scan in the
+  report", and each page in it is marked "in the merged scan". A run's
+  merged scan has the same: "Merged by the run · Shown as 1 scan in the
+  report · 6 contexts", **Unmerge…**, then **Merge again…** (`impactOf`
+  takes a `run:` key too).
+- **The merged scan's card** in the report has **Review this group** and
+  **Unmerge…**, which opens the review on the group with what unmerging
+  changes, to apply or cancel there; nothing is unmerged from the card
+  itself. Each failure of its table says on how many of its pages it is
+  ("On 40 of 41 pages", "On all 41 pages"), from the pages its occurrences
+  are on, the merged scan's included pages: the template's failures read
+  apart from a few pages' own. A downloaded report leaves the two buttons
+  out (`.scan-merged-actions`, export.js) and keeps the counts.
+- **The card at the top of the summary** says "61 of 62 pages share a
+  layout, in 10 templates (largest: 41)." It counts the templates as the
+  workspace lists them, nested ones too; the largest is the largest
+  template, not a section that only holds several (a prefix pattern such as
+  `/en/…`). Then what merging the largest template not merged yet, and
+  holding no page already merged, would do: "Merging Product pages can
+  shorten the report from 62 scans to 22." (the report's scans, less its
+  included pages, plus one). Once groups are merged it says what the report
+  is now: "1 group merged: the report shows 22 scans instead of 62.", and
+  what merging the next would do. Its bar shows the templates side by side,
+  a section as the templates in it and its other pages.
+- **Groups are named from their pages' titles** (`suggestNames`): the parts
+  most titles end with (80%), without the part every title of the run ends
+  with, the site's name ("Blog - Insights pages"); else a word most titles
+  have that not every title of the run has ("Product pages"). A pattern
+  inside another named alike adds its own fixed part ("Product pages ·
+  category-0"). The name is the group's label, its pattern the muted line
+  under it; the person's name replaces it, and the Name field shows it as
+  its placeholder, said under the field too, since a placeholder alone is
+  not read out by every screen reader. A merged scan is named as its group
+  (`deps.nameOf` of `scansAsShown`). A run whose titles share nothing keeps
+  the patterns as names.
+- **The header's counts have units**: "In the report 22 scans", "Failures
+  listed 57" (a rule a scan fails, once per scan, as the impact counts
+  them), "Merged 2 scans (1 by the run)", "Excluded 0 scans". The run's
+  merged scans count as merged, said apart.
+- **The selection bar is one row**: "3 selected", Exclude or Include (only
+  what applies to the selected pages), Take out of group, **More** (Group by
+  hand…, Add to group…, which asks for the group in a dialog) and Clear
+  selection. More is a disclosure; Escape or a click elsewhere closes it,
+  focus back on More.
+- **The preview's footer** has Previous, "3 of 41" and Next on the left (the
+  page reached said to a screen reader) and the actions on the right,
+  Exclude from the report styled as taking something away; its backdrop
+  dims the review behind it. Its sections are "Shares with the template",
+  "Only on this page", "On this page and a few others" where some are, and
+  "The template's failures it lacks", read rule by rule from `groupIssues`,
+  so a rule both of the template and of the page's own content is in both.
+  Closed, focus goes back to the page's picture in the grid.
+- **A tile's badge is one line** ("Differs · 8 own failures", "Differs ·
+  built otherwise"), its whole text on hover; a page that differs has the
+  badge, no outline as well.
+- **The group's actions** (Keep one page, exclude the rest…, which now asks
+  first and lists the pages it excludes; Exclude all; Include all; Show
+  only these) are right under merging, before its failures.
 
 ## 12. Rejected alternatives
 
