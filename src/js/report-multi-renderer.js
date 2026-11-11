@@ -202,9 +202,11 @@ function sparkline(values, { good = 'down' } = {}) {
     });
     if (run.length) segments.push(run);
 
+    // Coloured by the latest step, as the pill beside it reads: a line that
+    // fell and is climbing back is not good news because it started higher.
     const last = points[points.length - 1];
-    const first = known[0];
-    const tone = (last == null || last === first) ? 'flat' : ((last < first) === (good === 'down') ? 'good' : 'bad');
+    const before = points.length > 1 ? points[points.length - 2] : null;
+    const tone = (last == null || before == null || last === before) ? 'flat' : ((last < before) === (good === 'down') ? 'good' : 'bad');
 
     // The fill only sits under an unbroken stretch, for the same reason.
     const areas = segments.filter((seg) => seg.length > 1).map((seg) => {
@@ -497,19 +499,74 @@ function subjectsNote(d) {
 }
 
 /**
- * The headline's change, from the first column's failures to the last's. A
- * percentage needs failures to start from: from none, it says how many there
- * are now; with as many as before, that they are the same.
+ * How the newest count stands against an earlier one, as a percentage: "3%
+ * below Jul 1". 124,893 down to 10 rounds to 100%, and "100% below" says the
+ * problems are gone when ten of them are not. Rounding is allowed to flatter
+ * a headline; it is not allowed to change what it claims.
  */
-function heroChange(from, to, raw, pct, almost, span) {
-    const ago = `${esc(span)} ago`;
-    if (from === 0) {
-        return to === 0
+function percentFrom(from, to, when) {
+    if (from === to) return `the same as ${esc(when)}`;
+    if (from === 0) return `none on ${esc(when)}`;
+    const raw = Math.round(((to - from) / from) * 100);
+    const almost = raw <= -100 && to !== 0;
+    const pct = almost ? 99 : Math.abs(raw);
+    return `${almost ? 'over ' : ''}${pct}% ${raw < 0 ? 'below' : 'above'} ${esc(when)}`;
+}
+
+/**
+ * The headline: where failures are heading now, then how that stands against
+ * the best run and the first. First to last alone can call a window better
+ * while its latest runs climb back up ("3% lower than three months ago" while
+ * up 566 since the best), so the sentence leads with the latest move and the
+ * pill takes its tone from it.
+ */
+function heroHeadline(d) {
+    const columns = d.columns;
+    const verdict = d.verdict;
+    const latest = verdict.latest || { since: null, move: 0 };
+    const failures = columns.map((c) => c.stats.failures);
+    const last = failures.length - 1;
+    const now = failures[last];
+    const plural = (n) => (n === 1 ? 'failure' : 'failures');
+
+    // Every run had the same count: nothing has moved to lead with.
+    if (latest.since == null) {
+        const ago = `${esc(verdict.span)} ago`;
+        return now === 0
             ? `<strong>No accessibility failures</strong>, as ${ago}`
-            : `<strong>${to} accessibility ${to === 1 ? 'failure' : 'failures'}</strong>, where ${ago} there were none`;
+            : `Accessibility failures are <strong>the same</strong> as ${ago}`;
     }
-    if (from === to) return `Accessibility failures are <strong>the same</strong> as ${ago}`;
-    return `Accessibility failures are <strong>${almost ? 'over ' : ''}${pct}% ${raw < 0 ? 'lower' : 'higher'}</strong> than ${ago}`;
+
+    const since = latest.since;
+    const sinceLabel = label(columns[since]);
+    const best = verdict.bestIndex;
+    // Strictly lower than every run before it: tied with an earlier run, it
+    // is not a new low.
+    const newLow = failures.slice(0, last).every((f) => now < f);
+
+    let lead;
+    if (failures[since] === 0) {
+        lead = `<strong>${now} accessibility ${plural(now)}</strong>, where on ${esc(sinceLabel)} there were none`;
+    } else if (now === 0) {
+        lead = `<strong>No accessibility failures</strong>, down from ${failures[since]} on ${esc(sinceLabel)}`;
+    } else {
+        lead = `Accessibility failures are <strong>${latest.move < 0 ? 'down' : 'up'} ${Math.abs(latest.move)}</strong>`
+            + ` since ${esc(sinceLabel)}${since === best ? ', the best' : ''}`;
+    }
+    // A run between that changed nothing: said, so the move is not read as
+    // the latest run's own.
+    if (since < last - 1) lead += `, and unchanged since ${esc(label(columns[since + 1]))}`;
+
+    if (newLow && now > 0) lead += ', the lowest yet';
+
+    // None left needs no percentage beside it.
+    const more = [];
+    if (!newLow && best !== since && failures[best] < now) {
+        more.push(`${now - failures[best]} above ${esc(label(columns[best]))}, the best`);
+    }
+    if (since !== 0 && best !== 0 && now > 0) more.push(percentFrom(failures[0], now, label(columns[0])));
+
+    return [lead, ...more].join('; ');
 }
 
 function heroTrend(d) {
@@ -517,17 +574,11 @@ function heroTrend(d) {
     const verdict = d.verdict;
     const first = columns[0];
     const last = columns[columns.length - 1];
+    const previous = columns[columns.length - 2];
 
-    const tone = verdict.tone === 'good' ? 'Improving' : (verdict.tone === 'bad' ? 'Getting worse' : 'Holding steady');
-    const raw = first.stats.failures
-        ? Math.round(((last.stats.failures - first.stats.failures) / first.stats.failures) * 100)
-        : 0;
-    // 124,893 down to 10 rounds to 100%, and "100% lower" says the problems are
-    // gone when ten of them are not. Rounding is allowed to flatter a headline;
-    // it is not allowed to change what it claims.
-    const cleared = last.stats.failures === 0;
-    const pct = (Math.abs(raw) >= 100 && !cleared) ? 99 : Math.abs(raw);
-    const almost = Math.abs(raw) >= 100 && !cleared;
+    // The pill follows the latest move, as the headline does.
+    const toneKey = (verdict.latest && verdict.latest.tone) || verdict.tone;
+    const tone = toneKey === 'good' ? 'Improving' : (toneKey === 'bad' ? 'Getting worse' : 'Holding steady');
 
     const caveat = (d.gate.comparable ? '' : `<p class="dash-caveat"><span class="dash-caveat-i" aria-hidden="true">!</span>`
         + `<span>${esc(workloadNote(d))} `
@@ -535,11 +586,17 @@ function heroTrend(d) {
         + subjectsNote(d);
 
     const best = columns[verdict.bestIndex];
+    const flapping = verdict.flapping
+        ? ` ${verdict.flapping === 1 ? 'One problem keeps' : `${verdict.flapping} problems keep`} coming back.`
+        : '';
+    // Every failure serious or critical: the same number twice says nothing
+    // the first did not, so the figure says so in words instead.
+    const allSerious = last.stats.seriousCritical === last.stats.failures && last.stats.failures > 0;
 
     return `<section class="dash-hero">
         <div class="dash-hero-main">
-            <p class="dash-status dash-status--${verdict.tone}"><span class="dash-status-dot" aria-hidden="true"></span>${tone}</p>
-            <h2 class="dash-hero-h">${heroChange(first.stats.failures, last.stats.failures, raw, pct, almost, verdict.span)}${verdict.flapping ? `, but ${verdict.flapping === 1 ? 'one problem keeps' : `${verdict.flapping} problems keep`} coming back` : ''}.</h2>
+            <p class="dash-status dash-status--${toneKey}"><span class="dash-status-dot" aria-hidden="true"></span>${tone}</p>
+            <h2 class="dash-hero-h">${heroHeadline(d)}.${flapping}</h2>
             <p class="dash-hero-lead">${esc(verdict.lead)}</p>
             ${caveat}
             ${sharedProfilesNoteHTML(d.document)}
@@ -548,12 +605,14 @@ function heroTrend(d) {
             <div class="dash-figure">
                 <span class="dash-figure-label">Failures today</span>
                 <span class="dash-figure-value num">${last.stats.failures}</span>
-                <span class="dash-figure-note">was ${first.stats.failures} on ${esc(label(first))}</span>
+                <span class="dash-figure-note">${delta(previous.stats.failures, last.stats.failures)}
+                    since ${esc(label(previous))} · ${first.stats.failures} on ${esc(label(first))}</span>
             </div>
             <div class="dash-figure">
                 <span class="dash-figure-label">Of those, serious or critical</span>
-                <span class="dash-figure-value num">${last.stats.seriousCritical}</span>
-                <span class="dash-figure-note">${delta(first.stats.seriousCritical, last.stats.seriousCritical)}</span>
+                <span class="dash-figure-value ${allSerious ? 'dash-figure-value--text' : 'num'}">${allSerious ? 'All of them' : last.stats.seriousCritical}</span>
+                <span class="dash-figure-note">${delta(previous.stats.seriousCritical, last.stats.seriousCritical)}
+                    since ${esc(label(previous))}</span>
             </div>
             <div class="dash-figure">
                 <span class="dash-figure-label">Best the site has been</span>
@@ -636,18 +695,24 @@ function failureUnitNoteFor(d) {
 
 function kpiRow(d) {
     const columns = d.columns;
-    const first = columns[0];
     const last = columns[columns.length - 1];
-    const over = `over ${columns.length} ${unitOf(d).many}`;
+    // Each pill says what the latest run changed, from the one before it; the
+    // line beside it shows the whole window.
+    const previous = columns[columns.length - 2];
+    const since = `since ${label(previous)}`;
     const kind = problemKind(d.rows);
+    // Every failure serious or critical in every run: the tile would repeat
+    // Failures figure for figure, so it is left out.
+    const allSerious = columns.every((c) => c.stats.seriousCritical === c.stats.failures)
+        && columns.some((c) => c.stats.failures > 0);
 
     const failureTiles = [
         { label: 'Failures', value: last.stats.failures, pick: (c) => c.stats.failures, good: 'down',
             caption: `One per element, for each ${problemOne(kind)} it fails, on each page. Lower is better.` },
         { label: 'Broken elements', value: last.stats.elements, pick: (c) => c.stats.elements, good: 'down',
             caption: 'Elements with at least one failure, each counted once whatever it breaks.' },
-        { label: 'Serious or critical', value: last.stats.seriousCritical, pick: (c) => c.stats.seriousCritical, good: 'down',
-            caption: 'The failures that stop people completing a task.' },
+        ...(allSerious ? [] : [{ label: 'Serious or critical', value: last.stats.seriousCritical, pick: (c) => c.stats.seriousCritical, good: 'down',
+            caption: 'The failures that stop people completing a task.' }]),
         { label: 'Kinds of problem', value: last.stats.rules, pick: (c) => c.stats.rules, good: 'down',
             caption: `Distinct ${kind} failing: the size of the to-do list.` },
     ];
@@ -660,14 +725,14 @@ function kpiRow(d) {
         // declined to conclude. A rule that moves from failing to needing review
         // has not been fixed, and a failures-only reading calls it fixed.
         { label: 'Questions to review', value: last.stats.reviewOccurrences, pick: (c) => c.stats.reviewOccurrences, good: 'down',
-            caption: 'Checks that could not decide, counted like failures. Not failures, and not in any failure count.' },
+            caption: 'Checks a person must confirm. Not counted as failures.' },
     ];
 
     const tile = (t) => `<article class="dash-kpi">
             <p class="dash-kpi-label">${esc(t.label)}</p>
             <p class="dash-kpi-value num">${esc(String(t.value))}</p>
-            <p class="dash-kpi-delta">${delta(t.pick(first), t.pick(last), { good: t.good })}
-                <span class="dash-kpi-since">${over}</span></p>
+            <p class="dash-kpi-delta">${delta(t.pick(previous), t.pick(last), { good: t.good })}
+                <span class="dash-kpi-since">${esc(since)}</span></p>
             ${sparkline(columns.map(t.pick), { good: t.good })}
             <p class="dash-kpi-caption">${esc(t.caption)}</p>
         </article>`;
@@ -675,8 +740,8 @@ function kpiRow(d) {
     // Two groups, so the questions to review are never read as more failures.
     return `<section class="dash-kpi-group">`
         + `<h3 class="dash-kpi-group-h">What failed</h3>`
-        + `<p class="dash-sub">${esc(failureUnitNoteFor(d))}</p>`
-        + `<div class="dash-kpis dash-kpis--four">${failureTiles.map(tile).join('')}</div></section>`
+        + `<p class="dash-sub">${esc(failureUnitNoteFor(d))}${allSerious ? ' Every failure here is serious or critical.' : ''}</p>`
+        + `<div class="dash-kpis dash-kpis--${failureTiles.length === 4 ? 'four' : 'three'}">${failureTiles.map(tile).join('')}</div></section>`
         + `<section class="dash-kpi-group">`
         + `<h3 class="dash-kpi-group-h">Score and open questions</h3>`
         + `<div class="dash-kpis dash-kpis--three">${otherTiles.map(tile).join('')}</div></section>`;

@@ -552,6 +552,30 @@
         return { biggest, rise };
     }
 
+    // Where the series is heading now, read from its end rather than its
+    // start. First to last can call a window better while the latest runs
+    // climb back up: a site that fell from 1978 failures to 1346 and rose
+    // again to 1912 is "3% lower than three months ago", and getting worse.
+    // `since` is the latest column whose count differs from the newest one,
+    // so a run that changed nothing (two equal releases in a row) does not
+    // hide the move before it; null when every column has the same count.
+    function latestMove(columns) {
+        const failures = columns.map((c) => c.stats.failures);
+        const last = failures.length - 1;
+        let since = last - 1;
+        while (since >= 0 && failures[since] === failures[last]) since -= 1;
+        if (since < 0) return { since: null, move: 0, previous: last - 1, tone: 'neutral' };
+        const move = failures[last] - failures[since];
+        return {
+            since,
+            move,
+            // The column just before the newest, for a figure that says what
+            // the latest run changed on its own.
+            previous: last - 1,
+            tone: move < 0 ? 'good' : 'bad',
+        };
+    }
+
     // How far back the window reaches. Elapsed time reads better than a column
     // count ("four months ago" rather than "six runs ago"), but it is only used
     // when dates ordered the series: a timestamp records when a scan ran, not
@@ -638,6 +662,7 @@
             resolved: count('resolved'), added: count('new'),
             persistent: count('persistent'), flapping,
             bestIndex, worstIndex, fromBest,
+            latest: latestMove(columns),
             step: steps(columns).biggest,
             rise: steps(columns).rise,
             // Gross movement, not the net one: the work done and the ground
@@ -704,7 +729,9 @@
         }
         if (verdict.fromBest > 0) {
             out.push(`The latest ${unit.one} is ${verdict.fromBest} failures worse than the best ${unit.one} in the window `
-                + `(${columns[verdict.bestIndex].label}), even though it is better than where the window started.`);
+                + `(${columns[verdict.bestIndex].label})`
+                + (verdict.net < 0 ? ', even though it is better than where the window started.'
+                    : (verdict.net > 0 ? ', and worse than where the window started.' : '.')));
         }
         // Gross movement. A net figure is the difference between two numbers
         // people worked hard on, and it credits neither.

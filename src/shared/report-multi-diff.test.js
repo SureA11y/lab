@@ -203,6 +203,29 @@ describe('diffReportSeries — trend categories', () => {
         assert.equal(d.verdict.fromBest, 2, 'the latest run is 2 worse than the best in the window');
         assert.deepEqual(d.verdict.rise, { from: 1, to: 2, move: 6 });
     });
+
+    test('the latest move is read from the end, so a climb back from the best is not called better', () => {
+        // Down from the first, but up since the best: the window is better,
+        // the latest runs are getting worse.
+        const d = diffReportSeries(series([{ r: 10 }, { r: 2 }, { r: 9 }]), { mode: 'trend' });
+        assert.equal(d.verdict.tone, 'good', 'first to last is still lower');
+        assert.deepEqual(d.verdict.latest, { since: 1, move: 7, previous: 1, tone: 'bad' });
+        assert.ok(d.narrative.some((p) => /7 failures worse than the best .*better than where the window started/.test(p)));
+    });
+
+    test('a release that changed nothing does not hide the move before it', () => {
+        const d = diffReportSeries(series([{ r: 10 }, { r: 2 }, { r: 9 }, { r: 9 }]), { mode: 'trend' });
+        assert.deepEqual(d.verdict.latest, { since: 1, move: 7, previous: 2, tone: 'bad' });
+
+        const flat = diffReportSeries(series([{ r: 4 }, { r: 4 }, { r: 4 }]), { mode: 'trend' });
+        assert.deepEqual(flat.verdict.latest, { since: null, move: 0, previous: 1, tone: 'neutral' });
+    });
+
+    test('above both the best and the start, the narrative does not call the latest run better', () => {
+        const d = diffReportSeries(series([{ r: 4 }, { r: 2 }, { r: 8 }]), { mode: 'trend' });
+        const said = d.narrative.find((p) => /worse than the best/.test(p));
+        assert.match(said, /and worse than where the window started\./);
+    });
 });
 
 describe('diffReportSeries — matrix categories', () => {
