@@ -106,6 +106,17 @@ describe('run queue panel', () => {
         assert.match(document.getElementById('list').textContent, /Nothing queued yet/);
     });
 
+    test('an empty queue offers the way to the Batch section', async () => {
+        let opened = 0;
+        const {p} = panel([{concurrency: 1, maxConcurrency: 4, sessions: []}], {onOpenBatch: () => { opened += 1; }});
+        await p.refresh();
+        const button = document.querySelector('#list [data-queue-open-batch]');
+        assert.equal(button.textContent, 'Go to the Batch section');
+        button.click();
+        assert.equal(opened, 1);
+        assert.equal(document.getElementById('all').hidden, true, 'nothing to cancel: Cancel all is out of sight');
+    });
+
     test('renders a session as a headed section with its links and a table of runs', async () => {
         const {p} = panel([{concurrency: 2, maxConcurrency: 4, sessions: [session()]}]);
         await p.refresh();

@@ -1060,10 +1060,12 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
 export function renderQueueSessions(doc, state, { isExpanded = () => true, compareBlocked = null, sendingToCompare = null, openVersions = new Set() } = {}) {
     const sessions = Array.isArray(state?.sessions) ? state.sessions : [];
     if (!sessions.length) {
-        return el(doc, 'p', {
-            className: 'hint queue-empty',
-            text: 'Nothing queued yet. Paste workflows in the Batch section of the run workflow tab, then use Run batch.',
-        });
+        // An empty queue says what fills it, with the way there.
+        return el(doc, 'div', { className: 'queue-empty' }, [
+            el(doc, 'p', { className: 'queue-empty__title', text: 'No batches yet' }),
+            el(doc, 'p', { className: 'hint queue-empty__text', text: 'Nothing queued yet. A batch runs a workflow once per row of a list: give it its rows in the Batch section of the run workflow tab, then use Run batch.' }),
+            el(doc, 'button', { type: 'button', className: 'secondary-button', 'data-queue-open-batch': true, text: 'Go to the Batch section' }),
+        ]);
     }
     const queueBusy = sessions.some((s) => s.state === 'running');
     const frag = doc.createDocumentFragment();
@@ -1111,6 +1113,7 @@ export function describeChanges(prev, next) {
  * @param {(session) => void} opts.onSendToCompare
  * @param {(item, session) => void} opts.onWatch  Shows a running run live, in a dialog.
  * @param {(isRunning: boolean) => void} opts.onRunningChange  A batch started or stopped running.
+ * @param {() => void} [opts.onOpenBatch] The empty queue's button: shows the Batch section.
  * @param {(message: string) => boolean} [opts.confirmDelete] Asks before deleting.
  * @param {(fields: object[]) => Promise<Record<string,string>|null>} [opts.askMaskedValues]
  *   Asks for the hidden values interrupted runs need; null when dismissed.
@@ -1132,6 +1135,7 @@ export function createRunQueuePanel({
     onSendToCompare = () => {},
     onWatch = () => {},
     onRunningChange = () => {},
+    onOpenBatch = () => {},
     confirmDelete = (message) => window.confirm(message),
     askMaskedValues = null,
     getFormWorkflow = () => null,
@@ -1234,6 +1238,8 @@ export function createRunQueuePanel({
         }
         if (cancelAllButton) {
             cancelAllButton.setAttribute('aria-disabled', hasRunning() ? 'false' : 'true');
+            // Nothing queued, nothing to cancel: the button waits out of sight.
+            cancelAllButton.hidden = !(Array.isArray(state?.sessions) && state.sessions.length);
         }
 
         markBusy();
@@ -1520,6 +1526,10 @@ export function createRunQueuePanel({
     }
 
     listEl.addEventListener('click', (event) => {
+        if (event.target.closest('[data-queue-open-batch]')) {
+            onOpenBatch();
+            return;
+        }
         const button = event.target.closest('[data-queue-action]');
         if (!button || !listEl.contains(button)) return;
         // Already under way: the spinner says so.
