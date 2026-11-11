@@ -162,7 +162,14 @@ most of them end with, without the site's name ("Blog - Insights pages"),
 or a word most of them have ("Product pages"); its URL pattern is the
 muted line under the name, and a name you give replaces the suggestion.
 Below them, the groups made by hand, the scans in no group, and the scans a
-Merged scan step made.
+Merged scan step made. The list is a tree whose branches fold: a group with
+groups in it has a button that shows or hides them, and each section folds
+by its heading. It opens as an overview, the top-level groups and the ones
+directly in them, deeper ones folded (a long list of the run's merged scans
+too); the selected group's branch stays open. The three columns read as
+three parts: the groups on a deeper surface, the selected one joined to the
+pages it shows like a tab; its pages on the brightest, under a band naming
+it; what to do with it in cards beside them, Merge the first action.
 
 In the middle, the selected group's pages are a grid of their screenshots,
 those that differ from the others first, each with one short badge

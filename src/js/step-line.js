@@ -101,9 +101,6 @@ export function createStepLine(builder) {
             fillInfoBody();
             if (typeof infoDialog.showModal === "function") infoDialog.showModal();
         });
-        infoDialog.addEventListener("click", (e) => {
-            if (e.target === infoDialog) infoDialog.close();
-        });
         infoDialog.querySelector(".sb-action-info__close")?.addEventListener("click", () => infoDialog.close());
 
         const copyBtn = iconButton({

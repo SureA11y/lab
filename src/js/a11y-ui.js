@@ -2952,6 +2952,8 @@ function storeActiveMode(mode) {
     const initialMode = openQuery ? openQuery.mode : getStoredActiveMode();
     const tabsmode = setupModeSwitch({initialMode});
     trackOpenDialogs(document);
+    // Every modal dialog closes on a click on its backdrop, as with Escape.
+    globalThis.A11Y_DIALOG_BACKDROP?.installBackdropClose(document);
     installBackToTop({
         bar: document.querySelector('.mode-bar'),
         button: document.getElementById('back-to-top'),

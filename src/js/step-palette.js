@@ -275,9 +275,6 @@ export function createStepPalette(builder) {
 
         dlg.addEventListener("close", () => dlg.remove());
         dlg.querySelector(".src-dialog-close").addEventListener("click", () => dlg.close("cancel"));
-        dlg.addEventListener("click", (e) => {
-            if (e.target === dlg) dlg.close("cancel");
-        });
 
         search.addEventListener("input", () => renderList(search.value));
 

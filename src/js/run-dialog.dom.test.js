@@ -80,12 +80,21 @@ describe('run dialog', () => {
         assert.equal(document.activeElement.id, 'opener');
     });
 
-    test('a click on the backdrop closes it; a click inside does not', () => {
+    test('a click on the backdrop closes it, as every dialog (dialog-backdrop.js); a click inside does not', () => {
+        require('../shared/dialog-backdrop.js').installBackdropClose(window.document);
         const d = createRunDialog();
         d.open({title: 't'});
-        d.body.dispatchEvent(new window.MouseEvent('click', {bubbles: true}));
+        // Its box, and modal as showModal() leaves it (jsdom tracks neither).
+        d.dialog.getBoundingClientRect = () => ({left: 100, top: 100, right: 300, bottom: 300});
+        const matches = d.dialog.matches.bind(d.dialog);
+        d.dialog.matches = (sel) => (sel === ':modal' ? true : matches(sel));
+        const click = (target, x, y) => {
+            target.dispatchEvent(new window.MouseEvent('pointerdown', {bubbles: true, clientX: x, clientY: y}));
+            target.dispatchEvent(new window.MouseEvent('click', {bubbles: true, clientX: x, clientY: y}));
+        };
+        click(d.body, 150, 150);
         assert.equal(d.isOpen(), true);
-        d.dialog.dispatchEvent(new window.MouseEvent('click', {bubbles: true}));
+        click(d.dialog, 20, 20);
         assert.equal(d.isOpen(), false);
     });
 

@@ -117,6 +117,7 @@ async function buildReportAssets() {
         path.join(__dirname, '..', 'shared', 'scan-sort.js'),
         path.join(__dirname, '..', 'shared', 'toast.js'),
         path.join(__dirname, '..', 'shared', 'scroll-reach.js'),
+        path.join(__dirname, '..', 'shared', 'dialog-backdrop.js'),
         // Order matters: the view module reads the analysis module's global.
         path.join(__dirname, '..', 'shared', 'issue-dispersion.js'),
         path.join(__dirname, '..', 'shared', 'issue-dispersion-view.js')
