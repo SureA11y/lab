@@ -2681,15 +2681,17 @@ a.engine-brand {
     margin-top: 56px;
     min-width: 0;
     max-width: 380px;
-    max-height: 600px;
-    overflow: auto;
 }
 
 .report-toc[hidden] {
     display: none !important;
 }
 
+/* The frame is on the box that scrolls, so it closes at the bottom however
+   long the list is; it is as tall as the window lets it be. */
 .report-toc__inner {
+    max-height: calc(100vh - 20px);
+    overflow: auto;
     padding: 1rem;
     background: var(--surface-1);
     border: 1px solid var(--border-subtle);
@@ -2807,12 +2809,11 @@ a.engine-brand {
         position: relative;
         top: 0;
         margin-top: 10px;
-        max-height: 300px;
     }
 
     .report-toc__inner {
         position: static;
-        max-height: none;
+        max-height: 300px;
     }
 }
 
@@ -3156,6 +3157,14 @@ a.engine-brand {
 
 .all-scans-open-btn svg { display: block; }
 
+/* In the report, the icon carries its words: a reader's control, named. */
+.all-scans-open-btn.all-scans-open-btn--labelled {
+    width: auto;
+    padding: 0 .75rem;
+    gap: .4rem;
+}
+.all-scans-open-btn__text { white-space: nowrap; }
+
 .all-scans-dialog {
     width: min(1100px, 94vw);
     max-width: 94vw;
@@ -3287,7 +3296,7 @@ a.engine-brand {
 }
 .summary-controls { display: inline-flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .scan-sort { display: inline-flex; align-items: center; gap: var(--space-2); }
-.scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-ui); }
+.scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-ui); white-space: nowrap; }
 #scan-sort-select {
     /* The height of the buttons beside it (Hide excluded): 36px, the DS sm
        size every button has. */

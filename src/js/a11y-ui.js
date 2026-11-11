@@ -2584,9 +2584,11 @@ function storeActiveMode(mode) {
         const options = sort.SORT_KEYS
             .map((k) => `<option value="${k.id}"${k.id === activeScanSort ? ' selected' : ''}>${escapeHtml(k.label)}</option>`)
             .join('');
+        // Its visible words are its name. The downloaded report keeps it, as
+        // the reader's own control (report.js sorts there too).
         const sortCtl =
-            `<label class="scan-sort"><span class="scan-sort__label">Sort</span>` +
-            `<select id="scan-sort-select" data-scan-sort aria-label="Sort scans">${options}</select></label>`;
+            `<label class="scan-sort"><span class="scan-sort__label">Sort scans</span>` +
+            `<select id="scan-sort-select" data-scan-sort>${options}</select></label>`;
 
         return sortCtl + hideBtn;
     }

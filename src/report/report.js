@@ -486,7 +486,8 @@ function addVisualizationModeSelector() {
     const scanPresentationSelect = buildLabeledSelect({
         id: 'scan-presentation-mode',
         name: 'scanPresentationMode',
-        labelText: 'Results visualization mode',
+        // The reader's own control, worded as the app's: what each scan shows.
+        labelText: 'Show in each scan',
         options: {
             analysis: 'Findings and analysis',
             evidence: 'Findings',
@@ -667,7 +668,10 @@ function initReportToc(options = {}) {
         const a = document.createElement('a');
         a.className = linkClass;
         a.href = `#${ensureId(heading)}`;
-        a.textContent = heading.textContent.trim();
+        // A scan's heading reads "Scan: <name>"; in the list, every entry
+        // under Results is a scan, so the name alone says it.
+        const scanName = heading.querySelector('.scan-name-text');
+        a.textContent = (scanName ? scanName.textContent : heading.textContent).trim();
         a.setAttribute('data-level', String(getLevel(heading)));
 
         // An entry follows its section out of view: "Failures only" hides the
@@ -802,8 +806,15 @@ function initAllScansDialog() {
     const cardCount = dialog.querySelectorAll('.all-scans-card').length;
     const label = 'View all scans (' + cardCount + ')';
     document.querySelectorAll('[data-all-scans-open]').forEach((btn) => {
-        btn.setAttribute('aria-label', label);
-        btn.setAttribute('title', label);
+        // In the report, a reader's control: its words show beside the icon,
+        // so it is not taken for a setting of the app it came from.
+        btn.removeAttribute('aria-label');
+        btn.removeAttribute('title');
+        btn.classList.add('all-scans-open-btn--labelled');
+        const text = btn.querySelector('.all-scans-open-btn__text') || document.createElement('span');
+        text.className = 'all-scans-open-btn__text';
+        text.textContent = label;
+        btn.appendChild(text);
     });
 
     document.addEventListener('click', function (e) {
@@ -852,11 +863,12 @@ function initThemeToggle() {
     function readChoice() {
         try {
             const v = localStorage.getItem(STORAGE_KEY);
-            // Default to Light when nothing is stored; an explicit
-            // Auto/Light/Dark choice the reader made always wins on reload.
-            return (v === 'auto' || v === 'light' || v === 'dark') ? v : 'light';
+            // Auto when nothing is stored, following the reader's system
+            // scheme; an explicit Auto/Light/Dark choice the reader made
+            // always wins on reload.
+            return (v === 'auto' || v === 'light' || v === 'dark') ? v : 'auto';
         } catch (e) {
-            return 'light';
+            return 'auto';
         }
     }
 

@@ -21,16 +21,17 @@
             try {
                 var root = document.documentElement;
                 root.classList.add('no-theme-transition');
-                // Default to Light when the reader has not chosen a theme yet;
-                // an explicit Auto/Light/Dark choice always wins on reload.
+                // Auto when the reader has not chosen a theme yet: the
+                // report follows their system's light or dark scheme. An
+                // explicit Auto/Light/Dark choice always wins on reload.
                 var stored = localStorage.getItem('surea11y-report-theme');
-                var choice = (stored === 'auto' || stored === 'light' || stored === 'dark') ? stored : 'light';
+                var choice = (stored === 'auto' || stored === 'light' || stored === 'dark') ? stored : 'auto';
                 if (choice === 'light' || choice === 'dark') {
                     root.setAttribute('data-theme', choice);
                 } else {
                     root.removeAttribute('data-theme');
                 }
-            } catch (e) { /* ignore — fall back to Light */ }
+            } catch (e) { /* ignore — fall back to Auto */ }
         })();
     </script>
 </head>
@@ -50,7 +51,7 @@
                 </svg>
                 <span class="wordmark"><span class="wordmark-sure">sure</span><span class="wordmark-a11y">a11y</span><span class="wordmark-product">compare</span></span>
             </div>
-            <button type="button" class="theme-switch" data-theme-toggle aria-label="Colour theme: Light">
+            <button type="button" class="theme-switch" data-theme-toggle aria-label="Colour theme: Auto">
                 <svg class="theme-switch__icon theme-switch__icon--auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                     <rect x="3" y="4" width="18" height="12" rx="2"></rect>
                     <path d="M8 20h8M12 16v4"></path>

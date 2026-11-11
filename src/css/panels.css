@@ -11,7 +11,7 @@
 }
 .summary-controls { display: inline-flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .scan-sort { display: inline-flex; align-items: center; gap: var(--space-2); }
-.scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-ui); }
+.scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-ui); white-space: nowrap; }
 #scan-sort-select {
     /* The height of the buttons beside it (Hide excluded): 36px, the DS sm
        size every button has. */
