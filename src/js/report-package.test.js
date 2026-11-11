@@ -161,3 +161,29 @@ describe('a report as its JSON file holds it', () => {
         assert.equal('a11yGlobalFindings' in saved, false);
     });
 });
+
+describe('a report\'s JSON opened without its zip', () => {
+    test('counts each picture it names by its path in the package, once', async () => {
+        const { P } = await load();
+        const text = JSON.stringify({ scans: [
+            { screenshots: [{ dataUrl: 'images/aa.jpg' }, { dataUrl: 'images/bb.png' }] },
+            { screenshots: [{ dataUrl: 'images/aa.jpg' }] },
+        ] });
+        assert.equal(P.countUnpackagedPictures(text), 2);
+    });
+
+    test('counts none once the zip has given each its picture, or in a report without packages', async () => {
+        const { P } = await load();
+        const text = JSON.stringify({ a: 'images/aa.jpg' });
+        const resolved = P.resolveImageRefs(text, new Map([['images/aa.jpg', 'blob:x']]));
+        assert.equal(P.countUnpackagedPictures(resolved), 0);
+        assert.equal(P.countUnpackagedPictures(JSON.stringify({ a: '/reports/runs/1/images/aa.jpg', b: 'data:image/png;base64,AA' })), 0);
+    });
+
+    test('says to open the zip it came in', async () => {
+        const { P } = await load();
+        assert.equal(P.unpackagedPicturesNote(0), '');
+        assert.match(P.unpackagedPicturesNote(1), /^Its 1 picture came in the zip .*open that zip, from Download report/);
+        assert.match(P.unpackagedPicturesNote(3), /^Its 3 pictures came/);
+    });
+});

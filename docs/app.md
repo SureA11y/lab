@@ -271,6 +271,10 @@ report with all their scans, and stay listed, to choose which scans and
 screenshots of each to keep and **Load selected** again. Reports saved by
 older versions of the lab open as they always did.
 
+The pictures of a report from **Download report** are in its zip, not in its
+JSON. A JSON taken out of the zip and opened on its own says so, in the
+list of files and once it is loaded: open the zip to see them.
+
 ## Comparing reports
 
 ![The compare tab: the demo shop's release 2 against release 1, accessibility improved, with the change in failures, broken elements and kinds of problem](assets/screens/app-compare.png)
