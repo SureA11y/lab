@@ -572,3 +572,23 @@ test('a downloaded HTML report leaves out the review of scan groups and a merged
     fs.rmSync(downloads, { recursive: true, force: true });
     await page.close();
 });
+
+test('Run settings closes with Done, which says the settings are kept as they change', async () => {
+    const { page, errors } = await openApp();
+    // On the run workflow tab with its Configuration panel open: the app
+    // reopens on the tab last used, and earlier tests may leave either.
+    await page.click('#mode-run');
+    await page.evaluate(() => {
+        const toggle = document.querySelector('#config-toggle');
+        if (toggle && toggle.getAttribute('aria-expanded') === 'false') toggle.click();
+    });
+    await page.waitForSelector('#run-settings-button', { visible: true });
+    await page.click('#run-settings-button');
+    await page.waitForSelector('#run-settings-dialog[open]');
+    assert.match(await page.$eval('#run-settings-dialog .run-settings-footer', (el) => el.textContent), /kept as you change them/);
+    await page.click('#run-settings-done');
+    await page.waitForFunction(() => !document.querySelector('#run-settings-dialog').open);
+    assert.equal(await page.evaluate(() => document.activeElement && document.activeElement.id), 'run-settings-button', 'focus back on the button that opened it');
+    assert.deepEqual(errors, []);
+    await page.close();
+});
