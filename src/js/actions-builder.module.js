@@ -1309,7 +1309,9 @@ export function createActionsBuilder ({
                 "button",
                 {
                     type: "button",
-                    className: "secondary-button",
+                    // A shortcut: the add button's menu holds the same steps,
+                    // so a phone's narrow list shows that button alone.
+                    className: "secondary-button action-shortcut",
                     title: defs[shortcut]?.description || ""
                 },
                 defs[shortcut]?.label || ""
