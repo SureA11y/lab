@@ -6281,6 +6281,12 @@
    "bestIndex": 0,
    "worstIndex": 0,
    "fromBest": 0,
+   "latest": {
+    "since": null,
+    "move": 0,
+    "previous": 1,
+    "tone": "neutral"
+   },
    "step": {
     "from": 0,
     "to": 1,

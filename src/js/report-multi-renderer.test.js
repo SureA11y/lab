@@ -65,8 +65,11 @@ describe('multi-report renderer — what a non-technical reader sees first', () 
         const { comparisonSeriesHTML } = await load();
         const html = comparisonSeriesHTML(trend());
 
-        assert.match(html, /dash-status--good/);
-        assert.match(html, /Improving/);
+        // 13, then 5, then 11: lower than the first run, but up since the
+        // best, and the status says where it is heading now.
+        assert.match(html, /dash-status--bad/);
+        assert.match(html, /Getting worse/);
+        assert.match(html, /Accessibility failures are <strong>up 6<\/strong> since Feb 1, the best; 15% below Jan 1\./);
         assert.match(html, /Failures today/);
         assert.match(html, /Best the site has been/);
         // The verdict sentence, not a rule id
@@ -266,7 +269,7 @@ describe('multi-report renderer — robustness', () => {
             'no printed figure carries more than two decimals');
         assert.match(html, /dash-kpi-value num">83\.81</);
         assert.match(html, /dash-kpi-value num">75%</);
-        assert.match(html, /up 12\.4</, 'and the deltas are rounded the same way');
+        assert.match(html, /up 5\.61</, 'and the deltas are rounded the same way');
         assert.match(html, /<td>71\.41<\/td>/, 'including the table under the chart');
     });
 
@@ -589,7 +592,7 @@ describe('multi-report renderer — the work behind the delta', () => {
         const html = comparisonSeriesHTML(rich());
 
         assert.match(html, /Questions to review/);
-        assert.match(html, /Not failures, and not in any failure count/);
+        assert.match(html, /Checks a person must confirm\. Not counted as failures\./);
         // In their own group, after the failure tiles.
         assert.ok(html.indexOf('Score and open questions') > html.indexOf('What failed'));
         assert.ok(html.indexOf('Questions to review') > html.indexOf('Score and open questions'));
@@ -741,12 +744,12 @@ describe('multi-report renderer — holding up under awkward data', () => {
         const { comparisonSeriesHTML } = await load();
         const html = comparisonSeriesHTML(diffReportSeries([
             report({ runId: 'a', timestamp: '2026-01-01T00:00:00Z', findings: [finding('r', 'serious', 124876, '1.4.3')] }),
-            report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z', findings: [finding('r', 'serious', 10, '1.4.3')] }),
+            report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z', findings: [finding('r', 'serious', 50, '1.4.3')] }),
             report({ runId: 'c', timestamp: '2026-03-01T00:00:00Z', findings: [finding('r', 'serious', 10, '1.4.3')] }),
         ], { mode: 'trend' }));
 
-        assert.match(html, /over 99% lower/);
-        assert.ok(!/>100% lower/.test(html), '100% lower would say the problems are gone');
+        assert.match(html, /over 99% below Jan 1/);
+        assert.ok(!/100% below/.test(html), '100% below would say the problems are gone');
     });
 
     test('from no failures, the headline says how many there are now, not a percentage', async () => {
@@ -756,8 +759,8 @@ describe('multi-report renderer — holding up under awkward data', () => {
             report({ runId: 'b', timestamp: '2026-01-01T00:01:00Z', findings: [finding('r', 'serious', 2, '1.4.3')] }),
             report({ runId: 'c', timestamp: '2026-01-01T00:01:00Z', findings: [finding('r', 'serious', 2, '1.4.3')] }),
         ], { mode: 'trend' }));
-        assert.match(html, /<strong>2 accessibility failures<\/strong>, where a minute ago there were none/);
-        assert.doesNotMatch(html, /0% lower/);
+        assert.match(html, /<strong>2 accessibility failures<\/strong>, where on [^<]+ there were none/);
+        assert.doesNotMatch(html, /0% (below|above)/);
         assert.doesNotMatch(html, /1 minutes/);
     });
 
@@ -768,7 +771,66 @@ describe('multi-report renderer — holding up under awkward data', () => {
             report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z', findings: [finding('r', 'serious', 1, '1.4.3')] }),
             report({ runId: 'c', timestamp: '2026-03-01T00:00:00Z', findings: [finding('r', 'serious', 3, '1.4.3')] }),
         ], { mode: 'trend' }));
-        assert.match(html, /Accessibility failures are <strong>the same<\/strong> as/);
+        assert.match(html, /<strong>up 2<\/strong> since Feb 1, the best; the same as Jan 1\./);
+
+        const flat = comparisonSeriesHTML(diffReportSeries([
+            report({ runId: 'a', timestamp: '2026-01-01T00:00:00Z', findings: [finding('r', 'serious', 3, '1.4.3')] }),
+            report({ runId: 'b', timestamp: '2026-02-01T00:00:00Z', findings: [finding('r', 'serious', 3, '1.4.3')] }),
+            report({ runId: 'c', timestamp: '2026-03-01T00:00:00Z', findings: [finding('r', 'serious', 3, '1.4.3')] }),
+        ], { mode: 'trend' }));
+        assert.match(flat, /Accessibility failures are <strong>the same<\/strong> as/);
+        assert.match(flat, /dash-status--neutral/);
+    });
+
+    test('the headline and its status follow the latest move, then the best and the first', async () => {
+        const { comparisonSeriesHTML } = await load();
+        const at = (runId, month, n) => report({ runId, timestamp: `2026-0${month}-01T00:00:00Z`, findings: [finding('r', 'serious', n, '1.4.3')] });
+
+        // Fell to the best, rose again and stayed: lower than the start, but
+        // the status says it is getting worse, and a release that changed
+        // nothing does not hide the rise before it.
+        const regressed = comparisonSeriesHTML(diffReportSeries(
+            [at('a', 1, 1978), at('b', 2, 1346), at('c', 3, 1912), at('d', 4, 1912)], { mode: 'trend' }));
+        assert.match(regressed, /dash-status--bad/);
+        assert.match(regressed, /Accessibility failures are <strong>up 566<\/strong> since Feb 1, the best, and unchanged since Mar 1; 3% below Jan 1\./);
+
+        // Coming down again, still above the best.
+        const recovering = comparisonSeriesHTML(diffReportSeries(
+            [at('a', 1, 10), at('b', 2, 2), at('c', 3, 9), at('d', 4, 6)], { mode: 'trend' }));
+        assert.match(recovering, /dash-status--good/);
+        assert.match(recovering, /<strong>down 3<\/strong> since Mar 1; 4 above Feb 1, the best; 40% below Jan 1\./);
+
+        // A new low says so, and no count of how far from the best.
+        const low = comparisonSeriesHTML(diffReportSeries(
+            [at('a', 1, 10), at('b', 2, 8), at('c', 3, 5)], { mode: 'trend' }));
+        assert.match(low, /<strong>down 3<\/strong> since Feb 1, the lowest yet; 50% below Jan 1\./);
+    });
+
+    test('the pills say what the latest run changed, and from which run', async () => {
+        const { comparisonSeriesHTML } = await load();
+        const at = (runId, month, n) => report({ runId, timestamp: `2026-0${month}-01T00:00:00Z`, findings: [finding('r', 'serious', n, '1.4.3')] });
+        const html = comparisonSeriesHTML(diffReportSeries(
+            [at('a', 1, 10), at('b', 2, 2), at('c', 3, 9)], { mode: 'trend' }));
+
+        const failures = html.slice(html.indexOf('dash-kpi-label">Failures<'));
+        assert.match(failures, /dash-delta--bad[^>]*><span aria-hidden="true">↑<\/span> up 7<\/span>\s*<span class="dash-kpi-since">since Feb 1</);
+        assert.doesNotMatch(html, /over 3 runs/);
+        // The line beside it is coloured by the same step.
+        assert.match(failures, /dash-spark dash-spark--bad/);
+    });
+
+    test('a tile that would repeat another figure for figure is left out', async () => {
+        const { comparisonSeriesHTML } = await load();
+        // Every failure serious: Serious or critical would equal Failures.
+        const at = (runId, month, n) => report({ runId, timestamp: `2026-0${month}-01T00:00:00Z`, findings: [finding('r', 'serious', n, '1.4.3')] });
+        const html = comparisonSeriesHTML(diffReportSeries([at('a', 1, 4), at('b', 2, 3), at('c', 3, 2)], { mode: 'trend' }));
+        assert.doesNotMatch(html, /dash-kpi-label">Serious or critical</);
+        assert.match(html, /dash-kpis dash-kpis--three/);
+        assert.match(html, /Every failure here is serious or critical\./);
+        assert.match(html, /dash-figure-value dash-figure-value--text">All of them</);
+
+        const mixed = comparisonSeriesHTML(rich());
+        assert.match(mixed, /dash-kpi-label">Serious or critical</);
     });
 
     test('reports that start from different pages are said to be different subjects', async () => {
