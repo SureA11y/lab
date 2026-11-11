@@ -322,6 +322,16 @@ The first public release.
   workflow and the custom steps. Fix the file and load it again before
   saving over it. Required fields the file left empty show as errors once
   it is loaded, not only at Run.
+- **Quieter step cards.** Every card showed seven buttons (280 in a
+  forty-step workflow) and a dashed "Show more options" box. A card now
+  shows Collapse and a ⋯, and its other buttons where the pointer is or
+  focus is (by keyboard they are where they were, in the same order); on a
+  touch screen they are in the ⋯ menu, as on a phone, Collapse beside it.
+  "Show more options" is a small text button. A step's kind is a small
+  pill before a title of its own, always in the same place, where it came
+  after the title, quoted, and wrapped with it. A condition's branches
+  read "Then" and "Otherwise (optional)", and an empty list says "Nothing
+  runs here." with one Add step button rather than a row of five.
 - **Passwords to type again are shown where they are.** A loaded
   configuration's passwords, never saved, were only mentioned in a green
   line by Run, far from the fields deep in the workflow. Each step with one

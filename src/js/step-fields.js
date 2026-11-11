@@ -12,6 +12,9 @@ import {SELECT_TOKEN_SENTINEL, SHORTCUTS, clipboardAction, registerPasteButton} 
  * builder: accessors for what the rest shares with this part
  * (actionsEl, addShortcuts, branchChipFor, defs, engineOfLine, focusFirstInput, isListedType, moveLine, options, pushHistory, randomId, refreshActionArraySummary, refreshReorderButtons, scheduleHistoryPush, stepLine, stepPalette, stepValues).
  */
+// What a branch is called, by its chip (branchChipFor).
+const BRANCH_TITLES = {then: "Then", else: "Otherwise", default: "Otherwise"};
+
 export function createStepFields(builder) {
     // Gather tags already used by every OTHER scanTags widget currently in this
     // builder, so the tag input can suggest "pick existing" values alongside
@@ -421,8 +424,14 @@ export function createStepFields(builder) {
 
         const titleText = (fieldDef && fieldDef.alias) ? String(fieldDef.alias) : fieldName;
         const branchName = builder.branchChipFor(actionKey, fieldName);
-        const title = createEl("div", {className: "action-array__title", id: titleId}, [
-            branchName ? createEl("span", {className: `branch-chip branch-chip--${branchName}`}, branchName) : null,
+        // A branch is named by when it runs, "Then" or "Otherwise", in its
+        // chip; "Otherwise" says it can stay empty. The field's own name
+        // ("If actions") said the same again.
+        const branchTitle = BRANCH_TITLES[branchName] || null;
+        const title = createEl("div", {className: "action-array__title", id: titleId}, branchTitle ? [
+            createEl("span", {className: `branch-chip branch-chip--${branchName}`}, branchTitle),
+            branchName === "then" ? null : createEl("span", {className: "action-array__optional"}, "(optional)")
+        ] : [
             titleText,
             isRequired ? createEl("span", {className: "req-badge", title: "Required"}, "*") : null
         ]);
@@ -525,7 +534,34 @@ export function createStepFields(builder) {
 
         const footer = createEl("div", {className: "action-array__footer"}, [controlsBox]);
 
-        wrapper.append(header, subContainer, footer, errorEl);
+        // An empty list says so, with one button to add its first step (and
+        // Paste, when there is a step to paste), rather than the whole row
+        // of shortcuts: a workflow's empty branches were rows of buttons.
+        // The row comes back with the first step (is-empty, set where the
+        // list's count is).
+        let emptyRow = null;
+        if (!itemType) {
+            const addFirstBtn = createEl("button", {type: "button", className: "secondary-button action-array__add-first"}, [
+                svgIcon("add"), createEl("span", {}, "Add step")
+            ]);
+            addFirstBtn.addEventListener("click", () => addBtn.click());
+            const pasteFirstBtn = iconButton({
+                className: "secondary-button icon-button paste-button",
+                ariaLabel: "Paste action",
+                title: "Paste action",
+                iconName: "paste"
+            });
+            registerPasteButton(pasteFirstBtn, accepts);
+            pasteFirstBtn.addEventListener("click", () => pasteBtn.click());
+            emptyRow = createEl("div", {className: "action-array__empty"}, [
+                createEl("p", {className: "action-array__empty-note"}, "Nothing runs here."),
+                addFirstBtn,
+                pasteFirstBtn
+            ]);
+            wrapper.classList.add("is-empty");
+        }
+
+        wrapper.append(...[header, subContainer, emptyRow, footer, errorEl].filter(Boolean));
         builder.refreshReorderButtons(subContainer);
         return wrapper;
     }

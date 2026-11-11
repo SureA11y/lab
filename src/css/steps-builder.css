@@ -86,8 +86,12 @@
 :is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper {
     display: flex;
     align-items: center;
-    gap: 5px;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    min-width: 0;
 }
+/* A long title wraps inside its place, its pill and badges keep theirs. */
+:is(#actions-builder, #custom-step-actions-builder) .line .line-title { min-width: 0; overflow-wrap: anywhere; }
 
 /* 26px, not 24: its rounded corners leave a 24px square a pointer can hit
    (WCAG 2.5.8), where a nested step's title sits close to other targets. */
@@ -149,13 +153,61 @@
 @media (forced-colors: active) {
     .line-badge, .steps-panel__badge, .passwords-banner { border-color: CanvasText; }
 }
-:is(#actions-builder, #custom-step-actions-builder) .line-title-action-type { font-size: var(--fs-xs); color: var(--text-muted); }
+/* The kind of step, before a title of the step's own: a small pill in the
+   same place on every card, never wrapped. Muted text on the panel's own
+   pill colour, as the steps panel shows kinds (4.5:1 or more). */
+:is(#actions-builder, #custom-step-actions-builder) .line-title-action-type {
+    flex: none;
+    white-space: nowrap;
+    padding: 1px 7px;
+    border-radius: var(--radius-pill);
+    background: var(--na-soft);
+    color: var(--text-muted);
+    font-size: var(--fs-xxs);
+    font-weight: 600;
+    line-height: 1.5;
+}
+:is(#actions-builder, #custom-step-actions-builder) .line-title-action-type[hidden] { display: none; }
+@media (forced-colors: active) {
+    :is(#actions-builder, #custom-step-actions-builder) .line-title-action-type { border: 1px solid CanvasText; }
+}
 
 :is(#actions-builder, #custom-step-actions-builder) .line-controls {
+    position: relative;
     display: inline-flex;
     gap: 6px;
     align-items: center;
     flex-wrap: nowrap;
+}
+
+/* A card shows Collapse and, in the menu button's place, a sign that there
+   is more (step-line.js). With a mouse, its other buttons show in its place
+   while the pointer is on the card, and while focus is in it: not on the
+   cards around a nested one. Out of sight they are still in the tab order
+   and named, and a button that takes focus shows, the card having focus
+   within. Without a mouse they are in the menu (is-menu). */
+:is(#actions-builder, #custom-step-actions-builder) .line-controls__more {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
+    color: var(--text-muted);
+}
+@media (hover: hover) {
+    :is(#actions-builder, #custom-step-actions-builder) .line:is(:not(:hover, :focus-within), :has(.line:is(:hover, :focus-within))) > .line-header > .line-controls:not(.is-menu) > .line-controls__more { display: inline-flex; }
+    :is(#actions-builder, #custom-step-actions-builder) .line:is(:not(:hover, :focus-within), :has(.line:is(:hover, :focus-within))) > .line-header > .line-controls:not(.is-menu) > button:not(.toggle-action) {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        min-width: 0;
+        min-height: 0;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
 }
 
 /* Icon-only controls */
@@ -441,13 +493,28 @@
 :is(#actions-builder, #custom-step-actions-builder) .action-array__controls { display: inline-flex; align-items: center; gap: 6px; }
 
 :is(#actions-builder, #custom-step-actions-builder) .branch-chip {
-    font-size: var(--fs-xxs);
+    font-size: var(--fs-xs);
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .04em;
     padding: 1px 7px;
     border-radius: var(--radius-sm);
 }
+:is(#actions-builder, #custom-step-actions-builder) .action-array__optional { color: var(--text-muted); }
+
+/* An empty list: "Nothing runs here." and one button to add its first step
+   (with Paste, when there is a step to paste), in place of its row of
+   shortcuts (step-fields.js). */
+:is(#actions-builder, #custom-step-actions-builder) .action-array__empty {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+:is(#actions-builder, #custom-step-actions-builder) .action-array__empty-note { margin: 0; color: var(--text-muted); font-size: var(--fs-sm); }
+:is(#actions-builder, #custom-step-actions-builder) .action-array__add-first { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 10px; }
+:is(#actions-builder, #custom-step-actions-builder) .action-array__empty .paste-button:disabled { display: none; }
+:is(#actions-builder, #custom-step-actions-builder) .action-array:not(.is-empty) > .action-array__empty,
+:is(#actions-builder, #custom-step-actions-builder) .action-array.is-empty > :is(.actions-subcontainer, .action-array__footer),
+:is(#actions-builder, #custom-step-actions-builder) .action-array.is-empty > .action-array__header .action-array__summary { display: none; }
 :is(#actions-builder, #custom-step-actions-builder) .branch-chip--then { background: var(--accent-soft); color: var(--accent-on-soft); }
 :is(#actions-builder, #custom-step-actions-builder) .branch-chip--else { background: var(--surface-3); color: var(--text-muted); }
 :is(#actions-builder, #custom-step-actions-builder) .branch-chip--default { background: var(--surface-3); color: var(--text-muted); }
@@ -786,18 +853,28 @@
     align-self: end;
 }
 
-.fields-toggle {
+/* "Show more options": a small text button, as a link reads, not a box
+   that looked like a field to fill. 24px high, the smallest target a
+   pointer is given (WCAG 2.5.8). */
+.fields-toggle,
+:is(#actions-builder, #custom-step-actions-builder) .fields-toggle.secondary-button {
+    min-height: 24px;
+    margin-left: -4px;
+    padding: 0 4px;
     background: transparent;
-    border: 1px dashed var(--border-subtle);
+    border: 0;
+    box-shadow: none;
     color: var(--text-muted);
-    font-weight: 650;
-
-    padding: 0.35rem 0.75rem;
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+    font-weight: 600;
     text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
-.fields-toggle:hover {
-    background: var(--surface-3);
+.fields-toggle:hover,
+:is(#actions-builder, #custom-step-actions-builder) .fields-toggle.secondary-button:hover {
+    background: transparent;
     color: var(--text-main);
 }
 
