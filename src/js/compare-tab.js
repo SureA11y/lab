@@ -19,7 +19,7 @@ import {STATUS} from './ui-constants.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * (buildExportPayload, compareActionsEl, compareClearBtn, compareContextDesc, compareContextSeg, compareDocEl, compareInput, compareLoadBtn, compareOrderNote, comparePathsEl, compareProfilesEl, compareReportsEl, compareStatusEl, getActiveBucket, getCurrentReportName, isZipFile, queuePanel, reportFilesLoadBtn, reportMetaRow, resultsState, runComparisonEl, setStatusReport, setStatusRun, stageReportFiles, tabsmode).
+ * (buildExportPayload, compareActionsEl, compareClearBtn, compareContextDesc, compareContextSeg, compareDocEl, compareHintEl, compareInput, compareLoadBtn, compareOrderNote, comparePathsEl, compareProfilesEl, compareReportsEl, compareSettingsEl, compareStatusEl, getActiveBucket, getCurrentReportName, isZipFile, queuePanel, reportFilesLoadBtn, reportMetaRow, resultsState, runComparisonEl, setStatusReport, setStatusRun, stageReportFiles, tabsmode).
  */
 export function createCompareTab(app) {
     // ---- Compare tab: many reports, one view (wired once) ----
@@ -280,6 +280,7 @@ export function createCompareTab(app) {
         }
 
         if (app.compareClearBtn) app.compareClearBtn.hidden = list.length === 0;
+        foldCompareSettings(list.length >= 2);
         // Nothing to name until there is a comparison: an empty tab asking for a
         // title is a form to fill in before anything has happened.
         // Written after the view, because the name the line reads is the one
@@ -288,6 +289,42 @@ export function createCompareTab(app) {
         renderCompareContext();
         renderCompareProfiles();
         renderComparePaths();
+    }
+
+    // The setup above the comparison (what the reports are, profiles, path
+    // prefixes, its name) took a screen before the result began. It folds
+    // into Settings when a comparison appears and opens again when there is
+    // none, and only then: in between, open or folded is the reader's. The
+    // loading hint goes with it, as the reports it explains are in.
+    let comparing = false;
+    function foldCompareSettings(now) {
+        if (app.compareHintEl) app.compareHintEl.hidden = now;
+        if (now === comparing) return;
+        comparing = now;
+        if (app.compareSettingsEl) app.compareSettingsEl.open = !now;
+    }
+
+    // After a load gives a comparison, the reader is taken to it: its title
+    // is scrolled to the top, under the tab bar that sticks there, and
+    // focused, so a keyboard or screen reader user starts where it starts.
+    // Not after a change to one already drawn (a profile, a report moved),
+    // where focus stays on the control pressed.
+    function revealComparison() {
+        const view = app.runComparisonEl;
+        const title = view?.querySelector('.cmp2 .doc-title');
+        if (!title || view.closest('[hidden]')) return;
+        const bar = document.querySelector('.mode-bar');
+        title.style.scrollMarginTop = `${(bar ? Math.round(bar.getBoundingClientRect().height) : 0) + 16}px`;
+        title.tabIndex = -1;
+        title.scrollIntoView({ block: 'start' });
+        title.focus({ preventScroll: true });
+        // Focusable only to be arrived at: once focus moves on, the title is
+        // the plain heading the download copies.
+        title.addEventListener('blur', () => {
+            title.removeAttribute('tabindex');
+            title.style.removeProperty('scroll-margin-top');
+            if (!title.getAttribute('style')) title.removeAttribute('style');
+        }, { once: true });
     }
 
     // Which profiles the comparison is read on: a switch per profile every
@@ -547,19 +584,23 @@ export function createCompareTab(app) {
         if (count < 2) parts.push('load one more to compare');
         else if (comparisonController.shape() === 'pair') parts.push('showing the side-by-side diff');
         else parts.push(`showing the dashboard over ${count} reports`);
+        // Said as a fact to check, not as good news: the same run loaded twice
+        // is a mistake, one run exported once per tag is not, and only the
+        // reader knows which it is.
         if (duplicates) {
-            parts.push((added === 1
-                ? 'it matches a report already loaded'
-                : `${duplicates} of them ${duplicates === 1 ? 'matches' : 'match'} a report already loaded`)
-                + ' — fine if they are one run exported per tag');
+            parts.push(added === 1
+                ? 'it looks like the same run as a report already loaded'
+                : `${duplicates} of them look${duplicates === 1 ? 's' : ''} like the same run as a report already loaded`);
         }
 
-        const tone = failures.length ? STATUS.ERROR : STATUS.OK;
         const message = failures.length
             ? `${parts.join(' · ')}. Could not load ${failures.join('; ')}`
-            : `${parts.join(' · ')}.`;
+            : `${parts.join(' · ')}.`
+                + (duplicates ? ' That is expected when one run was exported once per tag; otherwise remove the copy.' : '');
+        const tone = failures.length ? STATUS.ERROR : (duplicates ? STATUS.INFO : STATUS.OK);
 
         setCompareStatus(message, tone);
+        if (added && count >= 2) revealComparison();
         return message;
     }
 
@@ -801,7 +842,7 @@ export function createCompareTab(app) {
                 added += 1;
                 keys.push(result.key);
                 if (result.duplicate) duplicates += 1;
-                adding.done(result.duplicate ? 'matches a report already loaded' : undefined);
+                adding.done(result.duplicate ? 'looks like the same run as a report already loaded' : undefined);
             } catch (err) {
                 const why = err && err.message ? err.message : String(err);
                 failures.push(`${source.label} (${why})`);

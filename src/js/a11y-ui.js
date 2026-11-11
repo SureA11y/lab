@@ -70,6 +70,8 @@ function storeActiveMode(mode) {
         get compareActionsEl() { return compareActionsEl; },
         get compareClearBtn() { return compareClearBtn; },
         get compareContextDesc() { return compareContextDesc; },
+        get compareHintEl() { return compareHintEl; },
+        get compareSettingsEl() { return compareSettingsEl; },
         get compareContextSeg() { return compareContextSeg; },
         get compareDocEl() { return compareDocEl; },
         get compareInput() { return compareInput; },
@@ -357,6 +359,8 @@ function storeActiveMode(mode) {
     const compareStatusEl = $('#compare-status');
     const compareDocEl = $('#compare-doc');
     const compareActionsEl = $('#compare-actions');
+    const compareSettingsEl = $('#compare-settings');
+    const compareHintEl = $('#compare-hint');
 
     // Live selection for the per-scan tag filter (a view lens over the report).
     // Kept as a raw {tags:[], untagged, mode} selection plus a derived matcher;

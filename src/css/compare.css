@@ -295,6 +295,34 @@ body.queue-mode-active #screenshots-container { display: none; }
 .compare-report-n { font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600; color: var(--text-soft); background: var(--surface-2); border-radius: var(--radius-sm); padding: 1px 6px; font-variant-numeric: tabular-nums; }
 .compare-order-note { font-size: var(--fs-xs); color: var(--text-soft); margin: 0 0 var(--space-3); max-width: 90ch; }
 .compare-profiles { margin: 0 0 var(--space-3); }
+/* The profiles compared read as a set of labels, each on or off, rather than
+   as buttons waiting to be pressed: the thick accent frame of the tag filter
+   made two profiles both compared look like two calls to action. On is a
+   tinted label with a tick; off is the outline alone with the name struck
+   through, so the state reads without colour. They stay switches. */
+.compare-profiles .scan-tag-filter__chip { border-radius: 999px; padding: 3px 10px; font-family: var(--font-sans); background: transparent; border-color: var(--border-subtle); }
+.compare-profiles .scan-tag-filter__chip[aria-pressed="true"] { color: var(--text-main); background: var(--surface-2); border-color: var(--border-subtle); box-shadow: none; font-weight: 600; }
+.compare-profiles .scan-tag-filter__chip[aria-pressed="true"]::before { content: "✓"; color: var(--ok); font-weight: 700; }
+.compare-profiles .scan-tag-filter__chip[aria-pressed="false"] { text-decoration: line-through; }
+.compare-profiles .scan-tag-filter__chip[aria-disabled="true"]:hover,
+.compare-profiles .scan-tag-filter__chip[aria-pressed="true"][aria-disabled="true"] { background: var(--surface-2); }
+
+/* The setup, folded once there is a comparison: the summary is the whole
+   row, with what it holds said beside the word, so a reader knows what is
+   in it without opening it. */
+.compare-settings { margin: 0 0 var(--space-3); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-3); }
+.compare-settings__summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--space-3); padding: var(--space-2) var(--space-3); cursor: pointer; font-weight: 600; font-size: var(--fs-sm); list-style: none; border-radius: var(--radius-md); }
+.compare-settings__summary::-webkit-details-marker { display: none; }
+.compare-settings__summary::before { content: "▸"; display: inline-block; width: 1em; color: var(--text-soft); transition: transform var(--duration-fast) var(--ease-standard); }
+.compare-settings[open] > .compare-settings__summary::before { transform: rotate(90deg); }
+.compare-settings__summary:hover { background: var(--surface-hover); }
+.compare-settings__summary:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+.compare-settings__what { font-weight: 400; font-size: var(--fs-xs); color: var(--text-soft); }
+.compare-settings__body { padding: 0 var(--space-3) var(--space-2); }
+.compare-settings__body > .compare-controls { margin-top: var(--space-2); }
+/* "None. For example: …" is an example, not a value: slanted, so a field
+   left empty does not read as prefixes already set. */
+.compare-paths-input::placeholder { font-style: italic; }
 /* A change being drawn (compare-tab.js updateComparison): the comparison
    dims and is inert, and a note with a spinner stays at the top of the part
    in view while it scrolls, as the report view's results do. */
@@ -401,6 +429,14 @@ body.queue-mode-active #screenshots-container { display: none; }
 .cmp2 .report-chip .file { font-size: var(--fs-sm); font-weight: 600; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; }
 .cmp2 .report-chip .meta { font-size: var(--fs-xs); color: var(--text-soft); }
 .cmp2 .vs { align-self: center; font-family: var(--font-display); font-weight: 600; color: var(--text-soft); font-size: var(--fs-sm); }
+/* On a phone the two cards stack, each the full width: a "vs" column beside
+   the first left it narrower than the second, and its tags wrapped more. The
+   cards say Baseline and Latest, or A and B, so the "vs" goes. */
+@media (max-width: 640px) {
+    .cmp2 .reports-row { flex-direction: column; }
+    .cmp2 .report-chip { flex: 0 0 auto; min-width: 0; }
+    .cmp2 .vs { display: none; }
+}
 
 /* ---- verdict hero ---- */
 .cmp2 .verdict { margin-top: var(--space-5); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-subtle); background: var(--surface-raised); box-shadow: var(--shadow-card); display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); }
@@ -478,7 +514,6 @@ body.queue-mode-active #screenshots-container { display: none; }
 /* ---- narrative ---- */
 .cmp2 .narrative h4 { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 600; margin: 0 0 8px; }
 .cmp2 .narrative p { font-size: var(--fs-sm); color: var(--text-muted); margin: 0 0 10px; line-height: 1.6; }
-.cmp2 .narrative .det { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-soft); letter-spacing: .04em; margin-top: 4px; }
 
 /* ---- finding diff ---- */
 .cmp2 .segbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -832,6 +867,10 @@ body.queue-mode-active #screenshots-container { display: none; }
 /* Sized down as it grows: a typed title can be a sentence, and it has to stay a
    title rather than becoming a paragraph in a large face. */
 .cmp2 .doc-title { font-family: var(--font-display); font-size: clamp(22px, 2.6vw, 30px); font-weight: 600; line-height: 1.15; letter-spacing: -.01em; color: var(--text-main); margin: 0; overflow-wrap: anywhere; }
+/* Focused by the app after a load, to start the reader there (compare-tab.js,
+   revealComparison). A heading is not a control: a ring round it would ask
+   to be pressed. */
+.cmp2 .doc-title[tabindex="-1"]:focus { outline: none; box-shadow: none; }
 .cmp2 .doc-note { margin-top: 8px; font-size: var(--fs-md); color: var(--text-muted); max-width: 72ch; overflow-wrap: anywhere; }
 .cmp2 .doc-facts { display: flex; flex-wrap: wrap; gap: 6px var(--space-5); margin: 14px 0 0; }
 .cmp2 .doc-fact { min-width: 0; }

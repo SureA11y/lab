@@ -632,20 +632,13 @@
     <!-- Compare pane: two reports diff side by side, three or more open the dashboard -->
     <section id="pane-compare" role="tabpanel" aria-labelledby="mode-compare" hidden>
         <div class="compare-panel">
-            <p class="hint">Compare exported reports — how accessibility evolved over time, or several variants side by side.
+            <!-- How to load, said while there is nothing to compare; hidden
+                 once there is, with the setup folded below, so the
+                 comparison starts near the top of the tab. -->
+            <p class="hint" id="compare-hint">Compare exported reports — how accessibility evolved over time, or several variants side by side.
                 Two reports give the side-by-side diff; three or more open the dashboard.
                 A zip from “Download with the reports” loads back as the comparison it was; any other zip loads the reports in it.
                 Load them with the button, or drop them anywhere on this tab.</p>
-
-            <div class="compare-controls">
-                <span class="ctx-label">What are you comparing?</span>
-                <div class="ctx-seg" role="group" aria-label="What are you comparing?" id="compare-context-seg">
-                    <button type="button" class="ctx-opt" data-context="time" aria-pressed="true">↗ Runs over time</button>
-                    <button type="button" class="ctx-opt" data-context="versions" aria-pressed="false">⇈ Versions</button>
-                    <button type="button" class="ctx-opt" data-context="variants" aria-pressed="false">⇄ Variants</button>
-                </div>
-                <span class="ctx-desc" id="compare-context-desc">One subject scanned again and again. Ordered by each report’s own timestamp, and the headline says how long ago that was.</span>
-            </div>
 
             <div class="compare-loaders">
                 <div class="compare-loader">
@@ -655,31 +648,52 @@
                 <button type="button" id="compare-clear" class="secondary-button" hidden>Remove all</button>
             </div>
 
-            <p class="compare-order-note" id="compare-order-note" hidden></p>
-
-            <!-- Which profiles the comparison is read on: one switch per profile
-                 every loaded report checked, shown when there are two or more.
-                 Rendered by renderCompareProfiles(). -->
-            <div id="compare-profiles" class="scan-tag-filter compare-profiles" hidden></div>
-
-            <!-- Path prefixes left out when pages are matched: one site under
-                 two paths (/v1/, /v2/). Shown with two reports or more;
-                 renderComparePaths() keeps it in step with the comparison. -->
-            <form id="compare-paths" class="compare-paths" hidden>
-                <label for="compare-path-prefixes" class="compare-paths-label">Ignore path prefixes</label>
-                <input type="text" id="compare-path-prefixes" class="compare-paths-input" placeholder="/v1, /v2"
-                       autocomplete="off" spellcheck="false" aria-describedby="compare-paths-hint" />
-                <button type="submit" class="secondary-button">Match pages</button>
-                <p id="compare-paths-hint" class="compare-paths-hint"></p>
-            </form>
-
-            <!-- What this comparison calls itself: the same metadata line a
-                 report carries, corrected the same way. Rendered by
-                 writeComparisonData(); the values travel into the exported file,
-                 the controls that set them do not. -->
-            <div id="compare-doc" class="compare-doc"></div>
-
             <ul id="compare-reports" class="compare-reports" aria-label="Reports loaded for comparison"></ul>
+
+            <!-- The setup: open while there is nothing to compare, folded by
+                 renderCompareChips() once there is, and left as the reader
+                 sets it after that. -->
+            <details id="compare-settings" class="compare-settings" open>
+                <summary class="compare-settings__summary">Settings
+                    <span class="compare-settings__what">What the reports are, order, profiles, page matching, name</span></summary>
+                <div class="compare-settings__body">
+                    <div class="compare-controls">
+                        <span class="ctx-label">What are you comparing?</span>
+                        <div class="ctx-seg" role="group" aria-label="What are you comparing?" id="compare-context-seg">
+                            <button type="button" class="ctx-opt" data-context="time" aria-pressed="true">↗ Runs over time</button>
+                            <button type="button" class="ctx-opt" data-context="versions" aria-pressed="false">⇈ Versions</button>
+                            <button type="button" class="ctx-opt" data-context="variants" aria-pressed="false">⇄ Variants</button>
+                        </div>
+                        <span class="ctx-desc" id="compare-context-desc">One subject scanned again and again. Ordered by each report’s own timestamp, and the headline says how long ago that was.</span>
+                    </div>
+
+                    <p class="compare-order-note" id="compare-order-note" hidden></p>
+
+                    <!-- Which profiles the comparison is read on: one switch per profile
+                         every loaded report checked, shown when there are two or more.
+                         Rendered by renderCompareProfiles(). -->
+                    <div id="compare-profiles" class="scan-tag-filter compare-profiles" hidden></div>
+
+                    <!-- Path prefixes left out when pages are matched: one site under
+                         two paths (/v1/, /v2/). Shown with two reports or more;
+                         renderComparePaths() keeps it in step with the comparison.
+                         The placeholder says it is an example, so it is not
+                         read as prefixes already set. -->
+                    <form id="compare-paths" class="compare-paths" hidden>
+                        <label for="compare-path-prefixes" class="compare-paths-label">Ignore path prefixes</label>
+                        <input type="text" id="compare-path-prefixes" class="compare-paths-input" placeholder="None. For example: /v1, /v2"
+                               autocomplete="off" spellcheck="false" aria-describedby="compare-paths-hint" />
+                        <button type="submit" class="secondary-button">Match pages</button>
+                        <p id="compare-paths-hint" class="compare-paths-hint"></p>
+                    </form>
+
+                    <!-- What this comparison calls itself: the same metadata line a
+                         report carries, corrected the same way. Rendered by
+                         writeComparisonData(); the values travel into the exported file,
+                         the controls that set them do not. -->
+                    <div id="compare-doc" class="compare-doc"></div>
+                </div>
+            </details>
 
             <div id="compare-actions" class="compare-actions"></div>
             <div id="compare-status" class="status" role="status"></div>

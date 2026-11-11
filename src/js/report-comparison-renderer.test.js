@@ -39,7 +39,9 @@ describe('comparisonDiffHTML — evolution', () => {
         assert.match(html, /class="verdict"/);         // verdict hero
         assert.match(html, /Accessibility <span class="accent/);
         assert.match(html, /class="kpis"/);            // KPI cards
-        assert.equal((html.match(/class="kpi /g) || []).length, 6);
+        // Every failure on both sides is serious or critical, so that card,
+        // which would repeat Failures, is left out.
+        assert.equal((html.match(/class="kpi /g) || []).length, 5);
         assert.match(html, /<svg class="dumbbell"/);   // chart
         assert.match(html, /class="panel narrative"/); // narrative
         assert.match(html, /class="segbar"/);          // finding diff tabs
@@ -60,6 +62,32 @@ describe('comparisonDiffHTML — evolution', () => {
         const { comparisonDiffHTML, diffReports } = await load();
         const html = comparisonDiffHTML(diffReports(A(), B(), { mode: 'evolution' }));
         assert.match(html, /class="kpi good"/); // at least one improvement
+    });
+});
+
+describe('comparisonDiffHTML — plain words', () => {
+    test('the numbers are named for a reader, and the score says its scale', async () => {
+        const { comparisonDiffHTML, diffReports } = await load();
+        const html = comparisonDiffHTML(diffReports(A(), B(), { mode: 'evolution' }));
+        assert.match(html, /<h3>What changed, in numbers<\/h3>/);
+        assert.match(html, /<div class="name">Accessibility score \(out of 100\)<\/div>/);
+        assert.match(html, /<div class="name">Confidence in the score<\/div>/);
+        assert.doesNotMatch(html, /Executive deltas|class="layer">globals|deterministically/i);
+    });
+
+    test('a card that would repeat another figure for figure is left out, and the reason is said', async () => {
+        const { comparisonDiffHTML, diffReports } = await load();
+        const html = comparisonDiffHTML(diffReports(A(), B(), { mode: 'evolution' }));
+        assert.doesNotMatch(html, /Serious or critical<\/div>/);
+        assert.match(html, /Every failure here is serious or critical\./);
+
+        const mixed = report({ runId: 'c', timestamp: '2026-03-01T00:00:00Z', name: 'v3', scans: [1],
+            findings: [finding('color-contrast', 'serious', ['/1']), finding('region', 'moderate', ['/1', '/2'])] });
+        const both = comparisonDiffHTML(diffReports(A(), mixed, { mode: 'evolution' }));
+        assert.match(both, /<div class="name">Serious or critical<\/div>/);
+        assert.doesNotMatch(both, /Every failure here is serious or critical/);
+        const ab = comparisonDiffHTML(diffReports(A(), mixed, { mode: 'ab' }));
+        assert.equal((ab.match(/class="kpi /g) || []).length, 7);
     });
 });
 
@@ -247,7 +275,7 @@ describe('comparisonDiffHTML — problems and failures read as different things'
         const { comparisonDiffHTML, diffReports } = await load();
         const html = comparisonDiffHTML(diffReports(A(), B(), { mode: 'ab' }));
         assert.match(html, /<div class="kpis kpis-ab">/);
-        assert.equal((html.match(/class="kpi /g) || []).length, 7);
+        assert.equal((html.match(/class="kpi /g) || []).length, 6);
         assert.match(html, /<div class="name">Failures<\/div>/);
         assert.match(html, /<div class="name">Broken elements<\/div>/);
         assert.match(html, /<div class="name">Kinds of problem<\/div>/);
