@@ -20,18 +20,19 @@ A workflow is the page to start on and the steps to take there. The
 - **URL to scan**: the page the workflow starts on.
 - **Scenario name**: what the run is called, in reports and file names.
 - **Run settings**, the button at the end of that line, opens them in a
-  dialog; under the line a chip says what each one is, so what the run will
-  use is seen at a glance (the ones changed from their default stand out, and
-  a chip opens the dialog at its setting):
-  - **How the page is shown**, from the first page on: its **Viewport
-    preset** (the window size, from a phone to a wide desktop), **Color
-    scheme** (light or dark), **High contrast** (forced colors, as Windows'
-    contrast themes) and **Language** (one from the list, or any tag or
-    variable with Other…). Steps can change them as the workflow goes; their
-    **Run default** comes back to these.
-  - **Connection**: **Untrusted certificates**, Refuse unless you choose
-    Accept, for a site whose certificate the browser does not trust (a
-    staging server's own, or any site on a network that inspects HTTPS).
+  dialog; under the line a chip says what each one is, in the dialog's words
+  ("Colors: Browser default"), so what the run will use is seen at a glance
+  (the ones changed from their default stand out, and a chip opens the dialog
+  at its setting):
+  - **How the page is shown**, from the first page on: its **Viewport**
+    (the window size, from a phone to a wide desktop), **Colors** (light or
+    dark), **High contrast** (forced colors, as Windows' contrast themes) and
+    **Language** (one from the list, or any tag or variable with Other…).
+    Steps can change them as the workflow goes; their **Run default** comes
+    back to these.
+  - **Connection**: **Certificates**, Refuse untrusted unless you choose
+    Accept untrusted, for a site whose certificate the browser does not trust
+    (a test server's own, or any site on a network that checks its traffic).
     Refused, the run fails on it, says why, and offers **Run again, accepting
     this certificate**. Accepted, the browser cannot tell the site from one
     pretending to be it, so sign in only where you trust the network; the

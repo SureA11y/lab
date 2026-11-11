@@ -314,6 +314,11 @@ The first public release.
   Each password in the dialog says where it is asked (the steps it sits
   inside and its own step), the steps just before it, and the runs it is
   for, so two passwords in one workflow can be told apart.
+- **Run settings say the same in their chips and their dialog**:
+  "Colors: Browser default", "Certificates: Refuse untrusted", the chip's
+  name the field's label and its value the option chosen (the chips said
+  "Colors: Default" and "Trusted only"). The certificates' help is in plain
+  words and lines short enough to read.
 - **A run can be deleted from a finished batch**: **Delete** on its row,
   once confirmed, removes its results and the pictures and evidence only
   they used, from the batch's folder, `batch.json`, zip and Send to Compare. Not

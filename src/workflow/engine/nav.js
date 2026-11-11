@@ -85,7 +85,7 @@ function explainCertificateError(err) {
     const msg = String(err && (err.message || err) || '');
     if (!/net::ERR_CERT_/.test(msg)) return err;
     const out = new Error(`${msg}. The browser does not trust this site's certificate: the site's own may be broken, `
-        + 'or the network you are on inspects HTTPS. If you trust the site, set Untrusted certificates to Accept '
+        + 'or the network you are on inspects HTTPS. If you trust the site, set Certificates to Accept untrusted '
         + 'in the run settings (acceptUntrustedCerts in a spec, --accept-untrusted-certs for the runner).');
     out.cause = err;
     return out;

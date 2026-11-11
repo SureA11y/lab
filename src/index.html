@@ -251,7 +251,7 @@
                                     <legend>How the page is shown</legend>
                                     <div class="field-row field-inline field-inline-top">
                                         <div>
-                                            <label for="viewport-preset">Viewport preset</label>
+                                            <label for="viewport-preset">Viewport</label>
                                             <select id="viewport-preset" name="viewportPreset">
                                                 <option value="default">Default (1280 × 720)</option>
                                                 <option value="desktop-xlg">Desktop extra-large (1972 × 1100)</option>
@@ -262,7 +262,7 @@
                                             </select>
                                         </div>
                                         <div>
-                                            <label for="run-color-scheme">Color scheme</label>
+                                            <label for="run-color-scheme">Colors</label>
                                             <select id="run-color-scheme" name="colorScheme">
                                                 <option value="">Browser default</option>
                                                 <option value="light">Light</option>
@@ -296,15 +296,15 @@
                                     <legend>Connection</legend>
                                     <div class="field-row field-inline field-inline-top">
                                         <div class="field-narrow">
-                                            <label for="run-untrusted-certs">Untrusted certificates</label>
+                                            <label for="run-untrusted-certs">Certificates</label>
                                             <select id="run-untrusted-certs" name="acceptUntrustedCerts" aria-describedby="run-untrusted-certs-hint">
-                                                <option value="off">Refuse</option>
-                                                <option value="on">Accept</option>
+                                                <option value="off">Refuse untrusted</option>
+                                                <option value="on">Accept untrusted</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="field-row">
-                                        <p class="hint" id="run-untrusted-certs-hint">For a site whose certificate the browser does not trust: a staging server's own, or any site on a network that inspects HTTPS. Accepted, the browser cannot tell the site from one pretending to be it, so sign in only where you trust the network.</p>
+                                        <p class="hint" id="run-untrusted-certs-hint">Some sites have a certificate the browser does not trust, such as a test server, or any site on a network that checks its traffic. Refuse untrusted stops the run at such a site and says why. Accept untrusted goes on, but the browser can no longer tell the real site from a fake one: only sign in there on a network you trust.</p>
                                     </div>
                                 </fieldset>
                             </div>

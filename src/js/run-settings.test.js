@@ -17,28 +17,28 @@ const defaults = {
     'run-high-contrast': { value: 'off', text: 'Off' },
     'run-language': { value: '', text: 'Browser default' },
     'run-language-other': { value: '', text: '' },
-    'run-untrusted-certs': { value: 'off', text: 'Refuse' },
+    'run-untrusted-certs': { value: 'off', text: 'Refuse untrusted' },
 };
 
 describe('the run settings, as their chips say them', () => {
-    test('every one at its default, said plainly and marked as such', () => {
+    test('every one at its default, in the dialog\'s own words, and marked as such', () => {
         const summary = M.runSettingsSummary(defaults);
         assert.deepEqual(summary.map((s) => `${s.name}: ${s.label}`),
-            ['Viewport: 1280 × 720', 'Colors: Default', 'Contrast: Off', 'Language: Default', 'Certificates: Trusted only']);
+            ['Viewport: Default (1280 × 720)', 'Colors: Browser default', 'High contrast: Off', 'Language: Browser default', 'Certificates: Refuse untrusted']);
         assert.ok(summary.every((s) => !s.changed && !s.warn));
     });
 
     test('the changed ones marked, accepting untrusted certificates as a warning', () => {
         const summary = M.runSettingsSummary({
             ...defaults,
-            'run-untrusted-certs': { value: 'on', text: 'Accept' },
+            'run-untrusted-certs': { value: 'on', text: 'Accept untrusted' },
             'viewport-preset': { value: 'mobile', text: 'Mobile (375 × 812)' },
             'run-color-scheme': { value: 'dark', text: 'Dark' },
             'run-high-contrast': { value: 'on', text: 'On' },
             'run-language': { value: 'es-ES', text: 'Spanish (Spain)' },
         });
         assert.deepEqual(summary.map((s) => s.label),
-            ['Mobile (375 × 812)', 'Dark', 'High', 'Spanish (Spain)', 'Untrusted accepted']);
+            ['Mobile (375 × 812)', 'Dark', 'On', 'Spanish (Spain)', 'Accept untrusted']);
         assert.ok(summary.every((s) => s.changed));
         assert.deepEqual(summary.filter((s) => s.warn).map((s) => s.id), ['run-untrusted-certs']);
     });
@@ -55,11 +55,11 @@ describe('the chips', () => {
     test('a button each, "Name: value", the changed and the warning marked, nothing unescaped', () => {
         const doc = new JSDOM(`<div>${M.runSettingsChipsHtml([
             { id: 'run-color-scheme', name: 'Colors', label: 'Browser default', changed: false, warn: false },
-            { id: 'run-untrusted-certs', name: 'Certificates', label: 'Untrusted accepted', changed: true, warn: true },
+            { id: 'run-untrusted-certs', name: 'Certificates', label: 'Accept untrusted', changed: true, warn: true },
             { id: 'run-language', name: 'Language', label: '<b>x</b>', changed: true, warn: false },
         ])}</div>`).window.document;
         const chips = [...doc.querySelectorAll('button.run-setting-chip')];
-        assert.deepEqual(chips.map((c) => c.textContent), ['Colors: Browser default', 'Certificates: Untrusted accepted', 'Language: <b>x</b>']);
+        assert.deepEqual(chips.map((c) => c.textContent), ['Colors: Browser default', 'Certificates: Accept untrusted', 'Language: <b>x</b>']);
         assert.equal(chips[0].dataset.field, 'run-color-scheme');
         assert.ok(!chips[0].classList.contains('is-changed'));
         assert.ok(chips[1].classList.contains('is-changed') && chips[1].classList.contains('is-warn'));
