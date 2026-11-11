@@ -343,3 +343,18 @@ describe('groups merged in the reports\' view (scan-grouping-design.md §11)', (
         assert.doesNotMatch(comparisonDiffHTML(d), /cmp2-note/);
     });
 });
+
+describe('the severity chart\'s axis', () => {
+    test('steps by 1, 2 or 5 times a power of ten, about five ticks whatever the counts', async () => {
+        const { niceStep } = await load();
+        assert.equal(niceStep(10), 2);
+        assert.equal(niceStep(25), 5);
+        assert.equal(niceStep(180), 50);
+        assert.equal(niceStep(1978), 500);
+        assert.equal(niceStep(12345), 5000);
+        for (const max of [3, 47, 640, 2282, 99999]) {
+            const ticks = Math.ceil(max / niceStep(max)) + 1;
+            assert.ok(ticks >= 3 && ticks <= 11, `${max}: ${ticks} ticks`);
+        }
+    });
+});

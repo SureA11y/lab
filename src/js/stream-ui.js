@@ -28,9 +28,11 @@ function buildCountsNodes(counts) {
     const cantTell = counts?.incomplete ?? 0;
     const pass = counts?.passes ?? 0;
 
+    // None failing is said as such: "0 fail" beside the red glyph read as a failure.
     const failEl = document.createElement('span');
-    failEl.className = 'stream-fail';
-    failEl.append(resultGlyphEl('fail'), ` ${fail} fail`);
+    failEl.className = fail === 0 ? 'stream-nofail' : 'stream-fail';
+    if (fail === 0) failEl.textContent = 'No failures';
+    else failEl.append(resultGlyphEl('fail'), ` ${fail} fail`);
 
     const cantTellEl = document.createElement('span');
     cantTellEl.className = 'stream-cantTell';
