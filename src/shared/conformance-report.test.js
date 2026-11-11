@@ -484,7 +484,7 @@ describe('groups the report view shows merged (scan-grouping-design.md §11)', (
             "In the lab's report view, Product pages (6 scans) is shown as one merged scan. This report counts them page by page, as they were scanned.");
         const two = C.buildConformanceReport({ ...base, shownMerges: [{ name: 'Products', scans: 6 }, { name: 'Posts', scans: 3 }] });
         assert.match(two.evaluation.pagesNote, /Products \(6 scans\) and Posts \(3 scans\) are each shown as one merged scan/);
-        assert.match(H.conformanceReportHTML(one), /<p class="pages-note">In the lab&#39;s report view, Product pages \(6 scans\)/);
+        assert.match(H.conformanceReportHTML(one), /<span class="pages-note">In the lab&#39;s report view, Product pages \(6 scans\)/);
     });
 
     test('say nothing when none is merged', () => {
