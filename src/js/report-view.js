@@ -68,10 +68,10 @@ export function createReportView(app) {
         title.textContent = 'All scans';
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
-        closeBtn.className = 'all-scans-close secondary-button icon-button';
+        // Closes as every dialog does: "Close", in words.
+        closeBtn.className = 'all-scans-close secondary-button';
         closeBtn.setAttribute('data-all-scans-close', '');
-        closeBtn.setAttribute('aria-label', 'Close');
-        closeBtn.textContent = '✕';
+        closeBtn.textContent = 'Close';
         head.append(title, closeBtn);
         dialog.appendChild(head);
 

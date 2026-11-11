@@ -102,7 +102,6 @@ const KNOWN_PROPERTY_DRIFT = [
     "###.src-dialog-body",
     "###.src-dialog-footer",
     "###.src-dialog-header",
-    "###.src-dialog::backdrop",
     "###.stream-counts",
     "###.table-container",
     "###.tag-pill",

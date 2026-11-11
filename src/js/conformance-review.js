@@ -225,7 +225,7 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
     const first = api.buildConformanceReport(payload);
     dialog.innerHTML = `<div class="acr-review-shell">`
         + `<div class="acr-review-head"><h2 id="acr-review-title">Review conformance</h2>`
-        + `<button type="button" class="acr-close" data-acr-close aria-label="Close">×</button></div>`
+        + `<button type="button" class="secondary-button acr-close" data-acr-close>Close</button></div>`
         + `<p class="acr-intro">What automation cannot decide, decided by a person: set each criterion's conformance level and say why. `
         + `The automated draft stays where you leave it, and never says "Supports". What you record is saved in this report as you go, `
         + `and goes with it when you download it, the conformance report included.</p>`

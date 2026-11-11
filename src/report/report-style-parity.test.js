@@ -263,7 +263,6 @@ const KNOWN_PROPERTY_DRIFT = [
     "###.screenshot-btn",
     "###.src-dialog h5",
     "###.src-dialog",
-    "###.src-dialog-title",
     "###.theme-switch",
     "###.wordmark",
     "###.wordmark-product",

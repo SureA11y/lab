@@ -15,7 +15,7 @@
     background: var(--surface-base);
     color: var(--text-main);
 }
-.acr-review::backdrop { background: rgba(0, 0, 0, .45); }
+.acr-review::backdrop { background: rgba(0, 0, 0, .55); }
 .acr-review-shell { padding: 0 var(--space-4) var(--space-4); }
 .acr-review-head {
     position: sticky; top: 0; z-index: 1;
@@ -25,10 +25,9 @@
     border-bottom: 1px solid var(--border-subtle);
     background: var(--surface-base);
 }
-.acr-review-head h2 { margin: 0; font-size: var(--fs-lg); }
-.acr-close { font: inherit; font-size: var(--fs-lg); line-height: 1; min-width: 32px; min-height: 32px; color: var(--text-muted); background: transparent; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer; }
-.acr-close:hover { color: var(--text-main); background: var(--surface-2); }
-.acr-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.acr-review-head h2 { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
+/* Closes as every dialog does: a secondary "Close" button (controls.css). */
+.acr-close { flex: none; }
 .acr-intro { margin: 0 0 var(--space-2); color: var(--text-muted); font-size: var(--fs-sm); }
 .acr-status { margin: 0 0 var(--space-3); font-size: var(--fs-sm); font-weight: 600; }
 .acr-actions { margin: 0 0 var(--space-3); }

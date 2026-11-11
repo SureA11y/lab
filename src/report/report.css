@@ -1204,7 +1204,6 @@ tr.cantTell .issue-status { color: var(--warn); }
 
 .src-dialog::backdrop {
     background: rgba(4, 21, 14, 0.55);
-    backdrop-filter: blur(2px);
 }
 
 .src-dialog-header {
@@ -1283,15 +1282,17 @@ tr.cantTell .issue-status { color: var(--warn); }
 }
 
 /* Close button */
+/* As the app's: a secondary "Close" button as tall as the others. */
 button.src-dialog-close {
-    padding: .35rem .9rem;
-    border-radius: var(--radius-pill);
+    min-height: 36px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border-strong);
 
     background: var(--bg-elevated);
-    color: var(--text-muted);
+    color: var(--text-main);
 
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
     font-weight: 500;
 
     box-shadow: none;
@@ -1310,7 +1311,6 @@ button.src-dialog-close:focus-visible {
 
 .src-dialog-header .src-dialog-close {
     margin-left: auto;
-    padding: .3rem .7rem;
 }
 
 /* A finding's dialog heading (a11y-ui.rendering.js): the rule's name in plain
@@ -3177,7 +3177,7 @@ a.engine-brand {
     overflow: hidden;
 }
 .all-scans-dialog[open] { display: flex; flex-direction: column; }
-.all-scans-dialog::backdrop { background: rgba(0, 0, 0, .45); }
+.all-scans-dialog::backdrop { background: rgba(0, 0, 0, .55); }
 
 .all-scans-dialog-head {
     position: sticky;
@@ -3190,7 +3190,7 @@ a.engine-brand {
     border-bottom: 1px solid var(--border-subtle);
     background: var(--surface-base);
 }
-.all-scans-dialog-title { margin: 0; font-size: var(--fs-md); }
+.all-scans-dialog-title { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
 
 .all-scans-grid {
     display: grid;
