@@ -766,6 +766,71 @@ button.src-dialog-close:focus-visible {
 
 .summary strong { font-weight: 700; }
 
+/* As in the app (results.css), without its buttons, which the export leaves out. */
+/* The list of scans: a row a scan, its columns lined up down the list (the
+   rows share the list's grid): its number; its name, and under it what it
+   found; its tags; its buttons. Narrow, the tags and buttons go under the
+   text. */
+.scan-summary-list-h { margin: var(--space-4) 0 var(--space-2); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+/* A box of its own, framed, that scrolls; a shadow at an edge while there
+   is more past it (the gradients scroll with the rows and cover the
+   shadows at the ends). */
+.summary ol.scan-summary-list {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: var(--space-3);
+    max-height: 24rem;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0 var(--space-2);
+    list-style: none;
+    counter-reset: scan-summary;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background:
+        linear-gradient(var(--surface-base) 30%, transparent) center top / 100% 40px no-repeat local,
+        linear-gradient(transparent, var(--surface-base) 70%) center bottom / 100% 40px no-repeat local,
+        radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, .16), transparent) center top / 100% 12px no-repeat scroll,
+        radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, .16), transparent) center bottom / 100% 12px no-repeat scroll,
+        var(--surface-base);
+}
+.summary ol.scan-summary-list:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+.scan-summary-list > li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    row-gap: var(--space-2);
+    padding: var(--space-2) var(--space-2) var(--space-2) 0;
+    border-bottom: 1px solid var(--border-subtle);
+    counter-increment: scan-summary;
+}
+.scan-summary-list > li:last-child { border-bottom: 0; }
+.scan-summary-list > li::before {
+    content: counter(scan-summary) ".";
+    grid-column: 1;
+    align-self: start;
+    min-width: 2.5ch;
+    padding-top: .2em;
+    text-align: right;
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    font-variant-numeric: tabular-nums;
+}
+.scan-summary-main { grid-column: 2; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.scan-summary-name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); min-width: 0; }
+.scan-summary-name .scan-name-wrapper { min-width: 0; }
+.scan-summary-name .scan-name-text { overflow-wrap: anywhere; }
+.scan-summary-name .scan-excluded-badge { margin: 0; }
+.scan-summary-meta { font-size: var(--fs-sm); color: var(--text-muted); }
+.scan-summary-meta a { color: var(--text-main); }
+.scan-summary-tags { grid-column: 3; display: flex; justify-content: flex-start; }
+.scan-summary-tags .scan-tags__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 760px) {
+    .summary ol.scan-summary-list { grid-template-columns: auto minmax(0, 1fr); }
+    .scan-summary-tags { grid-column: 2; justify-content: flex-start; flex-wrap: wrap; }
+}
+
 .tag-pill {
     display: inline-flex;
     align-items: center;
