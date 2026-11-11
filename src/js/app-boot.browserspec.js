@@ -51,8 +51,10 @@ let reportFile;
 
 before(async () => {
     site = http.createServer((req, res) => {
-        res.writeHead(req.url === '/' ? 200 : 404, { 'Content-Type': 'text/html' });
-        res.end(req.url === '/' ? PAGE : '');
+        // The home page, and the pages of one template (/products/...).
+        const ok = req.url === '/' || /^\/products\/[a-z]+$/.test(req.url);
+        res.writeHead(ok ? 200 : 404, { 'Content-Type': 'text/html' });
+        res.end(ok ? PAGE : '');
     });
     await new Promise((resolve) => site.listen(0, '127.0.0.1', resolve));
     siteUrl = `http://127.0.0.1:${site.address().port}/`;
@@ -450,5 +452,74 @@ test('both steps panels start collapsed on every load, Add custom step in reach 
     await page.waitForSelector('#workflow-steps-panel .steps-panel__show');
     assert.deepEqual(await hidden(), [true, true]);
     assert.deepEqual(errors, []);
+    await page.close();
+});
+
+test('a downloaded HTML report leaves out the review of scan groups, and keeps what a merged scan stands for', async () => {
+    // Three pages of one template, with their pictures, merged in the review.
+    const actions = ['a', 'b', 'c'].flatMap((slug) => [
+        { type: 'navigate', url: `${siteUrl}products/${slug}` },
+        { type: 'a11yScan', label: `Product ${slug}`, screenshotView: true },
+    ]);
+    const { status, payload } = await executeWorkflowRun({ url: siteUrl, actions });
+    assert.equal(status, 'done');
+    const dir = path.dirname(reportFile);
+    const file = path.join(dir, 'products.a11y-report.json');
+    fs.writeFileSync(file, JSON.stringify(payload));
+    const downloads = fs.mkdtempSync(path.join(os.tmpdir(), 'app-boot-dl-'));
+
+    const { page, errors } = await openApp();
+    page.on('dialog', (d) => d.accept());
+    const cdp = await page.createCDPSession();
+    await cdp.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
+    await page.click('#mode-open');
+    await (await page.$('#resultsFiles')).uploadFile(file);
+    await page.waitForSelector('[data-sr-open]', { timeout: 30000 });
+    await page.click('[data-sr-open]');
+    const node = await page.waitForFunction(() => [...document.querySelectorAll('.sr-node')]
+        .find((n) => n.textContent.trim().startsWith('/products/{slug}')));
+    await node.click();
+    await page.waitForSelector('[data-sr-merge]');
+    await page.click('[data-sr-merge]');
+    await page.waitForSelector('[data-sr-apply-merge]');
+    await page.click('[data-sr-apply-merge]');
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#results .scan-filmstrip', { timeout: 30000 });
+    // In the app: the review's card and the buttons into it.
+    assert.ok(await page.$('#summary .sr-card'), 'the app shows the card');
+    assert.ok(await page.$('#results button.scan-filmstrip__page'), 'the app\'s pictures open the review');
+
+    const item = await page.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => /^Download as a single file/.test(b.textContent.trim())));
+    await item.evaluate((b) => b.click());
+    await page.waitForSelector('dialog.report-name-dialog[open]');
+    await page.click('dialog.report-name-dialog button[type="submit"]');
+    let html = null;
+    for (let i = 0; i < 160 && !html; i++) {
+        const name = fs.readdirSync(downloads).find((f) => f.endsWith('.html'));
+        if (name) html = fs.readFileSync(path.join(downloads, name), 'utf8');
+        else await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    assert.ok(html, 'downloaded');
+
+    // Read as the file a person opens: the review is not in it...
+    const doc = await browser.newPage();
+    await doc.setContent(html, { waitUntil: 'domcontentloaded' });
+    const found = await doc.evaluate(() => ({
+        card: document.querySelectorAll('.sr-card').length,
+        intoReview: document.querySelectorAll('[data-sr-open], [data-sr-open-group], [data-sr-film]').length,
+        filmButtons: document.querySelectorAll('button.scan-filmstrip__page').length,
+        pictures: document.querySelectorAll('span.scan-filmstrip__page img').length,
+        merged: (document.querySelector('.scan-contexts') || {}).textContent || '',
+    }));
+    assert.equal(found.card, 0, 'no review card');
+    assert.equal(found.intoReview, 0, 'nothing opens the review');
+    assert.equal(found.filmButtons, 0, 'its pictures are not buttons');
+    // ...and what the merged scan stands for is.
+    assert.equal(found.pictures, 3, 'the merged scan\'s pages, as pictures');
+    assert.match(found.merged, /Merged from 3 scans of \/products\/\{slug\}: Product a; Product b; Product c\./);
+    await doc.close();
+
+    assert.deepEqual(errors, []);
+    fs.rmSync(downloads, { recursive: true, force: true });
     await page.close();
 });
