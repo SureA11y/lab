@@ -117,6 +117,35 @@ The first public release.
 - **Passwords from the environment** (`{"$env": "NAME"}`), so workflows that
   log in can be saved, shared and run unattended with no password in them.
 - **Reports opened by address**: `?report=<url>` and `?compare=<url>`.
+- **Open report skips a file that is not a report** and loads the others,
+  with **Load 2 reports** saying how many it loads. The skipped file's row
+  says why once, in plain words, beside a warning sign ("This file is not a
+  surea11y report: it has no page address."); the status line and the
+  activity panel only say that it was skipped. It used to stop every file
+  from loading until it was removed, and quoted the schema.
+- **A finding's details read once for all**: titled with the rule's name
+  (its id under it), what every occurrence shares (what is wrong, how to fix
+  it, the check, why there is no picture) said at the top instead of under
+  each of 120 occurrences, the occurrences grouped by page, one Close, and
+  the selector Copy selector copies shown beside it.
+- **Close report** (it was "Clear") says what it does and asks first.
+- **The activity panel covers less**: a card that ended well folds to its
+  title and result at once and goes after 5 seconds, as before; one with a
+  warning, an error or work still running stays. On a phone it is docked
+  along the bottom, at most 30% of the screen, and the page makes room for
+  it.
+- **The downloaded HTML report** keeps only controls that work without the
+  app, named as the reader's: Sort scans, View all scans (now with its
+  words beside the icon) and Show in each scan (it was "Results
+  visualization mode"). Its contents list the scans by name, without
+  "Scan:", in a frame that is no longer cut at the bottom. It, and a
+  downloaded comparison, follow the reader's light or dark scheme until a
+  theme is chosen; they opened light.
+- **The conformance report** opens with a summary of what was evaluated
+  (how many pages, and the address patterns most of them share), the list
+  of pages moved to an appendix with each address a link; its dates read as
+  the HTML report's ("Wednesday, 11 November 2026"); it follows the reader's
+  dark scheme on screen and prints light.
 - **Phones and narrow screens**: from 320 pixels wide, each finding is a
   card, which screen readers still read as a table.
 - **Procedures for what no rule evaluates**, in English, in
