@@ -224,13 +224,27 @@ export function createRunSummaryUi(app) {
             scans.map((s) => [s?.id, s?.includedInReport !== false, s?.label || null, s?.scanTags || null, groupingUrlOf(s)]),
         ]);
         if (shownMemo.payload === payload && shownMemo.key === key) return shownMemo.value;
-        const value = mergeApi.scansAsShown(scans, findScanGroups(scans, choice), choice, {
-            fold,
-            buildA11ySummary: globalThis.A11Y_SUMMARY?.buildA11ySummary,
-            buildCoverageAwareSummary: globalThis.A11Y_COVERAGE_SUMMARY?.buildCoverageAwareSummary,
-        });
+        const result = findScanGroups(scans, choice);
+        const value = mergeApi.scansAsShown(scans, result, choice, mergeDeps(scans, result, choice));
         shownMemo = {payload, key, value};
         return value;
+    }
+
+    // What merging folds and scores with, and the names the review suggests
+    // from the pages' titles, so a merged scan is named as its group is.
+    function mergeDeps(scans, result, choice) {
+        const view = globalThis.A11Y_SCAN_REVIEW_VIEW;
+        const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        const entries = new Map(choice.map((p) => [p.key, p]));
+        const names = view && typeof view.suggestNames === 'function' && result
+            ? view.suggestNames(scans, result.groups, (g) => choiceApi.membersOf(g, entries.get(g.key) || null))
+            : new Map();
+        return {
+            fold: globalThis.A11Y_SCAN_FOLD,
+            buildA11ySummary: globalThis.A11Y_SUMMARY?.buildA11ySummary,
+            buildCoverageAwareSummary: globalThis.A11Y_COVERAGE_SUMMARY?.buildCoverageAwareSummary,
+            nameOf: (group) => names.get(group.key) || null,
+        };
     }
 
     // The narrowest group of two scans or more holding each scan, a group by
@@ -296,6 +310,8 @@ export function createRunSummaryUi(app) {
      * What merging group `key` would change, or unmerging it when it is
      * merged: { scans: [now, then], failures: [now, then] }, the report's
      * scans and failures as shown. Shown to the person before they apply it.
+     * A run's merged scan ('run:<id>') is unmerged into its contexts, or
+     * merged again as the run made it.
      */
     function impactOf(payload, key) {
         const mergeApi = globalThis.A11Y_SCAN_GROUP_MERGE;
@@ -304,11 +320,17 @@ export function createRunSummaryUi(app) {
         if (!mergeApi || !choiceApi || !fold || !payload) return null;
         const scans = Array.isArray(payload.scans) ? payload.scans : [];
         const choice = choiceApi.readChoice(payload);
-        const merged = choice.some((p) => p.key === key && p.merge);
-        const next = choiceApi.setMerged(choice, key, !merged);
-        const deps = {fold, buildA11ySummary: globalThis.A11Y_SUMMARY?.buildA11ySummary, buildCoverageAwareSummary: globalThis.A11Y_COVERAGE_SUMMARY?.buildCoverageAwareSummary};
+        let next;
+        if (choiceApi.isRun(key)) {
+            const unmerged = choice.some((p) => p.key === key && p.merge === false);
+            next = choiceApi.setRunMerged(choice, key.slice(4), unmerged);
+        } else {
+            const merged = choice.some((p) => p.key === key && p.merge);
+            next = choiceApi.setMerged(choice, key, !merged);
+        }
+        const result = findScanGroups(scans, next);
         const now = shownTotals(shownScans(payload).scans);
-        const then = shownTotals(mergeApi.scansAsShown(scans, findScanGroups(scans, next), next, deps).scans);
+        const then = shownTotals(mergeApi.scansAsShown(scans, result, next, mergeDeps(scans, result, next)).scans);
         return {scans: [now.scans, then.scans], failures: [now.failures, then.failures]};
     }
 

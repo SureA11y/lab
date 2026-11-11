@@ -44,6 +44,10 @@ function setup(paths = SHOP, extra = {}) {
     const old = document.getElementById('summary');
     const summaryEl = old.cloneNode(false);
     old.replaceWith(summaryEl);
+    document.getElementById('results')?.remove();
+    const results = document.createElement('div');
+    results.id = 'results';
+    document.body.append(results);
     const payload = {
         scans: paths.map((p, i) => {
             const url = `https://shop.example.com${p}`;
@@ -57,6 +61,7 @@ function setup(paths = SHOP, extra = {}) {
     const redraws = [];
     const app = {
         summaryEl,
+        results,
         resultsState: {activeMode: 'report'},
         getActiveBucket: () => ({payload}),
         setStatusReport: (m) => statuses.push(m),
@@ -80,7 +85,7 @@ function setup(paths = SHOP, extra = {}) {
     write();
     const dlg = () => document.querySelector('dialog.sr-dialog:not(.sr-preview):not(.sr-ask)');
     const $ = (sel) => dlg().querySelector(sel);
-    return {app, payload, summaryEl, statuses, redraws, dlg, $, write};
+    return {app, payload, summaryEl, results, statuses, redraws, dlg, $, write};
 }
 const change = (el, value) => {
     if (value !== undefined) { if (el.type === 'checkbox') el.checked = value; else el.value = value; }
@@ -91,7 +96,7 @@ const focusKey = () => document.activeElement && document.activeElement.getAttri
 describe('the card at the top of the summary', () => {
     test('says how much repeats, and opens the review on the first template, focus on it', () => {
         const {summaryEl, dlg} = setup();
-        assert.equal(summaryEl.querySelector('#sr-card-h').textContent, '3 of 5 scans are pages of 1 template');
+        assert.equal(summaryEl.querySelector('#sr-card-h').textContent, '3 of 5 pages share a layout, in 1 template.');
         summaryEl.querySelector('[data-sr-open]').click();
         assert.ok(dlg().hasAttribute('open'));
         assert.equal(focusKey(), `node:${P}`);
@@ -104,31 +109,56 @@ describe('the card at the top of the summary', () => {
     });
 });
 
+const flat = (el) => el.textContent.replace(/\s+/g, ' ').trim();
+
 describe('merging from the review', () => {
-    test('ticking shows what it changes first, ticked; applying saves, redraws, keeps focus on the switch', () => {
+    test('the button shows what it changes first; applying saves, clears the selection, says how it is shown', () => {
         const {app, payload, $, statuses, redraws} = setup();
         app.scanReview.open();
-        change($('[data-sr-merge]'), true);
-        assert.equal($('[data-sr-merge]').checked, true);
-        assert.deepEqual([...dlg2($).querySelectorAll('.sr-impact-row')].map((r) => r.textContent.replace(/\s+/g, ' ').trim()),
-            ['Scans in the report 5 → 3', 'Failures listed 6 → 4']);
+        change($('[data-sr-pick="s1"]'), true);
+        assert.equal(flat($('.sr-merge-state')), 'Not merged · Each page is a scan of its own in the report');
+        assert.equal(flat($('[data-sr-merge]')), 'Merge all 3 pages…');
+        $('[data-sr-merge]').click();
+        assert.equal($('[data-sr-merge]').getAttribute('aria-expanded'), 'true');
+        assert.deepEqual([...dlg2($).querySelectorAll('.sr-impact-row')].map(flat), ['Scans in the report 5 → 3', 'Failures listed 6 → 4']);
         assert.equal(focusKey(), 'apply-merge');
         assert.equal(redraws.length, 0);
         $('[data-sr-apply-merge]').click();
         assert.deepEqual(payload.scanGrouping.patterns, [{key: P, name: null, merge: true}]);
         assert.equal(redraws.length, 1);
-        assert.equal(statuses.at(-1), '/products/{slug}: its 3 scans shown as one merged scan.');
+        assert.equal(statuses.at(-1), '/products/{slug}: its 3 pages shown as one merged scan.');
         assert.equal(focusKey(), 'merge');
-        assert.equal($('[data-sr-merge]').checked, true);
+        // What the report shows of it now, in the panel, the grid and each page.
+        assert.equal(flat($('.sr-merge-state')), 'Merged · Shown as 1 scan in the report · 3 pages');
+        assert.equal(flat($('[data-sr-merge]')), 'Unmerge…');
+        assert.equal($('.sr-selbar'), null);
+        assert.match(flat($('.sr-grid .sr-note')), /shown as 1 merged scan in the report/);
+        assert.equal(dlg2($).querySelectorAll('.sr-tile .sr-badge--merged').length, 3);
+        // The header counts it.
+        assert.match(flat($('.sr-stats')), /Merged 1 scan/);
     });
 
-    test('Cancel puts the switch back and changes nothing', () => {
+    test('Cancel closes what it changes, changes nothing, and focus goes back to the button', () => {
         const {app, payload, $} = setup();
         app.scanReview.open();
-        change($('[data-sr-merge]'), true);
+        $('[data-sr-merge]').click();
         $('[data-sr-cancel-merge]').click();
-        assert.equal($('[data-sr-merge]').checked, false);
+        assert.equal($('.sr-impact'), null);
+        assert.equal($('[data-sr-merge]').getAttribute('aria-expanded'), 'false');
+        assert.equal(focusKey(), 'merge');
         assert.equal('scanGrouping' in payload, false);
+    });
+
+    test('a merged scan\'s Unmerge in the report opens the review on what unmerging changes', () => {
+        const {app, payload, results, $} = setup(SHOP, {scanGrouping: {patterns: [{key: P, merge: true}]}});
+        results.innerHTML = `<p class="scan-merged-actions"><button type="button" data-sr-unmerge="${P}">Unmerge…</button></p>`;
+        results.querySelector('[data-sr-unmerge]').click();
+        assert.ok($('.sr-body').closest('dialog').hasAttribute('open'));
+        assert.equal(dlg2($).querySelector('.sr-node[aria-current="true"]').getAttribute('data-sr-node'), P);
+        assert.equal(flat($('[data-sr-apply-merge]')), 'Unmerge');
+        assert.equal(focusKey(), 'apply-merge');
+        $('[data-sr-apply-merge]').click();
+        assert.deepEqual(payload.scanGrouping.patterns, [{key: P, name: null}]);
     });
 });
 // The dialog of a query function, for reading several elements.
@@ -141,7 +171,7 @@ describe('acting on pages', () => {
         assert.deepEqual([...dlg2($).querySelectorAll('.sr-tile-name')].map((e) => e.textContent), ['Scan 3', 'Scan 2', 'Scan 4']);
         change($('[data-sr-pick="s1"]'), true);
         change($('[data-sr-pick="s3"]'), true);
-        assert.equal($('.sr-selbar strong').textContent, '2 scans selected');
+        assert.equal($('.sr-selbar strong').textContent, '2 selected');
         $('[data-sr-bulk="out"]').click();
         assert.deepEqual(payload.scanGrouping.patterns, [{key: P, name: null, remove: ['s1', 's3']}]);
         assert.equal(statuses.at(-1), 'Took 2 scans out of /products/{slug}.');
@@ -151,12 +181,37 @@ describe('acting on pages', () => {
         assert.equal(statuses.at(-1), 'Undone: Took 2 scans out of /products/{slug}.');
     });
 
-    test('Keep one keeps the first included, and says so', () => {
+    test('Keep one asks first, listing what it excludes; then keeps the first included, and says so', () => {
         const {app, payload, $, statuses} = setup();
         app.scanReview.open();
         $('[data-sr-act="keepOne"]').click();
+        const ask = document.querySelector('dialog.sr-ask');
+        assert.ok(ask.hasAttribute('open'));
+        assert.equal(ask.querySelector('#sr-ask-title').textContent, 'Keep one page of /products/{slug}?');
+        assert.equal(ask.querySelectorAll('.sr-asklist li').length, 2);
+        assert.ok(payload.scans.every((s) => s.includedInReport !== false));
+        ask.querySelector('[data-sr-ask-ok]').click();
         assert.deepEqual(payload.scans.map((s) => s.includedInReport !== false), [true, true, false, false, true]);
         assert.equal(statuses.at(-1), 'Kept Scan 2 of /products/{slug}; excluded 2 other scans.');
+    });
+
+    test('the selection bar: More opens and closes, Escape closes it first, Clear selection empties it', () => {
+        const {app, $} = setup();
+        app.scanReview.open();
+        // Clicked as a person does: the click, then the change it makes.
+        $('[data-sr-pick="s1"]').click();
+        assert.equal($('.sr-selbar strong').textContent, '1 selected');
+        $('[data-sr-more]').click();
+        assert.equal($('[data-sr-more]').getAttribute('aria-expanded'), 'true');
+        assert.equal($('#sr-more-menu').hidden, false);
+        assert.equal(focusKey(), 'bulk:byhand');
+        document.activeElement.dispatchEvent(new dom.window.KeyboardEvent('keydown', {key: 'Escape', bubbles: true, cancelable: true}));
+        assert.equal($('#sr-more-menu').hidden, true);
+        assert.equal(focusKey(), 'more');
+        assert.ok($('.sr-body').closest('dialog').hasAttribute('open'));
+        $('[data-sr-bulk="clear"]').click();
+        assert.equal($('.sr-selbar'), null);
+        assert.equal(focusKey(), 'select-all');
     });
 
     test('naming a group saves it with the name, no choosing step', () => {
@@ -167,12 +222,18 @@ describe('acting on pages', () => {
         assert.equal(dlg2($).querySelector('.sr-node[aria-current="true"] .sr-node-label').textContent, 'Product pages /products/{slug}');
     });
 
-    test('added to another group by hand from a selection', () => {
+    test('added to another group from a selection, chosen in a dialog', () => {
         const {app, payload, $} = setup();
         app.scanReview.open('rest');
         change($('[data-sr-pick="s0"]'), true);
-        $('[data-sr-add-target]').value = P;
+        $('[data-sr-more]').click();
         $('[data-sr-bulk="add"]').click();
+        const ask = document.querySelector('dialog.sr-ask');
+        assert.ok(ask.hasAttribute('open'));
+        const select = ask.querySelector('#sr-add-target');
+        assert.equal(ask.querySelector('label[for="sr-add-target"]').textContent, 'Group');
+        select.value = P;
+        ask.querySelector('[data-sr-ask-ok]').click();
         assert.deepEqual(payload.scanGrouping.patterns, [{key: P, name: null, add: ['s0']}]);
     });
 });
@@ -226,15 +287,21 @@ describe('showing one group alone', () => {
 });
 
 describe('what the run merged', () => {
-    test('unmerged from its switch, and merged again', () => {
+    test('Unmerge… shows what it changes; applied, it is unmerged, and merged again the same way', () => {
         const ctxScan = {url: 'https://shop.example.com/', canonical: {findings: [], bestPractices: [], notices: [], margins: []}};
         const {app, payload, $} = setup(SHOP);
         payload.scans[0] = {...payload.scans[0], mergedScan: true, contexts: [{name: 'Light', scan: ctxScan}, {name: 'Dark', scan: ctxScan}]};
         app.scanReview.open('run:s0');
-        change($('[data-sr-run-merge="s0"]'), false);
+        assert.equal(flat($('.sr-merge-state')), 'Merged by the run · Shown as 1 scan in the report · 2 contexts');
+        $('[data-sr-merge="run:s0"]').click();
+        assert.deepEqual([...dlg2($).querySelectorAll('.sr-impact-row')].map(flat)[0], 'Scans in the report 5 → 6');
+        assert.equal('scanGrouping' in payload, false);
+        $('[data-sr-apply-merge]').click();
         assert.deepEqual(payload.scanGrouping.patterns, [{key: 'run:s0', merge: false}]);
-        assert.equal(focusKey(), 'run-merge:s0');
-        change($('[data-sr-run-merge="s0"]'), true);
+        assert.equal(focusKey(), 'merge');
+        assert.equal(flat($('[data-sr-merge]')), 'Merge again…');
+        $('[data-sr-merge]').click();
+        $('[data-sr-apply-merge]').click();
         assert.equal('scanGrouping' in payload, false);
     });
 });
