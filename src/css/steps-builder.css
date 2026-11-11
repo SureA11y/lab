@@ -524,11 +524,17 @@
 
 :is(#actions-builder, #custom-step-actions-builder) .action-array__summary { color: var(--text-muted); font-size: var(--fs-sm); }
 
+/* Each level's own indent is 65% of the level above it, so the running total
+   converges instead of growing without bound: a step nested 10 deep should
+   not cost 10 times a level's indent. Set by depth, on the step cards (whose
+   lists and indents read it): a custom property defined from itself, as this
+   was, is invalid, and every level took the full indent. */
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .line { --sb-indent-scale: .65; }
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .actions-subcontainer .line { --sb-indent-scale: .42; }
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .actions-subcontainer .actions-subcontainer .line { --sb-indent-scale: .27; }
+:is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .actions-subcontainer .actions-subcontainer .actions-subcontainer .line { --sb-indent-scale: .18; }
+
 :is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer {
-    /* Each level's own indent is 65% of the level above it, so the running
-       total converges (~29px) instead of growing without bound — a step
-       nested 10 deep shouldn't cost the same real estate as 10 * 10px. */
-    --sb-indent-scale: calc(var(--sb-indent-scale, 1) * 0.65);
     margin-top: 8px;
     min-width: 0;
     padding-left: calc(var(--sb-indent-scale, 1) * 10px);
@@ -574,9 +580,9 @@
 :is(#actions-builder, #custom-step-actions-builder) .action-array__error[hidden] { display: none !important; }
 :is(#actions-builder, #custom-step-actions-builder) .action-array[aria-invalid="true"] .action-array__error { display: block; }
 
-/* Nested Action[] fields below a line — same decaying scale as
-   .actions-subcontainer (inherited, not redeclared) so the two wrappers
-   that alternate per nesting level shrink together. */
+/* Nested Action[] fields below a line: the same scale as its lists, which
+   its step card sets by depth, so the two wrappers that alternate per
+   nesting level shrink together. */
 :is(#actions-builder, #custom-step-actions-builder) .action-arrays-below {
     margin-top: 0.65rem;
     margin-left: calc(var(--sb-indent-scale, 1) * .5rem);
