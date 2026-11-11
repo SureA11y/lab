@@ -121,8 +121,9 @@
 }
 
 .src-dialog::backdrop {
-    background: rgba(0,0,0,.9);
-    backdrop-filter: blur(2px);
+    /* The backdrop every dialog has: the page behind stays legible enough to
+       say where the dialog came from. */
+    background: rgba(0, 0, 0, .55);
 }
 
 .src-dialog-header {
@@ -140,6 +141,7 @@
 
 .src-dialog-title {
     font-size: var(--fs-lg);
+    font-weight: 600;
     letter-spacing: -0.01em;
     margin: 0;
 }
@@ -199,16 +201,19 @@
     background: var(--surface-base);
 }
 
-/* Close button */
+/* Close button: the one every dialog has, top right, a secondary button as
+   tall as the others (a small pill here and a lone × elsewhere made each
+   dialog close its own way). */
 button.src-dialog-close {
-    padding: .35rem .9rem;
-    border-radius: var(--radius-pill);
+    min-height: 36px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border-strong);
 
-    background: var(--surface-3);
-    color: var(--text-muted);
+    background: var(--surface-4);
+    color: var(--text-main);
 
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
 
 
     box-shadow: none;
@@ -234,7 +239,6 @@ button.src-dialog-close:focus-visible {
 
 .src-dialog-header .src-dialog-close {
     margin-left: auto;
-    padding: .3rem .7rem;
 }
 
 .sr-only {

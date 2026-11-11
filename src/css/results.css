@@ -663,7 +663,7 @@
     background: var(--surface-base);
     color: var(--text-main);
 }
-.sr-dialog::backdrop { background: rgba(0, 0, 0, .45); }
+.sr-dialog::backdrop { background: rgba(0, 0, 0, .55); }
 .sr-dialog:not(.sr-preview):not(.sr-ask) { width: min(1400px, 96vw); max-width: 96vw; height: 92vh; max-height: 92vh; }
 .sr-dialog:not(.sr-preview):not(.sr-ask)[open] { display: flex; flex-direction: column; }
 .sr-head {

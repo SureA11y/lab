@@ -614,7 +614,7 @@ html.has-floating-totals body {
 /* Native <dialog> is display:none until opened; only override that when open
    so the element stays hidden the rest of the time. */
 .all-scans-dialog[open] { display: flex; flex-direction: column; }
-.all-scans-dialog::backdrop { background: rgba(0, 0, 0, .45); }
+.all-scans-dialog::backdrop { background: rgba(0, 0, 0, .55); }
 
 .all-scans-dialog-head {
     position: sticky;
@@ -627,7 +627,7 @@ html.has-floating-totals body {
     border-bottom: 1px solid var(--border-subtle);
     background: var(--surface-base);
 }
-.all-scans-dialog-title { margin: 0; font-size: var(--fs-md); }
+.all-scans-dialog-title { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
 
 .all-scans-grid {
     display: grid;
