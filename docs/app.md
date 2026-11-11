@@ -88,9 +88,11 @@ lists every step and field.
   edited marked: choose another to edit it. A custom step's **Inputs** are a
   table, a row each: its **Name** (what its steps read, as `{var:name}`), a
   **Label** (what a call to it shows for the input; left empty, the name in
-  words: *Element screenshots* for `elementScreenshots`) and whether a call
-  must give it (**Required**), with **Add input** and a remove button per
-  row. They are saved as `inputs: [{name, required, label}]`.
+  words: *Element screenshots* for `elementScreenshots`), its **Default**
+  (what a call that leaves it out gives it; a call's empty field says
+  "Default: …") and whether a call must give it (**Required**), with **Add
+  input** and a remove button per row. They are saved as
+  `inputs: [{name, required, label, default}]`.
 - A password goes in **Set password value**: it is hidden on screen and never
   saved. For runs nobody watches, the step can read it from an environment
   variable instead ([the runner's guide](scheduled-scans-guide.md#passwords)).
@@ -263,9 +265,9 @@ downloaded first.
 Conformance Report in the layout of the VPAT 2.5 (WCAG and EU edition), as
 one HTML file: a table per WCAG level and the EN 301 549 chapters.
 **Conformance report (Word)** gives the same as a `.docx`, to edit and sign
-in Word. The HTML file opens with what was evaluated in a sentence (how many
-pages, and the address patterns most of them share), with every page,
-linked, in an appendix at its end; it follows the reader's light or dark
+in Word. Both open with what was evaluated in a sentence (how many pages,
+and the address patterns most of them share), with every page in an
+appendix at the end, linked in the HTML file; the HTML file it follows the reader's light or dark
 scheme on screen, and prints light. It starts
 as a draft from the report's scans, which never says "Supports": a failure is
 "Does Not Support", nothing to apply to is "Not Applicable", and the rest is

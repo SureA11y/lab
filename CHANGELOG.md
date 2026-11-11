@@ -155,7 +155,8 @@ The first public release.
   (how many pages, and the address patterns most of them share), the list
   of pages moved to an appendix with each address a link; its dates read as
   the HTML report's ("Wednesday, 11 November 2026"); it follows the reader's
-  dark scheme on screen and prints light.
+  dark scheme on screen and prints light. The Word version says the scope
+  the same way, its pages in an appendix too.
 - **Phones and narrow screens**: from 320 pixels wide, each finding is a
   card, which screen readers still read as a table.
 - **Procedures for what no rule evaluates**, in English, in
@@ -325,8 +326,9 @@ The first public release.
 - **The custom step editor says which one is open, and its inputs are a
   table.** Every custom step is a button above the editor, the one being
   edited marked, to switch between them. Inputs were a textarea of one name
-  a line with `*` for required; they are now a table (name, label,
-  required) with Add input and a remove button per row. An input can have a
+  a line with `*` for required; they are now a table (name, label, default,
+  required) with Add input and a remove button per row. A call's empty
+  input says the default it will get ("Default: 500"). An input can have a
   **label**, which a call to the custom step shows in place of its
   camelCase name (left out, the name in words). Saved custom steps load as
   before; `inputs` takes `label` in configurations and run specs
@@ -368,7 +370,8 @@ The first public release.
   "Colors: Browser default", "Certificates: Refuse untrusted", the chip's
   name the field's label and its value the option chosen (the chips said
   "Colors: Default" and "Trusted only"). The certificates' help is in plain
-  words and lines short enough to read.
+  words and lines short enough to read. The dialog ends with **Done**, and
+  says its settings are kept as they change.
 - **A run can be deleted from a finished batch**: **Delete** on its row,
   once confirmed, removes its results and the pictures and evidence only
   they used, from the batch's folder, `batch.json`, zip and Send to Compare. Not
