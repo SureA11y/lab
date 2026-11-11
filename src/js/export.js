@@ -1020,13 +1020,15 @@ export function createCompareReportBtn({accessibleName = 'Compare this report wi
     return compareReportBtn;
 }
 
-export function createClearReportBtn({accessibleName = 'Clear report'} = {}) {
+// The button that takes the report off the screen. Its words say what it
+// does ("Close report"); a bare "Clear" next to Download did not say what it
+// cleared. The words are its name too.
+export function createClearReportBtn({label = 'Close report'} = {}) {
     const clearReportBtn =
         document.createElement('button');
 
     clearReportBtn.type = 'button';
-    clearReportBtn.textContent = 'Clear';
-    clearReportBtn.setAttribute('aria-label', accessibleName);
+    clearReportBtn.textContent = label;
     clearReportBtn.classList.add('secondary-button');
 
     return clearReportBtn;

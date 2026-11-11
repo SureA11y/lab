@@ -14,6 +14,7 @@ import {collectScanProfiles, isProfileFilterActive, makeProfileFilter} from './s
 import {canCompareReport} from './report-comparison-controller.js';
 import {pickReportNamePrefill} from './report-name.js';
 import {askReportNameInDialog} from './report-name-dialog.js';
+import {askToConfirm} from './confirm-dialog.js';
 import {formatReportTimestamp} from './report-timestamp.js';
 import {reportMetaField} from './report-meta-fields.js';
 import {META_FIELD_ATTR, META_VALUE_CLASS, mountReportMetaEditors} from './report-meta-edit.js';
@@ -883,7 +884,7 @@ export function createReportView(app) {
             containerEl.appendChild(reviewBtn);
         }
 
-        // "Compare" sits before "Clear" so the row reads download / compare /
+        // "Compare" sits before "Close" so the row reads download / compare /
         // discard: the two things you can still do with this report, then the one
         // that ends it. It is offered only when there is something to diff — a
         // report with no rule-level findings would be refused on arrival.
@@ -917,22 +918,37 @@ export function createReportView(app) {
             containerEl.appendChild(compareReportBtn);
         }
 
-        const clearReportBtn = createClearReportBtn({
-            accessibleName: app.resultsState.activeMode === 'run' ? 'Clear run results' : 'Clear report'
-        });
+        // Named for what it does, and asked first: what is on screen goes,
+        // with the changes made to it here.
+        const runMode = app.resultsState.activeMode === 'run';
+        const clearReportBtn = createClearReportBtn({label: runMode ? 'Close results' : 'Close report'});
 
         if (clearReportBtn) {
-            clearReportBtn.addEventListener('click', () => {
+            clearReportBtn.addEventListener('click', async () => {
+                const confirmed = await askToConfirm(document, runMode
+                    ? {
+                        title: 'Close these results?',
+                        text: 'They leave the screen, with any changes made to them here. Download the report first to keep them.',
+                        confirmLabel: 'Close results',
+                        cancelLabel: 'Keep them open',
+                    }
+                    : {
+                        title: 'Close this report?',
+                        text: 'It leaves the screen, with any changes made to it here. The file it was opened from is not changed; download the report first to keep the changes.',
+                        confirmLabel: 'Close report',
+                        cancelLabel: 'Keep it open',
+                    });
+                if (!confirmed) return;
                 app.clearActiveBucketState();
                 app.clearRenderedResultsUi();
 
                 if (app.resultsState.activeMode === 'run') {
                     app.liveUi.resetLivePanels();
                     app.clearLiveStreamDialog();
-                    app.setStatusRun('Run results cleared.', STATUS.OK);
+                    app.setStatusRun('Run results closed.', STATUS.OK);
                     app.focusRuntimeArea();
                 } else {
-                    app.setStatusReport('Report cleared.', STATUS.OK);
+                    app.setStatusReport('Report closed.', STATUS.OK);
                     focusSafely(app.resultsFileBtn);
                 }
             }, true);

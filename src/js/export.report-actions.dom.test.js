@@ -2,13 +2,14 @@
 
 // DOM tests for the two report-level action buttons that sit beside the download
 // split button: "Compare", which hands the report on screen to the Compare tab,
-// and "Clear", which discards it.
+// and "Close report", which takes it off the screen once confirmed.
 //
 // What is pinned here is the labelling rather than the wiring (the click handlers
-// live at the a11y-ui.js call site). Both buttons show a bare verb, so the thing
-// each verb applies to only reaches a screen reader through the accessible name —
-// and that name has to keep the visible word inside it, or a voice-control user
-// saying "clear" no longer matches the button (WCAG 2.5.3 Label in Name). In an
+// live at the report-view.js call site). "Compare" shows a bare verb, so what it
+// applies to only reaches a screen reader through the accessible name — and that
+// name has to keep the visible word inside it, or a voice-control user saying
+// "compare" no longer matches the button (WCAG 2.5.3 Label in Name). "Close
+// report" says it all in its visible words, which are its name. In an
 // accessibility lab of all places, that is worth a test.
 //
 // node's test runner isolates each file in its own process.
@@ -44,22 +45,23 @@ describe('report action buttons', () => {
         }
     });
 
-    test('each shows a bare verb', () => {
+    test('Compare shows a bare verb; Close report says what it closes', () => {
         assert.equal(createCompareReportBtn().textContent, 'Compare');
-        assert.equal(createClearReportBtn().textContent, 'Clear');
+        assert.equal(createClearReportBtn().textContent, 'Close report');
     });
 
     test('the accessible name says what the verb applies to', () => {
         assert.equal(accessibleName(createCompareReportBtn()), 'Compare this report with another');
-        assert.equal(accessibleName(createClearReportBtn()), 'Clear report');
+        assert.equal(accessibleName(createClearReportBtn()), 'Close report');
     });
 
-    test('the caller can name what is being cleared or compared', () => {
+    test('the caller can name what is being closed or compared', () => {
         const compare = createCompareReportBtn({accessibleName: 'Compare these run results with another report'});
-        const clear = createClearReportBtn({accessibleName: 'Clear run results'});
+        const close = createClearReportBtn({label: 'Close results'});
 
         assert.equal(accessibleName(compare), 'Compare these run results with another report');
-        assert.equal(accessibleName(clear), 'Clear run results');
+        assert.equal(accessibleName(close), 'Close results');
+        assert.equal(close.hasAttribute('aria-label'), false, 'its words are its name');
     });
 
     test('the visible label stays inside the accessible name, whoever names it', () => {
@@ -67,7 +69,7 @@ describe('report action buttons', () => {
             createCompareReportBtn(),
             createClearReportBtn(),
             createCompareReportBtn({accessibleName: 'Compare these run results with another report'}),
-            createClearReportBtn({accessibleName: 'Clear run results'}),
+            createClearReportBtn({label: 'Close results'}),
         ];
 
         for (const button of buttons) {
