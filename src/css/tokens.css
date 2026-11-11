@@ -73,6 +73,9 @@
        (--font-mono) is for code and values only: selectors, rule ids,
        addresses, logs. */
     --font-ui: var(--font-sans);
+    /* Page thumbnails: as taken in the light theme; a little dimmer in the
+       dark one, where a white page glared beside the dark surfaces. */
+    --picture-filter: none;
 
     /* Font size scale */
     --fs-xxs: 0.6875rem;
@@ -333,6 +336,9 @@ html[data-initial-mode="compare"] #results-container { display: none; }
 :root[data-theme="dark"] {
     color-scheme: dark;
 
+    /* Page thumbnails a little dimmer than taken. */
+    --picture-filter: brightness(.86);
+
     /* Brand base */
     --brand-rgb: 196, 166, 255;
 
@@ -472,6 +478,9 @@ html[data-initial-mode="compare"] #results-container { display: none; }
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) {
         color-scheme: dark;
+
+        /* Page thumbnails a little dimmer than taken. */
+        --picture-filter: brightness(.86);
 
         /* Brand base */
         --brand-rgb: 196, 166, 255;
