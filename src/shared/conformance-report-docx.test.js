@@ -57,12 +57,22 @@ describe('the conformance report as a Word document', () => {
 
     test('has headings, a caption before each table, and header rows that repeat', () => {
         const doc = parts['word/document.xml'];
-        assert.equal((doc.match(/<w:pStyle w:val="Heading1"\/>/g) || []).length, 4);
+        // Applicable standards, Terms, the two reports, and the appendix of pages.
+        assert.equal((doc.match(/<w:pStyle w:val="Heading1"\/>/g) || []).length, 5);
         const tables = (doc.match(/<w:tbl>/g) || []).length;
         assert.equal(tables, 9, 'details, standards, terms, two WCAG levels and four EN 301 549 parts');
         assert.equal((doc.match(/<w:pStyle w:val="Caption"\/>/g) || []).length, tables);
         assert.equal((doc.match(/<w:tblHeader\/>/g) || []).length, tables);
         assert.match(parts['word/styles.xml'], /<w:outlineLvl w:val="0"\/>/);
+    });
+
+    test('says what was evaluated in a sentence, and lists every page in the appendix, as the HTML report does', () => {
+        const doc = parts['word/document.xml'];
+        const evaluated = doc.slice(doc.indexOf('>Evaluated<'), doc.indexOf('</w:tr>', doc.indexOf('>Evaluated<')));
+        assert.match(evaluated, /Every page evaluated is listed in the appendix\./);
+        const appendix = doc.slice(doc.indexOf('Appendix: pages evaluated'));
+        assert.ok(appendix.length > 40, 'the appendix is there');
+        assert.match(appendix, /https?:\/\//, 'with the pages\' addresses');
     });
 
     test('carries the draft and a reviewer\'s verdicts alike', () => {

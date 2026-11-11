@@ -12,12 +12,16 @@
 // Browser: globalThis.A11Y_CONFORMANCE_REPORT_DOCX. Node: module.exports.
 
 (function (root, factory) {
+    // The HTML report's way of saying the scope and the date, so the two
+    // files say them alike (conformance-report-html.js, loaded first).
     if (typeof module === 'object' && module.exports) {
-        module.exports = factory();
+        module.exports = factory(require('./conformance-report-html.js'));
     } else {
-        root.A11Y_CONFORMANCE_REPORT_DOCX = factory();
+        root.A11Y_CONFORMANCE_REPORT_DOCX = factory(root.A11Y_CONFORMANCE_REPORT_HTML);
     }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (html) {
+    const scopeText = html && html.scopeText ? html.scopeText : () => '';
+    const longDate = html && html.longDate ? html.longDate : (v) => v;
     const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
     const MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -80,11 +84,13 @@
         const t = acr.target;
         const methods = e.methodsText;
         const facts = [
-            ['Report date', p.date],
+            ['Report date', longDate(p.date)],
             ['Product description', p.description],
             ['Contact', p.contact],
             ['Evaluation methods', methods],
-            ['Evaluated', e.pages.map((pg) => (pg.url && pg.label ? `${pg.label}: ${pg.url}` : (pg.label || pg.url))).join('; ')],
+            // The scope in a sentence, as the HTML report says it; every page
+            // in the appendix, rather than all of them in this one cell.
+            ['Evaluated', e.pages.length ? `${scopeText(e.pages)} Every page evaluated is listed in the appendix.` : ''],
             // Groups the lab's view shows merged, counted here page by page.
             ['Merged in the report view', e.pagesNote],
             ['Notes', p.notes],
@@ -114,7 +120,14 @@
             ...acr.tables.filter((tb) => tb.standard === 'wcag').map(criteriaTable),
             para(`EN 301 549 ${t.en301549} Report`, 'Heading1'),
             ...acr.tables.filter((tb) => tb.standard === 'en301549').map(criteriaTable),
-            para(`Generated ${generatedAt} by surea11y-lab. “VPAT” is a registered service mark of the Information Technology Industry Council (ITI).`, 'Small'),
+            ...(e.pages.length ? [
+                para('Appendix: pages evaluated', 'Heading1'),
+                para(scopeText(e.pages)),
+                ...e.pages.map((pg) => (pg.label && pg.url
+                    ? para(pg.label, null, { bold: true }) + para(pg.url, 'Small')
+                    : para(pg.label || pg.url))),
+            ] : []),
+            para(`Generated ${longDate(generatedAt)} by surea11y-lab. “VPAT” is a registered service mark of the Information Technology Industry Council (ITI).`, 'Small'),
         ].join('');
 
         return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
