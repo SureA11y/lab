@@ -225,9 +225,10 @@
     }
 
     function treeHTML(model, sel) {
-        const item = (n) => `<li><button type="button" class="sr-node" data-sr-node="${esc(n.key)}" data-sr-focus="node:${esc(n.key)}" aria-current="${sel === n.key ? 'true' : 'false'}">`
-            // The pattern under a name given to it; an unnamed group is its pattern.
-            + `<span class="sr-node-label">${esc(n.name)}${n.pattern && n.pattern !== n.name ? ` <span class="sr-node-pattern">${esc(n.pattern)}</span>` : (n.byHand ? ' <span class="sr-node-pattern">by hand</span>' : '')}</span>`
+        const item = (n) => `<li><button type="button" class="sr-node" data-sr-node="${esc(n.key)}" data-sr-focus="node:${esc(n.key)}" aria-current="${sel === n.key ? 'true' : 'false'}" title="${esc(n.pattern && n.pattern !== n.name ? `${n.name}: ${n.pattern}` : n.name)}">`
+            // The pattern under a name given to it; an unnamed group is its
+            // pattern, an address, in the code font.
+            + `<span class="sr-node-label${isAddress(n) ? ' sr-url' : ''}">${esc(n.name)}${n.pattern && n.pattern !== n.name ? ` <span class="sr-node-pattern sr-url">${esc(n.pattern)}</span>` : (n.byHand ? ' <span class="sr-node-pattern">by hand</span>' : '')}</span>`
             + (n.merged ? ' <span class="sr-node-badge">merged</span>' : '')
             + ` <span class="sr-node-count">${n.ids.length}</span></button>`
             + (n.children && n.children.length ? `<ul>${n.children.map(item).join('')}</ul>` : '') + `</li>`;
@@ -245,10 +246,19 @@
         return html;
     }
 
-    function badgesHTML(d, scan, takenOut) {
+    // A group named by its URL pattern, not by a person.
+    function isAddress(n) {
+        return !n.byHand && (!n.pattern || n.pattern === n.name);
+    }
+
+    // What a tile says of its scan. Where most of the group differs, nothing
+    // stands out (`standOut` false): its own failures are counted plainly, and
+    // being built unlike the others, true of most, is not said.
+    function badgesHTML(d, scan, takenOut, standOut) {
+        const own = d && d.own && d.own.length;
         return [
-            d && d.own && d.own.length ? `<span class="sr-badge sr-badge--differs">${plural(d.own.length, 'own failure')}</span>` : '',
-            d && d.unlike ? '<span class="sr-badge sr-badge--unlike">built unlike the others</span>' : '',
+            own ? `<span class="sr-badge${standOut ? ' sr-badge--differs' : ''}">${plural(own, 'own failure')}${standOut && d.unlike ? ', built unlike the others' : ''}</span>` : '',
+            !own && standOut && d && d.unlike ? '<span class="sr-badge sr-badge--differs">built unlike the others</span>' : '',
             !isIncluded(scan) ? '<span class="sr-badge sr-badge--excluded">excluded</span>' : '',
             takenOut ? '<span class="sr-badge">taken out</span>' : '',
         ].join('');
@@ -273,28 +283,35 @@
         };
         if (group && v.sort !== 'report') ids = [...ids].sort((a, b) => weight(b) - weight(a));
         const differ = ids.filter((id) => weight(id) > 0).length;
+        // Pages of one template, a few of them unlike the rest: those are
+        // outlined. Where most differ (a pattern wider than a template, as
+        // /usa/... is), outlining nearly all would single out nothing.
+        const standOut = differ > 0 && differ <= ids.length / 2;
         const picked = ids.filter((id) => selected.has(id));
         const tile = (id, takenOut) => {
             const s = model.byId.get(id);
             const d = byScan.get(id);
-            const differs = !takenOut && weight(id) > 0;
+            const differs = standOut && !takenOut && weight(id) > 0;
             const boxId = `sr-pick-${id}`;
             return `<li class="sr-tile${selected.has(id) ? ' sr-tile--selected' : ''}${isIncluded(s) ? '' : ' sr-tile--excluded'}${differs ? ' sr-tile--differs' : ''}">`
                 + `<button type="button" class="sr-thumb" data-sr-preview="${esc(id)}" data-sr-focus="preview:${esc(id)}" aria-label="${esc(`See ${s.label || s.id} large`)}">${thumbHTML(s, thumbOf(s), { decorative: true })}</button>`
                 + `<span class="sr-tile-body"><span class="sr-tile-top">`
                 + (takenOut ? '' : `<input type="checkbox" id="${esc(boxId)}" data-sr-pick="${esc(id)}" data-sr-focus="pick:${esc(id)}"${selected.has(id) ? ' checked' : ''}>`)
-                + `<label${takenOut ? '' : ` for="${esc(boxId)}"`} class="sr-tile-name">${esc(s.label || s.id)}</label></span>`
-                + `<span class="sr-tile-path">${esc(pathOf(s.url))}</span><span class="sr-badges">${badgesHTML(d, s, takenOut)}</span>`
+                + `<label${takenOut ? '' : ` for="${esc(boxId)}"`} class="sr-tile-name" title="${esc(s.label || s.id)}">${esc(s.label || s.id)}</label></span>`
+                + `<span class="sr-tile-path sr-url" title="${esc(pathOf(s.url))}">${esc(pathOf(s.url))}</span><span class="sr-badges">${badgesHTML(d, s, takenOut, standOut)}</span>`
                 + (takenOut ? `<button type="button" class="sr-link" data-sr-putback="${esc(id)}" data-sr-focus="putback:${esc(id)}">Put back</button>` : '')
                 + `</span></li>`;
         };
         const title = node.rest ? 'In no group' : node.name;
-        let html = `<div class="sr-grid-head"><h3 id="sr-grid-h">${esc(title)}</h3><span class="sr-grid-tools">`
+        let html = `<div class="sr-grid-head"><h3 id="sr-grid-h"${!node.rest && !node.run && isAddress(node) ? ' class="sr-url"' : ''}>${esc(title)}</h3><span class="sr-grid-tools">`
             + (group ? `<label>Order <select data-sr-sort data-sr-focus="sort"><option value="differs"${v.sort !== 'report' ? ' selected' : ''}>Those that differ first</option><option value="report"${v.sort === 'report' ? ' selected' : ''}>As in the report</option></select></label>` : '')
             + (ids.length ? `<button type="button" class="secondary-button" data-sr-select-all data-sr-focus="select-all">${picked.length === ids.length ? 'Select none' : 'Select all'}</button>` : '')
             + `</span></div>`;
         if (group) {
-            html += `<p class="sr-note">${plural(ids.length, 'scan')}${differ ? `; <strong>${differ}</strong> ${differ === 1 ? 'differs' : 'differ'} from the others, outlined${v.sort !== 'report' ? ', first' : ''}.` : ', alike.'} Select a picture to see it large.</p>`;
+            const alike = !differ ? ', alike.'
+                : standOut ? `; <strong>${differ}</strong> ${differ === 1 ? 'differs' : 'differ'} from the others, outlined${v.sort !== 'report' ? ', first' : ''}.`
+                : `, with little in common: most fail or are built in their own way. Its templates below it in the list may say more.`;
+            html += `<p class="sr-note">${plural(ids.length, 'scan')}${alike} Select a picture to see it large.</p>`;
         }
         if (picked.length) {
             html += `<div class="sr-selbar" role="group" aria-label="${esc(`${plural(picked.length, 'selected scan')}`)}"><strong>${plural(picked.length, 'scan')} selected</strong>`
@@ -319,8 +336,9 @@
     }
 
     function ruleListHTML(rules, total, fixOnce) {
-        return `<ul class="sr-fails">${rules.map((r) => `<li><span>${esc(r.title)} <span class="sr-sev sr-sev--${esc(r.severity)}">${esc(r.severity)}</span></span>`
-            + ` <span class="sr-fails-on">${r.scans.length} of ${total}${fixOnce ? ' · fix once' : ''}</span></li>`).join('')}</ul>`;
+        return `<ul class="sr-fails sr-fails--rules">${rules.map((r) => `<li><span class="sr-fail-name">${esc(r.title)}</span>`
+            + ` <span class="sr-sev sr-sev--${esc(r.severity)}">${esc(r.severity)}</span>`
+            + ` <span class="sr-fails-on">${r.scans.length} of ${total}${fixOnce ? '<small><span class="visually-hidden"> · </span>fix once</small>' : ''}</span></li>`).join('')}</ul>`;
     }
 
     /**
@@ -357,8 +375,9 @@
         const im = v.impact;
         const contentPages = issues ? new Set(issues.content.flatMap((r) => r.scans)).size : 0;
         const nameId = 'sr-name';
-        return `<h3>${esc(node.name)}</h3>`
-            + `<p class="sr-note sr-mono">${esc(node.byHand ? 'Grouped by hand' : node.pattern)} · ${plural(total, 'scan')}, ${node.included} included</p>`
+        return `<h3${isAddress(node) ? ' class="sr-url"' : ''}>${esc(node.name)}</h3>`
+            // Its pattern under a name given to it; not again under the pattern.
+            + `<p class="sr-note">${node.byHand ? 'Grouped by hand · ' : (isAddress(node) ? '' : `<span class="sr-url">${esc(node.pattern)}</span> · `)}${plural(total, 'scan')}, ${node.included} included</p>`
             + `<p class="sr-field"><label for="${nameId}">Name</label><input type="text" id="${nameId}" data-sr-name="${esc(node.key)}" data-sr-focus="name" value="${esc(node.entry && node.entry.name ? node.entry.name : '')}" maxlength="200" autocomplete="off"></p>`
             // While what it changes is shown, the switch shows the change asked
             // for: applying makes it so, Cancel puts it back.
