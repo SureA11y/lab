@@ -28,7 +28,7 @@ export function createScanReviewUi(app) {
     const sessions = new WeakMap();
     function session(payload) {
         if (!sessions.has(payload)) {
-            sessions.set(payload, {sel: null, selected: new Set(), anchor: null, sort: 'differs', impactOpen: false, history: []});
+            sessions.set(payload, {sel: null, selected: new Set(), anchor: null, sort: 'differs', impactOpen: false, moreOpen: false, history: []});
         }
         return sessions.get(payload);
     }
@@ -65,7 +65,7 @@ export function createScanReviewUi(app) {
         previewDlg.className = 'sr-dialog sr-preview';
         previewDlg.setAttribute('aria-labelledby', 'sr-preview-title');
         previewDlg.innerHTML = '<div class="sr-head"><h2 id="sr-preview-title"></h2><button type="button" class="secondary-button" data-sr-close-preview>Close</button></div>'
-            + '<div class="sr-preview-body"></div><div class="sr-foot"></div>';
+            + '<div class="sr-preview-body"></div><div class="sr-foot"></div><p class="sr-preview-live visually-hidden" aria-live="polite"></p>';
         askDlg = document.createElement('dialog');
         askDlg.className = 'sr-dialog sr-ask';
         askDlg.setAttribute('aria-labelledby', 'sr-ask-title');
@@ -76,6 +76,7 @@ export function createScanReviewUi(app) {
         dialog.addEventListener('change', onChange);
         dialog.addEventListener('keydown', onKeydown);
         previewDlg.addEventListener('click', onPreviewClick);
+        previewDlg.addEventListener('close', onPreviewClose);
         askDlg.addEventListener('click', (e) => {
             if (e.target.closest('[data-sr-ask-cancel]')) askDlg.close();
         });
@@ -130,7 +131,7 @@ export function createScanReviewUi(app) {
         }
         const issues = issuesFor(model, node);
         const focus = app.runSummaryUi.groupFocus(payload);
-        const impact = s.impactOpen && !node.rest && !node.run ? app.runSummaryUi.impactOf(payload, node.key) : null;
+        const impact = s.impactOpen && !node.rest ? app.runSummaryUi.impactOf(payload, node.key) : null;
         const thumbOf = (scan) => scanCardThumbnail(scan);
         // The other groups, which selected pages can be added to.
         const flat = (list) => list.flatMap((n) => [n, ...flat(n.children || [])]);
@@ -138,7 +139,7 @@ export function createScanReviewUi(app) {
 
         dialog.querySelector('.sr-stats').innerHTML = v.statsHTML(model, s.baseInReport);
         dialog.querySelector('.sr-tree').innerHTML = v.treeHTML(model, s.sel);
-        dialog.querySelector('.sr-grid').innerHTML = v.gridHTML(model, node, {selected: s.selected, sort: s.sort, issues, thumbOf, targets});
+        dialog.querySelector('.sr-grid').innerHTML = v.gridHTML(model, node, {selected: s.selected, sort: s.sort, issues, thumbOf, targets, moreOpen: s.moreOpen});
         dialog.querySelector('.sr-detail').innerHTML = v.detailHTML(model, node, {issues, impact, impactOpen: s.impactOpen, focus});
         const undo = dialog.querySelector('.sr-undobar');
         const last = s.history[s.history.length - 1];
@@ -155,6 +156,8 @@ export function createScanReviewUi(app) {
         div.textContent = String(t);
         return div.innerHTML;
     }
+
+    const escapeAttr = (t) => escapeText(t).replace(/"/g, '&quot;');
 
     // ----------------------------------------------------------- changes
 
@@ -190,6 +193,7 @@ export function createScanReviewUi(app) {
         s.history.push({snap: snapshotOf(payload), message});
         fn(payload, s);
         s.impactOpen = false;
+        s.moreOpen = false;
         app.redrawAsShown(payload);
         render(token);
         status(message);
@@ -275,13 +279,38 @@ export function createScanReviewUi(app) {
         });
     }
 
+    // Merging or unmerging, once what it changes was seen. The selection is
+    // cleared: what it was for is now one scan, or many again.
     function applyMerge(key) {
         const payload = payloadOf();
         const node = payload && modelNode(payload, key);
         if (!node) return;
+        if (node.run) {
+            runMerge(node.id, node.unmerged);
+            return;
+        }
         const merged = (choiceApi().readChoice(payload).find((p) => p.key === key) || {}).merge === true;
-        change(merged ? `${node.name}: its scans shown each on its own again.` : `${node.name}: its ${plural(node.ids.length, 'scan')} shown as one merged scan.`,
-            (p) => edit(p, (c) => choiceApi().setMerged(c, key, !merged)), 'merge');
+        change(merged ? `${node.name}: its scans shown each on its own again.` : `${node.name}: its ${plural(node.included, 'page')} shown as one merged scan.`,
+            (p, s) => {
+                edit(p, (c) => choiceApi().setMerged(c, key, !merged));
+                s.selected.clear();
+            }, 'merge');
+    }
+
+    // From a merged scan's card in the report: the review on its group, with
+    // what unmerging changes, to apply or cancel there.
+    function openUnmerge(key) {
+        const payload = payloadOf();
+        if (!payload || !key) return;
+        ensureDialogs();
+        const s = session(payload);
+        s.sel = key;
+        s.selected.clear();
+        s.impactOpen = true;
+        s.moreOpen = false;
+        render('apply-merge');
+        if (!dialog.open) dialog.showModal();
+        restoreFocus('apply-merge', `node:${key}`);
     }
 
     function rename(key, raw) {
@@ -308,7 +337,7 @@ export function createScanReviewUi(app) {
             edit(p, (c) => ids.reduce((acc, id) => choiceApi().removeScan(withEntry(acc, key), key, id), c));
             s.selected.clear();
             if (gone) s.sel = view().REST;
-        });
+        }, gone ? `node:${view().REST}` : 'select-all');
     }
 
     function putBack(key, id) {
@@ -326,7 +355,7 @@ export function createScanReviewUi(app) {
         change(`Added ${plural(ids.length, 'scan')} to ${node.name}.`, (p, s) => {
             edit(p, (c) => ids.reduce((acc, id) => choiceApi().addScan(withEntry(acc, key), key, id), c));
             s.selected.clear();
-        });
+        }, 'select-all');
     }
 
     function bulkInclude(ids, included) {
@@ -334,22 +363,64 @@ export function createScanReviewUi(app) {
         change(`${included ? 'Included' : 'Excluded'} ${plural(ids.length, 'scan')}.`, (p, s) => {
             setIncluded(p, ids, included);
             s.selected.clear();
-        });
+        }, 'select-all');
     }
 
     // Asks in a dialog of its own: a name and whether to merge, for a group
     // made by hand; a confirmation listing the scans, for excluding the rest.
-    function ask(title, bodyHTML, okText, onOk) {
+    // Cancelled, focus goes back to the control that asked (`returnTo`, a
+    // data-sr-focus key), drawn again without the menu it may have been in.
+    function ask(title, bodyHTML, okText, onOk, returnTo) {
         askDlg.querySelector('#sr-ask-title').textContent = title;
         askDlg.querySelector('.sr-ask-body').innerHTML = bodyHTML;
         const ok = askDlg.querySelector('[data-sr-ask-ok]');
         ok.textContent = okText;
+        let done = false;
         ok.onclick = () => {
+            done = true;
             askDlg.close();
             onOk();
         };
+        askDlg.onclose = () => {
+            if (done || !dialog.open) return;
+            const s = session(payloadOf());
+            s.moreOpen = false;
+            render(returnTo || null);
+        };
         askDlg.showModal();
-        (askDlg.querySelector('input[type=text]') || ok).focus();
+        (askDlg.querySelector('input[type=text], select') || ok).focus();
+    }
+
+    // Keeping one page excludes all the others: said, and asked, first.
+    function keepOne(key) {
+        const payload = payloadOf();
+        const node = payload && modelNode(payload, key);
+        if (!node) return;
+        const plan = choiceApi().planAction(payload.scans, node.ids, 'keepOne');
+        if (!plan.include.length && !plan.exclude.length) {
+            act(key, 'keepOne');
+            return;
+        }
+        const kept = node.ids.find((id) => !plan.exclude.includes(id));
+        ask(`Keep one page of ${node.name}?`,
+            `<p><bdi>${escapeText(labelOf(payload, kept))}</bdi> stays in the report; ${plural(plan.exclude.length, 'other page')} of the group ${plan.exclude.length === 1 ? 'is' : 'are'} excluded from it. It can be undone.</p>`
+            + scanListHTML(payload, plan.exclude),
+            `Exclude ${plural(plan.exclude.length, 'page')}`,
+            () => act(key, 'keepOne'),
+            'act:keepOne');
+    }
+
+    // Selected pages into another group, chosen in a dialog.
+    function askAddTo(ids, targets) {
+        const payload = payloadOf();
+        if (!payload || !ids.length || !targets.length) return;
+        ask(`Add ${plural(ids.length, 'scan')} to a group`,
+            `<p class="sr-field"><label for="sr-add-target">Group</label><select id="sr-add-target">`
+            + targets.map((t) => `<option value="${escapeAttr(t.key)}">${escapeText(t.name)}</option>`).join('') + '</select></p>'
+            + scanListHTML(payload, ids),
+            'Add',
+            () => addTo(askDlg.querySelector('#sr-add-target').value, ids),
+            'more');
     }
 
     function scanListHTML(payload, ids) {
@@ -359,7 +430,7 @@ export function createScanReviewUi(app) {
         }).join('')}</ul>`;
     }
 
-    function groupByHand(ids) {
+    function groupByHand(ids, returnTo) {
         const payload = payloadOf();
         if (!payload || ids.length < 2) {
             status('Choose two scans or more to group them by hand.');
@@ -381,7 +452,7 @@ export function createScanReviewUi(app) {
                         s.sel = made.key;
                         s.selected.clear();
                     }, `node:${made.key}`);
-            });
+            }, returnTo);
     }
 
     function excludeRest() {
@@ -392,14 +463,18 @@ export function createScanReviewUi(app) {
             '<p>They leave the report\'s totals and its download. Scans grouped later stay as they are now: excluding is done once, scan by scan.</p>'
             + scanListHTML(payload, node.ids),
             `Exclude ${plural(node.ids.length, 'scan')}`,
-            () => change(`Excluded the ${plural(node.ids.length, 'scan')} in no group.`, (p) => setIncluded(p, node.ids, false)));
+            () => change(`Excluded the ${plural(node.ids.length, 'scan')} in no group.`, (p) => setIncluded(p, node.ids, false)),
+            'rest:exclude');
     }
 
     function runMerge(scanId, merged) {
         const payload = payloadOf();
         if (!payload) return;
         change(merged ? `${labelOf(payload, scanId)} merged again, as the run made it.` : `${labelOf(payload, scanId)} shown as its contexts, each a scan of its own.`,
-            (p) => edit(p, (c) => choiceApi().setRunMerged(c, scanId, merged)), `run-merge:${scanId}`);
+            (p, s) => {
+                edit(p, (c) => choiceApi().setRunMerged(c, scanId, merged));
+                s.selected.clear();
+            }, 'merge');
     }
 
     function runContextOut(scanId, index, out) {
@@ -414,6 +489,7 @@ export function createScanReviewUi(app) {
     // ---------------------------------------------------------- the preview
 
     let previewIds = [];
+    let previewId = null;
 
     function preview(id) {
         const payload = payloadOf();
@@ -427,16 +503,26 @@ export function createScanReviewUi(app) {
         if (!scan) return;
         // Previous and next follow the grid's order.
         previewIds = [...dialog.querySelectorAll('.sr-grid [data-sr-preview]')].map((b) => b.getAttribute('data-sr-preview'));
+        previewId = id;
         const i = previewIds.indexOf(id);
         const d = issues && issues.byScan ? issues.byScan.get(id) || null : null;
-        previewDlg.querySelector('#sr-preview-title').textContent = scan.label || scan.id;
-        previewDlg.querySelector('.sr-preview-body').innerHTML = v.previewHTML(scan, scanCardThumbnail(scan), d, {excluded: scan.includedInReport === false});
+        const title = scan.label || scan.id;
+        previewDlg.querySelector('#sr-preview-title').textContent = title;
+        previewDlg.querySelector('.sr-preview-body').innerHTML = v.previewHTML(scan, scanCardThumbnail(scan), d, {excluded: scan.includedInReport === false, issues});
         const group = node && !node.rest && !node.run;
         const inGroup = group && node.ids.includes(id);
-        previewDlg.querySelector('.sr-foot').innerHTML = `<button type="button" class="secondary-button" data-sr-nav="${previewIds[i - 1] || ''}"${i > 0 ? '' : ' disabled'}>Previous</button>`
-            + `<button type="button" class="secondary-button" data-sr-nav="${previewIds[i + 1] || ''}"${i >= 0 && i < previewIds.length - 1 ? '' : ' disabled'}>Next</button>`
-            + (inGroup ? `<button type="button" class="secondary-button" data-sr-preview-out="${escapeText(id)}">Take out of ${escapeText(node.name)}</button>` : '')
-            + `<button type="button" class="secondary-button" data-sr-preview-toggle="${escapeText(id)}">${scan.includedInReport === false ? 'Include in the report' : 'Exclude from the report'}</button>`;
+        const where = i >= 0 ? `${i + 1} of ${previewIds.length}` : '';
+        // Moving through the pages on the left, what to do with this one on
+        // the right; excluding, which takes it out of the report, looks so.
+        previewDlg.querySelector('.sr-foot').innerHTML = `<span class="sr-foot-nav"><button type="button" class="secondary-button" data-sr-nav="${escapeAttr(previewIds[i - 1] || '')}"${i > 0 ? '' : ' disabled'}>Previous</button>`
+            + (where ? `<span class="sr-foot-pos">${where}</span>` : '')
+            + `<button type="button" class="secondary-button" data-sr-nav="${escapeAttr(previewIds[i + 1] || '')}"${i >= 0 && i < previewIds.length - 1 ? '' : ' disabled'}>Next</button></span>`
+            + `<span class="sr-foot-acts">`
+            + (inGroup ? `<button type="button" class="secondary-button" data-sr-preview-out="${escapeAttr(id)}">Take out of ${escapeText(node.name)}</button>` : '')
+            + `<button type="button" class="secondary-button${scan.includedInReport === false ? '' : ' sr-danger'}" data-sr-preview-toggle="${escapeAttr(id)}">${scan.includedInReport === false ? 'Include in the report' : 'Exclude from the report'}</button></span>`;
+        // Moving keeps focus on Previous or Next: the page reached is said.
+        const live = previewDlg.querySelector('.sr-preview-live');
+        if (live) live.textContent = previewDlg.open ? `${title}${where ? `, ${where}` : ''}` : '';
         if (!previewDlg.open) previewDlg.showModal();
     }
 
@@ -472,6 +558,15 @@ export function createScanReviewUi(app) {
         }
     }
 
+    // Closed, focus goes back to the picture of the page last seen, in the
+    // grid; to the review's own focus when that page is no longer there.
+    function onPreviewClose() {
+        if (!dialog.open || !previewId) return;
+        const key = `preview:${previewId}`;
+        const target = [...dialog.querySelectorAll('[data-sr-focus]')].find((el) => el.getAttribute('data-sr-focus') === key);
+        if (target && !dialog.contains(document.activeElement)) target.focus();
+    }
+
     // ---------------------------------------------------------- events
 
     function selectedIds() {
@@ -486,7 +581,14 @@ export function createScanReviewUi(app) {
         if (!payload) return;
         const s = session(payload);
         const t = e.target.closest('button, [data-sr-pick]');
-        if (!t) return;
+        // A click anywhere but in the More menu closes it. A page's checkbox
+        // is drawn again by its change, which comes after this click.
+        const closing = s.moreOpen && !(t && t.closest('.sr-more'));
+        if (closing) s.moreOpen = false;
+        if (!t || t.matches('[data-sr-pick]')) {
+            if (closing && !t) render();
+            return;
+        }
         const d = t.dataset;
         if ('srClose' in d) { dialog.close(); return; }
         if ('srUndo' in d) { undo(); return; }
@@ -497,12 +599,17 @@ export function createScanReviewUi(app) {
             render(`node:${d.srNode}`);
             return;
         }
-        if (d.srPreview) { preview(d.srPreview); return; }
+        if (d.srPreview) { render(`preview:${d.srPreview}`); preview(d.srPreview); return; }
         if ('srSelectAll' in d) {
             const ids = [...dialog.querySelectorAll('.sr-grid [data-sr-pick]')].map((el) => el.getAttribute('data-sr-pick'));
             const all = ids.every((id) => s.selected.has(id));
             ids.forEach((id) => (all ? s.selected.delete(id) : s.selected.add(id)));
             render('select-all');
+            return;
+        }
+        if ('srMore' in d) {
+            s.moreOpen = !s.moreOpen;
+            render(s.moreOpen ? 'bulk:byhand' : 'more');
             return;
         }
         if (d.srPutback) { putBack(s.sel, d.srPutback); return; }
@@ -511,26 +618,43 @@ export function createScanReviewUi(app) {
             if (d.srBulk === 'out') takeOut(s.sel, ids);
             else if (d.srBulk === 'exclude') bulkInclude(ids, false);
             else if (d.srBulk === 'include') bulkInclude(ids, true);
-            else if (d.srBulk === 'byhand') groupByHand(ids);
+            else if (d.srBulk === 'byhand') groupByHand(ids, 'more');
             else if (d.srBulk === 'add') {
-                const target = dialog.querySelector('[data-sr-add-target]')?.value;
-                if (!target) status('Choose the group to add them to first.');
-                else addTo(target, ids);
+                const model = app.runSummaryUi.reviewModelOf(payload);
+                const flat = (list) => list.flatMap((n) => [n, ...flat(n.children || [])]);
+                askAddTo(ids, flat([...model.patterns, ...model.byHand]).filter((n) => n.key !== s.sel).map((n) => ({key: n.key, name: n.name})));
+            } else if (d.srBulk === 'clear') {
+                s.selected.clear();
+                s.moreOpen = false;
+                render('select-all');
             }
+            return;
+        }
+        if (d.srMerge) {
+            // Not yet: what it changes is shown first, to apply or cancel;
+            // pressed again while shown, it is cancelled.
+            s.impactOpen = !s.impactOpen;
+            render(s.impactOpen ? 'apply-merge' : 'merge');
             return;
         }
         if (d.srApplyMerge) { applyMerge(d.srApplyMerge); return; }
         if ('srCancelMerge' in d) { s.impactOpen = false; render('merge'); return; }
-        if (d.srAct) { act(s.sel, d.srAct); return; }
+        if (d.srAct) {
+            if (d.srAct === 'keepOne') keepOne(s.sel);
+            else act(s.sel, d.srAct);
+            return;
+        }
         if (d.srRest) {
             const node = modelNode(payload, view().REST);
             if (d.srRest === 'focus') act(view().REST, 'focus');
-            else if (d.srRest === 'byhand') groupByHand(node ? node.ids : []);
+            else if (d.srRest === 'byhand') groupByHand(node ? node.ids : [], 'rest:byhand');
             else if (d.srRest === 'exclude') excludeRest();
             return;
         }
         if (d.srRunOut) { runContextOut(d.srRunOut, d.srContext, true); return; }
         if (d.srRunBack) { runContextOut(d.srRunBack, d.srContext, false); return; }
+        // A click that only closed the menu.
+        if (closing) render();
     }
 
     function onChange(e) {
@@ -552,18 +676,21 @@ export function createScanReviewUi(app) {
             return;
         }
         if (t.matches('[data-sr-sort]')) { s.sort = t.value; render('sort'); return; }
-        if (t.matches('[data-sr-merge]')) {
-            // Not yet: what it changes is shown first, to apply or cancel;
-            // unticked again while shown, it is cancelled.
-            s.impactOpen = !s.impactOpen;
-            render(s.impactOpen ? 'apply-merge' : 'merge');
-            return;
-        }
-        if (t.matches('[data-sr-run-merge]')) { runMerge(t.getAttribute('data-sr-run-merge'), t.checked); return; }
         if (t.matches('[data-sr-name]')) { rename(t.getAttribute('data-sr-name'), t.value); }
     }
 
     function onKeydown(e) {
+        // Escape closes the More menu first, not the review.
+        if (e.key === 'Escape') {
+            const s = payloadOf() && session(payloadOf());
+            if (s && s.moreOpen) {
+                e.preventDefault();
+                e.stopPropagation();
+                s.moreOpen = false;
+                render('more');
+                return;
+            }
+        }
         const name = e.target.closest && e.target.closest('[data-sr-name]');
         if (!name) return;
         if (e.key === 'Enter') {
@@ -581,7 +708,8 @@ export function createScanReviewUi(app) {
     }
 
     // In the report: a scan's group, and a merged scan's pages, open the
-    // review there.
+    // review there; a merged scan's Unmerge opens it on what unmerging
+    // changes.
     if (app.results) {
         app.results.addEventListener('click', (e) => {
             const film = e.target.closest('[data-sr-film]');
@@ -590,6 +718,8 @@ export function createScanReviewUi(app) {
                 preview(film.getAttribute('data-sr-film'));
                 return;
             }
+            const unmerge = e.target.closest('[data-sr-unmerge]');
+            if (unmerge) { openUnmerge(unmerge.getAttribute('data-sr-unmerge')); return; }
             const group = e.target.closest('[data-sr-open-group]');
             if (group) open(group.getAttribute('data-sr-open-group') || null);
         });

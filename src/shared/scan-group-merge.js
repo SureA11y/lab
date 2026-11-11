@@ -119,7 +119,9 @@
         const included = members.filter(isIncluded);
         const parts = (included.length ? included : members).filter((s) => s.canonical);
         const lead = parts[0] || members[0];
-        const label = (entry && entry.name) || group.label;
+        // The person's name, else one the view suggests from the pages'
+        // titles (deps.nameOf), else the pattern.
+        const label = (entry && entry.name) || (typeof deps.nameOf === 'function' && deps.nameOf(group)) || group.label;
         const urlOf = new Map(members.map((s) => [s.id, s.url || null]));
         const pagesTotal = new Set(parts.map((s) => s.url).filter(Boolean)).size;
 
@@ -180,6 +182,8 @@
                 key: group.key,
                 pattern: group.label,
                 name: (entry && entry.name) || null,
+                // What it is called as shown: the name, suggested or the pattern.
+                label,
                 pagesTotal,
                 members: members.map((s) => ({
                     id: s.id,
@@ -309,7 +313,8 @@
      * entries with `merge`, readChoice) in place of its scans, at the place
      * of its first; the other scans as they are.
      * - result: findGroups over these same scans;
-     * - deps: { fold (scan-fold.js), buildA11ySummary, buildCoverageAwareSummary }.
+     * - deps: { fold (scan-fold.js), buildA11ySummary, buildCoverageAwareSummary,
+     *   nameOf (optional: a group's name when the person gave none) }.
      * A scan is in one merged scan at most: the larger group is merged
      * first, so a merged group inside a merged group is merged into it
      * (§9.4). A group left with fewer than two scans is not merged.

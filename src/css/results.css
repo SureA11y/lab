@@ -756,15 +756,23 @@
 .sr-grid-tools select { box-sizing: border-box; height: 36px; min-height: 36px; margin: 0; font-size: var(--fs-sm); }
 .sr-note { margin: var(--space-2) 0; color: var(--text-muted); }
 .sr-mono { font-family: var(--font-mono); }
+/* One row: the count, the actions that apply, More, and Clear selection at
+   its end. It wraps between whole buttons only on a narrow grid. */
 .sr-selbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-2) 0 var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid var(--accent-border); border-radius: var(--radius-sm); background: var(--accent-soft); }
-.sr-add { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
+.sr-selbar > strong { margin-right: var(--space-1); white-space: nowrap; }
+.sr-selbar .sr-clear { align-self: center; margin-left: auto; white-space: nowrap; }
+.sr-more { position: relative; display: inline-flex; }
+.sr-more-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 3; display: flex; flex-direction: column; min-width: 12rem; padding: var(--space-1); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-base); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+.sr-more-menu[hidden] { display: none; }
+.sr-more-menu > button { padding: var(--space-2) var(--space-3); border: 0; border-radius: var(--radius-sm); background: none; color: var(--text-main); font: inherit; text-align: left; white-space: nowrap; cursor: pointer; }
+.sr-more-menu > button:hover { background: var(--surface-hover); }
+.sr-more-menu > button:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
 
 /* Tiles of the same height: the name on two lines at most, the path on one,
    all of each on hover; the checkbox on the name's first line. */
 .sr-tiles { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-3); }
 .sr-tile { position: relative; display: flex; flex-direction: column; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-base); overflow: hidden; transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard); }
 .sr-tile:hover { border-color: var(--border-strong); }
-.sr-tile--differs { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn); }
 .sr-tile--selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .sr-tile--excluded .sr-thumb { opacity: .45; }
 .sr-thumb { display: block; width: 100%; aspect-ratio: 16 / 10; padding: 0; border: 0; border-bottom: 1px solid var(--border-subtle); background: var(--surface-2); overflow: hidden; cursor: zoom-in; }
@@ -780,8 +788,11 @@
 .sr-tile-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); color: var(--text-muted); }
 .sr-badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: auto; padding-top: var(--space-1); }
 .sr-badges:empty { display: none; }
-.sr-badge { display: inline-flex; align-items: center; padding: 1px var(--space-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); background: var(--surface-1); font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap; }
-.sr-badge--differs { border-color: var(--warn); background: var(--warn-soft); color: var(--text-main); white-space: normal; }
+/* One line each, cut short with its whole text on hover: a tile is narrow. */
+.sr-badge { display: inline-block; box-sizing: border-box; max-width: 100%; padding: 1px var(--space-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); background: var(--surface-1); font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-badge--differs { border-color: var(--warn); background: var(--warn-soft); color: var(--text-main); }
+/* In a merged group's merged scan: said, not shouted. */
+.sr-badge--merged { border-style: dashed; background: none; }
 .sr-badge--excluded { border-color: var(--danger); background: var(--danger-soft); color: var(--danger-on-soft); }
 .sr-link { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
 
@@ -790,6 +801,12 @@
 .sr-field { display: flex; flex-direction: column; gap: var(--space-1); margin: var(--space-3) 0; }
 .sr-field label { font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); }
 .sr-field input { box-sizing: border-box; width: 100%; height: 36px; margin: 0; font-size: var(--fs-sm); }
+.sr-hint { font-size: var(--fs-xs); color: var(--text-muted); }
+/* Merging: the state in words, then the button that says what it covers. */
+.sr-merge-state { margin: 0 0 var(--space-2); }
+.sr-merge > .sr-note { margin-top: 0; font-size: var(--fs-xs); }
+.sr-merge > button { width: 100%; height: auto; min-height: 36px; padding-block: var(--space-2); line-height: 1.3; }
+.sr-impact > .sr-sub { margin-top: 0; }
 .sr-box { margin: var(--space-3) 0 0; padding: var(--space-3); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-base); }
 .sr-box > .sr-note:last-child { margin-bottom: 0; }
 .sr-switch { display: flex; align-items: flex-start; gap: var(--space-2); font-weight: 600; cursor: pointer; }
@@ -820,9 +837,10 @@
 .sr-fails li > button { flex: none; white-space: nowrap; }
 /* The selection bar's buttons keep their words on one line; the bar wraps
    between them, the target select no wider than its longest group. */
-.sr-selbar > button, .sr-add > button { flex: none; white-space: nowrap; }
-.sr-add select { width: auto; max-width: 16rem; }
+.sr-selbar > button, .sr-more > button { flex: none; white-space: nowrap; }
 .sr-primary { background: var(--accent); border-color: var(--accent); color: var(--surface-base); }
+/* What takes a page out of the report looks so. */
+.sr-danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
 
 /* In the report: a merged scan's pages as a strip of pictures, and the group a
    scan is part of, each opening the review there. */
@@ -834,9 +852,16 @@
 .scan-filmstrip__page:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); box-shadow: var(--focus-ring); }
 .scan-filmstrip__more { font-size: var(--fs-sm); }
 .scan-review-group { margin: .2rem 0 .4rem; font-size: var(--fs-sm); color: var(--text-muted); }
+/* A merged scan's Review this group and Unmerge, the app's only. */
+.scan-merged-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: .2rem 0 .4rem; }
+/* On how many of a merged group's pages a failure is. */
+.issue-pages { display: inline-block; margin-left: .35rem; padding: 0 .45rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap; }
 
 /* A scan seen large, and the questions asked on the way */
 .sr-preview { width: min(980px, 94vw); max-width: 94vw; }
+/* Over the review, which is a dialog itself: dimmed again, so the picture
+   is the one thing in front. */
+.sr-preview::backdrop, .sr-ask::backdrop { background: rgba(0, 0, 0, .55); }
 .sr-ask { width: min(560px, 94vw); max-width: 94vw; }
 .sr-preview-body { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 1rem; padding: 1rem; max-height: 70vh; overflow-y: auto; }
 .sr-preview-pic img { width: 100%; height: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); }
@@ -844,6 +869,10 @@
 .sr-ask-body { padding: 1rem; }
 .sr-asklist { max-height: 40vh; overflow-y: auto; margin: .5rem 0 0; padding-left: 1.2rem; font-size: var(--fs-sm); }
 .sr-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; padding: .6rem 1rem; border-top: 1px solid var(--border-subtle); }
+/* The preview's: moving through the pages on the left, acting on the right. */
+.sr-preview .sr-foot { justify-content: space-between; align-items: center; }
+.sr-foot-nav, .sr-foot-acts { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.sr-foot-pos { min-width: 5ch; text-align: center; font-size: var(--fs-sm); color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 @media (max-width: 1000px) {
     .sr-dialog:not(.sr-preview):not(.sr-ask) { height: 96vh; max-height: 96vh; }
