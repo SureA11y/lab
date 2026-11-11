@@ -96,6 +96,46 @@ describe('the activity panel', () => {
         assert.equal(doc.querySelector('.activity-panel').hidden, true);
     });
 
+    test('a card that ends well folds its steps away at once, keeping its result', () => {
+        const task = center.start('Open report: load');
+        task.step('Reading the file');
+        clock.tick(450);
+        assert.doesNotMatch(cards()[0].className, /is-settled/, 'running, its steps show');
+        task.done('Report loaded.');
+        assert.match(cards()[0].className, /is-settled/);
+        assert.equal(doc.querySelector('.activity-card__result').textContent, 'Report loaded.');
+        // Opened by the user, it shows its steps again.
+        doc.querySelector('.activity-card__toggle').click();
+        doc.querySelector('.activity-card__toggle').click();
+        assert.doesNotMatch(cards()[0].className, /is-settled/);
+    });
+
+    test('a warning or a running action does not fold its steps away', () => {
+        const warned = center.start('Open report: read 2 files');
+        warned.step('Checking a.json').warn('Skipped');
+        clock.tick(450);
+        warned.done('1 report ready to load.');
+        assert.equal(warned.state, 'warning');
+        assert.doesNotMatch(cards()[0].className, /is-settled/);
+    });
+
+    test('a card closed from under the pointer does not keep the next one from going', () => {
+        center.installButton(doc.querySelector('header'));
+        const first = center.start('Download report');
+        clock.tick(450);
+        first.done('Saved a.zip');
+        const panel = doc.querySelector('.activity-panel');
+        panel.dispatchEvent(new window.Event('mouseenter'));
+        // Closed with its ✕: the panel hides, and no mouseleave comes.
+        doc.querySelector('.activity-card__close').click();
+        assert.equal(panel.hidden, true);
+        const second = center.start('Download report');
+        clock.tick(450);
+        second.done('Saved b.zip');
+        clock.tick(5100);
+        assert.equal(cards().length, 0);
+    });
+
     test('a warning or a failure stays until closed, and a failure is said at once', () => {
         const warned = center.start('Download report');
         const step = warned.step('Packing the pictures');

@@ -288,15 +288,30 @@ button.activity-button:hover:not(:disabled, [aria-disabled=true]) {
     text-overflow: ellipsis;
 }
 
+/* A card that ended well: its title and result, not its steps, while it
+   waits to go (activity.js). */
+.activity-card.is-settled .activity-steps { display: none; }
+
+/* At phone width, a strip docked along the bottom, at most 30% of the
+   screen; the page makes room for it below its content, so the end of the
+   page can still be scrolled into view above it. */
 @media (max-width: 600px) {
     .activity-panel {
         top: auto;
-        bottom: var(--space-2);
-        left: var(--space-2);
-        right: var(--space-2);
+        bottom: 0;
+        left: 0;
+        right: 0;
         width: auto;
-        max-height: 50vh;
+        max-height: 30vh;
+        padding: var(--space-2);
+        background: var(--surface-1);
+        border-top: 1px solid var(--border-strong);
+        box-shadow: 0 -4px 12px rgba(4, 21, 14, .12);
     }
+    body:has(> .activity-panel:not([hidden]):not(.is-all)) { padding-bottom: 30vh; }
+    /* Opened from the Activity button, every action of the page: a list to
+       read, which closes as a menu does, so it may take more room. */
+    .activity-panel.is-all { max-height: 70vh; }
 }
 
 @media (prefers-reduced-motion: reduce) {
