@@ -83,15 +83,22 @@
     :is(#actions-builder, #custom-step-actions-builder) .line { content-visibility: visible; }
 }
 
+/* The kind's pill, the title, its pencil and its badges flow as words do:
+   a long title wraps as text, the pencil after its last word and the pill
+   and badges whole, wherever the line ends. */
 :is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 4px 6px;
+    display: block;
     min-width: 0;
+    line-height: 1.6;
 }
-/* A long title wraps inside its place, its pill and badges keep theirs. */
-:is(#actions-builder, #custom-step-actions-builder) .line .line-title { min-width: 0; overflow-wrap: anywhere; }
+:is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper > * { vertical-align: middle; }
+:is(#actions-builder, #custom-step-actions-builder) .line .line-title {
+    display: inline;
+    overflow-wrap: anywhere;
+}
+:is(#actions-builder, #custom-step-actions-builder) .line:not(.is-disabled) .line-title-wrapper .edit-title { display: inline-flex; margin-left: 4px; }
+:is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper .line-badge:not([hidden]) { display: inline-block; margin-left: 6px; }
+:is(#actions-builder, #custom-step-actions-builder) .line .line-title-input { width: min(100%, 40ch); }
 
 /* 26px, not 24: its rounded corners leave a 24px square a pointer can hit
    (WCAG 2.5.8), where a nested step's title sits close to other targets. */
@@ -117,7 +124,7 @@
 
 /* "Needs password": a step whose password, never saved, has to be typed
    again. Amber, as warnings are: the run waits for it, it is not broken.
-   Its text is the warning colour on its wash, 5.6:1 light and 7.6:1 dark. */
+   Its text is the warning colour on its wash, 5.7:1 light and 7.6:1 dark. */
 .line-badge,
 .steps-panel__badge {
     flex: none;
@@ -157,7 +164,8 @@
    same place on every card, never wrapped. Muted text on the panel's own
    pill colour, as the steps panel shows kinds (4.5:1 or more). */
 :is(#actions-builder, #custom-step-actions-builder) .line-title-action-type {
-    flex: none;
+    display: inline-block;
+    margin-right: 6px;
     white-space: nowrap;
     padding: 1px 7px;
     border-radius: var(--radius-pill);
@@ -865,6 +873,7 @@
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 2px;
+    text-align: left;
 }
 
 .fields-toggle:hover,
