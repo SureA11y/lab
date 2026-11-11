@@ -574,6 +574,21 @@ export function createRenderer({
         return count >= total ? `On all ${total} pages` : `On ${count} of ${total} pages`;
     }
 
+    /**
+     * On how many of a merged group's pages a finding is, any of its
+     * occurrences counted: "On all 41 pages", "On 40 of 41 pages". Empty
+     * outside a merged group. The template's failures, fixed once, read
+     * apart from a few pages' own.
+     */
+    function issuePagesLabel(nodes) {
+        const list = Array.isArray(nodes) ? nodes : [];
+        const total = list.reduce((n, x) => Math.max(n, Number(x?.pagesTotal) || 0), 0);
+        if (total < 2) return '';
+        const count = new Set(list.flatMap((x) => (Array.isArray(x?.urls) ? x.urls : []))).size;
+        if (!count) return '';
+        return count >= total ? `On all ${total} pages` : `On ${count} of ${total} pages`;
+    }
+
     /** Where a merged scan's occurrence was found: "In: Dark · desktop, Dark · mobile". */
     function contextsLabel(n) {
         const list = Array.isArray(n?.contexts) ? n.contexts : [];
@@ -1308,7 +1323,7 @@ export function createRenderer({
             '</ul>';
     }
 
-    function buildIssueRowHtml(issue, {index, rowIndex, type}) {
+    function buildIssueRowHtml(issue, {index, rowIndex, type, onPages: pagesMark = false}) {
         const impactClass = issue?.impact ? 'impact-' + issue.impact : '';
         const nodes = Array.isArray(issue?.nodes) ? issue.nodes : [];
         const nodeCount = nodes.length;
@@ -1327,6 +1342,7 @@ export function createRenderer({
         const groupedTagsHtml = buildGroupedTagsHtml(issue);
         const helpLink = buildHelpLinkHtml(issue);
         const verdicts = verdictsHtml(issue);
+        const onPages = pagesMark ? issuePagesLabel(nodes) : '';
 
         const instancesCell = buildInstancesCellHtmlForIssue({
             issue,
@@ -1358,6 +1374,7 @@ export function createRenderer({
             '</td>' +
             '<td role="cell" data-label="Description">' +
             withLang(escapeHtml(issue.help || issue.description || ''), issue.titleLang || issue.lang) +
+            (onPages ? ' <span class="issue-pages">' + escapeHtml(onPages) + '</span>' : '') +
             (issue.id ? '<br />Rule: ' + escapeHtml(issue.id).replaceAll(',', ', ') : '') +
             (helpLink ? ' (' + helpLink + ')' : '') +
             '</td>' +
@@ -1456,6 +1473,10 @@ export function createRenderer({
     function buildIssuesTableHtml(issues, params = {index: 0, label: 'Scan'}, groupingSpec = null, coverageSummary = null) {
         const {fail, cantTell} = issues;
         const {index, label, json} = params;
+        // A merged group's own table says on how many of its pages each
+        // finding is; the summary of all scans, which mixes them with other
+        // pages, does not.
+        const onPages = params.onPages === true;
 
         const hasAny = (Array.isArray(fail) && fail.length) || (Array.isArray(cantTell) && cantTell.length);
         if (!hasAny) {
@@ -1469,13 +1490,15 @@ export function createRenderer({
             const rowsFail = sortByImpact(fail, impactOrder).map((issue, idx) => buildIssueRowHtml(issue, {
                 index,
                 rowIndex: idx,
-                type: 'fail'
+                type: 'fail',
+                onPages
             })).join('');
 
             const rowsCantTell = sortForReview(cantTell).map((issue, idx) => buildIssueRowHtml(issue, {
                 index,
                 rowIndex: idx,
-                type: 'cantTell'
+                type: 'cantTell',
+                onPages
             })).join('');
 
             return buildIssuesTableShellHtml({
@@ -1517,13 +1540,15 @@ export function createRenderer({
             const rowsFail = sortByImpact(groupFail || [], impactOrder).map((issue, idx) => buildIssueRowHtml(issue, {
                 index,
                 rowIndex: idx,
-                type: 'fail'
+                type: 'fail',
+                onPages
             })).join('');
 
             const rowsCantTell = sortForReview(groupCantTell || []).map((issue, idx) => buildIssueRowHtml(issue, {
                 index,
                 rowIndex: idx,
-                type: 'cantTell'
+                type: 'cantTell',
+                onPages
             })).join('');
 
             const body = groupHasAny
@@ -1621,7 +1646,7 @@ export function createRenderer({
         const cantTell = getScanIncompleteList(scan);
 
         container.innerHTML = (hasFindings
-            ? buildIssuesTableHtml({fail, cantTell}, {index, label, json}, ACTIVE_ISSUE_GROUPS, scan?.metrics?.coverageSummary || null)
+            ? buildIssuesTableHtml({fail, cantTell}, {index, label, json, onPages: !!scan?.mergedGroup}, ACTIVE_ISSUE_GROUPS, scan?.metrics?.coverageSummary || null)
             : '') + bestPractices;
 
         return container;
@@ -2335,20 +2360,21 @@ export function createRenderer({
             p.append(lead, leftOut);
         }
         const list = members.length > FEW_MEMBERS ? buildMemberList(members, nameOf) : null;
+        const actions = buildMergedGroupActions(group);
         // Its pages as a strip of their pictures, each opening that page in
         // the review (scan-review-ui.js): the first ones, and how many more.
         const withShots = members.filter((m) => m && m.shot);
         if (!withShots.length) {
-            if (!list) return p;
             const only = document.createElement('div');
-            only.append(p, list);
+            only.append(p, actions);
+            if (list) only.append(list);
             return only;
         }
         const SHOWN = 8;
         const box = document.createElement('div');
         const strip = document.createElement('ul');
         strip.className = 'scan-filmstrip';
-        strip.setAttribute('aria-label', `Pages of ${group.name || group.pattern || 'the group'}`);
+        strip.setAttribute('aria-label', `Pages of ${group.label || group.name || group.pattern || 'the group'}`);
         for (const m of withShots.slice(0, SHOWN)) {
             const li = document.createElement('li');
             const btn = document.createElement('button');
@@ -2380,9 +2406,36 @@ export function createRenderer({
             li.append(more);
             strip.append(li);
         }
-        box.append(p, strip);
+        box.append(p, actions, strip);
         if (list) box.append(list);
         return box;
+    }
+
+    /**
+     * What can be done with a merged group from its card, in the app: review
+     * it, its pages by their pictures, or unmerge it, which opens the review
+     * on what unmerging changes (scan-review-ui.js). A downloaded report
+     * leaves them out (export.js).
+     */
+    function buildMergedGroupActions(group) {
+        const p = document.createElement('p');
+        p.className = 'scan-merged-actions';
+        const name = group.label || group.name || group.pattern || 'the group';
+        // The same words on every merged scan's card: the group's name, said
+        // after them, tells them apart in a list of the page's buttons.
+        const button = (text, data) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'secondary-button';
+            Object.assign(b.dataset, data);
+            const which = document.createElement('span');
+            which.className = 'visually-hidden';
+            which.textContent = `: ${name}`;
+            b.append(text, which);
+            return b;
+        };
+        p.append(button('Review this group', {srOpenGroup: group.key || ''}), button('Unmerge…', {srUnmerge: group.key || ''}));
+        return p;
     }
 
     // As many pages of a merged group as its sentence names.

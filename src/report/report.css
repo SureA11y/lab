@@ -3628,6 +3628,8 @@ a.engine-brand {
 .scan-filmstrip__page--excluded img { opacity: .4; }
 .scan-filmstrip__more { font-size: var(--fs-sm); color: var(--text-muted); }
 .scan-review-group { margin: .2rem 0 .4rem; font-size: var(--fs-sm); color: var(--text-muted); }
+/* On how many of a merged group's pages a failure is. */
+.issue-pages { display: inline-block; margin-left: .35rem; padding: 0 .45rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap; }
 .scan-members { margin: 0 0 var(--space-3); font-size: var(--fs-sm); }
 .scan-members > summary { width: fit-content; color: var(--accent); cursor: pointer; }
 .scan-members > summary:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
