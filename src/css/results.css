@@ -1335,3 +1335,14 @@ tr.cantTell .issue-status { color: var(--warn); }
     background: var(--accent-soft);
     color: var(--text-main);
 }
+
+/* Page thumbnails take the theme's picture filter (a little dimmer in the dark
+   theme) and show as taken when pointed at or focused. */
+:is(.screenshot-preview img, .sr-shot, .scan-filmstrip__page img, .stream-preview img) {
+    filter: var(--picture-filter, none);
+    transition: filter var(--duration-fast) var(--ease-standard);
+}
+:is(.screenshot-preview, .sr-thumb, .scan-filmstrip__page, .stream-preview) :is(a, button):is(:hover, :focus-visible) img,
+:is(.sr-thumb, .scan-filmstrip__page):is(:hover, :focus-visible) :is(img, .sr-shot) {
+    filter: none;
+}
