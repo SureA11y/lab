@@ -336,8 +336,8 @@ function initTheme() {
         else document.documentElement.dataset.theme = current;
         if (btn) {
             btn.dataset.choice = current;
-            btn.setAttribute('aria-label', `Colour theme: ${LABELS[current]}`);
-            btn.title = `Colour theme: ${LABELS[current]}`;
+            btn.setAttribute('aria-label', `Color theme: ${LABELS[current]}`);
+            btn.title = `Color theme: ${LABELS[current]}`;
         }
     };
     apply();

@@ -881,7 +881,7 @@ function initThemeToggle() {
 
         if (btn) {
             btn.setAttribute('data-choice', choice);
-            const label = 'Colour theme: ' + LABELS[choice];
+            const label = 'Color theme: ' + LABELS[choice];
             btn.setAttribute('aria-label', label);
             btn.title = label;
         }

@@ -199,7 +199,7 @@ export function createLiveUi(app) {
 
         if (btn) {
             btn.setAttribute('data-choice', theme);
-            const label = 'Colour theme: ' + THEME_LABELS[theme];
+            const label = 'Color theme: ' + THEME_LABELS[theme];
             btn.setAttribute('aria-label', label);
             btn.title = label;
         }
