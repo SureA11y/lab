@@ -19,9 +19,15 @@ The first public release.
   on most pages: the template's" and "Elements of each page's own", with
   their pages counted ("75 of 75 pages"): a rule failing on every page on a
   different element on each was listed as "On a few scans". The header says
-  who merged: "Merged 303 scans (303 by the run, 0 by you)". A page's
-  tile says what became of a scan the run merged: "unmerged into 6 scans",
-  or "1 context shown on its own".
+  who merged: "Merged 303 scans (303 by the run, 0 by you)".
+- **A scan the run merged, unmerged, is scans you can work with**: each
+  context unmerged or taken out is a scan of its own in the review, in its
+  page's template, named by its context and marked "context of a merged
+  scan". It can be excluded on its own, grouped by hand, added to another
+  group, and merged with the rest of a template (merging a template left
+  out its unmerged contexts before). Merged again, a context put in a group
+  leaves it, which the review says and asks first. A scan merged with some
+  contexts taken out says so on its tile: "1 context shown on its own".
 - **A click on a dialog's backdrop closes it**, as Escape does, in every
   dialog of the app and of the downloaded report: when the press and the
   release are both outside it, so a drag out of a dialog or a click in its

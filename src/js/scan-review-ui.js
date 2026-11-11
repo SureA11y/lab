@@ -236,14 +236,35 @@ export function createScanReviewUi(app) {
         return model ? view().nodeOf(model, key) : null;
     }
 
+    // The scans as the review shows them: a context of a run's merged scan,
+    // unmerged or taken out, a scan of its own (run-summary-ui.js
+    // reviewScansOf), whose own id is "<scan id>~<index>".
+    const reviewScans = (payload) => app.runSummaryUi.reviewScansOf(payload);
+    // Or as saved: a run's merged scan unmerged is in the report's scans only.
+    const scanOf = (payload, id) => reviewScans(payload).scans.find((x) => x && x.id === id)
+        || payload.scans.find((x) => x && x.id === id) || null;
+
     const labelOf = (payload, id) => {
-        const scan = payload.scans.find((x) => x && x.id === id);
+        const scan = scanOf(payload, id);
         return (scan && (scan.label || scan.id)) || id;
     };
 
+    /**
+     * Includes or excludes scans, as the report saves it: a scan of the
+     * report on itself (includedInReport); a context of a run's merged scan,
+     * which lives in that scan, in the choice (setRunContextExcluded).
+     */
     function setIncluded(payload, ids, included) {
+        const contexts = reviewScans(payload).contexts;
         const set = new Set(ids);
+        const ofContexts = ids.filter((id) => contexts.has(id));
         for (const scan of payload.scans) if (scan && set.has(scan.id)) scan.includedInReport = included;
+        if (ofContexts.length) {
+            edit(payload, (c) => ofContexts.reduce((acc, id) => {
+                const {scanId, index} = contexts.get(id);
+                return choiceApi().setRunContextExcluded(acc, scanId, index, !included);
+            }, c));
+        }
     }
 
     // ---------------------------------------------------------- actions
@@ -266,7 +287,7 @@ export function createScanReviewUi(app) {
                 }, `node:${view().REST}`);
             return;
         }
-        const plan = choiceApi().planAction(payload.scans, node.ids, action);
+        const plan = choiceApi().planAction(reviewScans(payload).scans, node.ids, action);
         const changes = plan.include.length + plan.exclude.length;
         if (!changes) {
             status(action === 'include'
@@ -404,7 +425,7 @@ export function createScanReviewUi(app) {
         const payload = payloadOf();
         const node = payload && modelNode(payload, key);
         if (!node) return;
-        const plan = choiceApi().planAction(payload.scans, node.ids, 'keepOne');
+        const plan = choiceApi().planAction(reviewScans(payload).scans, node.ids, 'keepOne');
         if (!plan.include.length && !plan.exclude.length) {
             act(key, 'keepOne');
             return;
@@ -433,7 +454,7 @@ export function createScanReviewUi(app) {
 
     function scanListHTML(payload, ids) {
         return `<ul class="sr-asklist">${ids.map((id) => {
-            const scan = payload.scans.find((x) => x && x.id === id);
+            const scan = scanOf(payload, id);
             return `<li><bdi>${escapeText(labelOf(payload, id))}</bdi> <span class="sr-mono">${escapeText(view().pathOf(scan && scan.url))}</span></li>`;
         }).join('')}</ul>`;
     }
@@ -475,20 +496,38 @@ export function createScanReviewUi(app) {
             'rest:exclude');
     }
 
+    /**
+     * A run's merged scan unmerged into its contexts, or merged again as the
+     * run made it. Merged again, its contexts are no longer scans of their
+     * own: one put in a group (added to a template, grouped by hand, taken
+     * out of one) leaves it, which is said, and asked, first.
+     */
     function runMerge(scanId, merged) {
         const payload = payloadOf();
         if (!payload) return;
-        change(merged ? `${labelOf(payload, scanId)} merged again, as the run made it.` : `${labelOf(payload, scanId)} shown as its contexts, each a scan of its own.`,
+        const name = labelOf(payload, scanId);
+        const apply = () => change(merged ? `${name} merged again, as the run made it.` : `${name} shown as its contexts, each a scan of its own.`,
             (p, s) => {
-                edit(p, (c) => choiceApi().setRunMerged(c, scanId, merged));
+                edit(p, (c) => {
+                    const next = choiceApi().setRunMerged(c, scanId, merged);
+                    return merged ? choiceApi().releaseRunContexts(next, scanId) : next;
+                });
                 s.selected.clear();
             }, 'merge');
+        const held = merged ? choiceApi().runContextsHeld(choiceApi().readChoice(payload), scanId) : [];
+        if (!held.length) { apply(); return; }
+        const model = app.runSummaryUi.reviewModelOf(payload);
+        const groupName = (key) => (model && view().nodeOf(model, key)?.name) || key;
+        const items = held.map((h) => `<li><bdi>${escapeText(groupName(h.key))}</bdi>: ${h.ids.map((id) => `<bdi>${escapeText(labelOf(payload, id))}</bdi>`).join(', ')}</li>`).join('');
+        ask(`Merge ${name} again?`,
+            `<p>Merged again, its contexts are no longer scans of their own, so they leave the groups you put them in:</p><ul class="sr-asklist">${items}</ul><p>Undo puts them back.</p>`,
+            'Merge again', apply, 'merge');
     }
 
     function runContextOut(scanId, index, out) {
         const payload = payloadOf();
         if (!payload) return;
-        const scan = payload.scans.find((x) => x && x.id === scanId);
+        const scan = scanOf(payload, scanId);
         const name = (scan && scan.contexts && scan.contexts[Number(index)] && scan.contexts[Number(index)].name) || `Context ${Number(index) + 1}`;
         change(out ? `${name} taken out of ${labelOf(payload, scanId)}, and shown on its own.` : `${name} put back in ${labelOf(payload, scanId)}.`,
             (p) => edit(p, (c) => choiceApi().setRunContextOut(c, scanId, index, out)), `${out ? 'run-back' : 'run-out'}:${scanId}:${index}`);
@@ -557,7 +596,7 @@ export function createScanReviewUi(app) {
         const toggle = b.getAttribute('data-sr-preview-toggle');
         if (toggle) {
             const payload = payloadOf();
-            const scan = payload && payload.scans.find((x) => x && x.id === toggle);
+            const scan = payload && scanOf(payload, toggle);
             if (!scan) return;
             const include = scan.includedInReport === false;
             change(`${include ? 'Included' : 'Excluded'} ${labelOf(payload, toggle)}.`, (p) => setIncluded(p, [toggle], include), `preview:${toggle}`);

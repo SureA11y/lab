@@ -210,7 +210,12 @@ in no group can be shown alone, grouped by hand, or excluded after a
 confirmation that lists them; they are never merged, as unrelated pages are
 not a template. A scan the run merged from several contexts says "Merged by
 the run" and can be unmerged into its contexts the same way, after seeing
-what it changes, or have a context taken out; the review's header counts
+what it changes, or have a context taken out. Each context unmerged or
+taken out is then a scan of its own in the review: in its page's template,
+named by its context and marked "context of a merged scan", it can be
+excluded, grouped by hand, added to another group or merged with the rest
+of a template. Merged again, a context put in a group leaves it; the
+review lists them and asks first; the review's header counts
 it among the merged scans, "(by the run)". Reports saved before the lab
 kept the contexts' own scans say they can't, and so do runs whose Merged
 scan step had **Keep each context's scan** turned off, which keeps the

@@ -42,11 +42,15 @@ function scans() {
         page(5, '/about', { label: 'About' }),
     ];
 }
+// As the app builds it (run-summary-ui.js reviewModelOf): the groups found
+// over the scans with the run's merges expanded, a context unmerged or taken
+// out a scan of its own; the run's merged scans listed from the scans saved.
 function modelOf(list, patterns = []) {
     const choice = C.readChoice({ scanGrouping: { patterns } });
-    const result = G.findGroups(list, { sources: [U.createUrlGroupSource(), C.createManualGroupSource(choice)] });
+    const expanded = M.expandRunMerges(list, choice, { fold: F }).scans;
+    const result = G.findGroups(expanded, { sources: [U.createUrlGroupSource(), C.createManualGroupSource(choice)] });
     const shown = M.scansAsShown(list, result, choice, { fold: F });
-    return V.reviewModel({ scans: list, result, choice, shown, membersOf: C.membersOf });
+    return V.reviewModel({ scans: expanded, runScans: list, result, choice, shown, membersOf: C.membersOf });
 }
 const dom = (h) => new JSDOM(`<!doctype html><body>${h}</body>`).window.document;
 const text = (el) => (el ? el.textContent.replace(/\s+/g, ' ').trim() : null);
@@ -224,19 +228,25 @@ describe('the workspace', () => {
         assert.match(text(dom(V.statsHTML(m)).body), /Merged 1 scan \(1 by the run, 0 by you\)/);
     });
 
-    test('a tile says what became of a scan the run merged, as the report shows it', () => {
+    test('a scan the run merged: its contexts, unmerged or taken out, are tiles of their own in its template', () => {
         const list = scans();
-        list[1] = { ...list[1], mergedScan: true, contexts: [{ name: 'Light', scan: {} }, { name: 'Dark', scan: {} }] };
-        const markOf = (choice) => {
+        // Each context kept, as a run with Keep each context's scan saves it.
+        const context = (name) => ({ name, scan: { canonical: { findings: [fail('button-name', '/products/a', 'cart')], bestPractices: [], notices: [], margins: [] } } });
+        list[1] = { ...list[1], mergedScan: true, contexts: [context('Light'), context('Dark')] };
+        const tilesOf = (choice) => {
             const m = modelOf(list, choice);
             const doc = dom(V.gridHTML(m, V.nodeOf(m, P), {}));
-            const tile = doc.querySelector('[data-sr-pick="s1"]').closest('.sr-tile');
-            const mark = tile.querySelector('.sr-badge--run');
-            return mark ? [text(mark), mark.getAttribute('title')] : null;
+            return [...doc.querySelectorAll('.sr-tile')].map((t) => {
+                const mark = t.querySelector('.sr-badge--run');
+                return `${t.querySelector('[data-sr-pick]').getAttribute('data-sr-pick')}${mark ? ` (${text(mark)})` : ''}`;
+            }).sort();
         };
-        assert.equal(markOf([]), null, 'merged as the run left it: nothing to say');
-        assert.deepEqual(markOf([{ key: 'run:s1', merge: false }]), ['unmerged into 2 scans', 'Shown in the report as 2 scans: Light, Dark']);
-        assert.deepEqual(markOf([{ key: 'run:s1', remove: ['1'] }]), ['1 context shown on its own', 'Shown on their own in the report: Dark']);
+        assert.deepEqual(tilesOf([]), ['s1', 's2', 's3', 's4'], 'merged as the run left it: one tile');
+        assert.deepEqual(tilesOf([{ key: 'run:s1', merge: false }]), ['s1~0', 's1~1', 's2', 's3', 's4'], 'unmerged: a tile a context');
+        assert.deepEqual(tilesOf([{ key: 'run:s1', remove: ['1'] }]), ['s1 (1 context shown on its own)', 's1~1', 's2', 's3', 's4']);
+        // Still listed under Merged by the run, unmerged.
+        const m = modelOf(list, [{ key: 'run:s1', merge: false }]);
+        assert.deepEqual(m.runMerges.map((r) => [r.key, r.unmerged]), [['run:s1', true]]);
     });
 
     test('the header: each count with its unit', () => {

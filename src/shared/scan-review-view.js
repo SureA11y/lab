@@ -174,8 +174,12 @@
      * - shown: the scans as shown (scan-group-merge.js scansAsShown);
      * - membersOf(group, entry): a group's scans as left by hand.
      */
-    function reviewModel({ scans, result, choice, shown, membersOf }) {
+    function reviewModel({ scans, runScans, result, choice, shown, membersOf }) {
+        // scans: as the groups hold them, a context of a run's merged scan
+        // unmerged or taken out a scan of its own; runScans: as saved, where
+        // the run's merged scans are listed whatever became of them.
         const list = (Array.isArray(scans) ? scans : []).filter(Boolean);
+        const saved = (Array.isArray(runScans) ? runScans : list).filter(Boolean);
         const entries = new Map((Array.isArray(choice) ? choice : []).map((p) => [p.key, p]));
         const groups = result && Array.isArray(result.groups) ? result.groups : [];
         const merges = shown && shown.merges ? shown.merges : new Map();
@@ -231,7 +235,7 @@
         const rest = list.filter((s) => !grouped.has(s.id)).map((s) => s.id);
 
         // The scans a Merged scan step made, to unmerge or take a context out of.
-        const runMerges = list.filter((s) => s.mergedScan === true && Array.isArray(s.contexts) && s.contexts.length).map((s) => {
+        const runMerges = saved.filter((s) => s.mergedScan === true && Array.isArray(s.contexts) && s.contexts.length).map((s) => {
             const entry = entries.get(`${RUN}${s.id}`) || {};
             const out = new Set(entry.remove || []);
             return {
@@ -456,16 +460,12 @@
     // failures are counted plainly, and being built unlike the others, true
     // of most, is not said. A page of a merged group that is in the merged
     // scan says so, quietly.
-    // What became of a scan the run merged, as the report shows it: unmerged
-    // into its contexts' scans, or some contexts shown on their own. '' when
-    // it is shown as the run merged it.
+    // What became of a scan the run merged when some of its contexts are
+    // shown on their own (each then a tile of its own beside it). Unmerged,
+    // it has no tile: its contexts' tiles are in its place. '' as the run
+    // merged it.
     function runMarkHTML(run) {
-        if (!run) return '';
-        const names = run.contexts.map((c) => c.name).join(', ');
-        if (run.unmerged) {
-            const n = run.contexts.filter((c) => c.kept).length;
-            return `<span class="sr-badge sr-badge--run" title="${esc(`Shown in the report as ${plural(n, 'scan')}: ${names}`)}">unmerged into ${plural(n, 'scan')}</span>`;
-        }
+        if (!run || run.unmerged) return '';
         const out = run.contexts.filter((c) => c.out).length;
         return out
             ? `<span class="sr-badge sr-badge--run" title="${esc(`Shown on their own in the report: ${run.contexts.filter((c) => c.out).map((c) => c.name).join(', ')}`)}">${plural(out, 'context')} shown on ${out === 1 ? 'its' : 'their'} own</span>`
@@ -483,6 +483,9 @@
             takenOut ? '<span class="sr-badge">taken out</span>' : '',
             inMerged && isIncluded(scan) && !takenOut ? '<span class="sr-badge sr-badge--merged">in the merged scan</span>' : '',
             runMarkHTML(run),
+            // A context of a run's merged scan, shown as a scan of its own:
+            // which merged scan it comes from.
+            scan && scan.runContext ? `<span class="sr-badge sr-badge--context" title="${esc(`A context of ${scan.runContext.of}, merged by the run`)}">context of a merged scan</span>` : '',
         ].join('');
     }
 
@@ -520,7 +523,9 @@
                 + `<button type="button" class="sr-thumb" data-sr-preview="${esc(id)}" data-sr-focus="preview:${esc(id)}" aria-label="${esc(`See ${s.label || s.id} large`)}">${thumbHTML(s, thumbOf(s), { decorative: true })}</button>`
                 + `<span class="sr-tile-body"><span class="sr-tile-top">`
                 + (takenOut ? '' : `<input type="checkbox" id="${esc(boxId)}" data-sr-pick="${esc(id)}" data-sr-focus="pick:${esc(id)}"${selected.has(id) ? ' checked' : ''}>`)
-                + `<label${takenOut ? '' : ` for="${esc(boxId)}"`} class="sr-tile-name" dir="auto" title="${esc(s.label || s.id)}">${esc(s.label || s.id)}</label></span>`
+                // A context is named by its own name (what tells it from the
+                // merged scan's other contexts), the merged scan's in its mark.
+                + `<label${takenOut ? '' : ` for="${esc(boxId)}"`} class="sr-tile-name" dir="auto" title="${esc(s.label || s.id)}">${esc(s.runContext ? s.runContext.name : (s.label || s.id))}</label></span>`
                 + `<span class="sr-tile-path sr-url" title="${esc(pathOf(s.url))}">${esc(pathOf(s.url))}</span><span class="sr-badges">${badgesHTML(d, s, takenOut, standOut, group && node.merged, runById.get(id))}</span>`
                 + (takenOut ? `<button type="button" class="sr-link" data-sr-putback="${esc(id)}" data-sr-focus="putback:${esc(id)}">Put back</button>` : '')
                 + `</span></li>`;

@@ -282,3 +282,38 @@ test('merging reports: each report\'s groups by hand stay apart, renumbered', ()
         ['manual:2', null, ['b3', 'b4']],
     ]);
 });
+
+describe('the contexts of a run\'s merged scan, as scans of their own', () => {
+    const choice = () => C.readChoice({ scanGrouping: { patterns: [
+        { key: 'run:s1', merge: false, exclude: ['1'] },
+        { key: 'url:shop/products/{*}', add: ['s1~0'], remove: ['s1~1', 's9'] },
+        { key: 'manual:1', name: 'Light', members: ['s1~0', 's4', 's5'] },
+    ] } });
+
+    test('says which groups hold them, and releases them from every one', () => {
+        assert.deepEqual(C.runContextsHeld(choice(), 's1'), [
+            { key: 'url:shop/products/{*}', ids: ['s1~0', 's1~1'] },
+            { key: 'manual:1', ids: ['s1~0'] },
+        ]);
+        assert.deepEqual(C.runContextsHeld(choice(), 's2'), []);
+        const released = C.releaseRunContexts(choice(), 's1');
+        assert.deepEqual(C.runContextsHeld(released, 's1'), []);
+        assert.deepEqual(released.find((p) => p.key === 'url:shop/products/{*}').remove, ['s9'], 'other scans stay');
+        assert.deepEqual(released.find((p) => p.key === 'manual:1').members, ['s4', 's5']);
+        assert.deepEqual(released.find((p) => p.key === 'run:s1').exclude, ['1'], 'the run\'s own entry is not touched');
+    });
+
+    test('a context\'s id follows its scan\'s when renamed', () => {
+        const renamed = C.renameScanIds(choice(), (id) => (id === 's1' ? 's1b' : id));
+        assert.ok(renamed.some((p) => p.key === 'run:s1b'));
+        assert.deepEqual(renamed.find((p) => p.key === 'manual:1').members, ['s1b~0', 's4', 's5']);
+        assert.deepEqual(renamed.find((p) => p.key === 'url:shop/products/{*}').add, ['s1b~0']);
+    });
+
+    test('put back in its merged scan, a context taken out is no longer excluded on its own', () => {
+        const out = C.setRunContextExcluded(C.setRunContextOut([], 's1', 1, true), 's1', 1, true);
+        assert.deepEqual(out.find((p) => p.key === 'run:s1').exclude, ['1']);
+        const back = C.setRunContextOut(out, 's1', 1, false);
+        assert.equal((back.find((p) => p.key === 'run:s1') || {}).exclude, undefined);
+    });
+});
