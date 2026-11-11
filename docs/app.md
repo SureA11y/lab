@@ -119,6 +119,13 @@ left out, and the load says so as a warning, step by step: *Step 8 (Switch):
 'actions' was not used, so 6 nested steps were left out*. The rest loads, and
 a required field the file left empty shows as one at once.
 
+While a run goes these actions stay in sight, but only **Export config**
+acts: **Load config**, **Append config**, **Undo** and **Redo** (and Ctrl+Z
+in the workflow) wait for the run to end, as they would change the
+configuration the run was started with. **Export config** in a report's
+**Download** menu saves the configuration that report was run with, not the
+one on screen.
+
 ## Reading a report
 
 ![A report's scan of the demo shop's products page: three failures, each with its severity, rule, occurrences and WCAG criterion, then the checks that need review](assets/screens/app-report.png)

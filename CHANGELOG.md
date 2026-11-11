@@ -9,6 +9,10 @@ The first public release.
 
 ### The lab
 
+- **The configuration actions stay in sight while a run goes**: Load
+  config, Append config, Undo and Redo wait for the run to end, shown
+  unavailable; Export config still saves the form. A report's Download menu
+  exports the configuration that report was run with, not the one on screen.
 - **The review of scan groups reads as three parts**: the groups on a
   deeper surface, the selected one joined to its pages like a tab; the pages
   on the brightest, under a band naming the group that stays in view; what

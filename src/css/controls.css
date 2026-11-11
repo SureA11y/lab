@@ -79,12 +79,6 @@ body.is-running #config-section .inline-actions {
     padding: var(--space-2) var(--space-5);
 }
 
-/* While a run goes the configuration is folded away, its actions too: loading
-   another configuration then would change the form under the run. */
-body.is-running .config-header .config-actions {
-    display: none;
-}
-
 /* Panel disclosure: the chevron and the heading are the toggle, as wide as
    they are, so the row's empty middle beside the actions isn't a place to
    click by mistake. The chevron points right, and down when open. */

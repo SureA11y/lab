@@ -544,34 +544,38 @@ export function createConfigIO(deps) {
     function setupConfigSaver(saveButtonEl) {
         if (!saveButtonEl) return;
 
-        saveButtonEl.addEventListener('click', async () => {
-            try {
-                const config = buildConfigFile();
-                const urlValue = config.url || '';
-                const scenarioName = typeof config.state?.['scenario-name'] === 'string'
-                    ? config.state['scenario-name'].trim()
-                    : '';
+        saveButtonEl.addEventListener('click', () => saveConfigFile(buildConfigFile()));
+    }
 
-                const problem = workflowProblem;
-                await saveBlobAsJSON(jsonBlob(config), {
-                    // The scenario name is what the user already calls this
-                    // configuration, so it is the file name they expect to be
-                    // offered. Unnamed scenarios keep falling back to the URL.
-                    suggestedBase: scenarioName || urlValue || 'a11y-ui-src-config',
-                    fileDesc: 'a11y-ui-src configuration',
-                    kind: 'a11y-config',
-                    promptMsg: 'File name for this configuration (without extension).',
-                    okMsg: problem
-                        ? `Configuration saved, but its workflow has an error to fix before it can run (${problem}). The workflow was saved as it stands.`
-                        : 'Configuration saved successfully.',
-                    okStatus: problem ? STATUS.WARNING : STATUS.OK,
-                    callback: setStatusRun
-                });
-            } catch (err) {
-                console.error('Could not export config file', err);
-                setStatusRun('Could not export config file.', STATUS.ERROR);
-            }
-        });
+    /**
+     * Save a configuration file: the one on screen, or a report's own (the
+     * configuration its run was made with), offered under its scenario name.
+     */
+    async function saveConfigFile(config, {problem = workflowProblem} = {}) {
+        try {
+            const urlValue = config.url || '';
+            const scenarioName = typeof config.state?.['scenario-name'] === 'string'
+                ? config.state['scenario-name'].trim()
+                : '';
+
+            await saveBlobAsJSON(jsonBlob(config), {
+                // The scenario name is what the user already calls this
+                // configuration, so it is the file name they expect to be
+                // offered. Unnamed scenarios keep falling back to the URL.
+                suggestedBase: scenarioName || urlValue || 'a11y-ui-src-config',
+                fileDesc: 'a11y-ui-src configuration',
+                kind: 'a11y-config',
+                promptMsg: 'File name for this configuration (without extension).',
+                okMsg: problem
+                    ? `Configuration saved, but its workflow has an error to fix before it can run (${problem}). The workflow was saved as it stands.`
+                    : 'Configuration saved successfully.',
+                okStatus: problem ? STATUS.WARNING : STATUS.OK,
+                callback: setStatusRun
+            });
+        } catch (err) {
+            console.error('Could not export config file', err);
+            setStatusRun('Could not export config file.', STATUS.ERROR);
+        }
     }
 
     return {
@@ -583,6 +587,7 @@ export function createConfigIO(deps) {
         autoApplyFromQuery,
         setupConfigLoader,
         setupConfigAppender,
-        setupConfigSaver
+        setupConfigSaver,
+        saveConfigFile
     };
 }

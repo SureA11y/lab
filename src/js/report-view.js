@@ -859,7 +859,17 @@ export function createReportView(app) {
                     id: 'config',
                     label: 'Export config',
                     description: 'The workflow and its settings, to load or run again',
-                    onSelect: () => app.$('#save-config-button')?.click(),
+                    // The configuration this report was run with, not the
+                    // one on screen, which may have changed since; a report
+                    // without one falls back to the screen's.
+                    onSelect: () => {
+                        const own = (app.getActiveBucket()?.payload || data)?.config;
+                        if (own && own.type === 'a11y-ui-src-config' && app.cfgIO?.saveConfigFile) {
+                            app.cfgIO.saveConfigFile(own, {problem: null});
+                        } else {
+                            app.$('#save-config-button')?.click();
+                        }
+                    },
                 }] : []),
             ],
         });
