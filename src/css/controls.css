@@ -644,6 +644,11 @@ html.has-mode-bar {
     .mode-bar .mode-tab { padding-inline: .5rem; }
     .back-to-top:not(.is-shown) { display: none; }
 }
+/* Narrower still, a little closer, so the four fit beside the button on one
+   row at a phone's usual width (390px). */
+@media (max-width: 420px) {
+    .mode-bar .mode-tab { padding-inline: .3rem; }
+}
 
 @media (prefers-reduced-motion: reduce) {
     .mode-bar,
@@ -693,6 +698,9 @@ html.has-mode-bar {
 @media (max-width: 420px) {
     .mode-tab {
         padding: .65rem .5rem;
+        /* Each name on one line: in the UI font the four fit beside
+           back-to-top at 360px, and a name on two lines doubled the bar. */
+        white-space: nowrap;
     }
 }
 
@@ -915,4 +923,11 @@ html.has-mode-bar {
 }
 @media print {
     .scan-results-wrapper { content-visibility: visible; }
+}
+
+/* At phone width the configuration panel's margin gives its room to the
+   steps (its run line keeps reaching both edges). */
+@media (max-width: 600px) {
+    #config-content { padding: var(--space-3) var(--space-2); }
+    #config-content > .config-data { margin-inline: calc(var(--space-2) * -1); padding-inline: var(--space-2); }
 }

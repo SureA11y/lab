@@ -53,6 +53,9 @@ export function installBackToTop({ bar, button, header, doc = document } = {}) {
         };
         const resized = new win.ResizeObserver(schedule);
         resized.observe(bar);
+        // The list itself narrows when the button appears beside it, while
+        // its tabs, whose names never wrap, keep their size.
+        resized.observe(tabs);
         tabs.querySelectorAll('[role="tab"]').forEach((tab) => resized.observe(tab));
     }
     fitTabs();
