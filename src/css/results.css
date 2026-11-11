@@ -441,9 +441,9 @@
 }
 
 .scan-tag-filter__chip {
-    /* DS TagFilter chip (Tag pressed). Reset the ambient 36px button box and
-       adopt the outlined Tag pill: transparent fill, mono label, radius-sm.
-       Never filled — a filled pill in this system is a ResultBadge. */
+    /* DS TagFilter chip. Reset the ambient 36px button box and adopt the
+       outlined Tag: transparent when off, radius-sm. On, it takes the accent's
+       soft tint, never a result's colour, so it cannot read as a ResultBadge. */
     width: auto;
     min-height: 0;
     display: inline-flex;
@@ -472,18 +472,15 @@
     background: var(--surface-hover);
 }
 .scan-tag-filter__chip[aria-pressed="true"] {
-    /* On = a double ring, not a fill. The 1px outline thickens to 3px via an
-       inset accent shadow and the label goes to 700. Line weight + font weight
-       carry the state without relying on hue; the mono face keeps 700 the same
-       advance width as 400 so a chip row can't reflow as it's toggled. */
+    /* On = a tinted fill and an accent border, the label in the main text
+       colour. A thick inset ring read as a focus ring, and a bolder label
+       (even with the face sans) made the row reflow as a chip was toggled. */
     color: var(--text-main);
-    background: transparent;
+    background: var(--accent-soft);
     border-color: var(--accent);
-    box-shadow: inset 0 0 0 2px var(--accent);
-    font-weight: 700;
 }
 .scan-tag-filter__chip[aria-pressed="true"]:hover {
-    background: var(--surface-hover);
+    background: color-mix(in srgb, var(--accent-soft) 80%, var(--accent));
 }
 /* The last profile shown: it stays on, so it doesn't look pressable. */
 .scan-tag-filter__chip[aria-disabled="true"] {

@@ -87,7 +87,7 @@ describe('finding details dialog', () => {
         const title = dialog.querySelector('#' + dialog.getAttribute('aria-labelledby'));
         assert.equal(title.textContent, 'Non-text content: text alternatives');
         const meta = dialog.querySelector('.src-dialog-header .src-dialog-meta').textContent;
-        assert.match(meta, /^Rule wcag-1\.1\.1-non-text-content · Impact: serious · 2 occurrences/);
+        assert.match(meta, /^Rule wcag-1\.1\.1-non-text-content · Severity: serious · 2 occurrences/);
     });
 
     test('has one close control, in its header', () => {

@@ -1234,7 +1234,7 @@ export function createRenderer({
                 '-title">' +
                 '<div class="src-dialog-header">' +
                 findingDialogHeadingHtml(issue, reviewDialogId, ruleId,
-                    'Impact: ' + escapeHtml(impact || 'unknown') + (partly ? ' · Partly checked' : ' · Needs manual review')) +
+                    'Severity: ' + escapeHtml(impact || 'unknown') + (partly ? ' · Partly checked' : ' · Needs manual review')) +
                 '<button type="button" class="src-dialog-close" aria-label="Close dialog">Close</button>' +
                 '</div>' +
                 '<div class="src-dialog-body">' +
@@ -1291,7 +1291,7 @@ export function createRenderer({
             '-title">' +
             '<div class="src-dialog-header">' +
             findingDialogHeadingHtml(issue, dialogId, ruleId,
-                'Impact: ' + escapeHtml(impact || 'unknown') + ' · ' + formatCount(total) + ' ' + instanceLabel +
+                'Severity: ' + escapeHtml(impact || 'unknown') + ' · ' + formatCount(total) + ' ' + instanceLabel +
                 (total === 1 ? '' : 's') + escapeHtml(elements)) +
             '<button type="button" class="src-dialog-close" aria-label="Close dialog">Close</button>' +
             '</div>' +
