@@ -39,12 +39,18 @@ Worked out on clickable prototypes before any code:
    that keeps the way back, where you are and the number of matches. The
    panel is for finding and filtering steps only: Custom steps' add, paste,
    undo and redo are in its editor's toolbar, in reach whatever the panel.
-   Both panels **start in their rail each time the app loads**: the app opens with one
-   step, and a panel open beside it is in the way. Shown or hidden is not
+   Where there is room for it beside the steps (a window 1280px wide or
+   more), the **Workflow's panel opens each time the app loads**, a sticky
+   outline of the steps: the way around a deep workflow, and where steps are
+   ticked to select them. Narrower, it starts in its rail. The **Custom
+   steps' starts in its rail** whatever the width. Shown or hidden is not
    kept, in the browser or in the config.
 5. **Selecting is a mode.** A Select button turns on checkboxes; Done turns
    them off and clears the selection. Ticking a container selects that
-   container only, never the steps inside it.
+   container only, never the steps inside it. Selecting opens the panel if
+   it is a rail (the sheet, on a narrow screen): the steps are ticked there.
+   With none ticked yet, Disable, Enable and Edit together are off, drawn as
+   outlines, and the row that adds steps is hidden.
 6. **The selection view.** While selecting, the editor shows only the selected
    steps, in the order they run, each with its path. While selecting, a click on a
    step in the panel only ticks or unticks it: the editor stays where it is

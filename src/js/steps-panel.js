@@ -1017,6 +1017,9 @@ export function createStepsPanel(o) {
         // A selection starts from the top of the list, not from the row
         // the last one ended on.
         state.focusId = null;
+        // Steps are ticked in the panel: folded to its rail, it opens.
+        if (narrow) openSheet();
+        else if (state.hidden) setHidden(false);
     }
 
     function stopSelecting({moveFocus = false} = {}) {

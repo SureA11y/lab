@@ -74,6 +74,12 @@ lists every step and field.
   on a row of its own. They check themselves as you type, and the workflow
   is checked again before it runs, so a mistake shows at the step, not
   halfway through a run.
+- The **steps panel** beside the workflow lists its steps as a tree, to find
+  them and go to them, and to select several to switch off, on, or change
+  together. On a screen 1280px wide or more it is open each time the app
+  loads, an outline that stays in view as the steps scroll; narrower, it is
+  a rail at the left until shown. Selecting opens it, as steps are ticked
+  there.
 - **Variables** carry values between steps: read a page's text or count its
   elements into one, and use it as `{var:name}` in any field.
 - **Custom steps** are workflows of your own, with inputs, used as one step:

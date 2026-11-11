@@ -431,15 +431,17 @@ test('with no custom step chosen, its editor takes neither a click nor the keybo
     await page.close();
 });
 
-test('both steps panels start collapsed on every load, Add custom step in reach outside them', async () => {
+test('the Workflow\'s steps panel opens beside the steps where there is room, on every load; Add custom step is in reach outside it', async () => {
     const { page, errors } = await openApp();
+    await page.setViewport({ width: 1180, height: 900 });
+    await page.reload({ waitUntil: 'networkidle0' });
     await page.click('#mode-run');
     await page.waitForSelector('#workflow-steps-panel .steps-panel__show');
     const hidden = () => page.evaluate(() => ['#workflow-steps-panel', '#custom-steps-steps-panel'].map((id) => {
         const host = document.querySelector(id);
         return host.querySelector('.steps-panel__full').hidden && !host.querySelector('.steps-panel__rail').hidden;
     }));
-    // The app opens with its one scan step, and both panels as a rail.
+    // Narrower than 1280px, both panels open as a rail.
     assert.equal(await page.$$eval('#actionsContainer > .line', (lines) => lines.length), 1);
     assert.deepEqual(await hidden(), [true, true]);
     // Add custom step is in the editor's toolbar, not in the panel.
@@ -451,6 +453,36 @@ test('both steps panels start collapsed on every load, Add custom step in reach 
     await page.reload({ waitUntil: 'networkidle0' });
     await page.waitForSelector('#workflow-steps-panel .steps-panel__show');
     assert.deepEqual(await hidden(), [true, true]);
+    // 1280px and up, the Workflow's opens as the steps' outline; hidden, it
+    // opens again on the next load. The Custom steps' stays a rail.
+    await page.setViewport({ width: 1280, height: 900 });
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.waitForSelector('#workflow-steps-panel .steps-panel__hide');
+    assert.deepEqual(await hidden(), [false, true]);
+    await page.click('#workflow-steps-panel .steps-panel__hide');
+    assert.deepEqual(await hidden(), [true, true]);
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.waitForSelector('#workflow-steps-panel .steps-panel__hide');
+    assert.deepEqual(await hidden(), [false, true]);
+    assert.deepEqual(errors, []);
+    await page.close();
+});
+
+test('selecting steps opens the panel they are ticked in; with none ticked, nothing acts on them and steps are not added', async () => {
+    const { page, errors } = await openApp();
+    await page.setViewport({ width: 1180, height: 900 });
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.click('#mode-run');
+    await page.waitForSelector('#workflow-steps-panel .steps-panel__select', { hidden: true });
+    // Select, as the app's own API starts it while the panel is a rail.
+    await page.$eval('#workflow-steps-panel .steps-panel__select', (b) => b.click());
+    const state = () => page.evaluate(() => ({
+        panelOpen: !document.querySelector('#workflow-steps-panel .steps-panel__full').hidden,
+        disable: document.querySelector('#workflow-selection-bar .steps-panel-bar__actions button').disabled,
+        edit: document.querySelector('#workflow-selection-bar .steps-panel-bar__edit').disabled,
+        addRow: getComputedStyle(document.querySelector('#workflow-content .actions-builder-actions')).display,
+    }));
+    assert.deepEqual(await state(), { panelOpen: true, disable: true, edit: true, addRow: 'none' });
     assert.deepEqual(errors, []);
     await page.close();
 });

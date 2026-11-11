@@ -88,6 +88,15 @@ describe('steps panel', () => {
         assert.equal(status(), '8 steps');
     });
 
+    test('selecting opens the panel folded to its rail: steps are ticked there', () => {
+        const { doc, panel } = setup({ startHidden: true });
+        assert.equal(panel.isHidden(), true);
+        doc.querySelector('#panel .steps-panel__select').click();
+        assert.equal(panel.selecting, true);
+        assert.equal(panel.isHidden(), false);
+        assert.equal(doc.querySelector('#panel .steps-panel__full').hidden, false);
+    });
+
     test('a step with a password to type again says so in its row, as on its card', () => {
         const { doc, panel, rows } = setup();
         doc.querySelector('.line[data-action-index-path="3.1.1.1"]').dataset.needsPassword = 'true';
