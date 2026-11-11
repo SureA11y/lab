@@ -19,7 +19,9 @@ The first public release.
   on most pages: the template's" and "Elements of each page's own", with
   their pages counted ("75 of 75 pages"): a rule failing on every page on a
   different element on each was listed as "On a few scans". The header says
-  who merged: "Merged 303 scans (303 by the run, 0 by you)".
+  who merged: "Merged 303 scans (303 by the run, 0 by you)". A page's
+  tile says what became of a scan the run merged: "unmerged into 6 scans",
+  or "1 context shown on its own".
 - **A click on a dialog's backdrop closes it**, as Escape does, in every
   dialog of the app and of the downloaded report: when the press and the
   release are both outside it, so a drag out of a dialog or a click in its

@@ -456,7 +456,23 @@
     // failures are counted plainly, and being built unlike the others, true
     // of most, is not said. A page of a merged group that is in the merged
     // scan says so, quietly.
-    function badgesHTML(d, scan, takenOut, standOut, inMerged) {
+    // What became of a scan the run merged, as the report shows it: unmerged
+    // into its contexts' scans, or some contexts shown on their own. '' when
+    // it is shown as the run merged it.
+    function runMarkHTML(run) {
+        if (!run) return '';
+        const names = run.contexts.map((c) => c.name).join(', ');
+        if (run.unmerged) {
+            const n = run.contexts.filter((c) => c.kept).length;
+            return `<span class="sr-badge sr-badge--run" title="${esc(`Shown in the report as ${plural(n, 'scan')}: ${names}`)}">unmerged into ${plural(n, 'scan')}</span>`;
+        }
+        const out = run.contexts.filter((c) => c.out).length;
+        return out
+            ? `<span class="sr-badge sr-badge--run" title="${esc(`Shown on their own in the report: ${run.contexts.filter((c) => c.out).map((c) => c.name).join(', ')}`)}">${plural(out, 'context')} shown on ${out === 1 ? 'its' : 'their'} own</span>`
+            : '';
+    }
+
+    function badgesHTML(d, scan, takenOut, standOut, inMerged, run) {
         const own = d && d.own && d.own.length;
         const differs = standOut && !takenOut && (own || (d && d.unlike));
         const differsText = own ? `Differs · ${plural(own, 'own failure')}` : 'Differs · built otherwise';
@@ -466,6 +482,7 @@
             !isIncluded(scan) ? '<span class="sr-badge sr-badge--excluded">excluded</span>' : '',
             takenOut ? '<span class="sr-badge">taken out</span>' : '',
             inMerged && isIncluded(scan) && !takenOut ? '<span class="sr-badge sr-badge--merged">in the merged scan</span>' : '',
+            runMarkHTML(run),
         ].join('');
     }
 
@@ -493,6 +510,8 @@
         // /usa/... is), outlining nearly all would single out nothing.
         const standOut = differ > 0 && differ <= ids.length / 2;
         const picked = ids.filter((id) => selected.has(id));
+        // The scans the run merged, by id: a tile says what became of its own.
+        const runById = new Map((model.runMerges || []).map((r) => [r.id, r]));
         const tile = (id, takenOut) => {
             const s = model.byId.get(id);
             const d = byScan.get(id);
@@ -502,7 +521,7 @@
                 + `<span class="sr-tile-body"><span class="sr-tile-top">`
                 + (takenOut ? '' : `<input type="checkbox" id="${esc(boxId)}" data-sr-pick="${esc(id)}" data-sr-focus="pick:${esc(id)}"${selected.has(id) ? ' checked' : ''}>`)
                 + `<label${takenOut ? '' : ` for="${esc(boxId)}"`} class="sr-tile-name" dir="auto" title="${esc(s.label || s.id)}">${esc(s.label || s.id)}</label></span>`
-                + `<span class="sr-tile-path sr-url" title="${esc(pathOf(s.url))}">${esc(pathOf(s.url))}</span><span class="sr-badges">${badgesHTML(d, s, takenOut, standOut, group && node.merged)}</span>`
+                + `<span class="sr-tile-path sr-url" title="${esc(pathOf(s.url))}">${esc(pathOf(s.url))}</span><span class="sr-badges">${badgesHTML(d, s, takenOut, standOut, group && node.merged, runById.get(id))}</span>`
                 + (takenOut ? `<button type="button" class="sr-link" data-sr-putback="${esc(id)}" data-sr-focus="putback:${esc(id)}">Put back</button>` : '')
                 + `</span></li>`;
         };
