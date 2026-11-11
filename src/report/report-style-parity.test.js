@@ -233,8 +233,6 @@ const KNOWN_PROPERTY_DRIFT = [
     "###.scan-filmstrip__more",
     "###.example-node-header>span:first-child",
     "###.fields-toggle-row",
-    "###.impact-critical",
-    "###.impact-serious",
     "###.kbd",
     "###.node-detail summary",
     "###.page",

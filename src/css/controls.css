@@ -216,7 +216,7 @@ button:active:not(:disabled, [aria-disabled=true], .screenshot-btn, .collapse-al
 
 button:disabled,
 button[aria-disabled=true] {
-    opacity: .42;
+    opacity: .55;
     cursor: not-allowed;
     box-shadow: none;
 }
@@ -398,7 +398,7 @@ button.src-dialog-close:focus-visible {
 
 .split-button__action:disabled,
 .split-button__chevron:disabled {
-    opacity: .42;
+    opacity: .55;
     cursor: not-allowed;
 }
 
@@ -452,7 +452,7 @@ button.src-dialog-close:focus-visible {
 }
 
 .split-button__item:disabled {
-    opacity: .42;
+    opacity: .55;
     cursor: not-allowed;
 }
 

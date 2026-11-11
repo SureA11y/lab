@@ -325,7 +325,7 @@ label {
     transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
 }
 
-/* Buttons carry their own DS disabled treatment (opacity .42, not-allowed) in
+/* Buttons carry their own DS disabled treatment (opacity .55, not-allowed) in
    the BUTTONS section; here we only dim disabled form fields and their labels. */
 input:disabled,
 select:disabled,

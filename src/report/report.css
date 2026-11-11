@@ -1109,10 +1109,13 @@ tr:nth-child(even) td { background: var(--surface-0); }
 tr.fail .issue-status { color: var(--danger); }
 tr.cantTell .issue-status { color: var(--warn); }
 
-.impact-critical { color: var(--danger); font-weight: 700; }
-.impact-serious { color: var(--warn); font-weight: 600; }
-.impact-moderate { color: var(--warn); }
-.impact-minor { color: var(--text-muted); }
+
+/* Severity, the same wherever it is said (the findings tables, the review):
+   a dot in its colour, then its word, which says it without the colour. */
+.sev { display: inline-flex; align-items: center; gap: .4em; white-space: nowrap; color: var(--text-main); text-transform: capitalize; }
+.sev::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
+.sev--critical::before, .sev--serious::before { background: var(--danger); }
+.sev--moderate::before { background: var(--warn); }
 
 .node-detail { margin-top: .55rem; margin-bottom: .4rem; }
 
@@ -1142,7 +1145,7 @@ tr.cantTell .issue-status { color: var(--warn); }
    its header sticks to, so the header would scroll away with the rows. */
 .table-container > table { overflow: visible; }
 
-/* Small pill action buttons shared — inline table micro-pills, not 36px buttons */
+/* Small action buttons shared, cornered as every button is — inline in tables, not 36px buttons */
 .copy-selector-btn,
 .src-dialog-trigger {
     display: inline-flex;
@@ -1154,7 +1157,7 @@ tr.cantTell .issue-status { color: var(--warn); }
     font-size: var(--fs-xs);
     font-weight: 600;
 
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--border-strong);
 
     background: var(--surface-2);
