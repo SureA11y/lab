@@ -5,11 +5,16 @@
 // through `app`.
 
 import {escapeAttr, escapeHtml} from './a11y-ui.utils.js';
+import {plainReportFileProblem} from './report-file-problem.js';
 import {afterPaint} from './busy.js';
 import {buildGlobalSummary, hashHex16, pickMetricDefsFromStaged, sortByOrderKey, validateReportOrThrow} from './report-data.js';
 import {focusSafely, isActuallyFocusable} from './focus-utils.js';
 import {STATUS} from './ui-constants.js';
 import {unpackagedPicturesNote} from './report-package.js';
+
+// The warning sign beside a file left out of the list: the same triangle the
+// activity panel draws, so a warning looks alike wherever it is.
+const WARNING_ICON = '<svg class="report-file-problem__icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 3.5L2.5 20h19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4.5M12 17v.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
 
 /**
  * app: accessors for what the rest of the app shares with this part
@@ -100,22 +105,45 @@ export function createOpenReportStaging(app) {
         } catch (err) {
             entry.ok = false;
             entry.parsed = null;
-            entry.error = String(err?.message || err);
+            entry.error = plainReportFileProblem(err);
         }
 
         stagedReportFiles.push(entry);
 
         renderStagedReportFilesList();
 
-        const total = stagedReportFiles.length;
-        const okCount = stagedReportFiles.filter(x => x.ok).length;
-        const badCount = total - okCount;
+        const staged = stagedFilesMessage();
+        app.setStatusReport(staged.text, staged.skipped ? STATUS.WARNING : STATUS.OK);
+    }
 
-        if (badCount) {
-            app.setStatusReport(`Files staged. ${okCount} valid, ${badCount} invalid. Remove or fix invalid files before loading.`, STATUS.WARNING);
-        } else {
-            app.setStatusReport(`Files staged. ${okCount} ready to load.`, STATUS.OK);
-        }
+    // The reports listed that load, with the selection made of each.
+    function loadableFiles() {
+        return stagedReportFiles.filter(it =>
+            it.ok && it.parsed &&
+            ((countSelected(it.includeScans) > 0) || (countSelected(it.includeActionScreenshots) > 0))
+        );
+    }
+
+    /**
+     * What the list holds, said once the files are read: how many reports
+     * are ready, and which files are left out. Why each is left out is said
+     * in its own row only, not again here. -> { text, ready, skipped }.
+     */
+    function stagedFilesMessage() {
+        const ready = stagedReportFiles.filter(x => x.ok).length;
+        const skipped = stagedReportFiles.filter(x => !x.ok);
+        const readyText = ready
+            ? `${ready} report${ready === 1 ? '' : 's'} ready to load.`
+            : 'No report to load.';
+        const text = skipped.length
+            ? `${readyText} ${skippedText(skipped)}`
+            : readyText;
+        return {text, ready, skipped: skipped.length};
+    }
+
+    function skippedText(skipped) {
+        const names = skipped.map(x => x.name).join(', ');
+        return `Skipped ${skipped.length === 1 ? 'a file that is' : `${skipped.length} files that are`} not a report (${names}): the list says why.`;
     }
 
     function normalizeMaybeString(v) {
@@ -226,7 +254,7 @@ export function createOpenReportStaging(app) {
         app.reportFilesCountEl.textContent =
             total === 0
                 ? ''
-                : `${total} file${total === 1 ? '' : 's'} selected, ${okCount} valid${badCount ? `, ${badCount} invalid` : ''}.`;
+                : `${okCount} report${okCount === 1 ? '' : 's'}${badCount ? `, ${badCount} file${badCount === 1 ? '' : 's'} skipped` : ''}.`;
 
         if (total === 0) {
             setStagingUiVisible(false);
@@ -241,9 +269,12 @@ export function createOpenReportStaging(app) {
             const li = document.createElement('li');
             li.className = 'hint'; // reuse existing styling class, minimal CSS changes
 
-            const statusText = item.ok
-                ? (item.missingPictures ? `Ready. ${unpackagedPicturesNote(item.missingPictures)}` : 'Ready')
-                : `Invalid: ${item.error || 'Unknown error'}`;
+            // A file left out says why once, here, with a warning sign: the
+            // status line and the activity panel only say that it was. A
+            // report's JSON without its zip says where its pictures are.
+            const statusHtml = item.ok
+                ? `<small style="opacity:.85;"> - Ready${item.missingPictures ? `. ${escapeHtml(unpackagedPicturesNote(item.missingPictures))}` : ''}</small>`
+                : `<span class="report-file-problem">${WARNING_ICON}<span><strong>Skipped.</strong> ${escapeHtml(item.error || plainReportFileProblem(null))}</span></span>`;
 
             const scans = (item.ok && item.parsed && Array.isArray(item.parsed.scans)) ? item.parsed.scans : [];
             const actionShots = (item.ok && item.parsed && Array.isArray(item.parsed.screenshots)) ? item.parsed.screenshots : [];
@@ -267,7 +298,7 @@ export function createOpenReportStaging(app) {
             <div style="display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;">
                 <div style="min-width:min(260px, 100%); text-align: left;">
                     <strong>${escapeHtml(item.name)}</strong>
-                    <small style="opacity:.85;"> - ${escapeHtml(statusText)}</small>
+                    ${statusHtml}
                     <div>
                       <small style="opacity:.85;"
                              data-report-file-summary="1"
@@ -404,31 +435,19 @@ export function createOpenReportStaging(app) {
             app.reportFilesListEl.appendChild(li);
         }
 
-        const anySelected = stagedReportFiles.some(it =>
-            it.ok &&
-            ((countSelected(it.includeScans) > 0) || (countSelected(it.includeActionScreenshots) > 0))
-        );
-
-        const canLoad = okCount > 0 && badCount === 0 && anySelected;
-        const canClear = total > 0;
-
-        setStagingButtonsEnabled({canLoad, canClear});
+        recomputeStagingButtonsEnabled();
     }
 
+    // Load says how many reports it loads; a file that is not a report is
+    // left out, and does not hold the others back.
     function recomputeStagingButtonsEnabled() {
-        const total = stagedReportFiles.length;
-        const okCount = stagedReportFiles.filter(x => x.ok).length;
-        const badCount = total - okCount;
-
-        const anySelected = stagedReportFiles.some(it =>
-            it.ok &&
-            ((countSelected(it.includeScans) > 0) || (countSelected(it.includeActionScreenshots) > 0))
-        );
-
-        const canLoad = okCount > 0 && badCount === 0 && anySelected;
-        const canClear = total > 0;
-
-        setStagingButtonsEnabled({canLoad, canClear});
+        const loadable = loadableFiles().length;
+        if (app.reportFilesLoadBtn) {
+            app.reportFilesLoadBtn.textContent = loadable
+                ? `Load ${loadable} report${loadable === 1 ? '' : 's'}`
+                : 'Load reports';
+        }
+        setStagingButtonsEnabled({canLoad: loadable > 0, canClear: stagedReportFiles.length > 0});
     }
 
     function updateStagedFileSummaryInPlace(key) {
@@ -629,22 +648,20 @@ export function createOpenReportStaging(app) {
                     ? ` ${unpackagedPicturesNote(without[0].missingPictures)}`
                     : ` ${without.map((x) => x.name).join(', ')}: ${without.length === 1 ? 'its pictures came' : 'their pictures came'} in the zip ${without.length === 1 ? 'it was' : 'they were'} saved in: open ${without.length === 1 ? 'that zip' : 'those zips'}, from Download report, to see them.`;
             }
-            app.setStatusReport(message, without.length ? STATUS.WARNING : STATUS.OK);
+            app.setStatusReport(message, skipped.length || without.length ? STATUS.WARNING : STATUS.OK);
             app.focusReportArea();
             await app.reportView.whenResultsComplete();
             task.done(message);
         };
 
         if (!okItems.length) {
-            refuse('No valid staged files to load.');
+            refuse('No report to load: the files listed are not reports.');
             return;
         }
 
-        const invalid = stagedReportFiles.filter(x => !x.ok);
-        if (invalid.length) {
-            refuse('Remove invalid files before loading.');
-            return;
-        }
+        // A file that is not a report is left out, and the message says so.
+        const skipped = stagedReportFiles.filter(x => !x.ok);
+        const skippedNote = skipped.length ? ` ${skippedText(skipped)}` : '';
 
         const anySelected = stagedReportFiles.some(it =>
             it.ok &&
@@ -775,7 +792,7 @@ export function createOpenReportStaging(app) {
 
                 await step('Drawing the report');
                 app.setReportPayload(payload, {fileName: only.name});
-                await shown('Report loaded from staged file.');
+                await shown(`Report loaded from ${only.name}.${skippedNote}`);
                 return;
             }
 
@@ -874,7 +891,7 @@ export function createOpenReportStaging(app) {
 
                 await step('Drawing the report');
                 app.setReportPayload(payload, {fileName: okItems.map(x => x.name).join(', ')});
-                await shown('Merged report loaded from staged files.');
+                await shown(`${okItems.length} reports loaded, merged into one.${skippedNote}`);
                 return;
             }
 
@@ -915,7 +932,7 @@ export function createOpenReportStaging(app) {
 
             await step('Drawing the report');
             app.setReportPayload(payload, {fileName: okItems.map(x => x.name).join(', ')});
-            await shown('Merged report loaded from staged files.');
+            await shown(`${okItems.length} reports loaded, merged into one.${skippedNote}`);
         } catch (err) {
             console.error('Import error:', err);
             refuse(`Import error: ${String(err?.message || err)}`);
@@ -927,6 +944,7 @@ export function createOpenReportStaging(app) {
         initEntrySelectionsFromParsed,
         isZipFile,
         loadStagedReportsIntoOpenReport,
+        stagedFilesMessage,
         makeFileKey,
         moveStagedReportFile,
         prepareSpareReport,

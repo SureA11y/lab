@@ -10,6 +10,7 @@ import {afterPaint, isBusy, runBusy, setBusy} from './busy.js';
 import {getActivity} from './activity.js';
 import {cleanGroupingItem} from './grouping-spec.js';
 import {validateReportOrThrow} from './report-data.js';
+import {plainReportFileProblem} from './report-file-problem.js';
 import {focusSafely} from './focus-utils.js';
 import {STATUS} from './ui-constants.js';
 
@@ -205,14 +206,14 @@ export function createOpenReportFiles(app) {
             // What is picked opens at once: one report on its own, as one
             // given by address does (and the next one picked the same way
             // takes its place), several merged with all their scans. The list
-            // stays, to leave scans or files out and Load selected again.
+            // stays, to leave scans or files out and load again.
             if (app.reportOpenedAlone && app.stagedReportFiles.length === 1 && app.stagedReportFiles[0] === app.reportOpenedAlone) {
                 app.stagedReportFiles = [];
             }
             app.reportOpenedAlone = null;
             const listedBefore = app.stagedReportFiles.length;
-            const allReports = await stageReportFiles(files);
-            if (!allReports) return;
+            const anyReport = await stageReportFiles(files);
+            if (!anyReport) return;
             if (listedBefore === 0 && app.stagedReportFiles.length === 1) app.reportOpenedAlone = app.stagedReportFiles[0];
             app.reportFilesLoadBtn?.click();
         });
@@ -220,8 +221,8 @@ export function createOpenReportFiles(app) {
 
     // Stages report files in the open report tab: reads and checks each now,
     // and loads none yet. The file picker and a report given by URL
-    // (openFromQuery) both come through here. -> true when every file is a
-    // report.
+    // (openFromQuery) both come through here. -> true when at least one
+    // file is a report.
     async function stageReportFiles(files) {
         {
             // Stage: parse + validate now, do not import yet. A large file
@@ -250,10 +251,11 @@ export function createOpenReportFiles(app) {
                     for (const f of found) sources.push(app.reportInZip(file, f));
                     reading.done(`${found.length} report${found.length === 1 ? '' : 's'}`);
                 } catch (err) {
-                    reading.warn(String(err?.message || err));
+                    // Why, in its row of the list only: here, that it was left out.
+                    reading.warn('Skipped');
                     app.stagedReportFiles.push({
                         key: app.makeFileKey(file), file, name: file.name, size: file.size, lastModified: file.lastModified,
-                        ok: false, error: String(err?.message || err), parsed: null, expanded: false,
+                        ok: false, error: plainReportFileProblem(err), parsed: null, expanded: false,
                         includeScans: null, includeActionScreenshots: null
                     });
                 }
@@ -273,7 +275,9 @@ export function createOpenReportFiles(app) {
                     try {
                         json = JSON.parse(String(text || ''));
                     } catch {
-                        throw new Error('Invalid JSON');
+                        const notJson = new Error('Invalid JSON');
+                        notJson.notJson = true;
+                        throw notJson;
                     }
 
                     // Keep your existing file-based key, but stage using the same shape
@@ -305,7 +309,8 @@ export function createOpenReportFiles(app) {
                     if (entry.missingPictures) checking.warn(unpackagedPicturesNote(entry.missingPictures));
                     else checking.done();
                 } catch (err) {
-                    checking.warn(String(err?.message || err));
+                    // Why, in its row of the list only: here, that it was left out.
+                    checking.warn('Skipped');
                     app.stagedReportFiles.push({
                         key,
                         file,
@@ -313,7 +318,7 @@ export function createOpenReportFiles(app) {
                         size: file.size,
                         lastModified: file.lastModified,
                         ok: false,
-                        error: String(err?.message || err),
+                        error: plainReportFileProblem(err),
                         parsed: null,
                         expanded: false,
                         includeScans: null,
@@ -325,19 +330,17 @@ export function createOpenReportFiles(app) {
 
             app.renderStagedReportFilesList();
 
-            const total = app.stagedReportFiles.length;
-            const okCount = app.stagedReportFiles.filter(x => x.ok).length;
-            const badCount = total - okCount;
-
+            const staged = app.stagedFilesMessage();
+            // A report's JSON opened without its zip: its pictures are there.
             const withoutPictures = app.stagedReportFiles.filter(x => x.ok && x.missingPictures).length;
-            const staged = (badCount
-                ? `Files staged. ${okCount} valid, ${badCount} invalid. Remove or fix invalid files before loading.`
-                : `Files staged. ${okCount} ready to load.`)
+            const stagedText = staged.text
                 + (withoutPictures ? ` ${withoutPictures === 1 ? 'One is' : `${withoutPictures} are`} without ${withoutPictures === 1 ? 'its' : 'their'} pictures.` : '');
-            app.setStatusReport(staged, badCount || withoutPictures ? STATUS.WARNING : STATUS.OK);
-            task.done(staged);
+            app.setStatusReport(stagedText, staged.skipped || withoutPictures ? STATUS.WARNING : STATUS.OK);
+            task.done(stagedText);
             readingReportFiles = null;
-            return badCount === 0;
+            // A file that is not a report does not hold back the others: they
+            // load, and the list says why it was left out.
+            return staged.ready > 0;
         }
     }
 
