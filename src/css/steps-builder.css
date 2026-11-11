@@ -1503,3 +1503,28 @@
 .steps-panel-edit__input .steps-panel-edit__mode { max-width: 200px; min-height: 32px; }
 .steps-panel-bar__outside { margin: 0; font-size: var(--fs-sm); }
 .steps-panel-bar__outside[hidden] { display: none; }
+
+/* ---- Phone width: nesting that costs little width ----
+   Each level cost 68px (the card's padding and border, its list's dashed box
+   and padding, the indent before it), so a step six levels deep was 18px
+   wide on a phone. Here a level costs about 20px: the card's border and a
+   small padding, and its list's thin rule on the left; the dashed box keeps
+   only its top edge, under the list's title. */
+@media (max-width: 600px) {
+    :is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer .line {
+        padding-inline: 6px;
+    }
+    :is(#actions-builder, #custom-step-actions-builder) .action-array {
+        padding: 6px 0 0;
+        border-width: 1px 0 0;
+        border-radius: 0;
+        background: transparent;
+    }
+    :is(#actions-builder, #custom-step-actions-builder) .actions-subcontainer {
+        padding-left: 4px;
+    }
+    :is(#actions-builder, #custom-step-actions-builder) .action-arrays-below {
+        margin-left: 0;
+        padding-left: 0;
+    }
+}
