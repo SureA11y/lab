@@ -85,7 +85,7 @@ export function maskedFlagKey(fieldName) {
     return `${fieldName}${MASKED_FLAG_SUFFIX}`;
 }
 
-export const MASKED_VALUE_PLACEHOLDER = "Not saved - enter it again";
+export const MASKED_VALUE_PLACEHOLDER = "Type it again: not saved with the configuration";
 
 // A secret field can name an environment variable instead of holding the
 // secret, {"$env": "SHOP_PASSWORD"} (src/shared/secret-refs.js): whatever runs
@@ -452,8 +452,10 @@ export function createActionsBuilder ({
     }
 
     function pushHistory(reason = '', { force = false } = {}) {
-        // Every edit lands here, so the row-variable check stays live.
+        // Every edit lands here, so the row-variable check and the steps that
+        // need a password stay live.
         refreshReservedVariableErrors();
+        refreshPasswordNeeds();
         if (isRestoringHistory) return;
 
         const snap = snapshotForHistory();
@@ -1019,6 +1021,53 @@ export function createActionsBuilder ({
         return `“${hit}” is also a batch workflow variable: from this step on, the workflow’s value is hidden. Rename one of them.`;
     }
 
+    // ---- Passwords to type again ----
+    // A password is never saved, so a workflow loaded back has its passwords
+    // empty, often deep in it. Each step that has one to type says so in its
+    // header ("Needs password", line.dataset.needsPassword for the steps
+    // panel), and options.onPasswordsChange(count) is told each time the
+    // count changes, for the section to say how many are left.
+    let lastPasswordCount = -1;
+
+    /** The password fields to type before a run, in the order they run. */
+    function passwordsToType() {
+        return Array.from(actionsEl.querySelectorAll(".sb-input-with-icon[data-secret='true'] input")).filter((input) => {
+            const field = input.closest(".field");
+            const line = input.closest(".line");
+            if (!field || !line || input.value !== "") return false;
+            // Read from the environment where it runs: nothing to type.
+            if (field.dataset.secretEnv) return false;
+            // A step that is off, or inside one that is, does not run.
+            return !line.closest(".line[data-explicit-disabled='true']");
+        });
+    }
+
+    function setNeedsPassword(line, on) {
+        let badge = line._needsPasswordBadge;
+        if (!badge && !on) return;
+        if (!badge) {
+            badge = createEl("span", {className: "line-badge line-badge--password"}, "Needs password");
+            line._needsPasswordBadge = badge;
+            line.querySelector(":scope > .line-header .line-title-wrapper")?.append(badge);
+        }
+        badge.hidden = !on;
+        if (on) line.dataset.needsPassword = "true";
+        else delete line.dataset.needsPassword;
+    }
+
+    function refreshPasswordNeeds() {
+        const pending = passwordsToType();
+        const lines = new Set(pending.map((input) => input.closest(".line")));
+        actionsEl.querySelectorAll(".line[data-needs-password]").forEach((line) => {
+            if (!lines.has(line)) setNeedsPassword(line, false);
+        });
+        lines.forEach((line) => setNeedsPassword(line, true));
+        if (pending.length !== lastPasswordCount) {
+            lastPasswordCount = pending.length;
+            if (typeof options.onPasswordsChange === "function") options.onPasswordsChange(pending.length);
+        }
+    }
+
     /**
      * Marks or clears the row-variable error on every field that names a
      * variable, without touching any other error a field may show: only
@@ -1464,6 +1513,12 @@ export function createActionsBuilder ({
 
     refreshReorderButtons(actionsEl);
 
+    // Typing a password clears its step's badge at once, not when the edit
+    // reaches the history.
+    actionsEl.addEventListener("input", (event) => {
+        if (event.target?.closest?.(".sb-input-with-icon[data-secret='true']")) refreshPasswordNeeds();
+    });
+
     // history baseline
     pushHistory("init", { force: true });
 
@@ -1618,6 +1673,7 @@ export function createActionsBuilder ({
     return {
         validate,
         showFieldErrors,
+        passwordsToType,
         // Steps' keys this editor would leave out (unusedStepKeys), for steps
         // kept elsewhere until opened in it: the custom steps.
         unusedKeys: (actions) => unusedStepKeys(withPasswordStepTypeDeep(actions), defs),

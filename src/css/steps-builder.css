@@ -110,6 +110,45 @@
 }
 
 :is(#actions-builder, #custom-step-actions-builder) .line-title { font-size: var(--fs-lg); color: var(--text-main); }
+
+/* "Needs password": a step whose password, never saved, has to be typed
+   again. Amber, as warnings are: the run waits for it, it is not broken.
+   Its text is the warning colour on its wash, 5.6:1 light and 7.6:1 dark. */
+.line-badge,
+.steps-panel__badge {
+    flex: none;
+    white-space: nowrap;
+    padding: 1px 7px;
+    border: 1px solid var(--warn);
+    border-radius: var(--radius-pill);
+    background: var(--warn-soft);
+    color: var(--warn);
+    font-size: var(--fs-xxs);
+    font-weight: 600;
+    line-height: 1.5;
+}
+.line-badge[hidden] { display: none; }
+.steps-panel__badge { margin-left: var(--space-1); }
+
+/* How many passwords a run still needs, at the top of the Workflow. */
+.passwords-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin: 0 0 var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--warn);
+    border-left-width: var(--stroke-accent-bar, 4px);
+    border-radius: var(--radius-md);
+    background: var(--warn-soft);
+    color: var(--text-main);
+}
+.passwords-banner[hidden] { display: none; }
+.passwords-banner__text { margin: 0; flex: 1 1 20rem; font-size: var(--fs-sm); }
+@media (forced-colors: active) {
+    .line-badge, .steps-panel__badge, .passwords-banner { border-color: CanvasText; }
+}
 :is(#actions-builder, #custom-step-actions-builder) .line-title-action-type { font-size: var(--fs-xs); color: var(--text-muted); }
 
 :is(#actions-builder, #custom-step-actions-builder) .line-controls {
