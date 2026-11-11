@@ -56,9 +56,15 @@ or a reviewer's, and a reviewer's level is kept when a later run is applied.
   by hand and takes an answer per check.
 
 Product details on the report's first page: name and version, the report's
-date, what was evaluated (the pages and flows the runs covered, read from
-the report), the evaluation methods (the automated runs, with the engine and
-its version, and the manual review, with who did it), contact, and notes.
+date (written as the HTML report writes it, "Wednesday, 11 November 2026"),
+what was evaluated, the evaluation methods (the automated runs, with the
+engine and its version, and the manual review, with who did it), contact,
+and notes. What was evaluated is a summary of the scope, read from the
+report: how many pages, on which site, and the address patterns most of them
+share ("62 scans of 60 pages on shop.test: 40 pages at /en/products/…/…, 12
+pages at /en/blog/2026/…/… and 8 other pages"). Every page, its address a
+link, is in an appendix at the end. The HTML file follows the reader's light
+or dark scheme on screen, and prints light.
 
 ## Steps
 

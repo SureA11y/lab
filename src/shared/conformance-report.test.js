@@ -149,6 +149,53 @@ describe('the HTML file', () => {
         assert.match(html, /still the automated draft/);
         assert.match(html, /Automated draft<\/span>/);
     });
+
+    test('writes its dates as the HTML report does', () => {
+        assert.match(html, /<dt>Report date<\/dt><dd>Friday, 30 October 2026<\/dd>/);
+        assert.match(html, /Generated Friday, 30 October 2026 by surea11y-lab/);
+    });
+
+    test('follows the reader\'s dark scheme on screen, and prints light', () => {
+        assert.match(html, /@media screen and \(prefers-color-scheme: dark\) \{\n {2}:root \{ color-scheme: dark;/);
+        assert.match(html, /body \{[^}]*background: var\(--page\); \}/);
+    });
+});
+
+describe('what was evaluated', () => {
+    const { scopeText, longDate } = require('./conformance-report-html.js');
+    const page = (path, label = path) => ({ label: `Scan: ${label}`, url: `https://shop.test${path}`, canonical: { findings: [] } });
+    const products = Array.from({ length: 5 }, (_, i) => page(`/en/products/category-${i % 2}/item-${i}`, `Product ${i}`));
+    const site = { scenarioName: 'Shop', timestamp: '2026-11-11T08:12:00Z', scans: [...products, page('/en/about', 'About'), page('/en/about', 'About, menu open'), page('/', 'Home')] };
+    const html = conformanceReportHTML(buildConformanceReport(site), { generatedAt: '2026-11-11' });
+
+    test('opens with a summary of its scope, before any table', () => {
+        assert.equal(scopeText(buildConformanceReport(site).evaluation.pages),
+            '8 scans of 7 pages on shop.test: 5 pages at /en/products/…/… and 2 other pages. In an address, “…” stands for the part that differs from page to page.');
+        const facts = html.slice(html.indexOf('<dt>Evaluated</dt>'), html.indexOf('</dl>'));
+        assert.match(facts, /8 scans of 7 pages on shop\.test/);
+        assert.match(facts, /<a href="#evaluated-pages">Every page evaluated<\/a> is listed in the appendix\./);
+        assert.doesNotMatch(facts, /<ul/, 'no list of pages up front');
+        assert.ok(html.indexOf('<dt>Evaluated</dt>') < html.indexOf('<table'));
+    });
+
+    test('lists every page in an appendix, after the tables, its address a link', () => {
+        const appendix = html.slice(html.indexOf('<h2 id="evaluated-pages">Appendix: pages evaluated</h2>'));
+        assert.ok(html.lastIndexOf('<table') < html.indexOf('id="evaluated-pages"'));
+        assert.equal((appendix.match(/<li>/g) || []).length, 8);
+        assert.match(appendix, /<li><a href="https:\/\/shop\.test\/en\/products\/category-0\/item-0">Product 0<\/a><span class="url">https:\/\/shop\.test\/en\/products\/category-0\/item-0<\/span><\/li>/);
+    });
+
+    test('names a pattern only where three pages or more share it', () => {
+        assert.equal(scopeText([{ url: 'https://a.test/en/x' }, { url: 'https://a.test/en/y' }, { url: 'https://a.test/en/z' }]), '3 pages on a.test.',
+            'pages that differ in a word, not an id, are not one pattern');
+        assert.match(scopeText([{ url: 'https://a.test/item/1' }, { url: 'https://a.test/item/2' }, { url: 'https://a.test/item/3' }]), /^3 pages on a\.test: 3 pages at \/item\/…\./);
+    });
+
+    test('keeps a date written another way as it is', () => {
+        assert.equal(longDate('2026-11-11'), 'Wednesday, 11 November 2026');
+        assert.equal(longDate('Autumn 2026'), 'Autumn 2026');
+        assert.equal(longDate('2026-02-30'), '2026-02-30');
+    });
 });
 
 test('carrying a review forward fills in only what this report has not decided', () => {
