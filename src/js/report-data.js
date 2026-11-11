@@ -432,7 +432,11 @@ export function validateReportOrThrow(obj, fileLabel) {
         globalThis.A11Y_REPORT_SCHEMAS.openableReportSchema(), obj);
     if (problems.length) {
         const [first] = problems;
-        throw new Error(`Invalid report file${fileLabel ? ` (${fileLabel})` : ''}: ${first.path} , ${first.message}`);
+        const error = new Error(`Invalid report file${fileLabel ? ` (${fileLabel})` : ''}: ${first.path} , ${first.message}`);
+        // Kept whole, so Open report can say in plain words what is wrong
+        // (report-file-problem.js) instead of quoting the schema path.
+        error.reportProblem = first;
+        throw error;
     }
 }
 

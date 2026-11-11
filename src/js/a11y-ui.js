@@ -211,6 +211,7 @@ function storeActiveMode(mode) {
         get moveStagedReportFile() { return openReportStaging.moveStagedReportFile; },
         get prepareSpareReport() { return openReportStaging.prepareSpareReport; },
         get renderStagedReportFilesList() { return openReportStaging.renderStagedReportFilesList; },
+        get stagedFilesMessage() { return openReportStaging.stagedFilesMessage; },
         get reportFilesClearBtn() { return reportFilesClearBtn; },
         get reportFilesListEl() { return reportFilesListEl; },
         get reportInZip() { return openReportStaging.reportInZip; },

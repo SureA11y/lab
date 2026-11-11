@@ -758,8 +758,8 @@ export function createCompareTab(app) {
             await runCompareLoad(title, (task) => loadCompareFiles(files, task));
             return;
         }
-        // As if picked and then loaded: staged, checked, and loaded when every
-        // file is a report.
+        // As if picked and then loaded: staged, checked, and the reports
+        // among them loaded.
         if (await app.stageReportFiles(files)) app.reportFilesLoadBtn?.click();
     }
 
