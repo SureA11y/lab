@@ -77,7 +77,9 @@ export function readStepNodes(editorEl, idOf, under = {}) {
                 disabled: parentDisabled || line.dataset.explicitDisabled === 'true' || line.dataset.inheritedDisabled === 'true',
                 // Turned off by itself, not only by a container it is in.
                 explicitDisabled: line.dataset.explicitDisabled === 'true',
-                container: nested.length > 0
+                container: nested.length > 0,
+                // A password to type again (the editor marks the step).
+                needsPassword: line.dataset.needsPassword === 'true'
             };
             if (type === 'runCustomStep') {
                 const called = Array.from(line.querySelectorAll('.field[data-field-name="customStepId"]')).find((f) => f.closest('.line') === line);
@@ -118,6 +120,7 @@ export function readStepNodes(editorEl, idOf, under = {}) {
  * @param {(type: string) => string} o.typeTitleOf   "A11y scan" for "a11yScan".
  * @param {(action: object) => string} o.nameOf      What the step is called, '' for none.
  * @param {(type: string) => string[]} o.listsOf     The fields of a type that hold steps, in the editor's order.
+ * @param {(action: object) => boolean} [o.needsPassword]  Whether a step has a password to type again.
  * @param {number} [o.depth]
  * @param {string|null} [o.parentId]
  * @param {boolean} [o.parentDisabled]
@@ -137,7 +140,9 @@ export function readActionNodes(actions, o) {
                 id: o.idOf(key), key, path, depth, parentId, type, typeTitle, name,
                 disabled: parentDisabled || action.disabled === true,
                 explicitDisabled: action.disabled === true,
-                container: o.listsOf(type).length > 0
+                container: o.listsOf(type).length > 0,
+                // A password to type again, for steps read from saved ones.
+                needsPassword: !parentDisabled && action.disabled !== true && !!o.needsPassword?.(action)
             };
             if (type === 'runCustomStep') node.calls = String(action.customStepId || '').trim();
             let searchText = null;
@@ -592,6 +597,10 @@ export function createStepsPanel(o) {
                     node.name,
                     node.disabled ? el(doc, 'span', {className: 'steps-panel__flag', text: ' (disabled)'}) : null
                 ]),
+                // A comma first for a screen reader, which reads the row as one name.
+                node.needsPassword ? el(doc, 'span', {className: 'steps-panel__badge'}, [
+                    el(doc, 'span', {className: 'visually-hidden', text: ', '}), 'Needs password'
+                ]) : null,
                 node.note ? el(doc, 'span', {className: 'steps-panel__note', text: node.note}) : null,
                 row.context ? el(doc, 'span', {className: 'visually-hidden', text: ', holds matches'}) : null
             ]);

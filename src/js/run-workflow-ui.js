@@ -234,6 +234,16 @@ export function createRunWorkflowUi(app) {
      * on the form; null means there is nothing to send.
      */
     function prepareRunRequest({markMasked = false, fallbackUrl = ''} = {}) {
+        // Passwords are never saved: after a configuration is loaded, each
+        // has to be typed again. The run waits for them, saying how many,
+        // and focus goes to the first one, rather than to "fix the
+        // highlighted fields" at whichever error comes first.
+        const left = app.passwordsLeftToType ? app.passwordsLeftToType().count : 0;
+        if (left) {
+            app.setUiState('error', `Type the ${left === 1 ? 'password' : `${left} passwords`} again before running: ${left === 1 ? 'it is' : 'they are'} never saved with a configuration. Focus is on the first one.`);
+            app.goToNextPassword?.({fromStart: true});
+            return null;
+        }
         // A batch whose rows all carry a URL can leave the form's empty.
         let url = app.urlInput.value.trim() || fallbackUrl;
         if (url.length && !url.startsWith('http')) url = 'http://' + url;

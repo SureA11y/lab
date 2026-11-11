@@ -20,6 +20,7 @@ import {buildGlobalSummary, ensureScanSummaryCounts, ensureScansIncludedFlag, ge
 import {collapseLineIfExpanded, deriveActionDisplayLabel, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
 import {parseCustomStepsJson} from './custom-steps-data.js';
 import {createStepsPanel, readActionNodes, readStepNodes} from './steps-panel.js';
+import {createPasswordsBanner, customStepIdsRun, customStepsWithEmptyPasswords, stepHasEmptyPassword} from './passwords-to-type.js';
 import {setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
 import {STATUS, TAB_MODE_STORAGE_KEY} from './ui-constants.js';
@@ -248,6 +249,9 @@ function storeActiveMode(mode) {
         set customStepsData(value) { customStepsData = value; },
         get customStepsPanelEl() { return customStepsPanelEl; },
         get onCustomStepsListChanged() { return onCustomStepsListChanged; },
+        get onPasswordsChange() { return updatePasswordsBanner; },
+        get passwordsLeftToType() { return passwordsLeftToType; },
+        get goToNextPassword() { return goToNextPassword; },
         get pushCustomStepsHistory() { return pushCustomStepsHistory; },
         get resetCustomStepsHistory() { return resetCustomStepsHistory; },
         get rulesCatalog() { return rulesCatalog; },
@@ -2122,7 +2126,8 @@ function storeActiveMode(mode) {
                 got.lineById.forEach((line, id) => lineById.set(id, line));
             } else {
                 nodes.push(...readActionNodes(def?.actions, {
-                    idOf: (key) => `${defId}/${key}`, typeTitleOf, nameOf: nameOfAction, listsOf, depth: 1, parentId: defId
+                    idOf: (key) => `${defId}/${key}`, typeTitleOf, nameOf: nameOfAction, listsOf, depth: 1, parentId: defId,
+                    needsPassword: (action) => stepHasEmptyPassword(action, stepDefs)
                 }));
             }
         });
@@ -2228,6 +2233,72 @@ function storeActiveMode(mode) {
 
     function onCustomStepsListChanged() {
         customStepsPanel?.refresh();
+        updatePasswordsBanner();
+    }
+
+    // ---- Passwords to type again (passwords-to-type.js) ----
+    // One banner at the top of the Workflow section says how many passwords
+    // a run still needs, the workflow's and those of the custom steps it
+    // runs, and goes to the next one; Run waits for them.
+    let passwordsBanner = null;
+
+    /** The custom steps the workflow's cards call, as steps, for what it runs. */
+    function workflowCalls() {
+        if (!actionsBar) return [];
+        return $$('.line[data-action-type="runCustomStep"]', actionsBar)
+            .filter((line) => !line.closest('.line[data-explicit-disabled="true"]'))
+            .map((line) => ({type: 'runCustomStep', customStepId: line.querySelector(':scope > .fields .field[data-field-name="customStepId"] select')?.value || ''}));
+    }
+
+    /**
+     * What is left to type, in the order to type it: the workflow's fields,
+     * then the open custom step's, when the workflow runs it, then the other
+     * custom steps it runs. -> {count, workflow: input[], open: input[], others: [{index, count}]}
+     */
+    function passwordsLeftToType() {
+        const workflow = actionsBuilder?.passwordsToType?.() || [];
+        if (!stepDefs) return {count: workflow.length, workflow, open: [], others: []};
+        const calls = workflowCalls();
+        const selected = customStepsData[selectedCustomStepIndex];
+        const runsOpen = !!selected && customStepIdsRun(customStepsData, calls).has(String(selected.id || '').trim());
+        const open = runsOpen ? (customStepActionsBuilder?.passwordsToType?.() || []) : [];
+        const others = customStepsWithEmptyPasswords(customStepsData, calls, stepDefs, {skipIndex: selectedCustomStepIndex});
+        return {count: workflow.length + open.length + others.reduce((n, o) => n + o.count, 0), workflow, open, others};
+    }
+
+    function updatePasswordsBanner() {
+        if (!passwordsBanner) {
+            const host = $('#workflow-passwords');
+            if (!host) return;
+            passwordsBanner = createPasswordsBanner({host, onNext: () => goToNextPassword()});
+        }
+        passwordsBanner.update(passwordsLeftToType().count);
+    }
+
+    /**
+     * Scrolls to the next password left to type after the one focused, and
+     * puts focus in it; after the last, the first again. A custom step's is
+     * typed in the custom step: it is opened first. `fromStart`: the first
+     * one, whatever is focused (Run). -> the field, or null.
+     */
+    function goToNextPassword({fromStart = false} = {}) {
+        const left = passwordsLeftToType();
+        const fields = [...left.workflow, ...left.open];
+        const at = fromStart ? -1 : fields.indexOf(document.activeElement);
+        let field = at >= 0 ? fields[at + 1] : fields[0];
+        if (!field && left.others.length && (at >= 0 || !fields.length)) {
+            setConfigExpanded(true);
+            setCustomStepsExpanded(true);
+            customStepsUi.selectCustomStep(left.others[0].index);
+            field = customStepActionsBuilder?.passwordsToType?.()[0] || null;
+        }
+        if (!field) field = fields[0] || null;
+        if (!field) return null;
+        const line = field.closest('.line');
+        if (actionsBar?.contains(field)) goToWorkflowLine(line);
+        else goToCustomStepLine(line);
+        field.focus({preventScroll: true});
+        return field;
     }
 
     // "3 more matches in Custom steps →": the other panel, filtered alike.
@@ -2269,8 +2340,12 @@ function storeActiveMode(mode) {
                 count: (kind, query) => customStepsPanel?.countMatches(kind, query) || 0,
                 go: (kind, query) => showFilteredIn(customStepsPanel, setCustomStepsExpanded, kind, query)
             },
-            // Where each custom step runs comes from the workflow's calls.
-            onRead: () => customStepsPanel?.refresh()
+            // Where each custom step runs comes from the workflow's calls, and
+            // so do the custom steps whose passwords a run needs.
+            onRead: () => {
+                customStepsPanel?.refresh();
+                updatePasswordsBanner();
+            }
         });
     }
 
@@ -3184,7 +3259,10 @@ function storeActiveMode(mode) {
                     actionsEl,
                     options: {
                         openRulesCatalog: (options) => rulesCatalog.open(options),
-                        useHorizontalStepper: false
+                        useHorizontalStepper: false,
+                        // Each step that needs a password marks itself; the
+                        // Workflow section says how many are left.
+                        onPasswordsChange: () => updatePasswordsBanner()
                     }
                 });
                 createHistoryButtons();

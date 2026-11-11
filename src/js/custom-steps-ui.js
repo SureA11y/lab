@@ -416,7 +416,8 @@ export function createCustomStepsUi(app) {
                 actionsEl: app.customStepActionsEl,
                 options: {
                     openRulesCatalog: (options) => app.rulesCatalog.open(options),
-                    useHorizontalStepper: false
+                    useHorizontalStepper: false,
+                    onPasswordsChange: () => app.onPasswordsChange?.()
                 }
             });
             app.createCustomStepActionsHistoryButtons();

@@ -88,6 +88,22 @@ describe('steps panel', () => {
         assert.equal(status(), '8 steps');
     });
 
+    test('a step with a password to type again says so in its row, as on its card', () => {
+        const { doc, panel, rows } = setup();
+        doc.querySelector('.line[data-action-index-path="3.1.1.1"]').dataset.needsPassword = 'true';
+        panel.refresh();
+        const flagged = rows().filter((r) => r.querySelector('.steps-panel__badge'));
+        assert.equal(flagged.length, 1);
+        assert.equal(flagged[0].querySelector('.steps-panel__num').textContent, '3.1.1.1');
+        // Read with the row's name, after a pause.
+        assert.equal(flagged[0].querySelector('.steps-panel__badge').textContent, ', Needs password');
+        const saved = readActionNodes([{ type: 'setPassword' }, { type: 'click' }], {
+            idOf: (k) => k, typeTitleOf: (t) => t, nameOf: () => '', listsOf: () => [],
+            needsPassword: (action) => action.type === 'setPassword'
+        });
+        assert.deepEqual(saved.map((n) => n.needsPassword), [true, false]);
+    });
+
     test('says a disabled step is disabled, in words', () => {
         const { rows } = setup();
         const cart = rows()[7];

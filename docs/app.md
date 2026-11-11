@@ -73,6 +73,12 @@ lists every step and field.
 - A password goes in **Set password value**: it is hidden on screen and never
   saved. For runs nobody watches, the step can read it from an environment
   variable instead ([the runner's guide](scheduled-scans-guide.md#passwords)).
+  A configuration loaded back has its passwords empty: each step with one
+  to type says **Needs password**, on its card and in the steps panel, and a
+  banner at the top of the workflow says how many are left (*4 passwords to
+  type again*), the workflow's and those of the custom steps it runs, with
+  **Go to the next one**. Run and Dry run wait for them, and put focus on the
+  first.
 
 **Run** runs the workflow and shows its progress, step by step, with a log.
 **Dry run** takes every step but the scans, screenshots and evidence, and

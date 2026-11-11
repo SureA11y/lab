@@ -322,6 +322,15 @@ The first public release.
   workflow and the custom steps. Fix the file and load it again before
   saving over it. Required fields the file left empty show as errors once
   it is loaded, not only at Run.
+- **Passwords to type again are shown where they are.** A loaded
+  configuration's passwords, never saved, were only mentioned in a green
+  line by Run, far from the fields deep in the workflow. Each step with one
+  now says **Needs password** (amber) on its card and in the steps panel; a
+  banner at the top of the workflow says how many are left, those of the
+  custom steps it runs too, and **Go to the next one** scrolls to it and
+  puts focus in it. Run and Dry run wait for them, saying so, with focus
+  on the first. The empty field says "Type it again: not saved with the
+  configuration".
 - **Run settings say the same in their chips and their dialog**:
   "Colors: Browser default", "Certificates: Refuse untrusted", the chip's
   name the field's label and its value the option chosen (the chips said
