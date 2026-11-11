@@ -235,27 +235,20 @@
 }
 
 /* Fields (grid)
-   Columns are added as the step's own box gets wider (see container-type on
-   .line), never as the window does. The breakpoints are the exact width each
-   column count needs - N * 180px plus the 16px gaps - so a track is never
-   asked for more room than the step has, and minmax(0, 1fr) keeps the grid
-   from pushing past its parent even below the narrowest breakpoint. */
+   As many columns of at least 14rem as the step's own box has room for,
+   never as the window does, and the fields there are share the row: two
+   fields in a wide step are two wide fields, not two 200px ones beside an
+   empty row. min() keeps a column from asking for more than a narrow
+   (nested) step has. A URL, a selector, a text or a value (data-wide,
+   step-fields.js) takes the whole row: they are long, and cut short they
+   cannot be read. */
 :is(#actions-builder, #custom-step-actions-builder) .fields {
     display: grid;
     gap: 16px;
     align-items: start;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
 }
-
-@container (min-width: 376px) {
-    :is(#actions-builder, #custom-step-actions-builder) .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@container (min-width: 572px) {
-    :is(#actions-builder, #custom-step-actions-builder) .fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@container (min-width: 768px) {
-    :is(#actions-builder, #custom-step-actions-builder) .fields { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
+:is(#actions-builder, #custom-step-actions-builder) .fields > .field[data-wide="true"] { grid-column: 1 / -1; }
 
 /* Default field */
 :is(#actions-builder, #custom-step-actions-builder) .field {
@@ -389,22 +382,24 @@
 :is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
     gap: 12px 16px;
     align-items: start;
 }
+/* A value of several lines (a list of viewports) is a textarea, on a row
+   of its own. */
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-input-row:has(textarea) { grid-column: 1 / -1; }
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-input-row textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    min-height: 28px;
+    resize: vertical;
+    font-size: var(--sb-fs);
+    line-height: 1.4;
+}
 
-@container (min-width: 376px) {
-    :is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@container (min-width: 572px) {
-    :is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@container (min-width: 768px) {
-    :is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-
-:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs > label {
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs > .runcustomstep-dynamic-inputs__title {
     grid-column: 1 / -1;
     font-size: var(--fs-sm);
     color: var(--text-muted);
