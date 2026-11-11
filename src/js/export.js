@@ -109,7 +109,12 @@ function getReportContent({ includeFilteredOut = false } = {}) {
         // change them.
         '.report-meta-edit',
         '.report-meta-editor',
-        'td a[href*="dequeuniversity.com"]'
+        'td a[href*="dequeuniversity.com"]',
+        // The review of the run's scans (docs/design/scan-grouping-design.md
+        // §11.2) is the app's: its card, and the buttons of the bar that says
+        // the report shows one group only (the bar's sentence stays).
+        '.sr-card',
+        '.sr-focusbar button'
     ];
 
     // By default the export follows the current view: scans the tag or profile
@@ -121,6 +126,18 @@ function getReportContent({ includeFilteredOut = false } = {}) {
     resultsContainer
         .querySelectorAll(removeSelectors.join(', '))
         .forEach((element) => element.remove());
+
+    // What opens the review stays as what it shows: a merged scan's pages as
+    // pictures, a scan's group as its name.
+    resultsContainer.querySelectorAll('.scan-filmstrip__page').forEach((button) => {
+        const picture = document.createElement('span');
+        picture.className = button.className;
+        picture.append(...button.childNodes);
+        button.replaceWith(picture);
+    });
+    resultsContainer.querySelectorAll('.scan-filmstrip__more button, .scan-review-group button').forEach((button) => {
+        button.replaceWith(document.createTextNode(button.textContent));
+    });
 
 
     // The exported report ships in default (workflow) order whatever sort is
