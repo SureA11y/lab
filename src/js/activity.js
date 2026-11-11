@@ -5,8 +5,11 @@
  * take a while and go through steps, such as downloading a report or loading
  * a large zip, shown top right as they go. Each action is a card; each step
  * is listed as it starts, with a spinner, and a check once done. A card that
- * ends well stays a few seconds and goes; one that ends in a warning or an
- * error stays until it is closed. Scans and runs are not shown here: the
+ * ends well folds to its title and result at once, so it covers little, and
+ * goes after a few seconds; one that ends in a warning or an error stays
+ * until it is closed, as does one still running. At phone width the panel is
+ * a strip along the bottom, at most 30% of the screen, and the page makes
+ * room for it below its content. Scans and runs are not shown here: the
  * queue has its own panel.
  *
  * What it does for people who cannot see it:
@@ -307,7 +310,10 @@ export function createActivityCenter({
         const c = task.card;
         if (!c) return;
         const folded = isFolded(task);
-        c.card.className = `activity-card activity-card--${task.state}${folded ? ' is-collapsed' : ''}${task.flash ? ' is-flashing' : ''}`;
+        // Ended well, and not opened by the user: its steps fold away, its
+        // title and result stay until it goes. The Activity list keeps them.
+        const settled = !allOpen && task.state === 'done' && !task.touched && !task.question;
+        c.card.className = `activity-card activity-card--${task.state}${folded ? ' is-collapsed' : ''}${settled ? ' is-settled' : ''}${task.flash ? ' is-flashing' : ''}`;
         c.toggle.setAttribute('aria-expanded', String(!folded));
         // Folded to one line, a long title is cut short: whole on hover.
         if (folded && allOpen) c.toggle.title = task.title;
@@ -406,6 +412,9 @@ export function createActivityCenter({
         if (ui && !tasks.some((t) => t.card)) {
             ui.panel.hidden = !allOpen;
             untuck();
+            // A panel that goes from under the pointer, or with focus in it,
+            // gets no mouseleave or focusout: the next card would never go.
+            if (!allOpen) paused = false;
         } else if (ui && ui.panel.classList.contains('is-tucked')) {
             renderChip();
         }

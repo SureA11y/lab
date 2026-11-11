@@ -50,9 +50,11 @@ is asked, so the browser's own download shows it from the start.
   ends "Done with warnings".
 - **It ends with one line**: "Downloaded Checkout.zip", "2 reports loaded…",
   or what went wrong.
-- **A card that ended well goes after 5 seconds**, not while the pointer is
-  over the panel or focus is in it. One with a warning or an error stays
-  until it is closed.
+- **A card that ended well folds to its title and result at once**, so it
+  covers little, **and goes after 5 seconds**, not while the pointer is over
+  the panel or focus is in it; its steps stay in the Activity list. One with
+  a warning or an error stays until it is closed, with its steps, as does
+  one still running.
 - **Cancel**, on the downloads, stops at the next step. Compressing cannot
   stop half-way, so Cancel takes effect once it is done.
 - **✕ on a running card hides it**: the action goes on. Pressing the button
@@ -106,8 +108,10 @@ label no longer changes with each step.
   progress:"), not only an icon.
 - With reduced motion, the spinners stand still. In forced colours, the icons
   and edges take the system colours.
-- At phone width it is a strip along the bottom, at most half the screen
-  high.
+- At phone width it is a strip docked along the bottom, at most 30% of the
+  screen high, and the page makes room for it below its content, so nothing
+  is left under it for good. The list opened from the Activity button may
+  take more, as a menu does.
 
 ## Using it
 
