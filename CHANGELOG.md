@@ -314,6 +314,14 @@ The first public release.
   Each password in the dialog says where it is asked (the steps it sits
   inside and its own step), the steps just before it, and the runs it is
   for, so two passwords in one workflow can be told apart.
+- **Load config says what it left out.** A key a step's fields do not read
+  (a switch's cases under `actions`, an `if` with `selector`) was dropped
+  without a word, whole branches with it, and the load said a green
+  "loaded". It now loads the rest and warns, step by step: *Step 8 (Switch):
+  'actions' was not used, so 6 nested steps were left out*, for the
+  workflow and the custom steps. Fix the file and load it again before
+  saving over it. Required fields the file left empty show as errors once
+  it is loaded, not only at Run.
 - **Run settings say the same in their chips and their dialog**:
   "Colors: Browser default", "Certificates: Refuse untrusted", the chip's
   name the field's label and its value the option chosen (the chips said

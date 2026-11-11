@@ -7,6 +7,8 @@
  * - Load/save config JSON (the workflow travels inside the config's state)
  * - Auto-apply state from query params
  */
+import {describeUnusedStepKeys} from './actions-builder.module.js';
+
 export function createConfigIO(deps) {
     if (!deps) throw new Error('createConfigIO: deps is required');
 
@@ -146,6 +148,37 @@ export function createConfigIO(deps) {
         return `It has ${dropped.length === 1 ? 'a step' : 'steps'} the app does not have, left out: ${list}. Saving now would drop ${dropped.length === 1 ? 'it' : 'them'} for good.`;
     }
 
+    // Steps listed in a note before the rest are left to the console: a note
+    // is read in the status line, and a long one is not read.
+    const UNUSED_SHOWN = 6;
+
+    /**
+     * What steps held that the editor does not use (unusedStepKeys), as a
+     * note, or null: "Step 8 (Switch): 'actions' was not used, so 6 nested
+     * steps were left out". `lists` is [{unused, where}], the workflow's and
+     * each custom step's.
+     */
+    function unusedKeysNote(lists) {
+        const lines = lists.flatMap(({unused, where}) => describeUnusedStepKeys(unused, where));
+        if (!lines.length) return null;
+        if (lines.length > UNUSED_SHOWN) console.info('Not used from the file:\n' + lines.join('\n'));
+        const shown = lines.slice(0, UNUSED_SHOWN).join('. ')
+            + (lines.length > UNUSED_SHOWN ? `. And ${lines.length - UNUSED_SHOWN} more steps (listed in the console)` : '');
+        return `Some of what its steps hold is not something the app knows, and was left out: ${shown}. Saving now would drop it for good.`;
+    }
+
+    /** The custom steps of a config's state, as saved, or [] when they cannot be read. */
+    function savedCustomSteps(raw) {
+        try {
+            const parsed = typeof raw === 'string' ? (raw.trim() ? JSON.parse(raw) : []) : raw;
+            if (Array.isArray(parsed)) return parsed;
+            if (parsed && typeof parsed === 'object') return Object.entries(parsed).map(([id, v]) => ({id, ...(v || {})}));
+        } catch {
+            // Said where the custom steps are read.
+        }
+        return [];
+    }
+
     function applyShareableState(state) {
         if (!state || typeof state !== 'object') return;
 
@@ -174,10 +207,24 @@ export function createConfigIO(deps) {
             setCustomSteps(raw);
         }
 
+        const unused = [];
         if (state['actions-workflow']) {
-            const note = droppedStepsNote(actionsBuilder.loadActions(state['actions-workflow'], {}));
+            const result = actionsBuilder.loadActions(state['actions-workflow'], {});
+            const note = droppedStepsNote(result);
             if (note) loadNotes.push(note);
+            if (result && Array.isArray(result.unused)) unused.push({unused: result.unused, where: 'Step'});
+            // A required field the config left empty shows as one at once.
+            actionsBuilder.showFieldErrors?.();
         }
+        if (typeof actionsBuilder.unusedKeys === 'function') {
+            const raw = state['custom-steps-json'] || state['custom-steps-definitions'] || '';
+            savedCustomSteps(raw).forEach((step) => {
+                if (!step || !Array.isArray(step.actions)) return;
+                unused.push({unused: actionsBuilder.unusedKeys(step.actions), where: `Custom step “${step.name || step.id}”, step`});
+            });
+        }
+        const unusedNote = unusedKeysNote(unused);
+        if (unusedNote) loadNotes.push(unusedNote);
 
         if (typeof onStateApplied === 'function') onStateApplied();
     }
