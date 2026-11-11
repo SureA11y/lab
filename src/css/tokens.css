@@ -69,6 +69,10 @@
     --font-display: "Space Grotesk", var(--font-sans);
     --font-sans: "Public Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    /* Interface text: buttons, tabs, menus, labels, chips. Monospace
+       (--font-mono) is for code and values only: selectors, rule ids,
+       addresses, logs. */
+    --font-ui: var(--font-sans);
 
     /* Font size scale */
     --fs-xxs: 0.6875rem;

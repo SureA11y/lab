@@ -17,6 +17,10 @@
     --font-display: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-sans: "Public Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    /* Interface text: buttons, tabs, menus, labels, chips. Monospace
+       (--font-mono) is for code and values only: selectors, rule ids,
+       addresses, logs. */
+    --font-ui: var(--font-sans);
 
     /* Font size scale */
     --fs-xxs: 0.6875rem;  /* 11px */
@@ -633,7 +637,7 @@ button {
 
     cursor: pointer;
 
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-weight: 600;
     font-size: var(--fs-base);
 
@@ -671,7 +675,7 @@ button[aria-disabled=true] {
     background: var(--surface-2);
     color: var(--text-muted);
 
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-weight: 600;
     box-shadow: none;
 }
@@ -840,7 +844,7 @@ button.src-dialog-close:focus-visible {
     padding: .3rem .6rem;
     border-radius: var(--radius-sm);
 
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
 
     background: transparent;
@@ -1146,7 +1150,7 @@ tr.cantTell .issue-status { color: var(--warn); }
     min-height: 0;
     padding: .15rem .55rem;
 
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-weight: 600;
 
@@ -2206,7 +2210,7 @@ a:hover { text-decoration-thickness: 2px; }
 }
 
 .scoreGauge__readout--rating .scoreGauge__status {
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-sm);
     font-weight: 600;
     white-space: nowrap;
@@ -2220,7 +2224,7 @@ a:hover { text-decoration-thickness: 2px; }
 }
 
 .scoreGauge__bottom .scoreGauge__status {
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     color: var(--text-muted);
 }
@@ -2228,7 +2232,7 @@ a:hover { text-decoration-thickness: 2px; }
 /* The unresolved share of the same denominator - never let the number above
    stand alone as an unqualified claim. */
 .scoreGauge__unresolved {
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     color: var(--warn);
     white-space: nowrap;
@@ -3028,7 +3032,7 @@ a.engine-brand {
     align-items: center;
     padding: 5px 10px;
     border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     line-height: 1.4;
     color: var(--text-muted);
@@ -3244,13 +3248,13 @@ a.engine-brand {
 }
 .summary-controls { display: inline-flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .scan-sort { display: inline-flex; align-items: center; gap: var(--space-2); }
-.scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-mono); }
+.scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-ui); }
 #scan-sort-select {
     /* The height of the buttons beside it (Hide excluded): 36px, the DS sm
        size every button has. */
     box-sizing: border-box;
     min-height: 36px;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-weight: 600;
     font-size: var(--fs-sm);
     padding: 0 var(--space-3);
@@ -3439,7 +3443,7 @@ a.engine-brand {
 .dsp-seg { display: inline-flex; align-items: center; border: 0; padding: 0; margin: 0; min-width: 0; }
 .dsp-seg legend { float: left; font-size: .8rem; color: var(--text-muted); margin-right: 8px; padding: 0; }
 /* Wraps inside its segment when the line has no room. Mirrors the app. */
-.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: normal; min-width: 0; }
+.dsp-seg label { position: relative; font-family: var(--font-ui, system-ui, sans-serif); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: normal; min-width: 0; }
 .dsp-seg label + label { border-left-width: 0; }
 .dsp-seg label:has(input:checked) + label { border-left-color: var(--accent); }
 .dsp-seg label:hover, .dsp-filter-btn:hover { background: var(--na-soft); }
@@ -3449,11 +3453,11 @@ a.engine-brand {
 .dsp-seg label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--text-main); font-weight: 700; }
 .dsp-seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 1; }
 .dsp-filter { position: relative; }
-.dsp-filter-btn { min-height: 0; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); font-weight: 400; line-height: 1.4; border: 1px solid var(--border-strong); border-radius: 4px; background: transparent; color: var(--text-main); cursor: pointer; }
+.dsp-filter-btn { min-height: 0; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-family: var(--font-ui, system-ui, sans-serif); font-size: var(--fs-xs, .78rem); font-weight: 400; line-height: 1.4; border: 1px solid var(--border-strong); border-radius: 4px; background: transparent; color: var(--text-main); cursor: pointer; }
 .dsp-filter-btn[aria-expanded="true"] { border-color: var(--accent); }
 .dsp-chip:hover { border-color: var(--accent); }
 .dsp-filter-caret { font-size: .8em; line-height: 1; }
-.dsp-filter-n { line-height: 1.5; font-family: var(--font-mono, ui-monospace, monospace); font-size: .76rem; padding: 0 7px; border-radius: 999px; background: var(--accent); color: var(--bg-elevated); }
+.dsp-filter-n { line-height: 1.5; font-family: var(--font-ui, system-ui, sans-serif); font-size: .76rem; padding: 0 7px; border-radius: 999px; background: var(--accent); color: var(--bg-elevated); }
 .dsp-filter-n[hidden] { display: none; }
 .dsp-filter-panel { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: min(420px, calc(100vw - 32px)); padding: 10px 12px 12px; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 8px 28px rgba(4, 21, 14, .18); }
 .dsp-filter-panel[hidden] { display: none; }
@@ -3471,7 +3475,7 @@ a.engine-brand {
 .dsp-link { min-height: 0; font: inherit; font-size: .82rem; padding: 2px 4px; border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; }
 .dsp-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 6px; }
 .dsp-chips[hidden] { display: none; }
-.dsp-chip { min-height: 0; font-family: var(--font-mono, ui-monospace, monospace); font-size: .78rem; font-weight: 400; line-height: 1.4; display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px 2px 9px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--accent-soft); color: var(--text-main); cursor: pointer; }
+.dsp-chip { min-height: 0; font-family: var(--font-ui, system-ui, sans-serif); font-size: .78rem; font-weight: 400; line-height: 1.4; display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px 2px 9px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--accent-soft); color: var(--text-main); cursor: pointer; }
 .dsp-chip span { font-size: .9rem; line-height: 1; color: var(--text-muted); }
 .dsp-strips-status { font-size: .82rem; color: var(--text-muted); margin: 0 0 4px; }
 /* The hotspots are found over every rule, so they say nothing about a few. */
@@ -3489,7 +3493,7 @@ a.engine-brand {
 .dsp-map text, .dsp-line text { fill: var(--text-soft); font-size: 11px; }
 .dsp-map .dsp-q { fill: var(--text-muted); font-size: 12px; font-weight: 600; }
 .dsp-map .dsp-qs { font-size: 10.5px; }
-.dsp-map .dsp-lbl { fill: var(--text-main); font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; }
+.dsp-map .dsp-lbl { fill: var(--text-main); font-family: var(--font-ui, system-ui, sans-serif); font-size: 11px; }
 .dsp-map .dsp-ttl { fill: var(--text-muted); font-size: 11.5px; }
 /* A halo in the surface colour keeps a label readable where it crosses a dot,
    an arrow or a quadrant title. */

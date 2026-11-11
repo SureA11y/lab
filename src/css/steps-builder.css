@@ -862,7 +862,7 @@
     border: 1px solid var(--border-strong);
     background: var(--bg-elevated);
     color: var(--text-main);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-weight: 600;
     cursor: pointer;
@@ -958,7 +958,7 @@
 .steps-panel__type {
     flex: none;
     white-space: nowrap;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xxs);
     font-weight: 600;
     letter-spacing: .03em;
@@ -970,7 +970,7 @@
 }
 .steps-panel__type[data-cat="scan"] { background: var(--accent-soft); color: var(--accent-on-soft); }
 .steps-panel__type[data-cat="container"] { background: transparent; box-shadow: inset 0 0 0 1px var(--border-strong); }
-.steps-panel__num { flex: none; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
+.steps-panel__num { flex: none; white-space: nowrap; font-family: var(--font-ui); font-size: var(--fs-xs); color: var(--text-muted); }
 /* A long name wraps rather than being cut: cut text is lost to someone who
    spaces text out (WCAG 1.4.12). Where a deep step leaves it less than ten
    characters beside its type and number, it goes to a line of its own. */
@@ -982,7 +982,7 @@
 .steps-panel__row.is-root:first-child { margin-top: 0; }
 .steps-panel__row.is-root .steps-panel__name { font-weight: 600; color: var(--text-main); }
 /* Where a custom step runs, at the row's end; below its name when there is no room. */
-.steps-panel__note { margin-left: auto; padding-left: var(--space-2); font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap; }
+.steps-panel__note { margin-left: auto; padding-left: var(--space-2); font-family: var(--font-ui); font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap; }
 .steps-panel__row.is-match .steps-panel__name { font-weight: 600; }
 .steps-panel__row.is-context { color: var(--text-muted); }
 .steps-panel__row.is-disabled .steps-panel__name { text-decoration: line-through; color: var(--text-muted); }
@@ -1025,8 +1025,8 @@
     border-radius: var(--radius-lg);
     background: var(--bg-elevated);
 }
-.steps-panel__rail-where { writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); white-space: nowrap; }
-.steps-panel__rail-count { min-width: 1.5em; font-family: var(--font-mono); font-size: var(--fs-xxs); font-weight: 600; text-align: center; padding: 2px 6px; border-radius: var(--radius-pill); background: var(--accent); color: var(--bg-elevated); }
+.steps-panel__rail-where { writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--font-ui); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.steps-panel__rail-count { min-width: 1.5em; font-family: var(--font-ui); font-size: var(--fs-xxs); font-weight: 600; text-align: center; padding: 2px 6px; border-radius: var(--radius-pill); background: var(--accent); color: var(--bg-elevated); }
 .steps-panel__rail-count[hidden] { display: none; }
 
 /* The step the panel went to, in the editor. */
@@ -1066,7 +1066,7 @@
     border-radius: var(--radius-pill);
     background: var(--bg-elevated);
     color: var(--accent);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-weight: 600;
     cursor: pointer;
@@ -1086,7 +1086,7 @@
     border: 1px solid var(--border-strong);
     background: var(--surface-base);
     color: var(--text-main);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-weight: 600;
     cursor: pointer;
@@ -1147,7 +1147,7 @@
     border-radius: var(--radius-sm);
     background: var(--bg-elevated);
     color: var(--accent);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-weight: 600;
     cursor: pointer;
@@ -1251,11 +1251,11 @@
 .steps-panel-edit__now { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: var(--fs-xs); color: var(--text-muted); }
 .steps-panel-edit__value { padding: 1px 8px; border-radius: var(--radius-pill); background: var(--na-soft); color: var(--text-main); }
 .steps-panel-edit__value b { font-family: var(--font-mono); font-weight: 600; color: var(--text-muted); }
-.steps-panel-edit__mixed { padding: 1px 6px; border-radius: var(--radius-xs); background: var(--warn-soft); color: var(--warn); font-family: var(--font-mono); font-weight: 600; }
+.steps-panel-edit__mixed { padding: 1px 6px; border-radius: var(--radius-xs); background: var(--warn-soft); color: var(--warn); font-family: var(--font-ui); font-weight: 600; }
 .steps-panel-edit__control { max-width: 320px; min-height: 32px; }
 .steps-panel-edit__list { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .steps-panel-edit__list .steps-panel-edit__control { flex: 1 1 160px; }
-.steps-panel-edit__count { margin: 0; padding-top: 6px; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
+.steps-panel-edit__count { margin: 0; padding-top: 6px; font-family: var(--font-ui); font-size: var(--fs-xs); color: var(--text-muted); }
 .steps-panel-edit .steps-panel-edit__more {
     margin: var(--space-2) 0;
     padding: 4px 10px;
@@ -1264,7 +1264,7 @@
     border-radius: var(--radius-sm);
     background: var(--surface-base);
     color: var(--text-main);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-weight: 600;
     cursor: pointer;
@@ -1294,7 +1294,7 @@
     border: 1px solid var(--border-strong);
     background: var(--surface-base);
     color: var(--text-main);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-weight: 600;
     cursor: pointer;

@@ -177,7 +177,7 @@ body.is-running .config-header .config-actions {
 button {
     /* DS Button: sm (36px) is the default size across the desktop tool. The
        height is fixed and shared with icon buttons; vertical padding is 0 and
-       the label is centred by flex. IBM Plex Mono 600 is the UI voice. */
+       the label is centred by flex, in the UI font (--font-ui) at 600. */
     min-height: 36px;
     padding: 0 var(--space-4);
     border-radius: var(--radius-sm);
@@ -185,7 +185,7 @@ button {
 
     cursor: pointer;
 
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-base);
     font-weight: 600;
     line-height: 1.2;
@@ -292,7 +292,7 @@ button.src-dialog-close:focus-visible {
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-strong);
 
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-weight: 600;
 
     background: var(--surface-2);
@@ -352,7 +352,7 @@ button.src-dialog-close:focus-visible {
     box-sizing: border-box;
     min-height: 36px;
     border: 1px solid transparent;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-base);
     font-weight: 600;
     line-height: 1.2;
@@ -424,7 +424,7 @@ button.src-dialog-close:focus-visible {
 
 .split-button__menu-heading {
     padding: var(--space-2) var(--space-3) var(--space-1);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     letter-spacing: .1em;
     text-transform: uppercase;
@@ -462,7 +462,7 @@ button.src-dialog-close:focus-visible {
 }
 
 .split-button__item-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--text-main);
@@ -680,7 +680,7 @@ html.has-mode-bar {
     background: transparent;
     color: var(--text-muted);
 
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-weight: 400;
     font-size: var(--fs-sm);
 
@@ -755,7 +755,7 @@ html.has-mode-bar {
     padding: 0;
     border: 0;
     background: transparent;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xxs);
     line-height: 18px;
     color: var(--ok);
