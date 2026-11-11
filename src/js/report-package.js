@@ -216,3 +216,20 @@ export function resolveImageRefs(text, urls) {
     return String(text).replace(/"(images\/[A-Za-z0-9._-]+)"/g, (match, at) => (urls.has(at) ? JSON.stringify(urls.get(at)) : match));
 }
 
+
+/**
+ * How many pictures a report's JSON `text` names by their path in a package
+ * ("images/<name>") with none given to it: a report's JSON opened without the
+ * zip it came in. Each picture counted once.
+ */
+export function countUnpackagedPictures(text) {
+    const paths = new Set(String(text).match(/"images\/[A-Za-z0-9._-]+"/g) || []);
+    return paths.size;
+}
+
+/** What to say of `count` such pictures, as a sentence; '' for none. */
+export function unpackagedPicturesNote(count) {
+    if (!count) return '';
+    const pictures = count === 1 ? '1 picture' : `${count} pictures`;
+    return `Its ${pictures} came in the zip it was saved in, not with this file: open that zip, from Download report, to see them.`;
+}

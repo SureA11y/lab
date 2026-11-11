@@ -25,6 +25,7 @@ The first public release.
   principle or level, by your own grouping, or not at all; exported as a
   report package (report version 4, with an occurrence id on every failing
   element, the same in every run) or a standalone HTML page.
+  A package's JSON opened without its zip says its pictures are in the zip.
   A report's time reads in the reader's own time zone, named; scans see the
   machine's zone unless `A11Y_TZ` names one.
   At the top of a report's summary, a card says how much of the run is

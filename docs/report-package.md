@@ -173,6 +173,10 @@ like the lab's.
 Reports saved before packages load as they always did: pictures inline, or
 links the lab serves.
 
+A JSON opened without its zip is named, in the list of files and in the
+status once loaded, with how many pictures it lacks and that its zip has them
+(`countUnpackagedPictures`).
+
 ## A picture that cannot be shown
 
 A picture a report names but the page cannot show says why, in place of the

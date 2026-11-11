@@ -9,6 +9,7 @@ import {afterPaint} from './busy.js';
 import {buildGlobalSummary, hashHex16, pickMetricDefsFromStaged, sortByOrderKey, validateReportOrThrow} from './report-data.js';
 import {focusSafely, isActuallyFocusable} from './focus-utils.js';
 import {STATUS} from './ui-constants.js';
+import {unpackagedPicturesNote} from './report-package.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
@@ -240,7 +241,9 @@ export function createOpenReportStaging(app) {
             const li = document.createElement('li');
             li.className = 'hint'; // reuse existing styling class, minimal CSS changes
 
-            const statusText = item.ok ? 'Ready' : `Invalid: ${item.error || 'Unknown error'}`;
+            const statusText = item.ok
+                ? (item.missingPictures ? `Ready. ${unpackagedPicturesNote(item.missingPictures)}` : 'Ready')
+                : `Invalid: ${item.error || 'Unknown error'}`;
 
             const scans = (item.ok && item.parsed && Array.isArray(item.parsed.scans)) ? item.parsed.scans : [];
             const actionShots = (item.ok && item.parsed && Array.isArray(item.parsed.screenshots)) ? item.parsed.screenshots : [];
@@ -618,8 +621,15 @@ export function createOpenReportStaging(app) {
             await afterPaint();
         };
         // The report is drawn a few scans at a time: the task ends once all are.
+        // A report whose pictures stayed in its zip says so once it shows.
         const shown = async (message) => {
-            app.setStatusReport(message, STATUS.OK);
+            const without = okItems.filter((x) => x.missingPictures);
+            if (without.length) {
+                message += without.length === 1 && okItems.length === 1
+                    ? ` ${unpackagedPicturesNote(without[0].missingPictures)}`
+                    : ` ${without.map((x) => x.name).join(', ')}: ${without.length === 1 ? 'its pictures came' : 'their pictures came'} in the zip ${without.length === 1 ? 'it was' : 'they were'} saved in: open ${without.length === 1 ? 'that zip' : 'those zips'}, from Download report, to see them.`;
+            }
+            app.setStatusReport(message, without.length ? STATUS.WARNING : STATUS.OK);
             app.focusReportArea();
             await app.reportView.whenResultsComplete();
             task.done(message);

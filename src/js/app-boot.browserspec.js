@@ -142,6 +142,33 @@ test('a report opens on the Open report tab, and two in Compare', async () => {
     await page.close();
 });
 
+test('a report\'s JSON opened without its zip says its pictures are in the zip', async () => {
+    const payload = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+    // As the JSON in a Download report zip names its pictures.
+    payload.screenshots = [{ id: 'shot-1', label: 'Shot', dataUrl: 'images/0123456789abcdef0123.jpg' }];
+    const file = path.join(path.dirname(reportFile), 'unzipped.a11y-report.json');
+    fs.writeFileSync(file, JSON.stringify(payload));
+
+    const { page, errors } = await openApp();
+    await page.click('#mode-open');
+    await (await page.$('#resultsFiles')).uploadFile(file);
+    await page.waitForFunction(() => /loaded/i.test(document.querySelector('#statusReport').textContent), { timeout: 30000 });
+    assert.match(await statusOf(page, '#statusReport'), /Its 1 picture came in the zip it was saved in.*open that zip, from Download report/);
+    assert.match(await page.$eval('#report-files-list', (el) => el.textContent), /Ready\. Its 1 picture came in the zip/);
+
+    assert.deepEqual(errors, []);
+    await page.close();
+
+    // A report with its pictures says nothing of the kind.
+    const other = await openApp();
+    await other.page.click('#mode-open');
+    await (await other.page.$('#resultsFiles')).uploadFile(reportFile);
+    await other.page.waitForFunction(() => /loaded/i.test(document.querySelector('#statusReport').textContent), { timeout: 30000 });
+    assert.doesNotMatch(await statusOf(other.page, '#statusReport'), /picture/);
+    assert.deepEqual(other.errors, []);
+    await other.page.close();
+});
+
 test('the Sort select is as tall as the Hide excluded button beside it', async () => {
     const { page, errors } = await openApp();
     await page.click('#mode-open');

@@ -5,6 +5,7 @@
 // `app`.
 
 import {readCompareZip} from './comparison-bundle.js';
+import {countUnpackagedPictures, unpackagedPicturesNote} from './report-package.js';
 import {afterPaint, isBusy, runBusy, setBusy} from './busy.js';
 import {getActivity} from './activity.js';
 import {cleanGroupingItem} from './grouping-spec.js';
@@ -294,11 +295,15 @@ export function createOpenReportFiles(app) {
 
                     entry.ok = true;
                     entry.parsed = json;
+                    // A report's JSON taken out of its zip: its pictures are
+                    // still in the zip (report-package.js).
+                    entry.missingPictures = countUnpackagedPictures(text);
                     app.initEntrySelectionsFromParsed(entry);
 
                     app.stagedReportFiles.push(entry);
                     app.prepareSpareReport(entry, text);
-                    checking.done();
+                    if (entry.missingPictures) checking.warn(unpackagedPicturesNote(entry.missingPictures));
+                    else checking.done();
                 } catch (err) {
                     checking.warn(String(err?.message || err));
                     app.stagedReportFiles.push({
@@ -324,10 +329,12 @@ export function createOpenReportFiles(app) {
             const okCount = app.stagedReportFiles.filter(x => x.ok).length;
             const badCount = total - okCount;
 
-            const staged = badCount
+            const withoutPictures = app.stagedReportFiles.filter(x => x.ok && x.missingPictures).length;
+            const staged = (badCount
                 ? `Files staged. ${okCount} valid, ${badCount} invalid. Remove or fix invalid files before loading.`
-                : `Files staged. ${okCount} ready to load.`;
-            app.setStatusReport(staged, badCount ? STATUS.WARNING : STATUS.OK);
+                : `Files staged. ${okCount} ready to load.`)
+                + (withoutPictures ? ` ${withoutPictures === 1 ? 'One is' : `${withoutPictures} are`} without ${withoutPictures === 1 ? 'its' : 'their'} pictures.` : '');
+            app.setStatusReport(staged, badCount || withoutPictures ? STATUS.WARNING : STATUS.OK);
             task.done(staged);
             readingReportFiles = null;
             return badCount === 0;
