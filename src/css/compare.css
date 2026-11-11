@@ -1328,3 +1328,8 @@ body.queue-mode-active #screenshots-container { display: none; }
 }
 
 /* compare:end */
+
+/* The queue with nothing in it: what fills it, and the way there. */
+.queue-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); max-width: 65ch; margin: var(--space-4) 0; padding: var(--space-4); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); }
+.queue-empty__title { margin: 0; font-weight: 600; color: var(--text-main); }
+.queue-empty__text { margin: 0; }

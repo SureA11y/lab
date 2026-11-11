@@ -31,6 +31,15 @@ export function createRunQueueUi(app) {
         activity: getActivity(),
         getFormWorkflow: app.getWorkflowWithPasswords,
         onWatch: (item, session) => app.queueRunWatch.watchQueuedRun(item, session),
+        // The empty queue's way to fill it: the run tab, its Batch section open.
+        onOpenBatch: () => {
+            app.tabsmode?.setActive('run');
+            const toggle = app.$('#batch-toggle');
+            if (!toggle) return;
+            if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
+            toggle.scrollIntoView({block: 'start'});
+            toggle.focus();
+        },
         onRunningChange: (isRunning) => {
             setQueueTabSpinner(isRunning);
             queueBusy = isRunning;

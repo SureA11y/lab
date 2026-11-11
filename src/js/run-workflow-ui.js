@@ -120,11 +120,12 @@ export function createRunWorkflowUi(app) {
         const totalActions = Array.isArray(actions) ? actions.length : 0;
         const a11yScanCount = totalActions ? actions.filter((st) => st?.type === 'a11yScan').length : 0;
 
+        // In the words of the steps' own names: a step, a scan.
         return totalActions > 0
-            ? `Running workflow scan with ${totalActions} action${totalActions === 1 ? '' : 's'}${
-                a11yScanCount ? ` (${a11yScanCount} a11yScan${a11yScanCount === 1 ? '' : 's'})` : ''
-            }, please wait...`
-            : 'Running, please wait...';
+            ? `Running the workflow: ${totalActions} step${totalActions === 1 ? '' : 's'}${
+                a11yScanCount ? (a11yScanCount === 1 ? ', 1 of them a scan' : `, ${a11yScanCount} of them scans`) : ''
+            }…`
+            : 'Running…';
     }
 
     async function runWorkflow(payload) {
