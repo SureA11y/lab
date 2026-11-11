@@ -2530,6 +2530,56 @@ function storeActiveMode(mode) {
     }
 
     /**
+     * While a run goes, the Configuration panel's actions stay where they are:
+     * Export config can be used, and those that would change the configuration
+     * on screen (Load config and its menu, Undo, Redo) are unavailable until
+     * the run ends: the run goes on with the copy it was sent, and the report
+     * keeps the configuration it ran with, but what is on screen is what the
+     * next run uses. A lock over their own state (aria-disabled, which Undo
+     * and Redo's own disabled state is set apart from), following the page's
+     * is-running, whichever way a run ends; a click or key on a locked one does
+     * nothing.
+     */
+    function lockConfigActionsWhileRunning() {
+        const actions = document.querySelector('.config-header .config-actions');
+        if (!actions) return;
+        const LOCKED_TITLE = 'Available when the run ends';
+        const lockable = () => [...actions.querySelectorAll('button')].filter((b) => b.id !== 'save-config-button');
+        function apply(locked) {
+            for (const b of lockable()) {
+                if (locked && !b.hasAttribute('data-run-locked')) {
+                    b.setAttribute('data-run-locked', b.getAttribute('aria-disabled') ?? '');
+                    b.setAttribute('data-run-locked-title', b.getAttribute('title') ?? '');
+                    b.setAttribute('aria-disabled', 'true');
+                    b.setAttribute('title', LOCKED_TITLE);
+                } else if (!locked && b.hasAttribute('data-run-locked')) {
+                    const was = b.getAttribute('data-run-locked');
+                    if (was) b.setAttribute('aria-disabled', was); else b.removeAttribute('aria-disabled');
+                    const title = b.getAttribute('data-run-locked-title');
+                    if (title) b.setAttribute('title', title); else b.removeAttribute('title');
+                    b.removeAttribute('data-run-locked');
+                    b.removeAttribute('data-run-locked-title');
+                }
+            }
+        }
+        const guard = (e) => {
+            const b = e.target.closest && e.target.closest('button[data-run-locked]');
+            if (!b || !actions.contains(b)) return;
+            if (e.type === 'keydown' && !['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        };
+        actions.addEventListener('click', guard, true);
+        actions.addEventListener('keydown', guard, true);
+        const running = () => document.body.classList.contains('is-running');
+        new MutationObserver(() => apply(running())).observe(document.body, {attributes: true, attributeFilter: ['class']});
+        // Undo and Redo are built again at times: a new one is locked too.
+        new MutationObserver(() => apply(running())).observe(actions, {childList: true, subtree: true});
+        apply(running());
+    }
+    lockConfigActionsWhileRunning();
+
+    /**
      * Unified UI state setter.
      * Keeps behavior, centralizes button states and status messaging.
      */
@@ -2882,6 +2932,10 @@ function storeActiveMode(mode) {
         const active = document.activeElement;
         const inCustomStepActions = !!(customStepActionsEl && active && customStepActionsEl.contains(active));
         const inCustomStepsPanel = !!(customStepsContentEl && active && customStepsContentEl.contains(active));
+
+        // The workflow's own Undo and Redo wait for the run to end, as its
+        // buttons do (lockConfigActionsWhileRunning).
+        if (!inCustomStepActions && !inCustomStepsPanel && document.body.classList.contains('is-running')) return;
 
         e.preventDefault();
 

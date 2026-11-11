@@ -627,3 +627,26 @@ test('a dialog closes on a click on its backdrop, not on one in its own padding'
     assert.deepEqual(errors, []);
     await page.close();
 });
+
+test('while a run goes, the configuration actions stay in sight, Export config the only one that acts', async () => {
+    const { page, errors } = await openApp();
+    await page.click('#mode-run');
+    await page.waitForSelector('.config-header .config-actions button');
+    await page.evaluate(() => document.body.classList.add('is-running'));
+    await page.waitForFunction(() => document.querySelector('.config-header .config-actions button[data-run-locked]'));
+    const seen = await page.$$eval('.config-header .config-actions button', (bs) => bs.map((b) => ({
+        id: b.id || b.textContent.trim(),
+        locked: b.getAttribute('aria-disabled') === 'true',
+    })));
+    assert.ok(await page.$eval('.config-header .config-actions', (el) => el.getClientRects().length > 0), 'the actions are in sight');
+    for (const b of seen) assert.equal(b.locked, b.id !== 'save-config-button', b.id);
+    // A locked button takes no click: Load config opens no file chooser.
+    const chooser = page.waitForFileChooser({ timeout: 800 }).then(() => true, () => false);
+    await page.evaluate(() => document.querySelector('.config-header .config-actions button[data-run-locked]').click());
+    assert.equal(await chooser, false, 'a locked button does nothing');
+    // The run ends: they act again.
+    await page.evaluate(() => document.body.classList.remove('is-running'));
+    await page.waitForFunction(() => !document.querySelector('.config-header .config-actions button[data-run-locked]'));
+    assert.deepEqual(errors, []);
+    await page.close();
+});
