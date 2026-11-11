@@ -322,6 +322,13 @@ The first public release.
   workflow and the custom steps. Fix the file and load it again before
   saving over it. Required fields the file left empty show as errors once
   it is loaded, not only at Run.
+- **Step fields fit what they hold.** A step's fields were fixed columns of
+  about 200px, so a long URL or selector was cut short beside an empty row.
+  They now share the row (as many columns of at least 14rem as fit), and a
+  URL, a selector, a text or a value takes the whole row. A custom step's
+  input whose value has several lines (a list of viewports) is a textarea
+  that grows with it, where its lines ran together ("desktop-lgtabletmobile");
+  each input's label is tied to its field.
 - **Quieter step cards.** Every card showed seven buttons (280 in a
   forty-step workflow) and a dashed "Show more options" box. A card now
   shows Collapse and a ⋯, and its other buttons where the pointer is or

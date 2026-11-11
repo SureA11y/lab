@@ -520,21 +520,39 @@ export function createStepLine(builder) {
                 dynamicWrap.classList.remove("is-advanced");
                 dynamicWrap.hidden = false;
 
-                dynamicWrap.append(createEl("label", {}, "Inputs"));
+                // The inputs are a group named by its title; each input has
+                // its own label, tied to it.
+                const titleId = builder.randomId("custom-step-inputs");
+                dynamicWrap.setAttribute("role", "group");
+                dynamicWrap.setAttribute("aria-labelledby", titleId);
+                dynamicWrap.append(createEl("div", {className: "runcustomstep-dynamic-inputs__title", id: titleId}, "Inputs"));
 
                 schema.forEach((def) => {
                     const name = String((def && def.name) || "").trim();
                     if (!name) return;
                     const required = !!(def && def.required);
+                    const inputId = builder.randomId("custom-step-input");
+                    const value = currentArgs[name] != null ? String(currentArgs[name]) : "";
 
                     const row = createEl("div", {className: "runcustomstep-dynamic-input-row"});
-                    row.append(createEl("label", {}, required ? `${name} *` : name));
+                    const label = createEl("label", {htmlFor: inputId}, name);
+                    if (required) label.append(" ", createEl("span", {className: "req-badge", title: "Required"}, "*"));
+                    row.append(label);
 
-                    const input = createEl("input", {
-                        type: "text",
-                        value: currentArgs[name] != null ? String(currentArgs[name]) : "",
-                        placeholder: required ? "Required" : ""
-                    });
+                    // A value of several lines (a list of viewports, one a
+                    // line) is a textarea that grows with it: in a one-line
+                    // field its lines ran together, "desktop-lgtabletmobile".
+                    const multiline = value.includes("\n");
+                    const input = multiline
+                        ? createEl("textarea", {id: inputId, rows: Math.min(value.split("\n").length, 12), spellcheck: false})
+                        : createEl("input", {type: "text", id: inputId, value, placeholder: required ? "Required" : ""});
+                    if (multiline) {
+                        input.value = value;
+                        input.addEventListener("input", () => {
+                            input.rows = Math.min(Math.max(input.value.split("\n").length, 1), 12);
+                        });
+                    }
+                    if (required) input.setAttribute("aria-required", "true");
                     input.addEventListener("input", writeArgsFromDynamicInputs);
                     row.append(input);
 

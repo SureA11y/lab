@@ -290,6 +290,13 @@ export function createStepFields(builder) {
             ? controlEl.querySelector("input")
             : controlEl;
         describedEl.setAttribute("aria-describedby", errorEl.id);
+        // A URL, a selector, a text or a value is long by nature: it takes
+        // the whole row of the step's fields (steps-builder.css), where a
+        // column of its own cut it short. Not a choice or a number.
+        if (!choices && typeStr !== "boolean" && typeStr !== "number"
+            && (fieldDef.cssSelector === true || /url|selector/i.test(fieldName) || fieldName === "text" || fieldName === "value")) {
+            wrapper.dataset.wide = "true";
+        }
         wrapper.append(labelEl, controlEl, errorEl);
 
         // ---- History: track edits on this field (debounced) ----
