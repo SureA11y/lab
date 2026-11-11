@@ -643,7 +643,11 @@
 .sr-grid { padding: .75rem 1rem; }
 .sr-grid-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
 .sr-grid-head h3 { margin: 0; border: 0; font-size: var(--fs-md); }
-.sr-grid-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: var(--fs-sm); }
+.sr-grid-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem; font-size: var(--fs-sm); }
+/* Order's select, its label above it, lines up with Select all beside it:
+   the same bottom and the 36px every button is. */
+.sr-grid-tools label { display: flex; flex-direction: column; gap: .25rem; margin: 0; }
+.sr-grid-tools select { box-sizing: border-box; height: 36px; min-height: 36px; margin: 0; }
 .sr-note { color: var(--text-muted); font-size: var(--fs-sm); margin: .4rem 0; }
 .sr-mono { font-family: var(--font-mono); }
 .sr-sub { margin: .7rem 0 .25rem; font-size: var(--fs-sm); }
