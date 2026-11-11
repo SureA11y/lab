@@ -111,47 +111,69 @@ as a JSON file: a list of groups, each naming its requirements in WCAG or
 EN 301 549 terms, or those of another installed standard, by its name as its
 findings give it.
 
-At the top of the summary, a card says how much of the run is pages of a
-template ("42 of 46 scans are pages of 5 templates"), with a bar of the
-templates and their pages' pictures, and **Review scans** opens the review
-over the report. On the left, every pattern the scans' URLs repeat is a
-group, nested where one narrows another (`/blog/accessibility/{slug}` inside
-`/blog/{slug}/{slug}`): a group needs several different pages sharing the
-shape of their address under a fixed part of it, on one host, and a run
-whose URLs repeat nothing has none. Below them, the groups made by hand, the
-scans in no group, and the scans a Merged scan step made.
+At the top of the summary, a card says how much of the run shares a layout
+("61 of 62 pages share a layout, in 10 templates (largest: 41)."), counting
+the templates as the review lists them, and what merging the largest one not
+merged yet would do ("Merging Product pages can shorten the report from 62
+scans to 22."); once groups are merged, it says what the report is now
+("1 group merged: the report shows 22 scans instead of 62."). A bar shows
+the templates and a stack their pages' pictures, and **Review scans** opens
+the review over the report. On the left, every pattern the scans' URLs
+repeat is a group, nested where one narrows another
+(`/blog/accessibility/{slug}` inside `/blog/{slug}/{slug}`): a group needs
+several different pages sharing the shape of their address under a fixed
+part of it, on one host, and a run whose URLs repeat nothing has none. A
+group is named from its pages' titles where they share something: the part
+most of them end with, without the site's name ("Blog - Insights pages"),
+or a word most of them have ("Product pages"); its URL pattern is the
+muted line under the name, and a name you give replaces the suggestion.
+Below them, the groups made by hand, the scans in no group, and the scans a
+Merged scan step made.
 
 In the middle, the selected group's pages are a grid of their screenshots,
-those that differ from the others first and outlined: a page with failures
-few others have (its own content's), or that lacks the template's failures,
-or much bigger or smaller than the others (built otherwise, perhaps another
-template). Select a picture to see it large with what it fails like the
-others and on its own. Tick pages (Shift selects a range) to take them out
-of the group, exclude or include them, add them to another group, or group
-them by hand.
+those that differ from the others first, each with one short badge
+("Differs · 8 own failures"): a page with failures few others have (its own
+content's), or that lacks the template's failures, or much bigger or
+smaller than the others (built otherwise, perhaps another template). Select
+a picture to see it large with what it shares with the template, what is
+only on that page, and the template's failures it lacks; Previous and Next,
+with "3 of 41", move through the group. Tick pages (Shift selects a range)
+and one row of actions says what applies to them: **Exclude** or
+**Include**, **Take out of group**, and under **More**, **Group by hand…**
+and **Add to group…**; **Clear selection** ends it.
 
-On the right, the group's name, what its scans fail on most of them (the
-template's, fixed once) and on a few (their content's), and what to do with
-them: **Keep one**, **Exclude all**, **Include all**, **Show only these in
-the report** (a view, like the tag filter: nothing is excluded, and a line
-in the summary shows every scan again), and **Merge into one scan**, which
-first shows what it changes ("Scans in the report 45 → 24") before you apply
-it. Merged, a failure of the template is listed once, "On all 5 pages", a
-page's own failure stays on that page ("On 2 of 5 pages"), and the report
-counts the group once in its totals and the issue dispersion; its card shows
-its pages as a strip of pictures, and every scan in a group says which on
-its card ("In Product pages · 3 of 23"), the name opening the review there.
-The report keeps every scan: unmerging shows them as they were. The review is
-the app's: a downloaded HTML report leaves out its card and its buttons, and
-keeps what a merged scan stands for, its pages' pictures and names, and the
-group each scan is in, as text. The scans in
-no group can be shown alone, grouped by hand, or excluded after a
+On the right, the group's name, then whether it is merged, in words, and a
+button that says what it covers: "Not merged · Merge all 41 pages…". It
+first shows what it changes ("Scans in the report 62 → 22") to apply or
+cancel; applied, the panel says "Merged · Shown as 1 scan in the report · 41
+pages", the grid says so and each page in the merged scan is marked, and
+**Unmerge…** undoes it the same way. Under it, what to do with the group's
+pages: **Keep one page, exclude the rest…** (which asks first, listing
+them), **Exclude all**, **Include all** and **Show only these** (a view,
+like the tag filter: nothing is excluded, and a line in the summary shows
+every scan again); then what its scans fail on most of them (the
+template's, fixed once) and on a few (their content's). Merged, a failure
+of the template is listed once, "On all 5 pages", a page's own failure
+stays on that page ("On 2 of 5 pages"), and the report counts the group
+once in its totals and the issue dispersion. The merged scan's card shows
+its pages as a strip of pictures, each failure of its table says on how
+many of its pages it is ("On 40 of 41 pages", "On all 41 pages"), and
+**Review this group** and **Unmerge…** open the review on it; every scan in
+a group says which on its card ("In Product pages · 3 of 23"), the name
+opening the review there. The report keeps every scan: unmerging shows them
+as they were. The review is the app's: a downloaded HTML report leaves out
+its card and its buttons, a merged scan's actions among them, and keeps
+what a merged scan stands for, its pages' pictures and names, how many
+pages each failure is on, and the group each scan is in, as text. The scans
+in no group can be shown alone, grouped by hand, or excluded after a
 confirmation that lists them; they are never merged, as unrelated pages are
-not a template. A scan the run merged from several contexts can be shown as
-its contexts, or have a context taken out; reports saved before the lab kept
-the contexts' own scans say they can't, and so do runs whose Merged scan
-step had **Keep each context's scan** turned off, which keeps the report
-smaller. Every change can be undone.
+not a template. A scan the run merged from several contexts says "Merged by
+the run" and can be unmerged into its contexts the same way, after seeing
+what it changes, or have a context taken out; the review's header counts
+it among the merged scans, "(by the run)". Reports saved before the lab
+kept the contexts' own scans say they can't, and so do runs whose Merged
+scan step had **Keep each context's scan** turned off, which keeps the
+report smaller. Every change can be undone.
 
 What you group, name, merge and change is saved with the report; its
 download leaves the excluded scans out, as it always does, and keeps the
