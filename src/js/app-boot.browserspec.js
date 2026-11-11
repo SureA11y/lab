@@ -455,7 +455,7 @@ test('both steps panels start collapsed on every load, Add custom step in reach 
     await page.close();
 });
 
-test('a downloaded HTML report leaves out the review of scan groups, and keeps what a merged scan stands for', async () => {
+test('a downloaded HTML report leaves out the review of scan groups and a merged scan\'s actions, and keeps what it stands for', async () => {
     // Three pages of one template, with their pictures, merged in the review.
     const actions = ['a', 'b', 'c'].flatMap((slug) => [
         { type: 'navigate', url: `${siteUrl}products/${slug}` },
@@ -479,15 +479,26 @@ test('a downloaded HTML report leaves out the review of scan groups, and keeps w
     const node = await page.waitForFunction(() => [...document.querySelectorAll('.sr-node')]
         .find((n) => n.textContent.trim().startsWith('/products/{slug}')));
     await node.click();
+    // Merge all 3 pages…, then what it changes, then apply.
     await page.waitForSelector('[data-sr-merge]');
     await page.click('[data-sr-merge]');
     await page.waitForSelector('[data-sr-apply-merge]');
     await page.click('[data-sr-apply-merge]');
+    await page.waitForFunction(() => /Shown as 1 scan in the report/.test(document.querySelector('.sr-merge-state')?.textContent || ''));
     await page.keyboard.press('Escape');
     await page.waitForSelector('#results .scan-filmstrip', { timeout: 30000 });
-    // In the app: the review's card and the buttons into it.
+    // In the app: the review's card and the buttons into it, and the merged
+    // scan's own actions.
     assert.ok(await page.$('#summary .sr-card'), 'the app shows the card');
     assert.ok(await page.$('#results button.scan-filmstrip__page'), 'the app\'s pictures open the review');
+    assert.deepEqual(await page.$$eval('#results .scan-merged-actions button', (bs) => bs.map((b) => b.firstChild.textContent)), ['Review this group', 'Unmerge…']);
+    // Unmerge… opens the review on what unmerging changes; cancelled, nothing changes.
+    await page.click('#results [data-sr-unmerge]');
+    await page.waitForFunction(() => document.activeElement?.matches('[data-sr-apply-merge]'));
+    await page.click('[data-sr-cancel-merge]');
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('dialog.sr-dialog[open]'));
+    assert.ok(await page.$('#results .scan-filmstrip'), 'still merged');
 
     const item = await page.evaluateHandle(() => [...document.querySelectorAll('button')].find((b) => /^Download as a single file/.test(b.textContent.trim())));
     await item.evaluate((b) => b.click());
@@ -510,13 +521,19 @@ test('a downloaded HTML report leaves out the review of scan groups, and keeps w
         filmButtons: document.querySelectorAll('button.scan-filmstrip__page').length,
         pictures: document.querySelectorAll('span.scan-filmstrip__page img').length,
         merged: (document.querySelector('.scan-contexts') || {}).textContent || '',
+        actions: document.querySelectorAll('.scan-merged-actions, [data-sr-unmerge]').length,
+        onPages: [...document.querySelectorAll('.issue-pages')].map((el) => el.textContent),
     }));
     assert.equal(found.card, 0, 'no review card');
     assert.equal(found.intoReview, 0, 'nothing opens the review');
     assert.equal(found.filmButtons, 0, 'its pictures are not buttons');
+    assert.equal(found.actions, 0, 'no Review this group or Unmerge');
     // ...and what the merged scan stands for is.
     assert.equal(found.pictures, 3, 'the merged scan\'s pages, as pictures');
     assert.match(found.merged, /Merged from 3 scans of \/products\/\{slug\}: Product a; Product b; Product c\./);
+    // Each failure of the merged scan says on how many of its pages it is.
+    assert.ok(found.onPages.length > 0, 'its failures say on how many pages');
+    assert.ok(found.onPages.every((t) => /^On (all 3|[12] of 3) pages$/.test(t)), found.onPages.join(', '));
     await doc.close();
 
     assert.deepEqual(errors, []);

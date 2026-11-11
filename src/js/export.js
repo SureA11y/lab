@@ -114,7 +114,9 @@ function getReportContent({ includeFilteredOut = false } = {}) {
         // §11.2) is the app's: its card, and the buttons of the bar that says
         // the report shows one group only (the bar's sentence stays).
         '.sr-card',
-        '.sr-focusbar button'
+        '.sr-focusbar button',
+        // A merged scan's Review this group and Unmerge.
+        '.scan-merged-actions'
     ];
 
     // By default the export follows the current view: scans the tag or profile
