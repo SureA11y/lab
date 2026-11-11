@@ -249,6 +249,19 @@ describe('what the run merged (step 9)', () => {
     }
     const run = (scans, choice) => M.scansAsShown(scans, G.findGroups(scans, { sources: [] }), choice, deps);
 
+    test('a context taken out is excluded on its own, as an unmerged one is', () => {
+        const { scans } = run([runMerged()], [{ key: 'run:m1', remove: ['1'], exclude: ['1'] }]);
+        assert.deepEqual(scans.map((s) => [s.id, s.includedInReport !== false]), [['m1', true], ['m1~1', false]]);
+    });
+
+    test('given a function, the groups are found over the scans with the run\'s merges expanded, the contexts in them', () => {
+        let seen = null;
+        const choice = [{ key: 'run:m1', merge: false }];
+        run([runMerged(), scan(1, '/q')], choice);
+        M.scansAsShown([runMerged(), scan(1, '/q')], (list) => { seen = list.map((x) => x.id); return null; }, [...choice, { key: 'url:x', merge: true }], deps);
+        assert.deepEqual(seen, ['m1~0', 'm1~1', 's1']);
+    });
+
     test('as the run made it until changed', () => {
         const scans = [runMerged()];
         assert.equal(run(scans, []).scans, scans);

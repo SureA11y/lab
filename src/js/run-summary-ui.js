@@ -224,9 +224,35 @@ export function createRunSummaryUi(app) {
             scans.map((s) => [s?.id, s?.includedInReport !== false, s?.label || null, s?.scanTags || null, groupingUrlOf(s)]),
         ]);
         if (shownMemo.payload === payload && shownMemo.key === key) return shownMemo.value;
-        const result = findScanGroups(scans, choice);
-        const value = mergeApi.scansAsShown(scans, result, choice, mergeDeps(scans, result, choice));
+        // Grouped as they are shown: a context of a run's merged scan,
+        // unmerged or taken out, is a scan of its own, in its groups.
+        const expanded = reviewScansOf(payload).scans;
+        const result = findScanGroups(expanded, choice);
+        const value = mergeApi.scansAsShown(scans, result, choice, mergeDeps(expanded, result, choice));
         shownMemo = {payload, key, value};
+        return value;
+    }
+
+    // The report's scans with each run's merged scan as the person left it,
+    // nothing else merged (scan-group-merge.js expandRunMerges): a context
+    // unmerged or taken out is a scan of its own ("<scan id>~<index>"), which
+    // can be grouped, merged with a template's pages and excluded as any
+    // scan. { scans, contexts }: contexts by id, { scanId, index }. What the
+    // groups are found over, in the report and in the review.
+    let reviewScansMemo = {payload: null, key: null, value: null};
+
+    function reviewScansOf(payload) {
+        const scans = Array.isArray(payload?.scans) ? payload.scans : [];
+        const mergeApi = globalThis.A11Y_SCAN_GROUP_MERGE;
+        const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
+        const none = {scans, contexts: new Map()};
+        if (!mergeApi || !choiceApi || typeof mergeApi.expandRunMerges !== 'function') return none;
+        const runs = choiceApi.readChoice(payload).filter((p) => choiceApi.isRun(p.key));
+        if (!runs.length) return none;
+        const key = JSON.stringify([runs, scans.map((s) => [s?.id, s?.includedInReport !== false, s?.label || null, groupingUrlOf(s)])]);
+        if (reviewScansMemo.payload === payload && reviewScansMemo.key === key) return reviewScansMemo.value;
+        const value = mergeApi.expandRunMerges(scans, runs, mergeDeps(scans, null, []));
+        reviewScansMemo = {payload, key, value};
         return value;
     }
 
@@ -291,11 +317,14 @@ export function createRunSummaryUi(app) {
         const view = globalThis.A11Y_SCAN_REVIEW_VIEW;
         const choiceApi = globalThis.A11Y_SCAN_GROUP_CHOICE;
         if (!view || !choiceApi || !payload) return null;
-        const scans = getScansFromPayload(payload);
         const choice = choiceApi.readChoice(payload);
+        // The scans as the groups hold them (a context unmerged is one of its
+        // own); the run's merged scans listed from the scans as saved.
+        const view_ = typeof app.viewScan === 'function' ? app.viewScan : (scan) => scan;
+        const scans = reviewScansOf(payload).scans.map(view_);
         const result = findScanGroups(scans, choice);
         if (!result) return null;
-        return view.reviewModel({scans, result, choice, shown: shownScans(payload), membersOf: choiceApi.membersOf});
+        return view.reviewModel({scans, runScans: getScansFromPayload(payload), result, choice, shown: shownScans(payload), membersOf: choiceApi.membersOf});
     }
 
     // How many scans the report shows, and failures it lists, for these scans
@@ -328,9 +357,10 @@ export function createRunSummaryUi(app) {
             const merged = choice.some((p) => p.key === key && p.merge);
             next = choiceApi.setMerged(choice, key, !merged);
         }
-        const result = findScanGroups(scans, next);
+        const expanded = mergeApi.expandRunMerges(scans, next, mergeDeps(scans, null, [])).scans;
+        const result = findScanGroups(expanded, next);
         const now = shownTotals(shownScans(payload).scans);
-        const then = shownTotals(mergeApi.scansAsShown(scans, result, next, mergeDeps(scans, result, next)).scans);
+        const then = shownTotals(mergeApi.scansAsShown(scans, result, next, mergeDeps(expanded, result, next)).scans);
         return {scans: [now.scans, then.scans], failures: [now.failures, then.failures]};
     }
 
@@ -376,8 +406,10 @@ export function createRunSummaryUi(app) {
         const ids = focusIds(payload);
         if (!ids) return true;
         if (scan.mergedGroup && Array.isArray(scan.mergedGroup.members)) return scan.mergedGroup.members.some((m) => ids.has(m.id));
-        if (scan.runContext) return ids.has(scan.runContext.scanId);
-        return ids.has(scan.id);
+        // A context of a run's merged scan is in the group that holds it on
+        // its own, or that holds its merged scan.
+        if (ids.has(scan.id)) return true;
+        return !!scan.runContext && ids.has(scan.runContext.scanId);
     }
 
     // The card at the top of the summary (scan-review-view.js), and the line
@@ -455,6 +487,7 @@ export function createRunSummaryUi(app) {
     return {
         buildScansListHtml,
         findScanGroups,
+        reviewScansOf,
         getScansFromPayload,
         groupFocus,
         groupIssuesOf,

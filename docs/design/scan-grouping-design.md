@@ -567,6 +567,18 @@ the run.
    a run whose one scan is merged from two contexts saves a payload 59%
    larger (460 KB to 733 KB): each context's findings, passes and
    not-applicable ones included, and its coverage.
+9a. **Its contexts as scans to group** (built). The groups are found over
+   the scans with the run's merges expanded (`expandRunMerges`, then
+   `findGroups`; `reviewScansOf` in `run-summary-ui.js`), in the report and
+   in the review, so a context unmerged or taken out (`<scan id>~<index>`) is
+   in the groups its address puts it in, and can be excluded (in the choice,
+   `setRunContextExcluded`, the context living in its merged scan), grouped
+   by hand, added to a group and merged with a template's pages. Before, the
+   groups were found over the scans as saved, and merging a template left
+   its unmerged contexts out. Merged again, `releaseRunContexts` takes its
+   contexts out of every group that held them, which the review lists and
+   asks first (`runContextsHeld`); a context's id follows its scan's when a
+   report opened with others renames it (`renameScanIds`).
 9. **Unmerging what the run merged** (built, §8, D11). `expandRunMerges` in
    `src/shared/scan-group-merge.js`, run first in the scans as shown: a
    run's merged scan unmerged into its contexts' scans (ids `<scan id>~<n>`,

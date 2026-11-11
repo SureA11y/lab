@@ -306,6 +306,64 @@ describe('what the run merged', () => {
     });
 });
 
+describe('the contexts of a scan the run merged, unmerged', () => {
+    // /products/a merged by the run from two contexts, each kept.
+    function unmergedShop() {
+        const env = setup(SHOP);
+        const url = 'https://shop.example.com/products/a';
+        const ctx = () => ({url, canonical: {findings: [fail('button-name', url, 'cart')], bestPractices: [], notices: [], margins: []}});
+        env.payload.scans[1] = {...env.payload.scans[1], mergedScan: true, contexts: [{name: 'Light', scan: ctx()}, {name: 'Dark', scan: ctx()}]};
+        env.payload.scanGrouping = {patterns: [{key: 'run:s1', merge: false}]};
+        return env;
+    }
+
+    test('are scans of their own in their page\'s template, which merging holds them in', () => {
+        const {app, payload} = unmergedShop();
+        const model = app.runSummaryUi.reviewModelOf(payload);
+        const node = model.patterns.find((n) => n.key === P);
+        assert.deepEqual([...node.ids].sort(), ['s1~0', 's1~1', 's2', 's3']);
+        assert.deepEqual(model.runMerges.map((r) => [r.key, r.unmerged]), [['run:s1', true]], 'still listed as merged by the run');
+        // The template merged: its merged scan holds the contexts, which the
+        // groups were found over the scans as saved left out.
+        payload.scanGrouping.patterns.push({key: P, merge: true});
+        const merged = app.runSummaryUi.shownScans(payload).scans.find((s) => s.mergedGroup);
+        assert.deepEqual(merged.mergedGroup.members.map((m) => m.id).sort(), ['s1~0', 's1~1', 's2', 's3']);
+    });
+
+    test('a context is excluded on its own, in the choice, and Undo includes it again', () => {
+        const {app, payload, $, summaryEl} = unmergedShop();
+        app.scanReview.open(P);
+        const box = $('[data-sr-pick="s1~1"]');
+        box.checked = true;
+        box.dispatchEvent(new dom.window.Event('change', {bubbles: true}));
+        $('[data-sr-bulk="exclude"]').click();
+        assert.deepEqual(payload.scanGrouping.patterns.find((p) => p.key === 'run:s1').exclude, ['1']);
+        const shown = app.runSummaryUi.shownScans(payload).scans;
+        assert.equal(shown.find((s) => s.id === 's1~1').includedInReport, false);
+        assert.equal(shown.find((s) => s.id === 's1~0').includedInReport !== false, true);
+        $('[data-sr-undo]').click();
+        assert.equal(payload.scanGrouping.patterns.find((p) => p.key === 'run:s1').exclude, undefined);
+        void summaryEl;
+    });
+
+    test('merged again while a context is in a group by hand: asked first, then it leaves the group', () => {
+        const {app, payload, $} = unmergedShop();
+        payload.scanGrouping.patterns.push({key: 'manual:1', name: 'Light pages', members: ['s1~0', 's4']});
+        app.scanReview.open('run:s1');
+        $('[data-sr-merge="run:s1"]').click();
+        $('[data-sr-apply-merge]').click();
+        const ask = document.querySelector('dialog.sr-ask');
+        assert.equal(ask.open, true, 'asked first');
+        assert.match(flat(ask.querySelector('.sr-ask-body')), /Light pages: Scan 2 · Light/);
+        assert.equal(payload.scanGrouping.patterns.find((p) => p.key === 'run:s1').merge, false, 'nothing changed yet');
+        ask.querySelector('[data-sr-ask-ok]').click();
+        // Nothing left changed: the choice is gone from the report.
+        const left = (payload.scanGrouping && payload.scanGrouping.patterns) || [];
+        assert.equal(left.some((p) => p.key === 'run:s1'), false, 'merged again as the run made it');
+        assert.equal(left.some((p) => p.key === 'manual:1'), false, 'the group, left with one scan, goes');
+    });
+});
+
 describe('in the report', () => {
     test('each scan in a group says which, the narrowest; a merged scan and the rest do not', () => {
         const {app, payload} = setup(['/', '/blog/a/1', '/blog/a/2', '/blog/b/3', '/blog/b/4', '/about'],

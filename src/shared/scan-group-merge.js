@@ -294,16 +294,19 @@
             const asScans = kept.map(({ c, i }) => contextAsScan(raw, c, i, included));
             asScans.forEach((s) => contexts.set(s.id, { scanId: raw.id, index: s.runContext.index }));
 
+            // A context shown on its own, unmerged or taken out, can be
+            // excluded on its own.
+            const excluded = new Set(entry.exclude || []);
+            const own = (s) => ({ ...s, includedInReport: included && !excluded.has(String(s.runContext.index)) });
             if (entry.merge === false) {
-                const excluded = new Set(entry.exclude || []);
-                for (const s of asScans) out.push({ ...s, includedInReport: included && !excluded.has(String(s.runContext.index)) });
+                for (const s of asScans) out.push(own(s));
                 continue;
             }
             const removed = new Set(entry.remove || []);
             const stay = asScans.filter((s) => !removed.has(String(s.runContext.index)));
             const left = asScans.filter((s) => removed.has(String(s.runContext.index)));
             if (stay.length && deps && deps.fold) out.push(refoldRunMerge(raw, stay, removed, deps));
-            out.push(...left);
+            out.push(...left.map(own));
         }
         return { scans: out, contexts };
     }
@@ -312,7 +315,10 @@
      * The report's scans as shown: each group the person merged (`choice`
      * entries with `merge`, readChoice) in place of its scans, at the place
      * of its first; the other scans as they are.
-     * - result: findGroups over these same scans;
+     * - result: findGroups over the scans with the run's merges expanded
+     *   (expandRunMerges: a context unmerged or taken out is a scan of its
+     *   own, in the groups its address puts it in), or a function of that
+     *   list which finds them;
      * - deps: { fold (scan-fold.js), buildA11ySummary, buildCoverageAwareSummary,
      *   nameOf (optional: a group's name when the person gave none) }.
      * A scan is in one merged scan at most: the larger group is merged
@@ -330,6 +336,8 @@
         const wanted = (Array.isArray(choice) ? choice : []).filter((p) => p && p.merge === true);
         const merges = new Map();
         if (!wanted.length || !result || !deps || !deps.fold) return { scans: list, merges, contexts: run.contexts };
+        if (typeof result === 'function') result = result(list);
+        if (!result) return { scans: list, merges, contexts: run.contexts };
 
         const byKey = new Map(flatten(result.groups).map((g) => [g.key, g]));
         const position = new Map(list.map((s, i) => [s && s.id, i]));

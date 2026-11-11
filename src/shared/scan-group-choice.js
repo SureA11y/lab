@@ -182,16 +182,53 @@
         });
     }
 
-    /** Its context `index` taken out of it (shown on its own), or put back. */
+    /**
+     * Its context `index` taken out of it (shown on its own), or put back;
+     * put back, it is in the merged scan again, no longer excluded on its own.
+     */
     function setRunContextOut(choice, scanId, index, out) {
         const i = String(index);
         return updateRun(choice, scanId, (p) => {
             const remove = (p.remove || []).filter((x) => x !== i);
-            return { ...p, remove: out ? [...remove, i] : remove };
+            const exclude = (p.exclude || []).filter((x) => x !== i);
+            return out ? { ...p, remove: [...remove, i] } : { ...p, remove, exclude };
         });
     }
 
-    /** Unmerged, its context `index` excluded from the report or included. */
+    // The id a context of a run's merged scan has as a scan of its own,
+    // "<scan id>~<index>" (scan-group-merge.js contextAsScan), split.
+    function contextIdParts(id) {
+        const m = /^(.*)~(\d+)$/.exec(String(id));
+        return m ? { scanId: m[1], index: m[2] } : null;
+    }
+
+    /**
+     * The groups that hold contexts of the run's merged scan `scanId` as
+     * scans of their own (added to a pattern, taken out of one, grouped by
+     * hand): [{ key, ids }]. Merged again, those contexts are no longer scans
+     * of their own, so the person is asked first (releaseRunContexts).
+     */
+    function runContextsHeld(choice, scanId) {
+        const own = (id) => { const c = contextIdParts(id); return !!c && c.scanId === String(scanId); };
+        return normalize(choice)
+            .filter((p) => !isRun(p.key))
+            .map((p) => ({ key: p.key, ids: [...new Set([...(p.add || []), ...(p.remove || []), ...(p.members || [])].filter(own))] }))
+            .filter((x) => x.ids.length);
+    }
+
+    /** The choice without the contexts of `scanId` in any group: they are back in it. */
+    function releaseRunContexts(choice, scanId) {
+        const own = (id) => { const c = contextIdParts(id); return !!c && c.scanId === String(scanId); };
+        const keep = (list) => (Array.isArray(list) ? list.filter((id) => !own(id)) : list);
+        return normalize(normalize(choice).map((p) => (isRun(p.key) ? p : {
+            ...p,
+            ...(p.add ? { add: keep(p.add) } : {}),
+            ...(p.remove ? { remove: keep(p.remove) } : {}),
+            ...(p.members ? { members: keep(p.members) } : {}),
+        })));
+    }
+
+    /** Unmerged or taken out, its context `index` excluded from the report or included. */
     function setRunContextExcluded(choice, scanId, index, excluded) {
         const i = String(index);
         return updateRun(choice, scanId, (p) => {
@@ -208,9 +245,16 @@
      * same id. Keys of patterns name no scan and stay as they are.
      */
     function renameScanIds(choice, rename) {
-        const to = (id) => {
+        const one = (id) => {
             const next = typeof rename === 'function' ? rename(id) : id;
             return typeof next === 'string' && next ? next : id;
+        };
+        // A context's id follows its scan's: "s12~1" becomes "s12b~1".
+        const to = (id) => {
+            const c = contextIdParts(id);
+            if (!c) return one(id);
+            const renamed = one(id);
+            return renamed !== id ? renamed : `${one(c.scanId)}~${c.index}`;
         };
         const list = (field, p) => (Array.isArray(p[field]) ? { [field]: p[field].map(to) } : {});
         return normalize(normalize(choice).map((p) => ({
@@ -400,6 +444,9 @@
         setRunMerged,
         setRunContextOut,
         setRunContextExcluded,
+        runContextsHeld,
+        releaseRunContexts,
+        contextIdParts,
         planAction,
     };
 }));
