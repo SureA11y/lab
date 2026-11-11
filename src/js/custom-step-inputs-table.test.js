@@ -52,6 +52,23 @@ describe('the inputs table', () => {
         assert.deepEqual(t.getInputs(), saved);
     });
 
+    test('shows a default and saves what is typed; an empty field is no default; one that is not text is kept until edited', () => {
+        const { t, rows } = table([{ name: 'waitMs', default: '500' }, { name: 'viewports', default: ['desktop', 'mobile'] }, { name: 'tags' }]);
+        const field = (i) => rows()[i].querySelector('.custom-step-inputs__default');
+        assert.equal(field(0).value, '500');
+        assert.equal(field(1).value, '["desktop","mobile"]');
+        assert.equal(field(2).value, '');
+        assert.equal(field(2).placeholder, 'None');
+        assert.deepEqual(t.getInputs(), [{ name: 'waitMs', default: '500' }, { name: 'viewports', default: ['desktop', 'mobile'] }, { name: 'tags' }]);
+        field(0).value = '';
+        field(0).dispatchEvent(new win.Event('input'));
+        field(1).value = 'desktop';
+        field(1).dispatchEvent(new win.Event('input'));
+        field(2).value = 'logged-in';
+        field(2).dispatchEvent(new win.Event('input'));
+        assert.deepEqual(t.getInputs(), [{ name: 'waitMs' }, { name: 'viewports', default: 'desktop' }, { name: 'tags', default: 'logged-in' }]);
+    });
+
     test('every field is named with its row, and the table by its title', () => {
         const { host, rows } = table([{ name: 'a' }, { name: 'b' }]);
         const table_ = host.querySelector('table');
@@ -59,9 +76,10 @@ describe('the inputs table', () => {
         const second = rows()[1];
         assert.equal(second.querySelector('.custom-step-inputs__name').getAttribute('aria-label'), 'Input 2 name');
         assert.equal(second.querySelector('.custom-step-inputs__label').getAttribute('aria-label'), 'Input 2 label');
+        assert.equal(second.querySelector('.custom-step-inputs__default').getAttribute('aria-label'), 'Input 2 default');
         assert.equal(second.querySelector('.custom-step-inputs__required').getAttribute('aria-label'), 'Input 2 required');
         assert.equal(second.querySelector('.custom-step-inputs__remove').getAttribute('aria-label'), 'Remove input 2, b');
-        assert.deepEqual(Array.from(host.querySelectorAll('th')).map((th) => th.getAttribute('scope')), ['col', 'col', 'col', 'col']);
+        assert.deepEqual(Array.from(host.querySelectorAll('th')).map((th) => th.getAttribute('scope')), ['col', 'col', 'col', 'col', 'col']);
     });
 
     test('Add input adds a row and puts focus in its name; Remove takes focus to the row after', () => {
