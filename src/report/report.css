@@ -777,7 +777,7 @@ button.src-dialog-close:focus-visible {
    shadows at the ends). */
 .summary ol.scan-summary-list {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(12rem, 1fr) fit-content(40%);
     column-gap: var(--space-3);
     max-height: 24rem;
     overflow-y: auto;
@@ -824,7 +824,8 @@ button.src-dialog-close:focus-visible {
 .scan-summary-name .scan-excluded-badge { margin: 0; }
 .scan-summary-meta { font-size: var(--fs-sm); color: var(--text-muted); }
 .scan-summary-meta a { color: var(--text-main); }
-.scan-summary-tags { grid-column: 3; display: flex; justify-content: flex-start; }
+.scan-summary-tags { grid-column: 3; display: flex; flex-wrap: wrap; justify-content: flex-start; min-width: 0; }
+.scan-summary-tags .scan-tags { flex-wrap: wrap; }
 .scan-summary-tags .scan-tags__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 760px) {
     .summary ol.scan-summary-list { grid-template-columns: auto minmax(0, 1fr); }
@@ -1125,9 +1126,10 @@ tr.cantTell .issue-status { color: var(--warn); }
     overflow-x: auto;
 }
 
+/* As tall as its findings: a box of its own height hid the rows past it,
+   with no scrollbar to say so. Wide tables still scroll sideways. */
 .table-container {
-    max-height: 420px;
-    overflow: auto;
+    overflow-x: auto;
     border-radius: var(--radius-sm);
     border: 1px solid var(--neutral-300);
 }
@@ -2738,8 +2740,24 @@ a.engine-brand {
 }
 
 @media (max-width: 960px) {
+    /* Stacked, each part as wide as the screen: aligned to the start, a
+       part took its content's width, and a long title or table made the
+       whole page scroll sideways on a phone. */
     .report-layout {
         flex-direction: column;
+        align-items: stretch;
+    }
+
+    .report-layout > * {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .report-layout h1,
+    .report-layout h2,
+    .report-layout h3 {
+        overflow-wrap: anywhere;
     }
 
     .report-toc {
@@ -3074,6 +3092,7 @@ a.engine-brand {
 .stream-meta { font-size: var(--fs-sm); color: var(--text-muted); }
 .stream-counts { font-size: var(--fs-sm); }
 .stream-fail { color: var(--danger); }
+.stream-nofail { color: var(--text-muted); }
 .stream-cantTell { color: var(--warn); }
 .stream-pass { color: var(--ok); }
 .stream-preview { text-align: center; }
@@ -3443,7 +3462,7 @@ a.engine-brand {
 .dsp-filter-list fieldset { border: 0; margin: 0 0 6px; padding: 0; min-width: 0; }
 .dsp-filter-list fieldset[hidden] { display: none; }
 .dsp-filter-list legend { padding: 4px 0; font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-soft); }
-.dsp-opt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 3px 4px; border-radius: 4px; font-size: .86rem; cursor: pointer; }
+.dsp-opt { display: grid; grid-template-columns: auto minmax(12rem, 1fr) fit-content(40%); gap: 8px; align-items: baseline; padding: 3px 4px; border-radius: 4px; font-size: .86rem; cursor: pointer; }
 .dsp-opt[hidden] { display: none; }
 .dsp-opt:hover { background: var(--na-soft); }
 .dsp-opt code { overflow-wrap: anywhere; color: var(--text-main); }
@@ -3570,11 +3589,18 @@ a.engine-brand {
     padding: var(--space-3);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
-    background: var(--surface-1);
     list-style: none;
+    /* A shadow at an edge while more is past it, as the scan list has. */
+    background:
+        linear-gradient(var(--surface-1) 30%, transparent) center top / 100% 40px no-repeat local,
+        linear-gradient(transparent, var(--surface-1) 70%) center bottom / 100% 40px no-repeat local,
+        radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, .16), transparent) center top / 100% 12px no-repeat scroll,
+        radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, .16), transparent) center bottom / 100% 12px no-repeat scroll,
+        var(--surface-1);
 }
 .scan-members__list li { min-width: 0; }
-.scan-members__name { display: block; }
+/* A long name on two lines at most, all of it on hover. */
+.scan-members__name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .scan-members__path { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scan-members__item--excluded .scan-members__name { color: var(--text-muted); }
 /* The report shows one group only: said, with nothing to press. */

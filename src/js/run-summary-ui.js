@@ -2,7 +2,7 @@
 // found, once it has finished. Moved out of a11y-ui.js; what it shares with
 // the rest of the app it reaches through `app`.
 
-import {escapeAttr, escapeHtml, svgIcon} from './a11y-ui.utils.js';
+import {escapeAttr, escapeHtml, svgIcon, untitledLabel} from './a11y-ui.utils.js';
 import {failureFreeScansNote, isFailureFreeScan} from './scan-failures.js';
 import {optInRulesLabel} from './report-fields.js';
 import {scanCardThumbnail} from './all-scans-data.js';
@@ -27,7 +27,7 @@ export function createRunSummaryUi(app) {
         const count = isSkipped ? 0 : typeof s.failCount === 'number' ? s.failCount : 0;
         const isIncluded = scan.includedInReport !== false;
 
-        const label = scan.label || scan.id || 'Scan ' + (index + 1);
+        const label = scan.label || untitledLabel(scan) || scan.id || 'Scan ' + (index + 1);
 
         const perScanNodes = isSkipped
             ? 0
@@ -54,7 +54,7 @@ export function createRunSummaryUi(app) {
 
         const nameWrapperHtml =
             '<span class="scan-name-wrapper">' +
-            `<strong class="scan-name-text" data-scan-id="${scanIdAttr}">${escapeHtml(label)}</strong>` +
+            `<strong class="scan-name-text" dir="auto" data-scan-id="${scanIdAttr}">${escapeHtml(label)}</strong>` +
             `<input type="text" class="scan-name-input" data-scan-id="${scanIdAttr}" aria-label="Edit scan name" hidden>` +
             '</span>';
 
@@ -386,18 +386,22 @@ export function createRunSummaryUi(app) {
         if (app.scanReview && typeof app.scanReview.refresh === 'function') app.scanReview.refresh();
     }
 
+    // A count with its thousands separated: 2,282.
+    const num = (n) => Number(n).toLocaleString('en');
+
     function writeSummaryHtml({data, fallbackUrl, totals, scansListHtml, scansCount, headerText, allScansButtonHtml = ''}) {
         const header = headerText != null
             ? headerText
-            : 'Workflow scan - ' +
-            totals.totalViolations +
+            // A colon, not " - ": in this font "scan -178" read as minus 178.
+            : 'Workflow scan: ' +
+            num(totals.totalViolations) +
             ' failure' +
             (totals.totalViolations === 1 ? '' : 's') +
             (totals.totalNodes > 0
-                ? ' in ' + totals.totalNodes + ' element' + (totals.totalNodes === 1 ? '' : 's')
+                ? ' in ' + num(totals.totalNodes) + ' element' + (totals.totalNodes === 1 ? '' : 's')
                 : '') +
             ', across ' +
-            scansCount +
+            num(scansCount) +
             ' scan' +
             (scansCount === 1 ? '' : 's') +
             '.';
@@ -422,7 +426,7 @@ export function createRunSummaryUi(app) {
 
         if (app.runResultToStatus && app.resultsState.activeMode === 'run' && headerText == null) {
             app.runResultToStatus = false;
-            app.runResultText = 'Finished: ' + header.replace(/^Workflow scan - /, '');
+            app.runResultText = 'Finished: ' + header.replace(/^Workflow scan: /, '');
         }
     }
 

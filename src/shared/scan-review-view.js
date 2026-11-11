@@ -297,7 +297,7 @@
                 + `<button type="button" class="sr-thumb" data-sr-preview="${esc(id)}" data-sr-focus="preview:${esc(id)}" aria-label="${esc(`See ${s.label || s.id} large`)}">${thumbHTML(s, thumbOf(s), { decorative: true })}</button>`
                 + `<span class="sr-tile-body"><span class="sr-tile-top">`
                 + (takenOut ? '' : `<input type="checkbox" id="${esc(boxId)}" data-sr-pick="${esc(id)}" data-sr-focus="pick:${esc(id)}"${selected.has(id) ? ' checked' : ''}>`)
-                + `<label${takenOut ? '' : ` for="${esc(boxId)}"`} class="sr-tile-name" title="${esc(s.label || s.id)}">${esc(s.label || s.id)}</label></span>`
+                + `<label${takenOut ? '' : ` for="${esc(boxId)}"`} class="sr-tile-name" dir="auto" title="${esc(s.label || s.id)}">${esc(s.label || s.id)}</label></span>`
                 + `<span class="sr-tile-path sr-url" title="${esc(pathOf(s.url))}">${esc(pathOf(s.url))}</span><span class="sr-badges">${badgesHTML(d, s, takenOut, standOut)}</span>`
                 + (takenOut ? `<button type="button" class="sr-link" data-sr-putback="${esc(id)}" data-sr-focus="putback:${esc(id)}">Put back</button>` : '')
                 + `</span></li>`;

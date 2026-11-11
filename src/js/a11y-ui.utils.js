@@ -88,6 +88,19 @@ export function createEl(tag, props = {}, children = []) {
 
 // Read-only chips markup for a scan's tags, shared by the summary rows and the
 // scan header so both render the same pills. Empty tag lists yield no markup.
+/** A scan with no name, by its page: "Untitled: /en/about"; '' without a URL. */
+export function untitledLabel(scan) {
+    if (!scan || !scan.url) return '';
+    let path = String(scan.url);
+    try {
+        const u = new URL(path);
+        path = u.pathname + u.search;
+    } catch {
+        // not a full URL: as it is
+    }
+    return `Untitled: ${path}`;
+}
+
 export function scanTagChipsHtml(tags) {
     const clean = (Array.isArray(tags) ? tags : []).map((t) => String(t == null ? '' : t).trim()).filter(Boolean);
     if (!clean.length) return '';
@@ -153,6 +166,25 @@ function ensureSplitButtonOutsideClickListener() {
  * activity panel (activity.js). A press meanwhile calls `onBusyPress`, which
  * points to it.
  */
+/**
+ * A menu under its button opens toward the side it fits on: right-aligned
+ * to the button (the default), or left-aligned when that would run it off
+ * the left edge, as a button at the left of a phone's screen does; and never
+ * wider than the screen.
+ */
+export function keepMenuOnScreen(menu) {
+    const view = menu.ownerDocument.defaultView;
+    if (!view) return;
+    menu.style.left = '';
+    menu.style.right = '';
+    menu.style.maxWidth = `calc(${view.innerWidth}px - 2rem)`;
+    const box = menu.getBoundingClientRect();
+    if (box.left < 8) {
+        menu.style.left = '0';
+        menu.style.right = 'auto';
+    }
+}
+
 export function createSplitButton({
     label,
     onAction,
@@ -216,6 +248,7 @@ export function createSplitButton({
 
     function openMenu(focusFirst) {
         menu.hidden = false;
+        keepMenuOnScreen(menu);
         chevronBtn.setAttribute('aria-expanded', 'true');
         if (focusFirst && itemEls[0]) itemEls[0].btn.focus();
     }

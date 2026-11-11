@@ -355,7 +355,7 @@ export function createScanReviewUi(app) {
     function scanListHTML(payload, ids) {
         return `<ul class="sr-asklist">${ids.map((id) => {
             const scan = payload.scans.find((x) => x && x.id === id);
-            return `<li>${escapeText(labelOf(payload, id))} <span class="sr-mono">${escapeText(view().pathOf(scan && scan.url))}</span></li>`;
+            return `<li><bdi>${escapeText(labelOf(payload, id))}</bdi> <span class="sr-mono">${escapeText(view().pathOf(scan && scan.url))}</span></li>`;
         }).join('')}</ul>`;
     }
 

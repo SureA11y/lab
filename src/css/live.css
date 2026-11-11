@@ -99,6 +99,7 @@
 /* Each state's count takes its own state colour, same as ResultBadge —
    colour is per-state here too, not a single flat muted tone. */
 .stream-fail { color: var(--danger); }
+.stream-nofail { color: var(--text-muted); }
 .stream-cantTell { color: var(--warn); }
 .stream-pass { color: var(--ok); }
 

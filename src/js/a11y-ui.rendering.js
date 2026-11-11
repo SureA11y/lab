@@ -6,7 +6,7 @@
 import {occurrencePagesHtml} from './occurrence-pages.js';
 import {elementCountText} from './occurrence-elements.js';
 import {generateA11yMetricsContents} from './a11y-metrics-renderer.js';
-import {iconButton, scanTagChipsHtml} from './a11y-ui.utils.js';
+import {iconButton, scanTagChipsHtml, untitledLabel} from './a11y-ui.utils.js';
 import {buildTagsInputControl} from './tags-input.js';
 import {resultGlyphHtml} from './result-glyph.js';
 import {summarizeTopic, topicBadgeText} from './coverage-topics.js';
@@ -1602,7 +1602,11 @@ export function createRenderer({
         };
     }
 
+    // A scan with no name: its page's path, rather than an id such as
+    // "scan-56" that means nothing to a reader.
     function defaultScanLabel(scan, index) {
+        const path = untitledLabel(scan);
+        if (path) return path;
         return String(scan?.id || (index != null ? `Scan ${index + 1}` : 'Scan') || '').trim();
     }
 
@@ -1610,6 +1614,8 @@ export function createRenderer({
     function buildScanNameEditParts(scan, index) {
         const nameText = document.createElement('span');
         nameText.className = 'scan-name-text';
+        // A page's title in its own direction: an Arabic one beside "Scan:".
+        nameText.dir = 'auto';
         nameText.textContent = scan?.label || defaultScanLabel(scan, index);
         if (scan?.id) nameText.dataset.scanId = scan.id;
 
@@ -1939,7 +1945,10 @@ export function createRenderer({
 
     /** The fail, can't tell and pass counts, each with the comma after it inside, so no line starts with one. */
     function streamCountsHtml({fail, cantTell, likely = '', pass}) {
-        return '<span class="stream-fail">' + resultGlyphHtml('fail') + ' ' + fail + ' fail,</span> ' +
+        // None failing is said as such, in plain text: "0 fail" beside the
+        // red fail glyph read as a failure at a glance.
+        return (Number(fail) === 0 ? '<span class="stream-nofail">No failures,</span> '
+            : '<span class="stream-fail">' + resultGlyphHtml('fail') + ' ' + fail + ' fail,</span> ') +
             '<span class="stream-cantTell">' + resultGlyphHtml('cantTell') + ' ' + cantTell + ' can\'t tell' + likely + ',</span> ' +
             '<span class="stream-pass">' + resultGlyphHtml('pass') + ' ' + pass + ' pass</span>';
     }
@@ -2305,7 +2314,9 @@ export function createRenderer({
             const li = document.createElement('li');
             const name = document.createElement('span');
             name.className = 'scan-members__name';
+            name.dir = 'auto';
             name.textContent = nameOf(m);
+            name.title = nameOf(m);
             li.append(name);
             const path = pathOfUrl(m?.url);
             if (path) {

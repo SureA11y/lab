@@ -202,6 +202,15 @@ function kpis(d) {
 
 // ---------- dumbbell chart ----------
 
+// A round step (1, 2 or 5 times a power of ten) giving about five ticks up
+// to `max`: a fixed step drew hundreds of ticks once counts ran to thousands.
+export function niceStep(max) {
+    const raw = Math.max(max, 1) / 5;
+    const power = 10 ** Math.floor(Math.log10(raw));
+    const unit = raw / power;
+    return Math.max(1, (unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 5 ? 5 : 10) * power);
+}
+
 function dumbbellSvg(d) {
     const bands = ['critical', 'serious', 'moderate', 'minor']
         .map((sev) => ({ sev, a: d.severity.a[sev] || 0, b: d.severity.b[sev] || 0 }))
@@ -212,14 +221,14 @@ function dumbbellSvg(d) {
     const plotW = W - padL - padR;
     const rowH = (H - padT - padB) / bands.length;
     const rawMax = Math.max(...bands.map((x) => Math.max(x.a, x.b)), 1);
-    const step = rawMax <= 10 ? 2 : (rawMax <= 25 ? 5 : 10);
+    const step = niceStep(rawMax);
     const max = Math.ceil(rawMax / step) * step;
     const x = (v) => padL + (v / max) * plotW;
 
     let els = '';
     for (let t = 0; t <= max; t += step) {
         els += `<line class="db-track" x1="${x(t)}" y1="${padT}" x2="${x(t)}" y2="${H - padB}"/>`;
-        els += `<text class="db-axis" x="${x(t)}" y="${H - padB + 14}" text-anchor="middle">${t}</text>`;
+        els += `<text class="db-axis" x="${x(t)}" y="${H - padB + 14}" text-anchor="middle">${t.toLocaleString('en')}</text>`;
     }
     els += `<text class="db-axis" x="${padL + plotW / 2}" y="${H - 2}" text-anchor="middle">failures</text>`;
 
@@ -234,7 +243,7 @@ function dumbbellSvg(d) {
         els += `<circle class="db-a" cx="${xa}" cy="${cy}" r="6"><title>${cap} · A ${dd.a}</title></circle>`;
         els += `<circle class="db-b" cx="${xb}" cy="${cy}" r="7"><title>${cap} · B ${dd.b}</title></circle>`;
         const dv = dd.b - dd.a;
-        const label = `${dv > 0 ? '+' : (dv < 0 ? '−' : '±')}${Math.abs(dv)}`;
+        const label = `${dv > 0 ? '+' : (dv < 0 ? '−' : '±')}${Math.abs(dv).toLocaleString('en')}`;
         // Sit the value above dot B so it never collides with the severity
         // axis label when the Latest dot sits near the left edge. Near a plot
         // edge, pin the label inside the plot so it doesn't lean into the
