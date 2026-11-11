@@ -224,6 +224,21 @@ describe('the workspace', () => {
         assert.match(text(dom(V.statsHTML(m)).body), /Merged 1 scan \(1 by the run, 0 by you\)/);
     });
 
+    test('a tile says what became of a scan the run merged, as the report shows it', () => {
+        const list = scans();
+        list[1] = { ...list[1], mergedScan: true, contexts: [{ name: 'Light', scan: {} }, { name: 'Dark', scan: {} }] };
+        const markOf = (choice) => {
+            const m = modelOf(list, choice);
+            const doc = dom(V.gridHTML(m, V.nodeOf(m, P), {}));
+            const tile = doc.querySelector('[data-sr-pick="s1"]').closest('.sr-tile');
+            const mark = tile.querySelector('.sr-badge--run');
+            return mark ? [text(mark), mark.getAttribute('title')] : null;
+        };
+        assert.equal(markOf([]), null, 'merged as the run left it: nothing to say');
+        assert.deepEqual(markOf([{ key: 'run:s1', merge: false }]), ['unmerged into 2 scans', 'Shown in the report as 2 scans: Light, Dark']);
+        assert.deepEqual(markOf([{ key: 'run:s1', remove: ['1'] }]), ['1 context shown on its own', 'Shown on their own in the report: Dark']);
+    });
+
     test('the header: each count with its unit', () => {
         const doc = dom(V.statsHTML(modelOf(scans(), [{ key: P, merge: true }])));
         assert.deepEqual([...doc.querySelectorAll('.sr-stat')].map(text), ['In the report 3 scans', 'Failures listed 4', 'Merged 1 scan', 'Excluded 1 scan']);

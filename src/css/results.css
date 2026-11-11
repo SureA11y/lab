@@ -843,6 +843,8 @@
 .sr-badge--differs { border-color: var(--warn); background: var(--warn-soft); color: var(--text-main); }
 /* In a merged group's merged scan: said, not shouted. */
 .sr-badge--merged { border-style: dashed; background: none; }
+/* What became of a scan the run merged: the accent, as the run's entries in the tree. */
+.sr-badge--run { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-on-soft); }
 .sr-badge--excluded { border-color: var(--danger); background: var(--danger-soft); color: var(--danger-on-soft); }
 .sr-link { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
 
