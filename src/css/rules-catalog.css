@@ -47,7 +47,7 @@
 
 .rules-catalog__summary {
     margin: 0;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     color: var(--text-muted);
 }

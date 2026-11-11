@@ -103,7 +103,7 @@ button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-sm);
     font-weight: 600;
     box-shadow: none;
@@ -154,7 +154,7 @@ button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
 .custom-steps-count-badge {
     display: inline-flex;
     align-items: center;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xxs);
     font-weight: 600;
     color: var(--text-muted);
@@ -234,7 +234,7 @@ button.collapse-all-toggle:active:not(:disabled, [aria-disabled=true]) {
     border-radius: var(--radius-pill);
     background: var(--bg-elevated);
     color: var(--accent);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-weight: 600;
     text-decoration: none;

@@ -406,7 +406,7 @@ summary.a11y-help:focus-visible {
 .scoreGauge__name {
     margin: 0;
     padding-left: 15px;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -501,7 +501,7 @@ summary.a11y-help:focus-visible {
 /* The unresolved share of the same denominator — never let the number above
    stand alone as an unqualified claim. */
 .scoreGauge__unresolved {
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     color: var(--warn);
     white-space: nowrap;
@@ -510,7 +510,7 @@ summary.a11y-help:focus-visible {
 /* Rating gauge's band name — the colour is the second reading, the word
    beside the number is the first. */
 .scoreGauge__readout--rating .scoreGauge__status {
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-sm);
     font-weight: 600;
     white-space: nowrap;
@@ -518,7 +518,7 @@ summary.a11y-help:focus-visible {
 
 /* Plain qualitative label under a ScoreGauge (not the rating speedometer) */
 .scoreGauge__bottom .scoreGauge__status {
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     color: var(--text-muted);
 }

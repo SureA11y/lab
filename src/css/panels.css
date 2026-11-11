@@ -11,13 +11,13 @@
 }
 .summary-controls { display: inline-flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .scan-sort { display: inline-flex; align-items: center; gap: var(--space-2); }
-.scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-mono); }
+.scan-sort__label { font-size: var(--fs-xs); color: var(--text-muted); font-family: var(--font-ui); }
 #scan-sort-select {
     /* The height of the buttons beside it (Hide excluded): 36px, the DS sm
        size every button has. */
     box-sizing: border-box;
     min-height: 36px;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-weight: 600;
     font-size: var(--fs-sm);
     padding: 0 var(--space-3);
@@ -147,7 +147,7 @@ button.activity-plain:focus-visible { outline: var(--focus-outline); outline-off
 .activity-step__time {
     flex: none;
     color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-variant-numeric: tabular-nums;
 }
@@ -239,7 +239,7 @@ button.activity-button:hover:not(:disabled, [aria-disabled=true]) {
     border-radius: var(--radius-pill);
     background: var(--accent);
     color: var(--surface-0);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xxs);
     line-height: 18px;
     text-align: center;

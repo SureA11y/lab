@@ -59,6 +59,10 @@
     --font-display: "Space Grotesk", sans-serif;
     --font-sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    /* Interface text: buttons, tabs, menus, labels, chips. Monospace
+       (--font-mono) is for code and values only: selectors, rule ids,
+       addresses, logs. */
+    --font-ui: var(--font-sans);
 
     /* Type scale — shared with the app (src/css/tokens.css), so extension
        and app text sizes can't drift. rem-based off a 16px root. */
@@ -498,7 +502,7 @@ input:focus, textarea:focus, select:focus{
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-sm);
     font-weight: 600;
     cursor: pointer;
@@ -574,7 +578,7 @@ input:focus, textarea:focus, select:focus{
     flex: 1;
 }
 
-.btn{
+    /* DS Button: sm (36px) default height, the UI font (--font-ui) at 600,
     /* DS Button: sm (36px) default height, IBM Plex Mono 600 UI voice,
        radius-sm, colour-only interaction. */
     display: inline-flex;
@@ -586,7 +590,7 @@ input:focus, textarea:focus, select:focus{
     color: var(--text);
     border-radius: var(--radius-sm);
     padding: 0 var(--space-4);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-weight: 600;
     cursor: pointer;
     transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
@@ -735,7 +739,7 @@ input:focus, textarea:focus, select:focus{
     background: var(--panel2);
     border-bottom: 1px solid var(--line);
 
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xxs);
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -878,7 +882,7 @@ input:focus, textarea:focus, select:focus{
     border: 1px solid var(--line);
     background: transparent;
     margin: 2px 6px 0 0;
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     color: var(--text-muted);
     opacity: .95;
@@ -950,7 +954,7 @@ input:focus, textarea:focus, select:focus{
     color: var(--text);
     border-radius: var(--radius-sm);
     padding: var(--space-1) var(--space-3);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-weight: 600;
     cursor: pointer;
     transition: background-color var(--duration-fast) var(--ease-standard),
@@ -975,7 +979,7 @@ input:focus, textarea:focus, select:focus{
    variant that sits inside table rows. */
 .src-dialog-trigger,
 .src-dialog-close {
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-weight: 600;
     color: var(--text);
     background: var(--surface-3);
@@ -1095,7 +1099,7 @@ input:focus, textarea:focus, select:focus{
     min-height: 24px;
     padding: 2px var(--space-2);
 
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--fs-xs);
     font-weight: 600;
 
@@ -1350,7 +1354,7 @@ input:focus, textarea:focus, select:focus{
 .dsp-seg { display: inline-flex; align-items: center; border: 0; padding: 0; margin: 0; min-width: 0; }
 .dsp-seg legend { float: left; font-size: .8rem; color: var(--text-muted); margin-right: 8px; padding: 0; }
 /* Wraps inside its segment when the line has no room. Mirrors the app. */
-.dsp-seg label { position: relative; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: normal; min-width: 0; }
+.dsp-seg label { position: relative; font-family: var(--font-ui, system-ui, sans-serif); font-size: var(--fs-xs, .78rem); line-height: 1.4; padding: 4px 10px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); cursor: pointer; white-space: normal; min-width: 0; }
 .dsp-seg label + label { border-left-width: 0; }
 .dsp-seg label:has(input:checked) + label { border-left-color: var(--accent); }
 .dsp-seg label:hover, .dsp-filter-btn:hover { background: var(--na-soft); }
@@ -1360,11 +1364,11 @@ input:focus, textarea:focus, select:focus{
 .dsp-seg label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--text-main); font-weight: 700; }
 .dsp-seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 1; }
 .dsp-filter { position: relative; }
-.dsp-filter-btn { min-height: 0; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--fs-xs, .78rem); font-weight: 400; line-height: 1.4; border: 1px solid var(--border-strong); border-radius: 4px; background: transparent; color: var(--text-main); cursor: pointer; }
+.dsp-filter-btn { min-height: 0; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-family: var(--font-ui, system-ui, sans-serif); font-size: var(--fs-xs, .78rem); font-weight: 400; line-height: 1.4; border: 1px solid var(--border-strong); border-radius: 4px; background: transparent; color: var(--text-main); cursor: pointer; }
 .dsp-filter-btn[aria-expanded="true"] { border-color: var(--accent); }
 .dsp-chip:hover { border-color: var(--accent); }
 .dsp-filter-caret { font-size: .8em; line-height: 1; }
-.dsp-filter-n { line-height: 1.5; font-family: var(--font-mono, ui-monospace, monospace); font-size: .76rem; padding: 0 7px; border-radius: 999px; background: var(--accent); color: var(--bg-elevated); }
+.dsp-filter-n { line-height: 1.5; font-family: var(--font-ui, system-ui, sans-serif); font-size: .76rem; padding: 0 7px; border-radius: 999px; background: var(--accent); color: var(--bg-elevated); }
 .dsp-filter-n[hidden] { display: none; }
 .dsp-filter-panel { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: min(420px, calc(100vw - 32px)); padding: 10px 12px 12px; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 8px 28px rgba(4, 21, 14, .18); }
 .dsp-filter-panel[hidden] { display: none; }
@@ -1382,7 +1386,7 @@ input:focus, textarea:focus, select:focus{
 .dsp-link { min-height: 0; font: inherit; font-size: .82rem; padding: 2px 4px; border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; }
 .dsp-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 6px; }
 .dsp-chips[hidden] { display: none; }
-.dsp-chip { min-height: 0; font-family: var(--font-mono, ui-monospace, monospace); font-size: .78rem; font-weight: 400; line-height: 1.4; display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px 2px 9px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--accent-soft); color: var(--text-main); cursor: pointer; }
+.dsp-chip { min-height: 0; font-family: var(--font-ui, system-ui, sans-serif); font-size: .78rem; font-weight: 400; line-height: 1.4; display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px 2px 9px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--accent-soft); color: var(--text-main); cursor: pointer; }
 .dsp-chip span { font-size: .9rem; line-height: 1; color: var(--text-muted); }
 .dsp-strips-status { font-size: .82rem; color: var(--text-muted); margin: 0 0 4px; }
 /* The hotspots are found over every rule, so they say nothing about a few. */
@@ -1400,7 +1404,7 @@ input:focus, textarea:focus, select:focus{
 .dsp-map text, .dsp-line text { fill: var(--text-soft); font-size: 11px; }
 .dsp-map .dsp-q { fill: var(--text-muted); font-size: 12px; font-weight: 600; }
 .dsp-map .dsp-qs { font-size: 10.5px; }
-.dsp-map .dsp-lbl { fill: var(--text-main); font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; }
+.dsp-map .dsp-lbl { fill: var(--text-main); font-family: var(--font-ui, system-ui, sans-serif); font-size: 11px; }
 .dsp-map .dsp-ttl { fill: var(--text-muted); font-size: 11.5px; }
 .dsp { --dsp-halo: var(--surface-base, var(--bg-elevated)); }
 .dsp-map .dsp-lbl, .dsp-map .dsp-q, .dsp-map .dsp-qs { paint-order: stroke; stroke: var(--dsp-halo); stroke-width: 3px; stroke-linejoin: round; }
