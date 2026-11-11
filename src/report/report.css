@@ -3478,3 +3478,49 @@ a.engine-brand {
     .dsp-sw--wide, .dsp-conc-bar--elements i { background: CanvasText; forced-color-adjust: none; }
     .dsp-sw--other, .dsp-conc-bar--scans i { background: Highlight; forced-color-adjust: none; }
 }
+
+/* What a merged scan stands for (a11y-ui.rendering.js buildMergedGroup):
+   its sentence, its pages as pictures, and the list of them. In the export
+   the pictures and a scan's group are shown, not buttons into the app's
+   review (export.js). */
+.scan-contexts { margin: var(--space-1) 0 var(--space-2); font-size: var(--fs-sm); color: var(--text-muted); }
+.scan-contexts strong { color: var(--text-main); font-weight: 600; }
+.scan-members__pattern { font-family: var(--font-mono); font-size: .95em; font-weight: 400; }
+.scan-filmstrip { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; list-style: none; margin: .3rem 0 .6rem; padding: 0; }
+.scan-filmstrip__page { display: block; width: 72px; aspect-ratio: 4 / 3; padding: 0; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--surface-2); overflow: hidden; }
+.scan-filmstrip__page img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: left top; }
+.scan-filmstrip__page--excluded img { opacity: .4; }
+.scan-filmstrip__more { font-size: var(--fs-sm); color: var(--text-muted); }
+.scan-review-group { margin: .2rem 0 .4rem; font-size: var(--fs-sm); color: var(--text-muted); }
+.scan-members { margin: 0 0 var(--space-3); font-size: var(--fs-sm); }
+.scan-members > summary { width: fit-content; color: var(--accent); cursor: pointer; }
+.scan-members > summary:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+.scan-members__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+    gap: var(--space-2) var(--space-6);
+    max-height: 18rem;
+    overflow-y: auto;
+    margin: var(--space-2) 0 0;
+    padding: var(--space-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    list-style: none;
+}
+.scan-members__list li { min-width: 0; }
+.scan-members__name { display: block; }
+.scan-members__path { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scan-members__item--excluded .scan-members__name { color: var(--text-muted); }
+/* The report shows one group only: said, with nothing to press. */
+.sr-focusbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin: .6rem 0 0;
+    padding: .4rem .75rem;
+    border: 1px solid var(--warn);
+    border-radius: var(--radius-md);
+    background: var(--warn-soft);
+}

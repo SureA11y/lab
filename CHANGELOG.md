@@ -26,6 +26,8 @@ The first public release.
   report package (report version 4, with an occurrence id on every failing
   element, the same in every run) or a standalone HTML page.
   A package's JSON opened without its zip says its pictures are in the zip.
+  A downloaded HTML report leaves out the review of scan groups, the app's
+  work, and keeps what each merged scan stands for.
   A report's time reads in the reader's own time zone, named; scans see the
   machine's zone unless `A11Y_TZ` names one.
   At the top of a report's summary, a card says how much of the run is

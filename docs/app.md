@@ -141,7 +141,10 @@ page's own failure stays on that page ("On 2 of 5 pages"), and the report
 counts the group once in its totals and the issue dispersion; its card shows
 its pages as a strip of pictures, and every scan in a group says which on
 its card ("In Product pages · 3 of 23"), the name opening the review there.
-The report keeps every scan: unmerging shows them as they were. The scans in
+The report keeps every scan: unmerging shows them as they were. The review is
+the app's: a downloaded HTML report leaves out its card and its buttons, and
+keeps what a merged scan stands for, its pages' pictures and names, and the
+group each scan is in, as text. The scans in
 no group can be shown alone, grouped by hand, or excluded after a
 confirmation that lists them; they are never merged, as unrelated pages are
 not a template. A scan the run merged from several contexts can be shown as

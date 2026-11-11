@@ -20,12 +20,13 @@ const RENDERER_SOURCES = [
     path.join(ROOT, 'src', 'js', 'a11y-metrics-renderer.js'),
     path.join(ROOT, 'src', 'js', 'a11y-ui.rendering.js'),
     path.join(ROOT, 'src', 'js', 'ui-gauge.js'),
+    path.join(ROOT, 'src', 'js', 'run-summary-ui.js'),
     path.join(ROOT, 'src', 'shared', 'issue-dispersion-view.js')
 ];
 
 // Only the families the export is expected to style; interactive app chrome is
 // stripped from the exported markup and deliberately has no report styling.
-const EXPORTED_PREFIXES = ['a11y-cov-', 'a11y-review-signals', 'a11y-score-caveat', 'a11y-chip-unevaluated', 'issues-group-coverage', 'issues-group-empty', 'scoreGauge', 'dsp', 'scan-notices', 'a11y-margins', 'node-details-list', 'node-screenshot', 'node-lean', 'node-how-to-check', 'lean-badge', 'instances-lean'];
+const EXPORTED_PREFIXES = ['a11y-cov-', 'a11y-review-signals', 'a11y-score-caveat', 'a11y-chip-unevaluated', 'issues-group-coverage', 'issues-group-empty', 'scoreGauge', 'dsp', 'scan-notices', 'a11y-margins', 'node-details-list', 'node-screenshot', 'node-lean', 'node-how-to-check', 'lean-badge', 'instances-lean', 'scan-contexts', 'scan-members', 'scan-filmstrip', 'scan-review-group', 'sr-focusbar'];
 
 function classesEmittedByRenderers() {
     const found = new Set();
@@ -226,6 +227,10 @@ const KNOWN_PROPERTY_DRIFT = [
     "###.config-data .req-badge",
     "###.copy-selector-btn,.src-dialog-trigger",
     "###.example-node",
+    // A picture in the export, not a button into the review: no zoom cursor.
+    "###.scan-filmstrip__page",
+    // "and 16 more" is text in the export, muted as the line it ends.
+    "###.scan-filmstrip__more",
     "###.example-node-header>span:first-child",
     "###.fields-toggle-row",
     "###.impact-critical",
