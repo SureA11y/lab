@@ -1314,7 +1314,10 @@ function initUi() {
     });
 
     async function ensureSessionStarted() {
-        if (runId) return runId;
+        // A finished session takes no more scans (the server has built its
+        // result): a scan after Finish starts a new one, rather than going
+        // into a result that would never hold it.
+        if (runId && sessionState !== 'finished') return runId;
 
         setStatus('Starting session...');
         const r = await postJson('/manual-start', { scenarioName: null, tags: null });
