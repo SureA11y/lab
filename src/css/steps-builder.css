@@ -161,14 +161,16 @@
     .line-badge, .steps-panel__badge, .passwords-banner { border-color: CanvasText; }
 }
 /* The kind of step, on a line of its own above every title, so every title
-   starts at the same place: small and muted (4.5:1 or more), as a caption
-   over the step's name. */
+   starts at the same place: small, in the softest text colour, as a caption
+   over the step's name that the eye passes over. --text-soft is 4.98:1 or
+   more on every card's surface in both themes (AA for its small size;
+   step-kind-contrast.test.js). */
 :is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper .line-title-action-type {
     display: block;
     width: max-content;
     max-width: 100%;
     margin: 0 0 1px;
-    color: var(--text-muted);
+    color: var(--text-soft);
     font-size: var(--fs-xxs);
     font-weight: 600;
     letter-spacing: .02em;
