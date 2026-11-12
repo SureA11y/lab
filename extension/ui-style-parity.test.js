@@ -90,7 +90,6 @@ const NO_DARK_OVERRIDE_NEEDED = ['--shadow-overlay', '--shadow-popover'];
 // Rules both stylesheets define that set different properties. Adding to this is
 // a decision; an entry that stops drifting has to come out.
 const KNOWN_PROPERTY_DRIFT = [
-    "###.example-node",
     "###.impact-critical",
     "###.impact-minor",
     "###.impact-moderate",

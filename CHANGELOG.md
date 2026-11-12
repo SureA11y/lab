@@ -528,7 +528,10 @@ The first public release.
   and send a session to the lab. Its Profile is the scan step's: one WCAG
   2.2 level and any standards at once, folded under a toggle that says what
   the scan checks ("Profile  WCAG 2.2 AA"). Its Advanced options are folded
-  too, their toggle saying how many are set ("2 applied"). Its build (`npm run build:extension`)
+  too, their toggle saying how many are set ("2 applied"). A finding's
+  details show each occurrence as a card of its own, its parts in order:
+  where it is, what is wrong, what the engine measured, a "How to fix"
+  callout, and its check. Its build (`npm run build:extension`)
   takes in the packs installed, so their standards (WAI-ARIA 1.2) are
   offered there too. A scan records the
   profiles that ran, and says when the page has iframes, which the

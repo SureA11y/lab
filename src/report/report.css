@@ -551,11 +551,11 @@ html.no-theme-transition * {
 .rgaa-rate-note { display: block; font-size: var(--fs-sm); color: var(--text-muted); }
 
 /* What the engine measured for one occurrence, as label/value pairs. */
-.node-details-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 2px 16px; margin: 4px 0 0; }
-.node-details-list > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.node-details-list { display: flex; flex-wrap: wrap; gap: 2px 20px; margin: 4px 0 0; }
+.node-details-list > div { display: flex; gap: 6px; min-width: 0; max-width: 100%; }
 .node-details-list dt { color: var(--text-muted); }
 .node-details-list dt::after { content: ":"; }
-.node-details-list dd { margin: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
+.node-details-list dd { margin: 0; min-width: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
 
 /* A question's lean (core 1.14): which way its evidence points, and the
    steps that answer it. */

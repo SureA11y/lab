@@ -1080,17 +1080,55 @@ input:focus, textarea:focus, select:focus{
 }
 
 
-/* Content styling inside dialog */
+/* Content styling inside dialog.
+   Each occurrence is a card of its own, a step lighter than the body under
+   it and edged with the stronger line, so occurrences are told apart at a
+   glance, in the dark theme too, where shades alone are close. Inside it,
+   its parts read in order: where it is (heading, page, selector, element),
+   what is wrong, what the engine measured, how to fix it, the check. */
+.src-dialog-body { background: var(--surface-0); }
+
 .example-node {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
 }
-.example-node:last-child { border-bottom: 0; }
+.example-node + .example-node { margin-top: var(--space-3); }
 
 .example-node-header h2 {
     font-size: var(--fs-md);
     margin: 0 0 6px;
 }
+/* The page it was found on, under its heading, not run into it. */
+.example-node-header h2 .node-urls { display: block; margin-top: 2px; overflow-wrap: anywhere; }
+
+.example-node .node-detail { margin-top: var(--space-2); line-height: 1.45; }
+.example-node .node-failure { color: var(--text-main); }
+
+/* What the engine measured: its label small, over a light box of values. */
+.example-node .node-measured > strong {
+    display: block;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+.example-node .node-measured .node-details-list {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+}
+
+/* How to fix it: the part most come for, a callout of the secondary accent. */
+.example-node .node-hint {
+    padding: var(--space-2) var(--space-3);
+    border-left: var(--stroke-accent-bar) solid var(--accent-2);
+    border-radius: var(--radius-sm);
+    background: var(--advisory-soft);
+    color: var(--text-main);
+}
+
+/* The check that found it: a footnote. */
+.example-node .node-check { font-size: var(--fs-xs); color: var(--text-muted); }
 
 .node-selector {
     display: block;
@@ -1544,11 +1582,14 @@ body .dsp, body .dsp-tip, body .a11y-margins, body .scan-notices, body .scan-not
 }
 
 /* What the engine measured for one occurrence, as label/value pairs. */
-.node-details-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 2px 16px; margin: 4px 0 0; }
-.node-details-list > div { display: flex; gap: 6px; flex-wrap: wrap; }
+/* Each value as wide as it is, side by side while they fit: a long one (a
+   selector) takes the room it needs, not a column cut to the shortest. */
+.node-details-list { display: flex; flex-wrap: wrap; gap: 2px 20px; margin: 4px 0 0; }
+.node-details-list > div { display: flex; gap: 6px; min-width: 0; max-width: 100%; }
 .node-details-list dt { color: var(--text-muted); }
 .node-details-list dt::after { content: ":"; }
-.node-details-list dd { margin: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
+/* A value longer than the row wraps beside its label, not under it. */
+.node-details-list dd { margin: 0; min-width: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
 
 /* A question's lean (core 1.14): which way its evidence points, and the
    steps that answer it. */
