@@ -541,9 +541,12 @@ The first public release.
   callout, and its check. Each card has a picture of its element, taken
   right after the scan as the lab takes them (the element framed with the
   page around it and the same highlight), of failures by default and at
-  most 50, which Advanced options change. They are taken without moving
-  the page: nothing is scrolled, so a page that loads more as it is
-  scrolled does not, and an element hidden in a scrolling box says so. The pictures go with the
+  most 50, which Advanced options change. A scan leaves the page as it
+  is: nothing is scrolled, so a page that loads more as it is scrolled
+  does not, and nothing is drawn on it, the highlight going on the
+  picture; an element hidden in a scrolling box says so. In Firefox the
+  picture of the whole page is one capture of the document, no longer
+  pieced together by scrolling the page a screen at a time. The pictures go with the
   session: the lab shows them when it is sent to it or its file opened
   there, and packs them into a downloaded report. Its buttons have their
   own style again, which a lost selector had dropped, and are as tall as

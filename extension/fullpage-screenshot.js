@@ -84,151 +84,41 @@ globalThis.A11YFullPageScreenshot = (function () {
     }
 
     // -----------------------------
-    // Firefox best path: scroll + capture + stitch
+    // Firefox best path: one capture of the whole document
     // -----------------------------
-    // Firefox's tabs.captureTab() only ever captures the visible viewport - it
-    // takes just {format, quality} (see MDN), there is no "rect" or any other
-    // option to capture beyond it, unlike Chrome's CDP path below. So instead
-    // we scroll the page in viewport-height steps, capture each step, and draw
-    // them onto one canvas. This visibly scrolls the real tab while it runs
-    // (there's no way around that without CDP-equivalent access) - we restore
-    // the original scroll position afterward.
-    const MAX_STITCH_SLICES = 40;
+    // tabs.captureTab takes a rect, an area of the document in its CSS
+    // pixels, and a scale (Firefox 82): the whole page in one picture, drawn
+    // where it is, with nothing scrolled. It replaces scrolling the page a
+    // viewport at a time and stitching the captures, which moved the page in
+    // front of the person using it. A page larger than an image may be is
+    // pictured at a smaller scale; one that can't be, or a Firefox without
+    // rect, gets the visible part (captureBest's fallback), never a scroll.
+    const MAX_IMAGE_SIDE = 32000;
+    const MAX_IMAGE_PIXELS = 120 * 1000 * 1000;
 
-    async function getViewportInfo(tabId) {
-        const execInTab = globalThis.__A11Y_EXEC_IN_TAB;
-        if (typeof execInTab !== 'function') return null;
-        try {
-            const arr = await execInTab(tabId, {
-                world: 'MAIN',
-                func: () => ({
-                    width: Number(window.innerWidth) || 0,
-                    height: Number(window.innerHeight) || 0,
-                    scrollY: Number(window.scrollY) || 0
-                })
-            });
-            const v = arr && arr[0];
-            return (v && v.width && v.height) ? v : null;
-        } catch {
-            return null;
-        }
-    }
-
-    async function scrollTabTo(tabId, y) {
-        const execInTab = globalThis.__A11Y_EXEC_IN_TAB;
-        if (typeof execInTab !== 'function') return null;
-        try {
-            const arr = await execInTab(tabId, {
-                world: 'MAIN',
-                args: [y],
-                func: (targetY) => {
-                    window.scrollTo(0, targetY);
-                    return Number(window.scrollY) || 0;
-                }
-            });
-            const v = arr && arr[0];
-            return (typeof v === 'number') ? v : null;
-        } catch {
-            return null;
-        }
-    }
-
-    function waitForRepaint() {
-        // Lets scroll-linked effects (sticky headers, lazy-loaded images) settle
-        // before the next capture. A fixed delay is more reliable here than
-        // requestAnimationFrame, which browsers may throttle in a background page.
-        return new Promise((resolve) => setTimeout(resolve, 80));
-    }
-
-    async function captureVisibleForStitch(tabId) {
-        try {
-            const dataUrl = await api.tabs.captureTab(tabId, { format: 'png' });
-            return dataUrl || null;
-        } catch {
-            return null;
-        }
-    }
-
-    function loadImage(dataUrl) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = () => reject(new Error('image decode failed'));
-            img.src = dataUrl;
-        });
-    }
-
-    async function canvasToDataUrl(canvas) {
-        if (typeof canvas.convertToBlob === 'function') {
-            const blob = await canvas.convertToBlob({ type: 'image/png' });
-            return await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(reader.error);
-                reader.readAsDataURL(blob);
-            });
-        }
-        return canvas.toDataURL('image/png');
-    }
-
-    async function tryFirefoxStitch(tabId) {
+    async function tryFirefoxRect(tabId) {
         if (!api.tabs || typeof api.tabs.captureTab !== 'function') return null;
 
         const m = await measurePage(tabId);
         if (!m) return null;
 
-        // Some pages can be huge, avoid obvious crashy sizes.
-        if (m.width > 20000 || m.height > 60000) return null;
-
-        const viewport = await getViewportInfo(tabId);
-        if (!viewport) return null;
-
         const dpr = m.dpr || 1;
-        const step = Math.max(1, viewport.height);
-        const maxScrollY = Math.max(0, m.height - viewport.height);
-        const slices = Math.min(MAX_STITCH_SLICES, Math.ceil(m.height / step));
-
-        // Whole page already fits in one viewport - let the plain viewport
-        // capture handle it, no need to stitch a single slice.
-        if (slices <= 1 || maxScrollY <= 0) return null;
-
-        const originalY = viewport.scrollY;
-        const shots = [];
+        const scale = Math.min(
+            dpr,
+            MAX_IMAGE_SIDE / m.width,
+            MAX_IMAGE_SIDE / m.height,
+            Math.sqrt(MAX_IMAGE_PIXELS / (m.width * m.height))
+        );
+        // Too large to be legible, even scaled.
+        if (!(scale > 0.1)) return null;
 
         try {
-            for (let i = 0; i < slices; i++) {
-                const targetY = Math.min(i * step, maxScrollY);
-                const actualY = await scrollTabTo(tabId, targetY);
-                if (actualY == null) break;
-                await waitForRepaint();
-
-                const dataUrl = await captureVisibleForStitch(tabId);
-                if (!dataUrl) break;
-                shots.push({ y: actualY, dataUrl });
-
-                // The page couldn't scroll as far as expected (shorter than measured) - stop.
-                if (actualY >= maxScrollY) break;
-            }
-        } finally {
-            try { await scrollTabTo(tabId, originalY); } catch {}
-        }
-
-        if (!shots.length) return null;
-
-        try {
-            const canvasWidth = Math.round(m.width * dpr);
-            const canvasHeight = Math.round(m.height * dpr);
-            const canvas = (typeof OffscreenCanvas === 'function')
-                ? new OffscreenCanvas(canvasWidth, canvasHeight)
-                : Object.assign(document.createElement('canvas'), { width: canvasWidth, height: canvasHeight });
-            const ctx = canvas.getContext('2d');
-
-            for (const shot of shots) {
-                const img = await loadImage(shot.dataUrl);
-                ctx.drawImage(img, 0, Math.round(shot.y * dpr));
-            }
-
-            return await canvasToDataUrl(canvas);
+            const dataUrl = await api.tabs.captureTab(tabId, {
+                format: 'png',
+                rect: { x: 0, y: 0, width: m.width, height: m.height },
+                scale
+            });
+            return dataUrl || null;
         } catch {
             return null;
         }
@@ -330,9 +220,9 @@ globalThis.A11YFullPageScreenshot = (function () {
         const cdp = await tryChromeCDP(tabId);
         if (cdp) return { dataUrl: cdp, mode: 'chrome-cdp-fullpage' };
 
-        // 2) Firefox (MV2): scroll + capture + stitch
-        const stitched = await tryFirefoxStitch(tabId);
-        if (stitched) return { dataUrl: stitched, mode: 'firefox-stitched-fullpage' };
+        // 2) Firefox: the whole document in one capture, nothing scrolled
+        const whole = await tryFirefoxRect(tabId);
+        if (whole) return { dataUrl: whole, mode: 'firefox-fullpage' };
 
         // 3) Fallback: viewport
         const vp = await captureViewportScreenshot(tabId);
