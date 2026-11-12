@@ -64,8 +64,8 @@ lists every step and field.
 
 - A step can be folded, switched off without removing it, and given its own
   title. Every card shows its kind in small letters above its title
-  (*Set variable*, then *1 The start locale*), the number set apart from the
-  name, so every title starts at the same place. A card shows its
+  (*Set variable*, then *1 The start locale*), so every title starts at the
+  same place; the step's number is a small chip before its name. A card shows its
   Collapse button and a ⋯; its other buttons (info, switch off, move up and
   down, copy, remove) show when the pointer is on the card or focus is in
   it, and are in the ⋯ menu on a touch screen or a narrow card. A

@@ -164,7 +164,7 @@
    starts at the same place: small, in the softest text colour, as a caption
    over the step's name that the eye passes over. --text-soft is 4.98:1 or
    more on every card's surface in both themes (AA for its small size;
-   step-kind-contrast.test.js). */
+   step-header-contrast.test.js). */
 :is(#actions-builder, #custom-step-actions-builder) .line .line-title-wrapper .line-title-action-type {
     display: block;
     width: max-content;
@@ -177,14 +177,33 @@
     line-height: 1.3;
 }
 
-/* The step's number, told from its name: muted, its digits of one width so
-   numbers line up from card to card, with a space before the name. The
-   " - " between them is in the text, not drawn (actions-builder.module.js). */
+/* The step's number, told from its name at a glance: a small chip in the
+   accent's soft colour, as the "Then" of a condition's branch, its digits of
+   one width so numbers line up from card to card. The " - " between it and
+   the name is in the text, not drawn (actions-builder.module.js). Its text
+   is 7.9:1 on it in the light theme and 7.4:1 in the dark one; on a step
+   switched off it is grey, as the rest of the title
+   (step-header-contrast.test.js). */
 :is(#actions-builder, #custom-step-actions-builder) .line-title-index {
-    margin-right: .4em;
-    color: var(--text-muted);
-    font-size: .9em;
+    display: inline-block;
+    margin-right: .5em;
+    padding: 0 .45em;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent-on-soft);
+    font-size: .78em;
+    font-weight: 600;
+    line-height: 1.6;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    vertical-align: .12em;
+}
+:is(#actions-builder, #custom-step-actions-builder) .line.is-disabled > .line-header .line-title-index {
+    background: var(--na-soft);
+    color: var(--text-muted);
+}
+@media (forced-colors: active) {
+    :is(#actions-builder, #custom-step-actions-builder) .line-title-index { border: 1px solid CanvasText; }
 }
 
 :is(#actions-builder, #custom-step-actions-builder) .line-controls {
