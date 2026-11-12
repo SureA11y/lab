@@ -545,10 +545,22 @@ input:focus, textarea:focus, select:focus{
 /* Inherit the toggle's colour so the label follows the rest→hover shift. */
 .legend-toggle-label{ color: inherit; }
 
+/* What is chosen in a folded section, after its label ("Profile  WCAG 2.2
+   AA"): plain weight, so the label still reads first; it wraps when long. */
+.legend-toggle-value{
+    font-weight: 400;
+    color: var(--text-main);
+    white-space: normal;
+    text-align: left;
+}
+
 /* Disclosure content: aligns under the label, with breathing room below the
    toggle row; removed from layout entirely when collapsed. */
-.advanced-content{ padding-top: var(--space-2); }
-.advanced-content[hidden]{ display: none !important; }
+.disclosure-content{ padding-top: var(--space-2); }
+.disclosure-content[hidden]{ display: none !important; }
+
+/* The Profile's section spans the row, as its fieldset did. */
+.profiles-disclosure{ grid-column: 1 / -1; min-width: 0; }
 
 .row-input-button {
     display: grid;
