@@ -496,7 +496,9 @@ The first public release.
   `@surea11y/pack-rgaa`, installed with the lab as EN 301 549's is (the lab
   now needs surea11y core 1.16.1): a scan against it reports one result per
   RGAA criterion, with the rules for what RGAA asks beyond WCAG 2.1.
-- **WAI-ARIA 1.2 as a profile**, from its pack `@surea11y/pack-wai-aria`,
+- **WAI-ARIA 1.2 as a profile**, from its pack `@surea11y/pack-wai-aria`
+  (1.0.2: a page whose scripts replace `Array.from`, as old libraries such
+  as Prototype and MooTools do, is scanned with it, where the scan stopped),
   installed with the lab as EN 301 549's is (the lab now needs surea11y
   core 1.15): a scan against it reports one result
   per author requirement, and a finding that WCAG only asks about (an
