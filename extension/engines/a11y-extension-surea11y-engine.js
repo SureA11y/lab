@@ -652,12 +652,12 @@
     }
 
     // What an occurrence keeps of its element's picture: the picture
-    // ({ dataUrl, box, cropped? }) or why there is none ({ skipped, max?,
-    // error? }); null when no picture was considered.
+    // ({ url, box, cropped? }, url a PNG's data URL) or why there is none
+    // ({ skipped, max?, error? }); null when no picture was considered.
     function elementScreenshotOf(shot) {
         if (!shot || typeof shot !== 'object') return null;
         if (typeof shot.dataUrl === 'string' && shot.dataUrl.startsWith('data:image/png;base64,')) {
-            return { dataUrl: shot.dataUrl, box: shot.box || null, ...(shot.cropped ? { cropped: true } : {}) };
+            return { url: shot.dataUrl, box: shot.box || null, ...(shot.cropped ? { cropped: true } : {}) };
         }
         if (typeof shot.skipped === 'string') {
             return {
@@ -686,8 +686,8 @@
         const shadowHostSelectors = notes ? notes.shadowHostsOf(occ) : null;
         // The picture the background took of the element (element-
         // screenshots.js), or why there is none, as the lab's engine keeps
-        // the binding's: here as a data URL, which the lab stores when the
-        // session is sent to it.
+        // the binding's: its url a data URL, which the lab shows, merges and
+        // packs into a downloaded report as it does a stored picture's.
         const elementScreenshot = elementScreenshotOf(occ && occ.screenshot);
         return {
             pageUrl,
@@ -823,7 +823,7 @@
                     base.checks.push(checkEntryOf(occ2, checkId));
                     base.sourceAtomicRules = base.sourceAtomicRules.concat(checkId);
                     // A picture from a later check, where the first had none.
-                    if (!(base.elementScreenshot && base.elementScreenshot.dataUrl) && occ2.elementScreenshot && occ2.elementScreenshot.dataUrl) {
+                    if (!(base.elementScreenshot && base.elementScreenshot.url) && occ2.elementScreenshot && occ2.elementScreenshot.url) {
                         base.elementScreenshot = occ2.elementScreenshot;
                     }
                 }

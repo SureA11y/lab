@@ -16,7 +16,8 @@
 // Each occurrence considered gets `screenshot`: { dataUrl, box, cropped? }
 // (box: where the element shows in the picture, CSS px), or { skipped } and
 // why. The panel's canonicalize moves it to the occurrence's
-// elementScreenshot, as the lab's engine does.
+// elementScreenshot, { url, box }, its url the data URL, as the lab's engine
+// does with a stored picture's link, so the lab reads it as its own.
 //
 // Loaded by the background (importScripts in Chrome, manifest.json's
 // background scripts in Firefox) and, for its tests, by Node.
