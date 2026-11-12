@@ -71,7 +71,7 @@ lists every step and field.
   condition's branches read **Then** and **Otherwise (optional)**, and an
   empty list says *Nothing runs here.* with one **Add step** button.
   Its fields share the card's width, a URL, a selector, a text or a value
-  on a row of its own. They check themselves as you type, and the workflow
+  twice as wide as the others, or on a row of its own on a narrow card. They check themselves as you type, and the workflow
   is checked again before it runs, so a mistake shows at the step, not
   halfway through a run.
 - The **steps panel** beside the workflow lists its steps as a tree, to find

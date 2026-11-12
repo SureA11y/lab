@@ -465,7 +465,7 @@ export function createStepLine(builder) {
             const row = createEl("div", {className: "runcustomstep-pick"});
             select.replaceWith(row);
             row.append(select, link);
-            field.dataset.wide = "true";
+            field.dataset.wide = "row";
             // A loaded step's value is set without a change event
             // (step-values.js), which calls this after.
             lineEl._applyRunCustomStepOpen = sync;

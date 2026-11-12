@@ -110,7 +110,7 @@ describe('a call to a custom step', () => {
         builder.loadActions([{ type: 'runCustomStep', customStepId: 'multi' }], { clearFirst: true, focusFirst: false, injectDefaultWhenEmpty: false });
 
         const field = actionsEl.querySelector('.line > .fields > .field[data-field-name="customStepId"]');
-        assert.equal(field.dataset.wide, 'true');
+        assert.equal(field.dataset.wide, 'row');
         const row = field.querySelector('.runcustomstep-pick');
         const select = row.querySelector(':scope > select');
         const open = row.querySelector(':scope > .runcustomstep-open');
