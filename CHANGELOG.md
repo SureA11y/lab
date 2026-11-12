@@ -536,7 +536,9 @@ The first public release.
   page around it and the same highlight), of failures by default and at
   most 50, which Advanced options change. The pictures go with the
   session: the lab shows them when it is sent to it or its file opened
-  there, and packs them into a downloaded report. Its build (`npm run build:extension`)
+  there, and packs them into a downloaded report. Its buttons have their
+  own style again, which a lost selector had dropped, and are as tall as
+  the fields beside them. Its build (`npm run build:extension`)
   takes in the packs installed, so their standards (WAI-ARIA 1.2) are
   offered there too. A scan records the
   profiles that ran, and says when the page has iframes, which the

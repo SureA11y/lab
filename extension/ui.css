@@ -452,6 +452,10 @@ input, textarea, select{
     outline: none;
 }
 
+/* A one-line field as tall as the buttons beside it (the DS Button's sm,
+   36px): picker and reset line up with their field. */
+input:not([type="checkbox"], [type="radio"]), select{ min-height: 36px; box-sizing: border-box; }
+
 textarea{ min-height: 72px; resize: vertical; }
 
 /* The browser's own placeholder grey fell below 4.5:1 on these fields. */
@@ -606,8 +610,8 @@ input:focus, textarea:focus, select:focus{
     flex: 1;
 }
 
+.btn{
     /* DS Button: sm (36px) default height, the UI font (--font-ui) at 600,
-    /* DS Button: sm (36px) default height, IBM Plex Mono 600 UI voice,
        radius-sm, colour-only interaction. */
     display: inline-flex;
     align-items: center;
