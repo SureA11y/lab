@@ -417,6 +417,11 @@ app.post("/manual-scan", async (req, res) => {
 
         const run = ManualRuns.get(runId);
         if (!run) return res.status(404).json({ ok: false, error: "Unknown runId" });
+        // A finished run's result is built: a scan added now would be in no
+        // result, so it is refused rather than kept where no one sees it.
+        if (run.status !== "collecting") {
+            return res.status(409).json({ ok: false, error: `The session is ${run.status}; start a new one to add scans.` });
+        }
 
         // New mode: the extension sends a fully adapted scan object
         if (!scan || typeof scan !== "object") {
