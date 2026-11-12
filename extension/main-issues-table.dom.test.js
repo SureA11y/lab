@@ -689,7 +689,7 @@ describe('the picture of an occurrence\'s element', () => {
     }
 
     test('shows in its occurrence, named for it', () => {
-        render(scanWithShot({dataUrl: 'data:image/png;base64,iVBORw0KGgo=', box: {x: 16, y: 16, width: 8, height: 8}}));
+        render(scanWithShot({url: 'data:image/png;base64,iVBORw0KGgo=', box: {x: 16, y: 16, width: 8, height: 8}}));
         const img = outEl.querySelector('.example-node .node-screenshot img');
         assert.equal(img.getAttribute('src'), 'data:image/png;base64,iVBORw0KGgo=');
         assert.equal(img.getAttribute('alt'), 'Occurrence 1: the flagged img element, with a box drawn around it');
@@ -697,7 +697,7 @@ describe('the picture of an occurrence\'s element', () => {
     });
 
     test('says when only part of the element fits', () => {
-        render(scanWithShot({dataUrl: 'data:image/png;base64,iVBORw0KGgo=', box: null, cropped: true}));
+        render(scanWithShot({url: 'data:image/png;base64,iVBORw0KGgo=', box: null, cropped: true}));
         assert.equal(outEl.querySelector('.node-screenshot figcaption').textContent, 'Only part of the element fits in the picture.');
     });
 
@@ -708,7 +708,7 @@ describe('the picture of an occurrence\'s element', () => {
     });
 
     test('takes no address but a picture\'s', () => {
-        render(scanWithShot({dataUrl: 'javascript:alert(1)'}));
+        render(scanWithShot({url: 'javascript:alert(1)'}));
         assert.equal(outEl.querySelector('.node-screenshot'), null);
     });
 });

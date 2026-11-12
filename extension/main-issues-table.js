@@ -754,16 +754,18 @@
         return m ? m[1].toLowerCase() : '';
     }
 
+    // A picture's address the dialog shows: a picture's data URL (the
+    // extension's own), or a link (a report's, the lab's).
+    const PICTURE_SRC = /^(data:image\/|blob:|https?:|\/)/i;
+
     // The picture of an occurrence's element, as the lab shows it: the
     // element framed with some of the page around it, a box drawn around it;
-    // or why there is none. Taken by the extension (a data URL) or stored by
-    // the lab (a URL). `name` is the occurrence's heading, so the text
+    // or why there is none. `name` is the occurrence's heading, so the text
     // alternative says whose picture it is.
     function buildElementScreenshotHtml(n, name = '') {
         const shot = n?.elementScreenshot;
         if (!shot) return '';
-        const src = typeof shot.dataUrl === 'string' && shot.dataUrl.startsWith('data:image/') ? shot.dataUrl
-            : (typeof shot.url === 'string' ? shot.url : '');
+        const src = typeof shot.url === 'string' && PICTURE_SRC.test(shot.url) ? shot.url : '';
         if (!src) {
             return shot.skipped
                 ? '<div class="node-detail node-screenshot-none"><strong>No picture:</strong> ' + escapeHtml(screenshotSkipText(shot)) + '</div>'
