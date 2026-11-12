@@ -554,6 +554,19 @@ input:focus, textarea:focus, select:focus{
     text-align: left;
 }
 
+/* How many options of a folded section are set ("2 applied"): a small chip
+   of the secondary accent, as the lab marks what is in effect. */
+.legend-toggle-badge{
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--advisory-soft);
+    color: var(--accent-2);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    line-height: 1.6;
+}
+.legend-toggle-badge[hidden]{ display: none; }
+
 /* Disclosure content: aligns under the label, with breathing room below the
    toggle row; removed from layout entirely when collapsed. */
 .disclosure-content{ padding-top: var(--space-2); }
