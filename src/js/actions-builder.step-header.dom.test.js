@@ -93,6 +93,38 @@ describe("a step's header", () => {
     });
 });
 
+describe('a call to a custom step', () => {
+    test('"Open this custom step" sits beside the choice, the field taking the whole row', () => {
+        const defs = { ...ACTION_DEFINITIONS, runCustomStep: { ...ACTION_DEFINITIONS.runCustomStep } };
+        defs.runCustomStep.fields = { ...defs.runCustomStep.fields };
+        defs.runCustomStep.fields.customStepId = {
+            ...defs.runCustomStep.fields.customStepId,
+            optionsProvider: () => [{ value: 'multi', label: 'multi - Multi-viewport scan' }]
+        };
+        const opened = [];
+        defs.runCustomStep.openCustomStep = (id) => opened.push(id);
+        const actionsEl = win.document.createElement('div');
+        const toolbarEl = win.document.createElement('div');
+        win.document.body.append(actionsEl, toolbarEl);
+        const builder = createActionsBuilder({ defs, actionsEl, toolbarEl, options: { useHorizontalStepper: false } });
+        builder.loadActions([{ type: 'runCustomStep', customStepId: 'multi' }], { clearFirst: true, focusFirst: false, injectDefaultWhenEmpty: false });
+
+        const field = actionsEl.querySelector('.line > .fields > .field[data-field-name="customStepId"]');
+        assert.equal(field.dataset.wide, 'true');
+        const row = field.querySelector('.runcustomstep-pick');
+        const select = row.querySelector(':scope > select');
+        const open = row.querySelector(':scope > .runcustomstep-open');
+        assert.equal(select.nextElementSibling, open, 'the button right after the choice, in one row');
+        assert.equal(field.querySelector('label').htmlFor, select.id, 'the choice still named by its label');
+        assert.equal(open.hidden, false);
+        open.click();
+        assert.deepEqual(opened, ['multi']);
+        select.value = '';
+        select.dispatchEvent(new win.Event('change'));
+        assert.equal(open.hidden, true, 'no way to a custom step not chosen');
+    });
+});
+
 describe("a condition's branches and empty lists", () => {
     test('are "Then" and "Otherwise (optional)"; an empty one says nothing runs, with one add button', () => {
         const { actionsEl } = newBuilder([{ type: 'if', selectorExists: '#otp', actions: [{ type: 'click', selector: '#verify' }] }]);
