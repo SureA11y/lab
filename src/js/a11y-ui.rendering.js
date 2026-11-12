@@ -686,8 +686,7 @@ export function createRenderer({
         return list.every((n) => JSON.stringify(n.howToCheck) === key) ? list[0].howToCheck : null;
     }
 
-    // `hintShown` when the hint is said once for every occurrence, above them.
-    function buildOccurrenceGuidanceHtml(n, {stepsShown = false, hintShown = false} = {}) {
+    function buildOccurrenceGuidanceHtml(n, {stepsShown = false} = {}) {
         const hint = typeof n?.hint === 'string' ? n.hint.trim() : '';
         const u = n?.uncertainty && typeof n.uncertainty === 'object' ? n.uncertainty : null;
         const code = u && typeof u.code === 'string' ? u.code.trim() : '';
@@ -702,7 +701,7 @@ export function createRenderer({
                 '</div>';
         }
         if (!stepsShown) out += buildHowToCheckHtml(n.howToCheck, {lang: n.lang});
-        if (hint && !hintShown) {
+        if (hint) {
             out += '<div class="node-detail node-hint"><strong>How to fix:</strong> ' + withLang(escapeHtml(hint), n.lang) + '</div>';
         }
         return out;
@@ -910,7 +909,11 @@ export function createRenderer({
     // What every occurrence shares (what is wrong, how to fix it, the check,
     // why there is no picture) is said once, at the top; the occurrences
     // follow, grouped by the page they were found on, each with its element
-    // and the selector "Copy selector" copies.
+    // and the selector "Copy selector" copies. Each still says what is wrong
+    // with it, how to fix it and its check, whether or not the others share
+    // them: an occurrence reached on its own (a long list, a search in the
+    // page) is read without the top. Shared steps to check and the reason for
+    // no picture are said once.
     function buildInstancesListHtml(nodes, type = 'fail') {
         const list = dedupeWithUrlMerge(nodes);
         // Questions in the order a review takes them: likely failures first.
@@ -1020,10 +1023,10 @@ export function createRenderer({
 
             const picture = hoistPictureNote && pictureNoteOf(n) === pictureNoteForAll ? '' : buildElementScreenshotHtml(n, name);
             return '<div class="example-node">' + header + htmlPart + selectorPart + contextSelectorsPart + picture +
-                (failureForAll ? '' : failureOf(n)) +
+                failureOf(n) +
                 buildOccurrenceDetailsHtml(n) +
-                buildOccurrenceGuidanceHtml(n, {stepsShown: !!stepsForAll, hintShown: !!hintForAll}) +
-                (checksForAll ? '' : checksOf(n)) +
+                buildOccurrenceGuidanceHtml(n, {stepsShown: !!stepsForAll}) +
+                checksOf(n) +
                 '</div>';
         };
 
