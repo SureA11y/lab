@@ -9,6 +9,11 @@ The first public release.
 
 ### The lab
 
+- **A step's buttons no longer move the workflow when they show**: with a
+  mouse, a step's buttons show in a place kept for them, so the card is as
+  tall as before and its title wraps as before. They show once the pointer
+  rests on the step, so crossing a parent's edge on the way to a nested step
+  no longer flashes the parent's buttons; with the keyboard they show at once.
 - **The configuration actions stay in sight while a run goes**: Load
   config, Append config, Undo and Redo wait for the run to end, shown
   unavailable; Export config still saves the form. A report's Download menu
