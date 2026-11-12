@@ -98,6 +98,24 @@
                 <label class="label" for="includeBestPractice">Include best-practice rules</label>
             </div>
 
+            <!-- Pictures of the elements a scan flags, as the lab's scan step
+                 takes them (element-screenshots.js): which outcomes, and how
+                 many at most in a scan. -->
+            <div class="element-shots">
+                <div class="field">
+                    <label class="label" for="elementShots">Pictures of flagged elements</label>
+                    <select id="elementShots">
+                        <option value="fail" selected>Failures</option>
+                        <option value="failCantTell">Failures and can’t tell</option>
+                        <option value="off">None</option>
+                    </select>
+                </div>
+                <div class="field field-compact">
+                    <label class="label" for="elementShotsMax">At most, a scan</label>
+                    <input id="elementShotsMax" type="number" min="1" step="1" value="50" inputmode="numeric" />
+                </div>
+            </div>
+
             <div class="field">
                 <label class="label" for="custom-css">Custom CSS (applied automatically when scanning)</label>
                 <div class="row-input-button">

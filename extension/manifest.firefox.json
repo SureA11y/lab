@@ -30,6 +30,8 @@
     "scripts": [
       "conformance-targets.js",
       "fullpage-screenshot.js",
+      "engines/vendor/surea11y-screenshots.min.js",
+      "element-screenshots.js",
       "engines/a11y-extension-surea11y-engine.js",
       "a11y-extension-engine.js",
       "background.js"

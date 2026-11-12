@@ -197,6 +197,10 @@ function initUi() {
     const labelInput = document.getElementById('label');
     const profileField = document.getElementById('profile');
     const includeBestPracticeInput = document.getElementById('includeBestPractice');
+    // Pictures of flagged elements: which outcomes, and at most how many.
+    const elementShotsSelect = document.getElementById('elementShots');
+    const elementShotsMaxInput = document.getElementById('elementShotsMax');
+    const ELEMENT_SHOTS_DEFAULT = { choice: 'fail', max: 50 };
     const contextInput = document.getElementById('context');
     const excludeInput = document.getElementById('exclude');
 
@@ -222,15 +226,29 @@ function initUi() {
     // so a scan changed by one is seen with the section folded. Part of the
     // toggle's name ("Advanced options 2 applied"). Set again wherever a
     // value is: typed, restored, picked or reset.
+    /** The pictures chosen: { choice: 'fail'|'failCantTell'|'off', max }. */
+    function elementShotChoices() {
+        const choice = ['fail', 'failCantTell', 'off'].includes(elementShotsSelect?.value) ? elementShotsSelect.value : ELEMENT_SHOTS_DEFAULT.choice;
+        const n = Number(String(elementShotsMaxInput?.value || '').trim());
+        return { choice, max: Number.isInteger(n) && n >= 1 ? n : ELEMENT_SHOTS_DEFAULT.max };
+    }
+
+    function syncElementShotsMax() {
+        if (elementShotsMaxInput) elementShotsMaxInput.disabled = elementShotsSelect?.value === 'off';
+    }
+
     function syncAdvancedBadge() {
         const badge = document.getElementById('advancedBadge');
         if (!badge) return;
         const filled = (el) => !!String(el?.value || '').trim();
+        const shots = elementShotChoices();
         const applied = [
             filled(excludeInput),
             filled(contextInput),
             !!includeBestPracticeInput?.checked,
-            filled(document.getElementById('custom-css'))
+            filled(document.getElementById('custom-css')),
+            // Pictures count once changed from what a scan takes by default.
+            shots.choice !== ELEMENT_SHOTS_DEFAULT.choice || (shots.choice !== 'off' && shots.max !== ELEMENT_SHOTS_DEFAULT.max)
         ].filter(Boolean).length;
         badge.hidden = !applied;
         badge.textContent = applied ? `${applied} applied` : '';
@@ -1163,6 +1181,14 @@ function initUi() {
         if (includeBestPracticeInput && data && typeof data.includeBestPractice === 'boolean') {
             includeBestPracticeInput.checked = data.includeBestPractice;
         }
+        const shots = await sessionGet(['elementScreenshots', 'elementScreenshotsMax']);
+        if (elementShotsSelect && shots && ['fail', 'failCantTell', 'off'].includes(shots.elementScreenshots)) {
+            elementShotsSelect.value = shots.elementScreenshots;
+        }
+        if (elementShotsMaxInput && shots && Number.isInteger(shots.elementScreenshotsMax) && shots.elementScreenshotsMax >= 1) {
+            elementShotsMaxInput.value = String(shots.elementScreenshotsMax);
+        }
+        syncElementShotsMax();
         syncAdvancedBadge();
     }
 
@@ -1209,6 +1235,16 @@ function initUi() {
             await sessionSet({ profile: getSelectedTarget().raw });
         } catch {}
     });
+
+    const saveElementShots = async () => {
+        syncElementShotsMax();
+        const { choice, max } = elementShotChoices();
+        try {
+            await sessionSet({ elementScreenshots: choice, elementScreenshotsMax: max });
+        } catch {}
+    };
+    elementShotsSelect?.addEventListener('change', saveElementShots);
+    elementShotsMaxInput?.addEventListener('change', saveElementShots);
 
     includeBestPracticeInput?.addEventListener('change', async () => {
         try {
@@ -1365,6 +1401,8 @@ function initUi() {
                     excludeSelectors,
                     // The packs this build has, which a pack's profile needs.
                     packs: builtPackNames,
+                    // Pictures of the elements it flags (element-screenshots.js).
+                    elementScreenshots: elementShotChoices(),
                     engineOptions: { locale: RESULTS_LANGUAGE }
                 }
             });
@@ -1435,6 +1473,15 @@ function initUi() {
             } catch (e) {
                 console.error('[UI] canonicalize failed', e);
                 throw e;
+            }
+
+            // The pictures are on the canonical occurrences now; the engine's
+            // own result, kept for the report, stays as the engine gave it,
+            // with no images, as the lab keeps it.
+            for (const cr of Array.isArray(native.checksResults) ? native.checksResults : []) {
+                for (const occ of Array.isArray(cr && cr.occurrences) ? cr.occurrences : []) {
+                    if (occ && typeof occ === 'object') delete occ.screenshot;
+                }
             }
 
             // As the lab does after every engine: the best practices go apart,

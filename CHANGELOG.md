@@ -531,7 +531,10 @@ The first public release.
   too, their toggle saying how many are set ("2 applied"). A finding's
   details show each occurrence as a card of its own, its parts in order:
   where it is, what is wrong, what the engine measured, a "How to fix"
-  callout, and its check. Its build (`npm run build:extension`)
+  callout, and its check. Each card has a picture of its element, taken
+  right after the scan as the lab takes them (the element framed with the
+  page around it and the same highlight), of failures by default and at
+  most 50, which Advanced options change. Its build (`npm run build:extension`)
   takes in the packs installed, so their standards (WAI-ARIA 1.2) are
   offered there too. A scan records the
   profiles that ran, and says when the page has iframes, which the
