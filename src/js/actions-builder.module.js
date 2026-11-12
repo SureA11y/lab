@@ -1378,13 +1378,27 @@ export function createActionsBuilder ({
                     const safeIndexForId = indexPath.replace(/\./g, "-");
                     const titleId = `action-${safeIndexForId}-${line._uid}`;
 
-                    titleEl.textContent = `${indexPath} - ${displayTitle}`;
+                    // "3.2 - Click": the number styled apart from the name,
+                    // the " - " between them kept in the text (what a screen
+                    // reader says, and what is read back from the title) but
+                    // not drawn.
+                    titleEl.replaceChildren(
+                        createEl("span", {className: "line-title-index"}, [
+                            indexPath,
+                            createEl("span", {className: "visually-hidden line-title-sep"}, " - ")
+                        ]),
+                        displayTitle
+                    );
                     titleEl.parentNode.id = titleId;
                     line.setAttribute("aria-labelledby", titleId);
                 }
                 const titleActionTypeEl = line.querySelector(":scope > .line-header .line-title-action-type");
-                // The kind of step, when the title is the step's own.
-                if (titleActionTypeEl) titleActionTypeEl.hidden = !alias;
+                // The kind of step, above every title; not said again to a
+                // screen reader when the title is the kind.
+                if (titleActionTypeEl) {
+                    if (displayTitle === base) titleActionTypeEl.setAttribute("aria-hidden", "true");
+                    else titleActionTypeEl.removeAttribute("aria-hidden");
+                }
 
                 // Recurse into any nested actions-subcontainer under this line
                 const nestedContainers = line.querySelectorAll(
