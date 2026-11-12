@@ -761,6 +761,9 @@ export function createRenderer({
         'capture-failed': 'the picture could not be taken.',
         'store-failed': 'the picture was taken but could not be saved.',
         'time-limit': 'the scan ran out of time for pictures.',
+        // Pictures the extension takes without scrolling the page.
+        'hidden-in-container': 'the element is scrolled out of sight inside its container.',
+        'outside-view': 'the element is outside the visible part of the page, which this browser can\'t picture without scrolling it.',
         // A picture in a state (the text spacing).
         'state-not-applied': 'the page kept it from being applied.',
         'state-unavailable': 'this version of surea11y can\'t apply it.',

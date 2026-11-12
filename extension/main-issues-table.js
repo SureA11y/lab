@@ -738,7 +738,10 @@
         'max-reached': 'the scan reached its limit of pictures.',
         'capture-failed': 'the picture could not be taken.',
         'store-failed': 'the picture was taken but could not be saved.',
-        'time-limit': 'the scan ran out of time for pictures.'
+        'time-limit': 'the scan ran out of time for pictures.',
+        // Pictures the extension takes without scrolling the page.
+        'hidden-in-container': 'the element is scrolled out of sight inside its container.',
+        'outside-view': 'the element is outside the visible part of the page, which this browser can\'t picture without scrolling it.'
     };
 
     function screenshotSkipText(shot) {
