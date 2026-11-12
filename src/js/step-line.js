@@ -175,12 +175,12 @@ export function createStepLine(builder) {
             iconName: "edit"
         });
 
-        // What kind of step it is, as a small pill before a title of the
-        // step's own ("Set variable", before "1 - The start locale"): in the
-        // same place on every card, whatever the title's length, and never
-        // wrapped. A step titled by its kind has none: it would say it twice.
-        const titleActionTypeText = createEl("span", {className: "line-title-action-type"}, baseTitle);
-        titleActionTypeText.hidden = true;
+        // What kind of step it is, as a small line above its title ("Set
+        // variable", above "1 - The start locale"), on every card, so every
+        // title starts at the same place. A step titled by its kind has it
+        // too, unsaid to a screen reader, as the title says it
+        // (updateLineTitles).
+        const titleActionTypeText = createEl("span", {className: "line-title-action-type", "aria-hidden": "true"}, baseTitle);
 
         // helpers
         function getBaseTitleForLine() {
@@ -230,8 +230,6 @@ export function createStepLine(builder) {
             } else {
                 line.dataset.alias = raw;
             }
-
-            titleActionTypeText.hidden = !getAliasForLine();
 
             exitTitleEdit({ restoreText: true });
 

@@ -63,8 +63,9 @@ whose scans are reported as one. [The step reference](step-definitions.html)
 lists every step and field.
 
 - A step can be folded, switched off without removing it, and given its own
-  title; a step with a title of its own shows its kind as a small pill
-  before it (*Set variable* · *1 - The start locale*). A card shows its
+  title. Every card shows its kind in small letters above its title
+  (*Set variable*, then *1 The start locale*), the number set apart from the
+  name, so every title starts at the same place. A card shows its
   Collapse button and a ⋯; its other buttons (info, switch off, move up and
   down, copy, remove) show when the pointer is on the card or focus is in
   it, and are in the ⋯ menu on a touch screen or a narrow card. A

@@ -57,15 +57,39 @@ function newBuilder(actions) {
 const header = (line) => line.querySelector(':scope > .line-header');
 
 describe("a step's header", () => {
-    test('its kind is a pill before a title of its own, and not there when the title is the kind', () => {
+    test('its kind is above every title, said to a screen reader only when the title is not the kind', () => {
         const { actionsEl } = newBuilder([{ type: 'setVar', alias: 'The start locale', key: 'locale', value: 'en' }, { type: 'setVar', key: 'b', value: 'c' }]);
         const [named, plain] = actionsEl.querySelectorAll(':scope > .line');
-        const pill = header(named).querySelector('.line-title-action-type');
-        assert.equal(pill.hidden, false);
-        assert.equal(pill.textContent, 'Set variable', 'no quotes, no hyphen');
-        assert.equal(pill.nextElementSibling, header(named).querySelector('.line-title'), 'before the title');
-        assert.equal(header(named).querySelector('.line-title').textContent, '1 - The start locale');
-        assert.equal(header(plain).querySelector('.line-title-action-type').hidden, true);
+        const kind = header(named).querySelector('.line-title-action-type');
+        assert.equal(kind.hidden, false);
+        assert.equal(kind.textContent, 'Set variable', 'no quotes, no hyphen');
+        assert.equal(kind.nextElementSibling, header(named).querySelector('.line-title'), 'before the title');
+        assert.equal(kind.hasAttribute('aria-hidden'), false, 'said: the title is the step\'s own');
+        const plainKind = header(plain).querySelector('.line-title-action-type');
+        assert.equal(plainKind.hidden, false, 'on every card');
+        assert.equal(plainKind.getAttribute('aria-hidden'), 'true', 'not said twice: the title is the kind');
+        assert.equal(header(plain).querySelector('.line-title').textContent, '2 - Set variable');
+
+        // The number is styled apart from the name; the text reads as before.
+        const title = header(named).querySelector('.line-title');
+        assert.equal(title.textContent, '1 - The start locale');
+        const index = title.querySelector(':scope > .line-title-index');
+        assert.equal(index.textContent, '1 - ');
+        assert.ok(index.querySelector('.line-title-sep').classList.contains('visually-hidden'), 'the " - " is said, not drawn');
+
+        // Renamed and back, the kind is said and then not.
+        const pencil = header(plain).querySelector('.edit-title');
+        pencil.click();
+        const input = header(plain).querySelector('.line-title-input');
+        input.value = 'Second';
+        input.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Enter' }));
+        assert.equal(header(plain).querySelector('.line-title').textContent, '2 - Second');
+        assert.equal(plainKind.hasAttribute('aria-hidden'), false);
+        pencil.click();
+        input.value = '';
+        input.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Enter' }));
+        assert.equal(header(plain).querySelector('.line-title').textContent, '2 - Set variable');
+        assert.equal(plainKind.getAttribute('aria-hidden'), 'true');
         // One id per page: the pill no longer repeats the title's.
         const ids = Array.from(win.document.querySelectorAll('[id]')).map((e) => e.id);
         assert.equal(new Set(ids).size, ids.length);

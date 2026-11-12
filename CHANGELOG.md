@@ -9,6 +9,10 @@ The first public release.
 
 ### The lab
 
+- **A step's kind is above its title, on every card**: in small letters
+  where the title starts, so every title, renamed or not, starts at the same
+  place, and the number before it is set apart from the name. A screen
+  reader says the kind only when the title is not the kind already.
 - **A step's buttons no longer move the workflow when they show**: with a
   mouse, a step's buttons show in a place kept for them, so the card is as
   tall as before and its title wraps as before. They show once the pointer
