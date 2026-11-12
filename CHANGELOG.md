@@ -19,6 +19,10 @@ The first public release.
   only when the step is too narrow for both, and the choice takes the
   step's whole row. It no longer shows for a variable token, which names no
   custom step, nor on a loaded step whose custom step is not chosen.
+- **A selector shares its row with the fields after it**: a URL, a
+  selector, a text or a value takes two of a step's columns where the step
+  has three or more, the fields after it beside it, and the whole row only
+  on a narrower step, where two columns are the row.
 - **The configuration actions stay in sight while a run goes**: Load
   config, Append config, Undo and Redo wait for the run to end, shown
   unavailable; Export config still saves the form. A report's Download menu

@@ -267,15 +267,23 @@
    fields in a wide step are two wide fields, not two 200px ones beside an
    empty row. min() keeps a column from asking for more than a narrow
    (nested) step has. A URL, a selector, a text or a value (data-wide,
-   step-fields.js) takes the whole row: they are long, and cut short they
-   cannot be read. */
+   step-fields.js) is long, and cut short it cannot be read: it takes two
+   columns, sharing its row with the fields after it where the step has
+   three columns or more, and the whole row where it has fewer (two
+   columns are the row then; one would be cut short). A field marked
+   data-wide="row" takes the whole row at any width. */
 :is(#actions-builder, #custom-step-actions-builder) .fields {
     display: grid;
     gap: 16px;
     align-items: start;
     grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
 }
-:is(#actions-builder, #custom-step-actions-builder) .fields > .field[data-wide="true"] { grid-column: 1 / -1; }
+:is(#actions-builder, #custom-step-actions-builder) .fields > .field:is([data-wide="true"], [data-wide="row"]) { grid-column: 1 / -1; }
+/* Three columns of 14rem and their two gaps: the step's box (the container,
+   whose content box the grid fills) has room for three or more. */
+@container (min-width: 44rem) {
+    :is(#actions-builder, #custom-step-actions-builder) .fields > .field[data-wide="true"] { grid-column: span 2; }
+}
 
 /* Default field */
 :is(#actions-builder, #custom-step-actions-builder) .field {

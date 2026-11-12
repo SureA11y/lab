@@ -84,9 +84,16 @@ describe('actions builder field grids size themselves', () => {
         assert.deepEqual(offenders, []);
     });
 
-    test('a URL, a selector, a text or a value takes the whole row', () => {
-        const wide = BLOCKS.find((b) => b.prelude === ':is(#actions-builder, #custom-step-actions-builder) .fields > .field[data-wide="true"]');
+    test('a URL, a selector, a text or a value takes the whole row, or two columns where there are three or more', () => {
+        const wide = BLOCKS.find((b) => b.prelude === ':is(#actions-builder, #custom-step-actions-builder) .fields > .field:is([data-wide="true"], [data-wide="row"])');
         assert.ok(wide);
         assert.match(wide.body, /grid-column:\s*1\s*\/\s*-1/);
+        // Two columns only where three fit (3 × 14rem and two 16px gaps):
+        // with two it is the row anyway, and with one a span of two would
+        // add a column the step has no room for.
+        const shared = BLOCKS.find((b) => b.prelude.endsWith('@container (min-width: 44rem)'));
+        assert.ok(shared, 'a container query for three columns');
+        assert.match(shared.body, /\.fields > \.field\[data-wide="true"\] \{ grid-column: span 2; \}/);
+        assert.doesNotMatch(shared.body, /data-wide="row"/, 'a field marked "row" keeps the whole row');
     });
 });
