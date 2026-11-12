@@ -634,6 +634,8 @@ input:focus, textarea:focus, select:focus{
 .btn:focus-visible{ outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
 
 .btn[disabled]{ opacity: .55; cursor: not-allowed; }
+/* Its display would show a button that is hidden. */
+.btn[hidden]{ display: none; }
 
 /* The one primary action per view — a true solid fill, not a tint. */
 .btn-primary{
@@ -648,7 +650,11 @@ input:focus, textarea:focus, select:focus{
     background: color-mix(in srgb, var(--ok) 88%, black);
 }
 
-/* Destructive action (e.g. Clear session) — ghost by default so it never
+/* A small button, in a list's rows (the session's Show and Remove): still a
+   24px target at least (WCAG 2.5.8). */
+.btn-small{ min-height: 28px; padding: 0 var(--space-3); font-size: var(--fs-xs); }
+
+/* Destructive action (e.g. New session) — ghost by default so it never
    competes with the primary, tinting red only on hover/focus. */
 .btn-danger{
     color: var(--danger);
@@ -692,9 +698,49 @@ input:focus, textarea:focus, select:focus{
     align-items: flex-start;
 }
 
-.download {
-    text-align: right;
+/* The session: the scans made since it started, each to show or remove
+   (scan-session.js). */
+.session{
+    margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface-1);
 }
+.session-head{ display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.session-title{ margin: 0; font-size: var(--fs-md); font-weight: 600; }
+.session-count{ font-weight: 400; color: var(--text-muted); }
+.session-empty{ margin: var(--space-2) 0 0; font-size: var(--fs-sm); color: var(--text-muted); }
+.session-list{ margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+.session-list[hidden]{ display: none; }
+.session-item{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--line);
+}
+.session-item:first-child{ border-top: 0; }
+.session-item-text{ display: flex; flex-direction: column; min-width: 0; flex: 1 1 14rem; }
+.session-item-name{ font-weight: 600; overflow-wrap: anywhere; }
+.session-item-meta{ font-size: var(--fs-xs); color: var(--text-muted); overflow-wrap: anywhere; }
+.session-item-actions{ display: inline-flex; gap: var(--space-2); flex: none; }
+
+/* Asked before a new session discards scans not yet shared. */
+.session-confirm{
+    margin: 0 0 var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--danger);
+    border-left-width: var(--stroke-accent-bar);
+    border-radius: var(--radius-md);
+    background: var(--danger-soft);
+}
+.session-confirm[hidden]{ display: none; }
+.session-confirm-text{ margin: 0 0 var(--space-2); color: var(--text-main); }
+.session-confirm-text:focus{ outline: none; }
+.session-confirm-actions{ display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 .shotWrap {
     margin: 0;

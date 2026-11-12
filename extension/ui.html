@@ -1,18 +1,25 @@
 <div class="a11y-ui">
+    <!-- A session is the pages scanned since it started, kept by the
+         extension (scan-session.js): scan them, then open them all in the
+         lab or download them. Only opening in the lab needs it running. -->
     <div class="topbar">
-        <button id="start" class="btn">Start session</button>
-        <button id="run" class="btn">A11yScan</button>
-        <button id="finish" class="btn" disabled>Finish</button>
-        <button id="result" class="btn" disabled>Get result</button>
-        <button id="sendToUi" class="btn btn-primary" disabled>Send to UI</button>
-        <button id="clear" class="btn btn-danger">Clear session</button>
+        <button id="run" type="button" class="btn btn-primary">Scan this page</button>
+        <button id="openInLab" type="button" class="btn" disabled>Open in the lab</button>
+        <button id="download" type="button" class="btn" disabled>Download</button>
+        <button id="newSession" type="button" class="btn btn-danger" disabled>New session</button>
+    </div>
+
+    <!-- Asked before a new session discards scans not yet opened in the lab
+         or downloaded. -->
+    <div id="newSessionConfirm" class="session-confirm" role="group" aria-labelledby="newSessionConfirmText" hidden>
+        <p id="newSessionConfirmText" class="session-confirm-text" tabindex="-1"></p>
+        <div class="session-confirm-actions">
+            <button id="newSessionDiscard" type="button" class="btn btn-danger">Discard them and start a new session</button>
+            <button id="newSessionKeep" type="button" class="btn">Keep this session</button>
+        </div>
     </div>
 
     <div class="card">
-        <div class="meta">
-            runId: <span id="runId" class="mono">(none)</span>
-        </div>
-
         <div class="grid2">
             <div class="field">
                 <label class="label" for="label">Scan label (optional)</label>
@@ -134,6 +141,16 @@
         </div>
     </div>
 
+    <!-- The session's scans: each to show again or remove. -->
+    <section class="session" aria-labelledby="sessionTitle">
+        <div class="session-head">
+            <h2 id="sessionTitle" class="session-title">This session <span id="sessionCount" class="session-count"></span></h2>
+            <button id="sessionShowAll" type="button" class="btn btn-small" hidden>Show all</button>
+        </div>
+        <p id="sessionEmpty" class="session-empty">No pages scanned yet. Scan a page to start a session.</p>
+        <ol id="sessionList" class="session-list" hidden></ol>
+    </section>
+
     <div class="resultsRow">
         <figure id="shotWrap" class="shotWrap" hidden>
             <div id="shotBox" class="shotBox">
@@ -143,8 +160,5 @@
         </figure>
 
         <pre id="out" class="out" data-scroll-name="Scan output"></pre>
-    </div>
-    <div class="download">
-        <button id="download" class="btn" disabled>Download</button>
     </div>
 </div>
