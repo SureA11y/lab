@@ -775,7 +775,7 @@
                     : '';
 
                 const failurePart = failure
-                    ? '<div class="node-detail"' + langAttr(n.lang) + '>' + convertIndentedBlockToHtml(escapeAngleBrackets(failure)) + '</div>'
+                    ? '<div class="node-detail node-failure"' + langAttr(n.lang) + '>' + convertIndentedBlockToHtml(escapeAngleBrackets(failure)) + '</div>'
                     : '';
 
                 const sourceAtomicRules = normalizeStringListUnique(n?.sourceAtomicRules);
@@ -784,7 +784,7 @@
                 );
                 const resolvedAtomicRules = sourceAtomicRules.length ? sourceAtomicRules : sourceAtomicFromContrib;
                 const sourceLine = resolvedAtomicRules.length
-                    ? '<div class="node-detail"><strong>' + (resolvedAtomicRules.length === 1 ? 'Check' : 'Checks') + ':</strong> <code>' +
+                    ? '<div class="node-detail node-check"><strong>' + (resolvedAtomicRules.length === 1 ? 'Check' : 'Checks') + ':</strong> <code>' +
                     escapeHtml(resolvedAtomicRules.join(', ')) +
                     '</code></div>'
                     : '';
