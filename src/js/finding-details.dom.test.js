@@ -1,8 +1,8 @@
 'use strict';
 
 // DOM tests for a finding's "View details" dialog (a11y-ui.rendering.js):
-// titled with the rule's name, what every occurrence shares said once at the
-// top, the occurrences grouped by page, one close, and the selector "Copy
+// titled with the rule's name, what every occurrence shares said at the top
+// (and still on each), the occurrences grouped by page, one close, and the selector "Copy
 // selector" copies shown beside it. Driven under jsdom.
 
 const {test, describe, before, beforeEach} = require('node:test');
@@ -98,7 +98,7 @@ describe('finding details dialog', () => {
         assert.equal(dialog.querySelector('.src-dialog-footer'), null, 'no footer when every occurrence is listed');
     });
 
-    test('says what every occurrence shares once, at the top', () => {
+    test('says what every occurrence shares at the top, and still on each', () => {
         const dialog = render([occurrence('#a', A), occurrence('#b', A), occurrence('#c', B)]);
         const common = dialog.querySelector('.occurrences-common');
         assert.equal(common.querySelector('h2').textContent, 'For all 3 occurrences');
@@ -106,8 +106,13 @@ describe('finding details dialog', () => {
         assert.match(common.textContent, /How to fix: Add an alt attribute/);
         assert.match(common.textContent, /Check: img-alt-present/);
         assert.match(common.textContent, /No picture: the scan reached its limit of 20 pictures\./);
+        // Each occurrence still says what is wrong with it, how to fix it and
+        // its check; the reason for no picture is said once.
         for (const node of dialog.querySelectorAll('.example-node')) {
-            assert.doesNotMatch(node.textContent, /How to fix|No picture|has no alt attribute|Check:/);
+            assert.match(node.textContent, /This <img> has no alt attribute\./);
+            assert.match(node.textContent, /How to fix: Add an alt attribute/);
+            assert.match(node.textContent, /Check: img-alt-present/);
+            assert.doesNotMatch(node.textContent, /No picture/);
         }
     });
 

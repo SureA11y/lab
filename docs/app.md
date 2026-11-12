@@ -253,9 +253,10 @@ goes to "Not in WCAG" when it corresponds to no WCAG criterion, and to
 
 A finding's **View details** is titled with the rule's name, its rule id
 under it. What all its occurrences share (what is wrong, how to fix it, the
-check, why there is no picture) is said once at the top; the occurrences
-follow, grouped by the page they were found on, each with its element and
-the selector **Copy selector** copies.
+check, why there is no picture) is said at the top; the occurrences follow,
+grouped by the page they were found on, each with its element, the selector
+**Copy selector** copies, and what is wrong with it, how to fix it and its
+check, so an occurrence reads on its own.
 
 ## Downloading and sharing
 

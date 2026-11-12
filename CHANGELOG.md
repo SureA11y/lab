@@ -23,6 +23,10 @@ The first public release.
   selector, a text or a value takes two of a step's columns where the step
   has three or more, the fields after it beside it, and the whole row only
   on a narrower step, where two columns are the row.
+- **Each occurrence says what is wrong with it and how to fix it**: a
+  finding's View details still says at the top what all its occurrences
+  share, and each occurrence now says it too (what is wrong, How to fix,
+  Check), so one read on its own is not left without it.
 - **The configuration actions stay in sight while a run goes**: Load
   config, Append config, Undo and Redo wait for the run to end, shown
   unavailable; Export config still saves the form. A report's Download menu
