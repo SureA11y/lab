@@ -2,9 +2,11 @@
 
 // The extension's pictures of flagged elements (element-screenshots.js): which
 // elements it pictures for the panel's choices, what each occurrence gets,
-// that every highlight drawn is removed, and that a capture which would need
-// the page scrolled is not taken. The page's step and the capture are
-// stand-ins here; the real ones run in the page and the browser.
+// that the page is only asked where an element is (it is neither scrolled
+// nor drawn on: the highlight goes on the picture), and that a capture which
+// would need the page scrolled is not taken. The page's step, the capture
+// and the drawing are stand-ins here; the real ones run in the page and the
+// browser.
 
 const {test, describe} = require('node:test');
 const assert = require('node:assert/strict');
@@ -42,28 +44,31 @@ const steps = {
 
 const VIEW = {devicePixelRatio: 1, scroll: {x: 0, y: 0}, viewport: {width: 800, height: 600}};
 
-// The page's side: each element ready unless its selector is in `skip`;
-// every request recorded, and the highlights it holds.
+// The page's side: where each element is, unless its selector is in `skip`;
+// every question recorded.
 function fakePage({skip = {}, clip = {x: 0, y: 0, width: 40, height: 20}} = {}) {
     const log = [];
-    const held = new Set();
     return {
         log,
-        held,
         evaluate: async (fn, [request]) => {
-            assert.equal(fn, shots.pictureStepInPage, 'the extension\'s own step, which never scrolls');
+            assert.equal(fn, shots.pictureStepInPage, 'the extension\'s own step, which only reads the page');
             log.push(request);
-            if (request.op === 'release') { held.delete(request.token); return {released: true}; }
             if (skip[request.selector]) return {skipped: skip[request.selector]};
-            held.add(request.token);
-            return {clip, view: VIEW, box: {x: 20, y: 20, width: 8, height: 8}, cropped: false};
+            return {clip, view: VIEW, box: {x: 20, y: 20, width: 8, height: 8}, element: {x: 20, y: 20, width: 8, height: 12}, cropped: false};
         }
     };
 }
 
+const RINGED = 'data:image/png;base64,UklOR0VE';
+
 function driverWith(page, {box = async () => PNG, now} = {}) {
     let closed = 0;
-    return {steps, evaluate: page.evaluate, capturer: {box, close: async () => { closed++; }}, now, closed: () => closed};
+    const rings = [];
+    return {
+        steps, evaluate: page.evaluate, capturer: {box, close: async () => { closed++; }}, now,
+        ring: async (dataUrl, element, clipWidth) => { rings.push({dataUrl, element, clipWidth}); return RINGED; },
+        closed: () => closed, rings
+    };
 }
 
 describe('the panel\'s choices', () => {
@@ -94,16 +99,17 @@ describe('each occurrence considered', () => {
         const a2 = {selector: '#a'};
         const b = {selector: '#b', occurrenceOutcome: 'cantTell'};
         const pageLevel = {};
-        await shots.pictureFlaggedElements(resultWith(a1, a2, b, pageLevel), {choice: 'fail'}, driverWith(page));
-        assert.deepEqual(a1.screenshot, {dataUrl: PNG, box: {x: 20, y: 20, width: 8, height: 8}});
+        const driver = driverWith(page);
+        await shots.pictureFlaggedElements(resultWith(a1, a2, b, pageLevel), {choice: 'fail'}, driver);
+        assert.deepEqual(a1.screenshot, {dataUrl: RINGED, box: {x: 20, y: 20, width: 8, height: 8}});
         assert.equal(a2.screenshot, a1.screenshot);
         assert.equal(b.screenshot, undefined, 'a can\'t tell, with failures only');
         assert.deepEqual(pageLevel.screenshot, {skipped: 'no-element'});
-        const targets = page.log.filter((r) => r.op === 'target');
-        assert.equal(targets.length, 1);
+        assert.equal(page.log.length, 1, 'one question to the page for the element');
         // The lab's 16px of page around it, and the highlight's own room.
-        assert.equal(targets[0].margin, 16 + shots.RING);
-        assert.equal(targets[0].ring, shots.RING);
+        assert.equal(page.log[0].margin, 16 + shots.RING);
+        // The highlight drawn on the picture, around the whole element.
+        assert.deepEqual(driver.rings, [{dataUrl: PNG, element: {x: 20, y: 20, width: 8, height: 12}, clipWidth: 40}]);
     });
 
     test('goes through the shadow roots its element is in', async () => {
@@ -112,21 +118,19 @@ describe('each occurrence considered', () => {
         assert.deepEqual(page.log[0].hosts, ['my-app', 'my-menu']);
     });
 
-    test('says why when its element can\'t be pictured, and draws nothing', async () => {
+    test('says why when its element can\'t be pictured', async () => {
         const page = fakePage({skip: {'#hidden': 'hidden-in-container'}});
         const o = {selector: '#hidden'};
-        await shots.pictureFlaggedElements(resultWith(o), {choice: 'fail'}, driverWith(page));
+        const driver = driverWith(page);
+        await shots.pictureFlaggedElements(resultWith(o), {choice: 'fail'}, driver);
         assert.deepEqual(o.screenshot, {skipped: 'hidden-in-container'});
-        assert.equal(page.held.size, 0);
+        assert.deepEqual(driver.rings, []);
     });
 
-    test('says the capture failed, and the highlight is removed all the same', async () => {
-        const page = fakePage();
+    test('says the capture failed', async () => {
         const o = {selector: '#a'};
-        await shots.pictureFlaggedElements(resultWith(o), {choice: 'fail'}, driverWith(page, {box: async () => { throw new Error('tab hidden'); }}));
+        await shots.pictureFlaggedElements(resultWith(o), {choice: 'fail'}, driverWith(fakePage(), {box: async () => { throw new Error('tab hidden'); }}));
         assert.deepEqual(o.screenshot, {skipped: 'capture-failed', error: 'tab hidden'});
-        assert.deepEqual(page.log.map((r) => r.op), ['target', 'release']);
-        assert.equal(page.held.size, 0);
     });
 
     test('a capture that gives no PNG is a failed capture', async () => {
@@ -154,14 +158,12 @@ describe('the limits of a scan', () => {
         }));
         assert.ok(occ[0].screenshot.dataUrl);
         assert.deepEqual(occ[1].screenshot, {skipped: 'time-limit'});
-        assert.equal(page.log.filter((r) => r.op === 'target').length, 1);
+        assert.equal(page.log.length, 1);
     });
 
-    test('every highlight drawn is removed, and the capture closed once', async () => {
-        const page = fakePage({skip: {'#b': 'zero-size'}});
-        const driver = driverWith(page);
+    test('the capture is closed once', async () => {
+        const driver = driverWith(fakePage({skip: {'#b': 'zero-size'}}));
         await shots.pictureFlaggedElements(resultWith({selector: '#a'}, {selector: '#b'}, {selector: '#c'}), {choice: 'fail'}, driver);
-        assert.equal(page.held.size, 0);
         assert.equal(driver.closed(), 1);
     });
 });
@@ -171,9 +173,8 @@ describe('without scrolling', () => {
         const capturer = shots.visibleCapturer(async () => { throw new Error('should not capture'); });
         const o = {selector: '#far'};
         const page = fakePage({clip: {x: 0, y: 2000, width: 40, height: 20}});
-        await shots.pictureFlaggedElements(resultWith(o), {choice: 'fail'}, {steps, evaluate: page.evaluate, capturer});
+        await shots.pictureFlaggedElements(resultWith(o), {choice: 'fail'}, {steps, evaluate: page.evaluate, capturer, ring: async (d) => d});
         assert.deepEqual(o.screenshot, {skipped: 'outside-view'});
-        assert.equal(page.held.size, 0);
     });
 
     test('Firefox captures the part of the document, wherever it is, at the screen\'s scale', async () => {

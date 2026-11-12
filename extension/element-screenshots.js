@@ -5,13 +5,14 @@
 // each element framed with 16 CSS px of the page around it and the binding's
 // highlight around it.
 //
-// Without moving the page. The binding's own step scrolls each element into
-// view to picture it, as a browser it drives shows only its viewport; on a
-// page a person is using, every scroll moves what they are looking at, and a
-// page that loads more as it is scrolled kept loading. Here nothing is
-// scrolled: the element is found where it is, its place in the document is
-// worked out, the highlight is drawn there, and the picture is taken of that
-// part of the document wherever it is:
+// Without touching the page. The binding's own step scrolls each element
+// into view and draws its highlight on the page, as a browser it drives is
+// nobody's to look at; on a page a person is using, every scroll moved what
+// they were looking at, a page that loads more as it is scrolled kept
+// loading, and the highlight flashed on it. Here the page only answers
+// where the element is: nothing is scrolled, nothing is drawn on it. The
+// picture is taken of that part of the document wherever it is, and the
+// binding's highlight is drawn on the picture:
 // - Firefox: tabs.captureTab with a rect, in the document's CSS pixels;
 // - Chrome: the DevTools protocol, a clip of the document;
 // - elsewhere: only an element in the visible part of the page, cut from a
@@ -71,31 +72,15 @@
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     /**
-     * Runs in the page, one request at a time, and never scrolls it. Self-
-     * contained: it is sent to the tab as its source.
-     * - { op: 'target', token, selector, hosts, margin, ring }: finds the
-     *   element, draws the highlight around it where it is, and returns
-     *   { clip, box, cropped, view } (clip in the document's CSS pixels), or
-     *   { skipped } and why, with nothing drawn.
-     * - { op: 'release', token }: removes that highlight.
+     * Runs in the page and only reads it: where the element is. It neither
+     * scrolls the page nor changes anything in it. Self-contained: it is
+     * sent to the tab as its source. Given { selector, hosts, margin },
+     * returns { clip, box, element, cropped, view }: clip, the part of the
+     * document to picture, in its CSS pixels; box, where the element shows
+     * in it; element, where the whole element is in it (the highlight goes
+     * around it); or { skipped } and why.
      */
     function pictureStepInPage(request) {
-        const KEY = Symbol.for('surea11y.extension.pictures');
-        if (!Object.prototype.hasOwnProperty.call(window, KEY)) {
-            Object.defineProperty(window, KEY, { value: new Map(), configurable: true });
-        }
-        const drawn = window[KEY];
-
-        if (request.op === 'release') {
-            const overlay = drawn.get(request.token);
-            if (overlay) {
-                try { if (overlay.matches(':popover-open')) overlay.hidePopover(); } catch (e) {}
-                overlay.remove();
-                drawn.delete(request.token);
-            }
-            return { released: true };
-        }
-
         // The element, through the shadow roots its hosts lead into.
         let node = null;
         try {
@@ -148,69 +133,54 @@
         if (x1 <= x0 || y1 <= y0) return { skipped: 'off-screen' };
         const clip = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
         const round2 = (n) => Math.round(n * 100) / 100;
-        const box = {
-            x: round2(vis.left + sx - clip.x),
-            y: round2(vis.top + sy - clip.y),
-            width: round2(vis.right - vis.left),
-            height: round2(vis.bottom - vis.top)
-        };
-        const cropped = (vis.right - vis.left) * (vis.bottom - vis.top) < b.width * b.height - 0.01;
-
-        // The binding's highlight, pinned to the document rather than the
-        // window, so it is drawn where the element is, shown or not: in the
-        // top layer where there is one (above a modal dialog), at the top
-        // otherwise. Never a style on the element itself.
-        if (request.ring) {
-            const ring = request.ring;
-            const overlay = document.createElement('surea11y-highlight');
-            const set = (name, value) => overlay.style.setProperty(name, value, 'important');
-            set('all', 'initial');
-            set('display', 'block');
-            set('position', 'absolute');
-            set('box-sizing', 'border-box');
-            set('margin', '0');
-            set('padding', '0');
-            set('inset', 'auto');
-            set('left', `${b.left + sx - ring + 1}px`);
-            set('top', `${b.top + sy - ring + 1}px`);
-            set('width', `${b.width + 2 * (ring - 1)}px`);
-            set('height', `${b.height + 2 * (ring - 1)}px`);
-            set('border', '2px solid #e5007d');
-            set('box-shadow', '0 0 0 1px #ffffff, inset 0 0 0 1px #ffffff');
-            set('background', 'transparent');
-            set('z-index', '2147483647');
-            set('pointer-events', 'none');
-            set('opacity', '1');
-            set('visibility', 'visible');
-            overlay.setAttribute('aria-hidden', 'true');
-            const topLayer = typeof overlay.showPopover === 'function';
-            if (topLayer) overlay.setAttribute('popover', 'manual');
-            de.appendChild(overlay);
-            drawn.set(request.token, overlay);
-            if (topLayer) {
-                try { overlay.showPopover(); } catch (e) {}
-            }
-            // A positioned or transformed <html> moves it: put it where it was meant.
-            const at = overlay.getBoundingClientRect();
-            const dx = b.left - ring + 1 - at.left;
-            const dy = b.top - ring + 1 - at.top;
-            if (Math.abs(dx) > 0.01) set('left', `${b.left + sx - ring + 1 + dx}px`);
-            if (Math.abs(dy) > 0.01) set('top', `${b.top + sy - ring + 1 + dy}px`);
-        }
-
-        const view = {
-            devicePixelRatio: window.devicePixelRatio || 1,
-            scroll: { x: sx, y: sy },
-            viewport: { width: window.innerWidth, height: window.innerHeight }
-        };
-        // Once painted: two animation frames, capped, as a tab in the
-        // background runs none.
-        return new Promise((resolve) => {
-            let done = false;
-            const finish = () => { if (!done) { done = true; resolve({ clip, box, cropped, view }); } };
-            requestAnimationFrame(() => requestAnimationFrame(finish));
-            setTimeout(finish, 120);
+        const inClip = (left, top, right, bottom) => ({
+            x: round2(left + sx - clip.x),
+            y: round2(top + sy - clip.y),
+            width: round2(right - left),
+            height: round2(bottom - top)
         });
+        return {
+            clip,
+            box: inClip(vis.left, vis.top, vis.right, vis.bottom),
+            element: inClip(b.left, b.top, b.right, b.bottom),
+            cropped: (vis.right - vis.left) * (vis.bottom - vis.top) < b.width * b.height - 0.01,
+            view: {
+                devicePixelRatio: window.devicePixelRatio || 1,
+                scroll: { x: sx, y: sy },
+                viewport: { width: window.innerWidth, height: window.innerHeight }
+            }
+        };
+    }
+
+    /**
+     * The binding's highlight, drawn on a picture rather than on the page:
+     * around `element` (CSS px in the picture's clip, the picture `clipWidth`
+     * CSS px wide), a white line, two of #e5007d and a white line, outside
+     * the element so none of its own pixels change. Resolves to a PNG data URL.
+     */
+    async function drawRing(dataUrl, element, clipWidth) {
+        const blob = await (await fetch(dataUrl)).blob();
+        const bitmap = await createImageBitmap(blob);
+        try {
+            const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(bitmap, 0, 0);
+            const s = clipWidth ? bitmap.width / clipWidth : 1;
+            ctx.scale(s, s);
+            const { x, y, width: w, height: h } = element;
+            const stroke = (colour, line, out) => {
+                ctx.strokeStyle = colour;
+                ctx.lineWidth = line;
+                ctx.strokeRect(x - out + line / 2, y - out + line / 2, w + 2 * out - line, h + 2 * out - line);
+            };
+            stroke('#ffffff', 1, RING);
+            stroke('#e5007d', 2, RING - 1);
+            stroke('#ffffff', 1, 1);
+            const png = await canvas.convertToBlob({ type: 'image/png' });
+            return await blobToDataUrl(png);
+        } finally {
+            if (typeof bitmap.close === 'function') bitmap.close();
+        }
     }
 
     /**
@@ -223,8 +193,10 @@
      * @param {{ choice?: string, max?: number }} choices the panel's
      * @param {{ evaluate: (fn: Function, args: Array) => Promise<*>,
      *   capturer: { box: (clip, view) => Promise<string>, close: () => Promise<void> },
+     *   ring?: (dataUrl, element, clipWidth) => Promise<string>,
      *   steps?: { planScreenshots: Function }, now?: () => number }} driver how
-     *   to run the step in the page, and how to take a picture of a clip
+     *   to ask the page where an element is, how to take a picture of a
+     *   clip, and how to draw the highlight on it
      */
     async function pictureFlaggedElements(result, choices, driver) {
         const steps = driver.steps || global.SUREA11Y_SCREENSHOTS;
@@ -234,9 +206,9 @@
             return result;
         }
         const now = driver.now || (() => Date.now());
+        const ring = driver.ring || drawRing;
         const started = now();
         let taken = 0;
-        let tokens = 0;
         try {
             const { elements, unlocated } = steps.planScreenshots(result, { outcomes: options.outcomes });
             for (const occurrence of unlocated) occurrence.screenshot = { skipped: 'no-element' };
@@ -256,41 +228,28 @@
         return result;
 
         async function pictureOne(element) {
-            const token = `surea11y-picture-${++tokens}`;
             let ready;
             try {
                 ready = await driver.evaluate(pictureStepInPage, [{
-                    op: 'target',
-                    token,
                     selector: element.selector,
                     hosts: element.shadowHostSelectors || [],
-                    margin: options.padding + (options.highlight ? RING : 0),
-                    ring: options.highlight ? RING : 0
+                    margin: options.padding + (options.highlight ? RING : 0)
                 }]);
             } catch (e) {
-                await release(token);
                 return { skipped: 'capture-failed', error: errorMessage(e) };
             }
-            if (!ready || typeof ready !== 'object') {
-                await release(token);
-                return { skipped: 'capture-failed', error: 'the page gave nothing to picture' };
-            }
+            if (!ready || typeof ready !== 'object') return { skipped: 'capture-failed', error: 'the page gave nothing to picture' };
             if (ready.skipped) return { skipped: ready.skipped };
             try {
-                const dataUrl = await driver.capturer.box(ready.clip, ready.view);
+                let dataUrl = await driver.capturer.box(ready.clip, ready.view);
                 if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/png;base64,')) throw new Error('the capture gave no PNG');
+                if (options.highlight) dataUrl = await ring(dataUrl, ready.element, ready.clip.width);
                 taken += 1;
                 return { dataUrl, box: ready.box, ...(ready.cropped ? { cropped: true } : {}) };
             } catch (e) {
                 if (e && e.skipped) return { skipped: e.skipped };
                 return { skipped: 'capture-failed', error: errorMessage(e) };
-            } finally {
-                await release(token);
             }
-        }
-
-        async function release(token) {
-            try { await driver.evaluate(pictureStepInPage, [{ op: 'release', token }]); } catch {}
         }
     }
 
@@ -434,8 +393,7 @@
         const capturer = firefoxCapturer(tabId, api) || (await cdpCapturer(tabId)) || visibleCapturer(captureVisible);
         return pictureFlaggedElements(result, choices, {
             evaluate: async (fn, args) => {
-                // The extension's own world, where the step keeps its
-                // highlights between calls, out of the page's reach.
+                // The extension's own world, out of the page's reach.
                 const out = await exec(tabId, { func: fn, args, world: 'ISOLATED' });
                 return Array.isArray(out) ? out[0] : out;
             },
@@ -445,7 +403,7 @@
 
     const api = {
         OUTCOMES, DEFAULT_CHOICE, DEFAULT_MAX, PADDING, RING, BUDGET_MS,
-        optionsFor, pictureStepInPage, pictureFlaggedElements, pictureInTab, visibleCapturer, firefoxCapturer
+        optionsFor, pictureStepInPage, drawRing, pictureFlaggedElements, pictureInTab, visibleCapturer, firefoxCapturer
     };
     global.A11YElementScreenshots = api;
     if (typeof module === 'object' && module && module.exports) module.exports = api;
