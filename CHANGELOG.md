@@ -14,6 +14,11 @@ The first public release.
   tall as before and its title wraps as before. They show once the pointer
   rests on the step, so crossing a parent's edge on the way to a nested step
   no longer flashes the parent's buttons; with the keyboard they show at once.
+- **"Open this custom step" sits beside the custom step it opens**: on a
+  call to a custom step, the button is on the row of the choice, under it
+  only when the step is too narrow for both, and the choice takes the
+  step's whole row. It no longer shows for a variable token, which names no
+  custom step, nor on a loaded step whose custom step is not chosen.
 - **The configuration actions stay in sight while a run goes**: Load
   config, Append config, Undo and Redo wait for the run to end, shown
   unavailable; Export config still saves the form. A report's Download menu

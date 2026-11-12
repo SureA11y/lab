@@ -1199,13 +1199,21 @@
 }
 
 /* On a call to a custom step: the way to it, as the custom step's
-   "Used in" links lead back (custom-steps.css). */
+   "Used in" links lead back (custom-steps.css). Beside the choice of the
+   custom step, and under it only when the two do not fit on one row. */
+.line .runcustomstep-pick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-pick > select { flex: 1 1 min(14rem, 100%); min-width: 0; max-width: 28rem; width: auto; }
 .line .runcustomstep-open {
     display: inline-flex;
+    flex: none;
     align-items: center;
     width: auto;
     min-height: 28px;
-    margin-top: var(--space-2);
     padding: 3px 10px;
     border: 1px solid var(--accent-border);
     border-radius: var(--radius-pill);

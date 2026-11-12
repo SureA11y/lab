@@ -5,7 +5,7 @@
 // through `builder`.
 
 import {createEl, iconButton, svgIcon} from './a11y-ui.utils.js';
-import {setClipboardAction} from './actions-builder.module.js';
+import {setClipboardAction, SELECT_TOKEN_SENTINEL} from './actions-builder.module.js';
 import {inputLabelOf} from './custom-step-inputs-table.js';
 
 /**
@@ -446,8 +446,10 @@ export function createStepLine(builder) {
             apply();
         }
 
-        // A call to a custom step leads to it: "Open this custom step" under
-        // the choice of which one, when the app says how to open one.
+        // A call to a custom step leads to it: "Open this custom step" beside
+        // the choice of which one (under it when the card has no room), when
+        // the app says how to open one. The field takes the card's whole row,
+        // so the custom step's name keeps room beside the button.
         function wireRunCustomStepOpenLink(lineEl) {
             if (!lineEl || lineEl.dataset.actionType !== "runCustomStep") return;
             const open = actionDef && actionDef.openCustomStep;
@@ -456,10 +458,17 @@ export function createStepLine(builder) {
             const select = field ? field.querySelector("select") : null;
             if (!field || !select) return;
             const link = createEl("button", {type: "button", className: "runcustomstep-open"}, "Open this custom step →");
-            const sync = () => { link.hidden = !select.value; };
+            // A variable token names no custom step to open.
+            const sync = () => { link.hidden = !select.value || select.value === SELECT_TOKEN_SENTINEL; };
             link.addEventListener("click", () => open(select.value));
             select.addEventListener("change", sync);
-            field.append(link);
+            const row = createEl("div", {className: "runcustomstep-pick"});
+            select.replaceWith(row);
+            row.append(select, link);
+            field.dataset.wide = "true";
+            // A loaded step's value is set without a change event
+            // (step-values.js), which calls this after.
+            lineEl._applyRunCustomStepOpen = sync;
             sync();
         }
 

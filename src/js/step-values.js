@@ -339,6 +339,9 @@ export function createStepValues(builder) {
         if (typeof lineEl._applySubjectFieldVisibility === "function") {
             lineEl._applySubjectFieldVisibility();
         }
+        if (typeof lineEl._applyRunCustomStepOpen === "function") {
+            lineEl._applyRunCustomStepOpen();
+        }
 
         // Apply explicit disabled flag from JSON before children
         builder.setLineExplicitDisabled(lineEl, !!actionObj?.disabled);
