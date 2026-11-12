@@ -1604,7 +1604,7 @@ function initUi() {
             }
 
             lastResultPayload = payload;
-            lastResultFileName = runId ? `manual-run-${runId}.json` : `manual-scan-${scanObj.scanId}.json`;
+            lastResultFileName = runId ? `manual-run-${runId}.json` : `${scanObj.scanId}.json`;
             syncActionButtons();
 
             out.textContent = '';
@@ -1637,22 +1637,22 @@ function initUi() {
                     const warn = document.createElement('div');
                     warn.className = 'muted muted-footnote';
                     warn.textContent =
-                        `Warning: could not send scan to server. Local results are shown, session actions disabled. (${String(e && e.message ? e.message : e)})`;
+                        `Warning: could not send scan to server. Local results are shown, and can still be downloaded or sent to the lab; session actions are disabled. (${String(e && e.message ? e.message : e)})`;
                     out.appendChild(warn);
 
+                    // The session is gone, the scan is not: it stays the
+                    // result Download and Send to UI give.
                     sessionState = 'idle';
                     sessionScanCount = 0;
-                    lastResultPayload = null;
-                    lastResultFileName = null;
+                    lastResultFileName = `${scanObj.scanId}.json`;
                     setRunId(null);
                     syncActionButtons();
                     persistSessionState();
                 }
             } else {
+                // No server: the scan is kept here, to download or send.
                 sessionState = 'idle';
                 sessionScanCount = 0;
-                lastResultPayload = null;
-                lastResultFileName = null;
                 setRunId(null);
                 syncActionButtons();
                 persistSessionState();
