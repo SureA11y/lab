@@ -23,26 +23,40 @@
 
             <!-- What the scan checks against: one WCAG level (or none), and any
                  standards, as the lab's scan step offers them. The standards
-                 of the packs the extension was built with are added at start. -->
-            <fieldset class="field profiles" id="profile">
-                <legend class="label">Profile</legend>
-                <div class="profiles-groups">
-                    <fieldset class="profiles-group">
-                        <legend>WCAG 2.2</legend>
-                        <label class="profiles-option"><input type="radio" name="profileWcag" value="wcag22-a"> Level A</label>
-                        <label class="profiles-option"><input type="radio" name="profileWcag" value="wcag22-aa" checked> Level AA</label>
-                        <label class="profiles-option"><input type="radio" name="profileWcag" value="wcag22-aaa"> Level AAA</label>
-                        <label class="profiles-option"><input type="radio" name="profileWcag" value=""> Don’t check WCAG</label>
-                    </fieldset>
-                    <fieldset class="profiles-group" id="profileStandards">
-                        <legend>Standards</legend>
-                        <label class="profiles-option"><input type="checkbox" name="profileStandard" value="en301549-v4.1.1"> EN 301 549 V4.1.1</label>
-                        <label class="profiles-option"><input type="checkbox" name="profileStandard" value="en301549-v3.2.1"> EN 301 549 V3.2.1</label>
+                 of the packs the extension was built with are added at start.
+                 Folded, as Advanced options are: its toggle says what the
+                 scan checks ("WCAG 2.2 AA"), so the choice is seen closed. -->
+            <div class="profiles-disclosure">
+                <button type="button"
+                        id="profileToggle"
+                        class="legend-toggle"
+                        aria-expanded="false"
+                        aria-controls="profileContent">
+                    <span class="legend-toggle-label">Profile</span>
+                    <span class="legend-toggle-value" id="profileToggleValue"></span>
+                </button>
+                <div id="profileContent" class="disclosure-content" hidden>
+                    <fieldset class="field profiles" id="profile">
+                        <legend class="visually-hidden">Profile</legend>
+                        <div class="profiles-groups">
+                            <fieldset class="profiles-group">
+                                <legend>WCAG 2.2</legend>
+                                <label class="profiles-option"><input type="radio" name="profileWcag" value="wcag22-a"> Level A</label>
+                                <label class="profiles-option"><input type="radio" name="profileWcag" value="wcag22-aa" checked> Level AA</label>
+                                <label class="profiles-option"><input type="radio" name="profileWcag" value="wcag22-aaa"> Level AAA</label>
+                                <label class="profiles-option"><input type="radio" name="profileWcag" value=""> Don’t check WCAG</label>
+                            </fieldset>
+                            <fieldset class="profiles-group" id="profileStandards">
+                                <legend>Standards</legend>
+                                <label class="profiles-option"><input type="checkbox" name="profileStandard" value="en301549-v4.1.1"> EN 301 549 V4.1.1</label>
+                                <label class="profiles-option"><input type="checkbox" name="profileStandard" value="en301549-v3.2.1"> EN 301 549 V3.2.1</label>
+                            </fieldset>
+                        </div>
+                        <p class="profiles-note" id="profileOverlap" hidden></p>
+                        <p class="profiles-summary" id="profileSummary" aria-live="polite"></p>
                     </fieldset>
                 </div>
-                <p class="profiles-note" id="profileOverlap" hidden></p>
-                <p class="profiles-summary" id="profileSummary" aria-live="polite"></p>
-            </fieldset>
+            </div>
         </div>
 
         <div class="advanced">
@@ -50,12 +64,11 @@
                     id="advancedToggle"
                     class="legend-toggle"
                     aria-expanded="false"
-                    aria-controls="advancedContent"
-                    aria-label="Expand advanced options">
+                    aria-controls="advancedContent">
                 <span class="legend-toggle-label">Advanced options</span>
             </button>
 
-            <div id="advancedContent" class="advanced-content" role="region" aria-label="Advanced options" hidden>
+            <div id="advancedContent" class="advanced-content disclosure-content" role="region" aria-label="Advanced options" hidden>
             <div class="field">
                 <label class="label" for="exclude">Exclude selectors (optional, comma-separated)</label>
                 <div class="row-input-button">

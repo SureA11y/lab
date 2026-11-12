@@ -200,29 +200,22 @@ function initUi() {
     const contextInput = document.getElementById('context');
     const excludeInput = document.getElementById('exclude');
 
-    const isDevTools = document.body.classList.contains('panel');
-
-    // DS Disclosure (button + aria-expanded/aria-controls) for the Advanced
-    // options panel — replaces a native <details>/<summary>.
-    const advancedToggle = document.getElementById('advancedToggle');
-    const advancedContent = document.getElementById('advancedContent');
-
-    function setAdvancedExpanded(expanded) {
-        if (!advancedToggle || !advancedContent) return;
-        advancedToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        advancedContent.hidden = !expanded;
-        advancedToggle.setAttribute('aria-label', expanded ? 'Collapse advanced options' : 'Expand advanced options');
+    // DS Disclosure (button + aria-expanded/aria-controls), for the Profile
+    // and the Advanced options: both folded at first, in the popup and in
+    // the devtools panel, so the scan's own controls come first. A toggle is
+    // named by what it shows (its label, and what is chosen in it), its
+    // state said by aria-expanded.
+    function wireDisclosure(toggle, content) {
+        if (!toggle || !content) return;
+        const set = (expanded) => {
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            content.hidden = !expanded;
+        };
+        set(false);
+        toggle.addEventListener('click', () => set(toggle.getAttribute('aria-expanded') !== 'true'));
     }
-
-    if (advancedToggle && advancedContent) {
-        // The devtools panel has vertical room, so default it open; the popup
-        // stays collapsed to keep the initial surface compact.
-        setAdvancedExpanded(isDevTools);
-        advancedToggle.addEventListener('click', () => {
-            const expanded = advancedToggle.getAttribute('aria-expanded') === 'true';
-            setAdvancedExpanded(!expanded);
-        });
-    }
+    wireDisclosure(document.getElementById('profileToggle'), document.getElementById('profileContent'));
+    wireDisclosure(document.getElementById('advancedToggle'), document.getElementById('advancedContent'));
 
     const customCssInput = document.getElementById('custom-css');
     const customCssAddBtn = document.getElementById('customCssAdd');
@@ -1046,6 +1039,9 @@ function initUi() {
                 ? `This scan checks: ${ids.map(targetLabelOf).join(' + ')}`
                 : 'Choose a WCAG level or a standard.';
         }
+        // On the Profile's toggle, seen folded too.
+        const onToggle = document.getElementById('profileToggleValue');
+        if (onToggle) onToggle.textContent = ids.length ? ids.map(targetLabelOf).join(' + ') : 'none chosen';
         const note = document.getElementById('profileOverlap');
         const wcag = ids.find((id) => globalThis.A11Y_CONFORMANCE_TARGETS?.isWcagTarget(id));
         const restated = wcag ? ids.filter((id) => RESTATES_WCAG.has(id)) : [];
