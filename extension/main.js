@@ -217,6 +217,27 @@ function initUi() {
     wireDisclosure(document.getElementById('profileToggle'), document.getElementById('profileContent'));
     wireDisclosure(document.getElementById('advancedToggle'), document.getElementById('advancedContent'));
 
+    // How many advanced options are set (selectors to exclude, to scan
+    // within, best-practice rules, custom CSS), as a badge on their toggle,
+    // so a scan changed by one is seen with the section folded. Part of the
+    // toggle's name ("Advanced options 2 applied"). Set again wherever a
+    // value is: typed, restored, picked or reset.
+    function syncAdvancedBadge() {
+        const badge = document.getElementById('advancedBadge');
+        if (!badge) return;
+        const filled = (el) => !!String(el?.value || '').trim();
+        const applied = [
+            filled(excludeInput),
+            filled(contextInput),
+            !!includeBestPracticeInput?.checked,
+            filled(document.getElementById('custom-css'))
+        ].filter(Boolean).length;
+        badge.hidden = !applied;
+        badge.textContent = applied ? `${applied} applied` : '';
+    }
+    document.getElementById('advancedContent')?.addEventListener('input', syncAdvancedBadge);
+    document.getElementById('advancedContent')?.addEventListener('change', syncAdvancedBadge);
+
     const customCssInput = document.getElementById('custom-css');
     const customCssAddBtn = document.getElementById('customCssAdd');
     const customCssRemoveBtn = document.getElementById('customCssRemove');
@@ -451,6 +472,7 @@ function initUi() {
             if (customCssInput && typeof data?.customCssText === 'string') {
                 customCssInput.value = data.customCssText;
             }
+            syncAdvancedBadge();
             customCssInjected = !!data?.customCssInjected;
             try {
                 const tab = await getTargetTab();
@@ -751,6 +773,7 @@ function initUi() {
         }
 
         try { field.focus(); } catch {}
+        syncAdvancedBadge();
         saveContextAndExclude().catch(() => {});
     }
 
@@ -763,6 +786,7 @@ function initUi() {
 
         field.value = '';
         try { field.focus(); } catch {}
+        syncAdvancedBadge();
 
         // Persist the cleared value
         saveContextAndExclude().catch(() => {});
@@ -1139,6 +1163,7 @@ function initUi() {
         if (includeBestPracticeInput && data && typeof data.includeBestPractice === 'boolean') {
             includeBestPracticeInput.checked = data.includeBestPractice;
         }
+        syncAdvancedBadge();
     }
 
     function getContextSelector() {
@@ -1166,6 +1191,7 @@ function initUi() {
 
         if (contextInput) contextInput.value = ctx;
         if (excludeInput) excludeInput.value = exc;
+        syncAdvancedBadge();
     }
 
     async function saveContextAndExclude() {
