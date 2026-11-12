@@ -202,21 +202,40 @@
     min-height: 36px;
     color: var(--text-muted);
 }
+/* The out-of-sight buttons keep their place, only unseen: shown or not, the
+   row is as wide and as tall, so the title beside it does not wrap anew nor
+   the cards below move when the pointer comes on a card. The sign is drawn
+   over the last of them, beside Collapse.
+   They show once the pointer rests on the card (a pointer crossing a parent's
+   edge on its way to a nested step does not light the parent's), and at once
+   for focus; they go at once. */
 @media (hover: hover) {
-    :is(#actions-builder, #custom-step-actions-builder) .line:is(:not(:hover, :focus-within), :has(.line:is(:hover, :focus-within))) > .line-header > .line-controls:not(.is-menu) > .line-controls__more { display: inline-flex; }
+    :is(#actions-builder, #custom-step-actions-builder) .line-controls:not(.is-menu) > .line-controls__more {
+        display: inline-flex;
+        position: relative;
+        z-index: 1;
+        margin-left: -42px;
+        pointer-events: none;
+    }
+    :is(#actions-builder, #custom-step-actions-builder) .line-controls:not(.is-menu) > :is(.line-controls__more, button:not(.toggle-action)) {
+        transition: opacity .1s ease .15s, pointer-events 0s .15s;
+        transition-behavior: allow-discrete;
+    }
+    :is(#actions-builder, #custom-step-actions-builder) .line:focus-within:not(:has(.line:focus-within)) > .line-header > .line-controls:not(.is-menu) > :is(.line-controls__more, button:not(.toggle-action)) {
+        transition: none;
+    }
+    :is(#actions-builder, #custom-step-actions-builder) .line:is(:hover, :focus-within):not(:has(.line:is(:hover, :focus-within))) > .line-header > .line-controls:not(.is-menu) > .line-controls__more { opacity: 0; }
     :is(#actions-builder, #custom-step-actions-builder) .line:is(:not(:hover, :focus-within), :has(.line:is(:hover, :focus-within))) > .line-header > .line-controls:not(.is-menu) > button:not(.toggle-action) {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        min-width: 0;
-        min-height: 0;
-        margin: -1px;
-        padding: 0;
-        overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+    }
+    :is(#actions-builder, #custom-step-actions-builder) .line:is(:not(:hover, :focus-within), :has(.line:is(:hover, :focus-within))) > .line-header > .line-controls:not(.is-menu) > :is(.line-controls__more, button:not(.toggle-action)) {
+        transition: none;
     }
 }
+/* Its own margin is for the pill beside a table's cell; here the info button
+   would sit lower than its row and make the row taller. */
+:is(#actions-builder, #custom-step-actions-builder) .line-controls .src-dialog-trigger { margin-top: 0; }
 
 /* Icon-only controls */
 :is(#actions-builder, #custom-step-actions-builder) button.icon-button,
