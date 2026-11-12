@@ -524,8 +524,15 @@ The first public release.
   past `A11Y_MAX_RUNS` running and `A11Y_MAX_WAITING` waiting, a run is
   refused with 429; every answer is JSON, compressed for a client that
   takes gzip. A run's pictures stay on disk `A11Y_RUN_FILES_HOURS` (24).
-- **A browser extension** (`extension/`) to scan the page in front of you
-  and send a session to the lab. Its Profile is the scan step's: one WCAG
+- **A browser extension** (`extension/`) to scan the page in front of you,
+  page after page, and open them all in the lab. Scan this page adds a scan
+  to the session, listed in the panel to show again or remove; Open in the
+  lab opens the whole session in its Open report, Download saves it as a
+  file to open there later, and New session asks first when scans would be
+  lost that were neither opened nor downloaded. The extension keeps the
+  session itself, shared by its popup and its devtools panel and kept when
+  the popup closes, so it works without the lab running: only Open in the
+  lab needs it, and says so. Its Profile is the scan step's: one WCAG
   2.2 level and any standards at once, folded under a toggle that says what
   the scan checks ("Profile  WCAG 2.2 AA"). Its Advanced options are folded
   too, their toggle saying how many are set ("2 applied"). A finding's

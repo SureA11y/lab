@@ -181,19 +181,23 @@ function getPanelTargetTabId() {
 }
 
 function initUi() {
-    const startBtn = document.getElementById('start');
     const runBtn = document.getElementById('run');
     const downloadBtn = document.getElementById('download');
-    const finishBtn = document.getElementById('finish');
-    const resultBtn = document.getElementById('result');
-    const clearBtn = document.getElementById('clear');
-    const sendToUiBtn = document.getElementById('sendToUi');
+    const openInLabBtn = document.getElementById('openInLab');
+    const newSessionBtn = document.getElementById('newSession');
+    const newSessionConfirm = document.getElementById('newSessionConfirm');
+    const newSessionConfirmText = document.getElementById('newSessionConfirmText');
+    const newSessionDiscardBtn = document.getElementById('newSessionDiscard');
+    const newSessionKeepBtn = document.getElementById('newSessionKeep');
+    const sessionListEl = document.getElementById('sessionList');
+    const sessionEmptyEl = document.getElementById('sessionEmpty');
+    const sessionCountEl = document.getElementById('sessionCount');
+    const sessionShowAllBtn = document.getElementById('sessionShowAll');
 
     const out = document.getElementById('out');
     // The output scrolls past 350px: reachable by keyboard while it does.
     if (out && globalThis.A11Y_SCROLL_REACH) globalThis.A11Y_SCROLL_REACH.keepScrollBoxesReachable(out.parentElement || document.body, '.out');
     const statusEl = document.getElementById('status');
-    const runIdEl = document.getElementById('runId');
     const labelInput = document.getElementById('label');
     const profileField = document.getElementById('profile');
     const includeBestPracticeInput = document.getElementById('includeBestPractice');
@@ -280,20 +284,10 @@ function initUi() {
 
     let pickerActive = false;
 
-    let runId = null;
-    let lastResultPayload = null;
-    let lastResultFileName = null;
-    let sessionState = 'idle'; // 'idle' | 'started' | 'finished'
-    let sessionScanCount = 0;
-    let isApplyingRemoteSessionSync = false;
-
-    function persistSessionState() {
-        sessionSet({
-            runId: runId || null,
-            sessionState,
-            sessionScanCount
-        }).catch(() => {});
-    }
+    // The session (scan-session.js): the pages scanned since it started,
+    // kept by the extension, shared by the popup and the devtools panel, and
+    // needing no server. Open in the lab and Download give all of it.
+    const scanSession = globalThis.A11Y_SCAN_SESSION.createScanSession();
 
     function getCustomCssText() {
         return String(customCssInput?.value || '').trim();
@@ -946,34 +940,17 @@ function initUi() {
         try { await sendPickerCommand(cmd); } catch {}
     }, true);
 
-    function syncActionButtons() {
-        const payloadScanCount = getPayloadScanCount(lastResultPayload);
-        const hasPayloadToSend = payloadScanCount > 0;
-        const hasRunId = !!runId;
-        const isStarted = sessionState === 'started';
-        const isFinished = sessionState === 'finished';
-        const hasServerScans = sessionScanCount > 0;
-
-        if (startBtn) startBtn.disabled = isStarted;
-        if (downloadBtn) downloadBtn.disabled = !hasPayloadToSend;
-        if (sendToUiBtn) sendToUiBtn.disabled = !hasPayloadToSend;
-        if (finishBtn) finishBtn.disabled = !isStarted;
-        if (resultBtn) resultBtn.disabled = !hasRunId || !hasServerScans || (!isStarted && !isFinished);
-    }
-
-    function getPayloadScanCount(payload) {
-        return (payload && Array.isArray(payload.scans)) ? payload.scans.length : 0;
+    // Open in the lab, Download and New session act on the session's scans:
+    // with none, there is nothing to act on.
+    function syncActionButtons(count) {
+        const has = count > 0;
+        if (openInLabBtn) openInLabBtn.disabled = !has;
+        if (downloadBtn) downloadBtn.disabled = !has;
+        if (newSessionBtn) newSessionBtn.disabled = !has;
     }
 
     function setStatus(msg) {
         statusEl.textContent = msg || '';
-    }
-
-    function setRunId(id) {
-        runId = id || null;
-        runIdEl.textContent = runId || '(none)';
-        syncActionButtons();
-        persistSessionState();
     }
 
     // The extension scans with surea11y, in English: the panel offers no
@@ -985,54 +962,6 @@ function initUi() {
     function getSelectedEngineDefinition() {
         const engineId = getSelectedEngineId();
         return EXTENSION_UI_ENGINE.resolveEngine(engineId);
-    }
-
-    async function loadRunId() {
-        const data = await sessionGet(['runId', 'sessionState', 'sessionScanCount']);
-        const savedRunId = data && data.runId ? data.runId : null;
-        const savedSessionState = data && typeof data.sessionState === 'string' ? data.sessionState : '';
-        const savedSessionScanCount = data && Number.isFinite(data.sessionScanCount) ? data.sessionScanCount : 0;
-
-        runId = savedRunId;
-        sessionScanCount = savedSessionScanCount;
-        runIdEl.textContent = runId || '(none)';
-        sessionState = savedRunId
-            ? (savedSessionState === 'finished' ? 'finished' : 'started')
-            : 'idle';
-
-        syncActionButtons();
-    }
-
-    async function refreshSharedSessionStateFromStorage() {
-        if (isApplyingRemoteSessionSync) return;
-        isApplyingRemoteSessionSync = true;
-
-        try {
-            const previousRunId = runId;
-            const previousSessionState = sessionState;
-            const previousSessionScanCount = sessionScanCount;
-
-            await loadRunId();
-
-            // If the shared session changed in another panel, local payload/result
-            // data may no longer match the current shared session.
-            const sessionIdentityChanged = previousRunId !== runId;
-            const sessionLifecycleChanged = previousSessionState !== sessionState;
-            const sessionCountChanged = previousSessionScanCount !== sessionScanCount;
-
-            if (sessionIdentityChanged || sessionLifecycleChanged || sessionCountChanged) {
-                if (previousRunId !== runId) {
-                    lastResultPayload = null;
-                    lastResultFileName = null;
-                    clearScreenshotUi();
-                    if (out) out.textContent = '';
-                }
-
-                syncActionButtons();
-            }
-        } finally {
-            isApplyingRemoteSessionSync = false;
-        }
     }
 
     // The profiles a scan checks against, as the lab's scan step offers
@@ -1263,79 +1192,6 @@ function initUi() {
         saveContextAndExclude();
     });
 
-    async function postJson(path, body) {
-        const res = await fetch(SERVER_BASE + path, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body || {})
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || json.ok === false) {
-            throw new Error(json && (json.error || json.details) ? (json.error || json.details) : `HTTP ${res.status}`);
-        }
-        return json;
-    }
-
-    async function getJson(path) {
-        const res = await fetch(SERVER_BASE + path, { method: 'GET' });
-        if (res.status === 202) return { status: 'collecting' };
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || json.ok === false) {
-            throw new Error(json && (json.error || json.details) ? (json.error || json.details) : `HTTP ${res.status}`);
-        }
-        return json;
-    }
-
-    startBtn.addEventListener('click', async () => {
-        clearScreenshotUi();
-        out.textContent = '';
-        setStatus('Starting session...');
-
-        try {
-            const r = await postJson('/manual-start', {
-                scenarioName: null,
-                tags: null
-            });
-
-            sessionState = 'started';
-            sessionScanCount = 0;
-            lastResultPayload = null;
-            lastResultFileName = null;
-            setRunId(r.runId);
-            syncActionButtons();
-            persistSessionState();
-
-            out.textContent = `Session started.\nrunId=${r.runId}`;
-            setStatus('Ready');
-        } catch (e) {
-            out.textContent = String(e && e.stack ? e.stack : e);
-            setStatus('Failed');
-        }
-    });
-
-    async function ensureSessionStarted() {
-        // A finished session takes no more scans (the server has built its
-        // result): a scan after Finish starts a new one, rather than going
-        // into a result that would never hold it.
-        if (runId && sessionState !== 'finished') return runId;
-
-        setStatus('Starting session...');
-        const r = await postJson('/manual-start', { scenarioName: null, tags: null });
-
-        sessionState = 'started';
-        sessionScanCount = 0;
-        lastResultPayload = null;
-        lastResultFileName = null;
-        setRunId(r.runId);
-        syncActionButtons();
-        persistSessionState();
-
-        out.textContent = `Session started.\nrunId=${r.runId}`;
-        setStatus('Ready');
-
-        return r.runId;
-    }
-
     async function runScanFromUi() {
         out.textContent = '';
         // "Don't check WCAG" and no standard: nothing to check against, and
@@ -1350,15 +1206,6 @@ function initUi() {
         let tabForCleanup = null;
 
         try {
-            try {
-                await ensureSessionStarted();
-            } catch (e) {
-                // Server unavailable, proceed locally, but disable session actions
-                sessionState = 'idle';
-                setRunId(null);
-                syncActionButtons();
-            }
-
             const target = getSelectedTarget();
             const { selection } = target;
             const wcagLevel = target.level;
@@ -1558,54 +1405,8 @@ function initUi() {
                 extraScreenshots: []
             };
 
-            let payload = null;
-
-            if (
-                WORKFLOW_BUILDER_API &&
-                typeof WORKFLOW_BUILDER_API.createWorkflowPayloadBuilder === 'function' &&
-                WORKFLOW_DEPS_API &&
-                WORKFLOW_DEPS_API.METRIC_DEFS &&
-                typeof WORKFLOW_DEPS_API.buildGlobalSummary === 'function'
-            ) {
-                try {
-                    const builder = WORKFLOW_BUILDER_API.createWorkflowPayloadBuilder({
-                        METRIC_DEFS: WORKFLOW_DEPS_API.METRIC_DEFS,
-                        sortByOrderKey: WORKFLOW_DEPS_API.sortByOrderKey,
-                        buildGlobalSummary: WORKFLOW_DEPS_API.buildGlobalSummary,
-                        cryptoSha1Hex16: WORKFLOW_DEPS_API.cryptoSha1Hex16
-                    });
-
-                    payload = builder.finalizeWorkflowPayload(
-                        builder.buildWorkflowPayloadBase({
-                            url: scanObj.url || null,
-                            scenarioName: null,
-                            scans: [scanObj],
-                            workflowScreenshots: [],
-                            cancelled: false,
-                            failed: false,
-                            errorDetails: null,
-                            debugNative: false,
-                            includeScanScreenshots: true,
-                            timestamp: isoNow()
-                        })
-                    );
-                } catch (e) {
-                    payload = null;
-                }
-            }
-
-            if (!payload) {
-                payload = {
-                    ok: true,
-                    runId: runId || null,
-                    createdAt: isoNow(),
-                    scans: [scanObj]
-                };
-            }
-
-            lastResultPayload = payload;
-            lastResultFileName = runId ? `manual-run-${runId}.json` : `${scanObj.scanId}.json`;
-            syncActionButtons();
+            // Into the session, which the extension keeps: no server needed.
+            const count = await scanSession.add(scanObj);
 
             out.textContent = '';
             clearScreenshotDialogItems();
@@ -1617,48 +1418,7 @@ function initUi() {
                 `Screenshot captured: ${res.screenshot ? 'yes' : 'no'}, viewportRatio: ${res.viewportRatio ?? '(none)'}`;
             out.appendChild(footer);
 
-            let sentToServer = false;
-            if (runId) {
-                try {
-                    setStatus('Sending to server...');
-                    const r = await postJson('/manual-scan', { runId, scan: scanObj });
-
-                    sessionScanCount += 1;
-                    persistSessionState();
-                    syncActionButtons();
-
-                    const info = document.createElement('div');
-                    info.className = 'muted muted-footnote';
-                    info.textContent = `Stored on server, scanId=${r.scanId}`;
-                    out.appendChild(info);
-
-                    sentToServer = true;
-                } catch (e) {
-                    const warn = document.createElement('div');
-                    warn.className = 'muted muted-footnote';
-                    warn.textContent =
-                        `Warning: could not send scan to server. Local results are shown, and can still be downloaded or sent to the lab; session actions are disabled. (${String(e && e.message ? e.message : e)})`;
-                    out.appendChild(warn);
-
-                    // The session is gone, the scan is not: it stays the
-                    // result Download and Send to UI give.
-                    sessionState = 'idle';
-                    sessionScanCount = 0;
-                    lastResultFileName = `${scanObj.scanId}.json`;
-                    setRunId(null);
-                    syncActionButtons();
-                    persistSessionState();
-                }
-            } else {
-                // No server: the scan is kept here, to download or send.
-                sessionState = 'idle';
-                sessionScanCount = 0;
-                setRunId(null);
-                syncActionButtons();
-                persistSessionState();
-            }
-
-            setStatus(sentToServer ? 'Done' : 'Done (local only)');
+            setStatus(`Done. This session has ${count} ${count === 1 ? 'scan' : 'scans'}.`);
         } catch (e) {
             out.textContent = String(e && e.stack ? e.stack : e);
             setStatus('Failed');
@@ -1682,261 +1442,350 @@ function initUi() {
         });
     });
 
-    downloadBtn.addEventListener('click', () => {
-        if (!lastResultPayload) return;
-        downloadJson(lastResultFileName, lastResultPayload);
-    });
-
-    finishBtn.addEventListener('click', async () => {
-        out.textContent = '';
-        setStatus('Finishing...');
-        clearScreenshotUi();
-
-        try {
-            if (!runId) throw new Error('No session.');
-
-            const currentRunId = runId;
-            const r = await postJson('/manual-finish', { runId: currentRunId });
-
-            sessionState = 'finished';
-            syncActionButtons();
-            persistSessionState();
-
-            out.textContent = `Shared session finished.\\nstatus=${r.status}\\nNow click "Get result".`;
-            setStatus('Done');
-        } catch (e) {
-            out.textContent = String(e && e.stack ? e.stack : e);
-            setStatus('Failed');
+    // The session as one payload, as the lab's reports are built
+    // (workflow-payload-builder.js): every scan, in the order made.
+    function buildSessionPayload(scans) {
+        let payload = null;
+        if (
+            WORKFLOW_BUILDER_API &&
+            typeof WORKFLOW_BUILDER_API.createWorkflowPayloadBuilder === 'function' &&
+            WORKFLOW_DEPS_API &&
+            WORKFLOW_DEPS_API.METRIC_DEFS &&
+            typeof WORKFLOW_DEPS_API.buildGlobalSummary === 'function'
+        ) {
+            try {
+                const builder = WORKFLOW_BUILDER_API.createWorkflowPayloadBuilder({
+                    METRIC_DEFS: WORKFLOW_DEPS_API.METRIC_DEFS,
+                    sortByOrderKey: WORKFLOW_DEPS_API.sortByOrderKey,
+                    buildGlobalSummary: WORKFLOW_DEPS_API.buildGlobalSummary,
+                    cryptoSha1Hex16: WORKFLOW_DEPS_API.cryptoSha1Hex16
+                });
+                payload = builder.finalizeWorkflowPayload(
+                    builder.buildWorkflowPayloadBase({
+                        url: (scans[0] && scans[0].url) || null,
+                        scenarioName: null,
+                        scans,
+                        workflowScreenshots: [],
+                        cancelled: false,
+                        failed: false,
+                        errorDetails: null,
+                        debugNative: false,
+                        includeScanScreenshots: true,
+                        timestamp: isoNow()
+                    })
+                );
+            } catch (e) {
+                console.warn('[A11Y] could not build the session payload', e);
+                payload = null;
+            }
         }
-    });
+        return payload || { ok: true, createdAt: isoNow(), scans };
+    }
 
-    resultBtn.addEventListener('click', async () => {
+    // "surea11y-session-2026-11-12-10-42.json".
+    function sessionFileName() {
+        return `surea11y-session-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.json`;
+    }
+
+    // Scans' results, as the lab reports them: what they share, then each
+    // scan with its page's picture and its findings.
+    function renderScansView(given) {
+        const payload = buildSessionPayload(given);
+        const scans = Array.isArray(payload.scans) ? payload.scans : given;
         out.textContent = '';
-        setStatus('Fetching result...');
         clearScreenshotUi();
+        clearScreenshotDialogItems();
+        renderGlobalFindingsBlock(out, payload);
+        renderDispersionBlock(out, scans);
 
-        try {
-            if (!runId) throw new Error('No session.');
+        for (let i = 0; i < scans.length; i++) {
+            const scan = scans[i];
+            if (!scan) continue;
 
-            const r = await getJson('/manual-result?runId=' + encodeURIComponent(runId));
+            // Optional header line per scan
+            const header = document.createElement('div');
+            header.className = 'muted muted-block';
 
-            if (r.status && r.status !== 'done') {
-                out.textContent = `Not ready yet.\nstatus=${r.status}`;
-                setStatus('Pending');
-                return;
-            }
+            const label = scan.label ? String(scan.label) : '';
+            const url = scan.url ? String(scan.url) : '';
+            const scanId = scan.scanId ? String(scan.scanId) : (scan.id ? String(scan.id) : '');
+            // Every profile it checked against: "WCAG 2.2 AA + WAI-ARIA 1.2".
+            const targetLabel = String(globalThis.A11Y_REPORT_SCAN?.scanProfilesLabel(scan) || '');
 
-            lastResultPayload = r.payload || null;
-            lastResultFileName = runId ? `manual-run-${runId}.json` : 'extension-report.json';
+            header.textContent =
+                `Scan ${i + 1}/${scans.length}`
+                + (label ? `, ${label}` : '')
+                + (targetLabel ? `, ${targetLabel}` : '')
+                + (scanId ? `, id: ${scanId}` : '')
+                + (url ? `, ${url}` : '');
 
-            syncActionButtons();
+            out.appendChild(header);
 
-            const scans = (r && r.payload && Array.isArray(r.payload.scans)) ? r.payload.scans : [];
+            // This is the "left screenshot, right table" row, same as your live-run UI
+            const row = document.createElement('div');
+            row.className = 'resultsRow';
 
-            if (!scans.length) {
-                out.textContent = JSON.stringify(r.payload, null, 2);
-                setStatus('Done');
-                return;
-            }
+            const screenshot = (scan.screenshot && typeof scan.screenshot === 'object') ? scan.screenshot : null;
+            const shot = (scan.screenshots && scan.screenshots.length >= 1) ? scan.screenshots[0] : screenshot;
+            const dataUrl = (shot && typeof shot.dataUrl === 'string') ? shot.dataUrl : null;
 
-            out.textContent = '';
-            clearScreenshotDialogItems();
-            renderGlobalFindingsBlock(out, lastResultPayload);
-            renderDispersionBlock(out, scans);
+            if (dataUrl) {
+                const fig = document.createElement('figure');
+                fig.className = 'shotWrap';
 
-            for (let i = 0; i < scans.length; i++) {
-                const scan = scans[i];
-                if (!scan) continue;
+                const box = document.createElement('div');
+                box.className = 'shotBox';
 
-                // Optional header line per scan
-                const header = document.createElement('div');
-                header.className = 'muted muted-block';
+                const img = document.createElement('img');
+                img.className = 'shotImg';
+                img.alt = 'Screenshot captured after the scan';
+                img.src = dataUrl;
 
-                const label = scan.label ? String(scan.label) : '';
-                const url = scan.url ? String(scan.url) : '';
-                const scanId = scan.scanId ? String(scan.scanId) : (scan.id ? String(scan.id) : '');
-                // Every profile it checked against: "WCAG 2.2 AA + WAI-ARIA 1.2".
-                const targetLabel = String(globalThis.A11Y_REPORT_SCAN?.scanProfilesLabel(scan) || '');
+                box.appendChild(img);
 
-                header.textContent =
-                    `Scan ${i + 1}/${scans.length}`
-                    + (label ? `, ${label}` : '')
-                    + (targetLabel ? `, ${targetLabel}` : '')
-                    + (scanId ? `, id: ${scanId}` : '')
-                    + (url ? `, ${url}` : '');
+                const ratio = (typeof scan.viewportRatio === 'number' && Number.isFinite(scan.viewportRatio) && scan.viewportRatio > 0)
+                    ? scan.viewportRatio
+                    : null;
 
-                out.appendChild(header);
-
-                // This is the "left screenshot, right table" row, same as your live-run UI
-                const row = document.createElement('div');
-                row.className = 'resultsRow';
-
-                const screenshot = (scan.screenshot && typeof scan.screenshot === 'object') ? scan.screenshot : null;
-                const shot = (scan.screenshots && scan.screenshots.length >= 1) ? scan.screenshots[0] : screenshot;
-                const dataUrl = (shot && typeof shot.dataUrl === 'string') ? shot.dataUrl : null;
-
-                if (dataUrl) {
-                    const fig = document.createElement('figure');
-                    fig.className = 'shotWrap';
-
-                    const box = document.createElement('div');
-                    box.className = 'shotBox';
-
-                    const img = document.createElement('img');
-                    img.className = 'shotImg';
-                    img.alt = 'Screenshot captured after the scan';
-                    img.src = dataUrl;
-
-                    box.appendChild(img);
-
-                    const ratio = (typeof scan.viewportRatio === 'number' && Number.isFinite(scan.viewportRatio) && scan.viewportRatio > 0)
-                        ? scan.viewportRatio
-                        : null;
-
-                    if (ratio) {
-                        box.style.setProperty('--shot-ratio', `${ratio} / 1`);
-                    }
-
-                    const metaText =
-                        (shot && shot.mode ? `mode: ${String(shot.mode)}` : 'screenshot') +
-                        (ratio ? `, ratio: ${ratio.toFixed(3)}` : '');
-
-                    const clickableBox = makeScreenshotButton({
-                        boxEl: box,
-                        imgEl: img,
-                        metaText,
-                        titleText: `Screenshot preview, scan ${i + 1}`
-                    });
-
-                    fig.appendChild(clickableBox);
-
-                    const cap = document.createElement('figcaption');
-                    cap.className = 'shotMeta';
-                    const mode = shot && shot.mode ? String(shot.mode) : '';
-                    cap.textContent =
-                        (mode ? `mode: ${mode}` : 'screenshot')
-                        + (ratio ? `, ratio: ${ratio.toFixed(3)}` : '');
-
-                    fig.appendChild(cap);
-
-                    row.appendChild(fig);
-                } else {
-                    // Keep alignment consistent, even without screenshot
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'shotWrap';
-                    placeholder.style.opacity = '0.6';
-                    placeholder.textContent = '';
-                    row.appendChild(placeholder);
+                if (ratio) {
+                    box.style.setProperty('--shot-ratio', `${ratio} / 1`);
                 }
 
-                const scanOut = document.createElement('div');
-                scanOut.className = 'scanOut';
-                row.appendChild(scanOut);
+                const metaText =
+                    (shot && shot.mode ? `mode: ${String(shot.mode)}` : 'screenshot') +
+                    (ratio ? `, ratio: ${ratio.toFixed(3)}` : '');
 
-                out.appendChild(row);
+                const clickableBox = makeScreenshotButton({
+                    boxEl: box,
+                    imgEl: img,
+                    metaText,
+                    titleText: `Screenshot preview, scan ${i + 1}`
+                });
 
-                if (scan.canonical && Array.isArray(scan.canonical.findings)) {
-                    ISSUES_TABLE.renderInto(scanOut, scan, { enableDialogs: true });
-                } else {
-                    scanOut.textContent = JSON.stringify(scan, null, 2);
-                }
+                fig.appendChild(clickableBox);
+
+                const cap = document.createElement('figcaption');
+                cap.className = 'shotMeta';
+                const mode = shot && shot.mode ? String(shot.mode) : '';
+                cap.textContent =
+                    (mode ? `mode: ${mode}` : 'screenshot')
+                    + (ratio ? `, ratio: ${ratio.toFixed(3)}` : '');
+
+                fig.appendChild(cap);
+
+                row.appendChild(fig);
+            } else {
+                // Keep alignment consistent, even without screenshot
+                const placeholder = document.createElement('div');
+                placeholder.className = 'shotWrap';
+                placeholder.style.opacity = '0.6';
+                placeholder.textContent = '';
+                row.appendChild(placeholder);
             }
 
-            setStatus('Done');
-        } catch (e) {
-            out.textContent = String(e && e.stack ? e.stack : e);
-            setStatus('Failed');
+            const scanOut = document.createElement('div');
+            scanOut.className = 'scanOut';
+            row.appendChild(scanOut);
+
+            out.appendChild(row);
+
+            if (scan.canonical && Array.isArray(scan.canonical.findings)) {
+                ISSUES_TABLE.renderInto(scanOut, scan, { enableDialogs: true });
+            } else {
+                scanOut.textContent = JSON.stringify(scan, null, 2);
+            }
         }
+    }
+
+    // A scan as the session lists it: its label, else its page's title or
+    // address.
+    function scanTitleOf(scan) {
+        return String((scan && (scan.label || scan.pageTitle || scan.title || scan.url)) || 'Untitled scan');
+    }
+
+    function failingCountOf(scan) {
+        const findings = scan && scan.canonical && Array.isArray(scan.canonical.findings) ? scan.canonical.findings : [];
+        return findings.filter((f) => f && f.outcome === 'fail').length;
+    }
+
+    function sessionItem(record) {
+        const scan = record.scan;
+        const title = scanTitleOf(scan);
+        const li = document.createElement('li');
+        li.className = 'session-item';
+        li.dataset.scanId = record.scanId;
+
+        const text = document.createElement('span');
+        text.className = 'session-item-text';
+        const name = document.createElement('span');
+        name.className = 'session-item-name';
+        name.textContent = title;
+        const meta = document.createElement('span');
+        meta.className = 'session-item-meta';
+        const fails = failingCountOf(scan);
+        const time = new Date(record.addedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        meta.textContent = [scan && scan.label && scan.url ? scan.url : '', `${fails} failing`, time].filter(Boolean).join(' · ');
+        text.append(name, meta);
+
+        const actions = document.createElement('span');
+        actions.className = 'session-item-actions';
+        const show = document.createElement('button');
+        show.type = 'button';
+        show.className = 'btn btn-small';
+        show.dataset.action = 'show';
+        show.textContent = 'Show';
+        show.setAttribute('aria-label', `Show ${title}`);
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'btn btn-small';
+        remove.dataset.action = 'remove';
+        remove.textContent = 'Remove';
+        remove.setAttribute('aria-label', `Remove ${title}`);
+        actions.append(show, remove);
+
+        li.append(text, actions);
+        return li;
+    }
+
+    // The session's list, its count, and what the buttons can do with it.
+    async function renderSessionList() {
+        const records = await scanSession.list();
+        const n = records.length;
+        if (sessionCountEl) sessionCountEl.textContent = n ? `(${n} ${n === 1 ? 'scan' : 'scans'})` : '';
+        if (sessionEmptyEl) sessionEmptyEl.hidden = n > 0;
+        if (sessionListEl) {
+            sessionListEl.hidden = !n;
+            sessionListEl.replaceChildren(...records.map(sessionItem));
+        }
+        if (sessionShowAllBtn) sessionShowAllBtn.hidden = n < 2;
+        syncActionButtons(n);
+        if (!n) hideNewSessionConfirm();
+        return records;
+    }
+
+    sessionListEl?.addEventListener('click', async (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('button[data-action]') : null;
+        const li = btn ? btn.closest('.session-item') : null;
+        if (!btn || !li) return;
+        const records = await scanSession.list();
+        const record = records.find((r) => r.scanId === li.dataset.scanId);
+        if (!record) return;
+        if (btn.dataset.action === 'show') {
+            renderScansView([record.scan]);
+            setStatus(`Showing ${scanTitleOf(record.scan)}.`);
+            return;
+        }
+        // Removed: focus goes to the scan after it, else before it, else the
+        // list's heading, so it is not lost with the button.
+        const index = records.indexOf(record);
+        await scanSession.remove(record.scanId);
+        const left = await renderSessionList();
+        const next = left[index] || left[index - 1];
+        const focusTo = next
+            ? sessionListEl.querySelector(`.session-item[data-scan-id="${CSS.escape(next.scanId)}"] button[data-action="remove"]`)
+            : document.getElementById('sessionTitle');
+        try { focusTo?.focus(); } catch {}
+        setStatus(`Removed ${scanTitleOf(record.scan)} from this session.`);
     });
 
-    clearBtn.addEventListener('click', async () => {
-        out.textContent = 'Shared session cleared. Start a new session when ready.';
-        setStatus('');
-        labelInput.value = '';
-
-        sessionState = 'idle';
-        sessionScanCount = 0;
-        lastResultPayload = null;
-        lastResultFileName = null;
-        setRunId(null);
-
-        clearScreenshotUi();
-
-        syncActionButtons();
-        persistSessionState();
+    sessionShowAllBtn?.addEventListener('click', async () => {
+        const records = await scanSession.list();
+        if (!records.length) return;
+        renderScansView(records.map((r) => r.scan));
+        setStatus(`Showing all ${records.length} scans.`);
     });
 
-    sendToUiBtn?.addEventListener('click', async () => {
-        out.textContent = '';
-        setStatus('Sending to UI...');
+    downloadBtn.addEventListener('click', async () => {
+        const records = await scanSession.list();
+        if (!records.length) return;
+        downloadJson(sessionFileName(), buildSessionPayload(records.map((r) => r.scan)));
+        await scanSession.markShared();
+        setStatus(`Downloaded the session: ${records.length} ${records.length === 1 ? 'scan' : 'scans'}. Open the file in the lab's Open report.`);
+    });
 
+    // Whether the lab answers: it serves the page the session opens in.
+    async function labIsRunning() {
         try {
-            if (!lastResultPayload) throw new Error('No payload available yet.');
+            const res = await fetch(SERVER_BASE + '/', { method: 'HEAD', cache: 'no-store', signal: AbortSignal.timeout(2500) });
+            return res.ok;
+        } catch {
+            return false;
+        }
+    }
 
+    openInLabBtn?.addEventListener('click', async () => {
+        const records = await scanSession.list();
+        if (!records.length) return;
+        setStatus('Opening in the lab...');
+        try {
+            if (!(await labIsRunning())) {
+                setStatus(`The lab is not running at ${SERVER_BASE}. Start it and try again, or download the session and open the file in the lab later.`);
+                return;
+            }
             const res = await runtimeSendMessage({
                 type: 'POST_TO_UI_TAB',
-                payload: lastResultPayload,
-                fileName: lastResultFileName
+                payload: buildSessionPayload(records.map((r) => r.scan)),
+                fileName: sessionFileName()
             });
-
-            if (!res || !res.ok) throw new Error(res && res.error ? res.error : 'Failed to send payload to UI');
-
-            out.textContent = 'Payload sent to the active tab UI via window.postMessage.';
-            setStatus('Done');
+            if (!res || !res.ok) throw new Error(res && res.error ? res.error : 'the lab did not take it');
+            await scanSession.markShared();
+            setStatus(`Opened in the lab: ${records.length} ${records.length === 1 ? 'scan' : 'scans'}, ready in its Open report tab.`);
         } catch (e) {
-            out.textContent = String(e && e.stack ? e.stack : e);
-            setStatus('Failed');
+            setStatus(`Could not open it in the lab (${String(e && e.message ? e.message : e)}). Download the session instead.`);
         }
     });
 
-    syncActionButtons();
+    // A new session, asked first when it would discard scans not yet opened
+    // in the lab or downloaded.
+    function hideNewSessionConfirm() {
+        if (newSessionConfirm) newSessionConfirm.hidden = true;
+    }
 
-    loadRunId().catch(() => {
-        sessionState = 'idle';
-        setRunId(null);
+    async function startNewSession(note) {
+        await scanSession.clear();
+        hideNewSessionConfirm();
+        out.textContent = '';
+        clearScreenshotUi();
+        labelInput.value = '';
+        setStatus(note);
+    }
+
+    newSessionBtn?.addEventListener('click', async () => {
+        const unshared = await scanSession.unsharedCount();
+        if (!unshared) {
+            await startNewSession('New session started.');
+            try { runBtn.focus(); } catch {}
+            return;
+        }
+        newSessionConfirmText.textContent = `${unshared} ${unshared === 1 ? 'scan has' : 'scans have'} not been opened in the lab or downloaded. A new session discards ${unshared === 1 ? 'it' : 'them'}.`;
+        newSessionConfirm.hidden = false;
+        try { newSessionConfirmText.focus(); } catch {}
     });
+
+    newSessionDiscardBtn?.addEventListener('click', async () => {
+        await startNewSession('New session started. The previous scans were discarded.');
+        try { runBtn.focus(); } catch {}
+    });
+
+    newSessionKeepBtn?.addEventListener('click', () => {
+        hideNewSessionConfirm();
+        try { newSessionBtn.focus(); } catch {}
+    });
+
+    // The session, as kept: here and in the other panel when either changes it.
+    scanSession.onChange(() => { renderSessionList().catch(() => {}); });
+    renderSessionList().catch(() => {});
 
     loadProfile().catch(() => {});
 
     loadContextAndExclude().catch(() => {});
 
     loadCustomCssState().catch(() => {});
-
-    if (api.storage && api.storage.onChanged && typeof api.storage.onChanged.addListener === 'function') {
-        api.storage.onChanged.addListener((changes, areaName) => {
-            const expectedArea =
-                (api.storage && api.storage.session && sessionStore === api.storage.session)
-                    ? 'session'
-                    : 'local';
-
-            if (areaName !== expectedArea) return;
-
-            const hasRunIdChange = !!(changes && changes.runId);
-            const hasSessionStateChange = !!(changes && changes.sessionState);
-            const hasSessionScanCountChange = !!(changes && changes.sessionScanCount);
-
-            if (!hasRunIdChange && !hasSessionStateChange && !hasSessionScanCountChange) {
-                return;
-            }
-
-            refreshSharedSessionStateFromStorage().catch(() => {});
-        });
-    }
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            refreshSharedSessionStateFromStorage().catch(() => {});
-        }
-    });
-
-    window.addEventListener('focus', () => {
-        refreshSharedSessionStateFromStorage().catch(() => {});
-    });
 }
 
 function initWhenReady() {
     // root exists immediately, but UI elements appear after fetch(ui.html)
-    if (document.getElementById('start')) {
+    if (document.getElementById('run')) {
         initUi();
         return;
     }

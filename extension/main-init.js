@@ -1,5 +1,5 @@
 'use strict';
 
 (async () => {
-    await globalThis.__loadSharedUi('Start a session, then run one or more scans.');
+    await globalThis.__loadSharedUi('Scan this page to start a session. Scan as many pages as you like, then open them all in the lab, or download them.');
 })();
