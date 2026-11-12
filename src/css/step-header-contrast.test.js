@@ -1,12 +1,14 @@
 'use strict';
 
-// A step's kind, above its title ("Get text into variable"), is small text in
-// the softest text colour: lighter than the title, so the eye passes over it,
-// and still at least 4.5:1 (WCAG 1.4.3, AA, for text this small) on every
-// surface a step's card has: a step (--surface-base), a nested one
-// (--surface-raised), and one nested deeper (--surface-overlay), in the light
-// theme and in the dark one, chosen or the system's. Read from the
-// stylesheets, so a token changed later is checked as well.
+// The small text of a step's header, at least 4.5:1 (WCAG 1.4.3, AA, for text
+// this small) in the light theme and in the dark one, chosen or the system's:
+// - its kind, above its title ("Get text into variable"), in the softest text
+//   colour, lighter than the title so the eye passes over it, on every
+//   surface a step's card has: a step (--surface-base), a nested one
+//   (--surface-raised), and one nested deeper (--surface-overlay);
+// - its number ("2.1"), a chip of the accent's soft colour, grey on a step
+//   switched off.
+// Read from the stylesheets, so a token changed later is checked as well.
 
 const {test, describe} = require('node:test');
 const assert = require('node:assert/strict');
@@ -83,6 +85,33 @@ describe("a step's kind", () => {
         test(`is lighter to the eye than the title, ${theme}`, () => {
             const base = token(block, 'surface-base');
             assert.ok(contrast(token(block, 'text-soft'), base) < contrast(token(block, 'text-muted'), base));
+        });
+    }
+});
+
+describe("a step's number", () => {
+    const css = readAppCss();
+    const ruleBody = (selectorEnd) => {
+        const at = css.indexOf(selectorEnd + ' {');
+        assert.ok(at >= 0, `${selectorEnd} has its rule`);
+        return css.slice(at, css.indexOf('}', at));
+    };
+    const chip = ruleBody(':is(#actions-builder, #custom-step-actions-builder) .line-title-index');
+    const off = ruleBody(':is(#actions-builder, #custom-step-actions-builder) .line.is-disabled > .line-header .line-title-index');
+
+    test('is a chip of the accent, grey on a step switched off', () => {
+        assert.match(chip, /background:\s*var\(--accent-soft\);/);
+        assert.match(chip, /color:\s*var\(--accent-on-soft\);/);
+        assert.match(off, /background:\s*var\(--na-soft\);/);
+        assert.match(off, /color:\s*var\(--text-muted\);/);
+    });
+
+    for (const [theme, block] of Object.entries(THEMES)) {
+        test(`is 4.5:1 or more on its chip, ${theme}`, () => {
+            for (const [text, bg] of [['accent-on-soft', 'accent-soft'], ['text-muted', 'na-soft']]) {
+                const ratio = contrast(token(block, text), token(block, bg));
+                assert.ok(ratio >= 4.5, `--${text} on --${bg}: ${ratio.toFixed(2)}:1`);
+            }
         });
     }
 });

@@ -11,9 +11,10 @@ The first public release.
 
 - **A step's kind is above its title, on every card**: in small, light
   letters (still 4.5:1 or more in both themes) where the title starts, so
-  every title, renamed or not, starts at the same place, and the number
-  before it is set apart from the name. A screen
-  reader says the kind only when the title is not the kind already.
+  every title, renamed or not, starts at the same place. The number before
+  the title is a small chip in the accent's soft colour (grey on a step
+  switched off), told from the name at a glance. A screen reader says the
+  kind only when the title is not the kind already.
 - **A step's buttons no longer move the workflow when they show**: with a
   mouse, a step's buttons show in a place kept for them, so the card is as
   tall as before and its title wraps as before. They show once the pointer
