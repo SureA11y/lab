@@ -64,6 +64,16 @@ const DEST_HOW_TO_CHECK = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendo
 // A11Y_PACKS), so they are not kept in git.
 const DEST_PACKS_SCRIPT = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'surea11y-packs.js');
 const DEST_STANDARDS = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'standards.json');
+// The binding's pictures of flagged elements (@surea11y/binding-base): what
+// to picture, getting an element ready (found, scrolled into view and
+// highlighted, its clip worked out) and putting the page back. The extension
+// takes the picture itself between the two, as the binding's Cypress driver
+// does (background.js). Its step in the page is built with new Function,
+// which an extension's pages and worker may not run (their CSP): the build
+// builds it here, in Node, and the bundle holds its source as a function.
+const SRC_SCREENSHOTS = path.join(PROJECT_ROOT, 'node_modules', '@surea11y', 'binding-base', 'src', 'screenshots.js');
+const SRC_SCREENSHOTS_IN_PAGE = path.join(PROJECT_ROOT, 'node_modules', '@surea11y', 'binding-base', 'src', 'screenshotsInPage.js');
+const DEST_SCREENSHOTS = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'surea11y-screenshots.min.js');
 const SRC_REVIEW_EN = path.join(PROJECT_ROOT, 'node_modules', '@surea11y', 'core', 'src', 'i18n', 'review', 'en.json');
 const DEST_REVIEW_EN = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'review', 'en.json');
 
@@ -106,6 +116,55 @@ function copyDirRecursive(src, dest) {
 
 function buildRequireEntrySource(relImport, wrapperSource) {
     return `'use strict';\nconst api = require(${JSON.stringify(relImport)});\n\n${wrapperSource}`;
+}
+
+/**
+ * The binding's screenshot steps as a browser script that sets
+ * globalThis.SUREA11Y_SCREENSHOTS. Its in-page step is taken from the
+ * module run here, as source, in place of the module that builds it at
+ * run time with new Function.
+ */
+async function buildScreenshotsBundle() {
+    for (const f of [SRC_SCREENSHOTS, SRC_SCREENSHOTS_IN_PAGE]) {
+        if (!fs.existsSync(f)) throw new Error(`@surea11y/binding-base file does not exist: ${f}`);
+    }
+    const { screenshotInPage, HIGHLIGHT_SPACE } = require(SRC_SCREENSHOTS_IN_PAGE);
+    if (typeof screenshotInPage !== 'function' || !Number.isFinite(HIGHLIGHT_SPACE)) {
+        throw new Error('@surea11y/binding-base screenshotsInPage.js no longer exports screenshotInPage and HIGHLIGHT_SPACE');
+    }
+    const inPageModule = `module.exports = { screenshotInPage: (${screenshotInPage.toString()}), HIGHLIGHT_SPACE: ${HIGHLIGHT_SPACE} };`;
+    const inPagePlugin = {
+        name: 'screenshots-in-page-as-source',
+        setup(build) {
+            build.onResolve({ filter: /^\.\/screenshotsInPage$/ }, () => ({ path: 'screenshots-in-page', namespace: 'in-page' }));
+            build.onLoad({ filter: /.*/, namespace: 'in-page' }, () => ({ contents: inPageModule, loader: 'js' }));
+        }
+    };
+    const relImport = './' + path.relative(PROJECT_ROOT, SRC_SCREENSHOTS).replace(/\\/g, '/');
+    const buildResult = await esbuild.build({
+        absWorkingDir: PROJECT_ROOT,
+        bundle: true,
+        platform: 'browser',
+        format: 'iife',
+        target: ['firefox115', 'chrome115'],
+        write: false,
+        logLevel: 'silent',
+        plugins: [inPagePlugin],
+        stdin: {
+            resolveDir: PROJECT_ROOT,
+            sourcefile: 'surea11y-screenshots-entry.js',
+            contents: `'use strict';\nconst s = require(${JSON.stringify(relImport)});\n` +
+                'globalThis.SUREA11Y_SCREENSHOTS = { planScreenshots: s.planScreenshots, prepareElementScreenshot: s.prepareElementScreenshot, ' +
+                'releaseElementScreenshot: s.releaseElementScreenshot, screenshotToken: s.screenshotToken, normalizeScreenshotOptions: s.normalizeScreenshotOptions, ' +
+                'SCREENSHOT_SKIPS: s.SCREENSHOT_SKIPS };\n'
+        }
+    });
+    const minified = await minify(buildResult.outputFiles[0].text, { compress: true, mangle: true, format: { comments: false } });
+    if (!minified || !minified.code) throw new Error('Terser did not return minified code for the screenshots bundle');
+    if (/new Function|\beval\(/.test(minified.code)) throw new Error('the screenshots bundle would build code at run time, which an extension may not run');
+    ensureDirForFile(DEST_SCREENSHOTS);
+    fs.writeFileSync(DEST_SCREENSHOTS, minified.code, 'utf8');
+    console.log(`✔ Built and minified browser bundle: ${path.relative(PROJECT_ROOT, DEST_SCREENSHOTS)}`);
 }
 
 async function buildBrowserBundle({
@@ -293,6 +352,8 @@ function writePacks() {
             bundleLabel: 'surea11y how-to-check'
         });
         copyFile(SRC_REVIEW_EN, DEST_REVIEW_EN);
+
+        await buildScreenshotsBundle();
 
         writePacks();
 

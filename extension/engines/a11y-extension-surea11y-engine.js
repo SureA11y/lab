@@ -651,6 +651,24 @@
         return worst === 'fail' || worst === 'cantTell' || worst === 'pass' ? worst : null;
     }
 
+    // What an occurrence keeps of its element's picture: the picture
+    // ({ dataUrl, box, cropped? }) or why there is none ({ skipped, max?,
+    // error? }); null when no picture was considered.
+    function elementScreenshotOf(shot) {
+        if (!shot || typeof shot !== 'object') return null;
+        if (typeof shot.dataUrl === 'string' && shot.dataUrl.startsWith('data:image/png;base64,')) {
+            return { dataUrl: shot.dataUrl, box: shot.box || null, ...(shot.cropped ? { cropped: true } : {}) };
+        }
+        if (typeof shot.skipped === 'string') {
+            return {
+                skipped: shot.skipped,
+                ...(Number.isInteger(shot.max) ? { max: shot.max } : {}),
+                ...(shot.error ? { error: String(shot.error) } : {})
+            };
+        }
+        return null;
+    }
+
     function makeAtomicOccurrence(native, occ, fallbackTitle, ruleId, ruleOutcome) {
         const selector = occ && occ.selector ? String(occ.selector) : null;
         const htmlSnippet = occ && occ.html ? String(occ.html) : '';
@@ -666,6 +684,11 @@
         const notes = scanNotes();
         const details = notes ? notes.normalizeOccurrenceDetails(occ && occ.data && occ.data.details) : null;
         const shadowHostSelectors = notes ? notes.shadowHostsOf(occ) : null;
+        // The picture the background took of the element (element-
+        // screenshots.js), or why there is none, as the lab's engine keeps
+        // the binding's: here as a data URL, which the lab stores when the
+        // session is sent to it.
+        const elementScreenshot = elementScreenshotOf(occ && occ.screenshot);
         return {
             pageUrl,
             target: selector ? [selector] : [],
@@ -679,6 +702,7 @@
             ...(howToCheck ? { howToCheck } : {}),
             ...(details ? { details } : {}),
             ...(shadowHostSelectors ? { shadowHostSelectors } : {}),
+            ...(elementScreenshot ? { elementScreenshot } : {}),
             // A scan of several profiles: what each makes of this element.
             ...(verdictsOf(occ) ? { verdicts: verdictsOf(occ) } : {}),
             evidence: {
@@ -798,6 +822,10 @@
                     if (!base.checks) base.checks = [checkEntryOf(seen.first, base.atomicCheckId)];
                     base.checks.push(checkEntryOf(occ2, checkId));
                     base.sourceAtomicRules = base.sourceAtomicRules.concat(checkId);
+                    // A picture from a later check, where the first had none.
+                    if (!(base.elementScreenshot && base.elementScreenshot.dataUrl) && occ2.elementScreenshot && occ2.elementScreenshot.dataUrl) {
+                        base.elementScreenshot = occ2.elementScreenshot;
+                    }
                 }
             }
             finding.occurrences = out;

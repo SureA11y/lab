@@ -479,6 +479,9 @@ input:focus, textarea:focus, select:focus{
 .profiles-summary{ margin: var(--space-2) 0 0; font-size: var(--fs-xs); color: var(--muted); }
 
 .field-compact{ min-width: 92px; }
+/* Pictures of flagged elements: which, and how many, side by side. */
+.element-shots{ display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: flex-end; margin: var(--space-2) 0; }
+.element-shots input[type="number"]{ width: 6rem; }
 .select-compact{ padding-left: 10px; padding-right: 10px; }
 
 .advanced{
@@ -1126,6 +1129,21 @@ input:focus, textarea:focus, select:focus{
     background: var(--advisory-soft);
     color: var(--text-main);
 }
+
+/* The picture of its element, the page around it: on white, as the page
+   is drawn, edged so it holds on the dark theme too; at most its own size,
+   less on a narrow panel. */
+.example-node .node-screenshot { margin: var(--space-2) 0 0; }
+.example-node .node-screenshot img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: #fff;
+}
+.example-node .node-screenshot figcaption { margin-top: var(--space-1); font-size: var(--fs-xs); color: var(--text-muted); }
+.example-node .node-screenshot-none { font-size: var(--fs-xs); color: var(--text-muted); }
 
 /* The check that found it: a footnote. */
 .example-node .node-check { font-size: var(--fs-xs); color: var(--text-muted); }

@@ -515,6 +515,8 @@
                 howToCheck: occ?.howToCheck && Array.isArray(occ.howToCheck.steps) ? occ.howToCheck : null,
                 details: occ?.details && typeof occ.details === 'object' ? occ.details : null,
                 shadowHostSelectors: Array.isArray(occ?.shadowHostSelectors) ? occ.shadowHostSelectors : null,
+                // Its element's picture, or why there is none.
+                elementScreenshot: occ?.elementScreenshot && typeof occ.elementScreenshot === 'object' ? occ.elementScreenshot : null,
             };
         });
 
@@ -725,6 +727,56 @@
         return out;
     }
 
+    // Why an element has no picture, as the lab says it
+    // (src/js/a11y-ui.rendering.js).
+    const SCREENSHOT_SKIP_LABELS = {
+        'no-element': 'the finding names no element, or it is no longer in the page.',
+        'page-level': 'the finding is about the whole page.',
+        'not-rendered': 'the element is not rendered (hidden by CSS, for instance).',
+        'zero-size': 'the element has no width or height.',
+        'off-screen': 'the element is outside the page.',
+        'max-reached': 'the scan reached its limit of pictures.',
+        'capture-failed': 'the picture could not be taken.',
+        'store-failed': 'the picture was taken but could not be saved.',
+        'time-limit': 'the scan ran out of time for pictures.'
+    };
+
+    function screenshotSkipText(shot) {
+        const why = shot.skipped === 'max-reached' && shot.max
+            ? `the scan reached its limit of ${shot.max} pictures.`
+            : (SCREENSHOT_SKIP_LABELS[shot.skipped] || String(shot.skipped));
+        const detail = shot.error ? ' (' + String(shot.error).replace(/\.$/, '') + ')' : '';
+        return detail ? why.replace(/\.$/, '') + detail + '.' : why;
+    }
+
+    function elementTagOf(html) {
+        const m = /^\s*<([a-zA-Z][a-zA-Z0-9-]*)/.exec(String(html || ''));
+        return m ? m[1].toLowerCase() : '';
+    }
+
+    // The picture of an occurrence's element, as the lab shows it: the
+    // element framed with some of the page around it, a box drawn around it;
+    // or why there is none. Taken by the extension (a data URL) or stored by
+    // the lab (a URL). `name` is the occurrence's heading, so the text
+    // alternative says whose picture it is.
+    function buildElementScreenshotHtml(n, name = '') {
+        const shot = n?.elementScreenshot;
+        if (!shot) return '';
+        const src = typeof shot.dataUrl === 'string' && shot.dataUrl.startsWith('data:image/') ? shot.dataUrl
+            : (typeof shot.url === 'string' ? shot.url : '');
+        if (!src) {
+            return shot.skipped
+                ? '<div class="node-detail node-screenshot-none"><strong>No picture:</strong> ' + escapeHtml(screenshotSkipText(shot)) + '</div>'
+                : '';
+        }
+        const tag = elementTagOf(n.html);
+        const alt = (name ? name + ': the' : 'The') + ' flagged ' + (tag ? tag + ' element' : 'element') + ', with a box drawn around it';
+        return '<figure class="node-screenshot">' +
+            '<img src="' + escapeAttr(src) + '" alt="' + escapeAttr(alt) + '" loading="lazy">' +
+            (shot.cropped ? '<figcaption>Only part of the element fits in the picture.</figcaption>' : '') +
+            '</figure>';
+    }
+
     function buildInstancesListHtml(nodes, type = 'fail') {
         const instanceLabel = type === 'fail' ? 'Occurrence' : 'Instance';
         const list = dedupeWithUrlMerge(nodes);
@@ -789,7 +841,8 @@
                     '</code></div>'
                     : '';
 
-                return '<div class="example-node">' + selectorPart + htmlPart + failurePart + buildOccurrenceDetailsHtml(n) + buildOccurrenceGuidanceHtml(n, { stepsShown: !!shared }) + sourceLine + '</div>';
+                const picture = buildElementScreenshotHtml(n, instanceLabel + ' ' + (nodeIndex + 1));
+                return '<div class="example-node">' + selectorPart + htmlPart + picture + failurePart + buildOccurrenceDetailsHtml(n) + buildOccurrenceGuidanceHtml(n, { stepsShown: !!shared }) + sourceLine + '</div>';
             })
             .join('');
     }

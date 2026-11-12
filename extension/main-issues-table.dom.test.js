@@ -680,3 +680,35 @@ describe('best practices section', () => {
         assert.equal(outEl.querySelector('.best-practices'), null);
     });
 });
+
+describe('the picture of an occurrence\'s element', () => {
+    function scanWithShot(elementScreenshot) {
+        const scan = scanWith(['img.hero']);
+        scan.canonical.findings[0].occurrences[0].elementScreenshot = elementScreenshot;
+        return scan;
+    }
+
+    test('shows in its occurrence, named for it', () => {
+        render(scanWithShot({dataUrl: 'data:image/png;base64,iVBORw0KGgo=', box: {x: 16, y: 16, width: 8, height: 8}}));
+        const img = outEl.querySelector('.example-node .node-screenshot img');
+        assert.equal(img.getAttribute('src'), 'data:image/png;base64,iVBORw0KGgo=');
+        assert.equal(img.getAttribute('alt'), 'Occurrence 1: the flagged img element, with a box drawn around it');
+        assert.equal(outEl.querySelector('.node-screenshot figcaption'), null, 'nothing to say of a whole element');
+    });
+
+    test('says when only part of the element fits', () => {
+        render(scanWithShot({dataUrl: 'data:image/png;base64,iVBORw0KGgo=', box: null, cropped: true}));
+        assert.equal(outEl.querySelector('.node-screenshot figcaption').textContent, 'Only part of the element fits in the picture.');
+    });
+
+    test('says why there is none, as the lab does', () => {
+        render(scanWithShot({skipped: 'max-reached', max: 50}));
+        assert.equal(outEl.querySelector('.example-node .node-screenshot-none').textContent, 'No picture: the scan reached its limit of 50 pictures.');
+        assert.equal(outEl.querySelector('.node-screenshot'), null);
+    });
+
+    test('takes no address but a picture\'s', () => {
+        render(scanWithShot({dataUrl: 'javascript:alert(1)'}));
+        assert.equal(outEl.querySelector('.node-screenshot'), null);
+    });
+});

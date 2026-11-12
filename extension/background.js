@@ -9,6 +9,8 @@ if (typeof importScripts === 'function') {
     importScripts(
         'conformance-targets.js',
         'fullpage-screenshot.js',
+        'engines/vendor/surea11y-screenshots.min.js',
+        'element-screenshots.js',
         'engines/a11y-extension-surea11y-engine.js',
         'a11y-extension-engine.js'
     );
@@ -875,6 +877,30 @@ async function captureViewportScreenshot() {
     });
 }
 
+// The visible part of a tab, captured in its own window: with no window
+// named, the capture is of the window last focused, which is the DevTools
+// window when they are undocked.
+async function captureVisibleTabOf(windowId) {
+    return new Promise((resolve) => {
+        try {
+            const fn = api.tabs.captureVisibleTab;
+            const win = typeof windowId === 'number' ? windowId : null;
+            if (typeof fn === 'function' && fn.length >= 2) {
+                fn.call(api.tabs, win, { format: 'png' }, (dataUrl) => {
+                    void (api.runtime && api.runtime.lastError);
+                    resolve(dataUrl || null);
+                });
+                return;
+            }
+            Promise.resolve(fn.call(api.tabs, win, { format: 'png' }))
+                .then((dataUrl) => resolve(dataUrl || null))
+                .catch(() => resolve(null));
+        } catch {
+            resolve(null);
+        }
+    });
+}
+
 async function getViewportRatio(tabId) {
     try {
         const resArr = await execInTab(tabId, {
@@ -1113,6 +1139,21 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 else if (!domMetrics && textMetrics) domMetrics = { textMetrics };
 
                 const engineRun = await runSelectedEngine(tabId, engineId, engineOptions);
+
+                // Pictures of the elements it flags, right after the scan and
+                // with its styles still on, as the lab takes them; before the
+                // page's own picture, as each puts back the scroll it moves.
+                const shotChoices = engineOptions.elementScreenshots;
+                if (shotChoices && globalThis.A11YElementScreenshots && engineRun && engineRun.results) {
+                    try {
+                        await globalThis.A11YElementScreenshots.pictureInTab(tabId, engineRun.results, shotChoices, {
+                            exec: execInTab,
+                            captureVisible: () => captureVisibleTabOf(tab && typeof tab.windowId === 'number' ? tab.windowId : null)
+                        });
+                    } catch (e) {
+                        console.warn('[A11Y] element pictures failed:', e);
+                    }
+                }
 
                 const capturePromise =
                     (globalThis.A11YFullPageScreenshot &&
