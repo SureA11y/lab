@@ -4,7 +4,7 @@
 // reaches through `app`.
 
 import {escapeHtml} from './a11y-ui.utils.js';
-import {enginesHTML, howTestedHTML} from './engine-brand.js';
+import {enginesHTML} from './engine-brand.js';
 import {MAX_REPORTS as MAX_COMPARE_REPORTS, createComparisonController} from './report-comparison-controller.js';
 import {formatReportTimestamp} from './report-timestamp.js';
 import {reportMetaField} from './report-meta-fields.js';
@@ -143,7 +143,7 @@ export function createCompareTab(app) {
         const engines = comparisonController.engines();
         if (!engines.length) return '';
         const label = engines.length > 1 ? 'Engines' : 'Engine';
-        return `<li><strong>${label}:</strong> <span>${enginesHTML(engines)}${howTestedHTML(engines)}</span></li>`;
+        return `<li><strong>${label}:</strong> <span>${enginesHTML(engines)}</span></li>`;
     }
 
     function writeComparisonData() {

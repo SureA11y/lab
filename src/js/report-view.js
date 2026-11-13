@@ -7,7 +7,7 @@
 import {buildLabeledSelect, createImg, escapeAttr, escapeHtml, scanTagChipsHtml, svgIcon} from './a11y-ui.utils.js';
 import {renderAllScansCard} from './stream-ui.js';
 import {scanToAllScansCardProps} from './all-scans-data.js';
-import {enginesHTML, howTestedHTML} from './engine-brand.js';
+import {enginesHTML} from './engine-brand.js';
 import {openConformanceReview} from './conformance-review.js';
 import {collectScanTags, isTagFilterActive, makeTagFilter} from './scan-tag-filter.js';
 import {collectScanProfiles, isProfileFilterActive, makeProfileFilter} from './scan-profile-filter.js';
@@ -1176,7 +1176,7 @@ export function createReportView(app) {
         const engines = collectReportEngines(data);
         if (engines.length) {
             const label = engines.length > 1 ? 'Engines' : 'Engine';
-            const value = enginesHTML(engines) + howTestedHTML(engines);
+            const value = enginesHTML(engines);
             // Not editable: what ran is the one thing on this line the report
             // cannot be talked out of.
             reportData += `<li><strong>${label}:</strong> <span>${value}</span></li>`;

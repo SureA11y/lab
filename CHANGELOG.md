@@ -9,6 +9,9 @@ The first public release.
 
 ### The lab
 
+- **No "How surea11y is tested" link beside the engine**: a report, a
+  comparison and the Compare tab name the engine and its version, without
+  the link after it.
 - **A can't tell count names only its leans**: beside a review row's
   count, and in the run's summary, the questions that lean are counted
   (*2 likely fail, 1 likely passes*) and the rest are not named as

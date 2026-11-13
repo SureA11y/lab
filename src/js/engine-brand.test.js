@@ -38,17 +38,10 @@ describe('engine-brand', () => {
         assert.doesNotMatch(doc.reportsStripHTML([{ label: 'v1', name: 'Shop', pages: 2, engines }]), /engine-brand/);
     });
 
-    test('beside surea11y, a link to how it is tested; beside no engine, nothing', () => {
-        const link = B.howTestedHTML([{ id: 'surea11y', version: '1.14.1' }]);
-        assert.match(link, /<a href="https:\/\/github\.com\/SureA11y\/core#checked-against-the-act-corpus">How surea11y is tested<\/a>/);
-        assert.equal(B.howTestedHTML([]), '');
-        assert.equal(B.howTestedHTML(undefined), '');
-        assert.equal(B.howTestedHTML([{ id: 'other', name: 'Other' }]), '');
-    });
-
-    test('a comparison names surea11y\'s engine with the link, and no engine without one', () => {
+    test('a comparison names surea11y\'s engine with no link beside it, and no engine without one', () => {
         const masthead = doc.mastheadHTML({ title: 'Shop', summary: '2 runs', framing: 'Runs over time', scopes: [], generatedAt: '2026-10-28T10:00:00Z', engines: [{ id: 'surea11y', version: '1.14.1' }] });
-        assert.match(masthead, /How surea11y is tested/);
+        assert.match(masthead, /class="engine-brand"/);
+        assert.doesNotMatch(masthead, /How surea11y is tested/);
         const none = doc.mastheadHTML({ title: 'Shop', summary: '2 runs', framing: 'Runs over time', scopes: [], generatedAt: '2026-10-28T10:00:00Z', engines: [] });
         assert.doesNotMatch(none, /<dt>Engine/);
     });
