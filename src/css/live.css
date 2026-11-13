@@ -172,9 +172,11 @@
 .live-totals {
     position: fixed;
     right: 16px;
-    /* Moved up above the configuration's run bar where they would meet
-       (run-bar.js), so its buttons stay where they are and in sight. */
-    bottom: calc(16px + var(--run-bar-lift, 0px));
+    /* Its gap to the bottom edge, and how far it is moved up above the
+       configuration's run bar where they would meet (run-bar.js), so the
+       bar's buttons stay where they are and in sight. */
+    --live-totals-edge: 16px;
+    bottom: calc(var(--live-totals-edge) + var(--run-bar-lift, 0px));
     z-index: 60;
 
     display: flex;
@@ -190,6 +192,14 @@
 /* Hidden while another top-level tab is active (kept out of the a11y tree). */
 .live-totals.is-tab-hidden { display: none; }
 
+/* Going onto the run bar or back to its corner, the card slides rather than
+   jumps (run-bar.js). Riding up and down with the bar it does not: it would
+   lag behind the bar, over its buttons. */
+.live-totals.is-settling { transition: bottom .2s ease; }
+@media (prefers-reduced-motion: reduce) {
+    .live-totals.is-settling { transition: none; }
+}
+
 /* While the card floats over the page, a control that takes focus scrolls
    clear of it, and the end of the page can scroll out from under it. */
 /* live-totals.js sets the class while the card floats, shown: a :has() rule
@@ -204,7 +214,7 @@ html.has-floating-totals body {
 }
 
 @media (max-width: 600px) {
-    .live-totals { right: 8px; bottom: calc(8px + var(--run-bar-lift, 0px)); max-width: calc(100vw - 16px); }
+    .live-totals { right: 8px; --live-totals-edge: 8px; max-width: calc(100vw - 16px); }
 }
 
 /* The visible totals card — the surface that used to live on .live-totals. */
