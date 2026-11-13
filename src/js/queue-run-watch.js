@@ -7,6 +7,7 @@ import {createEl, escapeAttr, escapeHtml, indentPrefix, linkifyUrlsToHtml, parse
 import {pollWorkflowUntilDone} from './a11y-ui.workflow.js';
 import {createRunDialog} from './run-dialog.js';
 import {createLiveView} from './live-view.js';
+import {createLogFollow} from './log-follow.js';
 import {describeRunNow} from './run-queue-panel.js';
 import {PROGRESS_POLL_INTERVAL_MS, STATUS} from './ui-constants.js';
 
@@ -108,32 +109,17 @@ export function createQueueRunWatch(app) {
         const parts = buildWatchView(item.id);
         parts.showNow(item);
         dialog.body.append(parts.root);
-        // Follow the log only while the user is at its end. Whether they are
-        // is read when the log scrolls, never as a line is added: measuring
-        // it then laid out the whole log once per line, and opening a run of
-        // hundreds of scans replays thousands of lines at once (41 s frozen
-        // at 570 scans). Scrolling to the end waits for the next frame, so a
-        // batch of lines scrolls once.
+        // Follow the log only while the user is at its end (see log-follow.js:
+        // opening a run of hundreds of scans replays thousands of lines at once).
         const logEl = parts.logEl;
-        let following = true;
-        let followFrame = 0;
-        logEl.addEventListener('scroll', () => {
-            if (!followFrame) following = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 80;
-        }, {passive: true});
+        const follow = createLogFollow(logEl);
         view = createLiveView({
             totalsMount: parts.totalsMount,
             streamEl: parts.streamEl,
             gridEl: parts.gridEl,
             logEl,
             idPrefix: `watch-${item.id}`,
-            onLog: () => {
-                if (!following || followFrame) return;
-                followFrame = requestAnimationFrame(() => {
-                    logEl.scrollTop = logEl.scrollHeight;
-                    // The scroll this causes is ours, not the user's leaving the end.
-                    requestAnimationFrame(() => { followFrame = 0; });
-                });
-            },
+            onLog: () => follow.lineAdded(),
             helpers: {escapeHtml, escapeAttr, linkifyUrlsToHtml, indentPrefix, parseForEachIteration, parseRepeatIteration},
         });
 
