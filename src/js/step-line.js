@@ -470,105 +470,241 @@ export function createStepLine(builder) {
             sync();
         }
 
+        // A call's inputs, one field each: one for each input the custom
+        // step declares (labelled with its label), and one for each other
+        // input the call gives (labelled with its name; all of them when the
+        // custom step declares none, is a variable token, or is not one the
+        // app has), each with a button to remove it, and a name to type to
+        // add one. The JSON text the step saves (argsJson) stays the field's
+        // value, hidden: the fields write it. Only text that is not a JSON
+        // object, written by hand, shows it, to be put right.
         function wireRunCustomStepDynamicInputs(lineEl) {
-            // Only applies to runCustomStep actions
             if (!lineEl || lineEl.dataset.actionType !== "runCustomStep") return;
 
             const getSchema = actionDef && actionDef.getStepInputsSchema;
-            if (typeof getSchema !== "function") return;
-
             const customStepSelect = lineEl.querySelector(':scope > .fields > .field[data-field-name="customStepId"] select');
             const argsField = lineEl.querySelector(':scope > .fields > .field[data-field-name="argsJson"]');
             const argsTextarea = argsField ? argsField.querySelector("textarea") : null;
-            if (!customStepSelect || !argsField || !argsTextarea) return;
+            if (!argsField || !argsTextarea) return;
+            const argsLabel = argsField.querySelector(":scope > label");
+            const argsError = argsField.querySelector(":scope > .error");
 
-            const dynamicWrap = createEl("div", {className: "field runcustomstep-dynamic-inputs", hidden: true});
-            argsField.insertAdjacentElement("afterend", dynamicWrap);
+            argsField.dataset.wide = "row";
+            const dynamicWrap = createEl("div", {className: "runcustomstep-dynamic-inputs"});
+            argsField.insertBefore(dynamicWrap, argsError || null);
 
-            let dynamicInputEls = [];
+            // Each input: {name: () => string, text: () => string, kept, value}.
+            // A value that is not text (a number, an object from a file
+            // written by hand) is kept as it came until its field is edited.
+            let rows = [];
 
-            function readCurrentArgs() {
+            function parseArgs() {
+                const text = String(argsTextarea.value || "").trim();
+                if (!text) return {};
                 try {
-                    const parsed = JSON.parse(argsTextarea.value || "{}");
-                    return (parsed && typeof parsed === "object" && !Array.isArray(parsed)) ? parsed : {};
+                    const parsed = JSON.parse(text);
+                    return (parsed && typeof parsed === "object" && !Array.isArray(parsed)) ? parsed : null;
                 } catch (e) {
-                    return {};
+                    return null;
                 }
             }
 
-            function writeArgsFromDynamicInputs() {
+            const shownText = (v) => (v == null ? "" : (typeof v === "string" ? v : JSON.stringify(v)));
+
+            function writeArgs() {
                 const out = {};
-                dynamicInputEls.forEach(({name, input}) => {
-                    if (input.value !== "") out[name] = input.value;
+                rows.forEach((row) => {
+                    const name = row.name().trim();
+                    if (!name || Object.prototype.hasOwnProperty.call(out, name)) return;
+                    if (row.kept) { out[name] = row.value; return; }
+                    const text = row.text();
+                    // A declared input left empty takes its default; a name
+                    // given by hand is given, empty or not.
+                    if (text === "" && row.declared) return;
+                    out[name] = text;
                 });
                 argsTextarea.value = Object.keys(out).length ? JSON.stringify(out) : "";
-                argsTextarea.dispatchEvent(new Event("input", {bubbles: true}));
-                argsTextarea.dispatchEvent(new Event("change", {bubbles: true}));
+                // The page's own Event: the editor and history listen there.
+                const PageEvent = argsTextarea.ownerDocument.defaultView?.Event || Event;
+                argsTextarea.dispatchEvent(new PageEvent("input", {bubbles: true}));
+                argsTextarea.dispatchEvent(new PageEvent("change", {bubbles: true}));
+            }
+
+            // A value of several lines (a list of viewports, one a line) is a
+            // textarea that grows with it: a one-line field drops its line
+            // breaks, "desktop-lgtabletmobile".
+            function valueControl(id, text, placeholder) {
+                if (!text.includes("\n")) {
+                    return createEl("input", {type: "text", id, value: text, placeholder, spellcheck: false, autocomplete: "off"});
+                }
+                const area = createEl("textarea", {id, rows: Math.min(text.split("\n").length, 12), spellcheck: false});
+                area.value = text;
+                area.addEventListener("input", () => {
+                    area.rows = Math.min(Math.max(area.value.split("\n").length, 1), 12);
+                });
+                return area;
+            }
+
+            function declaredRow(def, args) {
+                const name = String((def && def.name) || "").trim();
+                const required = !!(def && def.required);
+                const has = Object.prototype.hasOwnProperty.call(args, name);
+                const inputId = builder.randomId("custom-step-input");
+                const row = createEl("div", {className: "runcustomstep-dynamic-input-row"});
+                // Its label, or its name in words ("Element screenshots"
+                // for elementScreenshots): what it is, not the variable.
+                const label = createEl("label", {htmlFor: inputId}, inputLabelOf(def));
+                if (required) label.append(" ", createEl("span", {className: "req-badge", title: "Required"}, "*"));
+                const input = valueControl(inputId, has ? shownText(args[name]) : "", inputPlaceholder(def, required));
+                if (required) input.setAttribute("aria-required", "true");
+                row.append(label, input);
+                const state = {declared: true, name: () => name, text: () => input.value, kept: has && typeof args[name] !== "string", value: args[name]};
+                input.addEventListener("input", () => { state.kept = false; writeArgs(); });
+                rows.push(state);
+                return row;
+            }
+
+            // An input the custom step does not declare: one field, labelled
+            // with the input's name, and a button to remove it.
+            function namedRow(name, value, given) {
+                const inputId = builder.randomId("custom-step-arg");
+                const input = valueControl(inputId, given ? shownText(value) : "", "");
+                const remove = iconButton({className: "secondary-button runcustomstep-dynamic-input__remove", ariaLabel: `Remove input ${name}`, iconName: "trash"});
+                const row = createEl("div", {className: "runcustomstep-dynamic-input-row runcustomstep-dynamic-input-row--given"}, [
+                    createEl("label", {htmlFor: inputId}, name),
+                    createEl("div", {className: "runcustomstep-dynamic-input__control"}, [input, remove])
+                ]);
+                const state = {declared: false, input, name: () => name, text: () => input.value, kept: given && typeof value !== "string", value};
+                input.addEventListener("input", () => { state.kept = false; writeArgs(); });
+                remove.addEventListener("click", () => {
+                    const given = rows.filter((r) => !r.declared);
+                    const at = given.indexOf(state);
+                    rows = rows.filter((r) => r !== state);
+                    row.remove();
+                    writeArgs();
+                    empty.hidden = rows.length > 0;
+                    // Focus stays here: on the input that took its place, or
+                    // the new input's name.
+                    const left = rows.filter((r) => !r.declared);
+                    const next = left[Math.min(at, left.length - 1)];
+                    (next ? next.input : newName).focus();
+                });
+                rows.push(state);
+                return row;
+            }
+
+            const titleId = builder.randomId("custom-step-inputs");
+            const empty = createEl("p", {className: "runcustomstep-dynamic-inputs__empty"}, "No inputs: the call gives the custom step nothing.");
+            // Adding an input: its name, then Add input makes its field.
+            const newNameId = builder.randomId("custom-step-new-input");
+            const addErrorId = builder.randomId("custom-step-new-input-error");
+            const newName = createEl("input", {type: "text", id: newNameId, placeholder: "e.g. viewLabel", spellcheck: false, autocomplete: "off"});
+            const addBtn = createEl("button", {type: "button", className: "secondary-button runcustomstep-dynamic-inputs__add"}, [
+                svgIcon("add"), createEl("span", {}, "Add input")
+            ]);
+            const addError = createEl("p", {className: "runcustomstep-dynamic-inputs__error", id: addErrorId, role: "status", hidden: true});
+            const addArea = createEl("div", {className: "runcustomstep-dynamic-inputs__new"}, [
+                createEl("div", {className: "runcustomstep-dynamic-input-row"}, [
+                    createEl("label", {htmlFor: newNameId}, "New input’s name"),
+                    createEl("div", {className: "runcustomstep-dynamic-input__control"}, [newName, addBtn])
+                ]),
+                addError
+            ]);
+
+            function showAddError(msg) {
+                addError.textContent = msg || "";
+                addError.hidden = !msg;
+                if (msg) {
+                    newName.setAttribute("aria-invalid", "true");
+                    newName.setAttribute("aria-describedby", addErrorId);
+                } else {
+                    newName.removeAttribute("aria-invalid");
+                    newName.removeAttribute("aria-describedby");
+                }
+            }
+
+            function addInput() {
+                const name = newName.value.trim();
+                if (!name) {
+                    showAddError("Type the input’s name, then add it.");
+                    newName.focus();
+                    return;
+                }
+                if (rows.some((r) => r.name() === name)) {
+                    showAddError(`“${name}” is already an input: type its value in its field.`);
+                    newName.focus();
+                    return;
+                }
+                showAddError(null);
+                const row = namedRow(name, "", false);
+                applyDisabled(row);
+                dynamicWrap.insertBefore(row, empty);
+                empty.hidden = true;
+                newName.value = "";
+                writeArgs();
+                row.querySelector("input, textarea").focus();
+            }
+            addBtn.addEventListener("click", addInput);
+            newName.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") { e.preventDefault(); addInput(); }
+            });
+            newName.addEventListener("input", () => { if (!addError.hidden) showAddError(null); });
+
+            // New fields follow the step: none can be typed in on a disabled one.
+            function applyDisabled(root) {
+                root.querySelectorAll("input, textarea, button").forEach((el) => { el.disabled = argsTextarea.disabled; });
+            }
+
+            function showRawText(on) {
+                argsTextarea.hidden = !on;
+                // The fields' label sets its display: hidden alone keeps it.
+                if (argsLabel) { argsLabel.hidden = !on; argsLabel.style.display = on ? "" : "none"; }
+                dynamicWrap.hidden = on;
             }
 
             function rebuild() {
-                const schema = getSchema(customStepSelect.value);
-                dynamicInputEls = [];
-                dynamicWrap.innerHTML = "";
+                rows = [];
+                dynamicWrap.textContent = "";
+                newName.value = "";
+                showAddError(null);
 
-                if (!Array.isArray(schema) || !schema.length) {
-                    dynamicWrap.classList.add("is-advanced");
-                    dynamicWrap.hidden = true;
-                    argsField.classList.remove("is-advanced");
-                    argsField.hidden = false;
+                const args = parseArgs();
+                if (!args) {
+                    // Not an object: shown as written, to be put right; it
+                    // turns into fields once it is one.
+                    showRawText(true);
                     return;
                 }
+                showRawText(false);
 
-                const currentArgs = readCurrentArgs();
-                argsField.classList.add("is-advanced");
-                argsField.hidden = true;
-                dynamicWrap.classList.remove("is-advanced");
-                dynamicWrap.hidden = false;
+                const schema = (typeof getSchema === "function" && customStepSelect) ? getSchema(customStepSelect.value) : null;
+                const declared = (Array.isArray(schema) ? schema : [])
+                    .filter((def) => def && String(def.name || "").trim());
+                const declaredNames = new Set(declared.map((def) => String(def.name).trim()));
 
                 // The inputs are a group named by its title; each input has
                 // its own label, tied to it.
-                const titleId = builder.randomId("custom-step-inputs");
                 dynamicWrap.setAttribute("role", "group");
                 dynamicWrap.setAttribute("aria-labelledby", titleId);
                 dynamicWrap.append(createEl("div", {className: "runcustomstep-dynamic-inputs__title", id: titleId}, "Inputs"));
-
-                schema.forEach((def) => {
-                    const name = String((def && def.name) || "").trim();
-                    if (!name) return;
-                    const required = !!(def && def.required);
-                    const inputId = builder.randomId("custom-step-input");
-                    const value = currentArgs[name] != null ? String(currentArgs[name]) : "";
-
-                    const row = createEl("div", {className: "runcustomstep-dynamic-input-row"});
-                    // Its label, or its name in words ("Element screenshots"
-                    // for elementScreenshots): what it is, not the variable.
-                    const label = createEl("label", {htmlFor: inputId}, inputLabelOf(def));
-                    if (required) label.append(" ", createEl("span", {className: "req-badge", title: "Required"}, "*"));
-                    row.append(label);
-
-                    // A value of several lines (a list of viewports, one a
-                    // line) is a textarea that grows with it: in a one-line
-                    // field its lines ran together, "desktop-lgtabletmobile".
-                    const multiline = value.includes("\n");
-                    const input = multiline
-                        ? createEl("textarea", {id: inputId, rows: Math.min(value.split("\n").length, 12), spellcheck: false})
-                        : createEl("input", {type: "text", id: inputId, value, placeholder: inputPlaceholder(def, required)});
-                    if (multiline) {
-                        input.value = value;
-                        input.addEventListener("input", () => {
-                            input.rows = Math.min(Math.max(input.value.split("\n").length, 1), 12);
-                        });
-                    }
-                    if (required) input.setAttribute("aria-required", "true");
-                    input.addEventListener("input", writeArgsFromDynamicInputs);
-                    row.append(input);
-
-                    dynamicWrap.append(row);
-                    dynamicInputEls.push({name, input});
-                });
+                declared.forEach((def) => dynamicWrap.append(declaredRow(def, args)));
+                Object.keys(args)
+                    .filter((name) => !declaredNames.has(name))
+                    .forEach((name) => dynamicWrap.append(namedRow(name, args[name], true)));
+                empty.hidden = rows.length > 0;
+                dynamicWrap.append(empty, addArea);
+                applyDisabled(dynamicWrap);
             }
 
-            customStepSelect.addEventListener("change", rebuild);
+            argsTextarea.addEventListener("change", (e) => {
+                // Only the raw text's own edits: the fields' writes are
+                // already shown.
+                if (e.target === argsTextarea && !argsTextarea.hidden && parseArgs()) rebuild();
+            });
+            if (customStepSelect) customStepSelect.addEventListener("change", rebuild);
+            // A loaded step's values are set without a change event
+            // (step-values.js), which calls this after.
+            lineEl._applyRunCustomStepInputs = rebuild;
             rebuild();
         }
 

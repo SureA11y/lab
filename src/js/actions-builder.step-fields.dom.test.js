@@ -162,4 +162,89 @@ describe('a custom step call\'s inputs', () => {
         assert.equal(area.rows, 4);
         assert.deepEqual(JSON.parse(saved(builder).argsJson), { label: 'Home', viewports: 'desktop-lg\ntablet\nmobile\nwatch' });
     });
+    const argsArea = (actionsEl) => fieldControl(actionsEl, 'argsJson');
+    // Each input given that the custom step does not declare: its label, the
+    // input's name, and its value.
+    const given = (wrap) => Array.from(wrap.querySelectorAll('.runcustomstep-dynamic-input-row--given')).map((row) => {
+        const field = row.querySelector('input, textarea');
+        assert.equal(row.querySelector('label').htmlFor, field.id);
+        return [row.querySelector('label').textContent, field.value];
+    });
+    const type = (el, text) => { el.value = text; el.dispatchEvent(new win.Event('input', { bubbles: true })); };
+    const newInput = (wrap) => wrap.querySelector('.runcustomstep-dynamic-inputs__new input');
+    const addBtn = (wrap) => wrap.querySelector('.runcustomstep-dynamic-inputs__add');
+
+    test('show as fields when loaded, without the JSON text', () => {
+        const defs = { ...ACTION_DEFINITIONS, runCustomStep: { ...ACTION_DEFINITIONS.runCustomStep, getStepInputsSchema: () => null } };
+        const actionsEl = win.document.createElement('div');
+        const toolbarEl = win.document.createElement('div');
+        win.document.body.append(actionsEl, toolbarEl);
+        const builder = createActionsBuilder({ defs, actionsEl, toolbarEl, options: { useHorizontalStepper: false } });
+        builder.loadActions([{ type: 'runCustomStep', customStepId: 'gone', argsJson: '{"user":"ana"}' }], { clearFirst: true, focusFirst: false, injectDefaultWhenEmpty: false });
+        const wrap = actionsEl.querySelector('.runcustomstep-dynamic-inputs');
+        assert.equal(argsArea(actionsEl).hidden, true);
+        assert.equal(wrap.hidden, false);
+        assert.deepEqual(given(wrap), [['user', 'ana']]);
+    });
+
+    test('a custom step that declares none takes one field an input, labelled with its name, added and removed', () => {
+        const { builder, wrap } = callWith({}, []);
+        assert.equal(wrap.querySelector('.runcustomstep-dynamic-inputs__empty').hidden, false);
+        type(newInput(wrap), 'section');
+        addBtn(wrap).click();
+        assert.deepEqual(given(wrap), [['section', '']]);
+        const field = wrap.querySelector('.runcustomstep-dynamic-input-row--given input');
+        assert.equal(win.document.activeElement, field);
+        assert.equal(newInput(wrap).value, '');
+        type(field, 'Main');
+        assert.deepEqual(JSON.parse(saved(builder).argsJson), { section: 'Main' });
+        const remove = wrap.querySelector('.runcustomstep-dynamic-input__remove');
+        assert.equal(remove.getAttribute('aria-label'), 'Remove input section');
+        remove.click();
+        assert.equal(saved(builder).argsJson, undefined);
+        assert.equal(win.document.activeElement, newInput(wrap));
+    });
+
+    test('keep the inputs the custom step does not declare, each a field of its own', () => {
+        const { builder, wrap } = callWith({ label: 'Home', extra: 'x' }, [{ name: 'label' }]);
+        assert.deepEqual(given(wrap), [['extra', 'x']]);
+        type(wrap.querySelector('.runcustomstep-dynamic-input-row input'), 'Shop');
+        assert.deepEqual(JSON.parse(saved(builder).argsJson), { label: 'Shop', extra: 'x' });
+    });
+
+    test('a value that is not text stays as it came until it is edited', () => {
+        const { builder, wrap } = callWith({ tries: 2, flags: { a: true } }, [{ name: 'tries' }]);
+        assert.equal(wrap.querySelector('.runcustomstep-dynamic-input-row input').value, '2');
+        assert.deepEqual(given(wrap), [['flags', '{"a":true}']]);
+        type(newInput(wrap), 'more');
+        addBtn(wrap).click();
+        assert.deepEqual(JSON.parse(saved(builder).argsJson), { tries: 2, flags: { a: true }, more: '' });
+    });
+
+    test('adding an input with no name, or the name of one there, says so and adds nothing', () => {
+        const { wrap } = callWith({ label: 'Home' }, [{ name: 'label' }]);
+        const error = wrap.querySelector('.runcustomstep-dynamic-inputs__error');
+        addBtn(wrap).click();
+        assert.match(error.textContent, /Type the input’s name/);
+        assert.equal(newInput(wrap).getAttribute('aria-invalid'), 'true');
+        assert.equal(newInput(wrap).getAttribute('aria-describedby'), error.id);
+        type(newInput(wrap), 'label');
+        assert.equal(error.hidden, true);
+        addBtn(wrap).click();
+        assert.match(error.textContent, /“label” is already an input/);
+        assert.deepEqual(given(wrap), []);
+    });
+
+    test('text that is not a JSON object shows as written, to be put right', () => {
+        const { actionsEl, wrap } = callWith(null, []);
+        const area = argsArea(actionsEl);
+        area.value = '{"user": ';
+        actionsEl.querySelector('.line')._applyRunCustomStepInputs();
+        assert.equal(area.hidden, false);
+        assert.equal(wrap.hidden, true);
+        area.value = '{"user": "ana"}';
+        area.dispatchEvent(new win.Event('change', { bubbles: true }));
+        assert.equal(area.hidden, true);
+        assert.deepEqual(given(wrap), [['user', 'ana']]);
+    });
 });

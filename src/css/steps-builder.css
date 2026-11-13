@@ -478,6 +478,43 @@
     text-transform: none;
 }
 
+/* An input the call gives that its custom step does not declare: its field
+   and, beside it, the button to remove it. Adding one: its name and Add
+   input, on a row of their own. */
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-input__control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-input__control > :is(input, textarea) {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-input__control > button { flex: none; height: 28px; min-height: 0; padding-block: 0; }
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs__new,
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs__empty {
+    grid-column: 1 / -1;
+}
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs__new > .runcustomstep-dynamic-input-row { max-width: 28rem; }
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs__empty {
+    margin: 0;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs__error {
+    margin: 2px 0 0;
+    color: var(--danger);
+    font-size: var(--fs-xxs);
+}
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs__error[hidden],
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs__empty[hidden] { display: none; }
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-dynamic-inputs__add {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
 /* Actions/output */
 :is(#actions-builder, #custom-step-actions-builder) .actions {
     margin-top: 8px;
