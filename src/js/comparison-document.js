@@ -11,7 +11,7 @@
 // Shared by both renderers so a pair and a series describe themselves the same
 // way. Pure string builders, no DOM.
 
-import { enginesHTML, howTestedHTML } from './engine-brand.js';
+import { enginesHTML } from './engine-brand.js';
 
 function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => (
@@ -99,7 +99,7 @@ export function mastheadHTML(doc, { titleTag = 'h2', sourcesHref = '' } = {}) {
     ].join('');
     // As a report names the engine that ran it: surea11y as its tag, at full
     // size, on a line of its own, as it stands taller than the text facts.
-    const engines = fact((doc.engines || []).length > 1 ? 'Engines' : 'Engine', enginesHTML(doc.engines) + howTestedHTML(doc.engines));
+    const engines = fact((doc.engines || []).length > 1 ? 'Engines' : 'Engine', enginesHTML(doc.engines));
 
     // The machine-readable half, for the exporter: it reads the rendered DOM
     // rather than the engine's object, so the few values that have to survive
