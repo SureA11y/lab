@@ -162,6 +162,48 @@ body.is-running #config-section .inline-actions {
     padding: var(--space-4) var(--space-5);
     border-top: 1px solid var(--border-subtle);
     margin: 0;
+    /* In sight while its place at the configuration's end is below the
+       window: it waits on the window's bottom edge, over the configuration,
+       and scrolls up with it once that end comes into view (run-bar.js).
+       Over the steps' cards and sticky bars, under the menus that open
+       from them. */
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: var(--surface-raised);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+#config-section > .inline-actions.is-stuck {
+    box-shadow: 0 -2px 8px rgb(0 0 0 / .12);
+}
+/* Where the bar leaves its place; takes no room (run-bar.js). */
+.run-bar-sentinel {
+    height: 1px;
+    margin-top: -1px;
+    pointer-events: none;
+}
+
+/* A control that takes focus, or a link's target, scrolls clear of the run
+   bar waiting on the window's bottom edge. */
+html.has-mode-bar {
+    scroll-padding-bottom: calc(var(--run-bar-h, 0px) + var(--space-3));
+}
+
+/* While a run's totals card floats on the bottom-right corner (live.css),
+   the bar's buttons keep clear of it, so Cancel is not under the card: to
+   its left, where the window is wide enough, else above the room the page
+   keeps for it. */
+html.has-floating-totals #config-section > .inline-actions {
+    padding-right: calc(min(92vw, 360px) + var(--space-6));
+}
+@media (max-width: 1000px) {
+    html.has-floating-totals #config-section > .inline-actions {
+        padding-right: var(--space-5);
+        bottom: var(--floating-totals-room);
+    }
+    html.has-mode-bar.has-floating-totals {
+        scroll-padding-bottom: calc(var(--floating-totals-room) + var(--run-bar-h, 0px) + var(--space-3));
+    }
 }
 
 /* ==========================================================================
