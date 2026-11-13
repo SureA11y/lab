@@ -6,10 +6,19 @@
  * at the configuration's end is below the window, and lets it scroll up with
  * the configuration once that end comes into view.
  *
- * This adds what CSS cannot say alone: `is-stuck` while it floats over the
- * configuration, for its shadow, and its height as `--run-bar-h` on the
- * page, so a control that takes focus scrolls clear of it.
+ * This adds what CSS cannot say alone:
+ * - `is-stuck` while it floats over the configuration, for its shadow;
+ * - its height as `--run-bar-h` on the page, so a control that takes focus
+ *   scrolls clear of it;
+ * - `--run-bar-lift` on the page: how far a run's floating totals card
+ *   (live.css) moves up so it sits above the bar where they would meet,
+ *   rather than over its buttons. The bar itself never moves for it.
  */
+
+// Between the bar and the card moved up above it.
+const CARD_GAP_PX = 8;
+const FLOATING_CARD = '.live-totals:not(.live-totals--inline):not(.is-tab-hidden)';
+
 export function installRunBar({ bar, doc = globalThis.document } = {}) {
     if (!bar || !bar.parentNode || !doc) return null;
     const win = doc.defaultView;
@@ -25,21 +34,78 @@ export function installRunBar({ bar, doc = globalThis.document } = {}) {
         bar.classList.toggle('is-stuck', stuck);
     }
 
-    if (win && typeof win.IntersectionObserver === 'function') {
-        new win.IntersectionObserver(([entry]) => {
-            const below = !entry.isIntersecting && entry.rootBounds
-                && entry.boundingClientRect.top >= entry.rootBounds.bottom;
-            setStuck(!!below);
-        }).observe(sentinel);
-    }
+    const resized = win && typeof win.ResizeObserver === 'function'
+        ? new win.ResizeObserver(() => { measure(); schedule(); })
+        : null;
 
     function measure() {
         root.style.setProperty('--run-bar-h', `${Math.ceil(bar.getBoundingClientRect().height)}px`);
     }
-    if (win && typeof win.ResizeObserver === 'function') {
-        new win.ResizeObserver(measure).observe(bar);
-    }
-    measure();
 
-    return { setStuck };
+    // The card is made for a run and taken away after it; it is watched for
+    // its size (its ledger opens above it) while it is there.
+    let watchedCard = null;
+    let lift = 0;
+    // Read where things are now. Not with an IntersectionObserver: a jump
+    // from below the configuration's end to above it (Back to top) crosses
+    // the window without its place ever being in it, and tells it nothing.
+    function update() {
+        const viewBottom = win?.innerHeight || root.clientHeight;
+        setStuck(!!bar.getBoundingClientRect().height && sentinel.getBoundingClientRect().top >= viewBottom);
+        placeCard();
+    }
+
+    function placeCard() {
+        const card = doc.querySelector(FLOATING_CARD);
+        if (card !== watchedCard) {
+            if (watchedCard) resized?.unobserve(watchedCard);
+            if (card) resized?.observe(card);
+            watchedCard = card;
+        }
+        let next = 0;
+        const viewBottom = win?.innerHeight || root.clientHeight;
+        const barBox = bar.getBoundingClientRect();
+        if (card && barBox.height && barBox.top < viewBottom && barBox.bottom > 0) {
+            // Where the card sits when not moved: its own gap to the bottom edge.
+            const cardBox = card.getBoundingClientRect();
+            const edge = viewBottom - cardBox.bottom - lift;
+            const cardTop = viewBottom - edge - cardBox.height;
+            if (barBox.bottom > cardTop) {
+                next = Math.max(0, Math.ceil(viewBottom - barBox.top + CARD_GAP_PX - edge));
+            }
+        }
+        if (next !== lift) {
+            lift = next;
+            root.style.setProperty('--run-bar-lift', `${lift}px`);
+        }
+    }
+
+    // Once a frame at most, as the page scrolls or changes size.
+    let frame = 0;
+    function schedule() {
+        if (frame || !win) return;
+        const later = win.requestAnimationFrame ? win.requestAnimationFrame.bind(win) : (fn) => win.setTimeout(fn, 16);
+        frame = later(() => {
+            frame = 0;
+            update();
+        });
+    }
+
+    if (win) {
+        win.addEventListener('scroll', schedule, { passive: true });
+        win.addEventListener('resize', schedule, { passive: true });
+    }
+    // A run's card comes and goes with `has-floating-totals` on the page.
+    if (win && typeof win.MutationObserver === 'function') {
+        new win.MutationObserver(schedule).observe(root, { attributes: true, attributeFilter: ['class'] });
+    }
+    // The bar moves without a scroll too: the configuration, or the page
+    // around it, changes size (a step opens; a run marks its steps).
+    resized?.observe(bar);
+    resized?.observe(bar.parentNode);
+    if (doc.body) resized?.observe(doc.body);
+    measure();
+    update();
+
+    return { update };
 }
