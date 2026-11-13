@@ -1906,6 +1906,13 @@ const ACTION_DEFINITIONS = {
                 placeholder: "{\"label\":\"Account\", \"section\":\"Main\"}",
                 example: "{\"label\":\"Settings\"}"
             },
+            slots: {
+                type: "Action[]",
+                itemType: "slotSteps",
+                required: false,
+                alias: "Steps for its places",
+                description: "Steps this call gives the custom step, one list for each of its places (the Slot steps in it). They run where the place is, in the custom step's steps. A place left empty is skipped, unless the custom step requires it."
+            },
             exportVars: {
                 type: "string[]",
                 required: false,
@@ -1945,7 +1952,7 @@ const ACTION_DEFINITIONS = {
             }
         },
         fieldOrder: {
-            primary: ["customStepId", "argsJson"],
+            primary: ["customStepId", "argsJson", "slots"],
             secondary: ["exportVars", "maxDepth", "allowRecursion", "optional", "label"]
         },
         examples: [
@@ -1956,6 +1963,84 @@ const ACTION_DEFINITIONS = {
                     customStepId: "scan-desktop-mobile",
                     argsJson: "{\"viewLabel\":\"Products\"}"
                 }
+            },
+            {
+                title: "Log in, with a step of this site's own after signing in",
+                snippet: {
+                    type: "runCustomStep",
+                    customStepId: "log-in",
+                    argsJson: "{\"user\":\"admin@example.com\"}",
+                    slots: [
+                        {type: "slotSteps", slot: "afterSubmit", actions: [{type: "clickByText", labelText: "Trust this device"}]}
+                    ]
+                }
+            }
+        ]
+    },
+
+    slotSteps: {
+        label: "Steps for a place",
+        category: "composition",
+        onlyIn: "runCustomStep",
+        fixedInList: true,
+        description: "The steps a call to a custom step gives for one of the custom step's places: they run where its Slot step is. Only used inside a custom step call's places.",
+        fields: {
+            slot: {
+                type: "string",
+                required: true,
+                alias: "Place",
+                variableToken: false,
+                description: "Name of the custom step's place these steps are for.",
+                example: "afterSubmit"
+            },
+            actions: {
+                type: "Action[]",
+                required: false,
+                alias: "Steps",
+                description: "Steps to run at that place in the custom step. They read the call's inputs as well as the workflow's variables."
+            }
+        },
+        fieldOrder: {
+            primary: ["slot", "actions"],
+            secondary: []
+        },
+        examples: [
+            {
+                title: "Accept the terms before signing in",
+                snippet: {type: "slotSteps", slot: "beforeSubmit", actions: [{type: "click", selector: "#accept-terms"}]}
+            }
+        ]
+    },
+
+    slot: {
+        label: "Slot",
+        category: "composition",
+        onlyInCustomStep: true,
+        description: "Only in a custom step: where the steps a call gives for one of its places run. The place is declared with the custom step, under Steps from the call; a call that gives it none goes straight on, unless it is required. Each place has one Slot step.",
+        fields: {
+            slot: {
+                type: "string",
+                required: true,
+                alias: "Place",
+                variableToken: false,
+                description: "Name of the place, one the custom step declares.",
+                example: "afterSubmit"
+            },
+            label: {
+                type: "string",
+                required: false,
+                alias: "Label",
+                description: "Name for reporting/logging."
+            }
+        },
+        fieldOrder: {
+            primary: ["slot"],
+            secondary: ["label"]
+        },
+        examples: [
+            {
+                title: "The call's steps after signing in",
+                snippet: {type: "slot", slot: "afterSubmit"}
             }
         ]
     },

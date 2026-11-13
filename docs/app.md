@@ -94,6 +94,23 @@ lists every step and field.
   "Default: …") and whether a call must give it (**Required**), with **Add
   input** and a remove button per row. They are saved as
   `inputs: [{name, required, label, default}]`.
+- A custom step can also take **steps from the call**: places in its steps
+  where each call puts steps of its own. One login, say, with a place after
+  signing in, where one site's call clicks *Trust this device* and
+  another's dismisses a cookie banner. Its **Steps from the call** table
+  declares the places, a row each (**Name**, **Label**, **Required**, with
+  **Add place**), and a **Slot** step among its steps says where each runs:
+  anywhere a step can go, inside a group, an if or a repeat too, one Slot
+  step a place. Slot is only offered in a custom step's steps. A call shows
+  one list for each place, titled with its label, under **Steps for its
+  places**: add steps to the ones it needs. A place left empty is skipped;
+  a required one has to be given steps. The call's steps can read its
+  inputs (`{var:user}`) as well as the workflow's variables. A place the
+  custom step no longer has (renamed, say) keeps the call's steps for it,
+  marked, until they are moved or removed. Saved as `slots: [{name,
+  required, label}]` on the custom step, and on the call as `slots:
+  [{type: "slotSteps", slot, actions}]`, for the places it gives steps for
+  ([design](design/custom-step-slots-design.md)).
 - A password goes in **Set password value**: it is hidden on screen and never
   saved. For runs nobody watches, the step can read it from an environment
   variable instead ([the runner's guide](scheduled-scans-guide.md#passwords)).

@@ -120,3 +120,29 @@ describe('the inputs table', () => {
         assert.ok(Array.from(host.querySelectorAll('input, button')).every((el) => !el.disabled));
     });
 });
+
+describe('the places table (kind "slots")', () => {
+    function slotsTable(slots) {
+        const host = win.document.createElement('div');
+        win.document.body.append(host);
+        const t = M.createInputsTable({ host, kind: 'slots' });
+        t.setInputs(slots);
+        return { t, host };
+    }
+
+    test('names, labels and required, with no default column', () => {
+        const { t, host } = slotsTable([{ name: 'afterSubmit', label: 'After signing in', required: true }, { name: 'beforeSubmit' }]);
+        assert.equal(host.querySelector('.custom-step-inputs__title').textContent, 'Steps from the call');
+        assert.deepEqual(Array.from(host.querySelectorAll('thead th')).map((th) => th.textContent), ['Name', 'Label', 'Required', 'Remove']);
+        assert.equal(host.querySelector('.custom-step-inputs__default'), null);
+        assert.equal(host.querySelector('.custom-step-inputs__name').getAttribute('aria-label'), 'Place 1 name');
+        assert.deepEqual(t.getInputs(), [{ name: 'afterSubmit', required: true, label: 'After signing in' }, { name: 'beforeSubmit' }]);
+    });
+
+    test('its ids are its own, apart from the inputs table\'s', () => {
+        const inputs = table([]);
+        const { host } = slotsTable([]);
+        assert.notEqual(host.querySelector('.custom-step-inputs__title').id, inputs.host.querySelector('.custom-step-inputs__title').id);
+        assert.match(host.querySelector('.custom-step-inputs__add').textContent, /Add place/);
+    });
+});

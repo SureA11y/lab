@@ -275,6 +275,37 @@ describe('planWorkflowSteps: paths match the engine actionPath numbering', () =>
     });
 });
 
+describe('planWorkflowSteps: a custom step\'s places', () => {
+    const LOG_IN = { id: 'log-in', slots: ['after'], actions: [{ type: 'click' }, { type: 'slot', slot: 'after' }, { type: 'click' }] };
+    const call = (slots) => ({ type: 'runCustomStep', customStepId: 'log-in', ...(slots ? { slots } : {}) });
+
+    test('the call\'s steps count where its slot step is, the slot step too', () => {
+        const out = plan([call([{ type: 'slotSteps', slot: 'after', actions: [{ type: 'a11yScan' }, { type: 'click' }] }])], [LOG_IN]);
+        // call + click + slot + scan + click + click
+        assert.equal(out.max, 6);
+        assert.equal(out.byType.a11yScan.max, 1);
+        assert.equal(out.byType.slot.max, 1);
+        assert.equal(out.byType.slotSteps, undefined, 'the list itself is not a step');
+    });
+
+    test('a place given nothing, or a disabled list, counts only the slot step', () => {
+        assert.equal(plan([call()], [LOG_IN]).max, 4);
+        assert.equal(plan([call([{ type: 'slotSteps', slot: 'after', disabled: true, actions: [{ type: 'click' }] }])], [LOG_IN]).max, 4);
+    });
+
+    test('the call\'s steps are numbered under the slot step', () => {
+        const out = plan([call([{ type: 'slotSteps', slot: 'after', actions: [{ type: 'if', actions: [] }] }])], [LOG_IN]);
+        assert.ok(out.nodes['1::customStep(log-in).2.1']);
+    });
+
+    test('the call\'s steps are walked as the caller\'s: calling the same custom step from them is no recursion', () => {
+        const out = plan([call([{ type: 'slotSteps', slot: 'after', actions: [call()] }])], [LOG_IN]);
+        assert.equal(out.unsized, 0);
+        // outer call (4 + the inner call's 4)
+        assert.equal(out.max, 8);
+    });
+});
+
 describe('planWorkflowSteps: nesting', () => {
     test('a bounded loop inside a bounded loop multiplies through', () => {
         const out = plan([{

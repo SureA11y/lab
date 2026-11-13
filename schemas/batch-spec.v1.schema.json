@@ -76,6 +76,7 @@
             "group",
             "mergedScan",
             "runCustomStep",
+            "slot",
             "if",
             "ifUrl",
             "switch",
@@ -490,6 +491,21 @@
           "if": {
             "properties": {
               "type": {
+                "const": "slot"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/action.slot"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "if"
               }
             },
@@ -744,7 +760,7 @@
       "additionalProperties": false
     },
     "customStep": {
-      "description": "A named list of steps that runCustomStep calls, with the inputs it takes as variables.",
+      "description": "A named list of steps that runCustomStep calls, with the inputs it takes as variables and the places where a call can give it steps.",
       "type": "object",
       "required": [
         "id",
@@ -785,6 +801,40 @@
                     "description": "What a call to the custom step shows for this input, in place of its name. Left out, its name split into words."
                   },
                   "default": {}
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "slots": {
+          "type": "array",
+          "description": "Places where a call can give the custom step steps of its own: they run where its slot step for the place is. A call gives them in its slots list.",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "What the slot step and the call's slotSteps name the place by."
+                  },
+                  "required": {
+                    "type": "boolean",
+                    "description": "A call must give steps for it."
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "What a call to the custom step shows for this place, in place of its name. Left out, its name split into words."
+                  }
                 },
                 "additionalProperties": false
               }
@@ -2898,6 +2948,13 @@
             "object"
           ]
         },
+        "slots": {
+          "description": "Steps this call gives the custom step, one list for each of its places (the Slot steps in it). They run where the place is, in the custom step's steps. A place left empty is skipped, unless the custom step requires it.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action.slotSteps"
+          }
+        },
         "exportVars": {
           "description": "Optional variable names to copy back to parent scope after execution.",
           "type": "array",
@@ -2928,6 +2985,79 @@
           "description": "If true and this call fails, mark as failed-optional and continue.",
           "default": false,
           "type": "boolean"
+        },
+        "label": {
+          "description": "Name for reporting/logging.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.slotSteps": {
+      "title": "Steps for a place",
+      "description": "The steps a call to a custom step gives for one of the custom step's places: they run where its Slot step is. Only used inside a custom step call's places.",
+      "type": "object",
+      "required": [
+        "type",
+        "slot"
+      ],
+      "properties": {
+        "type": {
+          "const": "slotSteps"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "slot": {
+          "description": "Name of the custom step's place these steps are for.",
+          "type": "string"
+        },
+        "actions": {
+          "description": "Steps to run at that place in the custom step. They read the call's inputs as well as the workflow's variables.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "action.slot": {
+      "title": "Slot",
+      "description": "Only in a custom step: where the steps a call gives for one of its places run. The place is declared with the custom step, under Steps from the call; a call that gives it none goes straight on, unless it is required. Each place has one Slot step.",
+      "type": "object",
+      "required": [
+        "type",
+        "slot"
+      ],
+      "properties": {
+        "type": {
+          "const": "slot"
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Skip this step without removing it."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "description": "Shown folded in the app's builder. No effect on the run."
+        },
+        "alias": {
+          "type": "string",
+          "description": "The step's own title in the app's builder and in the run's log, in place of its type's."
+        },
+        "slot": {
+          "description": "Name of the place, one the custom step declares.",
+          "type": "string"
         },
         "label": {
           "description": "Name for reporting/logging.",

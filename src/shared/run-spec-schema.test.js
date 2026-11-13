@@ -92,7 +92,8 @@ describe('the examples the action definitions show', () => {
                 if (field.type === 'Action[]' && Array.isArray(field.placeholder)) snippets.push(...field.placeholder);
             }
             for (const snippet of snippets) {
-                const ref = snippet.type === 'case' ? '#/$defs/action.case' : '#/$defs/action';
+                // A step that only lives in another's list is checked as itself.
+                const ref = snippet.type === 'case' || snippet.type === 'slotSteps' ? `#/$defs/action.${snippet.type}` : '#/$defs/action';
                 for (const p of checkAgainstSchema({ $ref: ref }, snippet, { root: schema })) {
                     problems.push(`${type}: ${JSON.stringify(snippet).slice(0, 80)} ${p.path} ${p.message}`);
                 }

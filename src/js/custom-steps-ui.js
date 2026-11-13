@@ -5,7 +5,7 @@
 
 import {createActionsBuilder, redactMaskedFieldsDeep, withPasswordStepTypeDeep} from './actions-builder.module.js';
 import {createEl} from './a11y-ui.utils.js';
-import {cloneCustomStepValue, collectUsedCustomStepIds, deepRemapCustomStepIds, makeUniqueImportedId, normalizeCustomStepInputs, parseCustomStepsJson} from './custom-steps-data.js';
+import {cloneCustomStepValue, collectUsedCustomStepIds, deepRemapCustomStepIds, makeUniqueImportedId, normalizeCustomStepInputs, normalizeCustomStepSlots, parseCustomStepsJson, slotsOf} from './custom-steps-data.js';
 import {createInputsTable} from './custom-step-inputs-table.js';
 
 /**
@@ -16,6 +16,8 @@ export function createCustomStepsUi(app) {
     // The open custom step's inputs, as a table (custom-step-inputs-table.js),
     // made when the section is set up.
     let inputsTable = null;
+    // Its places for steps from the call, a table of the same kind.
+    let slotsTable = null;
 
     function getCustomStepSelectChoices() {
         const out = [{ value: '', label: 'Select custom step...' }];
@@ -54,6 +56,38 @@ export function createCustomStepsUi(app) {
             sel.value = previousValue;
             if (!sel.value) sel.value = '';
             sel.dispatchEvent(new Event('change', {bubbles: true}));
+        });
+    }
+
+    /** The places of the custom step open in the editor, as a Slot step offers them. */
+    function getSlotSelectChoices() {
+        const selected = app.customStepsData[app.selectedCustomStepIndex];
+        return normalizeCustomStepSlots(selected && selected.slots)
+            .map((slot) => ({value: slot.name, label: slot.label ? `${slot.label} (${slot.name})` : slot.name}));
+    }
+
+    /**
+     * The Slot steps of the open custom step offer its places as they are
+     * now; one naming a place it no longer has keeps it, marked missing, so
+     * its check says so.
+     */
+    function refreshSlotStepSelectors() {
+        const root = app.customStepActionsEl;
+        if (!root) return;
+        const choices = getSlotSelectChoices();
+        const known = new Set(choices.map((c) => c.value));
+        root.querySelectorAll('.line[data-action-type="slot"] > .fields > .field[data-field-name="slot"]').forEach((field) => {
+            const sel = field.querySelector('select');
+            if (!sel) return;
+            const previous = String(sel.value || '');
+            sel.textContent = '';
+            sel.append(Object.assign(document.createElement('option'), {value: '', disabled: true, textContent: 'Choose…'}));
+            choices.forEach((c) => sel.append(Object.assign(document.createElement('option'), {value: c.value, textContent: c.label})));
+            if (previous && !known.has(previous)) {
+                sel.append(Object.assign(document.createElement('option'), {value: previous, textContent: `${previous} (missing)`}));
+            }
+            sel.value = previous;
+            field.dataset.enum = JSON.stringify(choices.map((c) => c.value));
         });
     }
 
@@ -141,6 +175,7 @@ export function createCustomStepsUi(app) {
             id: step.id,
             name: String(step.name || '').trim() || step.id,
             inputs: normalizeCustomStepInputs(step.inputs),
+            ...slotsOf(step),
             actions: deepRemapCustomStepIds(step.actions, remap)
         }));
         const remappedWorkflow = deepRemapCustomStepIds(importedWorkflow, remap);
@@ -211,6 +246,7 @@ export function createCustomStepsUi(app) {
             el.disabled = !enabled;
         });
         inputsTable?.setDisabled(!enabled);
+        slotsTable?.setDisabled(!enabled);
         if (app.customStepActionsBuilderEl) {
             app.customStepActionsBuilderEl.classList.toggle('is-disabled', !enabled);
             app.customStepActionsBuilderEl.setAttribute('aria-disabled', enabled ? 'false' : 'true');
@@ -267,6 +303,7 @@ export function createCustomStepsUi(app) {
             id: nextId,
             name: nextName,
             inputs: Array.isArray(app.copiedCustomStep.inputs) ? app.copiedCustomStep.inputs.map((i) => ({ ...i })) : [],
+            ...slotsOf(app.copiedCustomStep),
             actions: Array.isArray(app.copiedCustomStep.actions) ? JSON.parse(JSON.stringify(app.copiedCustomStep.actions)) : []
         });
         app.setCustomStepsExpanded(true);
@@ -381,6 +418,7 @@ export function createCustomStepsUi(app) {
                 if (app.customStepIdInput) app.customStepIdInput.value = '';
                 if (app.customStepNameInput) app.customStepNameInput.value = '';
                 inputsTable?.setInputs([]);
+                slotsTable?.setInputs([]);
                 if (app.customStepActionsBuilder) app.customStepActionsBuilder.clear();
                 setCustomStepEditorEnabled(false);
                 return;
@@ -390,6 +428,8 @@ export function createCustomStepsUi(app) {
             if (app.customStepIdInput) app.customStepIdInput.value = selected.id || '';
             if (app.customStepNameInput) app.customStepNameInput.value = selected.name || '';
             inputsTable?.setInputs(normalizeCustomStepInputs(selected.inputs));
+            // Before its steps: a Slot step offers the places it has.
+            slotsTable?.setInputs(normalizeCustomStepSlots(selected.slots));
             if (app.customStepActionsBuilder) {
                 app.customStepActionsBuilder.loadActions(Array.isArray(selected.actions) ? selected.actions : [], {
                     clearFirst: true,
@@ -412,9 +452,15 @@ export function createCustomStepsUi(app) {
         selected.id = String(app.customStepIdInput?.value || '').trim();
         selected.name = String(app.customStepNameInput?.value || '').trim() || selected.id;
         if (inputsTable) selected.inputs = inputsTable.getInputs();
+        if (slotsTable) {
+            const slots = slotsTable.getInputs();
+            if (slots.length) selected.slots = slots;
+            else delete selected.slots;
+        }
         renderCustomStepsList();
         syncCustomStepsHiddenInput();
         refreshRunCustomStepSelectors();
+        refreshSlotStepSelectors();
         app.scheduleCustomStepsHistoryPush();
     }
 
@@ -432,6 +478,7 @@ export function createCustomStepsUi(app) {
             id: String(item.id || `custom-step-${index + 1}`).trim() || `custom-step-${index + 1}`,
             name: String(item.name || '').trim() || String(item.id || `custom-step-${index + 1}`),
             inputs: normalizeCustomStepInputs(item.inputs),
+            ...slotsOf(item),
             actions: Array.isArray(item.actions) ? withPasswordStepTypeDeep(item.actions) : []
         }));
     }
@@ -452,6 +499,9 @@ export function createCustomStepsUi(app) {
         if (app.customStepInputsHost && !inputsTable) {
             inputsTable = createInputsTable({host: app.customStepInputsHost, onChange: syncSelectedCustomStepMetaFromEditor});
         }
+        if (app.customStepSlotsHost && !slotsTable) {
+            slotsTable = createInputsTable({host: app.customStepSlotsHost, onChange: syncSelectedCustomStepMetaFromEditor, kind: 'slots'});
+        }
         if (!app.customStepActionsEl || !app.customStepToolbarEl) return;
         if (!app.customStepActionsBuilder) {
             app.customStepActionsBuilder = createActionsBuilder({
@@ -461,7 +511,9 @@ export function createCustomStepsUi(app) {
                 options: {
                     openRulesCatalog: (options) => app.rulesCatalog.open(options),
                     useHorizontalStepper: false,
-                    onPasswordsChange: () => app.onPasswordsChange?.()
+                    onPasswordsChange: () => app.onPasswordsChange?.(),
+                    // A Slot step is only for a custom step's own steps.
+                    inCustomStep: true
                 }
             });
             app.createCustomStepActionsHistoryButtons();
@@ -580,11 +632,13 @@ export function createCustomStepsUi(app) {
         appendConfigState,
         getCustomStepSelectChoices,
         getCustomStepsForConfigState,
+        getSlotSelectChoices,
         getWorkflowWithPasswords,
         initCustomStepsUi,
         loadSelectedCustomStepIntoEditor,
         readCustomStepsFromUi,
         refreshRunCustomStepSelectors,
+        refreshSlotStepSelectors,
         renderCustomStepsList,
         selectCustomStep,
         setCustomStepsFromConfigState,

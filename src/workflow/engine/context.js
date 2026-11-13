@@ -66,6 +66,8 @@ function createChildContext(parentCtx) {
     child._customStepStack = Array.isArray(parentCtx?._customStepStack)
         ? [...parentCtx._customStepStack]
         : [];
+    // The places of the custom steps it runs inside, for a Slot step in them.
+    child._slotFrames = Array.isArray(parentCtx?._slotFrames) ? [...parentCtx._slotFrames] : [];
 
     // Backward/alternate naming, if you used it anywhere
     if (typeof parentCtx?._handleA11yScanAction === 'function' && typeof child.handleA11yScanAction !== 'function') {
@@ -100,6 +102,7 @@ function createWorkflowContext(ctxParams = {}) {
         iterationFailures: [],
         customSteps: normalizedCustomSteps,
         _customStepStack: [],
+        _slotFrames: [],
         progress: ctxParams.progress,
         isCancelled: typeof ctxParams.isCancelled === 'function' ? ctxParams.isCancelled : null,
         checkCancel(where = '') {

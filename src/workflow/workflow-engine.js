@@ -170,7 +170,12 @@ function countPlannedArtifacts(actions, customStepsRaw = null) {
                 if (!customStep || !Array.isArray(customStep.actions) || !customStep.actions.length) return acc;
                 if (recursionStack.includes(customStepId)) return acc;
                 const inner = countList(customStep.actions, recursionStack.concat([customStepId]));
-                return add(acc, inner);
+                // The steps the call gives for its places, counted once: they run
+                // where its Slot steps are, as the call's own.
+                const given = (Array.isArray(action.slots) ? action.slots : [])
+                    .filter((f) => f && f.type === 'slotSteps' && !isDisabled(f))
+                    .reduce((sum, f) => add(sum, countList(Array.isArray(f.actions) ? f.actions : [], recursionStack)), {a11yScans: 0, screenshots: 0, evidence: 0});
+                return add(acc, add(inner, given));
             }
 
             if (Array.isArray(action.actions)) {

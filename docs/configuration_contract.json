@@ -6,7 +6,7 @@
     "AI agents"
   ],
   "purpose": "Generate valid run specs (the workflow files the headless runner takes and other tools exchange) and app configuration files, including custom steps.",
-  "generatedAt": "2026-11-10T15:47:52.781Z",
+  "generatedAt": "2026-11-13T09:13:16.112Z",
   "sourceOfTruth": {
     "actionDefinitionsFile": "src/workflow/action-definitions.js",
     "workflowEngineFile": "src/workflow/workflow-engine.js",
@@ -166,6 +166,7 @@
     "group",
     "mergedScan",
     "runCustomStep",
+    "slot",
     "if",
     "ifUrl",
     "switch",
@@ -2469,6 +2470,12 @@
           "label": "Inputs (JSON object)",
           "description": "Optional inputs passed to this custom step: an object, or the same object as JSON text. Example: {\"label\":\"Settings\"}"
         },
+        "slots": {
+          "type": "Action[]",
+          "required": false,
+          "label": "Steps for its places",
+          "description": "Steps this call gives the custom step, one list for each of its places (the Slot steps in it). They run where the place is, in the custom step's steps. A place left empty is skipped, unless the custom step requires it."
+        },
         "exportVars": {
           "type": "string[]",
           "required": false,
@@ -2511,6 +2518,94 @@
             "type": "runCustomStep",
             "customStepId": "scan-desktop-mobile",
             "argsJson": "{\"viewLabel\":\"Products\"}"
+          }
+        },
+        {
+          "title": "Log in, with a step of this site's own after signing in",
+          "snippet": {
+            "type": "runCustomStep",
+            "customStepId": "log-in",
+            "argsJson": "{\"user\":\"admin@example.com\"}",
+            "slots": [
+              {
+                "type": "slotSteps",
+                "slot": "afterSubmit",
+                "actions": [
+                  {
+                    "type": "clickByText",
+                    "labelText": "Trust this device"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "slotSteps": {
+      "label": "Steps for a place",
+      "category": "composition",
+      "description": "The steps a call to a custom step gives for one of the custom step's places: they run where its Slot step is. Only used inside a custom step call's places.",
+      "requiredFields": [
+        "slot"
+      ],
+      "fields": {
+        "slot": {
+          "type": "string",
+          "required": true,
+          "label": "Place",
+          "description": "Name of the custom step's place these steps are for."
+        },
+        "actions": {
+          "type": "Action[]",
+          "required": false,
+          "label": "Steps",
+          "description": "Steps to run at that place in the custom step. They read the call's inputs as well as the workflow's variables."
+        }
+      },
+      "examples": [
+        {
+          "title": "Accept the terms before signing in",
+          "snippet": {
+            "type": "slotSteps",
+            "slot": "beforeSubmit",
+            "actions": [
+              {
+                "type": "click",
+                "selector": "#accept-terms"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "slot": {
+      "label": "Slot",
+      "category": "composition",
+      "description": "Only in a custom step: where the steps a call gives for one of its places run. The place is declared with the custom step, under Steps from the call; a call that gives it none goes straight on, unless it is required. Each place has one Slot step.",
+      "requiredFields": [
+        "slot"
+      ],
+      "fields": {
+        "slot": {
+          "type": "string",
+          "required": true,
+          "label": "Place",
+          "description": "Name of the place, one the custom step declares."
+        },
+        "label": {
+          "type": "string",
+          "required": false,
+          "label": "Label",
+          "description": "Name for reporting/logging."
+        }
+      },
+      "examples": [
+        {
+          "title": "The call's steps after signing in",
+          "snippet": {
+            "type": "slot",
+            "slot": "afterSubmit"
           }
         }
       ]
