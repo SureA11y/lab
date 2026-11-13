@@ -17,7 +17,7 @@ import {getActivity} from './activity.js';
 import {clearLazyBodies, setLazyScope} from './lazy-dialogs.js';
 import {attachFileDrop} from './file-drop.js';
 import {buildGlobalSummary, ensureScanSummaryCounts, ensureScansIncludedFlag, getA11yGlobalFindings, normalizePayloadForUi, pickMetricDefsFromPayload, prepareDataForReport, stripVolatileKeysDeep} from './report-data.js';
-import {collapseLineIfExpanded, deriveActionDisplayLabel, expandLineIfCollapsed, focusLineForNavigation, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
+import {collapseLineIfExpanded, deriveActionDisplayLabel, expandLineIfCollapsed, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
 import {parseCustomStepsJson} from './custom-steps-data.js';
 import {createStepsPanel, readActionNodes, readStepNodes} from './steps-panel.js';
 import {createPasswordsBanner, customStepIdsRun, customStepsWithEmptyPasswords, stepHasEmptyPassword} from './passwords-to-type.js';
@@ -2006,9 +2006,10 @@ function storeActiveMode(mode) {
 
         const keepOpen = new Set([resolved.line, ...resolved.ancestors]);
         collapseAllCollapsibleGroups(keepOpen);
-        resolved.ancestors.forEach(expandLineIfCollapsed);
-        expandLineIfCollapsed(resolved.line);
-        focusLineForNavigation(resolved.line);
+        // Opens it and the steps around it, and moves focus to it: the
+        // step's title it used to try to focus is no control, so focus
+        // stayed where the link to it was.
+        revealLine(resolved.line, {focus: true});
         return true;
     }
 

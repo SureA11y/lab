@@ -14,6 +14,9 @@ The first public release.
   **Copy last 30 lines** and **Copy all** in the dialog too. It is the log
   itself: a run's new lines keep arriving in it, and its line count
   follows them. **Go to config** on a line closes it and goes to the step.
+- **Go to config moves focus to the step**: the step it leads to takes
+  focus, named by its title, so the keyboard and a screen reader carry on
+  from there. Focus used to stay on the log's link.
 - **A table of results is as tall as before, and scrolls inside**: past
   420px its rows scroll in the table's own box, its header in
   view, so the page around it no longer runs as long as its findings. The
