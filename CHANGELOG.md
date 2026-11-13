@@ -9,6 +9,11 @@ The first public release.
 
 ### The lab
 
+- **Run, Dry run and Cancel stay in sight**: while the configuration's end
+  is below the window, its line with the run's status and buttons waits on
+  the window's bottom edge, and scrolls up with the configuration once its
+  end comes into view. A field that takes focus scrolls clear of it, and
+  during a run its buttons keep clear of the totals card.
 - **The run log stays where you are reading it**: in its box and in its
   dialog, the log follows new lines only while its last line is in sight.
   Scrolled up to read, new lines leave it where it is; scroll back down to

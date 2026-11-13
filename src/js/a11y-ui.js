@@ -10,6 +10,7 @@ import {createAdvancedDialog} from './advanced-dialog.js';
 import {setupRulesCatalogDialog} from './rules-catalog-dialog.module.js';
 import {installInPageLinks} from './in-page-links.js';
 import {installBackToTop} from './back-to-top.js';
+import {installRunBar} from './run-bar.js';
 import {createLogFollow} from './log-follow.js';
 import {trackOpenDialogs} from './page-state.js';
 import {setWhenReportDrawn} from './export.js';
@@ -3058,6 +3059,7 @@ function storeActiveMode(mode) {
         button: document.getElementById('back-to-top'),
         header: document.querySelector('body > header'),
     });
+    installRunBar({bar: document.querySelector('#config-section > .inline-actions')});
 
     if (tabsmode && typeof tabsmode.setActive === 'function') {
         tabsmode.setActive(initialMode);

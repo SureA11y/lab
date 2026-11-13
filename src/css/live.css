@@ -192,11 +192,14 @@
    clear of it, and the end of the page can scroll out from under it. */
 /* live-totals.js sets the class while the card floats, shown: a :has() rule
    on the whole page was matched again at every change in it. */
+/* The room the floating card takes at the bottom edge; the run bar
+   (controls.css) waits above it too. */
+:root { --floating-totals-room: 190px; }
 html.has-floating-totals {
-    scroll-padding-bottom: 190px;
+    scroll-padding-bottom: var(--floating-totals-room);
 }
 html.has-floating-totals body {
-    padding-bottom: 190px;
+    padding-bottom: var(--floating-totals-room);
 }
 
 @media (max-width: 600px) {
