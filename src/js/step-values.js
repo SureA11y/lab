@@ -342,6 +342,9 @@ export function createStepValues(builder) {
         if (typeof lineEl._applyRunCustomStepOpen === "function") {
             lineEl._applyRunCustomStepOpen();
         }
+        if (typeof lineEl._applyRunCustomStepInputs === "function") {
+            lineEl._applyRunCustomStepInputs();
+        }
 
         // Apply explicit disabled flag from JSON before children
         builder.setLineExplicitDisabled(lineEl, !!actionObj?.disabled);

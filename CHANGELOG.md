@@ -29,6 +29,17 @@ The first public release.
   only when the step is too narrow for both, and the choice takes the
   step's whole row. It no longer shows for a variable token, which names no
   custom step, nor on a loaded step whose custom step is not chosen.
+- **A call to a custom step gives its inputs one field each, never as
+  JSON**: an input the custom step declares has a field under its label, as
+  before; any other input the call gives has a field under its own name,
+  with a button to remove it. Type a name and choose Add input for one
+  more. This is also how a call to a custom step that declares no inputs,
+  a variable token or a custom step the app does not have shows its
+  inputs, where it used to show a box of JSON. A loaded call shows its
+  inputs at once, and an input its custom step does not declare is no
+  longer dropped when another is edited. Only text that is not a JSON
+  object, written by hand in a file, still shows as written, to be put
+  right.
 - **A selector shares its row with the fields after it**: a URL, a
   selector, a text or a value takes two of a step's columns where the step
   has three or more, the fields after it beside it, and the whole row only

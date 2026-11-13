@@ -1294,6 +1294,7 @@ export function createActionsBuilder ({
             line._applySetViewportPresetVisibility?.();
             line._applyScanEngine?.();
             line._applySubjectFieldVisibility?.();
+            line._applyRunCustomStepInputs?.();
         });
         if (changed) {
             updateLineTitles(actionsEl);

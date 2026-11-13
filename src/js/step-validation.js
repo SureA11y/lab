@@ -89,7 +89,11 @@ export function createStepValidation(builder) {
             if (reservedMsg) {
                 builder.setError(control, reservedMsg);
                 control.setAttribute(builder.RESERVED_ERROR_ATTR, "true");
-                note(control);
+                // A call's inputs hide their JSON text: the error leads to
+                // the first of their fields.
+                note(control.hidden
+                    ? (fieldEl.querySelector(".runcustomstep-dynamic-inputs input, .runcustomstep-dynamic-inputs textarea, .runcustomstep-dynamic-inputs button") || control)
+                    : control);
                 ok = false;
                 return;
             }
