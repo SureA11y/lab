@@ -139,14 +139,14 @@ describe('captureScreenshotArtifact', () => {
         // at all (only captureFullPageCDP's internal return value has them) - so these tests assert
         // on the clip actually sent to Page.captureScreenshot instead, which is the only externally
         // observable trace of that computation.
-        test('happy path: computes clip width as max(contentWidth, viewportWidth), clip height as contentHeight, and decodes the base64 result', async () => {
+        test('happy path: computes clip width as the viewport width, clip height as contentHeight, and decodes the base64 result', async () => {
             const { page, sent } = makeCdpPage({ contentSize: { width: 300, height: 900 }, layoutViewport: { clientWidth: 500 } });
             const out = await captureScreenshotArtifact(page, { strategy: 'cdp', type: 'jpeg' });
             assert.equal(out.strategy, 'cdp');
             assert.ok(Buffer.isBuffer(out.buffer));
             assert.ok(sent.some(([m]) => m === 'Page.enable'));
             const captureCall = sent.find(([m]) => m === 'Page.captureScreenshot');
-            assert.deepEqual(captureCall[1].clip, { x: 0, y: 0, width: 500, height: 900, scale: 1 }); // max(300, 500), content height only
+            assert.deepEqual(captureCall[1].clip, { x: 0, y: 0, width: 500, height: 900, scale: 1 }); // the viewport's width, content height only
         });
 
         test('falls back to visualViewport.clientWidth when layoutViewport is absent', async () => {
@@ -165,7 +165,7 @@ describe('captureScreenshotArtifact', () => {
             });
             await captureScreenshotArtifact(page, { strategy: 'cdp' });
             const captureCall = sent.find(([m]) => m === 'Page.captureScreenshot');
-            assert.equal(captureCall[1].clip.width, 150); // max(100, 150) via visualViewport fallback
+            assert.equal(captureCall[1].clip.width, 150); // the viewport width via visualViewport fallback
         });
 
         test('missing layout metrics entirely fall back to a clip width/height of at least 1', async () => {
@@ -194,14 +194,29 @@ describe('captureScreenshotArtifact', () => {
             const { page, sent } = makeCdpPage({ contentSize: { width: 3329084, height: 481758 }, layoutViewport: { clientWidth: 1280 } });
             const out = await captureScreenshotArtifact(page, { strategy: 'cdp', type: 'jpeg' });
             const { clip } = sent.find(([m]) => m === 'Page.captureScreenshot')[1];
-            assert.equal(clip.width, MAX_CAPTURE_WIDTH);
-            assert.ok(clip.height < MAX_CAPTURE_HEIGHT && clip.width * clip.height <= 64000000);
+            assert.equal(clip.width, 1280);
+            assert.equal(clip.height, MAX_CAPTURE_HEIGHT);
             assert.equal(out.clipped, true);
+        });
+
+        test('content wider than a phone viewport does not widen the picture past the viewport', async () => {
+            // A row of filters 1,608 px wide at 375 px: the table reflowed to
+            // the phone, but the picture was as wide as the row.
+            const { page, sent } = makeCdpPage({ contentSize: { width: 1608, height: 900 }, layoutViewport: { clientWidth: 375 } });
+            const out = await captureScreenshotArtifact(page, { strategy: 'cdp', type: 'jpeg' });
+            const { clip } = sent.find(([m]) => m === 'Page.captureScreenshot')[1];
+            assert.deepEqual(clip, { x: 0, y: 0, width: 375, height: 900, scale: 1 });
+            assert.equal(out.clipped, false);
+        });
+
+        test('a viewport wider than a capture takes in is clipped to its left', async () => {
+            assert.deepEqual(fullPageClipSize(20000, 900, 20000), { width: MAX_CAPTURE_WIDTH, height: 900, clipped: true });
         });
 
         test('a long page keeps its width and is clipped at the most height; a page within the limits is not clipped', async () => {
             assert.deepEqual(fullPageClipSize(1280, 200000, 1280), { width: 1280, height: MAX_CAPTURE_HEIGHT, clipped: true });
             assert.deepEqual(fullPageClipSize(300, 900, 500), { width: 500, height: 900, clipped: false });
+            assert.deepEqual(fullPageClipSize(1608, 900, 375), { width: 375, height: 900, clipped: false });
             const { page } = makeCdpPage();
             assert.equal((await captureScreenshotArtifact(page, { strategy: 'cdp' })).clipped, false);
         });

@@ -9,6 +9,11 @@ The first public release.
 
 ### The lab
 
+- **A scan's page picture is as wide as the viewport**: at a phone's
+  width, one element wider than the screen (a row of filters, say) no
+  longer widens the whole picture to its own width, so the picture shows
+  the page as the phone does. What is past the viewport's right edge is
+  left out, as the phone leaves it until you scroll.
 - **A custom step can take steps from the call**: declare places under
   **Steps from the call** in the custom step editor, and put a **Slot**
   step wherever each should run, anywhere in its steps. Each call then

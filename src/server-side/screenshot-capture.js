@@ -57,11 +57,17 @@ const MAX_CAPTURE_WIDTH = 8192;
 const MAX_CAPTURE_HEIGHT = 12000;
 const MAX_CAPTURE_PIXELS = 64000000;
 
-/** The clip a full-page capture takes: the page's size, within the limits above. */
+/**
+ * The clip a full-page capture takes: as wide as the viewport and as tall as
+ * the page, within the limits above. An element wider than the viewport (a
+ * row of filters at a phone's width) makes the page scroll sideways, as it
+ * does on the phone; it does not widen the picture, which would show the
+ * page at a width no one sees it at.
+ */
 function fullPageClipSize(contentWidth, contentHeight, viewportWidth) {
-  const width = Math.min(Math.max(contentWidth, viewportWidth), MAX_CAPTURE_WIDTH);
+  const width = Math.max(1, Math.min(viewportWidth || contentWidth, MAX_CAPTURE_WIDTH));
   const height = Math.max(1, Math.min(contentHeight, MAX_CAPTURE_HEIGHT, Math.floor(MAX_CAPTURE_PIXELS / width)));
-  return { width, height, clipped: width < Math.max(contentWidth, viewportWidth) || height < contentHeight };
+  return { width, height, clipped: width < (viewportWidth || contentWidth) || height < contentHeight };
 }
 
 async function captureFullPageCDP(page, { type = 'jpeg', quality = 80 } = {}) {
@@ -81,10 +87,10 @@ async function captureFullPageCDP(page, { type = 'jpeg', quality = 80 } = {}) {
         contentWidth
       )
     );
-    // Keep screenshot width at least the current viewport width so
-    // narrow document content does not look like a mobile capture.
-    // Keep screenshot height constrained to actual page content to avoid
-    // extra empty area when the viewport is intentionally taller.
+    // The picture is the viewport's width, whatever the content's: narrow
+    // content keeps the page's width, and content wider than the viewport
+    // is not taken in. Its height is the content's, so a viewport taller
+    // than the page leaves no empty band.
     const { width, height, clipped } = fullPageClipSize(contentWidth, contentHeight, viewportWidth);
 
     const baseOptions = {
