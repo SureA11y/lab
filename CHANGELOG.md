@@ -9,6 +9,10 @@ The first public release.
 
 ### The lab
 
+- **The run log stays where you are reading it**: in its box and in its
+  dialog, the log follows new lines only while its last line is in sight.
+  Scrolled up to read, new lines leave it where it is; scroll back down to
+  the last line and it follows again. Watching a queued run does the same.
 - **No "How surea11y is tested" link beside the engine**: a report, a
   comparison and the Compare tab name the engine and its version, without
   the link after it.

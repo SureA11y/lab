@@ -10,6 +10,7 @@ import {createAdvancedDialog} from './advanced-dialog.js';
 import {setupRulesCatalogDialog} from './rules-catalog-dialog.module.js';
 import {installInPageLinks} from './in-page-links.js';
 import {installBackToTop} from './back-to-top.js';
+import {createLogFollow} from './log-follow.js';
 import {trackOpenDialogs} from './page-state.js';
 import {setWhenReportDrawn} from './export.js';
 import {afterPaint, isBusy, runBusy} from './busy.js';
@@ -337,6 +338,8 @@ function storeActiveMode(mode) {
     const logCopyLastBtn = $('#log-copy-last-btn');
     const logCopyAllBtn = $('#log-copy-all-btn');
     const logOpenDialogBtn = $('#log-open-dialog-btn');
+    // New lines keep the log at its end only while the user is there.
+    const logsFollow = logsPanelEl ? createLogFollow(logsPanelEl) : null;
     const scenarioInput = $('#scenario-name');
     const customStepsInput = $('#custom-steps-json');
     const customStepsCountBadgeEl = $('#custom-steps-count-badge');
@@ -1754,6 +1757,7 @@ function storeActiveMode(mode) {
     function clearLogsPanel() {
         if (!logsPanelEl) return;
         logsPanelEl.innerHTML = '';
+        logsFollow?.reset();
         logToolbarEl?.classList.remove('is-visible');
     }
 
@@ -2473,19 +2477,8 @@ function storeActiveMode(mode) {
         }
 
         logsPanelEl.appendChild(entry);
-        scrollLogsToEnd();
+        logsFollow.lineAdded();
         return entry;
-    }
-
-    // Once a frame, not once a line: reading scrollHeight lays out the whole
-    // log, and a long run's log arrives thousands of lines at a time.
-    let logsScrollFrame = 0;
-    function scrollLogsToEnd() {
-        if (logsScrollFrame) return;
-        logsScrollFrame = requestAnimationFrame(() => {
-            logsScrollFrame = 0;
-            logsPanelEl.scrollTop = logsPanelEl.scrollHeight;
-        });
     }
 
     // Plain-text rendering of a log entry, stripped of the "Go to config" button
@@ -2547,8 +2540,7 @@ function storeActiveMode(mode) {
                 counting.disconnect();
                 logsPanelEl.removeAttribute('tabindex');
                 logsPanelEl.removeAttribute('aria-label');
-                home.parent.insertBefore(logsPanelEl, home.next && home.next.parentNode === home.parent ? home.next : null);
-                scrollLogsToEnd();
+                logsFollow.move(() => home.parent.insertBefore(logsPanelEl, home.next && home.next.parentNode === home.parent ? home.next : null));
             },
             returnFocus: () => logOpenDialogBtn?.focus(),
         });
@@ -2561,8 +2553,7 @@ function storeActiveMode(mode) {
         // Scrolled with the keyboard too, by its name.
         logsPanelEl.setAttribute('tabindex', '0');
         logsPanelEl.setAttribute('aria-label', 'Run log');
-        logDialog.body.append(logsPanelEl);
-        scrollLogsToEnd();
+        logsFollow.move(() => logDialog.body.append(logsPanelEl));
     }
     logOpenDialogBtn?.addEventListener('click', openLogDialog);
 
