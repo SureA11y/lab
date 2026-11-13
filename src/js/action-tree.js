@@ -142,25 +142,6 @@ export function setupCollapseAllStepsButton(btn, root) {
     return refresh;
 }
 
-export function focusLineForNavigation(lineEl) {
-    if (!lineEl) return;
-    lineEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    const focusTarget =
-        lineEl.querySelector(':scope > .line-header .line-title') ||
-        lineEl.querySelector(':scope > .line-header button') ||
-        lineEl.querySelector(':scope input, :scope select, :scope textarea');
-
-    if (focusTarget && typeof focusTarget.focus === 'function') {
-        focusTarget.focus({ preventScroll: true });
-        return;
-    }
-
-    const hadTabindex = lineEl.hasAttribute('tabindex');
-    if (!hadTabindex) lineEl.setAttribute('tabindex', '-1');
-    lineEl.focus({ preventScroll: true });
-    if (!hadTabindex) setTimeout(() => lineEl.removeAttribute('tabindex'), 0);
-}
-
 export function resolveLineByPathFromContainer(containerEl, path, arrayTrail, depth = 0) {
     const lines = getDirectActionLines(containerEl);
     const line = lines[path[depth] - 1];

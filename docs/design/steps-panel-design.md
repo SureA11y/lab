@@ -91,7 +91,7 @@ Left out on purpose:
   `getDirectNestedActionContainers` in `action-tree.js`). It is rebuilt after
   edits pause, as Undo and Redo are.
 - **Going to a step** reuses what the Step tree dialog does (`goToStep`): open
-  the ancestors, expand the line, `focusLineForNavigation`. The panel holds the
+  the ancestors, expand the line, focus it (`revealLine`). The panel holds the
   line itself, so it does not resolve paths again.
 - **The model is plain data** (`steps-panel-model.js`): nodes, matching, counts,
   the ancestors kept for context, match navigation. It has no DOM, so it is
