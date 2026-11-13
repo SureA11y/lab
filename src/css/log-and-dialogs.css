@@ -83,6 +83,21 @@
     display: flex;
 }
 
+/* The log in a dialog (a11y-ui.js, openLogDialog): wide, and the log fills
+   its height and scrolls itself, so it can keep following a run's new
+   lines; the copy buttons stay in its footer. */
+.log-dialog { width: min(1200px, 100% - 2rem); max-width: none; }
+.log-dialog[open] { height: calc(100dvh - 2rem); }
+.log-dialog .run-dialog-body { display: flex; flex-direction: column; overflow: hidden; }
+.log-dialog #log-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    margin-top: 0;
+    font-size: var(--fs-xs);
+}
+.log-dialog #log-panel:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-outline-offset); }
+
 .log-copy-btn {
     padding: 0 .5rem;
     font-size: var(--fs-xxs);

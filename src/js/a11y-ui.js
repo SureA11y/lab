@@ -25,6 +25,7 @@ import {setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
 import {STATUS, TAB_MODE_STORAGE_KEY} from './ui-constants.js';
 import {createQueueRunWatch} from './queue-run-watch.js';
+import {createRunDialog} from './run-dialog.js';
 import {createCompareTab} from './compare-tab.js';
 import {createGroupingUi} from './grouping-ui.js';
 import {createScreenshotsUi} from './screenshots-ui.js';
@@ -334,6 +335,7 @@ function storeActiveMode(mode) {
     const logToolbarEl = $('#log-panel-toolbar');
     const logCopyLastBtn = $('#log-copy-last-btn');
     const logCopyAllBtn = $('#log-copy-all-btn');
+    const logOpenDialogBtn = $('#log-open-dialog-btn');
     const scenarioInput = $('#scenario-name');
     const customStepsInput = $('#custom-steps-json');
     const customStepsCountBadgeEl = $('#custom-steps-count-badge');
@@ -2511,6 +2513,53 @@ function storeActiveMode(mode) {
 
     logCopyLastBtn?.addEventListener('click', () => copyLogLines(30));
     logCopyAllBtn?.addEventListener('click', () => copyLogLines());
+
+    // The log in a dialog, as tall and wide as the window allows, with its
+    // copy buttons: more of it in one sight than its box under the run
+    // button. It is the log itself, moved into the dialog while it is open,
+    // so a run's new lines keep arriving there, and moved back on close.
+    let logDialog = null;
+    function openLogDialog() {
+        if (!logsPanelEl) return;
+        if (!logDialog) {
+            logDialog = createRunDialog({className: 'log-dialog'});
+            // "Go to config" leads to the workflow behind the dialog: it
+            // closes first, so the step it goes to can take focus.
+            logDialog.dialog.addEventListener('click', (e) => {
+                if (e.target.closest?.('.log-step-link')) logDialog.close({returnFocus: false});
+            }, true);
+        }
+        const home = {parent: logsPanelEl.parentNode, next: logsPanelEl.nextSibling};
+        // How many lines, kept as a run adds them.
+        const showCount = () => {
+            const count = logsPanelEl.querySelectorAll('.log-panel-entry').length;
+            logDialog.setStatus(`${count} line${count === 1 ? '' : 's'}`);
+        };
+        const counting = new MutationObserver(showCount);
+        logDialog.open({
+            title: 'Run log',
+            onClose: () => {
+                counting.disconnect();
+                logsPanelEl.removeAttribute('tabindex');
+                logsPanelEl.removeAttribute('aria-label');
+                home.parent.insertBefore(logsPanelEl, home.next && home.next.parentNode === home.parent ? home.next : null);
+                scrollLogsToEnd();
+            },
+            returnFocus: () => logOpenDialogBtn?.focus(),
+        });
+        showCount();
+        counting.observe(logsPanelEl, {childList: true});
+        logDialog.setActions([
+            {label: 'Copy last 30 lines', onClick: () => copyLogLines(30)},
+            {label: 'Copy all', onClick: () => copyLogLines()},
+        ]);
+        // Scrolled with the keyboard too, by its name.
+        logsPanelEl.setAttribute('tabindex', '0');
+        logsPanelEl.setAttribute('aria-label', 'Run log');
+        logDialog.body.append(logsPanelEl);
+        scrollLogsToEnd();
+    }
+    logOpenDialogBtn?.addEventListener('click', openLogDialog);
 
     // log: false when the log has said it already (a failed run's reason,
     // which the server's log ends with).

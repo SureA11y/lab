@@ -9,6 +9,11 @@ The first public release.
 
 ### The lab
 
+- **The run log opens in a dialog**: **Open in a dialog**, beside its copy
+  buttons, shows the log as wide and tall as the window allows, with
+  **Copy last 30 lines** and **Copy all** in the dialog too. It is the log
+  itself: a run's new lines keep arriving in it, and its line count
+  follows them. **Go to config** on a line closes it and goes to the step.
 - **A table of results is as tall as before, and scrolls inside**: past
   420px its rows scroll in the table's own box, its header in
   view, so the page around it no longer runs as long as its findings. The
