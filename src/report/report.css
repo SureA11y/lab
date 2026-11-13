@@ -567,7 +567,7 @@ html.no-theme-transition * {
 .lean-badge-pass { border: 1px solid var(--ok); color: var(--ok); background: var(--ok-soft); }
 .instances-lean { font-size: .8rem; color: var(--text-muted); white-space: normal; }
 /* The cell's count line does not wrap (.instances-meta); this one may, but
-   only between its parts: "1 likely fails," / "1 needs a person". */
+   only between its parts: "1 likely fails," / "1 likely passes". */
 .instances-lean__part { white-space: nowrap; }
 /* A sentence in place of the count ("Partly checked: …") wraps in the
    column; "284 occurrences · 142 elements", only between its two parts. */

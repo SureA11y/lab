@@ -1171,14 +1171,14 @@ export function createRenderer({
         return n > 0 ? ' (' + n + ' likely ' + (n === 1 ? 'fails' : 'fail') + ')' : '';
     }
 
-    // ["2 likely fail", "1 needs a person"], for a row whose questions lean.
+    // ["2 likely fail", "1 likely passes"], for a row whose questions lean.
+    // The ones that lean nowhere are not named: every question needs a
+    // person, and a row with no lean says nothing either.
     function reviewGroupCountsParts(nodes) {
         const c = reviewGroupCounts(nodes);
-        if (!c.leanFail && !c.leanPass) return [];
         const parts = [];
         if (c.leanFail) parts.push(c.leanFail + ' likely ' + (c.leanFail === 1 ? 'fails' : 'fail'));
         if (c.leanPass) parts.push(c.leanPass + ' likely ' + (c.leanPass === 1 ? 'passes' : 'pass'));
-        if (c.open) parts.push(c.open + ' ' + (c.open === 1 ? 'needs' : 'need') + ' a person');
         return parts;
     }
 

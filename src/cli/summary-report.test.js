@@ -236,7 +236,7 @@ describe('questions that lean', () => {
             status: 'done',
             health: CLEAN,
         });
-        assert.match(md, /- Can't tell: 1 rules, 3 instances\n {2}- 2 likely fail, 1 needs a person/);
+        assert.match(md, /- Can't tell: 1 rules, 3 instances\n {2}- 2 likely fail\n/);
     });
 
     test('--fail-on-lean: new likely failures lead, after new failing instances', () => {

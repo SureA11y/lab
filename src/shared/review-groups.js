@@ -77,13 +77,16 @@
         return `right in ${m.agreed} of ${m.cases} known cases`;
     }
 
-    /** "3 likely fail, 1 likely passes, 4 need a person", or '' with none. */
+    /**
+     * "3 likely fail, 1 likely passes", or '' with no lean. Only the leans
+     * are named: every question needs a person, so the ones that lean
+     * nowhere are the rest of the count beside it, not a group to name.
+     */
     function reviewGroupsText(counts) {
         if (!counts || !counts.total) return '';
         const parts = [];
         if (counts.leanFail) parts.push(`${counts.leanFail} likely ${counts.leanFail === 1 ? 'fails' : 'fail'}`);
         if (counts.leanPass) parts.push(`${counts.leanPass} likely ${counts.leanPass === 1 ? 'passes' : 'pass'}`);
-        if (counts.open) parts.push(`${counts.open} ${counts.open === 1 ? 'needs' : 'need'} a person`);
         return parts.join(', ');
     }
 
