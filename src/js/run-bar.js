@@ -17,6 +17,10 @@
 
 // Between the bar and the card moved up above it.
 const CARD_GAP_PX = 8;
+// The card's gap to the bottom edge when not moved (live.css), if unset.
+const CARD_EDGE_PX = 16;
+// How long the card slides onto the bar or back to its corner (live.css).
+const SETTLE_MS = 200;
 const FLOATING_CARD = '.live-totals:not(.live-totals--inline):not(.is-tab-hidden)';
 
 export function installRunBar({ bar, doc = globalThis.document } = {}) {
@@ -46,6 +50,7 @@ export function installRunBar({ bar, doc = globalThis.document } = {}) {
     // its size (its ledger opens above it) while it is there.
     let watchedCard = null;
     let lift = 0;
+    let settleTimer = 0;
     // Read where things are now. Not with an IntersectionObserver: a jump
     // from below the configuration's end to above it (Back to top) crosses
     // the window without its place ever being in it, and tells it nothing.
@@ -57,6 +62,7 @@ export function installRunBar({ bar, doc = globalThis.document } = {}) {
 
     function placeCard() {
         const card = doc.querySelector(FLOATING_CARD);
+        const sameCard = !!card && card === watchedCard;
         if (card !== watchedCard) {
             if (watchedCard) resized?.unobserve(watchedCard);
             if (card) resized?.observe(card);
@@ -66,18 +72,36 @@ export function installRunBar({ bar, doc = globalThis.document } = {}) {
         const viewBottom = win?.innerHeight || root.clientHeight;
         const barBox = bar.getBoundingClientRect();
         if (card && barBox.height && barBox.top < viewBottom && barBox.bottom > 0) {
-            // Where the card sits when not moved: its own gap to the bottom edge.
+            // Where the card sits when not moved: its own gap to the bottom
+            // edge, read from its style, as mid-slide its box is on the way.
             const cardBox = card.getBoundingClientRect();
-            const edge = viewBottom - cardBox.bottom - lift;
+            const edge = cardEdge(card);
             const cardTop = viewBottom - edge - cardBox.height;
             if (barBox.bottom > cardTop) {
                 next = Math.max(0, Math.ceil(viewBottom - barBox.top + CARD_GAP_PX - edge));
             }
         }
         if (next !== lift) {
+            // Onto the bar from its corner, or back: it slides. A card that
+            // has just come takes its place at once.
+            if (sameCard && (lift === 0) !== (next === 0)) settle(card);
             lift = next;
             root.style.setProperty('--run-bar-lift', `${lift}px`);
         }
+    }
+
+    function cardEdge(card) {
+        const px = parseFloat(win?.getComputedStyle?.(card).getPropertyValue('--live-totals-edge'));
+        return Number.isFinite(px) ? px : CARD_EDGE_PX;
+    }
+
+    function settle(card) {
+        card.classList.add('is-settling');
+        if (settleTimer) win.clearTimeout(settleTimer);
+        settleTimer = win.setTimeout(() => {
+            settleTimer = 0;
+            card.classList.remove('is-settling');
+        }, SETTLE_MS + 50);
     }
 
     // Once a frame at most, as the page scrolls or changes size.

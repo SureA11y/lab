@@ -132,6 +132,51 @@ describe('run bar', () => {
         assert.equal(lift(), '0px');
     });
 
+    test('slides the card onto the bar from its corner, and back again', () => {
+        const { addCard, barAt, lift } = page();
+        const card = addCard();
+        barAt(300);
+        assert.equal(card.classList.contains('is-settling'), false);
+        barAt(VIEW.bottom - 69);
+        assert.equal(lift(), '61px');
+        assert.equal(card.classList.contains('is-settling'), true);
+        card.classList.remove('is-settling');
+        barAt(300);
+        assert.equal(lift(), '0px');
+        assert.equal(card.classList.contains('is-settling'), true);
+    });
+
+    test('does not slide the card riding up and down with the bar', () => {
+        const { addCard, barAt, lift } = page();
+        const card = addCard();
+        barAt(300);
+        barAt(VIEW.bottom - 69);
+        card.classList.remove('is-settling');
+        barAt(560);
+        assert.equal(lift(), '132px');
+        barAt(500);
+        assert.equal(lift(), '192px');
+        assert.equal(card.classList.contains('is-settling'), false);
+    });
+
+    test('puts a card that has just come in its place at once', () => {
+        const { addCard, barAt, lift } = page();
+        const card = addCard();
+        barAt(VIEW.bottom - 69);
+        assert.equal(lift(), '61px');
+        assert.equal(card.classList.contains('is-settling'), false);
+    });
+
+    test('stops sliding once the slide is over', async () => {
+        const { addCard, barAt } = page();
+        const card = addCard();
+        barAt(300);
+        barAt(VIEW.bottom - 69);
+        assert.equal(card.classList.contains('is-settling'), true);
+        await new Promise((r) => setTimeout(r, 300));
+        assert.equal(card.classList.contains('is-settling'), false);
+    });
+
     test('leaves alone a card that is part of the content, or hidden', () => {
         const { addCard, barAt, lift } = page();
         addCard('live-totals live-totals--inline');
