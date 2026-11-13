@@ -92,6 +92,7 @@ function hasEvidenceCaptureAction(actions) {
             if (Array.isArray(st.preActions)) walk(st.preActions);
             if (Array.isArray(st.elseActions)) walk(st.elseActions);
             if (Array.isArray(st.cases)) walk(st.cases);
+            if (Array.isArray(st.slots)) walk(st.slots);
             if (Array.isArray(st.defaultActions)) walk(st.defaultActions);
 
             if (found) return;

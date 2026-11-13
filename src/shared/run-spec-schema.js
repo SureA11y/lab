@@ -229,7 +229,7 @@
                 additionalProperties: false,
             },
             customStep: {
-                description: 'A named list of steps that runCustomStep calls, with the inputs it takes as variables.',
+                description: 'A named list of steps that runCustomStep calls, with the inputs it takes as variables and the places where a call can give it steps.',
                 type: 'object',
                 required: ['id', 'actions'],
                 properties: {
@@ -248,6 +248,25 @@
                                         required: { type: 'boolean' },
                                         label: { type: 'string', description: 'What a call to the custom step shows for this input, in place of its name. Left out, its name split into words.' },
                                         default: {},
+                                    },
+                                    additionalProperties: false,
+                                },
+                            ],
+                        },
+                    },
+                    slots: {
+                        type: 'array',
+                        description: 'Places where a call can give the custom step steps of its own: they run where its slot step for the place is. A call gives them in its slots list.',
+                        items: {
+                            anyOf: [
+                                { type: 'string', minLength: 1 },
+                                {
+                                    type: 'object',
+                                    required: ['name'],
+                                    properties: {
+                                        name: { type: 'string', minLength: 1, description: 'What the slot step and the call\'s slotSteps name the place by.' },
+                                        required: { type: 'boolean', description: 'A call must give steps for it.' },
+                                        label: { type: 'string', description: 'What a call to the custom step shows for this place, in place of its name. Left out, its name split into words.' },
                                     },
                                     additionalProperties: false,
                                 },

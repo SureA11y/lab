@@ -9,6 +9,16 @@ The first public release.
 
 ### The lab
 
+- **A custom step can take steps from the call**: declare places under
+  **Steps from the call** in the custom step editor, and put a **Slot**
+  step wherever each should run, anywhere in its steps. Each call then
+  shows one list per place, titled with its label, for the steps of its
+  own: one login, say, that one site follows with a *Trust this device*
+  click and another with a cookie banner. A place left empty is skipped; a
+  required one must be given steps. The call's steps read its inputs and
+  the workflow's variables. Saved as `slots` on the custom step, and on the
+  call as `slots` of `slotSteps` steps, only for the places it gives steps
+  for; files without them are unchanged.
 - **An empty list's Add step is at the right, where it stays**: a list of
   steps with none yet (an iteration's set-up, an if's Otherwise) shows its
   Add step and Paste at the right, as a list with steps does, so they no

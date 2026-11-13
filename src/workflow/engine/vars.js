@@ -145,7 +145,10 @@ function interpolateVarsDeep(obj, { localVars = null, ctx = null } = {}, parentK
         parentKey === 'elseActions' ||
         parentKey === 'defaultActions' ||
         parentKey === 'preActions' ||
-        parentKey === 'iterSetupActions'
+        parentKey === 'iterSetupActions' ||
+        // A custom step call's places: their steps run inside the custom
+        // step, read the way any step there is.
+        parentKey === 'slots'
     )) {
         return obj;
     }

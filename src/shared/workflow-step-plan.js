@@ -65,7 +65,8 @@
         'repeat',
         'forEachElement',
         'crawlQueue',
-        'runCustomStep'
+        'runCustomStep',
+        'slot'
     ]);
 
     // The keys under which an action can carry nested actions.
@@ -192,6 +193,18 @@
         return byId;
     }
 
+    /** The steps a custom step call gives for each of its places, by name:
+     *  its slots list of slotSteps steps, a disabled one giving nothing. */
+    function slotFillsOf(action) {
+        const fills = Object.create(null);
+        for (const entry of (Array.isArray(action.slots) ? action.slots : [])) {
+            if (!entry || entry.type !== 'slotSteps' || isDisabled(entry)) continue;
+            const name = String(entry.slot || '').trim();
+            if (name && !fills[name]) fills[name] = Array.isArray(entry.actions) ? entry.actions : [];
+        }
+        return fills;
+    }
+
     /**
      * How many times `repeat` will loop, if that is knowable without running.
      * Mirrors the runtime precedence in workflow-engine.js: a non-empty
@@ -243,6 +256,11 @@
         // path -> what a live counter needs to turn this node's estimate into a
         // real number once the engine reports which way it went.
         const nodes = Object.create(null);
+
+        // The custom step calls being walked, innermost last: the steps each
+        // call gives for its places, and where the call stood, for a Slot
+        // step in the custom step (as the engine keeps them).
+        let slotFrames = [];
 
         /**
          * `preFiltered` mirrors an engine quirk that the paths depend on: some
@@ -376,8 +394,34 @@
                     // The engine gives a custom step's body its own path namespace
                     // (customStep(<id>) in workflow-engine.js), so paths inside it
                     // are numbered from there rather than continuing the caller's.
-                    return walk(def.actions, stack.concat([id]), `${here}::customStep(${id})`, false);
+                    const callerFrames = slotFrames;
+                    slotFrames = callerFrames.concat([{fills: slotFillsOf(action), callerStack: stack, callerFrames}]);
+                    try {
+                        return walk(def.actions, stack.concat([id]), `${here}::customStep(${id})`, false);
+                    } finally {
+                        slotFrames = callerFrames;
+                    }
                 }
+
+                case 'slot': {
+                    // The steps the call gives for this place, numbered under the
+                    // Slot step and walked as the call's own (its custom steps and
+                    // places), as the engine runs them.
+                    const frame = slotFrames[slotFrames.length - 1];
+                    const fill = frame ? frame.fills[String(action.slot || '').trim()] : null;
+                    if (!fill) return emptyCount();
+                    const inner = slotFrames;
+                    slotFrames = frame.callerFrames;
+                    try {
+                        return walk(fill, frame.callerStack, here, false);
+                    } finally {
+                        slotFrames = inner;
+                    }
+                }
+
+                case 'slotSteps':
+                    // Only walked through the Slot step it fills.
+                    return emptyCount();
 
                 default: {
                     // An unknown container-ish action still gets its children counted,

@@ -143,7 +143,13 @@ export function createStepLine(builder) {
             builder.pushHistory("toggleCollapse");
         });
 
-        const controls = createEl("div", {className: "line-controls"}, [infoBtn, toggleDisableActionBtn, upBtn, downBtn, copyBtn, removeBtn, toggleActionBtn]);
+        // A call's place for steps (slotSteps) is there for as long as the
+        // custom step has the place: it is not moved, copied or removed on its
+        // own.
+        const fixedInList = actionDef.fixedInList === true;
+        const controls = createEl("div", {className: "line-controls"}, fixedInList
+            ? [infoBtn, toggleDisableActionBtn, toggleActionBtn]
+            : [infoBtn, toggleDisableActionBtn, upBtn, downBtn, copyBtn, removeBtn, toggleActionBtn]);
 
         return {controls, infoDialog, collapseBtn: toggleActionBtn}
     }
@@ -708,6 +714,100 @@ export function createStepLine(builder) {
             rebuild();
         }
 
+        // A call's places for steps of its own: one list for each place its
+        // custom step has (getStepSlotsSchema), in the custom step's order,
+        // titled with the place's label. They are kept, not added or removed
+        // by hand: the list of places has no buttons of its own. One for a
+        // place the custom step no longer has stays, said so, with its steps,
+        // until it is emptied: no step is lost to a renamed place.
+        function wireRunCustomStepSlots(lineEl) {
+            if (!lineEl || lineEl.dataset.actionType !== "runCustomStep") return;
+            const arrWrap = lineEl.querySelector(':scope > .action-arrays-below > .action-array[data-field-name="slots"], :scope > .action-array[data-field-name="slots"]');
+            const slotStepsDef = builder.defs.slotSteps;
+            if (!arrWrap || !slotStepsDef) return;
+            const sub = arrWrap.querySelector(":scope > .actions-subcontainer");
+            const summary = arrWrap.querySelector(":scope > .action-array__header .action-array__summary");
+            if (!sub) return;
+            arrWrap.classList.add("runcustomstep-slots");
+            arrWrap.querySelector(":scope > .action-array__footer")?.setAttribute("hidden", "");
+            const getSchema = actionDef && actionDef.getStepSlotsSchema;
+            const customStepSelect = lineEl.querySelector(':scope > .fields > .field[data-field-name="customStepId"] select');
+
+            const slotOf = (line) => {
+                const input = line.querySelector(':scope > .fields > .field[data-field-name="slot"] input');
+                return input ? String(input.value || "").trim() : "";
+            };
+            const hasSteps = (line) => !!line.querySelector(":scope > .action-arrays-below .actions-subcontainer > .line, :scope > .action-array .actions-subcontainer > .line");
+
+            function sync() {
+                const schema = typeof getSchema === "function" && customStepSelect ? getSchema(customStepSelect.value) : null;
+                const declared = (Array.isArray(schema) ? schema : [])
+                    .map((def) => (typeof def === "string" ? {name: def} : def))
+                    .filter((def) => def && String(def.name || "").trim());
+                const byName = new Map();
+                Array.from(sub.querySelectorAll(":scope > .line")).forEach((line) => {
+                    const name = slotOf(line);
+                    if (!byName.has(name)) byName.set(name, line);
+                });
+
+                let changed = false;
+                const created = [];
+                const ordered = [];
+                const setTitle = (line, title) => {
+                    if (line.dataset.baseTitle !== title) { line.dataset.baseTitle = title; changed = true; }
+                };
+                declared.forEach((def) => {
+                    const name = String(def.name).trim();
+                    let line = byName.get(name);
+                    byName.delete(name);
+                    if (!line) {
+                        line = builder.stepLine.makeLine("slotSteps", slotStepsDef, (l, dir, btnRef) => builder.moveLine(sub, l, dir, btnRef));
+                        const input = line.querySelector(':scope > .fields > .field[data-field-name="slot"] input');
+                        if (input) input.value = name;
+                        created.push(line);
+                    }
+                    setTitle(line, `${inputLabelOf(def)}${def.required ? " (required)" : ""}`);
+                    if (def.required) line.dataset.slotRequired = "true";
+                    else delete line.dataset.slotRequired;
+                    delete line.dataset.slotUnknown;
+                    ordered.push(line);
+                });
+                // Steps for a place the custom step does not have: kept while
+                // they hold steps, said so; an empty one goes.
+                byName.forEach((line, name) => {
+                    if (!hasSteps(line)) { line.remove(); changed = true; return; }
+                    setTitle(line, `${name || "(no name)"}: the custom step has no such place`);
+                    line.dataset.slotUnknown = "true";
+                    delete line.dataset.slotRequired;
+                    ordered.push(line);
+                });
+                ordered.forEach((line) => {
+                    // Its place is its title: the name is not typed in.
+                    const field = line.querySelector(':scope > .fields > .field[data-field-name="slot"]');
+                    if (field) field.hidden = true;
+                });
+                const lines = Array.from(sub.querySelectorAll(":scope > .line"));
+                if (lines.length !== ordered.length || ordered.some((line, i) => lines[i] !== line)) {
+                    ordered.forEach((line) => sub.append(line));
+                    changed = true;
+                }
+                // A new one follows the call: disabled with it.
+                created.forEach((line) => builder.applyDisabledState(line));
+
+                arrWrap.hidden = ordered.length === 0;
+                if (!changed && !created.length) return;
+                builder.refreshReorderButtons(sub);
+                if (summary) builder.refreshActionArraySummary(summary, sub);
+                if (lineEl.isConnected) builder.updateLineTitles(builder.actionsEl);
+            }
+
+            if (customStepSelect) customStepSelect.addEventListener("change", sync);
+            // A loaded step's places are synced once its steps for them are in
+            // (step-values.js).
+            lineEl._applyRunCustomStepSlots = sync;
+            sync();
+        }
+
         // What an empty input gets: its custom step's default, said as such,
         // or that it must be given.
         function inputPlaceholder(def, required) {
@@ -832,7 +932,7 @@ export function createStepLine(builder) {
         // Initialize visuals
         builder.applyDisabledState(line);
 
-        if (actionKey === "case") {
+        if (actionKey === "case" || actionKey === "slot") {
             const refreshTitle = () => builder.updateLineTitles(line.parentElement || builder.actionsEl);
             fieldsWrap.addEventListener("input", refreshTitle);
             fieldsWrap.addEventListener("change", refreshTitle);
@@ -840,6 +940,7 @@ export function createStepLine(builder) {
 
         wireRepeatDatasetOverridesCount(line);
         wireRunCustomStepDynamicInputs(line);
+        wireRunCustomStepSlots(line);
         wireRunCustomStepOpenLink(line);
         wireSetViewportPresetToggle(line);
         wireSubjectFields(line);

@@ -1,7 +1,8 @@
 'use strict';
 
-// Custom steps as the engine reads them: their input definitions, their inputs
-// given as JSON, the variables they export, and the tags a scan step names.
+// Custom steps as the engine reads them: their input definitions, the places
+// where a call can give them steps, their inputs given as JSON, the variables
+// they export, and the tags a scan step names.
 
 const {cloneDeep, isNonEmptyString} = require('./utils');
 const {interpolateVarTokensLoose} = require('./vars');
@@ -28,6 +29,48 @@ function normalizeCustomStepInputDefs(inputsRaw) {
     return out;
 }
 
+/**
+ * The places a custom step holds for steps a call gives it (its slots):
+ * [{name, required}], each name once. A name alone ("afterSubmit") is an
+ * optional place.
+ */
+function normalizeCustomStepSlotDefs(slotsRaw) {
+    const list = Array.isArray(slotsRaw) ? slotsRaw : [];
+    const out = [];
+    const seen = new Set();
+    for (const entry of list) {
+        const def = (typeof entry === 'string')
+            ? { name: entry }
+            : (entry && typeof entry === 'object' ? entry : null);
+        if (!def) continue;
+        const name = String(def.name || '').trim();
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+        out.push({ name, required: def.required === true });
+    }
+    return out;
+}
+
+/**
+ * The steps a call gives for each place, by name, from its `slots` list of
+ * slotSteps steps. A disabled one gives nothing; a name given twice keeps
+ * its first list.
+ */
+function callSlotFills(slotsRaw) {
+    const fills = Object.create(null);
+    const list = Array.isArray(slotsRaw) ? slotsRaw : [];
+    list.forEach((entry, i) => {
+        if (!entry || typeof entry !== 'object' || entry.disabled === true) return;
+        if (entry.type !== 'slotSteps') {
+            throw new Error(`runCustomStep: place ${i + 1} is a "${entry.type}" step; a call's places only hold slotSteps steps`);
+        }
+        const name = String(entry.slot || '').trim();
+        if (!name || Object.prototype.hasOwnProperty.call(fills, name)) return;
+        fills[name] = { actions: Array.isArray(entry.actions) ? entry.actions : [], index: i + 1 };
+    });
+    return fills;
+}
+
 function normalizeCustomStepsById(raw) {
     const byId = Object.create(null);
     const list = Array.isArray(raw)
@@ -46,7 +89,8 @@ function normalizeCustomStepsById(raw) {
             id,
             name: String(item.name || '').trim() || id,
             actions: Array.isArray(item.actions) ? cloneDeep(item.actions) : [],
-            inputs: normalizeCustomStepInputDefs(item.inputs)
+            inputs: normalizeCustomStepInputDefs(item.inputs),
+            slots: normalizeCustomStepSlotDefs(item.slots)
         };
     }
     return byId;
@@ -102,6 +146,8 @@ function interpolateScanTags(raw, {localVars, ctx} = {}) {
 
 module.exports = {
     normalizeCustomStepInputDefs,
+    normalizeCustomStepSlotDefs,
+    callSlotFills,
     normalizeCustomStepsById,
     parseJsonObjectInput,
     normalizeExportVarNames,

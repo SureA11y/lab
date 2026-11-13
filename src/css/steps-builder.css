@@ -515,6 +515,14 @@
     white-space: nowrap;
 }
 
+/* A custom step call's places: one list each, kept by the editor
+   (step-line.js), so no buttons or count of their own; a place's name is
+   its title, not a field. */
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-slots[hidden],
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-slots > .action-array__footer[hidden],
+:is(#actions-builder, #custom-step-actions-builder) .line[data-action-type="slotSteps"] > .fields > .field[data-field-name="slot"] { display: none; }
+:is(#actions-builder, #custom-step-actions-builder) .runcustomstep-slots > .action-array__header .action-array__summary { display: none; }
+
 /* Actions/output */
 :is(#actions-builder, #custom-step-actions-builder) .actions {
     margin-top: 8px;

@@ -764,8 +764,10 @@ export function createActionsBuilder ({
         String(def?.type || "").toLowerCase().includes("action[]");
 
     // A step that only lives in one kind of list (a case, in a switch's cases)
-    // is left out of the palette and can't be pasted anywhere else.
-    const isListedType = (type) => !!defs[type] && !defs[type].onlyIn;
+    // is left out of the palette and can't be pasted anywhere else. A Slot
+    // step is only offered in a custom step's own steps (options.inCustomStep).
+    const isListedType = (type) => !!defs[type] && !defs[type].onlyIn
+        && (!defs[type].onlyInCustomStep || options.inCustomStep === true);
     const listedDefs = () => Object.fromEntries(Object.entries(defs).filter(([type]) => isListedType(type)));
 
     // The chip on a branching step's lists: which branch each one is.
@@ -789,6 +791,14 @@ export function createActionsBuilder ({
         const valueText = value ? String(value.value || "") : "";
         if (!comparisonText) return "";
         return `${lineEl.dataset.baseTitle} · ${comparisonText} "${valueText}"`;
+    }
+
+    // A Slot step's title names its place ("Slot · After signing in"), so
+    // the custom step's steps read as where the call's steps go.
+    function describeSlotLine(lineEl) {
+        const select = lineEl.querySelector(':scope > .fields > .field[data-field-name="slot"] select');
+        const option = select && select.value && select.selectedOptions ? select.selectedOptions[0] : null;
+        return option ? `${lineEl.dataset.baseTitle} · ${option.textContent.trim()}` : "";
     }
 
     // ---- Horizontal stepper (root-only) ----
@@ -1295,6 +1305,7 @@ export function createActionsBuilder ({
             line._applyScanEngine?.();
             line._applySubjectFieldVisibility?.();
             line._applyRunCustomStepInputs?.();
+            line._applyRunCustomStepSlots?.();
         });
         if (changed) {
             updateLineTitles(actionsEl);
@@ -1366,7 +1377,8 @@ export function createActionsBuilder ({
             for (const [i, line] of lines.entries()) {
                 const base = line.dataset.baseTitle || "";
                 const alias = String(line.dataset.alias || "").trim();
-                const described = line.dataset.actionType === "case" ? describeCaseLine(line) : "";
+                const described = line.dataset.actionType === "case" ? describeCaseLine(line)
+                    : line.dataset.actionType === "slot" ? describeSlotLine(line) : "";
                 const displayTitle = alias ? alias : (described || base);
                 const titleEl = line.querySelector(":scope > .line-header .line-title");
                 const indexPath = prefix ? `${prefix}.${i + 1}` : String(i + 1);
@@ -1424,8 +1436,10 @@ export function createActionsBuilder ({
         const lines = listLines(container);
         const isRoot = container === actionsEl && !!rootStepper;
         lines.forEach((line, idx) => {
-            const up = line.querySelector(".move-up");
-            const down = line.querySelector(".move-down");
+            // The line's own buttons, never those of a step inside it (a
+            // call's places have none of their own).
+            const up = line.querySelector(":scope > .line-header .move-up");
+            const down = line.querySelector(":scope > .line-header .move-down");
             if (up) {
                 const disabled = idx === 0;
                 up.disabled = disabled;

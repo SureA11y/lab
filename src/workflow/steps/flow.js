@@ -1,13 +1,14 @@
 'use strict';
 
 // The steps that hold other steps and choose which run: a group, a merged
-// scan, a custom step, if, if URL, switch and its cases, and repeat.
+// scan, a custom step and the places a call gives it steps for (slot,
+// slotSteps), if, if URL, switch and its cases, and repeat.
 
 const {_isVisible, resolveActiveScopeSelector, rewriteCtxTokenShallow, sameAsText} = require('../engine/deep-query');
 const {cloneDeep, isDisabled, isNonEmptyString, toNumber} = require('../engine/utils');
 const {evaluateUrlCondition} = require('../engine/url-condition');
 const {formatActionPrefix} = require('../engine/step-helpers');
-const {interpolateScanTags, normalizeExportVarNames, parseJsonObjectInput} = require('../engine/custom-steps');
+const {callSlotFills, interpolateScanTags, normalizeExportVarNames, parseJsonObjectInput} = require('../engine/custom-steps');
 const {interpolateTemplate, interpolateVarTokensLoose} = require('../engine/vars');
 const {lookupVar, pickSwitchCase, readSwitchSubject} = require('../engine/switch-step');
 const {parseRepeatItemsText} = require('../engine/repeat-items');
@@ -129,11 +130,38 @@ async function stepRunCustomStep(page, action, ctx, localVars, depth, actionPath
         }
     }
 
+    // The steps the call gives for the custom step's places: each must be a
+    // place it has, and a required place must be given some.
+    const fills = callSlotFills(action.slots);
+    const slotDefs = Array.isArray(customStepDef.slots) ? customStepDef.slots : [];
+    const declaredSlots = new Set(slotDefs.map((def) => def.name));
+    for (const name of Object.keys(fills)) {
+        if (!declaredSlots.has(name)) {
+            throw new Error(`runCustomStep "${customStepId}" has no place "${name}" for the steps this call gives`);
+        }
+    }
+    for (const def of slotDefs) {
+        const given = fills[def.name];
+        if (def.required && !(given && given.actions.some((a) => a && a.type && !isDisabled(a)))) {
+            throw new Error(`runCustomStep "${customStepId}" missing steps for its required place "${def.name}"`);
+        }
+    }
+
     const exportVars = normalizeExportVarNames(action.exportVars);
     const customStepPathPrefix = actionPathPrefix ? `${actionPathPrefix}::customStep(${customStepId})` : `customStep(${customStepId})`;
     const previousStack = ctx._customStepStack;
+    const previousSlotFrames = ctx._slotFrames;
     ctx.pushVarScope(callScopeVars);
     ctx._customStepStack = [...stack, customStepId];
+    // What a Slot step in this custom step runs, and where the call stood:
+    // the call's steps run as the call's, with its custom steps and places.
+    ctx._slotFrames = [...(Array.isArray(previousSlotFrames) ? previousSlotFrames : []), {
+        customStepId,
+        declared: declaredSlots,
+        fills,
+        callerStack: stack,
+        callerFrames: previousSlotFrames
+    }];
     try {
         await applyActions(page, customStepDef.actions, null, 0, ctx, localVars, depth + 1, customStepPathPrefix);
         for (const varName of exportVars) {
@@ -142,7 +170,46 @@ async function stepRunCustomStep(page, action, ctx, localVars, depth, actionPath
     } finally {
         ctx.popVarScope();
         ctx._customStepStack = previousStack;
+        ctx._slotFrames = previousSlotFrames;
     }
+}
+
+/**
+ * A place in a custom step where the steps its call gives for it run. They
+ * run as the call's own steps: its custom step call stack and places are the
+ * call's, so a Slot step among them is the caller's place, and calling the
+ * same custom step from them is not taken for a cycle. They read the call's
+ * inputs as well as the workflow's variables.
+ */
+async function stepSlot(page, action, ctx, localVars, depth, actionPathPrefix) {
+    const frames = Array.isArray(ctx._slotFrames) ? ctx._slotFrames : [];
+    const frame = frames[frames.length - 1];
+    if (!frame) throw new Error('A slot step only runs inside a custom step');
+    const name = String(action.slot || '').trim();
+    if (!name) throw new Error('slot requires the name of one of the custom step\'s places');
+    if (!frame.declared.has(name)) {
+        throw new Error(`slot: custom step "${frame.customStepId}" has no place "${name}"`);
+    }
+    const fill = frame.fills[name];
+    if (!fill || !fill.actions.length) {
+        pushLog(ctx, 'info', `slot "${name}": the call gives no steps, skipped`, {depth});
+        return;
+    }
+    pushLog(ctx, 'info', `slot "${name}": the call's steps`, {depth});
+    const savedStack = ctx._customStepStack;
+    const savedFrames = ctx._slotFrames;
+    ctx._customStepStack = frame.callerStack;
+    ctx._slotFrames = frame.callerFrames;
+    try {
+        await applyActions(page, fill.actions, null, 0, ctx, localVars, depth + 1, actionPathPrefix);
+    } finally {
+        ctx._customStepStack = savedStack;
+        ctx._slotFrames = savedFrames;
+    }
+}
+
+async function stepSlotSteps() {
+    throw new Error('A slotSteps step only runs as one of a custom step call\'s places, where the custom step\'s Slot step runs it');
 }
 
 async function stepIf(page, action, ctx, localVars, depth, actionPathPrefix) {
@@ -417,6 +484,8 @@ const STEPS = {
     'group': stepGroup,
     'mergedScan': stepMergedScan,
     'runCustomStep': stepRunCustomStep,
+    'slot': stepSlot,
+    'slotSteps': stepSlotSteps,
     'if': stepIf,
     'ifUrl': stepIfUrl,
     'switch': stepSwitch,

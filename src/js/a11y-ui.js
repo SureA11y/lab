@@ -242,6 +242,7 @@ function storeActiveMode(mode) {
         get customStepDeleteBtn() { return customStepDeleteBtn; },
         get customStepIdInput() { return customStepIdInput; },
         get customStepInputsHost() { return customStepInputsHost; },
+        get customStepSlotsHost() { return customStepSlotsHost; },
         get customStepsChooserEl() { return customStepsChooserEl; },
         get customStepNameInput() { return customStepNameInput; },
         get customStepPasteBtn() { return customStepPasteBtn; },
@@ -347,6 +348,7 @@ function storeActiveMode(mode) {
     const customStepIdInput = $('#custom-step-id');
     const customStepNameInput = $('#custom-step-name');
     const customStepInputsHost = $('#custom-step-inputs');
+    const customStepSlotsHost = $('#custom-step-slots');
     const customStepsChooserEl = $('#custom-steps-chooser');
     const customStepToolbarEl = $('#custom-step-toolbar');
     const customStepActionsEl = $('#custom-step-actions-container');
@@ -1575,6 +1577,7 @@ function storeActiveMode(mode) {
                 id: s.id,
                 name: s.name,
                 inputs: Array.isArray(s.inputs) ? s.inputs.map((i) => ({...i})) : [],
+                ...(Array.isArray(s.slots) && s.slots.length ? {slots: s.slots.map((i) => ({...i}))} : {}),
                 actions: Array.isArray(s.actions) ? JSON.parse(JSON.stringify(s.actions)) : []
             })),
             selectedIndex: selectedCustomStepIndex
@@ -1637,6 +1640,7 @@ function storeActiveMode(mode) {
                 id: s.id,
                 name: s.name,
                 inputs: Array.isArray(s.inputs) ? s.inputs.map((i) => ({...i})) : [],
+                ...(Array.isArray(s.slots) && s.slots.length ? {slots: s.slots.map((i) => ({...i}))} : {}),
                 actions: Array.isArray(s.actions) ? s.actions : []
             }));
             selectedCustomStepIndex = customStepsData.length
@@ -3355,6 +3359,10 @@ function storeActiveMode(mode) {
                 if (defs?.runCustomStep?.fields?.customStepId) {
                     defs.runCustomStep.fields.customStepId.optionsProvider = () => customStepsUi.getCustomStepSelectChoices();
                 }
+                // A Slot step offers the places of the custom step it is in.
+                if (defs?.slot?.fields?.slot) {
+                    defs.slot.fields.slot.optionsProvider = () => customStepsUi.getSlotSelectChoices();
+                }
                 if (defs?.runCustomStep) {
                     defs.runCustomStep.openCustomStep = (customStepId) => openCustomStepById(customStepId);
                     defs.runCustomStep.getStepInputsSchema = (customStepId) => {
@@ -3362,6 +3370,13 @@ function storeActiveMode(mode) {
                         if (!id) return null;
                         const step = customStepsData.find((s) => String(s?.id || '').trim() === id);
                         return step ? (step.inputs || []) : null;
+                    };
+                    // Its places for steps from the call, as getStepInputsSchema.
+                    defs.runCustomStep.getStepSlotsSchema = (customStepId) => {
+                        const id = String(customStepId || '').trim();
+                        if (!id) return null;
+                        const step = customStepsData.find((s) => String(s?.id || '').trim() === id);
+                        return step ? (step.slots || []) : null;
                     };
                 }
                 actionsBuilder = createActionsBuilder ({
@@ -3479,7 +3494,11 @@ function storeActiveMode(mode) {
                         const customStep = customStepMap[customStepId];
                         if (!customStep || !Array.isArray(customStep.actions) || stack.includes(customStepId)) return acc;
                         const inner = countList(customStep.actions, stack.concat([customStepId]));
-                        return add(acc, inner);
+                        // The steps the call gives for its places, counted once.
+                        const given = (Array.isArray(action.slots) ? action.slots : [])
+                            .filter((f) => f && f.type === 'slotSteps' && f.disabled !== true)
+                            .reduce((sum, f) => add(sum, countList(Array.isArray(f.actions) ? f.actions : [], stack)), {a11yScans: 0, screenshots: 0});
+                        return add(acc, add(inner, given));
                     }
 
                     if (Array.isArray(action.actions)) {

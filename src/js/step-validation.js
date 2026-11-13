@@ -214,6 +214,27 @@ export function createStepValidation(builder) {
             }
         }
 
+        // A custom step's place has one Slot step: a second would run the
+        // call's steps twice.
+        if (lineEl.dataset.actionType === "slot") {
+            const field = lineEl.querySelector(':scope > .fields > .field[data-field-name="slot"]');
+            const control = field && field.querySelector("select, input");
+            const name = control ? String(control.value || "").trim() : "";
+            if (control && name && !control.hasAttribute("aria-invalid")) {
+                const same = Array.from(builder.actionsEl.querySelectorAll('.line[data-action-type="slot"]'))
+                    .filter((other) => !builder.isEffectivelyDisabled(other))
+                    .filter((other) => {
+                        const c = other.querySelector(':scope > .fields > .field[data-field-name="slot"] select, :scope > .fields > .field[data-field-name="slot"] input');
+                        return c && String(c.value || "").trim() === name;
+                    });
+                if (same.length > 1 && same[0] !== lineEl) {
+                    builder.setError(control, `The place “${name}” already has a Slot step: each place has one`);
+                    note(control);
+                    ok = false;
+                }
+            }
+        }
+
         // Then validate nested arrays and their child lines recursively
         lineEl.querySelectorAll(":scope .action-array").forEach((arrWrap) => {
             const isRequired = arrWrap.dataset.required === "true";
@@ -227,6 +248,27 @@ export function createStepValidation(builder) {
                 note(arrWrap, {missing: true});
                 ok = false;
                 return;
+            }
+
+            // A call's steps for one of its custom step's places
+            // (step-line.js marks them): a required place needs some, and a
+            // place the custom step does not have cannot run them. Read off
+            // the place that holds the list, as this runs again for every
+            // step around it, which clears the list's error first.
+            const place = arrWrap.closest(".line");
+            if (place && place.dataset.actionType === "slotSteps" && !builder.isEffectivelyDisabled(place)) {
+                if (place.dataset.slotRequired === "true" && items.length === 0) {
+                    builder.setError(arrWrap, "The custom step requires steps here: add at least one");
+                    note(arrWrap, {missing: true});
+                    ok = false;
+                    return;
+                }
+                if (place.dataset.slotUnknown === "true" && items.length > 0) {
+                    builder.setError(arrWrap, "The custom step has no such place: move these steps to one of its places, or remove them");
+                    note(arrWrap);
+                    ok = false;
+                    return;
+                }
             }
 
             for (const child of items) {

@@ -120,7 +120,10 @@ export function createStepValues(builder) {
             const fieldName = arrWrap.dataset.fieldName;
             const sub = arrWrap.querySelector(".actions-subcontainer");
             const items = Array.from(sub.querySelectorAll(":scope > .line"));
-            const children = items.map((child) => readLineToObject(child, { maskValues, markMasked }));
+            const children = items.map((child) => readLineToObject(child, { maskValues, markMasked }))
+                // A call's place it gives no steps for (its list is there
+                // as long as the custom step has the place) is not saved.
+                .filter((child) => !(builder.defs[child.type]?.fixedInList && !child.actions && !child.disabled && !child.alias));
             if (children.length > 0 || arrWrap.dataset.required === "true") {
                 obj[fieldName] = children;
             }
@@ -396,6 +399,12 @@ export function createStepValues(builder) {
             builder.refreshReorderButtons(sub);
             if (summary) builder.refreshActionArraySummary(summary, sub);
         });
+
+        // A call's places, once its steps for them are in: one for each place
+        // its custom step has (step-line.js).
+        if (typeof lineEl._applyRunCustomStepSlots === "function") {
+            lineEl._applyRunCustomStepSlots();
+        }
     }
 
     return {

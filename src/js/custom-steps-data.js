@@ -23,6 +23,38 @@ export function normalizeCustomStepInputs(rawInputs) {
     return out;
 }
 
+/**
+ * The places where a call can give a custom step steps of its own, as
+ * saved: [{name, required?, label?}], each name once.
+ */
+export function normalizeCustomStepSlots(rawSlots) {
+    const list = Array.isArray(rawSlots) ? rawSlots : [];
+    const out = [];
+    const seen = new Set();
+    for (const entry of list) {
+        const item = typeof entry === 'string' ? {name: entry} : entry;
+        if (!item || typeof item !== 'object') continue;
+        const name = String(item.name || '').trim();
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+        const normalized = {name};
+        if (item.required === true) normalized.required = true;
+        const label = typeof item.label === 'string' ? item.label.trim() : '';
+        if (label) normalized.label = label;
+        out.push(normalized);
+    }
+    return out;
+}
+
+/**
+ * {slots} for a custom step that has places for a call's steps, {} for one
+ * that has none: a custom step without them is saved as it was.
+ */
+export function slotsOf(step) {
+    const slots = normalizeCustomStepSlots(step && step.slots);
+    return slots.length ? {slots} : {};
+}
+
 export function parseCustomStepInputsText(text) {
     const lines = String(text || '')
         .split(/\r?\n/)
@@ -139,6 +171,7 @@ export function parseCustomStepsJson(rawText) {
             id,
             name: String(item.name || '').trim() || id,
             inputs: normalizeCustomStepInputs(item.inputs),
+            ...slotsOf(item),
             actions: item.actions
         });
     }
@@ -152,6 +185,7 @@ export function cloneCustomStepValue(step) {
         id: String(step.id || '').trim(),
         name: String(step.name || '').trim(),
         inputs: Array.isArray(step.inputs) ? step.inputs.map((i) => ({ ...i })) : [],
+        ...slotsOf(step),
         actions: Array.isArray(step.actions) ? JSON.parse(JSON.stringify(step.actions)) : []
     };
 }
