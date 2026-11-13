@@ -172,7 +172,9 @@
 .live-totals {
     position: fixed;
     right: 16px;
-    bottom: 16px;
+    /* Moved up above the configuration's run bar where they would meet
+       (run-bar.js), so its buttons stay where they are and in sight. */
+    bottom: calc(16px + var(--run-bar-lift, 0px));
     z-index: 60;
 
     display: flex;
@@ -192,8 +194,7 @@
    clear of it, and the end of the page can scroll out from under it. */
 /* live-totals.js sets the class while the card floats, shown: a :has() rule
    on the whole page was matched again at every change in it. */
-/* The room the floating card takes at the bottom edge; the run bar
-   (controls.css) waits above it too. */
+/* The room the floating card takes at the bottom edge. */
 :root { --floating-totals-room: 190px; }
 html.has-floating-totals {
     scroll-padding-bottom: var(--floating-totals-room);
@@ -203,7 +204,7 @@ html.has-floating-totals body {
 }
 
 @media (max-width: 600px) {
-    .live-totals { right: 8px; bottom: 8px; max-width: calc(100vw - 16px); }
+    .live-totals { right: 8px; bottom: calc(8px + var(--run-bar-lift, 0px)); max-width: calc(100vw - 16px); }
 }
 
 /* The visible totals card — the surface that used to live on .live-totals. */

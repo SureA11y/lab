@@ -189,21 +189,11 @@ html.has-mode-bar {
     scroll-padding-bottom: calc(var(--run-bar-h, 0px) + var(--space-3));
 }
 
-/* While a run's totals card floats on the bottom-right corner (live.css),
-   the bar's buttons keep clear of it, so Cancel is not under the card: to
-   its left, where the window is wide enough, else above the room the page
-   keeps for it. */
-html.has-floating-totals #config-section > .inline-actions {
-    padding-right: calc(min(92vw, 360px) + var(--space-6));
-}
-@media (max-width: 1000px) {
-    html.has-floating-totals #config-section > .inline-actions {
-        padding-right: var(--space-5);
-        bottom: var(--floating-totals-room);
-    }
-    html.has-mode-bar.has-floating-totals {
-        scroll-padding-bottom: calc(var(--floating-totals-room) + var(--run-bar-h, 0px) + var(--space-3));
-    }
+/* While a run's totals card floats, it moves up above the bar where they
+   would meet (run-bar.js), so a control that takes focus scrolls clear of
+   both. */
+html.has-mode-bar.has-floating-totals {
+    scroll-padding-bottom: calc(var(--floating-totals-room) + var(--run-bar-h, 0px) + var(--space-3));
 }
 
 /* ==========================================================================
