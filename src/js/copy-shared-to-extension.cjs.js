@@ -71,8 +71,24 @@ const DEST_STANDARDS = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor',
 // does (background.js). Its step in the page is built with new Function,
 // which an extension's pages and worker may not run (their CSP): the build
 // builds it here, in Node, and the bundle holds its source as a function.
-const SRC_SCREENSHOTS = path.join(PROJECT_ROOT, 'node_modules', '@surea11y', 'binding-base', 'src', 'screenshots.js');
-const SRC_SCREENSHOTS_IN_PAGE = path.join(PROJECT_ROOT, 'node_modules', '@surea11y', 'binding-base', 'src', 'screenshotsInPage.js');
+// binding-base comes with @surea11y/puppeteer, not as a dependency of the
+// lab's own: npm puts it beside the lab's packages or inside the binding's,
+// as it lays the tree out. It is found as Node finds it for the binding,
+// from the binding's own folder, wherever npm put it.
+function bindingBaseDir() {
+    let fromBinding;
+    try {
+        fromBinding = path.dirname(require.resolve('@surea11y/puppeteer', { paths: [PROJECT_ROOT] }));
+    } catch {
+        throw new Error('@surea11y/puppeteer is not installed: run npm install');
+    }
+    try {
+        return path.dirname(require.resolve('@surea11y/binding-base/package.json', { paths: [fromBinding] }));
+    } catch {
+        throw new Error('@surea11y/binding-base, which @surea11y/puppeteer brings, is not installed: run npm install');
+    }
+}
+const BINDING_BASE_SRC = () => path.join(bindingBaseDir(), 'src');
 const DEST_SCREENSHOTS = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'surea11y-screenshots.min.js');
 const SRC_REVIEW_EN = path.join(PROJECT_ROOT, 'node_modules', '@surea11y', 'core', 'src', 'i18n', 'review', 'en.json');
 const DEST_REVIEW_EN = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor', 'review', 'en.json');
@@ -125,6 +141,8 @@ function buildRequireEntrySource(relImport, wrapperSource) {
  * run time with new Function.
  */
 async function buildScreenshotsBundle() {
+    const SRC_SCREENSHOTS = path.join(BINDING_BASE_SRC(), 'screenshots.js');
+    const SRC_SCREENSHOTS_IN_PAGE = path.join(BINDING_BASE_SRC(), 'screenshotsInPage.js');
     for (const f of [SRC_SCREENSHOTS, SRC_SCREENSHOTS_IN_PAGE]) {
         if (!fs.existsSync(f)) throw new Error(`@surea11y/binding-base file does not exist: ${f}`);
     }
@@ -140,9 +158,13 @@ async function buildScreenshotsBundle() {
             build.onLoad({ filter: /.*/, namespace: 'in-page' }, () => ({ contents: inPageModule, loader: 'js' }));
         }
     };
-    const relImport = './' + path.relative(PROJECT_ROOT, SRC_SCREENSHOTS).replace(/\\/g, '/');
+    // Built from binding-base's own folder, so the paths esbuild writes into
+    // the bundle ("src/screenshots.js") are the same wherever npm put it: the
+    // bundle, kept in git, comes out the same on every machine.
+    const BASE = bindingBaseDir();
+    const relImport = './' + path.relative(BASE, SRC_SCREENSHOTS).replace(/\\/g, '/');
     const buildResult = await esbuild.build({
-        absWorkingDir: PROJECT_ROOT,
+        absWorkingDir: BASE,
         bundle: true,
         platform: 'browser',
         format: 'iife',
@@ -151,7 +173,7 @@ async function buildScreenshotsBundle() {
         logLevel: 'silent',
         plugins: [inPagePlugin],
         stdin: {
-            resolveDir: PROJECT_ROOT,
+            resolveDir: BASE,
             sourcefile: 'surea11y-screenshots-entry.js',
             contents: `'use strict';\nconst s = require(${JSON.stringify(relImport)});\n` +
                 'globalThis.SUREA11Y_SCREENSHOTS = { planScreenshots: s.planScreenshots, prepareElementScreenshot: s.prepareElementScreenshot, ' +
