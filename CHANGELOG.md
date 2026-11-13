@@ -9,6 +9,10 @@ The first public release.
 
 ### The lab
 
+- **An empty list's Add step is at the right, where it stays**: a list of
+  steps with none yet (an iteration's set-up, an if's Otherwise) shows its
+  Add step and Paste at the right, as a list with steps does, so they no
+  longer jump from left to right with the first step.
 - **The run log opens in a dialog**: **Open in a dialog**, beside its copy
   buttons, shows the log as wide and tall as the window allows, with
   **Copy last 30 lines** and **Copy all** in the dialog too. It is the log

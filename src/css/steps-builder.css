@@ -595,7 +595,9 @@
 
 /* An empty list: "Nothing runs here." and one button to add its first step
    (with Paste, when there is a step to paste), in place of its row of
-   shortcuts (step-fields.js). */
+   shortcuts (step-fields.js). The buttons are at the right, where the list's
+   own buttons are once it has steps, so they do not move when it gets its
+   first; on a row of their own when there is no room, still at the right. */
 :is(#actions-builder, #custom-step-actions-builder) .action-array__empty {
     display: flex;
     flex-wrap: wrap;
@@ -603,7 +605,7 @@
     gap: var(--space-2) var(--space-3);
 }
 :is(#actions-builder, #custom-step-actions-builder) .action-array__empty-note { margin: 0; color: var(--text-muted); font-size: var(--fs-sm); }
-:is(#actions-builder, #custom-step-actions-builder) .action-array__add-first { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 10px; }
+:is(#actions-builder, #custom-step-actions-builder) .action-array__add-first { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 10px; margin-inline-start: auto; }
 :is(#actions-builder, #custom-step-actions-builder) .action-array__empty .paste-button:disabled { display: none; }
 :is(#actions-builder, #custom-step-actions-builder) .action-array:not(.is-empty) > .action-array__empty,
 :is(#actions-builder, #custom-step-actions-builder) .action-array.is-empty > :is(.actions-subcontainer, .action-array__footer),
