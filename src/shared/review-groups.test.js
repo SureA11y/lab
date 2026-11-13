@@ -21,7 +21,7 @@ describe('review groups', () => {
             null,
         ];
         assert.deepEqual(countReviewGroups(findings), { leanFail: 2, leanPass: 1, open: 1, total: 4 });
-        assert.equal(reviewGroupsText(countReviewGroups(findings)), '2 likely fail, 1 likely passes, 1 needs a person');
+        assert.equal(reviewGroupsText(countReviewGroups(findings)), '2 likely fail, 1 likely passes');
         assert.equal(reviewGroupsText(countReviewGroups([])), '');
     });
 

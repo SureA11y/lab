@@ -97,7 +97,7 @@ describe('questions that lean', () => {
         assert.equal(rows[0].querySelector('.issue-status .lean-badge').textContent, 'likely fails');
         assert.equal(rows[1].querySelector('.issue-status .lean-badge').textContent, 'likely passes');
         assert.equal(rows[2].querySelector('.issue-status .lean-badge'), null, 'a question that leans nowhere needs a person');
-        assert.equal(rows[0].querySelector('.instances-lean').textContent, '2 likely fail, 1 needs a person');
+        assert.equal(rows[0].querySelector('.instances-lean').textContent, '2 likely fail');
         // The row that likely fails stands out from the other review rows.
         assert.deepEqual(rows.map((r) => r.classList.contains('lean-fail')), [true, false, false]);
 

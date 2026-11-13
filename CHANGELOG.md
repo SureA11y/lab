@@ -9,6 +9,11 @@ The first public release.
 
 ### The lab
 
+- **A can't tell count names only its leans**: beside a review row's
+  count, and in the run's summary, the questions that lean are counted
+  (*2 likely fail, 1 likely passes*) and the rest are not named as
+  *need a person*: every question needs one, and a row with no lean said
+  nothing either.
 - **A scan's page picture is as wide as the viewport**: at a phone's
   width, one element wider than the screen (a row of filters, say) no
   longer widens the whole picture to its own width, so the picture shows
