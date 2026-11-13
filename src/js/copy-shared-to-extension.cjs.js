@@ -71,21 +71,15 @@ const DEST_STANDARDS = path.join(PROJECT_ROOT, 'extension', 'engines', 'vendor',
 // does (background.js). Its step in the page is built with new Function,
 // which an extension's pages and worker may not run (their CSP): the build
 // builds it here, in Node, and the bundle holds its source as a function.
-// binding-base comes with @surea11y/puppeteer, not as a dependency of the
-// lab's own: npm puts it beside the lab's packages or inside the binding's,
-// as it lays the tree out. It is found as Node finds it for the binding,
-// from the binding's own folder, wherever npm put it.
+// binding-base is the lab's own dependency, pinned by package.json's
+// overrides to the one version @surea11y/puppeteer runs with, so the
+// extension is built from the very steps the lab's scans use. It is found
+// as Node finds it for the lab, not at a folder assumed.
 function bindingBaseDir() {
-    let fromBinding;
     try {
-        fromBinding = path.dirname(require.resolve('@surea11y/puppeteer', { paths: [PROJECT_ROOT] }));
+        return path.dirname(require.resolve('@surea11y/binding-base/package.json', { paths: [PROJECT_ROOT] }));
     } catch {
-        throw new Error('@surea11y/puppeteer is not installed: run npm install');
-    }
-    try {
-        return path.dirname(require.resolve('@surea11y/binding-base/package.json', { paths: [fromBinding] }));
-    } catch {
-        throw new Error('@surea11y/binding-base, which @surea11y/puppeteer brings, is not installed: run npm install');
+        throw new Error('@surea11y/binding-base is not installed: run npm install');
     }
 }
 const BINDING_BASE_SRC = () => path.join(bindingBaseDir(), 'src');
