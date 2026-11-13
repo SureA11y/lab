@@ -1136,7 +1136,7 @@ tr.cantTell .issue-status { color: var(--warn); }
 /* A box of its own height: past it the rows scroll inside, under the
    caption and header that stay in view. Wide tables scroll sideways too. */
 .table-container {
-    max-height: 70vh;
+    max-height: 420px;
     overflow: auto;
     border-radius: var(--radius-sm);
     border: 1px solid var(--neutral-300);

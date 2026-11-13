@@ -10,7 +10,7 @@ The first public release.
 ### The lab
 
 - **A table of results is as tall as before, and scrolls inside**: past
-  70% of the window its rows scroll in the table's own box, its header in
+  420px its rows scroll in the table's own box, its header in
   view, so the page around it no longer runs as long as its findings. The
   exported report does the same; printed, a table is still shown whole.
 - **A step's kind is above its title, on every card**: in small, light
