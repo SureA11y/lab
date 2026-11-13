@@ -1272,10 +1272,11 @@ tr.cantTell .issue-status { color: var(--warn); }
     border: 1px solid var(--border-soft);
 }
 
-/* As tall as its findings: a box of its own height hid the rows past it,
-   with no scrollbar to say so. Wide tables still scroll sideways. */
+/* A box of its own height: past it the rows scroll inside, under the
+   caption and header that stay in view. Wide tables scroll sideways too. */
 .table-container {
-    overflow-x: auto;
+    max-height: 70vh;
+    overflow: auto;
     border-radius: var(--radius-sm);
     border: 1px solid var(--neutral-300);
 }
