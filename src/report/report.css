@@ -1785,7 +1785,7 @@ a:hover { text-decoration-thickness: 2px; }
     border-bottom: 1px solid var(--border-strong);
 
     position: sticky;
-    top: 0;
+    top: calc(calc(-1 * var(--space-3) - 1px));
     z-index: 1;
 }
 

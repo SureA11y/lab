@@ -181,8 +181,7 @@
     max-height: min(70vh, 680px);
     overflow: auto;
 
-    /* The same on both sides: the scrollbar takes its own room. */
-    padding: .9rem 1.1rem 1.0rem;
+    padding: var(--space-3) var(--space-4);
 
     scrollbar-width: thin;
     scrollbar-color: rgba(185,195,209,.55) transparent;
