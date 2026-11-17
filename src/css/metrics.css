@@ -177,6 +177,7 @@
     background: var(--surface-2);
 }
 
+/* report:shared:start - the "?" help note beside a metric */
 /* The "?" is a <summary>, so it needs the default disclosure marker removed and
    the pill shape restored. */
 .a11y-help-disclosure { position: relative; display: inline-flex; }
@@ -228,6 +229,7 @@ summary.a11y-help:focus-visible {
     text-align: left;
     white-space: normal;
 }
+/* report:shared:end */
 
 .a11y-kpi {
     border: 1px solid var(--border-subtle);
@@ -256,12 +258,14 @@ summary.a11y-help:focus-visible {
     color: var(--text-main);
 }
 
+/* report:shared:start - the keyboard focus of a metric's details disclosure */
 .a11y-details > summary:focus-visible {
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
     box-shadow: var(--focus-ring);
     border-radius: var(--radius-sm);
 }
+/* report:shared:end */
 
 .a11y-grid3 {
     display: grid;

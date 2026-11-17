@@ -74,6 +74,26 @@ starting the app:
 | `npm run build:extension-shared` | A shared module the extension uses, or the packs installed | `extension/*.js` copies; the packs' script and standards in `extension/engines/vendor/` (not committed: they come from the packs installed, the lab's and `A11Y_PACKS`') |
 | `npm run build:report` | The report's styles or script | `src/report/*.min.*` (not committed) |
 
+### Styles the app and the report share
+
+The downloadable report draws much of what the app draws (the scans, their
+tables and screenshots, the metrics), so its stylesheet must carry the same
+rules. Write such a rule once, in the app's stylesheet (`src/css/`), between
+markers, and `npm run build:report` copies it into the report's styles:
+
+```css
+/* report:shared:start - what it is for */
+.screenshot-preview--contexts { ... }
+/* report:shared:end */
+```
+
+Rules only the report needs (its page, its header, its theme switch) stay in
+`src/report/report.css`. `src/report/report-style-parity.test.js` fails when a
+block is left open, when a shared rule is also copied into `report.css`, and
+when the app styles a class the report's markup uses without the report getting
+the rule. A rule that is only for the app's own screens (editing, the live run)
+goes on that test's `APP_ONLY_ON_REPORT_CLASSES` list, with the reason.
+
 ## Writing
 
 Code comments, documentation and messages say what something does and why,

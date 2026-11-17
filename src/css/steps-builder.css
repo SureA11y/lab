@@ -1655,6 +1655,7 @@
     .action-array__footer .action-array__add .action-array__add-word { display: inline; }
 }
 
+/* report:shared:start - the workflow roadmap, in the app and in the report */
 /* ==========================================================================
    WORKFLOW ROADMAP (workflow-roadmap.js)
    The steps as a tree on a rail: a mark, a name, the type, what it acts on.
@@ -1809,3 +1810,4 @@ button.roadmap__row:focus-visible { outline: var(--focus-outline); outline-offse
 .report-roadmap[open] > summary { margin-bottom: 8px; }
 .report-roadmap__count { font-weight: 400; font-size: var(--fs-sm); color: var(--text-muted); margin-left: .5rem; }
 .report-roadmap .roadmap { font-size: var(--fs-md); }
+/* report:shared:end */

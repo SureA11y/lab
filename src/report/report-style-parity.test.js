@@ -11,10 +11,10 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
-const {readAppCss} = require('../css/app-styles');
+const {readAppCss, readReportCss} = require('../css/app-styles');
 
 const APP_CSS = readAppCss();
-const REPORT_CSS = fs.readFileSync(path.join(ROOT, 'src', 'report', 'report.css'), 'utf8');
+const REPORT_CSS = readReportCss();
 
 const RENDERER_SOURCES = [
     path.join(ROOT, 'src', 'js', 'a11y-metrics-renderer.js'),
@@ -272,6 +272,113 @@ const KNOWN_PROPERTY_DRIFT = [
     "@media (prefers-color-scheme:dark)###:root:not([data-theme])",
     "@media print###:root",
 ];
+
+// ---------------------------------------------------------------------------
+// One source for what both draw. A rule the exported report shares with the app
+// is written once, in the app's stylesheet, between report:shared markers, and
+// build:report copies it (app-styles.js, readReportCss). What follows guards the
+// two ways that goes wrong: a block left open, and an app rule for a class the
+// report's markup emits that never reaches the report - which is how a merged
+// scan's screenshots came to be full size in the export.
+// ---------------------------------------------------------------------------
+
+const {APP_STYLESHEETS, readSharedCss} = require('../css/app-styles');
+
+describe('rules shared between the app and the report', () => {
+    test('every report:shared block is closed, in every part of the app stylesheet', () => {
+        for (const name of APP_STYLESHEETS) {
+            const css = fs.readFileSync(path.join(ROOT, 'src', 'css', name), 'utf8');
+            const starts = (css.match(/\/\* report:shared:start/g) || []).length;
+            const ends = (css.match(/\/\* report:shared:end \*\//g) || []).length;
+            assert.equal(starts, ends, `${name} has ${starts} report:shared:start and ${ends} report:shared:end`);
+        }
+    });
+
+    test('the shared rules are in the report stylesheet, once, and are not also copied into report.css', () => {
+        const shared = readSharedCss();
+        assert.ok(shared.length > 1000, 'expected the shared blocks to carry rules');
+        const own = fs.readFileSync(path.join(ROOT, 'src', 'report', 'report.css'), 'utf8');
+        assert.ok(REPORT_CSS.includes(shared), 'the report stylesheet does not carry the shared rules');
+        const sharedKeys = [...ruleIndex(shared).keys()];
+        const ownKeys = new Set(ruleIndex(own).keys());
+        const copied = sharedKeys.filter((k) => ownKeys.has(k));
+        assert.deepEqual(copied, [], 'rules in a report:shared block are also written in report.css: keep one copy, in the app stylesheet');
+    });
+});
+
+// App rules for a class the report's markup emits that the report does not style
+// the same way, and why. Adding to this list is a decision: a rule the export
+// needs goes in a report:shared block instead.
+const APP_ONLY_ON_REPORT_CLASSES = [
+    // A margin the minifier drops from the report whichever way it is written.
+    '###.issues-group:nth-of-type(1) h4',
+    // The page and its header are the report's own; the app has another.
+    '(max-width:600px)###.page', '###header h1 .site-logo', '(max-width:600px)###.theme-switch',
+    // A busy button is the app's.
+    '###.icon-button[data-busy="true"]>svg', '###.icon-button[data-busy="true"]::before',
+    // The controls of a scan, and the editing of its name and tags: removed from the exported document.
+    '###.scan-name-wrapper', '###.scan-name-text', '###.scan-tags-region', '###.scan-tags-display[hidden]',
+    '###.scan-tags-edit[hidden]', '###.scan-tags-edit',
+    '###.scan-excluded-badge', '###.scan-excluded-badge[hidden]', '###.scan-name-input', '###.scan-header .scan-name-input',
+    '###.scan-header>h3:has(>.scan-name-input:not([hidden]))', '###.scan-header>h3>.scan-name-input:not([hidden])',
+    '###.scan-summary-controls', '###.scan-summary-list .scan-summary-controls',
+    '###.scan-summary-controls .icon-button,.scan-header-controls .icon-button', '###.scan-summary-controls svg,.scan-header-controls svg',
+    '###.scan-tags-display[hidden],.scan-tags-edit[hidden]', '###.scan-tags-edit .tag-input', '###.scan-tags-edit__save,.scan-tags-edit__cancel',
+    '###.scan-header-controls', '###.scan-move-controls', '@media (max-width:600px)###.scan-header-controls',
+    '###.scan-merged-actions', '###.scan-filtered-out',
+    '###.hide-excluded-scans .scan-summary-excluded,.hide-excluded-scans .scan-excluded-from-report',
+    '###.all-scans-card.scan-summary-excluded',
+    // A page of a merged scan is a picture in the export, not a button: no hover or focus.
+    '###.scan-filmstrip__page:hover', '###.scan-filmstrip__page:focus-visible',
+    // The live run's cards; the report's are .screenshot-card, styled in report.css.
+    '###.stream-card button.screenshot-btn', '###.stream-card button.screenshot-btn>*', '###.stream-card button.screenshot-btn img',
+    '###.stream-card,.screenshot-card', '###.stream-card .stream-card-title,.screenshot-card .stream-caption',
+    '###.stream-card button.screenshot-btn,.screenshot-card button.screenshot-btn',
+    '###.stream-card button.screenshot-btn>*,.screenshot-card button.screenshot-btn>*',
+    '###.stream-card button.screenshot-btn img,.screenshot-card button.screenshot-btn img',
+    // The report lays these out its own way (report.css), with other values: to be reconciled.
+    '###.scan-header', '###.scan-header>h3', '###.scan-header .scan-tags', '(max-width:600px)###.scan-header',
+    '@media (max-width:600px)###.scan-header', '@media (max-width:760px)###.scan-summary-tags,.scan-summary-list .scan-summary-controls',
+    '###.results-header-row',
+    '###.table-container tr.fail td:first-child', '###.table-container tr.cantTell td:first-child',
+    // To decide: speed for long reports, print layout, hover dimming of pictures.
+    '###.scan-results-wrapper', 'print###.scan-results-wrapper', '@media print###.scan-results-wrapper', '###.grouped-results',
+    '###.per-scan-report-mode .grouped-results',
+    'print###.a11y-help-disclosure', 'print###.scan-results-container', 'print###.screenshot-preview',
+    'print###.screenshot-preview img', 'print###.stream-preview img',
+    '@media print###.scan-results-container', '@media print###.screenshot-preview',
+    '###:is(.screenshot-preview img', '###.stream-preview img)', '###:is(.screenshot-preview', '###.stream-preview) :is(a'
+];
+
+describe('the app rules for the report markup', () => {
+    const EMITTERS = [...RENDERER_SOURCES, path.join(ROOT, 'src', 'js', 'screenshots-ui.js')];
+    // The families the report's markup is made of; the app's other classes (buttons, dialogs, panels) are its own.
+    const FAMILIES = /^(screenshot|scan-|stream-|results-|a11y-|table-|issue|example-node|node-|margin-|dsp|lean|instances|grouped-|scoreGauge|sr-focusbar)/;
+    // A class counts as the report's when its name is written in a renderer, however
+    // it is put into the markup (a class="" literal, className, a template).
+    const SOURCES = EMITTERS.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
+    const emitted = { has: (cls) => FAMILIES.test(cls) && SOURCES.includes(cls) };
+
+    test('every one reaches the report, as a shared rule or in report.css, or is on the list above', () => {
+        const app = ruleIndex(APP_CSS);
+        const report = ruleIndex(REPORT_CSS);
+        const missing = [];
+        for (const key of app.keys()) {
+            if (report.has(key)) continue;
+            const selector = key.split('###')[1] || '';
+            if (/#/.test(selector.replace(/\[[^\]]*\]/g, ''))) continue; // ids: the app's own chrome
+            // A class named only inside :not() or :is() is a condition, not what the rule styles.
+            const styled = selector.replace(/:(not|is|where)\([^)]*\)/g, '');
+            const classes = [...styled.matchAll(/\.([A-Za-z_][\w-]*)/g)].map((m) => m[1]);
+            if (classes.some((c) => emitted.has(c))) missing.push(key);
+        }
+        const unlisted = missing.filter((k) => !APP_ONLY_ON_REPORT_CLASSES.includes(k));
+        assert.deepEqual(unlisted, [],
+            'the app styles a class the report\'s markup emits, and the report does not: put the rule between report:shared markers in the app stylesheet (or list it in APP_ONLY_ON_REPORT_CLASSES with the reason)');
+        const stale = APP_ONLY_ON_REPORT_CLASSES.filter((k) => report.has(k));
+        assert.deepEqual(stale, [], 'these are in the report now: remove them from APP_ONLY_ON_REPORT_CLASSES');
+    });
+});
 
 describe('app and report stylesheet drift', () => {
     const app = ruleIndex(APP_CSS);

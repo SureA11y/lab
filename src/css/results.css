@@ -1020,6 +1020,7 @@
     .scan-results-meta > *:first-child { flex-basis: auto; min-width: 0; }
 }
 
+/* report:shared:start - the screenshots of a merged scan: one per context */
 /* A merged scan's screenshots, one per context, each captioned with it. */
 .screenshot-context-figure { margin: 0 0 var(--space-3); }
 .screenshot-context-figure figcaption {
@@ -1061,6 +1062,7 @@
     line-height: 1.25;
     overflow-wrap: anywhere;
 }
+/* report:shared:end */
 /* A merged scan says which contexts it was made from, and an occurrence
    which of them it was found in. */
 .scan-contexts { margin: var(--space-1) 0 var(--space-2); font-size: var(--fs-sm); color: var(--text-muted); }
@@ -1095,8 +1097,10 @@
 .scan-members__name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .scan-members__path { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scan-members__item--excluded .scan-members__name { color: var(--text-muted); }
+/* report:shared:start - where an occurrence was found */
 .example-node-header h2 span.node-contexts { color: var(--text-muted); }
 .a11y-margins-table .margin-contexts { display: block; margin-top: 2px; color: var(--text-muted); }
+/* report:shared:end */
 
 .screenshot-btn {
     border: 1px solid var(--border-subtle);
@@ -1169,10 +1173,12 @@ td { border-bottom: 1px solid var(--border-soft); }
 tr:nth-child(even) td { background: var(--surface-0); }
 
 .issue-status { white-space: nowrap; }
+/* report:shared:start - the verdicts of a scan of several profiles */
 /* A scan of several profiles: each one's verdict on the finding, under its
    status, in the text color: the status above already carries the color. */
 .issue-verdicts { list-style: none; margin: .25rem 0 0; padding: 0; font-size: var(--fs-xs); color: var(--text-muted); }
 .issue-verdict { white-space: nowrap; }
+/* report:shared:end */
 
 /* The results tables lay their columns out fixed, so the tables of a
    report's scans and groups line up one under another whatever each
@@ -1285,6 +1291,7 @@ tr.cantTell .issue-status { color: var(--warn); }
    its header sticks to, so the header would scroll away with the rows. */
 .table-container > table { overflow: visible; }
 
+/* report:shared:start - a results table's caption */
 .table-container table caption {
     caption-side: top;
     text-align: left;
@@ -1301,6 +1308,7 @@ tr.cantTell .issue-status { color: var(--warn); }
     text-transform: uppercase;
     color: var(--text-muted);
 }
+/* report:shared:end */
 
 /* =========================================================
    RESULT GLYPH TILES — SureA11y "five outcomes"
@@ -1403,6 +1411,7 @@ tr.cantTell .issue-status { color: var(--warn); }
     filter: none;
 }
 
+/* report:shared:start - the scans on a numbered rail, in the app and in the report */
 /* ==========================================================================
    SCANS ON A RAIL
    A numbered stop for each scan, a line joining it to the next and a rule
@@ -1475,3 +1484,4 @@ tr.cantTell .issue-status { color: var(--warn); }
         vertical-align: middle;
     }
 }
+/* report:shared:end */
