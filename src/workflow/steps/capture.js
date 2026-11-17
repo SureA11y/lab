@@ -350,6 +350,7 @@ async function runEvidenceCaptureShared({
                     variant: 'png',
                     data: buffer,
                     filename,
+                    unique: true,
                     dir,
                     url: currentUrl,
                     meta: {label, scanId, orderKey, iterationIndex: _iterIdx, artifactIndex: _artifactIdx, env, fullPage, visionDeficiency}
@@ -412,6 +413,7 @@ async function runEvidenceCaptureShared({
                 variant: 'mhtml',
                 data,
                 filename,
+                unique: true,
                 dir,
                 url: currentUrl,
                 meta: {label, scanId, orderKey, iterationIndex: _iterIdx, artifactIndex: _artifactIdx, env, fullPage, visionDeficiency}
