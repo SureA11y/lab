@@ -1105,7 +1105,7 @@ tr:nth-child(even) td { background: var(--surface-0); }
 }
 /* A review's "likely fails" badge goes under its word when the column is
    too narrow for both. */
-.results-table .issue-status { flex-wrap: wrap; row-gap: .2rem; }
+.results-table .issue-status { flex-wrap: wrap; row-gap: .2rem; display: inline-flex; align-items: center; gap: .35em;}
 tr.fail .issue-status { color: var(--danger); }
 tr.cantTell .issue-status { color: var(--warn); }
 
