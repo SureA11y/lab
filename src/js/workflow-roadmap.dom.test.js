@@ -98,3 +98,51 @@ describe('custom steps in the roadmap', () => {
         assert.ok(el.querySelector('.roadmap__row--scan'));
     });
 });
+
+describe('folding the roadmap', () => {
+    const deep = [
+        step('a', 0, {container: true, path: '1'}),
+        step('b', 1, {container: true, path: '1.1'}),
+        step('c', 2, {container: true, path: '1.1.1'}),
+        step('d', 3, {path: '1.1.1.1'})
+    ];
+
+    test('starts open down to two levels, the groups below folded', () => {
+        const el = mod.renderRoadmap(doc(), deep, {onGo() {}});
+        const open = [...el.querySelectorAll('details')].map((d) => d.open);
+        assert.deepEqual(open, [true, true, false]);
+    });
+
+    test('openDepth sets how many levels start open', () => {
+        const el = mod.renderRoadmap(doc(), deep, {openDepth: 1});
+        assert.deepEqual([...el.querySelectorAll('details')].map((d) => d.open), [true, false, false]);
+    });
+
+    test('a group has a button that folds it, apart from the row that goes to the step', () => {
+        const seen = [];
+        const el = mod.renderRoadmap(doc(), deep, {onGo: (s) => seen.push(s.id)});
+        const twisty = el.querySelector('button.roadmap__twisty');
+        assert.equal(twisty.getAttribute('aria-expanded'), 'true');
+        twisty.click();
+        assert.equal(el.querySelector('details').open, false);
+        assert.deepEqual(seen, [], 'folding does not go to the step');
+        el.querySelector('summary .roadmap__row').click();
+        assert.deepEqual(seen, ['a']);
+        assert.equal(el.querySelector('details').open, false, 'going to a step does not fold it');
+    });
+
+    test('Expand all and Collapse all', () => {
+        const el = mod.renderRoadmap(doc(), deep, {onGo() {}});
+        const [expand, collapse] = el.querySelectorAll('.roadmap__tool');
+        expand.click();
+        assert.ok([...el.querySelectorAll('details')].every((d) => d.open));
+        collapse.click();
+        assert.ok([...el.querySelectorAll('details')].every((d) => !d.open));
+    });
+
+    test('without onGo it folds by the summary alone, with no buttons', () => {
+        const el = mod.renderRoadmap(doc(), deep);
+        assert.equal(el.querySelectorAll('button').length, 0);
+        assert.ok(el.querySelector('summary'));
+    });
+});
