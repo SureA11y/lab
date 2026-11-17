@@ -1682,9 +1682,14 @@ button.roadmap-toggle + button.collapse-all-toggle { margin-left: 0; }
 .roadmap__tools { display: flex; gap: .5rem; margin: 0 0 8px; }
 .roadmap__twisty {
     flex: none;
-    width: 22px;
-    height: 22px;
+    align-self: center;
+    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
+    min-width: 0;
+    min-height: 0;
     padding: 0;
+    margin: 0;
     border: 0;
     background: transparent;
     box-shadow: none;
@@ -1695,16 +1700,16 @@ button.roadmap-toggle + button.collapse-all-toggle { margin-left: 0; }
 .roadmap__twisty::before {
     content: "";
     position: absolute;
-    left: 7px;
-    top: 5px;
-    width: 6px;
-    height: 6px;
+    left: 50%;
+    top: 50%;
+    width: 7px;
+    height: 7px;
     border-right: 2px solid currentColor;
     border-bottom: 2px solid currentColor;
-    transform: rotate(-45deg);
+    transform: translate(-65%, -50%) rotate(-45deg);
     transition: transform .12s;
 }
-details[open] > .roadmap__summary > .roadmap__twisty::before { transform: rotate(45deg); top: 4px; }
+details[open] > .roadmap__summary > .roadmap__twisty::before { transform: translate(-50%, -70%) rotate(45deg); }
 button.roadmap__twisty:hover:not(:disabled) { background: var(--surface-hover); border-radius: var(--radius-sm); }
 button.roadmap__twisty:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
 .roadmap__summary { list-style: none; cursor: pointer; }
