@@ -39,6 +39,7 @@ const {buildAutomationCoverage} = require('./metrics/automation-coverage');
 const {foldMergedScans, describeMerges} = require('./merged-scan');
 const { captureScreenshotArtifact } = require('./screenshot-capture.js');
 const { CAPTURE_BUDGET_MS, screenshotOptionsForStep, storeElementScreenshots } = require('./element-screenshots.js');
+const { createEvidenceWriter } = require('./evidence-writer.js');
 const { splitWcagTagToRef } = require('../shared/canonical-shared');
 const { LOCALES } = require('./engines/a11y-labs-engine');
 const { resolveScanSelection, selectionTags, targetLabel, scanTargetProblems, DEFAULT_WCAG_VERSION } = require('./conformance-targets');
@@ -1226,40 +1227,12 @@ async function runA11yWorkflow(url, tags, options = {}) {
     // it writes nothing unless called.
     const baseDir = path.join(REPORTS_ROOT, 'evidence', runId);
 
-    workflowCtx.saveEvidenceFile = async ({variant, data, filename, dir, url, meta} = {}) => {
-        const v = String(variant || '').trim().toLowerCase();
-        const sub = safeDirPart(dir);
-        const outDir = sub ? path.join(baseDir, sub) : baseDir;
-
-        // Create dir lazily, only when we actually write something
-        ensureDirSync(outDir);
-
-        const file = safeDirPart(filename) || `evidence-${Date.now()}.${v === 'mhtml' ? 'mhtml' : 'png'}`;
-        const outPath = path.join(outDir, file);
-
-        if (v === 'mhtml') {
-            const text = (data == null) ? '' : String(data);
-            await fs.promises.writeFile(outPath, text, 'utf8');
-            return {
-                path: outPath,
-                publicUrl: filePathToPublicUrl(outPath),
-                bytes: Buffer.byteLength(text, 'utf8'),
-                url: url || null,
-                meta: meta || null
-            };
-        }
-
-        // default png
-        const buf = Buffer.isBuffer(data) ? data : Buffer.from(data || '');
-        await fs.promises.writeFile(outPath, buf);
-        return {
-            path: outPath,
-            publicUrl: filePathToPublicUrl(outPath),
-            bytes: buf.length,
-            url: url || null,
-            meta: meta || null
-        };
-    };
+    workflowCtx.saveEvidenceFile = createEvidenceWriter({
+        baseDir,
+        safeDirPart,
+        ensureDirSync,
+        toPublicUrl: filePathToPublicUrl
+    });
 
     function throwCancelled(where) {
         try {
