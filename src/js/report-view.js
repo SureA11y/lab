@@ -1188,6 +1188,15 @@ export function createReportView(app) {
                 + 'the sites\' certificates to be trusted</span></li>';
         }
 
+        // The workflow the run followed, folded: from the configuration the
+        // report carries, so a report opened from a file or a package has it too.
+        const roadmap = app.workflowRoadmapOf?.(data?.config || app.getActiveBucket()?.payload?.config);
+        if (roadmap) {
+            reportData += '<li class="report-meta__wide"><details class="report-roadmap">'
+                + `<summary>Workflow roadmap <span class="report-roadmap__count">${roadmap.count} steps</span></summary>`
+                + `${roadmap.html}</details></li>`;
+        }
+
         container.innerHTML = reportData.length ? `<ul class="report-meta">${reportData}</ul>` : '';
 
         // Live chrome, added after the markup and stripped from the export:
