@@ -527,6 +527,15 @@
                                 </button>
                                 <button
                                         type="button"
+                                        id="workflow-roadmap-btn"
+                                        class="icon-button secondary-button collapse-all-toggle roadmap-toggle"
+                                        aria-label="Show workflow roadmap"
+                                        title="Show workflow roadmap"
+                                        aria-haspopup="dialog"
+                                        hidden
+                                ></button>
+                                <button
+                                        type="button"
                                         id="workflow-collapse-all-toggle"
                                         class="icon-button secondary-button collapse-all-toggle"
                                         aria-label="Collapse all steps"
@@ -758,6 +767,17 @@
         <div id="screenshots"></div>
     </section>
 </main>
+
+<dialog id="workflow-roadmap-dialog" class="src-dialog roadmap-dialog" aria-labelledby="workflow-roadmap-title">
+    <div class="src-dialog-header">
+        <h3 id="workflow-roadmap-title" class="src-dialog-title">Workflow roadmap</h3>
+        <button type="button" id="workflow-roadmap-close" class="src-dialog-close">Close</button>
+    </div>
+    <div class="src-dialog-body">
+        <p class="src-dialog-meta">The steps in the order a run takes them. Select one to go to it.</p>
+        <div id="workflow-roadmap-body"></div>
+    </div>
+</dialog>
 
 <script src="./shared/a11y-metric-defs.js"></script>
 <script src="./shared/a11y-summary.js"></script>
