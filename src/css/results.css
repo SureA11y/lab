@@ -1402,3 +1402,75 @@ tr.cantTell .issue-status { color: var(--warn); }
 :is(.sr-thumb, .scan-filmstrip__page):is(:hover, :focus-visible) :is(img, .sr-shot) {
     filter: none;
 }
+
+/* ==========================================================================
+   SCANS ON A RAIL
+   A numbered stop for each scan, a line joining it to the next and a rule
+   between them: the scans read as a sequence, and the content keeps all the
+   width but a 40px gutter (none on a narrow screen). The same in the app
+   (#results) and in the exported report (#results-container).
+   ========================================================================== */
+:is(#results, #results-container) { counter-reset: scan; }
+
+:is(#results, #results-container) .scan-results-wrapper {
+    counter-increment: scan;
+    position: relative;
+    margin: 0;
+    padding: 0 0 28px 40px;
+}
+:is(#results, #results-container) .scan-results-wrapper:has(~ .scan-results-wrapper) {
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border-soft);
+}
+:is(#results, #results-container) .scan-results-wrapper:has(~ .scan-results-wrapper)::after {
+    content: "";
+    position: absolute;
+    left: 13px;
+    top: 50px;
+    bottom: -2px;
+    width: 2px;
+    background: var(--accent-border);
+}
+
+:is(#results, #results-container) .scan-header { margin: 0 0 8px; padding-top: 14px; }
+:is(#results, #results-container) .scan-header > h3 { display: block; border-bottom: 0; padding-bottom: 0; }
+:is(#results, #results-container) .scan-header > h3::before {
+    content: counter(scan);
+    position: absolute;
+    left: 0;
+    top: 15px;
+    width: 28px;
+    height: 28px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--accent-border);
+    background: var(--surface-2);
+    color: var(--accent-dark);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* The counts as one capsule. */
+:is(#results, #results-container) .scan-results-meta > .stream-counts {
+    padding: 2px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-pill);
+    background: var(--surface-1);
+    align-self: center;
+}
+
+/* On a narrow screen the number goes inline, in front of the name, and the
+   gutter and the line go: nothing of the width is given up. */
+@media (max-width: 700px) {
+    :is(#results, #results-container) .scan-results-wrapper { padding-left: 0; }
+    :is(#results, #results-container) .scan-results-wrapper:has(~ .scan-results-wrapper)::after { display: none; }
+    :is(#results, #results-container) .scan-header > h3::before {
+        position: static;
+        margin-right: .5rem;
+        vertical-align: middle;
+    }
+}
