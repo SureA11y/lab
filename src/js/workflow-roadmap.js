@@ -76,7 +76,8 @@ export function expandCustomCalls(nodes, customNodes, defs) {
             if (!n || n.root) continue;
             const item = {...n, depth: n.depth - minDepth + offset, path: prefix ? `${prefix}.${n.path}` : n.path, from};
             const def = n.calls ? defById.get(n.calls) : null;
-            if (n.calls) item.detail = def?.name || n.calls;
+            // The custom step's name is the detail, unless the call is named by it already.
+            if (n.calls) item.detail = def ? (def.name === item.name ? '' : def.name) : n.calls;
             out.push(item);
             if (def && !seen.has(n.calls)) {
                 item.container = true;

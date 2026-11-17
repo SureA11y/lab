@@ -190,7 +190,7 @@
     padding: 0 .45em;
     border-radius: var(--radius-sm);
     background: var(--accent-soft);
-    color: var(--accent-on-soft);
+    color: var(--accent-on-soft, var(--accent-dark));
     font-size: .78em;
     font-weight: 600;
     line-height: 1.6;
@@ -1793,8 +1793,19 @@ button.roadmap__row:focus-visible { outline: var(--focus-outline); outline-offse
 .roadmap__row--scan .roadmap__type {
     background: color-mix(in srgb, var(--accent) 22%, transparent);
     border: 1px solid var(--accent-border);
-    color: var(--accent-on-soft);
+    color: var(--accent-on-soft, var(--accent-dark));
     font-weight: 500;
 }
 .roadmap__row.is-off .roadmap__name, .roadmap__row.is-off .roadmap__detail { text-decoration: line-through; opacity: .65; }
 .roadmap__empty { color: var(--text-muted); }
+
+/* In a report: the roadmap is one row of the metadata block, folded. */
+.report-meta > li.report-meta__wide { grid-template-columns: minmax(0, 1fr); }
+.report-roadmap > summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 2px 0;
+}
+.report-roadmap[open] > summary { margin-bottom: 8px; }
+.report-roadmap__count { font-weight: 400; font-size: var(--fs-sm); color: var(--text-muted); margin-left: .5rem; }
+.report-roadmap .roadmap { font-size: var(--fs-md); }

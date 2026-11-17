@@ -22,7 +22,8 @@ import {buildGlobalSummary, ensureScanSummaryCounts, ensureScansIncludedFlag, ge
 import {collapseLineIfExpanded, deriveActionDisplayLabel, expandLineIfCollapsed, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
 import {parseCustomStepsJson} from './custom-steps-data.js';
 import {createStepsPanel, readActionNodes, readStepNodes} from './steps-panel.js';
-import {expandCustomCalls, renderRoadmap} from './workflow-roadmap.js';
+import {expandCustomCalls, renderRoadmap, roadmapCount} from './workflow-roadmap.js';
+import {roadmapStepsFromConfig} from './workflow-roadmap-config.js';
 import {createPasswordsBanner, customStepIdsRun, customStepsWithEmptyPasswords, stepHasEmptyPassword} from './passwords-to-type.js';
 import {setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
@@ -192,6 +193,7 @@ function storeActiveMode(mode) {
         set pendingScanDraw(value) { pendingScanDraw = value; },
         get recomputeDerivedReportData() { return recomputeDerivedReportData; },
         get reportDataContainer() { return reportDataContainer; },
+        workflowRoadmapOf: (config) => workflowRoadmapOf(config),
         get reportEditMode() { return reportEditMode; },
         set reportEditMode(value) { reportEditMode = value; },
         get reportMetaEditors() { return reportMetaEditors; },
@@ -1965,6 +1967,15 @@ function storeActiveMode(mode) {
             const expanded = workflowToggleBtn.getAttribute('aria-expanded') === 'true';
             setWorkflowExpanded(!expanded);
         });
+    }
+
+    // The roadmap of a saved configuration (a report's), as markup that needs
+    // no script: groups fold by themselves.
+    function workflowRoadmapOf(config) {
+        if (config?.type !== 'a11y-ui-src-config') return null;
+        const steps = roadmapStepsFromConfig(config, {typeTitleOf, listsOf, nameOfAction});
+        if (!steps.length) return null;
+        return {html: renderRoadmap(document, steps).outerHTML, count: roadmapCount(steps)};
     }
 
     // The workflow's roadmap: its steps as a tree in a dialog, drawn from the

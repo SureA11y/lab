@@ -146,3 +146,38 @@ describe('folding the roadmap', () => {
         assert.ok(el.querySelector('summary'));
     });
 });
+
+describe('the roadmap of a saved configuration', () => {
+    let config;
+    before(async () => {
+        config = await import('./workflow-roadmap-config.js');
+    });
+    const defs = {
+        typeTitleOf: (t) => ({group: 'Group', click: 'Click', runCustomStep: 'Run custom step', a11yScan: 'A11y scan', setValue: 'Set field value'})[t] || t,
+        listsOf: (t) => (t === 'group' ? ['actions'] : []),
+        nameOfAction: (a) => String(a.alias || a.label || '')
+    };
+
+    test('reads the workflow and opens a call to a custom step in place', () => {
+        const steps = config.roadmapStepsFromConfig({
+            type: 'a11y-ui-src-config',
+            state: {
+                'actions-workflow': [
+                    {type: 'group', alias: 'Login', actions: [{type: 'setValue', selector: '#user', value: 'secret'}]},
+                    {type: 'runCustomStep', customStepId: 'scan'}
+                ],
+                'custom-steps-json': JSON.stringify([{id: 'scan', name: 'Scan page', actions: [{type: 'a11yScan', label: 'Home'}]}])
+            }
+        }, defs);
+        assert.deepEqual(steps.map((s) => `${s.path}:${s.name}`), ['1:Login', '1.1:Set field value', '2:Scan page', '2.1:Home']);
+        assert.equal(steps[1].detail, '#user');
+        assert.ok(!mod.renderRoadmap(doc(), steps).outerHTML.includes('secret'), 'a value to type is never in the roadmap');
+        assert.equal(steps[3].from, 'custom');
+    });
+
+    test('has nothing to show without a workflow or when the custom steps are not valid JSON', () => {
+        assert.deepEqual(config.roadmapStepsFromConfig({state: {}}, defs), []);
+        const steps = config.roadmapStepsFromConfig({state: {'actions-workflow': [{type: 'click', selector: 'a'}], 'custom-steps-json': '{not json'}}, defs);
+        assert.equal(steps.length, 1);
+    });
+});
