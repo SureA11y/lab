@@ -1654,3 +1654,111 @@
     .action-array__footer .action-array__add { width: auto; padding-inline: var(--space-3); gap: var(--space-2); }
     .action-array__footer .action-array__add .action-array__add-word { display: inline; }
 }
+
+/* ==========================================================================
+   WORKFLOW ROADMAP (workflow-roadmap.js)
+   The steps as a tree on a rail: a mark, a name, the type, what it acts on.
+   Also drawn in reports, so it only needs the classes below.
+   ========================================================================== */
+button.roadmap-toggle + button.collapse-all-toggle { margin-left: 0; }
+
+.roadmap { font-size: var(--fs-md); color: var(--text-main); }
+.roadmap__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.roadmap__list:not(.roadmap__list--top) {
+    margin: 2px 0 6px 15px;
+    padding-left: 14px;
+    border-left: 2px solid var(--border-soft);
+}
+.roadmap__list:not(.roadmap__list--top) > .roadmap__item { position: relative; }
+.roadmap__list:not(.roadmap__list--top) > .roadmap__item::before {
+    content: "";
+    position: absolute;
+    left: -14px;
+    top: 17px;
+    width: 10px;
+    border-top: 2px solid var(--border-soft);
+}
+.roadmap__summary { list-style: none; cursor: pointer; }
+.roadmap__summary::-webkit-details-marker { display: none; }
+button.roadmap__row, .roadmap__row {
+    display: grid;
+    grid-template-columns: 14px 3rem minmax(0, 1fr) auto;
+    align-items: center;
+    justify-content: stretch;
+    column-gap: .6rem;
+    min-height: 34px;
+    width: 100%;
+    padding: 5px 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+button.roadmap__row:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--border-soft); }
+button.roadmap__row:focus-visible { outline: var(--focus-outline); outline-offset: -2px; }
+.roadmap__mark {
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--text-soft);
+    border-radius: 50%;
+    background: var(--surface-2);
+}
+.roadmap__num {
+    font-family: ui-monospace, monospace;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+.roadmap__main { display: flex; align-items: baseline; gap: .6rem; min-width: 0; }
+.roadmap__name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; max-width: 60%; }
+.roadmap__detail {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: ui-monospace, monospace;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+}
+.roadmap__meta { display: flex; align-items: center; gap: .4rem; justify-content: flex-end; }
+.roadmap__type {
+    font-size: var(--fs-xs);
+    padding: 1px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-3);
+    color: var(--text-soft);
+    white-space: nowrap;
+}
+.roadmap__count {
+    min-width: 1.6em;
+    text-align: center;
+    font-size: var(--fs-xs);
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+    background: var(--warn-soft);
+    color: var(--text-main);
+}
+.roadmap__flag {
+    font-size: var(--fs-xs);
+    padding: 0 7px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--text-muted);
+}
+.roadmap__flag--off { border-style: solid; }
+.roadmap__row.roadmap__row--container { background: var(--surface-1); border-color: var(--border-soft); }
+.roadmap__row--container .roadmap__mark { border-radius: 3px; border-color: var(--warn); background: var(--warn-soft); }
+.roadmap__row--container .roadmap__name { font-weight: 600; }
+.roadmap__row.roadmap__row--scan { background: var(--accent-soft); border-color: var(--accent-border); }
+.roadmap__row--scan .roadmap__mark { background: var(--accent); border-color: var(--accent); }
+.roadmap__row--scan .roadmap__type {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    border: 1px solid var(--accent-border);
+    color: var(--accent-on-soft);
+    font-weight: 500;
+}
+.roadmap__row.is-off .roadmap__name, .roadmap__row.is-off .roadmap__detail { text-decoration: line-through; opacity: .65; }
+.roadmap__empty { color: var(--text-muted); }

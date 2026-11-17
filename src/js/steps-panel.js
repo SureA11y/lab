@@ -6,6 +6,7 @@
 // (steps-panel-model.js); this draws it and wires it.
 
 import {getDirectActionLines, getDirectNestedActionContainers} from './action-tree.js';
+import {stepDetail} from './workflow-roadmap.js';
 import {asList, isEdit, planChanges, sharedFields, tally} from './steps-bulk-edit.js';
 import {
     KINDS, ancestorIds, applyFilter, countKinds, foldRows, isOfKind, matchPosition, siblingPositions, stepThroughMatches
@@ -98,6 +99,28 @@ export function readStepNodes(editorEl, idOf, under = {}) {
                     return searchText;
                 }
             });
+            // What the roadmap says of a step, read when it is drawn.
+            let detail = null;
+            Object.defineProperty(node, 'detail', {
+                enumerable: true,
+                get() {
+                    if (detail === null) {
+                        detail = stepDetail((name) => {
+                            const f = ownFields(line).find((x) => x.dataset.fieldName === name);
+                            return f ? fieldText(f) : '';
+                        });
+                    }
+                    return detail;
+                }
+            });
+            Object.defineProperty(node, 'optional', {
+                enumerable: true,
+                get() {
+                    const f = ownFields(line).find((x) => x.dataset.fieldName === 'optional');
+                    const c = f?.querySelector('select, input');
+                    return c?.type === 'checkbox' ? c.checked : c?.value === 'true';
+                }
+            });
             nodes.push(node);
             lineById.set(id, line);
             nested.forEach((sub) => walk(sub, depth + 1, id, path, node.disabled, trail.concat([sub.dataset.fieldName || ''])));
@@ -158,6 +181,8 @@ export function readActionNodes(actions, o) {
                     return searchText;
                 }
             });
+            node.detail = stepDetail((name) => (typeof action[name] === 'object' ? '' : String(action[name] ?? '')));
+            node.optional = action.optional === true;
             nodes.push(node);
             lists.forEach((f) => walk(action[f], depth + 1, node.id, path, node.disabled, trail.concat([f])));
         });

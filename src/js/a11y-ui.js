@@ -22,6 +22,7 @@ import {buildGlobalSummary, ensureScanSummaryCounts, ensureScansIncludedFlag, ge
 import {collapseLineIfExpanded, deriveActionDisplayLabel, expandLineIfCollapsed, initSectionEndToggles, resolveLineByPathFromContainer, setupCollapseAllStepsButton} from './action-tree.js';
 import {parseCustomStepsJson} from './custom-steps-data.js';
 import {createStepsPanel, readActionNodes, readStepNodes} from './steps-panel.js';
+import {expandCustomCalls, renderRoadmap} from './workflow-roadmap.js';
 import {createPasswordsBanner, customStepIdsRun, customStepsWithEmptyPasswords, stepHasEmptyPassword} from './passwords-to-type.js';
 import {setRunTabBadge, setRunTabSpinner} from './tab-indicators.js';
 import {focusSafely, getFirstFocusable, isFocusable, shouldIgnoreGlobalUndoRedo} from './focus-utils.js';
@@ -463,6 +464,7 @@ function storeActiveMode(mode) {
     const workflowToggleBtn = $('#workflow-toggle');
     const workflowContentEl = $('#workflow-content');
     const workflowCollapseAllBtn = $('#workflow-collapse-all-toggle');
+    const workflowRoadmapBtn = $('#workflow-roadmap-btn');
     const liveStreamEl = $('#live-stream');
     const reportDataContainer = $('#report-data');
     const historyManagementButtonsContainer = $('#history-management');
@@ -1889,6 +1891,7 @@ function storeActiveMode(mode) {
         workflowToggleBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         workflowContentEl.hidden = !expanded;
         workflowToggleBtn.setAttribute('aria-label', expanded ? 'Collapse workflow' : 'Expand workflow');
+        if (workflowRoadmapBtn) workflowRoadmapBtn.hidden = !expanded;
         if (workflowCollapseAllBtn) {
             workflowCollapseAllBtn.hidden = !expanded;
             if (expanded) refreshWorkflowCollapseAllBtn?.();
@@ -1956,11 +1959,40 @@ function storeActiveMode(mode) {
     function initWorkflowCollapseUi() {
         if (!workflowToggleBtn) return;
         refreshWorkflowCollapseAllBtn = setupCollapseAllStepsButton(workflowCollapseAllBtn, actionsBar);
+        initWorkflowRoadmap();
         setWorkflowExpanded(true);
         workflowToggleBtn.addEventListener('click', () => {
             const expanded = workflowToggleBtn.getAttribute('aria-expanded') === 'true';
             setWorkflowExpanded(!expanded);
         });
+    }
+
+    // The workflow's roadmap: its steps as a tree in a dialog, drawn from the
+    // steps the Workflow steps panel reads. Selecting a step goes to it.
+    function initWorkflowRoadmap() {
+        const dialog = $('#workflow-roadmap-dialog');
+        const body = $('#workflow-roadmap-body');
+        if (!workflowRoadmapBtn || !dialog || !body) return;
+        workflowRoadmapBtn.append(svgIcon('step-tree'));
+        workflowRoadmapBtn.addEventListener('click', () => {
+            workflowStepsPanel?.refresh();
+            customStepsPanel?.refresh();
+            const steps = expandCustomCalls(
+                workflowStepsPanel?.nodes || [],
+                customStepsPanel?.nodes || [],
+                customStepsData.map((d, i) => ({id: String(d?.id || '').trim(), headId: `d${i}`, name: String(d?.name || d?.id || '')}))
+            );
+            body.replaceChildren(renderRoadmap(document, steps, {
+                onGo: (step) => {
+                    dialog.close();
+                    // A step of a custom step is in the Custom steps section.
+                    (step.from === 'custom' ? customStepsPanel : workflowStepsPanel)?.goTo(step.id, {focus: true});
+                }
+            }));
+            if (typeof dialog.showModal === 'function') dialog.showModal();
+            else dialog.setAttribute('open', '');
+        });
+        $('#workflow-roadmap-close')?.addEventListener('click', () => dialog.close());
     }
 
     function collapseAllCollapsibleGroups(keepOpen = null) {
