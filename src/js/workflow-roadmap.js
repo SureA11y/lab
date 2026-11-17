@@ -121,20 +121,41 @@ function label(doc, step, onGo) {
     return row;
 }
 
-function list(doc, items, onGo, top) {
+function list(doc, items, onGo, top, openDepth) {
     const ul = el(doc, 'ul', top ? 'roadmap__list roadmap__list--top' : 'roadmap__list');
     for (const item of items) {
         const step = {...item.step, childCount: item.children.length ? countAll(item.children) : null};
         const li = el(doc, 'li', 'roadmap__item');
         if (item.children.length) {
             const details = el(doc, 'details', 'roadmap__fold');
-            details.open = true;
-            const summary = el(doc, 'summary', 'roadmap__summary');
-            summary.append(label(doc, step, onGo));
-            details.append(summary, list(doc, item.children, onGo, false));
+            // Open down to a level; the groups below it start folded.
+            details.open = (Number(step.depth) || 0) < openDepth;
+            const summary = el(doc, 'summary', 'roadmap__summary roadmap__line');
+            let twisty;
+            if (onGo) {
+                // A row goes to its step, so folding is a button of its own.
+                twisty = el(doc, 'button', 'roadmap__twisty');
+                twisty.type = 'button';
+                twisty.setAttribute('aria-label', `Show the steps of ${step.name || step.typeTitle || 'this step'}`);
+                twisty.setAttribute('aria-expanded', String(details.open));
+                twisty.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    details.open = !details.open;
+                });
+                details.addEventListener('toggle', () => twisty.setAttribute('aria-expanded', String(details.open)));
+                // A click on the row goes to its step, not folding.
+                summary.addEventListener('click', (event) => event.preventDefault());
+            } else {
+                twisty = el(doc, 'span', 'roadmap__twisty');
+                twisty.setAttribute('aria-hidden', 'true');
+            }
+            summary.append(twisty, label(doc, step, onGo));
+            details.append(summary, list(doc, item.children, onGo, false, openDepth));
             li.append(details);
         } else {
-            li.append(label(doc, step, onGo));
+            const line = el(doc, 'div', 'roadmap__line');
+            line.append(el(doc, 'span', 'roadmap__twisty roadmap__twisty--none'), label(doc, step, onGo));
+            li.append(line);
         }
         ul.append(li);
     }
@@ -149,16 +170,29 @@ function countAll(items) {
  * The roadmap as an element.
  * @param {Document} doc
  * @param {import('./steps-panel-model.js').StepNode[]} nodes
- * @param {{onGo?: (step: object) => void}} [o]  Each step as a button that goes to it.
+ * @param {{onGo?: (step: object) => void, openDepth?: number}} [o]
+ *        onGo: each step as a button that goes to it, and Expand all and
+ *        Collapse all above the tree. openDepth: how many levels start open
+ *        (2: the groups of the third level start folded).
  * @returns {HTMLElement}
  */
-export function renderRoadmap(doc, nodes, {onGo} = {}) {
+export function renderRoadmap(doc, nodes, {onGo, openDepth = 2} = {}) {
     const root = el(doc, 'div', 'roadmap');
     const tree = roadmapTree(nodes);
     if (!tree.length) {
         root.append(el(doc, 'p', 'roadmap__empty', 'No steps yet.'));
         return root;
     }
-    root.append(list(doc, tree, onGo, true));
+    if (onGo && tree.some(function hasKids(i) { return i.children.length > 0; })) {
+        const tools = el(doc, 'div', 'roadmap__tools');
+        for (const [text, open] of [['Expand all', true], ['Collapse all', false]]) {
+            const btn = el(doc, 'button', 'secondary-button roadmap__tool', text);
+            btn.type = 'button';
+            btn.addEventListener('click', () => root.querySelectorAll('details').forEach((d) => { d.open = open; }));
+            tools.append(btn);
+        }
+        root.append(tools);
+    }
+    root.append(list(doc, tree, onGo, true, openDepth));
     return root;
 }
