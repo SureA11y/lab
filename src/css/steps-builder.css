@@ -190,7 +190,7 @@
     padding: 0 .45em;
     border-radius: var(--radius-sm);
     background: var(--accent-soft);
-    color: var(--accent-on-soft, var(--accent-dark));
+    color: var(--accent-on-soft);
     font-size: .78em;
     font-weight: 600;
     line-height: 1.6;
