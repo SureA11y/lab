@@ -1422,7 +1422,7 @@ tr.cantTell .issue-status { color: var(--warn); }
     margin-bottom: 4px;
     border-bottom: 1px solid var(--border-soft);
 }
-:is(#results, #results-container) .scan-results-wrapper:has(~ .scan-results-wrapper)::after {
+:is(#results, #results-container) .scan-results-wrapper::after {
     content: "";
     position: absolute;
     left: 13px;
@@ -1431,6 +1431,7 @@ tr.cantTell .issue-status { color: var(--warn); }
     width: 2px;
     background: var(--accent-border);
 }
+:is(#results, #results-container) .scan-results-wrapper:not(:has(~ .scan-results-wrapper))::after { bottom: 28px; }
 
 :is(#results, #results-container) .scan-header { margin: 0 0 8px; padding-top: 14px; }
 :is(#results, #results-container) .scan-header > h3 { display: block; border-bottom: 0; padding-bottom: 0; }
@@ -1467,7 +1468,7 @@ tr.cantTell .issue-status { color: var(--warn); }
    gutter and the line go: nothing of the width is given up. */
 @media (max-width: 700px) {
     :is(#results, #results-container) .scan-results-wrapper { padding-left: 0; }
-    :is(#results, #results-container) .scan-results-wrapper:has(~ .scan-results-wrapper)::after { display: none; }
+    :is(#results, #results-container) .scan-results-wrapper::after { display: none; }
     :is(#results, #results-container) .scan-header > h3::before {
         position: static;
         margin-right: .5rem;
