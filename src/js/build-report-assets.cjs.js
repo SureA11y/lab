@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { minify } = require('terser');
 const CleanCSS = require('clean-css');
+const { readReportCss } = require('../css/app-styles');
 
 const REPORT_DIR = path.join(__dirname, '..', 'report');
 const FONTS_DIR = path.join(__dirname, '..', 'fonts');
@@ -151,7 +152,8 @@ async function buildReportAssets() {
         throw new Error(`Missing file: ${cssInPath}`);
     }
 
-    const cssCode = fs.readFileSync(cssInPath, 'utf8');
+    // What the report shares with the app (marked there), then its own rules.
+    const cssCode = readReportCss();
     const cssMinified = new CleanCSS({ level: 2 }).minify(cssCode);
 
     if (cssMinified.errors.length) {
