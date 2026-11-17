@@ -1035,6 +1035,14 @@ tr:nth-child(even) td { background: var(--surface-0); }
 
 .issue-status { white-space: nowrap; }
 
+/* A status and its counts keep their glyph and word on one line, as in the app. */
+.issue-status,
+.stream-fail, .stream-cantTell, .stream-pass {
+    display: inline-flex;
+    align-items: center;
+    gap: .35em;
+}
+
 /* The results tables lay their columns out fixed, so the tables of a
    report's scans and groups line up one under another whatever each
    holds (the widths are the colgroup's: a11y-ui.rendering.js). Narrower
@@ -1105,7 +1113,7 @@ tr:nth-child(even) td { background: var(--surface-0); }
 }
 /* A review's "likely fails" badge goes under its word when the column is
    too narrow for both. */
-.results-table .issue-status { flex-wrap: wrap; row-gap: .2rem; display: inline-flex; align-items: center; gap: .35em;}
+.results-table .issue-status { flex-wrap: wrap; row-gap: .2rem; }
 tr.fail .issue-status { color: var(--danger); }
 tr.cantTell .issue-status { color: var(--warn); }
 
