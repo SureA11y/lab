@@ -33,6 +33,8 @@ const { createQueueGovernor } = require('./queue-governor');
 const { createRunActivity } = require('./run-activity');
 const { createBatchImages, packResultImages, imagePathsInFile, IMAGES_DIR } = require('./batch-package');
 const { isConfig } = require('../shared/batch-config.js');
+const { planWorkflowSteps } = require('../shared/workflow-step-plan.js');
+const timeEstimate = require('../shared/scan-time-estimate.js');
 
 const DEFAULT_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 8;
@@ -1534,6 +1536,32 @@ function createRunQueue({
         };
     }
 
+    // What the app needs to put a time on a run, worked out once per run: how
+    // many scans it is expected to do (the number it was given, else the one its
+    // workflow is certain to run), and a key that is the same for runs of the
+    // same workflow, so finished ones can say what the others will take.
+    const workflowInfos = new WeakMap();
+    function workflowInfo(item) {
+        let info = workflowInfos.get(item);
+        if (info) return info;
+        info = { key: null, expectedScans: null };
+        const spec = (item.config && item.config.runSpec) || item.spec || null;
+        if (spec && Array.isArray(spec.actions)) {
+            try {
+                const customSteps = Array.isArray(spec.customSteps) ? spec.customSteps : [];
+                const plan = planWorkflowSteps(spec.actions, { customSteps });
+                info = {
+                    key: crypto.createHash('sha1').update(JSON.stringify([spec.actions, customSteps])).digest('hex').slice(0, 16),
+                    expectedScans: timeEstimate.effectiveExpectedScans({ expectedScans: spec.expectedScans, plan }),
+                };
+            } catch {
+                // A workflow that cannot be walked has no time to put on it.
+            }
+        }
+        workflowInfos.set(item, info);
+        return info;
+    }
+
     // A result as the app sees it: without the run folders it made.
     function resultView(result) {
         const out = {};
@@ -1557,6 +1585,8 @@ function createRunQueue({
             findings: item.findings,
             file: item.file,
             error: item.error,
+            expectedScans: workflowInfo(item).expectedScans,
+            workflowKey: workflowInfo(item).key,
             needsValues: !!item.needsValues,
             hasConfig: !!item.config,
             row: item.row ?? null,

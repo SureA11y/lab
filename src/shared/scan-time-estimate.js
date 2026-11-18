@@ -226,15 +226,20 @@
      * `elapsedMs`      active-clock time now (defaults to the last scan's)
      * `prior`          priorFromRuns(...), or null
      *
+     * A caller that only knows counts, not each scan's time, passes `scansDone`,
+     * `lastScanAtMs` and `pace` ({perScanMs, scans, variation}) in their place;
+     * see estimateFromCounts.
+     *
      * Returns {state, basis, scansDone, expectedScans, scansLeft, perScanMs,
      * remainingMs, rangeMs, weightOwn, priorRuns}. `remainingMs` and `rangeMs`
      * are null unless the state is 'estimating'.
      */
     function estimateRun(input = {}) {
         const times = Array.isArray(input.completedAtMs) ? input.completedAtMs.filter(Number.isFinite) : [];
-        const own = ownPace(times);
+        const given = input.pace && input.pace.perScanMs > 0 ? input.pace : null;
+        const own = given || ownPace(times);
         const prior = input.prior && input.prior.perScanMs > 0 ? input.prior : null;
-        const scansDone = times.length;
+        const scansDone = Number.isInteger(input.scansDone) && input.scansDone >= 0 ? input.scansDone : times.length;
         const expectedScans = isCount(input.expectedScans) ? input.expectedScans : null;
 
         let weightOwn = 0;
@@ -283,7 +288,9 @@
             return result;
         }
 
-        const lastAt = times.length ? times[times.length - 1] : 0;
+        const lastAt = Number.isFinite(input.lastScanAtMs)
+            ? input.lastScanAtMs
+            : (times.length ? times[times.length - 1] : 0);
         const elapsedMs = Number.isFinite(input.elapsedMs) ? Math.max(input.elapsedMs, lastAt) : lastAt;
         const sinceLast = elapsedMs - lastAt;
 
@@ -301,10 +308,41 @@
     }
 
     /**
+     * estimateRun for a caller that knows how many scans are done and how long
+     * the run has been going, but not when each scan finished: the queue's rows,
+     * which the server describes that way. The pace is the time up to the last
+     * scan over the scans done, so the start-up counts in it as it does not in
+     * estimateRun, and there is no scatter to widen the range with.
+     *
+     * {expectedScans, scansDone, elapsedMs, sinceScanMs, prior}; `sinceScanMs`
+     * is the time since the last scan finished, when known.
+     */
+    function estimateFromCounts({ expectedScans = null, scansDone = 0, elapsedMs = null, sinceScanMs = null, prior = null } = {}) {
+        const done = Number.isFinite(scansDone) && scansDone > 0 ? Math.floor(scansDone) : 0;
+        const elapsed = Number.isFinite(elapsedMs) && elapsedMs >= 0 ? elapsedMs : null;
+        let lastScanAtMs = null;
+        let pace = null;
+        if (done > 0 && elapsed != null) {
+            lastScanAtMs = Math.max(0, elapsed - (Number.isFinite(sinceScanMs) && sinceScanMs >= 0 ? sinceScanMs : 0));
+            if (lastScanAtMs > 0) pace = { perScanMs: lastScanAtMs / done, scans: done, variation: null };
+        }
+        return estimateRun({
+            expectedScans,
+            scansDone: done,
+            completedAtMs: [],
+            lastScanAtMs: lastScanAtMs == null ? 0 : lastScanAtMs,
+            elapsedMs: elapsed == null ? 0 : elapsed,
+            pace,
+            prior
+        });
+    }
+
+    /**
      * estimateBatch({running, queued, prior, concurrency})
      *
      * `running`      estimateRun results for the runs going now
-     * `queued`       [{expectedScans}] for the runs not started, null where unknown
+     * `queued`       [{expectedScans, prior?}] for the runs not started, null where
+     *                unknown; a run's own `prior` (its workflow's) wins over the batch's
      * `prior`        priorFromRuns(...) for runs with no number of their own
      * `concurrency`  how many runs go at once
      *
@@ -339,12 +377,13 @@
 
         for (const item of queued) {
             const scans = item && isCount(item.expectedScans) ? item.expectedScans : null;
+            const own = item && item.prior && item.prior.perScanMs > 0 ? item.prior : prior;
             let ms = null;
-            if (scans != null && prior) ms = scans * prior.perScanMs;
-            else if (prior) ms = prior.meanDurationMs;
+            if (scans != null && own) ms = scans * own.perScanMs;
+            else if (own) ms = own.meanDurationMs;
             if (ms == null) return unknownBatch(prior);
 
-            const spread = clamp(prior.spread != null ? prior.spread : SPREAD_NO_HISTORY, SPREAD_MIN, SPREAD_MAX);
+            const spread = clamp(own.spread != null ? own.spread : SPREAD_NO_HISTORY, SPREAD_MIN, SPREAD_MAX);
             total += ms;
             low += ms * (1 - spread);
             high += ms * (1 + spread);
@@ -419,6 +458,7 @@
         ownPace,
         priorFromRuns,
         estimateRun,
+        estimateFromCounts,
         estimateBatch,
         formatRemaining,
         formatRange

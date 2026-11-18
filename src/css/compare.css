@@ -162,14 +162,16 @@ body.queue-mode-active #screenshots-container { display: none; }
 /* Fixed columns: a running row's counts and time grow without moving them.
    The name takes the rest, at least 11rem: below that the table scrolls
    inside .queue-table-wrap. */
-.queue-table { min-width: 61.25rem; }
+.queue-table { min-width: 62.5rem; }
 /* The longest status: "Saving result" and its spinner. */
 .queue-table .queue-col-status { width: 10rem; }
-.queue-table .queue-col-scans { width: 6.5rem; }
+.queue-table .queue-col-scans { width: 6rem; }
 /* "12,345" and its result tile. */
 .queue-table .queue-col-fail, .queue-table .queue-col-pass { width: 6rem; }
-.queue-table .queue-col-canttell { width: 6.5rem; }
-.queue-table .queue-col-duration { width: 6rem; }
+.queue-table .queue-col-canttell { width: 6rem; }
+.queue-table .queue-col-duration { width: 5.5rem; }
+/* "~1h 25m" or "finishing"; the heading is "Est. left". */
+.queue-table .queue-col-left { width: 5.5rem; }
 /* A row's actions are at most four 36px icon buttons (a finished row:
    Open, Download, Run again, Delete): 168px with their gaps, plus the
    cell's padding. */

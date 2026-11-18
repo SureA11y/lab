@@ -411,3 +411,79 @@ describe('describeBasis', () => {
         assert.equal(E.describeBasis(null), '');
     });
 });
+
+describe('estimateFromCounts', () => {
+    const prior = { perScanMs: 30000, meanScans: 20, meanDurationMs: 600000, runs: 3, spread: 0.2 };
+
+    test('takes the pace from the time up to the last scan over the scans done', () => {
+        // 4 scans in 4 min, the last one finished 30 s ago: 3.5 min / 4 scans.
+        const r = E.estimateFromCounts({ expectedScans: 10, scansDone: 4, elapsedMs: 4 * MIN, sinceScanMs: 30000 });
+        assert.equal(r.state, E.STATE.ESTIMATING);
+        assert.equal(r.basis, E.BASIS.OWN);
+        const perScan = 3.5 * MIN / 4;
+        assert.equal(Math.round(r.remainingMs), Math.round(6 * perScan - 30000));
+    });
+
+    test('has no scatter, so the range is the wider default, not the narrowest', () => {
+        const r = E.estimateFromCounts({ expectedScans: 10, scansDone: 4, elapsedMs: 4 * MIN, sinceScanMs: 0 });
+        const width = (r.rangeMs.high - r.rangeMs.low) / r.remainingMs;
+        assert.ok(width > 0.5, String(width));
+    });
+
+    test('a run that has not started takes its number from the prior', () => {
+        const r = E.estimateFromCounts({ expectedScans: 10, scansDone: 0, prior });
+        assert.equal(r.basis, E.BASIS.PRIOR);
+        assert.equal(r.remainingMs, 10 * 30000);
+    });
+
+    test('blends the run\'s pace with the prior as scans are done', () => {
+        const r = E.estimateFromCounts({ expectedScans: 30, scansDone: 3, elapsedMs: 3 * MIN, sinceScanMs: 0, prior });
+        assert.equal(r.basis, E.BASIS.BLEND);
+        assert.equal(r.weightOwn, 0.5);
+    });
+
+    test('with no prior it waits for two scans', () => {
+        const one = E.estimateFromCounts({ expectedScans: 10, scansDone: 1, elapsedMs: MIN, sinceScanMs: 0 });
+        assert.equal(one.state, E.STATE.WARMING_UP);
+        const two = E.estimateFromCounts({ expectedScans: 10, scansDone: 2, elapsedMs: 2 * MIN, sinceScanMs: 0 });
+        assert.equal(two.state, E.STATE.ESTIMATING);
+    });
+
+    test('says reached and past like estimateRun does', () => {
+        assert.equal(E.estimateFromCounts({ expectedScans: 3, scansDone: 3, elapsedMs: 3 * MIN }).state, E.STATE.REACHED);
+        assert.equal(E.estimateFromCounts({ expectedScans: 3, scansDone: 4, elapsedMs: 4 * MIN }).state, E.STATE.PAST);
+    });
+
+    test('with no total it has no time', () => {
+        const r = E.estimateFromCounts({ scansDone: 4, elapsedMs: 4 * MIN });
+        assert.equal(r.state, E.STATE.NO_TOTAL);
+        assert.equal(r.remainingMs, null);
+    });
+
+    test('bad numbers are no scans and no time', () => {
+        const r = E.estimateFromCounts({ expectedScans: 5, scansDone: NaN, elapsedMs: -5, prior });
+        assert.equal(r.scansDone, 0);
+        assert.equal(r.state, E.STATE.ESTIMATING);
+    });
+});
+
+describe('estimateBatch with a prior of its own for each queued run', () => {
+    const fast = { perScanMs: 10000, meanDurationMs: 100000, spread: 0.1, runs: 2 };
+    const slow = { perScanMs: 60000, meanDurationMs: 600000, spread: 0.1, runs: 2 };
+
+    test('a queued run reads its own workflow\'s prior before the batch\'s', () => {
+        const b = E.estimateBatch({
+            running: [],
+            queued: [{ expectedScans: 10, prior: fast }, { expectedScans: 10, prior: slow }],
+            prior: null,
+            concurrency: 1
+        });
+        assert.equal(b.state, E.STATE.ESTIMATING);
+        assert.equal(b.remainingMs, 10 * 10000 + 10 * 60000);
+    });
+
+    test('a queued run with no number is the mean run of its own workflow', () => {
+        const b = E.estimateBatch({ running: [], queued: [{ prior: slow }], prior: fast, concurrency: 1 });
+        assert.equal(b.remainingMs, 600000);
+    });
+});

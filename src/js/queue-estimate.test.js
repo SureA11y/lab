@@ -1,0 +1,210 @@
+'use strict';
+
+// The time left for the queue's runs and the batch (queue-estimate.js): what
+// finished runs of a workflow say about the others, and how a run's counts
+// become a time.
+
+const {test, describe, before} = require('node:test');
+const assert = require('node:assert/strict');
+
+const estimator = require('../shared/scan-time-estimate.js');
+
+let Q;
+before(async () => {
+    Q = await import('./queue-estimate.js');
+});
+
+const MIN = 60000;
+const done = (id, over = {}) => ({id, status: 'done', workflowKey: 'k', scans: 10, scansRun: 10, durationMs: 5 * MIN, ...over});
+const running = (id, over = {}) => ({
+    id, status: 'running', workflowKey: 'k', scans: 4, scansRun: 4, elapsedMs: 2.5 * MIN, sinceScanMs: 0, expectedScans: 10, ...over
+});
+const waiting = (id, over = {}) => ({id, status: 'waiting', workflowKey: 'k', expectedScans: null, ...over});
+
+const est = (items, extra = {}) => Q.estimateQueue(items, {estimator, ...extra});
+
+describe('priorsFrom', () => {
+    test('is what the finished runs of one workflow took, by workflow', () => {
+        const {byKey, pooled} = Q.priorsFrom([done('a'), done('b'), done('c', {workflowKey: 'other'})], estimator);
+        assert.equal(byKey.get('k').runs, 2);
+        assert.equal(byKey.get('k').perScanMs, 30000);
+        assert.equal(byKey.has('other'), false, 'one run is not enough');
+        assert.equal(pooled.runs, 3);
+    });
+
+    test('leaves out runs that failed, were cancelled or have no scans or time', () => {
+        const items = [done('a'), done('b'), done('c', {status: 'error'}), done('d', {scans: 0, scansRun: 0}), done('e', {durationMs: 0}), done('f', {status: 'cancelled'})];
+        assert.equal(Q.priorsFrom(items, estimator).byKey.get('k').runs, 2);
+    });
+
+    test('counts every scan a run ran, the contexts of a Merged scan included', () => {
+        const items = [done('a', {scans: 5, scansRun: 10}), done('b', {scans: 5, scansRun: 10})];
+        assert.equal(Q.priorsFrom(items, estimator).byKey.get('k').meanScans, 10);
+    });
+
+    test('has nothing without the shared estimator', () => {
+        const {byKey, pooled} = Q.priorsFrom([done('a'), done('b')], null);
+        assert.equal(byKey.size, 0);
+        assert.equal(pooled, null);
+    });
+});
+
+describe('estimateItem', () => {
+    const prior = {perScanMs: 30000, meanScans: 10, meanDurationMs: 5 * MIN, runs: 2, spread: 0.1};
+
+    test('a running run with a number: its pace, leaning on the others at first', () => {
+        const e = Q.estimateItem(running('r'), prior, estimator);
+        assert.equal(e.state, estimator.STATE.ESTIMATING);
+        assert.equal(e.basis, estimator.BASIS.BLEND);
+        assert.equal(e.from, 'set');
+        // 4 scans in 2.5 min: 37.5 s each; with 4 of 7 weight on it, 34.3 s; 6 left.
+        assert.equal(Math.round(e.remainingMs / 1000), 206);
+    });
+
+    test('with no finished runs the run\'s own pace counts alone', () => {
+        const e = Q.estimateItem(running('r'), null, estimator);
+        assert.equal(e.basis, estimator.BASIS.OWN);
+        assert.equal(Math.round(e.remainingMs / 1000), 225);
+    });
+
+    test('a waiting run with a number is that many scans at the pace of the others', () => {
+        const e = Q.estimateItem(waiting('w', {expectedScans: 20}), prior, estimator);
+        assert.equal(e.remainingMs, 20 * 30000);
+        assert.equal(e.from, 'set');
+    });
+
+    test('a run with no number is expected to do what the others did', () => {
+        const e = Q.estimateItem(waiting('w'), prior, estimator);
+        assert.equal(e.remainingMs, 10 * 30000);
+        assert.equal(e.from, 'earlier');
+        assert.equal(e.expectedScans, 10);
+    });
+
+    test('a run with neither a number nor finished runs has no time', () => {
+        assert.equal(Q.estimateItem(waiting('w'), null, estimator), null);
+        assert.equal(Q.estimateItem(running('r', {expectedScans: null}), null, estimator), null);
+    });
+
+    test('a run that is saving, cancelling or over has none', () => {
+        assert.equal(Q.estimateItem(running('r', {phase: 'saving'}), prior, estimator), null);
+        assert.equal(Q.estimateItem(running('r', {status: 'cancelling'}), prior, estimator), null);
+        assert.equal(Q.estimateItem(done('d'), prior, estimator), null);
+    });
+
+    test('a run past its number says so', () => {
+        const e = Q.estimateItem(running('r', {scansRun: 12, expectedScans: 10}), prior, estimator);
+        assert.equal(e.state, estimator.STATE.PAST);
+    });
+});
+
+describe('estimateQueue', () => {
+    test('puts a time on each unfinished run, and on the batch', () => {
+        const {byItem, batch} = est([done('a'), done('b'), running('r'), waiting('w')], {counts: {waiting: 1}});
+        assert.equal(byItem.has('a'), false);
+        assert.ok(byItem.get('r').remainingMs > 0);
+        assert.equal(byItem.get('w').remainingMs, 10 * 30000);
+        assert.equal(batch.state, estimator.STATE.ESTIMATING);
+        // The run going now plus the one waiting, one at a time.
+        assert.equal(Math.round(batch.remainingMs / 1000), Math.round((byItem.get('r').remainingMs + 300000) / 1000));
+    });
+
+    test('shares the work over the runs going at once', () => {
+        const items = [done('a'), done('b'), running('r1'), running('r2'), waiting('w1'), waiting('w2')];
+        const one = est(items.filter((i) => i.id !== 'r2' && i.id !== 'w2'), {counts: {waiting: 1}}).batch;
+        const two = est(items, {counts: {waiting: 2}}).batch;
+        assert.ok(two.remainingMs < 2 * one.remainingMs);
+    });
+
+    test('runs not loaded yet count as the average run', () => {
+        const items = [done('a'), done('b'), running('r')];
+        const all = est(items, {counts: {waiting: 0}}).batch;
+        const more = est(items, {counts: {waiting: 3}}).batch;
+        assert.equal(Math.round((more.remainingMs - all.remainingMs) / 1000), 3 * 300);
+    });
+
+    test('each workflow leans on its own finished runs', () => {
+        const items = [
+            done('a'), done('b'),
+            done('c', {workflowKey: 'slow', scansRun: 10, durationMs: 20 * MIN}), done('d', {workflowKey: 'slow', scansRun: 10, durationMs: 20 * MIN}),
+            waiting('w1'), waiting('w2', {workflowKey: 'slow'}),
+        ];
+        const {byItem} = est(items, {counts: {waiting: 2}});
+        assert.equal(byItem.get('w1').remainingMs, 5 * MIN);
+        assert.equal(byItem.get('w2').remainingMs, 20 * MIN);
+    });
+
+    test('a workflow with no finished runs uses all of them', () => {
+        const items = [done('a'), done('b'), waiting('w', {workflowKey: 'new'})];
+        assert.equal(est(items, {counts: {waiting: 1}}).byItem.get('w').remainingMs, 5 * MIN);
+    });
+
+    test('a batch that is not running has none', () => {
+        const {byItem, batch} = est([done('a'), done('b'), waiting('w')], {running: false});
+        assert.equal(batch, null);
+        assert.equal(byItem.has('w'), true);
+    });
+
+    test('the batch is unknown while a run has nothing to go on', () => {
+        const {batch} = est([running('r', {expectedScans: null})], {counts: {waiting: 0}});
+        assert.equal(batch.state, 'unknown');
+        assert.equal(Q.describeBatchLeft(batch, estimator), '');
+    });
+
+    test('nothing without the shared estimator or without runs', () => {
+        assert.equal(Q.estimateQueue([done('a')], {estimator: null}).batch, null);
+        assert.equal(est(null).byItem.size, 0);
+    });
+});
+
+describe('describeLeft', () => {
+    const prior = {perScanMs: 30000, meanScans: 10, meanDurationMs: 5 * MIN, runs: 2, spread: 0.1};
+    const left = (item, p = prior) => Q.describeLeft(Q.estimateItem(item, p, estimator), estimator);
+
+    test('is the time and nothing else, with where it comes from in the tooltip', () => {
+        const blend = left(running('r'));
+        assert.deepEqual(Object.keys(blend).sort(), ['text', 'title']);
+        assert.equal(blend.text, '~3 min');
+        assert.match(blend.title, /^Estimate: about 3 min left/);
+        assert.match(blend.title, /10 scans expected\./);
+        assert.match(blend.title, /with 2 finished runs/);
+
+        const fromPrior = left(waiting('w'));
+        assert.equal(fromPrior.text, '~5 min');
+        assert.match(fromPrior.title, /as the finished runs of this workflow did/);
+    });
+
+    test('a run on its own pace says so in the tooltip too', () => {
+        assert.match(left(running('r'), null).title, /From how long the scans of this run have taken\./);
+    });
+
+    test('says finishing and over, not a negative time', () => {
+        assert.equal(left(running('r', {scansRun: 10})).text, 'finishing');
+        const over = left(running('r', {scansRun: 12}));
+        assert.equal(over.text, 'over');
+        assert.match(over.title, /past the 10 expected, so there is no estimate/);
+    });
+
+    test('a run with no estimate has nothing to say', () => {
+        assert.deepEqual(left(waiting('w'), null), {text: '', title: ''});
+        assert.deepEqual(Q.describeLeft(null, estimator), {text: '', title: ''});
+    });
+
+    test('shortRemaining fits a column', () => {
+        assert.equal(Q.shortRemaining(20000, estimator), '< 1 min');
+        assert.equal(Q.shortRemaining(6 * MIN, estimator), '~6 min');
+        assert.equal(Q.shortRemaining(85 * MIN, estimator), '~1h 25m');
+        assert.equal(Q.shortRemaining(120 * MIN, estimator), '~2h');
+    });
+});
+
+describe('describeBatchLeft', () => {
+    test('is the time and its range', () => {
+        const {batch} = est([done('a'), done('b'), running('r')], {counts: {waiting: 0}});
+        assert.match(Q.describeBatchLeft(batch, estimator), /^(about \d+ min|under a minute) left, estimated/);
+    });
+
+    test('is empty with no estimate', () => {
+        assert.equal(Q.describeBatchLeft(null, estimator), '');
+        assert.equal(Q.describeBatchLeft({state: 'unknown'}, estimator), '');
+    });
+});
