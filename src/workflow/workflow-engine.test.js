@@ -45,7 +45,8 @@ describe('buildViewportFromPreset', () => {
         ['default', {width: 1280, height: 720}],
         ['desktop-md', {width: 1280, height: 720}],
         ['tablet', {width: 768, height: 1024}],
-        ['mobile', {width: 375, height: 812}]
+        ['mobile', {width: 375, height: 812}],
+        ['mobile-320', {width: 320, height: 812}]
     ];
     for (const [preset, expected] of cases) {
         test(`resolves "${preset}" to ${expected.width}x${expected.height}`, () => {

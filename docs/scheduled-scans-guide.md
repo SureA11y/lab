@@ -531,7 +531,7 @@ puts it on the scans that have none.
 
 Viewport presets: `default` (1280 × 720), `desktop-xlg` (1972 × 1100),
 `desktop-lg` (1440 × 900), `desktop-md` (1280 × 720), `tablet` (768 × 1024),
-`mobile` (375 × 812).
+`mobile` (375 × 812), `mobile-320` (320 × 812, the width WCAG 1.4.10 Reflow tests).
 
 The runner reads a spec, or a config exported from the app, and tells you
 everything wrong with it at once rather than one problem per attempt.

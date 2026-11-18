@@ -6,7 +6,7 @@
     "AI agents"
   ],
   "purpose": "Generate valid run specs (the workflow files the headless runner takes and other tools exchange) and app configuration files, including custom steps.",
-  "generatedAt": "2026-11-13T09:13:16.112Z",
+  "generatedAt": "2026-11-18T07:48:05.436Z",
   "sourceOfTruth": {
     "actionDefinitionsFile": "src/workflow/action-definitions.js",
     "workflowEngineFile": "src/workflow/workflow-engine.js",
@@ -1577,6 +1577,10 @@
             {
               "value": "mobile",
               "label": "Mobile (375 × 812)"
+            },
+            {
+              "value": "mobile-320",
+              "label": "Mobile 320, reflow check (320 × 812)"
             },
             {
               "value": "custom",

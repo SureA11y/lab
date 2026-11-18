@@ -59,7 +59,8 @@
             "desktop-lg",
             "desktop-md",
             "tablet",
-            "mobile"
+            "mobile",
+            "mobile-320"
           ]
         },
         {
@@ -2391,6 +2392,7 @@
                 "desktop-md",
                 "tablet",
                 "mobile",
+                "mobile-320",
                 "custom"
               ]
             },
