@@ -30,6 +30,9 @@
         'desktop-md': { width: 1280, height: 720, name: 'Desktop medium' },
         'tablet': { width: 768, height: 1024, name: 'Tablet portrait' },
         'mobile': { width: 375, height: 812, name: 'Mobile' },
+        // The narrowest width WCAG 1.4.10 (Reflow) tests: 320 CSS pixels, the
+        // same as a 1280 pixel window at 400% zoom.
+        'mobile-320': { width: 320, height: 812, name: 'Mobile 320, reflow check' },
     };
 
     const CUSTOM_VIEWPORT = 'custom';
