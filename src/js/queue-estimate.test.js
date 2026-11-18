@@ -262,3 +262,37 @@ describe('a number the workflow worked out', () => {
         assert.ok(worked.rangeMs.low > typed.rangeMs.low);
     });
 });
+
+describe('the batch and the slots of the queue', () => {
+    const eight = Array.from({ length: 8 }, (_, i) => running('r' + i, { expectedScans: 10, scansRun: 5, elapsedMs: 5 * MIN, sinceScanMs: 0 }));
+
+    test('nine runs in eight slots take the ninth after the first slot frees', () => {
+        const finished = [done('a'), done('b')];
+        const items = [...finished, ...eight, waiting('w')];
+        const counts = { waiting: 1 };
+        const some = Q.estimateQueue(items, { counts, slots: 8, estimator });
+        const run = some.byItem.get('r0').remainingMs;
+        // The first of the eight ends in run ms, then the ninth takes its mean time, 5 min.
+        assert.equal(Math.round(some.batch.remainingMs), Math.round(run + 5 * MIN));
+    });
+
+    test('without the setting the slots are the runs going, so the work is shared as before', () => {
+        const items = [done('a'), done('b'), running('r1'), running('r2'), waiting('w1'), waiting('w2')];
+        const withSetting = Q.estimateQueue(items, { counts: { waiting: 2 }, slots: 2, estimator }).batch;
+        const without = Q.estimateQueue(items, { counts: { waiting: 2 }, estimator }).batch;
+        assert.equal(withSetting.remainingMs, without.remainingMs);
+    });
+
+    test('more slots than runs end with the longest', () => {
+        const items = [done('a'), done('b'), running('r1'), waiting('w1')];
+        const wide = Q.estimateQueue(items, { counts: { waiting: 1 }, slots: 6, estimator });
+        assert.equal(wide.batch.remainingMs, Math.max(wide.byItem.get('r1').remainingMs, wide.byItem.get('w1').remainingMs));
+    });
+
+    test('with no finished runs, a waiting run is expected to take what the run going is projected to', () => {
+        const items = [running('r1', { expectedScans: 10, scansRun: 5, elapsedMs: 5 * MIN, sinceScanMs: 0 }), waiting('w1', { expectedScans: null })];
+        const { byItem, batch } = Q.estimateQueue(items, { counts: { waiting: 1 }, slots: 1, estimator });
+        const projected = 5 * MIN + byItem.get('r1').remainingMs;
+        assert.equal(Math.round(batch.remainingMs), Math.round(byItem.get('r1').remainingMs + projected));
+    });
+});

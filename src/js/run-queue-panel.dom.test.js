@@ -1773,3 +1773,38 @@ describe('estimated time left in the queue table', () => {
         assert.doesNotMatch(mod.describeSession({...s, state: 'finished'}, {timeLeft: 'about 8 min left'}), /left/);
     });
 });
+
+describe('the batch total and the queue setting', () => {
+    const MIN = 60000;
+    const estimator = require('../shared/scan-time-estimate.js');
+    const doneRun = (id) => baseItem({id, name: 'Run ' + id, workflowKey: 'k', scans: 10, scansRun: 10, durationMs: 5 * MIN});
+    const going = (id) => baseItem({
+        id, name: 'Run ' + id, status: 'running', workflowKey: 'k', scans: 5, scansRun: 5, elapsedMs: 2.5 * MIN,
+        sinceScanMs: 0, expectedScans: 10, file: null, fileUrl: null, findings: {fail: 1, cantTell: 1, pass: 1}, durationMs: null,
+    });
+    const wait = (id) => baseItem({id, name: 'Run ' + id, status: 'waiting', workflowKey: 'k', expectedScans: null, scans: null, file: null, fileUrl: null, findings: null, durationMs: null});
+
+    async function metaFor(concurrency) {
+        globalThis.A11Y_SCAN_TIME_ESTIMATE = estimator;
+        try {
+            const items = [doneRun('a'), doneRun('b'), going('r1'), going('r2'), wait('w1'), wait('w2'), wait('w3'), wait('w4')];
+            const {p} = panel([{concurrency, maxConcurrency: 8, sessions: [session({state: 'running'}, items)]}]);
+            await p.refresh();
+            return document.querySelector('.queue-session-meta').textContent;
+        } finally {
+            delete globalThis.A11Y_SCAN_TIME_ESTIMATE;
+        }
+    }
+
+    test('the batch ends later with fewer slots, from the queue setting', async () => {
+        const minutes = (text) => Number((text.match(/about (\d+) min left/) || [])[1]);
+        const one = minutes(await metaFor(2));
+        document.body.innerHTML = `
+            <select id="c"></select>
+            <button id="all" aria-disabled="true">Cancel all</button>
+            <div id="status" class="status" role="status"></div>
+            <div id="list"></div>`;
+        const four = minutes(await metaFor(6));
+        assert.ok(one > four, 'two slots ' + one + ' min, six slots ' + four + ' min');
+    });
+});

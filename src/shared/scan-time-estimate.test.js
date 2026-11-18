@@ -548,3 +548,80 @@ describe('resolveExpectedScans', () => {
         assert.deepEqual(E.resolveExpectedScans({ expectedScans: 'many' }), { count: null, exact: false });
     });
 });
+
+describe('estimateBatch schedules the runs into the slots', () => {
+    const prior = (minutes, spread = 0.1) => ({ perScanMs: minutes * MIN / 10, meanScans: 10, meanDurationMs: minutes * MIN, runs: 3, spread });
+    const going = (minutes, extra = {}) => ({
+        state: E.STATE.ESTIMATING, remainingMs: minutes * MIN, rangeMs: { low: minutes * MIN * 0.9, high: minutes * MIN * 1.1 }, ...extra
+    });
+
+    test('nine runs in eight slots end when the first slot frees plus the ninth run, not at a ninth of the work', () => {
+        const b = E.estimateBatch({ running: Array.from({ length: 8 }, () => going(5)), queued: [{ expectedScans: null }], prior: prior(20), concurrency: 8 });
+        assert.equal(b.remainingMs, 25 * MIN);
+    });
+
+    test('waiting runs take the slot that frees first, in order', () => {
+        const b = E.estimateBatch({ running: [going(10), going(20)], queued: [{}, {}, {}], prior: prior(5), concurrency: 2 });
+        // 10 to 15, 15 to 20, then 20 to 25 (the slots free together at 20).
+        assert.equal(b.remainingMs, 25 * MIN);
+    });
+
+    test('fewer waiting runs than free slots start at once', () => {
+        const b = E.estimateBatch({ running: [going(30)], queued: [{}, {}], prior: prior(5), concurrency: 4 });
+        assert.equal(b.remainingMs, 30 * MIN, 'the run going decides, the two waiting ones run beside it');
+        const c = E.estimateBatch({ running: [going(2)], queued: [{}, {}], prior: prior(5), concurrency: 4 });
+        assert.equal(c.remainingMs, 5 * MIN);
+    });
+
+    test('with one slot the runs go one after another', () => {
+        const b = E.estimateBatch({ running: [going(3)], queued: [{}, {}], prior: prior(5), concurrency: 1 });
+        assert.equal(b.remainingMs, 13 * MIN);
+    });
+
+    test('without the setting the slots are as many as are going', () => {
+        const b = E.estimateBatch({ running: [going(10), going(10)], queued: [{}, {}], prior: prior(5) });
+        assert.equal(b.remainingMs, 15 * MIN);
+    });
+
+    test('a run with a number of scans takes that many at its own prior pace', () => {
+        const b = E.estimateBatch({ running: [], queued: [{ expectedScans: 20 }], prior: prior(5), concurrency: 1 });
+        assert.equal(b.remainingMs, 10 * MIN);
+    });
+
+    test('with no finished runs a waiting run is expected to take what the runs going are projected to', () => {
+        const b = E.estimateBatch({ running: [going(5, { elapsedMs: 15 * MIN })], queued: [{}], prior: null, concurrency: 1 });
+        assert.equal(b.remainingMs, 25 * MIN);
+    });
+
+    test('with no finished runs and a number of scans it goes at the pace of the runs going', () => {
+        const b = E.estimateBatch({ running: [going(5, { perScanMs: 30000, elapsedMs: 15 * MIN })], queued: [{ expectedScans: 10 }], prior: null, concurrency: 1 });
+        assert.equal(b.remainingMs, 10 * MIN, 'five left of the run going, then ten scans at half a minute');
+    });
+
+    test('a number of scans with no pace to put it at falls back to the projected length', () => {
+        const b = E.estimateBatch({ running: [going(5, { elapsedMs: 15 * MIN })], queued: [{ expectedScans: 10 }], prior: null, concurrency: 1 });
+        assert.equal(b.remainingMs, 25 * MIN);
+    });
+
+    test('is unknown when a waiting run has nothing to go on', () => {
+        const b = E.estimateBatch({ running: [going(5)], queued: [{}], prior: null, concurrency: 1 });
+        assert.equal(b.state, 'unknown');
+    });
+
+    test('a run at or past its number is about to end, and adds no time', () => {
+        const past = E.estimateRun({ expectedScans: 3, completedAtMs: evenly(4, MIN) });
+        const b = E.estimateBatch({ running: [past], queued: [{}], prior: prior(5), concurrency: 1 });
+        assert.equal(b.remainingMs, 5 * MIN);
+    });
+
+    test('the range is scheduled the same way, around the estimate', () => {
+        const b = E.estimateBatch({ running: Array.from({ length: 8 }, () => going(5)), queued: [{}], prior: prior(20, 0.2), concurrency: 8 });
+        assert.ok(b.rangeMs.low < b.remainingMs && b.remainingMs < b.rangeMs.high);
+        // The first slot to free up at its earliest plus the ninth run at its shortest.
+        assert.equal(Math.round(b.rangeMs.low / MIN * 10) / 10, 4.5 + 16);
+    });
+
+    test('a batch with nothing running or waiting has nothing left', () => {
+        assert.equal(E.estimateBatch({ running: [], queued: [], prior: null, concurrency: 4 }).remainingMs, 0);
+    });
+});
