@@ -526,6 +526,13 @@
                                 >
                                     <span class="legend-toggle-label">Workflow</span>
                                 </button>
+                                <!-- How many scans the run is expected to do: the time left is worked
+                                     out from it (shared/scan-time-estimate.js). Empty, no estimate. -->
+                                <label class="run-expected-scans" for="run-expected-scans">
+                                    <span>Expected scans</span>
+                                    <input type="number" id="run-expected-scans" name="expectedScans" min="1" step="1" inputmode="numeric" autocomplete="off" aria-describedby="run-expected-scans-hint"/>
+                                </label>
+                                <span id="run-expected-scans-hint" class="visually-hidden">How many scans this run is expected to do. The time left is worked out from it and from how long the scans have taken so far. Leave it empty for no estimate.</span>
                                 <button
                                         type="button"
                                         id="workflow-roadmap-btn"

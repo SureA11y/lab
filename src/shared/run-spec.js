@@ -32,7 +32,7 @@
     const KNOWN_SPEC_KEYS = new Set([
         '$schema', 'specVersion', 'version', 'type', 'url', 'scenarioName', 'actions', 'customSteps',
         'viewport', 'colorScheme', 'highContrast', 'language', 'acceptUntrustedCerts',
-        'metadata', 'groupScans', 'vars'
+        'metadata', 'groupScans', 'vars', 'expectedScans'
     ]);
 
     // A run's Include and Exclude selectors, which each scan step now has
@@ -65,6 +65,7 @@
         colorScheme: ['run-color-scheme'],
         highContrast: ['run-high-contrast'],
         acceptUntrustedCerts: ['run-untrusted-certs'],
+        expectedScans: ['run-expected-scans'],
     };
 
     // The language field: a select of languages, whose "Other…" shows a text
@@ -79,6 +80,16 @@
 
     function trimmedString(v) {
         return typeof v === 'string' && v.trim() ? v.trim() : null;
+    }
+
+    /**
+     * How many scans the run is expected to do, as a whole number above zero,
+     * or null. The form holds it as text, so "20" counts; "2.5", "0" and
+     * "many" do not.
+     */
+    function expectedScansOf(v) {
+        const n = typeof v === 'string' ? (/^\s*\d+\s*$/.test(v) ? Number(v) : NaN) : v;
+        return Number.isInteger(n) && n > 0 ? n : null;
     }
 
     // A yes/no setting: true in a spec, "on" in the app's form.
@@ -132,6 +143,10 @@
         if (isOn(input.acceptUntrustedCerts)) spec.acceptUntrustedCerts = true;
 
         if (isPlainObject(input.vars) && Object.keys(input.vars).length) spec.vars = { ...input.vars };
+
+        // What the time left is worked out from; nothing says "no estimate".
+        const expectedScans = expectedScansOf(input.expectedScans);
+        if (expectedScans) spec.expectedScans = expectedScans;
 
         return spec;
     }
@@ -196,6 +211,7 @@
             [LANGUAGE_STATE_KEY]: '',
             [LANGUAGE_OTHER_STATE_KEY]: '',
             [first('customSteps')]: '',
+            [first('expectedScans')]: '',
         };
 
         const url = trimmedString(spec.url);
@@ -229,6 +245,11 @@
         if (colorScheme === 'light' || colorScheme === 'dark') state[first('colorScheme')] = colorScheme;
         if (spec.highContrast === true || trimmedString(spec.highContrast) === 'on') state[first('highContrast')] = 'on';
         if (isOn(spec.acceptUntrustedCerts)) state[first('acceptUntrustedCerts')] = 'on';
+        const expectedScans = expectedScansOf(spec.expectedScans);
+        if (expectedScans) state[first('expectedScans')] = String(expectedScans);
+        else if (spec.expectedScans != null && spec.expectedScans !== '') {
+            notes.push(`Its expectedScans ${JSON.stringify(spec.expectedScans)} is not a number of scans, so the run has none.`);
+        }
         // A language the list has is chosen there; any other, with "Other…".
         const language = trimmedString(spec.language);
         if (language && language !== 'default') {
@@ -349,6 +370,15 @@
             errors.push(`acceptUntrustedCerts ${JSON.stringify(v)} is not a setting: use true or false`);
         }
         return { acceptUntrustedCerts: false };
+    }
+
+    /** The number of scans a run is expected to do: null, or a whole number above zero. */
+    function normalizeExpectedScans(source, errors) {
+        const v = source.expectedScans;
+        if (v == null || v === '') return null;
+        const n = expectedScansOf(v);
+        if (n == null) errors.push(`expectedScans ${JSON.stringify(v)} is not a number of scans: use a whole number above 0, or leave it out`);
+        return n;
     }
 
     function normalizeRunConditions(source, errors) {
@@ -494,6 +524,10 @@
         const vars = normalizeVars(source.vars, errors);
         if (Object.keys(vars).length) spec.vars = vars;
 
+        // Only a spec that gives one carries it.
+        const expectedScans = normalizeExpectedScans(source, errors);
+        if (expectedScans) spec.expectedScans = expectedScans;
+
         return { ok: errors.length === 0, spec: errors.length ? null : spec, errors, warnings };
     }
 
@@ -513,5 +547,6 @@
         uiConfigFromRunSpec,
         normalizeRunSpec,
         normalizeVars,
+        expectedScansOf,
     };
 }));

@@ -11,7 +11,7 @@ import {PROGRESS_POLL_INTERVAL_MS, STATUS} from './ui-constants.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
- * (actionsBuilder, appendLog, batchUi, cancelButton, cfgIO, clearLogsPanel, clearResults, clearScreenshots, colorSchemeSelect, currentRunId, customStepActionsBuilder, customStepsInput, customStepsUi, dryRunButton, dryRunReportEl, formatElapsedHuman, getPlannedLiveStreamMode, highContrastSelect, languageOtherError, languageOtherField, languageOtherInput, languageSelect, lastWorkflowResponse, liveStreamDialog, liveUi, loadAndRun, resultsState, retryUntrustedButton, revealCustomStepError, runResultText, runSettings, runStartedAtMs, scanButton, scansDialog, scenarioInput, screenshotsDialog, setConfigExpanded, setRunPayload, setStatusRun, setUiState, summaryEl, untrustedCertsSelect, urlInput, useLiveStream, validateRunInputs, viewportSelect).
+ * (actionsBuilder, appendLog, batchUi, cancelButton, cfgIO, clearLogsPanel, clearResults, clearScreenshots, colorSchemeSelect, currentRunId, customStepActionsBuilder, customStepsInput, customStepsUi, dryRunButton, dryRunReportEl, formatElapsedHuman, getPlannedLiveStreamMode, expectedScansInput, highContrastSelect, languageOtherError, languageOtherField, languageOtherInput, languageSelect, lastWorkflowResponse, liveStreamDialog, liveUi, loadAndRun, resultsState, retryUntrustedButton, revealCustomStepError, runResultText, runSettings, runStartedAtMs, scanButton, scansDialog, scenarioInput, screenshotsDialog, setConfigExpanded, setRunPayload, setStatusRun, setUiState, summaryEl, untrustedCertsSelect, urlInput, useLiveStream, validateRunInputs, viewportSelect).
  */
 export function createRunWorkflowUi(app) {
     /** The languages Set language lists, as the Language field's choices. */
@@ -83,6 +83,7 @@ export function createRunWorkflowUi(app) {
             colorScheme: app.colorSchemeSelect ? app.colorSchemeSelect.value : '',
             highContrast: app.highContrastSelect ? app.highContrastSelect.value : '',
             acceptUntrustedCerts: app.untrustedCertsSelect ? app.untrustedCertsSelect.value : '',
+            expectedScans: app.expectedScansInput ? app.expectedScansInput.value : '',
             language: runLanguageValue(),
             scenarioName: app.scenarioInput ? app.scenarioInput.value.trim() : '',
         });

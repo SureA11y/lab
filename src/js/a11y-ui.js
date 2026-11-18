@@ -290,6 +290,7 @@ function storeActiveMode(mode) {
         get setConfigExpanded() { return setConfigExpanded; },
         get setRunPayload() { return setRunPayload; },
         get untrustedCertsSelect() { return untrustedCertsSelect; },
+        get expectedScansInput() { return expectedScansInput; },
         get validateRunInputs() { return validateRunInputs; },
         get viewportSelect() { return viewportSelect; },
         get reportFilesCountEl() { return reportFilesCountEl; },
@@ -316,6 +317,8 @@ function storeActiveMode(mode) {
     const colorSchemeSelect = $('#run-color-scheme');
     const highContrastSelect = $('#run-high-contrast');
     const untrustedCertsSelect = $('#run-untrusted-certs');
+    // How many scans the run is expected to do, in the Workflow header.
+    const expectedScansInput = $('#run-expected-scans');
     // The run settings' dialog, and a chip beside the URL for each one changed.
     const runSettings = setupRunSettings();
     const retryUntrustedButton = $('#retry-untrusted-certs');
@@ -3130,6 +3133,7 @@ function storeActiveMode(mode) {
                 'run-color-scheme': '',
                 'run-high-contrast': 'off',
                 'run-untrusted-certs': 'off',
+                'run-expected-scans': '',
                 'run-language': '',
                 'run-language-other': '',
             },

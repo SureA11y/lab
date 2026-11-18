@@ -4489,6 +4489,11 @@
           ],
           "description": "Open sites whose certificate the browser does not trust: a staging server's self-signed one, or any site through a network that inspects HTTPS. Left out, off, and such a site fails the run saying why. The browser cannot then tell a site from one pretending to be it, so a run that signs in should not use it on a network you do not trust. A run that uses it says so in its log and in runDiagnostics.untrustedCertsAccepted."
         },
+        "expectedScans": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How many scans the run is expected to do. The app and the runner work out the time left from it and from how long the scans have taken so far. Left out, there is no estimate, unless the workflow runs the same number of scans on every path, in which case the app fills it in. Only the estimate reads it: a run with more or fewer scans is not an error."
+        },
         "metadata": {
           "type": "object"
         },
