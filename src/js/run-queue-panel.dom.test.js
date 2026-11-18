@@ -132,7 +132,7 @@ describe('run queue panel', () => {
         assert.equal(section.querySelector('a[href$="batch.json"]'), null, 'batch.json comes in the zip, not on its own');
 
         const headers = [...section.querySelectorAll('thead th')].map((th) => th.textContent);
-        assert.deepEqual(headers, ['Name', 'Status', 'Scans', 'Failing', 'Can’t tell', 'Passing', 'Duration', 'Est. left', 'Actions']);
+        assert.deepEqual(headers, ['Name', 'Status', 'Scans', 'Failing', 'Can’t tell', 'Passing', 'Duration', 'Actions']);
 
         const row = section.querySelector('tbody tr');
         const cells = [...row.children].map(accessibleText);
@@ -1671,7 +1671,7 @@ describe('changing a finished batch', () => {
     });
 });
 
-describe('time left in the queue table', () => {
+describe('estimated time left in the queue table', () => {
     const MIN = 60000;
     const estimator = require('../shared/scan-time-estimate.js');
 
@@ -1687,59 +1687,82 @@ describe('time left in the queue table', () => {
 
     const running = (items) => session({state: 'running'}, items);
     const rowOf = (id) => document.querySelector(`tr[data-item-id="${id}"]`);
-    const leftOf = (id) => rowOf(id).querySelector('td.queue-left');
+    // The Duration cell is the seventh: name, status, scans, fail, can't tell, pass, duration.
+    const durationOf = (id) => rowOf(id).children[6];
 
-    test('each unfinished run gets its time left, and the batch its own in the status line', async () => {
+    async function withEstimator(fn) {
         globalThis.A11Y_SCAN_TIME_ESTIMATE = estimator;
         try {
-            const items = [doneRun('a'), doneRun('b'), runningRun, waitingRun];
-            const {p} = panel([{concurrency: 1, maxConcurrency: 4, sessions: [running(items)]}]);
-            await p.refresh();
-
-            assert.equal(leftOf('a').textContent, '', 'a finished run has none');
-            assert.equal(leftOf('r').textContent, '~3 min', 'the time, and nothing else');
-            assert.match(leftOf('r').title, /^Estimate: about 3 min left/);
-            assert.equal(leftOf('w').textContent, '~5 min');
-            assert.equal(leftOf('r').querySelector('.queue-note'), null);
-
-            const meta = document.querySelector('.queue-session-meta').textContent;
-            assert.match(meta, /about \d+ min left, estimated/);
+            await fn();
         } finally {
             delete globalThis.A11Y_SCAN_TIME_ESTIMATE;
         }
-    });
+    }
 
-    test('every row has the column, so the table keeps its shape', async () => {
-        globalThis.A11Y_SCAN_TIME_ESTIMATE = estimator;
-        try {
+    test('a run going or waiting has its estimated time under its duration, in the same column', async () => {
+        await withEstimator(async () => {
             const {p} = panel([{concurrency: 1, maxConcurrency: 4, sessions: [running([doneRun('a'), doneRun('b'), runningRun, waitingRun])]}]);
             await p.refresh();
-            const headers = document.querySelectorAll('thead th').length;
-            for (const tr of document.querySelectorAll('tbody tr[data-item-id]')) {
-                assert.equal(tr.children.length, headers, tr.dataset.itemId);
-            }
-            assert.equal(document.querySelectorAll('colgroup col').length, headers);
-        } finally {
-            delete globalThis.A11Y_SCAN_TIME_ESTIMATE;
-        }
+
+            const note = durationOf('r').querySelector('.queue-note');
+            assert.equal(note.textContent, '~3 min left');
+            assert.match(note.title, /^Estimate: about 3 min left/);
+            assert.equal(durationOf('r').textContent, '2m 30s~3 min left');
+
+            assert.equal(durationOf('w').textContent, '~5 min left', 'it has no time yet, so only the estimate');
+            assert.equal(durationOf('a').querySelector('.queue-note'), null, 'a finished run has none');
+            assert.equal(durationOf('a').textContent, '5m 00s');
+
+            assert.match(document.querySelector('.queue-session-meta').textContent, /about \d+ min left, estimated/);
+        });
     });
 
-    test('a finished batch has no time left, on any row or in its line', async () => {
-        globalThis.A11Y_SCAN_TIME_ESTIMATE = estimator;
-        try {
+    test('the table has no column for it', async () => {
+        await withEstimator(async () => {
+            const {p} = panel([{concurrency: 1, maxConcurrency: 4, sessions: [running([doneRun('a'), doneRun('b'), runningRun, waitingRun])]}]);
+            await p.refresh();
+            const headers = [...document.querySelectorAll('thead th')].map((th) => th.textContent);
+            assert.deepEqual(headers, ['Name', 'Status', 'Scans', 'Failing', 'Can’t tell', 'Passing', 'Duration', 'Actions']);
+            assert.equal(document.querySelectorAll('colgroup col').length, headers.length);
+            for (const tr of document.querySelectorAll('tbody tr[data-item-id]')) assert.equal(tr.children.length, headers.length, tr.dataset.itemId);
+        });
+    });
+
+    test('the running clock is its own element, so ticking does not rewrite the estimate', async () => {
+        await withEstimator(async () => {
+            const {p} = panel([{concurrency: 1, maxConcurrency: 4, sessions: [running([doneRun('a'), doneRun('b'), runningRun])]}]);
+            await p.refresh();
+            const clock = document.querySelector('[data-live-elapsed]');
+            assert.equal(clock.tagName, 'SPAN');
+            assert.equal(clock.parentElement, durationOf('r'));
+            // What the clock's tick does: it rewrites its own element's text.
+            clock.textContent = '9m 99s';
+            assert.equal(durationOf('r').querySelector('.queue-note').textContent, '~3 min left');
+        });
+    });
+
+    test('a run with no estimate keeps its duration cell as it was, clock and all', async () => {
+        // No number of scans to expect, and no finished runs to go by.
+        const {p} = panel([{concurrency: 1, maxConcurrency: 4, sessions: [running([{...runningRun, expectedScans: null}])]}]);
+        await p.refresh();
+        const clock = document.querySelector('[data-live-elapsed]');
+        assert.equal(clock.tagName, 'TD');
+        assert.equal(clock.textContent, '2m 30s');
+    });
+
+    test('a finished batch has no estimate, on any row or in its line', async () => {
+        await withEstimator(async () => {
             const {p} = panel([{concurrency: 1, maxConcurrency: 4, sessions: [session({}, [doneRun('a'), doneRun('b')])]}]);
             await p.refresh();
-            for (const td of document.querySelectorAll('td.queue-left')) assert.equal(td.textContent, '');
+            assert.equal(document.querySelector('.queue-left'), null);
             assert.doesNotMatch(document.querySelector('.queue-session-meta').textContent, /left/);
-        } finally {
-            delete globalThis.A11Y_SCAN_TIME_ESTIMATE;
-        }
+        });
     });
 
-    test('without the shared estimator the table is as it was, with an empty column', async () => {
+    test('without the shared estimator there is none either', async () => {
         const {p} = panel([{concurrency: 1, maxConcurrency: 4, sessions: [running([doneRun('a'), doneRun('b'), runningRun, waitingRun])]}]);
         await p.refresh();
-        for (const td of document.querySelectorAll('td.queue-left')) assert.equal(td.textContent, '');
+        assert.equal(document.querySelector('.queue-left'), null);
         assert.doesNotMatch(document.querySelector('.queue-session-meta').textContent, /left/);
     });
 
