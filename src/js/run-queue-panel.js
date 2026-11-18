@@ -2,6 +2,7 @@
 
 import { setBusy } from './busy.js';
 import { resultGlyphEl } from './result-glyph.js';
+import { estimateQueue, describeLeft, describeBatchLeft } from './queue-estimate.js';
 
 /**
  * The queue tab: what is waiting, running and finished, one section per queue
@@ -116,7 +117,7 @@ export function formatPace(ms) {
 
 const formatCount = (n) => n.toLocaleString('en-US');
 
-export function describeSession(session) {
+export function describeSession(session, { timeLeft = '' } = {}) {
     const c = session.counts || {};
     const total = c.total || 0;
     const finished = (c.done || 0) + (c.error || 0) + (c.cancelled || 0);
@@ -129,6 +130,9 @@ export function describeSession(session) {
             const merged = Number.isFinite(session.mergedScansPerMin) ? ` (${formatCount(session.mergedScansPerMin)} after merging)` : '';
             parts.push(`about ${plural(session.scansPerMin, 'scan')} a minute${merged}`);
         }
+        // How long the batch has left, from its runs' scans so far and from the
+        // runs of the same workflow that finished (queue-estimate.js).
+        if (timeLeft) parts.push(timeLeft);
     } else if (session.state === 'interrupted') {
         parts.push(`Interrupted by a server restart · ${finished} of ${total} finished`);
     } else {
@@ -268,8 +272,8 @@ function spinnerPhase(doc) {
 // folded: folded, it would otherwise read like a finished batch but for one
 // word. The spinner is a cue only; the words say it is running.
 const RUNNING = 'Running';
-function statusLine(doc, session) {
-    const text = describeSession(session);
+function statusLine(doc, session, timeLeft = '') {
+    const text = describeSession(session, { timeLeft });
     if (session.state !== 'running' || !text.startsWith(RUNNING)) return text;
     return [
         RUNNING,
@@ -661,6 +665,15 @@ function scansCell(doc, item) {
 // there, so the clock keeps going while the server is too busy to answer
 // (building and saving a long run's result holds it for a while). Every answer
 // puts the server's figure back; a finished row shows the server's duration.
+// A run's estimated time left (queue-estimate.js): "~6 min", the time and
+// nothing else; its tooltip says where the estimate comes from. Empty for a run
+// that has finished or has nothing to go on. Not a live region: it is read in
+// the row.
+function leftCell(doc, estimate) {
+    const left = describeLeft(estimate);
+    return el(doc, 'td', { className: 'queue-num queue-left', title: left.title || null }, left.text);
+}
+
 function durationCell(doc, item, duration) {
     const live = (item.status === 'running' || item.status === 'cancelling')
         && !Number.isFinite(item.durationMs) && Number.isFinite(item.elapsedMs);
@@ -732,7 +745,7 @@ function withWas(doc, cell, now, was, better) {
     return cell;
 }
 
-function countsCells(doc, row, { was = null } = {}) {
+function countsCells(doc, row, { was = null, left = null } = {}) {
     // No scan yet, no figures: a 0 would read as a clean page.
     const findings = row.scans > 0 ? (row.findings || {}) : {};
     const before = was && was.scans > 0 ? (was.findings || {}) : {};
@@ -747,6 +760,7 @@ function countsCells(doc, row, { was = null } = {}) {
         was ? withWas(doc, findingsCell(doc, row, findings, 'pass', 'queue-num queue-pass'), n(findings, 'pass'), n(before, 'pass'), (a, b) => a > b)
             : findingsCell(doc, row, findings, 'pass', 'queue-num queue-pass'),
         durationCell(doc, row, duration),
+        leftCell(doc, left),
     ];
 }
 
@@ -804,7 +818,7 @@ function choiceRow(doc, item, active, candidate) {
         }, [label, el(doc, 'span', { className: 'visually-hidden', text: ` for ${item.name}${keep === suggest ? ' (suggested)' : ''}` })]));
     });
     return el(doc, 'tr', { className: `queue-line queue-line--choice${warn ? ' queue-line--bad' : ''}`, 'data-line-of': item.id }, [
-        el(doc, 'td', { colspan: '7' }, el(doc, 'div', { className: 'queue-choice' }, [
+        el(doc, 'td', { colspan: '8' }, el(doc, 'div', { className: 'queue-choice' }, [
             el(doc, 'p', {}, [
                 el(doc, warn ? 'span' : 'strong', { className: warn ? 'queue-choice-warn' : null, text: warn || 'Run again finished:' }),
                 ` ${text}`,
@@ -859,7 +873,7 @@ function versionRows(doc, item) {
  * to keep; with its versions open, each of its results.
  */
 function itemRows(doc, session, item, opts = {}) {
-    const { versionsOpen = false } = opts;
+    const { versionsOpen = false, estimates = null } = opts;
     const runningAgain = item.active && ['waiting', 'running', 'cancelling'].includes(item.status);
     if (runningAgain) {
         const active = asRow(item, item.active);
@@ -901,7 +915,7 @@ function itemRows(doc, session, item, opts = {}) {
         el(doc, 'tr', { 'data-item-id': item.id, className: versions.length ? 'queue-line--group' : null }, [
             nameCell(doc, item, { rows: 1 + versions.length, versionsOpen }),
             statusCell(doc, item),
-            ...countsCells(doc, item),
+            ...countsCells(doc, item, { left: estimates ? estimates.get(item.id) : null }),
             actionsCell(doc, session, item, opts),
         ]),
         ...versions,
@@ -928,11 +942,11 @@ function itemsFooterRow(doc, session) {
     const shown = (session.items || []).length;
     const total = Number.isFinite(session.itemsTotal) ? session.itemsTotal : shown;
     if (session.itemsLoading && !shown) {
-        return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '8', text: 'Loading the runs…' }));
+        return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '9', text: 'Loading the runs…' }));
     }
     if (shown >= total) return null;
     const next = Math.min(ITEMS_PAGE, total - shown);
-    return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '8' }, [
+    return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '9' }, [
         el(doc, 'span', { className: 'queue-note', text: `Showing ${formatCount(shown)} of ${formatCount(total)} runs. ` }),
         el(doc, 'button', {
             type: 'button',
@@ -1000,11 +1014,14 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
         }, ['Delete', el(doc, 'span', { className: 'visually-hidden', text: ` ${describeBatch(session)}` })]) : null,
     ]);
 
+    // The time left of each run and of the batch: only a running batch has any.
+    const estimate = estimateQueue(session.items || [], { counts: session.counts, running: session.state === 'running' });
+
     const table = el(doc, 'table', { className: 'queue-table' }, [
         el(doc, 'caption', { className: 'visually-hidden', text: `Runs in ${title}` }),
         // Fixed widths, so a count or a time growing as a run goes never moves
         // the columns; the name takes what is left.
-        el(doc, 'colgroup', {}, ['name', 'status', 'scans', 'fail', 'canttell', 'pass', 'duration', 'actions']
+        el(doc, 'colgroup', {}, ['name', 'status', 'scans', 'fail', 'canttell', 'pass', 'duration', 'left', 'actions']
             .map((c) => el(doc, 'col', { className: `queue-col-${c}` }))),
         el(doc, 'thead', {}, el(doc, 'tr', {}, [
             el(doc, 'th', { scope: 'col', text: 'Name' }),
@@ -1014,11 +1031,12 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
             el(doc, 'th', { scope: 'col', className: 'queue-num', text: 'Can’t tell' }),
             el(doc, 'th', { scope: 'col', className: 'queue-num', text: 'Passing' }),
             el(doc, 'th', { scope: 'col', className: 'queue-num', text: 'Duration' }),
+            el(doc, 'th', { scope: 'col', className: 'queue-num', text: 'Est. left' }),
             el(doc, 'th', { scope: 'col', text: 'Actions' }),
         ])),
         el(doc, 'tbody', {}, [
             // Striped by run, not by table row: a run's lines share its stripe.
-            ...(session.items || []).flatMap((item, i) => itemRows(doc, session, item, { queueBusy, versionsOpen: openVersions.has(item.id) })
+            ...(session.items || []).flatMap((item, i) => itemRows(doc, session, item, { queueBusy, versionsOpen: openVersions.has(item.id), estimates: estimate.byItem })
                 .map((tr) => { if (i % 2) tr.classList.add('queue-row--even'); return tr; })),
             itemsFooterRow(doc, session),
         ]),
@@ -1040,7 +1058,7 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
             'data-session-id': session.id,
             'data-focus-key': `session:${session.id}`,
         }, title)),
-        el(doc, 'p', { className: 'queue-session-meta' }, statusLine(doc, session)),
+        el(doc, 'p', { className: 'queue-session-meta' }, statusLine(doc, session, describeBatchLeft(estimate.batch))),
         !running && describeSummary(session) ? el(doc, 'p', { className: 'queue-session-summary', text: describeSummary(session) }) : null,
         running && health && describeHealth(health) ? el(doc, 'p', {
             className: health.hold ? 'queue-session-health queue-session-health--held' : 'queue-session-health',

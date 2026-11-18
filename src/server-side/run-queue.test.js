@@ -1615,3 +1615,34 @@ describe('changing a finished batch', () => {
         assert.equal(queue.importReport, undefined);
     });
 });
+
+describe('run queue: what the app needs for a run\'s time left', () => {
+    const withActions = (name, actions, extra = {}) => ({
+        run: { url: 'https://example.com/', scenarioName: name, actions, ...extra },
+        config: null,
+    });
+    const scan = () => ({ type: 'a11yScan', profile: 'en301549-v4.1.1' });
+
+    test('a run says how many scans its workflow is certain to run, and the same key as its siblings', async () => {
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun);
+        queue.addItems([item('A'), item('B'), withActions('C', [scan(), scan()])]);
+        const [a, b, c] = onlySession(queue).items;
+        assert.deepEqual([a.expectedScans, b.expectedScans, c.expectedScans], [1, 1, 2]);
+        assert.ok(a.workflowKey && /^[0-9a-f]{16}$/.test(a.workflowKey));
+        assert.equal(a.workflowKey, b.workflowKey, 'the same workflow, run for another row');
+        assert.notEqual(a.workflowKey, c.workflowKey);
+    });
+
+    test('the number a run was given wins over the one its workflow works out', async () => {
+        const queue = newQueue(controlledRunner().executeRun);
+        queue.addItems([withActions('A', [scan()], { expectedScans: 7 })]);
+        assert.equal(onlySession(queue).items[0].expectedScans, 7);
+    });
+
+    test('a workflow whose scans depend on a loop has none to give', async () => {
+        const queue = newQueue(controlledRunner().executeRun);
+        queue.addItems([withActions('A', [{ type: 'forEachElement', selector: 'a', actions: [scan()] }])]);
+        assert.equal(onlySession(queue).items[0].expectedScans, null);
+    });
+});
