@@ -22,6 +22,27 @@
     padding: 0 0 0  3px;
 }
 
+/* The expected scans field takes the push to the right, so the header's
+   buttons follow it instead of each taking a share of the free space. */
+#actions-builder > legend.actions-builder-header .run-expected-scans {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 0 auto;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    white-space: nowrap;
+}
+#actions-builder > legend.actions-builder-header .run-expected-scans input {
+    width: 5.5rem;
+    min-height: 32px;
+    margin: 0;
+    padding: 2px 8px;
+    text-align: right;
+}
+#actions-builder > legend.actions-builder-header .run-expected-scans ~ button.collapse-all-toggle,
+#actions-builder > legend.actions-builder-header .run-expected-scans ~ button.section-end-toggle { margin-left: 0; }
+
 :is(#actions-builder, #custom-step-actions-builder) .actions-builder-actions {
     display: flex;
     flex-wrap: wrap;

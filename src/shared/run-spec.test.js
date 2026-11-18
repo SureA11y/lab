@@ -610,3 +610,60 @@ describe('starting variables', () => {
         assert.equal(normalizeRunSpec(specWith({ vars: ['a'] }), DEPS).ok, false);
     });
 });
+
+describe('expected scans', () => {
+    const { uiConfigFromRunSpec, expectedScansOf } = require('./run-spec.js');
+    const base = { url: 'https://x.test', actions: [{ type: 'a11yScan' }] };
+
+    test('a whole number above zero counts, as a number or as the form\'s text', () => {
+        assert.equal(expectedScansOf(20), 20);
+        assert.equal(expectedScansOf('20'), 20);
+        assert.equal(expectedScansOf(' 7 '), 7);
+        for (const bad of [0, -1, 2.5, '2.5', '0', '', 'many', null, undefined, NaN, true, []]) {
+            assert.equal(expectedScansOf(bad), null, String(bad));
+        }
+    });
+
+    test('a spec carries it only when it is set', () => {
+        assert.equal('expectedScans' in buildRunSpec(base), false);
+        assert.equal('expectedScans' in buildRunSpec({ ...base, expectedScans: '' }), false);
+        assert.equal('expectedScans' in buildRunSpec({ ...base, expectedScans: 'many' }), false);
+        assert.equal(buildRunSpec({ ...base, expectedScans: '20' }).expectedScans, 20);
+        assert.equal('expectedScans' in normalizeRunSpec(specWith(), DEPS).spec, false);
+    });
+
+    test('normalize keeps a good number, and refuses what is not one', () => {
+        const ok = normalizeRunSpec(specWith({ expectedScans: 12 }), DEPS);
+        assert.equal(ok.ok, true);
+        assert.equal(ok.spec.expectedScans, 12);
+        assert.deepEqual(ok.warnings, []);
+
+        for (const bad of [0, -3, 2.5, 'many']) {
+            const r = normalizeRunSpec(specWith({ expectedScans: bad }), DEPS);
+            assert.equal(r.ok, false, String(bad));
+            assert.match(r.errors[0], /expectedScans .* is not a number of scans/);
+        }
+        assert.equal(normalizeRunSpec(specWith({ expectedScans: null }), DEPS).ok, true);
+        assert.equal(normalizeRunSpec(specWith({ expectedScans: '' }), DEPS).ok, true);
+    });
+
+    test('a saved config reads the field\'s text', () => {
+        const r = normalizeRunSpec(uiConfigWith({ 'run-expected-scans': '15' }), DEPS);
+        assert.equal(r.ok, true);
+        assert.equal(r.spec.expectedScans, 15);
+        assert.equal('expectedScans' in normalizeRunSpec(uiConfigWith({ 'run-expected-scans': '' }), DEPS).spec, false);
+    });
+
+    test('opening a spec fills the field, and clears it when the spec has none', () => {
+        const withIt = uiConfigFromRunSpec(specWith({ expectedScans: 15 }), { viewportPresets: {} });
+        assert.equal(withIt.config.state['run-expected-scans'], '15');
+        const without = uiConfigFromRunSpec(specWith(), { viewportPresets: {} });
+        assert.equal(without.config.state['run-expected-scans'], '');
+    });
+
+    test('opening a spec with a number that is not one says so', () => {
+        const r = uiConfigFromRunSpec(specWith({ expectedScans: 'many' }), { viewportPresets: {} });
+        assert.equal(r.config.state['run-expected-scans'], '');
+        assert.ok(r.notes.some((n) => /expectedScans "many" is not a number of scans/.test(n)));
+    });
+});
