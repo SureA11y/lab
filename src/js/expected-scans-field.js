@@ -41,7 +41,7 @@ export function describeExpectedScans(plan, estimate, type = 'a11yScan') {
 }
 
 function hintText(info, typed) {
-    const base = 'How many scans this run is expected to do. The time left is worked out from it and from how long the scans have taken so far.';
+    const base = 'How many scans this run is expected to do, counting every scan that runs: each scan inside a Merged scan counts, not the one scan the report keeps. The time left is worked out from it and from how long the scans have taken so far.';
     if (typed) return `${base} Clear it to use the workflow's own count, when it has one.`;
     if (info.kind === 'calculated') {
         return `${base} This workflow runs ${info.count} scan${info.count === 1 ? '' : 's'} on every path, so that is used. Type a number to use another.`;

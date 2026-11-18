@@ -451,3 +451,58 @@ describe('Append config', () => {
         assert.deepEqual(statuses.at(-1), ['Could not append config. Fix the rows in the Batch section first.', 'error']);
     });
 });
+
+describe('the expected scans field of the Workflow header', () => {
+    // The field is not in the Configuration section the other fields are in:
+    // it sits in the Workflow's header.
+    const withField = () => {
+        document.getElementById('scan-form').insertAdjacentHTML(
+            'beforeend',
+            '<fieldset id="wf"><legend><input type="number" id="run-expected-scans" data-config-field></legend></fieldset>'
+        );
+        return document.getElementById('run-expected-scans');
+    };
+    const withoutField = () => document.getElementById('wf')?.remove();
+
+    test('is saved in the configuration\'s state', () => {
+        const input = withField();
+        try {
+            input.value = '20';
+            const state = makeConfigIO().collectShareableState();
+            assert.equal(state['run-expected-scans'], '20');
+        } finally {
+            withoutField();
+        }
+    });
+
+    test('is left out of the state when empty, as the other fields are', () => {
+        withField();
+        try {
+            assert.equal('run-expected-scans' in makeConfigIO().collectShareableState(), false);
+        } finally {
+            withoutField();
+        }
+    });
+
+    test('comes back when the configuration is opened, and is cleared by one without it', () => {
+        const input = withField();
+        try {
+            const io = createConfigIO({
+                form: document.getElementById('scan-form'),
+                urlInput: document.getElementById('url-input'),
+                actionsBuilder: { getValue: () => ({ ok: true, value: [] }) },
+                stateDefaults: { 'run-expected-scans': '' },
+                getCustomSteps: () => ({ ok: true, value: [] }),
+                setStatusRun: () => {},
+                STATUS: {},
+                jsonBlob: () => ({}),
+            });
+            io.applyShareableState({ 'run-expected-scans': '15' });
+            assert.equal(input.value, '15');
+            io.applyShareableState({});
+            assert.equal(input.value, '');
+        } finally {
+            withoutField();
+        }
+    });
+});
