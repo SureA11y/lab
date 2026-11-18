@@ -76,7 +76,10 @@ export function createConfigIO(deps) {
         if (!form) return {};
         const state = {};
 
-        const fields = form.querySelectorAll('.config-data input, .config-data select, .config-data textarea');
+        // The Configuration section's fields, and any other field that says it
+        // belongs to the configuration (data-config-field): the Expected scans
+        // field sits in the Workflow's header, not in the section.
+        const fields = form.querySelectorAll('.config-data input, .config-data select, .config-data textarea, [data-config-field]');
         fields.forEach((el) => {
             if (!el.id) return;
             // Saved only on request (the batch rows), never as plain form state.
