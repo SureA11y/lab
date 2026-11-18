@@ -389,64 +389,90 @@
     /**
      * estimateBatch({running, queued, prior, concurrency})
      *
-     * `running`      estimateRun results for the runs going now
+     * `running`      estimateRun results for the runs going now, each with the
+     *                `elapsedMs` it has been going when known
      * `queued`       [{expectedScans, prior?}] for the runs not started, null where
      *                unknown; a run's own `prior` (its workflow's) wins over the batch's
      * `prior`        priorFromRuns(...) for runs with no number of their own
-     * `concurrency`  how many runs go at once
+     * `concurrency`  how many runs go at once (the queue's setting)
      *
-     * The work left, shared out over the runs that go at once, but never less
-     * than the longest run still going. Returns {state, remainingMs, rangeMs,
-     * priorRuns}; the state is 'estimating', or 'unknown' when some run has
-     * neither a number nor a prior to stand on.
+     * When the batch ends: the runs are scheduled as the queue does. Each slot
+     * is free when the run in it ends, and the next waiting run takes the first
+     * slot to free up and runs its time; the batch ends with the last. Sharing
+     * the work out evenly over the slots, as this did, is wrong whenever the
+     * waiting runs do not fill them: nine runs in eight slots end when the
+     * first run ends plus the ninth's own time, not at a ninth of the work.
+     *
+     * What a waiting run takes: from the finished runs of its workflow (its
+     * `prior`, else the batch's); with none, from the runs going now, by their
+     * pace for a run with a number of scans, else by the time they are projected
+     * to take. A batch with a waiting run and nothing to go on is
+     * 'unknown'. Returns {state, remainingMs, rangeMs, priorRuns}.
      */
     function estimateBatch(input = {}) {
         const running = Array.isArray(input.running) ? input.running : [];
         const queued = Array.isArray(input.queued) ? input.queued : [];
         const prior = input.prior && input.prior.perScanMs > 0 ? input.prior : null;
-        const slots = isCount(input.concurrency) ? input.concurrency : 1;
+        const slots = isCount(input.concurrency) ? input.concurrency : Math.max(1, running.length);
 
-        let low = 0;
-        let high = 0;
-        let total = 0;
-        let longest = { remaining: 0, low: 0, high: 0 };
-
+        // When each slot is free: the runs going now, as the time they have left.
+        const free = { mid: [], low: [], high: [] };
+        const projected = [];
+        const paces = [];
         for (const run of running) {
             if (!run || run.remainingMs == null) {
-                if (run && (run.state === STATE.REACHED || run.state === STATE.PAST)) continue;
+                // A run at or past its number is about to end: no time to add.
+                if (run && (run.state === STATE.REACHED || run.state === STATE.PAST)) {
+                    free.mid.push(0); free.low.push(0); free.high.push(0);
+                    continue;
+                }
                 return unknownBatch(prior);
             }
-            total += run.remainingMs;
-            low += run.rangeMs.low;
-            high += run.rangeMs.high;
-            if (run.remainingMs > longest.remaining) {
-                longest = { remaining: run.remainingMs, low: run.rangeMs.low, high: run.rangeMs.high };
-            }
+            free.mid.push(run.remainingMs);
+            free.low.push(run.rangeMs.low);
+            free.high.push(run.rangeMs.high);
+            if (Number.isFinite(run.elapsedMs)) projected.push(run.elapsedMs + run.remainingMs);
+            if (run.perScanMs > 0) paces.push(run.perScanMs);
         }
+        // What the runs going now say of the ones waiting, when there is no prior.
+        const nowPace = paces.length ? mean(paces) : null;
+        const nowLength = projected.length ? mean(projected) : null;
 
+        const durations = { mid: [], low: [], high: [] };
         for (const item of queued) {
             const scans = item && isCount(item.expectedScans) ? item.expectedScans : null;
             const own = item && item.prior && item.prior.perScanMs > 0 ? item.prior : prior;
             let ms = null;
-            if (scans != null && own) ms = scans * own.perScanMs;
-            else if (own) ms = own.meanDurationMs;
+            let spread = SPREAD_NO_HISTORY;
+            if (own) {
+                ms = scans != null ? scans * own.perScanMs : own.meanDurationMs;
+                spread = clamp(own.spread != null ? own.spread : SPREAD_NO_HISTORY, BATCH_SPREAD_MIN, SPREAD_MAX);
+            } else if (scans != null && nowPace != null) {
+                ms = scans * nowPace;
+            } else if (nowLength != null) {
+                // A run with no number, or none to put at their pace (a loop has no pace per scan).
+                ms = nowLength;
+            }
             if (ms == null) return unknownBatch(prior);
-
-            const spread = clamp(own.spread != null ? own.spread : SPREAD_NO_HISTORY, BATCH_SPREAD_MIN, SPREAD_MAX);
-            total += ms;
-            low += ms * (1 - spread);
-            high += ms * (1 + spread);
+            durations.mid.push(ms);
+            durations.low.push(ms * (1 - spread));
+            durations.high.push(ms * (1 + spread));
         }
 
-        const share = (ms) => ms / slots;
-        const remainingMs = Math.max(share(total), longest.remaining);
+        // Each waiting run, in order, takes the slot that frees first.
+        const end = (freeAt, durs) => {
+            const slotsAt = freeAt.slice();
+            while (slotsAt.length < slots) slotsAt.push(0);
+            for (const d of durs) {
+                slotsAt.sort((x, y) => x - y);
+                slotsAt[0] += d;
+            }
+            return Math.max(0, ...slotsAt);
+        };
         return {
             state: STATE.ESTIMATING,
-            remainingMs,
-            rangeMs: {
-                low: Math.max(share(low), longest.low),
-                high: Math.max(share(high), longest.high)
-            },
+            remainingMs: end(free.mid, durations.mid),
+            rangeMs: { low: end(free.low, durations.low), high: end(free.high, durations.high) },
             priorRuns: prior ? prior.runs : 0
         };
     }

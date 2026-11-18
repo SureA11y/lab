@@ -106,9 +106,12 @@ export function estimateItem(item, prior, estimator = getEstimator()) {
  * `batch` is the time left of the whole batch ({state, remainingMs, rangeMs,
  * priorRuns}), or null when the batch is not running. `counts` is the session's
  * counts: the runs of a batch come a page at a time, so some that wait may not
- * be among `items`, and are counted as the average run.
+ * be among `items`, and are counted as the average run. `slots` is how many runs
+ * the queue runs at once (its setting): the waiting runs take the slots as they
+ * free up, so a batch with more runs than slots ends later than the work shared
+ * out would say. Without it, as many as are going now.
  */
-export function estimateQueue(items, { counts = null, running = true, estimator = getEstimator() } = {}) {
+export function estimateQueue(items, { counts = null, running = true, slots = null, estimator = getEstimator() } = {}) {
     const byItem = new Map();
     if (!estimator || !Array.isArray(items)) return { byItem, batch: null };
 
@@ -139,10 +142,12 @@ export function estimateQueue(items, { counts = null, running = true, estimator 
         // A run saving its result has no estimate and nothing left worth one.
         running: goingNow
             .filter(({ item }) => item.phase !== 'saving')
-            .map(({ estimate }) => estimate || { state: estimator.STATE.NO_TOTAL, remainingMs: null }),
+            .map(({ item, estimate }) => (estimate
+                ? { ...estimate, elapsedMs: Number.isFinite(item.elapsedMs) ? item.elapsedMs : undefined }
+                : { state: estimator.STATE.NO_TOTAL, remainingMs: null })),
         queued,
         prior: pooled,
-        concurrency: Math.max(1, goingNow.length),
+        concurrency: Number.isInteger(slots) && slots > 0 ? slots : Math.max(1, goingNow.length),
     });
     return { byItem, batch };
 }

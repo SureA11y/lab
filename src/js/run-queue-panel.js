@@ -964,7 +964,7 @@ function itemsFooterRow(doc, session) {
     ]));
 }
 
-function sessionSection(doc, session, { expanded = true, queueBusy = false, health = null, compareBlocked = null, sendingToCompare = null, openVersions = new Set() } = {}) {
+function sessionSection(doc, session, { expanded = true, queueBusy = false, health = null, compareBlocked = null, sendingToCompare = null, openVersions = new Set(), slots = null } = {}) {
     const headingId = `queue-session-${session.id}`;
     const bodyId = `queue-session-body-${session.id}`;
     const title = sessionTitle(session);
@@ -1021,7 +1021,7 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
     ]);
 
     // The time left of each run and of the batch: only a running batch has any.
-    const estimate = estimateQueue(session.items || [], { counts: session.counts, running: session.state === 'running' });
+    const estimate = estimateQueue(session.items || [], { counts: session.counts, running: session.state === 'running', slots });
 
     const table = el(doc, 'table', { className: 'queue-table' }, [
         el(doc, 'caption', { className: 'visually-hidden', text: `Runs in ${title}` }),
@@ -1093,7 +1093,7 @@ export function renderQueueSessions(doc, state, { isExpanded = () => true, compa
     const queueBusy = sessions.some((s) => s.state === 'running');
     const frag = doc.createDocumentFragment();
     const health = { hold: state.hold || null, resources: state.resources || null };
-    for (const s of sessions) frag.append(sessionSection(doc, s, { expanded: isExpanded(s), queueBusy, health, compareBlocked, sendingToCompare, openVersions }));
+    for (const s of sessions) frag.append(sessionSection(doc, s, { expanded: isExpanded(s), queueBusy, health, compareBlocked, sendingToCompare, openVersions, slots: Number.isInteger(state.concurrency) ? state.concurrency : null }));
     return frag;
 }
 
