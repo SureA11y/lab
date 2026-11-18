@@ -275,8 +275,8 @@ export function createLiveView({
     // its workflow is certain to run. None, no time left.
     function setExpectedScans(plan, given, prior) {
         const est = globalThis.A11Y_SCAN_TIME_ESTIMATE;
-        const expected = est ? est.effectiveExpectedScans({expectedScans: given, plan}) : null;
-        totals.setExpected({expectedScans: expected, prior});
+        const expected = est ? est.resolveExpectedScans({expectedScans: given, plan}) : {count: null, exact: false};
+        totals.setExpected({expectedScans: expected.count, exact: expected.exact, prior});
     }
 
     return {

@@ -1646,3 +1646,61 @@ describe('run queue: what the app needs for a run\'s time left', () => {
         assert.equal(onlySession(queue).items[0].expectedScans, null);
     });
 });
+
+describe('run queue: the time left in the loop a run is in', () => {
+    const loopEntry = (path, index, total, t) => ({
+        type: 'info', message: '', time: new Date(t).toISOString(),
+        extra: { stepEvent: 'loop-iteration', actionPath: path, index, total, loopType: 'forEachElement' },
+    });
+
+    test('a running run in a loop says what the loop has left, on its own iterations', async () => {
+        const t0 = Date.parse('2026-10-21T10:00:00Z');
+        let t = t0;
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun, { now: () => t });
+        queue.addItems([item('A')]);
+        const row = () => onlySession(queue).items[0];
+        assert.equal(row().loopLeft, null, 'no loop yet');
+
+        const { progress } = runner.calls[0].hooks;
+        for (let i = 0; i <= 3; i += 1) {
+            t = t0 + i * 10000;
+            progress(loopEntry('1', i, 10, t));
+        }
+        // Iteration 4 of 10 began 5 s ago: its average, 10 s, has 5 s left, and six more follow.
+        t += 5000;
+        assert.deepEqual(
+            { remainingMs: row().loopLeft.remainingMs, iteration: row().loopLeft.iteration, total: row().loopLeft.total, done: row().loopLeft.done },
+            { remainingMs: 65000, iteration: 4, total: 10, done: 3 }
+        );
+        assert.ok(row().loopLeft.lowMs < 65000 && 65000 < row().loopLeft.highMs);
+    });
+
+    test('says nothing before two iterations are done, or in a loop of no known size', async () => {
+        const t0 = Date.parse('2026-10-21T10:00:00Z');
+        let t = t0;
+        const runner = controlledRunner();
+        const queue = newQueue(runner.executeRun, { now: () => t });
+        queue.addItems([item('A')]);
+        const { progress } = runner.calls[0].hooks;
+        progress(loopEntry('1', 0, 10, t));
+        t += 10000;
+        progress(loopEntry('1', 1, 10, t));
+        assert.equal(onlySession(queue).items[0].loopLeft, null);
+        progress(loopEntry('2', 0, null, t));
+        assert.equal(onlySession(queue).items[0].loopLeft, null);
+    });
+
+    test('a run says whether its number of scans was worked out or typed', async () => {
+        const queue = newQueue(controlledRunner().executeRun);
+        queue.addItems([
+            { run: { url: 'https://example.com/', scenarioName: 'worked', actions: [{ type: 'a11yScan', profile: 'en301549-v4.1.1' }] }, config: null },
+            { run: { url: 'https://example.com/', scenarioName: 'typed', actions: [{ type: 'a11yScan', profile: 'en301549-v4.1.1' }], expectedScans: 3 }, config: null },
+            { run: { url: 'https://example.com/', scenarioName: 'unknown', actions: [{ type: 'forEachElement', selector: 'a', actions: [{ type: 'a11yScan', profile: 'en301549-v4.1.1' }] }] }, config: null },
+        ]);
+        const [a, b, c] = onlySession(queue).items;
+        assert.deepEqual([a.expectedScans, a.expectedExact], [1, true]);
+        assert.deepEqual([b.expectedScans, b.expectedExact], [3, false]);
+        assert.deepEqual([c.expectedScans, c.expectedExact], [null, false]);
+    });
+});

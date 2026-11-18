@@ -55,8 +55,8 @@ export function priorsFrom(items, estimator = getEstimator()) {
 /**
  * The time left of one run that has not finished, or null when there is no
  * number to put it on. `from` says where the number of scans came from:
- * 'set' (given, or certain from the workflow) or 'earlier' (what finished runs
- * of the workflow did).
+ * 'set' (given, or certain from the workflow), 'earlier' (what finished runs
+ * of the workflow did) or 'loop' (the loop it is in, which needs no number).
  */
 export function estimateItem(item, prior, estimator = getEstimator()) {
     if (!estimator) return null;
@@ -64,6 +64,24 @@ export function estimateItem(item, prior, estimator = getEstimator()) {
     if (!running && item.status !== 'waiting') return null;
     // Saving its result: every scan is done, and what is left is not scans.
     if (running && item.phase === 'saving') return null;
+
+    // A run in a loop says how long the loop has left from its own iterations
+    // (the server follows the engine's "item k of n"): better than a count of
+    // scans, and it needs no number. It does not include the steps after the loop.
+    const loop = running ? item.loopLeft : null;
+    if (loop && Number.isFinite(loop.remainingMs) && Number.isFinite(loop.lowMs) && Number.isFinite(loop.highMs)) {
+        return {
+            state: estimator.STATE.ESTIMATING,
+            basis: estimator.BASIS.LOOP,
+            remainingMs: loop.remainingMs,
+            rangeMs: { low: loop.lowMs, high: loop.highMs },
+            loop: { path: loop.path, iteration: loop.iteration, total: loop.total, done: loop.done },
+            scansDone: scansOf(item),
+            expectedScans: null,
+            priorRuns: 0,
+            from: 'loop',
+        };
+    }
 
     const given = Number.isInteger(item.expectedScans) && item.expectedScans > 0 ? item.expectedScans : null;
     const fromPrior = prior ? Math.max(1, Math.round(prior.meanScans)) : null;
@@ -76,6 +94,8 @@ export function estimateItem(item, prior, estimator = getEstimator()) {
         elapsedMs: running ? item.elapsedMs : null,
         sinceScanMs: running ? item.sinceScanMs : null,
         prior,
+        // A number the workflow worked out has no margin for being off.
+        numberUncertainty: given != null && item.expectedExact ? 0 : undefined,
     });
     return { ...estimate, from: given != null ? 'set' : 'earlier' };
 }
@@ -156,9 +176,11 @@ export function describeLeft(estimate, estimator = getEstimator()) {
     if (estimate.state !== S.ESTIMATING) return none;
 
     const range = estimator.formatRange(estimate.rangeMs);
-    const where = estimate.from === 'set'
-        ? `${estimate.expectedScans} scans expected.`
-        : `${estimate.expectedScans} scans expected, as the finished runs of this workflow did.`;
+    const where = estimate.from === 'loop'
+        ? ''
+        : estimate.from === 'set'
+            ? `${estimate.expectedScans} scans expected.`
+            : `${estimate.expectedScans} scans expected, as the finished runs of this workflow did.`;
     const title = [
         `Estimate: ${estimator.formatRemaining(estimate.remainingMs)} left${range ? ` (${range})` : ''}.`,
         where,

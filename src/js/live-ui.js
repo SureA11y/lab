@@ -52,11 +52,10 @@ export function createLiveUi(app) {
             // The scans it is expected to do: the one the run gives, else the one
             // its workflow is certain to run. A dry run takes no scans, so it has none.
             const timing = globalThis.A11Y_SCAN_TIME_ESTIMATE;
-            liveTotals.setExpected({
-                expectedScans: estimate && timing
-                    ? timing.effectiveExpectedScans({expectedScans, plan: app.groupingUi.liveStepState.counter.plan})
-                    : null
-            });
+            const expected = estimate && timing
+                ? timing.resolveExpectedScans({expectedScans, plan: app.groupingUi.liveStepState.counter.plan})
+                : {count: null, exact: false};
+            liveTotals.setExpected({expectedScans: expected.count, exact: expected.exact});
         } catch {
             // A workflow the planner cannot walk still deserves to run.
             app.groupingUi.liveStepState.counter = null;
