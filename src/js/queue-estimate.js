@@ -15,6 +15,10 @@
  * a run that has not begun, or has done a scan or two, leans on them, and its
  * own pace takes over as it goes. A run with no number of its own, in a
  * workflow others have finished, is expected to do what they did.
+ *
+ * A running run's own estimate comes from the server (`runLeft`), which follows
+ * its log as the CLI and the live panel follow theirs; until it has one, the
+ * counts above stand in.
  */
 
 const getEstimator = () => globalThis.A11Y_SCAN_TIME_ESTIMATE || null;
@@ -54,9 +58,12 @@ export function priorsFrom(items, estimator = getEstimator()) {
 
 /**
  * The time left of one run that has not finished, or null when there is no
- * number to put it on. `from` says where the number of scans came from:
- * 'set' (given, or certain from the workflow), 'earlier' (what finished runs
- * of the workflow did) or 'loop' (the loop it is in, which needs no number).
+ * number to put it on. `from` says where it comes from: 'run' (the server's
+ * estimate of a running run, from its own log: its scans, its loops and the
+ * steps ahead), 'set' (the number given, or certain from the workflow),
+ * 'earlier' (what finished runs of the workflow did). A waiting run's figure
+ * here is how long it should take once it starts; estimateQueue puts its wait
+ * in front of it when the batch is running.
  */
 export function estimateItem(item, prior, estimator = getEstimator()) {
     if (!estimator) return null;
@@ -65,22 +72,28 @@ export function estimateItem(item, prior, estimator = getEstimator()) {
     // Saving its result: every scan is done, and what is left is not scans.
     if (running && item.phase === 'saving') return null;
 
-    // A run in a loop says how long the loop has left from its own iterations
-    // (the server follows the engine's "item k of n"): better than a count of
-    // scans, and it needs no number. It does not include the steps after the loop.
-    const loop = running ? item.loopLeft : null;
-    if (loop && Number.isFinite(loop.remainingMs) && Number.isFinite(loop.lowMs) && Number.isFinite(loop.highMs)) {
+    // The server follows a running run's log as the CLI and the live panel
+    // do: its scans at their own pace, counted from the loops where the
+    // workflow cannot say how many it runs.
+    const own = running ? item.runLeft : null;
+    const S = estimator.STATE;
+    if (own && own.state === S.ESTIMATING && Number.isFinite(own.remainingMs) && Number.isFinite(own.lowMs) && Number.isFinite(own.highMs)) {
         return {
-            state: estimator.STATE.ESTIMATING,
-            basis: estimator.BASIS.LOOP,
-            remainingMs: loop.remainingMs,
-            rangeMs: { low: loop.lowMs, high: loop.highMs },
-            loop: { path: loop.path, iteration: loop.iteration, total: loop.total, done: loop.done },
-            scansDone: scansOf(item),
-            expectedScans: null,
+            state: S.ESTIMATING,
+            basis: own.basis,
+            remainingMs: own.remainingMs,
+            rangeMs: { low: own.lowMs, high: own.highMs },
+            scansDone: own.scansDone,
+            expectedScans: own.expectedScans,
+            count: own.count,
+            approximate: !!own.approximate,
+            loop: own.loop || null,
             priorRuns: 0,
-            from: 'loop',
+            from: 'run',
         };
+    }
+    if (own && (own.state === S.REACHED || own.state === S.PAST)) {
+        return { state: own.state, scansDone: own.scansDone, expectedScans: own.expectedScans, from: 'run' };
     }
 
     const given = Number.isInteger(item.expectedScans) && item.expectedScans > 0 ? item.expectedScans : null;
@@ -110,6 +123,10 @@ export function estimateItem(item, prior, estimator = getEstimator()) {
  * the queue runs at once (its setting): the waiting runs take the slots as they
  * free up, so a batch with more runs than slots ends later than the work shared
  * out would say. Without it, as many as are going now.
+ *
+ * While the batch runs, a waiting run's time left is when it should end, its
+ * wait for a slot included (from: 'queue', with `startsInMs` and `takesMs`,
+ * how long it should take once it starts).
  */
 export function estimateQueue(items, { counts = null, running = true, slots = null, estimator = getEstimator() } = {}) {
     const byItem = new Map();
@@ -149,6 +166,27 @@ export function estimateQueue(items, { counts = null, running = true, slots = nu
         prior: pooled,
         concurrency: Number.isInteger(slots) && slots > 0 ? slots : Math.max(1, goingNow.length),
     });
+
+    // Each waiting run: when it should end, its wait included.
+    if (batch && batch.state === estimator.STATE.ESTIMATING && Array.isArray(batch.queued)) {
+        waiting.forEach((item, i) => {
+            const slot = batch.queued[i];
+            if (!slot) return;
+            const own = byItem.get(item.id);
+            byItem.set(item.id, {
+                state: estimator.STATE.ESTIMATING,
+                remainingMs: slot.remainingMs,
+                rangeMs: slot.rangeMs,
+                startsInMs: slot.startsInMs,
+                takesMs: own && own.state === estimator.STATE.ESTIMATING ? own.remainingMs : slot.remainingMs - slot.startsInMs,
+                expectedScans: own ? own.expectedScans : null,
+                basis: own ? own.basis : null,
+                priorRuns: own ? own.priorRuns : 0,
+                own: own || null,
+                from: 'queue',
+            });
+        });
+    }
     return { byItem, batch };
 }
 
@@ -180,17 +218,31 @@ export function describeLeft(estimate, estimator = getEstimator()) {
     }
     if (estimate.state !== S.ESTIMATING) return none;
 
-    const range = estimator.formatRange(estimate.rangeMs);
-    const where = estimate.from === 'loop'
-        ? ''
-        : estimate.from === 'set'
-            ? `${estimate.expectedScans} scans expected.`
-            : `${estimate.expectedScans} scans expected, as the finished runs of this workflow did.`;
-    const title = [
-        `Estimate: ${estimator.formatRemaining(estimate.remainingMs)} left${range ? ` (${range})` : ''}.`,
-        where,
-        estimator.describeBasis(estimate),
-    ].filter(Boolean).join(' ');
+    const range = estimator.formatRange(estimate.rangeMs, estimate.remainingMs);
+    const left = `${estimator.formatRemaining(estimate.remainingMs)} left${range ? ` (${range})` : ''}`;
+    let title;
+    if (estimate.from === 'queue') {
+        // A waiting run: its wait for a slot, then the run.
+        const own = estimate.own;
+        const where = own && own.from === 'set'
+            ? `${own.expectedScans} scans expected.`
+            : own && own.from === 'earlier'
+                ? `${own.expectedScans} scans expected, as the finished runs of this workflow did.`
+                : 'It is expected to take what the runs going now are.';
+        title = [
+            `Estimate: ${left}, its wait included.`,
+            `It should start in ${estimator.formatRemaining(estimate.startsInMs)}, when a slot is free, and take ${estimator.formatRemaining(estimate.takesMs)}.`,
+            where,
+            own ? estimator.describeBasis(own) : '',
+        ].filter(Boolean).join(' ');
+    } else {
+        const where = estimate.from === 'run'
+            ? ''
+            : estimate.from === 'set'
+                ? `${estimate.expectedScans} scans expected.`
+                : `${estimate.expectedScans} scans expected, as the finished runs of this workflow did.`;
+        title = [`Estimate: ${left}.`, where, estimator.describeBasis(estimate)].filter(Boolean).join(' ');
+    }
 
     return { text: shortRemaining(estimate.remainingMs, estimator), title };
 }
@@ -198,6 +250,6 @@ export function describeLeft(estimate, estimator = getEstimator()) {
 /** The batch's time left for its status line: "about 14 min left, estimated (12 to 18 min)", or ''. */
 export function describeBatchLeft(batch, estimator = getEstimator()) {
     if (!batch || !estimator || batch.state !== estimator.STATE.ESTIMATING) return '';
-    const range = estimator.formatRange(batch.rangeMs);
+    const range = estimator.formatRange(batch.rangeMs, batch.remainingMs);
     return `${estimator.formatRemaining(batch.remainingMs)} left, estimated${range ? ` (${range})` : ''}`;
 }

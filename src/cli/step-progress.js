@@ -17,12 +17,12 @@
  *   is never drawn at all - the log lines already narrate the run, and the
  *   summary at the end carries the totals.
  *
- * When the run has a number of scans it is expected to do (the spec's
- * expectedScans, or the count its workflow is certain to run), the line also
- * says how many scans are done and the estimated time left, from how long the
- * scans have taken so far (shared/scan-time-estimate.js). Without one, it
- * says nothing of time. The estimate moves when a log line prints; the line
- * is not redrawn on a timer.
+ * Once it can tell how many scans the run will do (the spec's expectedScans,
+ * the count its workflow is certain to run, the last run's count, or the
+ * count its loops point to as it goes), the line also says how many scans are
+ * done and the estimated time left, at the pace the scans have gone so far
+ * (shared/scan-time-estimate.js). Before that, it says nothing of time. The
+ * estimate moves when a log line prints; the line is not redrawn on a timer.
  *
  * Like the panel, it shows only what is known: how many steps ran, a bar over
  * the workflow's own (top-level) steps, which is a fixed list however loops
@@ -90,24 +90,21 @@ function formatNow(snapshot) {
 
 /**
  * "7 of 20 scans · about 6 min left (5 to 8 min)": the scans done against the
- * scans expected, and the estimated time left. `estimate` is estimateRun's
- * result; '' for none.
+ * scans expected, and the estimated time left; "7 of ~205 scans" where the
+ * number was counted (from the loops) rather than given. The same words
+ * wherever the number comes from, so the line does not change shape as the
+ * count takes over from a number; the loop's item is in "now:" already.
+ * `estimate` is the run estimator's result; '' for none.
  */
 function formatScans(estimate) {
-    if (estimate && estimate.basis === timing.BASIS.LOOP && estimate.loop) {
-        const range = timing.formatRange(estimate.rangeMs);
-        return `item ${estimate.loop.iteration} of ${estimate.loop.total} · ${timing.formatRemaining(estimate.remainingMs)} left${range ? ` (${range})` : ''}`;
-    }
     if (!estimate || !estimate.expectedScans) return '';
     const S = timing.STATE;
-    const of = `${estimate.scansDone} of ${plural(estimate.expectedScans, 'scan')}`;
     if (estimate.state === S.PAST) return `${plural(estimate.scansDone, 'scan')}, past the ${estimate.expectedScans} expected`;
     if (estimate.state === S.REACHED) return `all ${plural(estimate.expectedScans, 'expected scan')} done`;
     // Too early for a time: the line says nothing of scans until it can.
-    if (estimate.state === S.WARMING_UP) return '';
     if (estimate.state !== S.ESTIMATING) return '';
-    const range = timing.formatRange(estimate.rangeMs);
-    return `${of} · ${timing.formatRemaining(estimate.remainingMs)} left${range ? ` (${range})` : ''}`;
+    const range = timing.formatRange(estimate.rangeMs, estimate.remainingMs);
+    return `${estimate.scansDone} of ${estimate.approximate ? '~' : ''}${plural(estimate.expectedScans, 'scan')} · ${timing.formatRemaining(estimate.remainingMs)} left${range ? ` (${range})` : ''}`;
 }
 
 /** The single line redrawn below a TTY run. */
@@ -187,9 +184,11 @@ function createStepProgress({
     columns = (stream && stream.columns) || 0,
     quiet = false,
     width = BAR_WIDTH,
-    // How many scans the run is expected to do, if the spec says, and what the
-    // finished runs of the same workflow in a batch say about it.
+    // How many scans the run is expected to do, if the spec says, how many the
+    // last run of the same workflow did, and what the finished runs of the same
+    // workflow in a batch say about it.
     expectedScans = null,
+    lastRunScans = null,
     prior = null,
     now = () => Date.now()
 } = {}) {
@@ -202,47 +201,27 @@ function createStepProgress({
         counter = null;
     }
 
-    // The scans the run is expected to do: the number it was given, else the
-    // one its workflow is certain to run. The clock runs on the log entries'
-    // own times, as the app's live totals do.
-    const resolved = counter
-        ? timing.resolveExpectedScans({ expectedScans, plan: counter.plan })
-        : { count: null, exact: false };
-    const expected = resolved.count;
-    const scanTimes = [];
-    // The loops, from the engine's "item k of n": where one is running it says the
-    // time left from its own iterations, with no number to give.
-    const loops = counter && timing.createLoopTracker ? timing.createLoopTracker() : null;
-    let startMs = null;
+    // The time left, on the clock of the log entries' own times, as the app's
+    // live totals keep it.
+    const timer = counter
+        ? timing.createRunEstimator({ plan: counter.plan, expectedScans, lastRunScans, prior })
+        : null;
     let lastEntryMs = null;
     let receivedMs = null;
 
-    function noteClock(entry, snapshot) {
-        const at = entry && typeof entry.time === 'string' ? Date.parse(entry.time) : NaN;
-        if (loops && entry) loops.accept(entry);
+    function noteClock(entry) {
+        if (!timer || !entry) return;
+        timer.accept(entry);
+        const at = typeof entry.time === 'string' ? Date.parse(entry.time) : NaN;
         if (!Number.isFinite(at)) return;
-        if (startMs == null) startMs = at;
         lastEntryMs = Math.max(lastEntryMs == null ? at : lastEntryMs, at);
         receivedMs = now();
-        const done = Math.max(0, Math.floor((snapshot && snapshot.doneByType && snapshot.doneByType.a11yScan) || 0));
-        while (scanTimes.length < done) scanTimes.push(Math.max(0, at - startMs));
     }
 
     function estimate() {
+        if (!timer || lastEntryMs == null) return null;
         const sinceEntry = receivedMs == null ? 0 : Math.max(0, now() - receivedMs);
-        if (loops && lastEntryMs != null) {
-            const inLoop = loops.estimate(lastEntryMs + sinceEntry);
-            if (inLoop) return inLoop;
-        }
-        if (expected == null) return null;
-        const lastAt = lastEntryMs == null ? 0 : lastEntryMs - startMs;
-        return timing.estimateRun({
-            expectedScans: expected,
-            completedAtMs: scanTimes,
-            elapsedMs: lastAt + sinceEntry,
-            prior,
-            numberUncertainty: resolved.exact ? 0 : undefined
-        });
+        return timer.estimate(lastEntryMs + sinceEntry);
     }
 
     // Whether a bar is currently occupying the last line of the output.
@@ -281,7 +260,8 @@ function createStepProgress({
             if (!counter) return;
             if (!entry || !entry.extra || typeof entry.extra !== 'object' || !entry.extra.stepEvent) return;
             try {
-                noteClock(entry, counter.accept(entry));
+                counter.accept(entry);
+                noteClock(entry);
             } catch {
                 // Never let a counting slip take the run down with it.
             }

@@ -22,7 +22,7 @@ const { parseCliArgs, applyOverrides } = require('./run-spec');
 const { EXIT, loadBaselinePayload, compareToBaseline, comparableSummary, decideExit, diffDocument } = require('./baseline');
 const {
     defaultOutDir, resolveBaselineTarget, promoteBaseline, pruneRuns,
-    defaultBatchDir, batchRunDirName, findPreviousBatchRun, pruneBatches, baselineFilePath, BATCH_MANIFEST,
+    defaultBatchDir, batchRunDirName, findPreviousBatchRun, pruneBatches, baselineFilePath, BATCH_MANIFEST, lastRunScans,
 } = require('./run-store');
 const { isBatch, checkBatch } = require('./batch-spec');
 const { summarizePayload } = require('../server-side/run-queue');
@@ -626,9 +626,13 @@ async function main(argv) {
         return EXIT_BAD_USAGE;
     }
 
+    // With no number of scans given, the last run of the same workflow says how
+    // many to expect, for the time left before the run's loops can count them.
+    const lastRun = finalSpec.expectedScans == null ? lastRunScans(outDir, finalSpec) : null;
+
     const cancel = watchCancel('Cancelling, the partial result will still be written. Press Ctrl+C again to force exit.');
     try {
-        const result = await runOne(finalSpec, options, {
+        const result = await runOne(finalSpec, { ...options, lastRunScans: lastRun }, {
             outDir,
             baselinePayload: baseline.payload,
             baselineLabel: baseline.label,
@@ -726,6 +730,7 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
         // The scans the spec expects, and what the batch's finished runs of
         // this workflow took, for the time left the line shows.
         expectedScans: finalSpec.expectedScans,
+        lastRunScans: options.lastRunScans || null,
         prior: options.scanPrior || null
     });
 

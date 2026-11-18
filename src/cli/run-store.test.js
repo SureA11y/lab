@@ -11,6 +11,7 @@ const {
     scenarioSlug,
     defaultOutDir,
     findPreviousRun,
+    lastRunScans,
     baselineFilePath,
     resolveBaselineTarget,
     promoteBaseline,
@@ -81,6 +82,40 @@ describe('scenarioSlug', () => {
         assert.equal(scenarioSlug({ url: 'https://example.com/checkout' }), 'example.com-checkout');
         assert.equal(scenarioSlug({}), 'run');
         assert.equal(scenarioSlug(null), 'run');
+    });
+});
+
+describe('lastRunScans', () => {
+    const actions = [{ type: 'a11yScan' }, { type: 'forEachElement', targetSelector: 'a', actions: [{ type: 'a11yScan' }] }];
+    const spec = { scenarioName: 'Web Banking', actions };
+    const whole = (over = {}) => ({
+        ...payload('run_last'), actions, actionResults: [{ status: 'ok' }, { status: 'ok' }],
+        scans: [{}, {}, { contexts: [{}, {}, { skipped: true }] }], ...over
+    });
+
+    test('is how many scans the last run of the same workflow did, each scan of a Merged scan counted', () => {
+        writeRun('2026-08-16T10-00-00-000Z', whole());
+        const current = writeRun('2026-08-17T10-00-00-000Z', null);
+        assert.equal(lastRunScans(current, spec), 4);
+    });
+
+    test('is nothing when the last run ran other steps', () => {
+        writeRun('2026-08-16T10-00-00-000Z', whole({ actions: [{ type: 'a11yScan' }] }));
+        const current = writeRun('2026-08-17T10-00-00-000Z', null);
+        assert.equal(lastRunScans(current, spec), null);
+    });
+
+    test('is nothing when the last run stopped before its last step, or failed', () => {
+        writeRun('2026-08-16T10-00-00-000Z', whole({ actionResults: [{ status: 'ok' }] }));
+        const current = writeRun('2026-08-17T10-00-00-000Z', null);
+        assert.equal(lastRunScans(current, spec), null);
+        writeRun('2026-08-16T10-00-00-000Z', whole({ errorDetails: { message: 'gone' } }));
+        assert.equal(lastRunScans(current, spec), null);
+    });
+
+    test('is nothing with no run before this one', () => {
+        const current = writeRun('2026-08-17T10-00-00-000Z', null);
+        assert.equal(lastRunScans(current, spec), null);
     });
 });
 

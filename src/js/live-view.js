@@ -271,12 +271,10 @@ export function createLiveView({
         getUseLiveStream: () => true
     });
 
-    // The scans the run is expected to do: the one it was given, else the one
-    // its workflow is certain to run. None, no time left.
+    // What the time left is worked out from: the run's plan, the scans it was
+    // given, and what finished runs of its workflow took.
     function setExpectedScans(plan, given, prior) {
-        const est = globalThis.A11Y_SCAN_TIME_ESTIMATE;
-        const expected = est ? est.resolveExpectedScans({expectedScans: given, plan}) : {count: null, exact: false};
-        totals.setExpected({expectedScans: expected.count, exact: expected.exact, prior});
+        totals.setExpected({plan, expectedScans: given, prior});
     }
 
     return {

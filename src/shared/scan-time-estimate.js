@@ -29,13 +29,16 @@
  *
  * The result always says how it was reached (`basis`) so a UI can show it.
  *
- * The loops of a workflow are a better guide than a count of scans where there
- * is one. The engine says "item 14 of 40" for each loop as it goes, and an
- * iteration (a page, with or without an extra scan) takes a steady time where
- * single scans do not: on a live run the time left from the loop was off by 3.5%
- * (median), from a typed number of scans by 8.1%, and it needs no number.
- * createLoopTracker follows those events; it estimates the time left in the
- * outermost loop that is running, not the steps after it.
+ * How many scans a run has left, where no one can say ahead (a loop whose
+ * size the page decides, an `if` around a scan), comes from the run itself:
+ * createRunEstimator follows the engine's "item k of n" for each loop and
+ * counts the scans each iteration took, and the plan says what the steps after
+ * the loop will run. The loops give the count and the scans give the pace. A
+ * loop's own time per iteration is not used for the pace: iterations differ in
+ * size (a category of one book, the next of twenty), where the time a scan
+ * takes hardly moves. On real runs of a 205-scan workflow over 13 uneven
+ * categories, the time per iteration was 23% off at the median; the scans
+ * left, counted this way, times the scan pace, about 7%.
  *
  * Browser: available as globalThis.A11Y_SCAN_TIME_ESTIMATE.
  * Node:    module.exports.
@@ -80,26 +83,54 @@
     const SPREAD_MIN = 0.05;
     const SPREAD_MAX = 0.5;
     const SLACK_SCANS = 3;
-    const NUMBER_UNCERTAINTY = 0.05;
+    // A typed number is a guess, often a round one: on the same runs, a number
+    // 12% off left the real time outside a 5% margin a quarter to two fifths
+    // of the time.
+    const NUMBER_UNCERTAINTY = 0.15;
+    // The last run of the same workflow did a number of scans; the next one
+    // usually does the same, give or take what the site changed.
+    const LAST_RUN_UNCERTAINTY = 0.05;
 
     // The range around what a run that has not started will take, from the
     // finished runs of its workflow (estimateBatch).
     const BATCH_SPREAD_MIN = 0.1;
     const SPREAD_NO_HISTORY = 0.3;
 
-    // A loop is trusted for a time once this many of its iterations are done:
-    // one iteration is a guess, and the start-up is often in it.
+    // The outermost loop counts for the scans left once this many of its
+    // iterations are done, unless the plan says how many scans each one runs:
+    // the first iteration alone says little of the others.
     const MIN_LOOP_ITERATIONS = 2;
 
-    // How many iteration times a loop keeps, for the scatter among them.
-    const LOOP_TIMES_KEPT = 200;
+    // How many iteration scan counts a loop keeps, for the scatter among them.
+    const LOOP_COUNTS_KEPT = 200;
+
+    // A number given (typed, or the last run's) is kept while it is within this
+    // share of the count from the loops: it is then the better of the two. Past
+    // it, the count wins. On the runs above, a number 5 to 27% off then cost
+    // 8 to 10% (the count's own error), where the right number gave 3%.
+    const AGREE_SHARE = 0.05;
+
+    // How far a count from the loops may be off, in scans: this many standard
+    // deviations of the scans per iteration, over the iterations to come.
+    const COUNT_SLACK_SD = 0.5;
 
     const BASIS = Object.freeze({
-        LOOP: 'loop',
         NONE: 'none',
         PRIOR: 'prior',
         OWN: 'own',
         BLEND: 'blend'
+    });
+
+    // Where the number of scans an estimate stands on comes from.
+    const COUNT = Object.freeze({
+        // Typed by the person (expectedScans).
+        TYPED: 'typed',
+        // What the last run of the same workflow did.
+        LAST_RUN: 'last-run',
+        // The workflow is certain to run it, or the plan counts it.
+        PLAN: 'plan',
+        // The loops so far, and the plan for the steps after them.
+        LOOPS: 'loops'
     });
 
     const STATE = Object.freeze({
@@ -188,14 +219,16 @@
      * worked out, NUMBER_UNCERTAINTY for one that was typed). It is slack in
      * scans, so it is the same however far the run is, and ever larger next to
      * a time left that is shrinking: the end of a run is where a wrong number
-     * shows.
+     * shows. `slackScans` is more slack, in scans: how far a count from the
+     * loops may be off.
      */
-    function rangeAround(remainingMs, perScanMs, scansLeft, expectedScans, numberUncertainty = NUMBER_UNCERTAINTY) {
+    function rangeAround(remainingMs, perScanMs, scansLeft, expectedScans, numberUncertainty = NUMBER_UNCERTAINTY, slackScans = 0) {
         const share = expectedScans > 0 ? Math.min(1, scansLeft / expectedScans) : 1;
         const relative = clamp(SPREAD_K * Math.sqrt(share), SPREAD_MIN, SPREAD_MAX);
         const half = relative * remainingMs
             + perScanMs * SLACK_SCANS
-            + numberUncertainty * expectedScans * perScanMs;
+            + numberUncertainty * expectedScans * perScanMs
+            + Math.max(0, Number.isFinite(slackScans) ? slackScans : 0) * perScanMs;
         return { low: Math.max(0, remainingMs - half), high: remainingMs + half };
     }
 
@@ -271,6 +304,7 @@
      * `numberUncertainty`  how far off the expected number may be, as a share of
      *                it: 0 for a number the workflow worked out (resolveExpectedScans
      *                says), the default for a typed one
+     * `slackScans`   how many scans a counted number may be off by, for the range
      *
      * A caller that only knows counts, not each scan's time, passes `scansDone`,
      * `lastScanAtMs` and `pace` ({perScanMs, scans, variation}) in their place;
@@ -350,7 +384,8 @@
         result.remainingMs = remainingMs;
         result.rangeMs = rangeAround(
             remainingMs, perScanMs, result.scansLeft, expectedScans,
-            Number.isFinite(input.numberUncertainty) ? input.numberUncertainty : NUMBER_UNCERTAINTY
+            Number.isFinite(input.numberUncertainty) ? input.numberUncertainty : NUMBER_UNCERTAINTY,
+            input.slackScans
         );
         return result;
     }
@@ -407,7 +442,9 @@
      * `prior`, else the batch's); with none, from the runs going now, by their
      * pace for a run with a number of scans, else by the time they are projected
      * to take. A batch with a waiting run and nothing to go on is
-     * 'unknown'. Returns {state, remainingMs, rangeMs, priorRuns}.
+     * 'unknown'. Returns {state, remainingMs, rangeMs, queued, priorRuns};
+     * `queued` gives each waiting run, in order, {startsInMs, remainingMs,
+     * rangeMs}: when it should start, and the time until it ends.
      */
     function estimateBatch(input = {}) {
         const running = Array.isArray(input.running) ? input.running : [];
@@ -459,20 +496,34 @@
             durations.high.push(ms * (1 + spread));
         }
 
-        // Each waiting run, in order, takes the slot that frees first.
-        const end = (freeAt, durs) => {
+        // Each waiting run, in order, takes the slot that frees first: when it
+        // starts and when it ends, and the batch ends with the last slot.
+        const schedule = (freeAt, durs) => {
             const slotsAt = freeAt.slice();
             while (slotsAt.length < slots) slotsAt.push(0);
+            const runs = [];
             for (const d of durs) {
                 slotsAt.sort((x, y) => x - y);
+                const startsAt = slotsAt[0];
                 slotsAt[0] += d;
+                runs.push({ startsAt, endsAt: slotsAt[0] });
             }
-            return Math.max(0, ...slotsAt);
+            return { end: Math.max(0, ...slotsAt), runs };
         };
+        const mid = schedule(free.mid, durations.mid);
+        const low = schedule(free.low, durations.low);
+        const high = schedule(free.high, durations.high);
         return {
             state: STATE.ESTIMATING,
-            remainingMs: end(free.mid, durations.mid),
-            rangeMs: { low: end(free.low, durations.low), high: end(free.high, durations.high) },
+            remainingMs: mid.end,
+            rangeMs: { low: low.end, high: high.end },
+            // For each waiting run, in the order given: when it is expected to
+            // start, and the time until it ends, its wait included.
+            queued: mid.runs.map((r, i) => ({
+                startsInMs: r.startsAt,
+                remainingMs: r.endsAt,
+                rangeMs: { low: low.runs[i].endsAt, high: high.runs[i].endsAt }
+            })),
             priorRuns: prior ? prior.runs : 0
         };
     }
@@ -486,63 +537,143 @@
         return child !== parent && (child.startsWith(parent + '.') || child.startsWith(parent + '::'));
     }
 
+    function stdDev(values) {
+        if (values.length < 2) return 0;
+        const avg = mean(values);
+        return Math.sqrt(mean(values.map((v) => (v - avg) * (v - avg))));
+    }
+
     /**
-     * Follows the loops of a run as its log entries arrive, and says how long
-     * the outermost running loop has left.
+     * The time left of one run, from its log entries as they arrive: used by the
+     * CLI line, the app's live panel and the queue alike.
      *
-     * accept(entry): a log entry, {time, extra: {stepEvent, actionPath, index,
-     * total}}. A 'loop-iteration' entry starts an iteration (index 0 starts the
-     * loop); the loop's own 'action-end', 'action-failed' or 'action-skipped'
-     * ends it, and the loops inside it with it. Other entries are ignored.
+     * createRunEstimator({plan, expectedScans, lastRunScans, prior, type})
+     *   `plan`          planWorkflowSteps(...) for the run's workflow
+     *   `expectedScans` the number typed, if any
+     *   `lastRunScans`  how many scans the last run of the same workflow did, if known
+     *   `prior`         priorFromRuns(...) of finished runs of the same workflow, or null
      *
-     * estimate(nowMs): {state, basis, remainingMs, rangeMs, loop} or null.
-     * `nowMs` is on the clock of the entries' times. `loop` says which loop it
-     * is {path, iteration (1-based), total, done}. Null when no loop is running,
-     * the outermost one's size is not known, or too few of its iterations are
-     * done for it to say (and nothing inside it can say either).
+     * accept(entry): a log entry ({time, extra: {stepEvent, actionPath,
+     * actionType, index, total}}). Scans are the `type` actions that end or
+     * fail; the workflow's own steps, its loops and their iterations are
+     * followed from the step events. Other entries only move the clock.
      *
-     * An iteration of the outermost loop takes the time its finished ones took
-     * on average; while one is running, what is left of it is what its inner
-     * loops have left, when they can say, else what is left of that average.
-     * The first iteration, with nothing finished, is the time it has taken so
-     * far plus what the loop inside it has left. A loop that runs its iterations
-     * side by side (workers) is as good: its iterations start at the pace it
-     * finishes them.
+     * estimate(nowMs): estimateRun's result, with `count` (where the number of
+     * scans comes from: COUNT), `approximate` (the number was counted, not
+     * given or certain), `loop` ({path, iteration, total, done} of the
+     * outermost loop running, or null) and `loopScans` (the number the loops
+     * point to, when they point to one). Null when there is nothing to go on.
+     * `nowMs` is on the clock of the entries' times.
+     *
+     * How many scans the run will do:
+     * - Counted from the run as it goes: the scans done, the scans left in the
+     *   outermost loop running (this iteration's, from its inner loops or what
+     *   its iterations took, and the iterations to come at the scans per
+     *   finished iteration, or as the plan says when each runs a fixed number),
+     *   and the scans the plan has in the steps after it. While the outermost
+     *   loop has fewer than two finished iterations and the plan cannot say
+     *   what each runs, there is no count: the first iteration is no guide to
+     *   the others.
+     * - A number given (typed, the last run's, or one the workflow is certain
+     *   to run) is used while there is no count, and kept while it agrees with
+     *   the count; where they disagree, the count wins.
+     * The time is the scans left at the run's own pace per scan (estimateRun).
      */
-    function createLoopTracker() {
+    function createRunEstimator(options = {}) {
+        const type = options.type || 'a11yScan';
+        const plan = options.plan && typeof options.plan === 'object' ? options.plan : null;
+        const steps = plan && Array.isArray(plan.steps) ? plan.steps : [];
+        const stepIndex = new Map(steps.map((step, i) => [step.path, i]));
+        const nodes = (plan && plan.nodes) || {};
+        const prior = options.prior && options.prior.perScanMs > 0 ? options.prior : null;
+        const resolved = resolveExpectedScans({ expectedScans: options.expectedScans, plan, type });
+        const lastRun = isCount(options.lastRunScans) ? options.lastRunScans : null;
+
+        // The number given, if any, and how much it may be off.
+        let given = null;
+        if (resolved.count != null) {
+            given = resolved.exact
+                ? { count: resolved.count, from: COUNT.PLAN, uncertainty: 0 }
+                : { count: resolved.count, from: COUNT.TYPED, uncertainty: NUMBER_UNCERTAINTY };
+        } else if (lastRun != null) {
+            given = { count: lastRun, from: COUNT.LAST_RUN, uncertainty: LAST_RUN_UNCERTAINTY };
+        }
+        const typeOf = (byType) => (byType && byType[type]) || null;
+
+        let startMs = null;
+        let lastMs = null;
+        let done = 0;
+        const scanTimes = [];
+        let top = -1;
+        let topScans = 0;
+        let topEnded = false;
         const loops = new Map();
+        // Whether a loop of this run has given a count yet.
+        let measured = false;
 
         function dropInside(path) {
             for (const other of [...loops.keys()]) if (isInsideLoop(other, path)) loops.delete(other);
         }
 
         function accept(entry) {
-            const x = entry && entry.extra;
-            if (!x || typeof x.actionPath !== 'string') return;
+            if (!entry || typeof entry !== 'object') return;
+            const at = typeof entry.time === 'string' ? Date.parse(entry.time) : NaN;
+            if (Number.isFinite(at)) {
+                if (startMs == null) startMs = at;
+                lastMs = lastMs == null ? at : Math.max(lastMs, at);
+            }
+            const x = entry.extra;
+            if (!x || typeof x !== 'object' || typeof x.actionPath !== 'string') return;
             const path = x.actionPath;
-            if (x.stepEvent === 'loop-iteration' && Number.isInteger(x.index) && x.index >= 0) {
-                const at = Date.parse(entry.time);
-                if (!Number.isFinite(at)) return;
+            const event = x.stepEvent;
+            const ended = event === 'action-end' || event === 'action-failed' || event === 'action-skipped';
+
+            // Any entry from inside a later step of the workflow's own says the
+            // run has reached it.
+            const head = path.split('::')[0].split('.')[0];
+            if (stepIndex.has(head) && stepIndex.get(head) > top) {
+                top = stepIndex.get(head);
+                topScans = done;
+                topEnded = false;
+            }
+            if (event === 'action-start' && stepIndex.has(path)) {
+                top = stepIndex.get(path);
+                topScans = done;
+                topEnded = false;
+            }
+            if ((event === 'action-end' || event === 'action-failed') && x.actionType === type) {
+                done += 1;
+                if (Number.isFinite(at) && startMs != null) scanTimes.push(Math.max(0, at - startMs));
+            }
+            if (event === 'loop-iteration' && Number.isInteger(x.index) && x.index >= 0) {
                 let loop = loops.get(path);
                 if (x.index === 0 || !loop) {
-                    loop = { path, total: null, first: at, curStart: at, prevStart: at, index: 0, durations: [] };
+                    loop = { path, total: null, index: x.index, iterationStart: done, counts: [] };
                     loops.delete(path);
                     loops.set(path, loop);
                 } else if (x.index > loop.index) {
-                    loop.durations.push(at - loop.prevStart);
-                    if (loop.durations.length > LOOP_TIMES_KEPT) loop.durations.shift();
-                    loop.prevStart = at;
+                    // The scans of the iterations that finished; with workers
+                    // running iterations side by side, shared out among them.
+                    const passed = x.index - loop.index;
+                    const each = (done - loop.iterationStart) / passed;
+                    for (let k = 0; k < passed; k += 1) loop.counts.push(each);
+                    if (loop.counts.length > LOOP_COUNTS_KEPT) loop.counts.splice(0, loop.counts.length - LOOP_COUNTS_KEPT);
+                    loop.index = x.index;
+                    loop.iterationStart = done;
                 }
-                // The size of a loop that is not dynamic is known when it starts;
-                // one that grows says so as it goes.
+                // A loop that grows says so as it goes.
                 loop.total = Number.isFinite(x.total) && x.total > 0 ? x.total : loop.total;
-                loop.index = Math.max(loop.index, x.index);
-                loop.curStart = at;
                 // A new iteration of this loop ends the loops inside the last one.
                 dropInside(path);
-            } else if (x.stepEvent === 'action-end' || x.stepEvent === 'action-failed' || x.stepEvent === 'action-skipped') {
+            } else if (ended) {
                 if (loops.has(path)) loops.delete(path);
                 dropInside(path);
+                // A step of the workflow's own that ended is behind the run,
+                // whether or not its start was seen.
+                if (stepIndex.has(path) && stepIndex.get(path) >= top) {
+                    top = stepIndex.get(path);
+                    topEnded = true;
+                }
             }
         }
 
@@ -555,68 +686,157 @@
             return out;
         }
 
-        // Time left in loop k of the chain, or null.
-        function left(list, k, nowMs) {
+        // What one step of the plan runs, as a count: {scans, slack}, or null
+        // when a loop of unknown size inside it runs scans. A range (a loop
+        // with a limit, an if) counts its most, with the difference as slack.
+        function planned(range) {
+            if (!range) return { scans: 0, slack: 0 };
+            if (range.unsized > 0) return null;
+            return { scans: range.max, slack: range.max - range.min };
+        }
+
+        // Scans left in loop k of the chain: {scans, slack}, or null.
+        function leftInLoop(list, k) {
             const loop = list[k];
             if (loop.total == null) return null;
-            const i = loop.index;
             const n = loop.total;
-            if (i >= n) return null;
-            const elapsed = Math.max(0, nowMs - loop.curStart);
-            const inner = k + 1 < list.length ? left(list, k + 1, nowMs) : null;
-            let each = i >= MIN_LOOP_ITERATIONS ? (loop.curStart - loop.first) / i : null;
-            let current;
-            if (inner != null) current = inner;
-            else if (each != null) current = Math.max(0, each - elapsed);
-            else return null;
-            if (each == null) each = elapsed + current;
-            return current + (n - i - 1) * each;
+            const i = loop.index;
+            const inside = done - loop.iterationStart;
+            const node = nodes[loop.path];
+            const range = node && node.perIterationRangeByType ? typeOf(node.perIterationRangeByType) : null;
+            const fixed = range && !range.unsized && range.min === range.max ? range.max : null;
+            const enough = k === 0 ? MIN_LOOP_ITERATIONS : 1;
+            const measured = loop.counts.length >= enough ? mean(loop.counts) : null;
+            const per = fixed != null ? fixed : measured;
+
+            let current = null;
+            let slack = 0;
+            if (k + 1 < list.length) {
+                const inner = leftInLoop(list, k + 1);
+                if (inner) { current = inner.scans; slack += inner.slack; }
+            }
+            if (current == null) {
+                if (per != null) current = Math.max(0, per - inside);
+                else if (range && !range.unsized) current = Math.max(0, (range.min + range.max) / 2 - inside);
+                else return null;
+            }
+            const after = Math.max(0, n - i - 1);
+            if (after > 0 && per == null) return null;
+            if (after > 0 && fixed == null) slack += COUNT_SLACK_SD * stdDev(loop.counts) * Math.sqrt(after);
+            return { scans: current + after * (per || 0), slack };
+        }
+
+        // The scans the run will do, counted: {scans, slack, loop}, or null.
+        function count() {
+            if (!steps.length) return null;
+            let left = 0;
+            let slack = 0;
+            let loop = null;
+            if (top >= 0 && !topEnded) {
+                const list = chain();
+                if (list.length) {
+                    const inLoop = leftInLoop(list, 0);
+                    if (!inLoop) return null;
+                    left += inLoop.scans;
+                    slack += inLoop.slack;
+                    const outer = list[0];
+                    if (outer.total != null) loop = { path: outer.path, iteration: outer.index + 1, total: outer.total, done: outer.index };
+                } else {
+                    const here = planned(typeOf(steps[top].byType));
+                    if (!here) return null;
+                    left += Math.max(0, here.scans - (done - topScans));
+                    slack += here.slack;
+                }
+            }
+            for (let j = Math.max(0, top + 1); j < steps.length; j += 1) {
+                const ahead = planned(typeOf(steps[j].byType));
+                if (!ahead) return null;
+                left += ahead.scans;
+                slack += ahead.slack;
+            }
+            return { scans: done + left, slack, loop };
         }
 
         function estimate(nowMs) {
-            if (!Number.isFinite(nowMs)) return null;
-            const list = chain();
-            if (!list.length || list[0].total == null) return null;
-            const remainingMs = left(list, 0, nowMs);
-            if (remainingMs == null) return null;
+            if (startMs == null) return null;
+            const counted = count();
+            let expected = null;
+            let from = null;
+            let uncertainty = 0;
+            let slackScans = 0;
+            if (counted && counted.loop) measured = true;
+            // A number given stands while nothing better says otherwise: no
+            // count, or one it agrees with, or only the plan's (a typed number
+            // over the one the workflow works out is the person's word: they may
+            // know an if hardly ever runs) before the run has measured a loop.
+            // Once the run reaches the number, a count with scans still to go
+            // takes over.
+            const ahead = counted && given
+                ? given.count > done || (given.count === done && Math.round(counted.scans) <= done)
+                : true;
+            const keep = given && (!counted || (ahead
+                && (Math.abs(given.count - counted.scans) <= AGREE_SHARE * counted.scans || !measured)));
+            if (keep) {
+                expected = given.count;
+                from = given.from;
+                uncertainty = given.uncertainty;
+            } else if (counted) {
+                expected = Math.max(done, Math.round(counted.scans));
+                from = counted.loop ? COUNT.LOOPS : COUNT.PLAN;
+                slackScans = counted.slack;
+            }
+            if (expected == null || expected < 1) return null;
 
-            const outer = list[0];
-            const n = outer.total;
-            const i = outer.index;
-            const each = i >= MIN_LOOP_ITERATIONS ? (outer.curStart - outer.first) / i : remainingMs / Math.max(1, n - i);
-            // How far the end may be: the scatter of the iterations over the ones
-            // still to come, or the same share of what is left as for scans,
-            // whichever is wider; and an iteration of slack.
-            const cv = variation(outer.durations);
-            const left_ = Math.max(1, n - i - 1);
-            const byScatter = cv == null ? 0 : 1.65 * cv / Math.sqrt(left_);
-            const relative = clamp(Math.max(byScatter, SPREAD_K * Math.sqrt((n - i) / n)), SPREAD_MIN, SPREAD_MAX);
-            const half = relative * remainingMs + each;
-            return {
-                state: STATE.ESTIMATING,
-                basis: BASIS.LOOP,
-                remainingMs,
-                rangeMs: { low: Math.max(0, remainingMs - half), high: remainingMs + half },
-                loop: { path: outer.path, iteration: i + 1, total: n, done: i }
-            };
+            const elapsedMs = Number.isFinite(nowMs) ? Math.max(0, nowMs - startMs) : (lastMs == null ? 0 : lastMs - startMs);
+            const result = estimateRun({
+                expectedScans: expected,
+                completedAtMs: scanTimes,
+                elapsedMs,
+                prior,
+                numberUncertainty: uncertainty,
+                slackScans
+            });
+            result.count = from;
+            // A number counted rather than given or certain: shown as "~205".
+            result.approximate = from === COUNT.LOOPS || (from === COUNT.PLAN && slackScans > 0);
+            result.loop = counted && counted.loop ? counted.loop : null;
+            result.loopScans = counted && counted.loop ? Math.round(counted.scans) : null;
+            return result;
         }
 
-        return { accept, estimate, loops: () => chain().map((l) => ({ path: l.path, index: l.index, total: l.total })) };
+        return {
+            accept,
+            estimate,
+            scansDone: () => done,
+            loops: () => chain().map((l) => ({ path: l.path, index: l.index, total: l.total }))
+        };
     }
 
     /** Where an estimate comes from, in words, for a tooltip or a screen reader. */
     function describeBasis(estimate) {
         if (!estimate) return '';
-        if (estimate.basis === BASIS.LOOP && estimate.loop) {
-            return `From the loop it is in: ${estimate.loop.done} of ${estimate.loop.total} items done, and how long they took. The steps after the loop are not in it.`;
-        }
         const runs = estimate.priorRuns > 0
             ? `${estimate.priorRuns} finished run${estimate.priorRuns === 1 ? '' : 's'} of this workflow`
             : '';
-        if (estimate.basis === BASIS.OWN) return 'From how long the scans of this run have taken.';
-        if (estimate.basis === BASIS.PRIOR) return `From ${runs}: this run has not done a scan yet.`;
-        if (estimate.basis === BASIS.BLEND) return `From how long the scans of this run have taken, with ${runs}.`;
-        return '';
+        let pace = '';
+        if (estimate.basis === BASIS.OWN) pace = 'From how long the scans of this run have taken.';
+        else if (estimate.basis === BASIS.PRIOR) pace = `From ${runs}: this run has not done a scan yet.`;
+        else if (estimate.basis === BASIS.BLEND) pace = `From how long the scans of this run have taken, with ${runs}.`;
+        if (!pace) return '';
+        const n = estimate.expectedScans;
+        let count = '';
+        if (estimate.count === COUNT.LOOPS) {
+            count = `About ${n} scans in all, counted from the loops so far and the steps after them.`;
+        } else if (estimate.count === COUNT.LAST_RUN) {
+            count = `${n} scans, as the last run of this workflow did.`;
+        } else if (estimate.count === COUNT.TYPED) {
+            count = estimate.loopScans != null && estimate.loopScans !== n
+                ? `${n} scans expected, as given; the loops point to about ${estimate.loopScans}.`
+                : `${n} scans expected, as given.`;
+        } else if (estimate.count === COUNT.PLAN) {
+            count = `${n} scans, from the steps of the workflow.`;
+        }
+        return count ? `${count} ${pace}` : pace;
     }
 
     /**
@@ -635,30 +855,42 @@
         return m ? `about ${h} h ${m} min` : `about ${h} h`;
     }
 
-    /** "5 to 8 min" for a range, or '' when it adds nothing (both ends round alike). */
-    function formatRange(range) {
+    /**
+     * "5 to 8 min" for a range, "up to 2 min" when its low end is under a
+     * minute, or '' when it adds nothing (both ends round alike). Given the
+     * estimate it surrounds (`ms`), the range always holds it as it is shown:
+     * "under a minute left (up to 2 min)", never "(1 to 2 min)".
+     */
+    function formatRange(range, ms) {
         if (!range || !Number.isFinite(range.low) || !Number.isFinite(range.high)) return '';
         if (range.high < 45000) return '';
-        const lo = Math.max(1, Math.round(range.low / 60000));
-        const hi = Math.max(1, Math.round(range.high / 60000));
+        let lo = Math.max(0, Math.round(range.low / 60000));
+        let hi = Math.max(1, Math.round(range.high / 60000));
+        if (Number.isFinite(ms) && ms >= 0) {
+            const shown = ms < 45000 ? 0 : Math.round(ms / 60000);
+            lo = Math.min(lo, shown);
+            hi = Math.max(hi, shown);
+        }
         if (lo === hi) return '';
         if (hi >= 60) return '';
-        return `${lo} to ${hi} min`;
+        return lo < 1 ? `up to ${hi} min` : `${lo} to ${hi} min`;
     }
 
     return {
         BASIS,
+        COUNT,
         STATE,
         FIRST_SCAN_WEIGHT,
         PRIOR_STRENGTH,
         MIN_OWN_SCANS,
         MIN_PRIOR_RUNS,
         exactScanCount,
-        createLoopTracker,
+        createRunEstimator,
         resolveExpectedScans,
         effectiveExpectedScans,
         rangeAround,
         NUMBER_UNCERTAINTY,
+        LAST_RUN_UNCERTAINTY,
         describeBasis,
         ownPace,
         priorFromRuns,

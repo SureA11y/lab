@@ -87,7 +87,7 @@ describe('setupExpectedScansField', () => {
         field([forEach({limit: 10})]);
         assert.equal(note().textContent, 'not sure');
         assert.equal(input().placeholder, 'up to 10');
-        assert.match(hint().textContent, /no time estimate until you type one/);
+        assert.match(hint().textContent, /Left empty, it comes from the last run of this workflow/);
     });
 
     test('says nothing for a workflow with no scans', () => {

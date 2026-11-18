@@ -116,7 +116,7 @@
     "expectedScans": {
       "type": "integer",
       "minimum": 1,
-      "description": "How many scans the run is expected to do, counting every scan that runs: each scan inside a Merged scan counts, not the one scan the report keeps. The app and the runner work out the time left from it and from how long the scans have taken so far. Left out, there is no estimate, unless the workflow runs the same number of scans on every path, in which case the app fills it in. A loop that is running gives the time left from its own iterations whether or not a number is given. Only the estimate reads it: a run with more or fewer scans is not an error."
+      "description": "How many scans the run is expected to do, counting every scan that runs: each scan inside a Merged scan counts, not the one scan the report keeps. The app and the runner work out the time left from it and from how long the scans have taken so far. Left out, the number comes from the last run of the same workflow when there is one, or from the workflow when it runs the same number of scans on every path (in which case the app fills it in), and, as a run goes, from its loops: the scans each iteration has taken, and the steps after the loop. A number given stands until the loops can count; it is kept while it agrees with their count, and gives way where it does not. Only the estimate reads it: a run with more or fewer scans is not an error."
     },
     "metadata": {
       "type": "object"

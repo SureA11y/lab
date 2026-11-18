@@ -313,19 +313,35 @@ describe('the progress line and the time left', () => {
     });
 
     test('a workflow whose scans depend on a loop says nothing of time until a number is given', () => {
-        const loop = [{ type: 'forEachElement', selector: 'a', actions: [{ type: 'a11yScan' }] }];
+        // A loop of unknown size whose iterations may or may not scan: nothing
+        // to count from until two iterations are done.
+        const loop = [{ type: 'forEachElement', targetSelector: 'a', actions: [
+            { type: 'if', selectorExists: '.x', actions: [{ type: 'a11yScan' }] }] }];
+        const item = (i, seconds) => ({ time: at(seconds), extra: { stepEvent: 'loop-iteration', actionPath: '1', index: i, total: 10 } });
+        const scan = (seconds) => ({ time: at(seconds), extra: { stepEvent: 'action-end', actionType: 'a11yScan', actionPath: '1.1.1', depth: 2 } });
+        const entries = [item(0, 0), scan(60), item(1, 61), scan(120)];
+
         const quiet = run({ actions: loop });
-        quiet.progress.accept(scanEnd(1, 60));
-        quiet.progress.accept(scanEnd(2, 120));
+        for (const e of entries) quiet.progress.accept(e);
         quiet.progress.refresh();
         assert.equal(quiet.progress.estimate(), null);
         assert.doesNotMatch(quiet.text(), /scans/);
 
         const given = run({ actions: loop, expectedScans: 10 });
-        given.progress.accept(scanEnd(1, 60));
-        given.progress.accept(scanEnd(2, 120));
+        for (const e of entries) given.progress.accept(e);
         given.progress.refresh();
         assert.match(given.text(), /2 of 10 scans · about 8 min left/);
+    });
+
+    test('the last run\'s count stands in for a number when none is given', () => {
+        const loop = [{ type: 'forEachElement', targetSelector: 'a', actions: [{ type: 'a11yScan' }] }];
+        const scan = (seconds) => ({ time: at(seconds), extra: { stepEvent: 'action-end', actionType: 'a11yScan', actionPath: '1.1', depth: 1 } });
+        const { progress, text } = run({ actions: loop, lastRunScans: 6 });
+        progress.accept(scan(60));
+        progress.accept(scan(120));
+        progress.refresh();
+        assert.equal(progress.estimate().count, 'last-run');
+        assert.match(text(), /2 of 6 scans · about 4 min left/);
     });
 
     test('the time counts down between log lines, from the clock', () => {
@@ -363,36 +379,48 @@ describe('the progress line and a loop', () => {
     const at = (seconds) => new Date(T0 + seconds * 1000).toISOString();
     const loopEntry = (index, total, seconds) => ({
         time: at(seconds), message: 'item',
-        extra: { stepEvent: 'loop-iteration', actionPath: '2', index, total, loopType: 'forEachElement' }
+        extra: { stepEvent: 'loop-iteration', actionPath: '1', index, total, loopType: 'forEachElement' }
+    });
+    const scanEntry = (seconds) => ({
+        time: at(seconds), message: 'done',
+        extra: { stepEvent: 'action-end', actionType: 'a11yScan', actionPath: '1.1', depth: 1 }
     });
     const loop = [{ type: 'forEachElement', targetSelector: 'a', actions: [{ type: 'a11yScan' }] }];
+
+    // A loop of 10 items, one scan each, 10 s an item; item `upTo` (0-based) started.
+    function steady(upTo) {
+        const entries = [];
+        for (let i = 0; i <= upTo; i += 1) {
+            entries.push(loopEntry(i, 10, i * 10));
+            if (i < upTo) entries.push(scanEntry(i * 10 + 9));
+        }
+        return entries;
+    }
 
     function run(entries, options = {}) {
         const chunks = [];
         const progress = S.createStepProgress({
             actions: loop, stream: { isTTY: true, columns: 300, write: (t) => chunks.push(t) },
-            isTTY: true, columns: 300, now: () => T0 + 45000, ...options
+            isTTY: true, columns: 300, now: () => T0 + 41000, ...options
         });
         for (const e of entries) progress.accept(e);
         progress.refresh();
         return { progress, text: () => chunks.join('') };
     }
 
-    test('says the time left from the loop, with no number given', () => {
-        const { progress, text } = run([0, 1, 2, 3, 4].map((i) => loopEntry(i, 10, i * 10)));
-        assert.match(text(), /item 5 of 10 · about 1 min left/);
-        assert.equal(progress.estimate().basis, 'loop');
+    test('counts the scans left from the loop, with no number given', () => {
+        // Item 5 of 10 started at 40 s; each item runs one scan, as the plan says.
+        const { progress, text } = run(steady(4));
+        const est = progress.estimate();
+        assert.equal(est.count, 'loops');
+        assert.equal(est.expectedScans, 10);
+        assert.deepEqual(est.loop, { path: '1', iteration: 5, total: 10, done: 4 });
+        assert.match(text(), /4 of ~10 scans · about 1 min left/);
     });
 
-    test('says nothing before two iterations are done', () => {
-        const { progress } = run([0, 1].map((i) => loopEntry(i, 10, i * 10)));
-        assert.equal(progress.estimate(), null);
-    });
-
-    test('formatScans writes a loop as item and time', () => {
+    test('formatScans writes a number it counted with a tilde', () => {
         const timing = require('../shared/scan-time-estimate.js');
-        const tracker = timing.createLoopTracker();
-        for (let i = 0; i <= 4; i += 1) tracker.accept(loopEntry(i, 10, i * 10));
-        assert.match(S.formatScans(tracker.estimate(T0 + 45000)), /^item 5 of 10 · about 1 min left/);
+        assert.equal(S.formatScans({ state: timing.STATE.ESTIMATING, expectedScans: 40, scansDone: 12, approximate: true, count: timing.COUNT.PLAN, remainingMs: 6 * 60000, rangeMs: { low: 5 * 60000, high: 8 * 60000 } }),
+            '12 of ~40 scans · about 6 min left (5 to 8 min)');
     });
 });

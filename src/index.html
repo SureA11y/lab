@@ -533,7 +533,7 @@
                                     <input type="number" id="run-expected-scans" name="expectedScans" min="1" step="1" inputmode="numeric" autocomplete="off" data-config-field aria-describedby="run-expected-scans-hint"/>
                                     <span id="run-expected-scans-note" class="run-expected-scans-note" data-kind="none"></span>
                                 </label>
-                                <span id="run-expected-scans-hint" class="visually-hidden">How many scans this run is expected to do, counting every scan that runs: each scan inside a Merged scan counts, not the one scan the report keeps. The time left is worked out from it and from how long the scans have taken so far; while a loop runs, from the loop itself. Leave it empty for no estimate.</span>
+                                <span id="run-expected-scans-hint" class="visually-hidden">How many scans this run is expected to do, counting every scan that runs: each scan inside a Merged scan counts, not the one scan the report keeps. The time left is worked out from it and from how long the scans have taken so far. Left empty, it comes from the last run of the same workflow, and, as the run goes, from the scans its loops have taken; a number given gives way to that count where they disagree.</span>
                                 <button
                                         type="button"
                                         id="workflow-roadmap-btn"

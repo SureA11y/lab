@@ -109,6 +109,30 @@ function findPreviousRun(currentOutDir, scenarioName) {
     return null;
 }
 
+/**
+ * How many scans the last run of the same workflow beside this one did, for
+ * the time left of this one before its loops can count (scan-time-estimate.js),
+ * or null. The last run of the scenario counts only if it ran the same steps
+ * and reached every one of them; each scan inside a Merged scan counts, as the
+ * time left counts them.
+ */
+function lastRunScans(currentOutDir, spec) {
+    const previous = findPreviousRun(currentOutDir, spec && spec.scenarioName);
+    if (!previous || !spec || !Array.isArray(spec.actions)) return null;
+    const { payload } = previous;
+    if (JSON.stringify(payload.actions) !== JSON.stringify(spec.actions)) return null;
+    const steps = spec.actions.filter((a) => a && a.type).length;
+    const reached = Array.isArray(payload.actionResults) ? payload.actionResults.length : 0;
+    if (reached < steps || payload.errorDetails) return null;
+    let scans = payload.scans.length;
+    for (const scan of payload.scans) {
+        if (scan && Array.isArray(scan.contexts) && scan.contexts.length > 1) {
+            scans += Math.max(0, scan.contexts.filter((c) => c && !c.skipped).length - 1);
+        }
+    }
+    return scans > 0 ? scans : null;
+}
+
 function baselineFilePath(name, spec, options) {
     return path.join(scenarioDir(spec, options), BASELINES_DIR, `${safeDirPart(name, 'baseline')}.json`);
 }
@@ -271,6 +295,7 @@ module.exports = {
     scenarioDir,
     defaultOutDir,
     findPreviousRun,
+    lastRunScans,
     baselineFilePath,
     resolveBaselineTarget,
     promoteBaseline,

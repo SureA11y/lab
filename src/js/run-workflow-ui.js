@@ -184,6 +184,7 @@ export function createRunWorkflowUi(app) {
 
     async function handleTerminalResult(final, url) {
         if (final.status === 'done' && final.payload) {
+            app.liveUi.rememberRun?.(final.payload);
             app.setRunPayload(final.payload, {url, status: 'done'});
             return;
         }

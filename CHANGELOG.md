@@ -9,6 +9,25 @@ The first public release.
 
 ### The lab
 
+- **A better time left in loops**: a run's time left is now the scans it has
+  left at the pace its scans have gone, wherever the count comes from. In a
+  loop, the scans each item took, the items to come and the steps after the
+  loop say how many are left; the loop's time per item is no longer the
+  estimate, since items of different sizes made it a quarter off and made it
+  jump. A loop whose items differ waits for two of them before it says
+  anything. The *Expected scans* you type is used until then, and gives way
+  to the loop's count where the two differ by more than 5%, so a wrong number
+  only costs the start of the run; left empty, the last run of the same
+  workflow in this browser gives it. The live panel, the queue and the
+  runner work it out the same way.
+- **A waiting run's time left in the queue includes its wait**: *~8 min*
+  beside a waiting run is when it should end, from the runs going now and the
+  slots, and it shows from the start of the batch instead of after two runs
+  have finished. Its tooltip says when it should start and how long it takes.
+- **The range never leaves out the time it surrounds**: *under a minute left
+  (up to 2 min)*, not *(1 to 2 min)*. A typed number of scans allows for 15%
+  of error in the range, not 5%.
+
 - **Run, Dry run and Cancel stay in sight**: while the configuration's end
   is below the window, its line with the run's status and buttons waits on
   the window's bottom edge, and scrolls up with the configuration once its
@@ -569,6 +588,12 @@ The first public release.
   finding as the standard judges it, not by the rule's WCAG outcome.
 
 ### The runner and integrations
+
+- **The progress line's time left with no number given**: with no
+  `expectedScans`, a run takes the number of scans from the last run of the
+  same scenario, when it ran the same steps and reached all of them, and, as
+  it goes, from its loops (`60 of ~205 scans · about 9 min left`). See *Expected
+  scans* above.
 
 - **`src/cli/run-workflow.js`** runs a workflow, a configuration or a batch
   with no window: for a nightly run that compares itself with the last one,

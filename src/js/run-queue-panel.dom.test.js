@@ -1709,7 +1709,10 @@ describe('estimated time left in the queue table', () => {
             assert.match(note.title, /^Estimate: about 3 min left/);
             assert.equal(durationOf('r').textContent, '2m 30s~3 min left');
 
-            assert.equal(durationOf('w').textContent, '~5 min left', 'it has no time yet, so only the estimate');
+            // Its wait for the one slot, about 3 min, then its own 5 min: no time
+            // of its own yet, so only the estimate.
+            assert.equal(durationOf('w').textContent, '~8 min left');
+            assert.match(durationOf('w').querySelector('.queue-note').title, /its wait included\. It should start in about 3 min/);
             assert.equal(durationOf('a').querySelector('.queue-note'), null, 'a finished run has none');
             assert.equal(durationOf('a').textContent, '5m 00s');
 
