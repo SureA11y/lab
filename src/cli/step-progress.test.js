@@ -239,3 +239,121 @@ describe('createStepProgress', () => {
         });
     });
 });
+
+describe('formatScans', () => {
+    const timing = require('../shared/scan-time-estimate.js');
+    const MIN = 60000;
+
+    test('is the scans done and the estimated time left', () => {
+        const est = timing.estimateRun({ expectedScans: 10, completedAtMs: [MIN, 2 * MIN], elapsedMs: 2 * MIN });
+        assert.match(S.formatScans(est), /^2 of 10 scans · about 8 min left/);
+    });
+
+    test('says nothing while it is too early for a time, or with no total', () => {
+        assert.equal(S.formatScans(timing.estimateRun({ expectedScans: 10, completedAtMs: [MIN] })), '');
+        assert.equal(S.formatScans(timing.estimateRun({ completedAtMs: [MIN, 2 * MIN] })), '');
+        assert.equal(S.formatScans(null), '');
+    });
+
+    test('says so when the run reaches or goes past its number', () => {
+        assert.equal(S.formatScans(timing.estimateRun({ expectedScans: 2, completedAtMs: [MIN, 2 * MIN] })), 'all 2 expected scans done');
+        assert.equal(S.formatScans(timing.estimateRun({ expectedScans: 2, completedAtMs: [MIN, 2 * MIN, 3 * MIN] })), '3 scans, past the 2 expected');
+    });
+
+    test('goes into the progress line before the step now running, which a narrow terminal cuts first', () => {
+        const line = S.formatProgressLine(snap({
+            done: 4, workflow: flow(8, 4, 5),
+            current: { actionPath: '5', type: 'click', label: 'Next', loop: null }
+        }), { scans: '2 of 10 scans · about 8 min left' });
+        assert.match(line, /4 steps run · 2 of 10 scans · about 8 min left · now: Next$/);
+    });
+});
+
+describe('the progress line and the time left', () => {
+    const MIN = 60000;
+    const T0 = Date.parse('2026-11-18T10:00:00.000Z');
+    const at = (seconds) => new Date(T0 + seconds * 1000).toISOString();
+    const actions = [{ type: 'a11yScan' }, { type: 'a11yScan' }, { type: 'a11yScan' }, { type: 'a11yScan' }];
+
+    const scanEnd = (n, seconds) => ({
+        time: at(seconds), message: 'done',
+        extra: { stepEvent: 'action-end', actionType: 'a11yScan', actionPath: String(n), depth: 0 }
+    });
+
+    // The run's first step starting at time 0 is what starts its clock.
+    const started = { time: at(0), message: 'start', extra: { stepEvent: 'action-start', actionType: 'a11yScan', actionPath: '1', depth: 0 } };
+
+    function run(options = {}) {
+        const chunks = [];
+        const clock = { now: T0 };
+        const progress = S.createStepProgress({
+            actions, stream: { isTTY: true, columns: 300, write: (t) => chunks.push(t) },
+            isTTY: true, columns: 300, now: () => clock.now, ...options
+        });
+        progress.accept(started);
+        return { progress, clock, text: () => chunks.join('') };
+    }
+
+    test('a workflow that cannot vary its scans gets a time from the first two', () => {
+        const { progress, text } = run();
+        progress.accept(scanEnd(1, 60));
+        progress.accept(scanEnd(2, 120));
+        progress.refresh();
+        const est = progress.estimate();
+        assert.equal(est.expectedScans, 4);
+        assert.match(text(), /2 of 4 scans · about 2 min left/);
+    });
+
+    test('the number the spec gives wins over the one the workflow works out', () => {
+        const { progress, text } = run({ expectedScans: 20 });
+        progress.accept(scanEnd(1, 60));
+        progress.accept(scanEnd(2, 120));
+        progress.refresh();
+        assert.match(text(), /2 of 20 scans · about 18 min left/);
+    });
+
+    test('a workflow whose scans depend on a loop says nothing of time until a number is given', () => {
+        const loop = [{ type: 'forEachElement', selector: 'a', actions: [{ type: 'a11yScan' }] }];
+        const quiet = run({ actions: loop });
+        quiet.progress.accept(scanEnd(1, 60));
+        quiet.progress.accept(scanEnd(2, 120));
+        quiet.progress.refresh();
+        assert.equal(quiet.progress.estimate(), null);
+        assert.doesNotMatch(quiet.text(), /scans/);
+
+        const given = run({ actions: loop, expectedScans: 10 });
+        given.progress.accept(scanEnd(1, 60));
+        given.progress.accept(scanEnd(2, 120));
+        given.progress.refresh();
+        assert.match(given.text(), /2 of 10 scans · about 8 min left/);
+    });
+
+    test('the time counts down between log lines, from the clock', () => {
+        const { progress, clock } = run({ expectedScans: 10 });
+        progress.accept(scanEnd(1, 60));
+        progress.accept(scanEnd(2, 120));
+        const before = progress.estimate().remainingMs;
+        clock.now += 30000;
+        assert.equal(Math.round((before - progress.estimate().remainingMs) / 1000), 30);
+    });
+
+    test('what a batch\'s finished runs took is where a run that has not started begins', () => {
+        const prior = require('../shared/scan-time-estimate.js').priorFromRuns([
+            { scans: 4, durationMs: 4 * MIN, ok: true },
+            { scans: 4, durationMs: 4 * MIN, ok: true }
+        ]);
+        const { progress } = run({ prior });
+        const est = progress.estimate();
+        assert.equal(est.basis, 'prior');
+        assert.equal(Math.round(est.remainingMs / MIN), 4);
+    });
+
+    test('nothing is drawn off a terminal, time or no time', () => {
+        const chunks = [];
+        const progress = S.createStepProgress({ actions, stream: { isTTY: false, write: (t) => chunks.push(t) }, isTTY: false, expectedScans: 4 });
+        progress.accept(scanEnd(1, 60));
+        progress.accept(scanEnd(2, 120));
+        progress.refresh();
+        assert.equal(chunks.join(''), '');
+    });
+});

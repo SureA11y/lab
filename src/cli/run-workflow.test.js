@@ -88,3 +88,36 @@ describe('countInstances', () => {
         assert.equal(countInstances({ fail: [] }), 0);
     });
 });
+
+describe('priorOfFinishedRuns', () => {
+    const { priorOfFinishedRuns } = require('./run-workflow');
+    const MIN = 60000;
+    const steps = [{ type: 'a11yScan' }, { type: 'a11yScan' }];
+    const run = (url, actions = steps) => ({ spec: { url, actions } });
+    const done = (over = {}) => ({ status: 'done', durationMs: 4 * MIN, scansRun: 2, scans: 2, ...over });
+
+    test('is what the earlier runs of the same workflow took', () => {
+        const runs = [run('a'), run('b'), run('c')];
+        const prior = priorOfFinishedRuns(runs, [done(), done(), { status: 'waiting' }], 2);
+        assert.equal(prior.runs, 2);
+        assert.equal(prior.perScanMs, 2 * MIN);
+    });
+
+    test('needs two finished runs, and none before the first', () => {
+        const runs = [run('a'), run('b'), run('c')];
+        assert.equal(priorOfFinishedRuns(runs, [done(), { status: 'waiting' }, { status: 'waiting' }], 2), null);
+        assert.equal(priorOfFinishedRuns(runs, [{ status: 'waiting' }, { status: 'waiting' }, { status: 'waiting' }], 0), null);
+    });
+
+    test('leaves out runs that failed or were cancelled, and runs of another workflow', () => {
+        const runs = [run('a'), run('b', [{ type: 'click' }]), run('c'), run('d')];
+        const items = [done(), done(), done({ status: 'error' }), { status: 'waiting' }];
+        assert.equal(priorOfFinishedRuns(runs, items, 3), null, 'one run of this workflow finished, not two');
+    });
+
+    test('counts every scan a run ran, merged contexts included', () => {
+        const runs = [run('a'), run('b'), run('c')];
+        const prior = priorOfFinishedRuns(runs, [done({ scans: 1, scansRun: 2 }), done({ scans: 1, scansRun: 2 }), {}], 2);
+        assert.equal(prior.meanScans, 2);
+    });
+});

@@ -17,6 +17,13 @@
  *   is never drawn at all - the log lines already narrate the run, and the
  *   summary at the end carries the totals.
  *
+ * When the run has a number of scans it is expected to do (the spec's
+ * expectedScans, or the count its workflow is certain to run), the line also
+ * says how many scans are done and the estimated time left, from how long the
+ * scans have taken so far (shared/scan-time-estimate.js). Without one, it
+ * says nothing of time. The estimate moves when a log line prints; the line
+ * is not redrawn on a timer.
+ *
  * Like the panel, it shows only what is known: how many steps ran, a bar over
  * the workflow's own (top-level) steps, which is a fixed list however loops
  * and branches turn out, and the step running now. Loops and conditions decide
@@ -24,6 +31,7 @@
  */
 
 const { createStepCounter } = require('../shared/workflow-step-counter.js');
+const timing = require('../shared/scan-time-estimate.js');
 
 const BAR_WIDTH = 24;
 
@@ -80,11 +88,29 @@ function formatNow(snapshot) {
     return name + item;
 }
 
+/**
+ * "7 of 20 scans · about 6 min left (5 to 8 min)": the scans done against the
+ * scans expected, and the estimated time left. `estimate` is estimateRun's
+ * result; '' for none.
+ */
+function formatScans(estimate) {
+    if (!estimate || !estimate.expectedScans) return '';
+    const S = timing.STATE;
+    const of = `${estimate.scansDone} of ${plural(estimate.expectedScans, 'scan')}`;
+    if (estimate.state === S.PAST) return `${plural(estimate.scansDone, 'scan')}, past the ${estimate.expectedScans} expected`;
+    if (estimate.state === S.REACHED) return `all ${plural(estimate.expectedScans, 'expected scan')} done`;
+    // Too early for a time: the line says nothing of scans until it can.
+    if (estimate.state === S.WARMING_UP) return '';
+    if (estimate.state !== S.ESTIMATING) return '';
+    const range = timing.formatRange(estimate.rangeMs);
+    return `${of} · ${timing.formatRemaining(estimate.remainingMs)} left${range ? ` (${range})` : ''}`;
+}
+
 /** The single line redrawn below a TTY run. */
-function formatProgressLine(snapshot, { width = BAR_WIDTH } = {}) {
+function formatProgressLine(snapshot, { width = BAR_WIDTH, scans = '' } = {}) {
     if (!snapshot) return '';
 
-    const parts = [formatPosition(snapshot), `${plural(Math.max(0, snapshot.done || 0), 'step')} run`];
+    const parts = [formatPosition(snapshot), `${plural(Math.max(0, snapshot.done || 0), 'step')} run`, scans];
     const now = formatNow(snapshot);
     if (now) parts.push(`now: ${now}`);
     return `  [${formatBar(snapshot, { width })}] ${parts.filter(Boolean).join(' · ')}`;
@@ -156,7 +182,12 @@ function createStepProgress({
     isTTY = !!(stream && stream.isTTY),
     columns = (stream && stream.columns) || 0,
     quiet = false,
-    width = BAR_WIDTH
+    width = BAR_WIDTH,
+    // How many scans the run is expected to do, if the spec says, and what the
+    // finished runs of the same workflow in a batch say about it.
+    expectedScans = null,
+    prior = null,
+    now = () => Date.now()
 } = {}) {
     let counter = null;
     try {
@@ -165,6 +196,39 @@ function createStepProgress({
         // A workflow the planner cannot walk still deserves to run; it just runs
         // without a step count.
         counter = null;
+    }
+
+    // The scans the run is expected to do: the number it was given, else the
+    // one its workflow is certain to run. The clock runs on the log entries'
+    // own times, as the app's live totals do.
+    const expected = counter
+        ? timing.effectiveExpectedScans({ expectedScans, plan: counter.plan })
+        : null;
+    const scanTimes = [];
+    let startMs = null;
+    let lastEntryMs = null;
+    let receivedMs = null;
+
+    function noteClock(entry, snapshot) {
+        const at = entry && typeof entry.time === 'string' ? Date.parse(entry.time) : NaN;
+        if (!Number.isFinite(at)) return;
+        if (startMs == null) startMs = at;
+        lastEntryMs = Math.max(lastEntryMs == null ? at : lastEntryMs, at);
+        receivedMs = now();
+        const done = Math.max(0, Math.floor((snapshot && snapshot.doneByType && snapshot.doneByType.a11yScan) || 0));
+        while (scanTimes.length < done) scanTimes.push(Math.max(0, at - startMs));
+    }
+
+    function estimate() {
+        if (expected == null) return null;
+        const lastAt = lastEntryMs == null ? 0 : lastEntryMs - startMs;
+        const sinceEntry = receivedMs == null ? 0 : Math.max(0, now() - receivedMs);
+        return timing.estimateRun({
+            expectedScans: expected,
+            completedAtMs: scanTimes,
+            elapsedMs: lastAt + sinceEntry,
+            prior
+        });
     }
 
     // Whether a bar is currently occupying the last line of the output.
@@ -183,7 +247,7 @@ function createStepProgress({
 
     function draw() {
         if (!live || !counter) return;
-        let line = formatProgressLine(counter.snapshot(), { width });
+        let line = formatProgressLine(counter.snapshot(), { width, scans: formatScans(estimate()) });
         if (!line) return;
         // CLEAR_LINE erases one line. A bar that wrapped would leave the half of
         // itself above the cursor stranded on screen, so it is cut to fit.
@@ -203,7 +267,7 @@ function createStepProgress({
             if (!counter) return;
             if (!entry || !entry.extra || typeof entry.extra !== 'object' || !entry.extra.stepEvent) return;
             try {
-                counter.accept(entry);
+                noteClock(entry, counter.accept(entry));
             } catch {
                 // Never let a counting slip take the run down with it.
             }
@@ -228,7 +292,10 @@ function createStepProgress({
 
         snapshot() {
             return counter ? counter.snapshot() : null;
-        }
+        },
+
+        /** The scans done and the time left as the line has them, or null. */
+        estimate
     };
 }
 
@@ -239,6 +306,7 @@ module.exports = {
     formatNow,
     formatPosition,
     formatProgressLine,
+    formatScans,
     stepRows,
     stepsSection,
     summaryLines

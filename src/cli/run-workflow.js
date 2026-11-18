@@ -28,6 +28,7 @@ const { isBatch, checkBatch } = require('./batch-spec');
 const { summarizePayload } = require('../server-side/run-queue');
 const { buildSummaryMarkdown, engineChangesText, profilesText } = require('./summary-report');
 const { createStepProgress, summaryLines: stepSummaryLines } = require('./step-progress');
+const scanTime = require('../shared/scan-time-estimate.js');
 const { writeExports, likelyFailures, baselineEntriesFor } = require('./export-formats');
 const { readReviewFile, carryReviewOnto, writeConformanceReport } = require('./conformance-export');
 const { countReviewGroups, reviewGroupsText } = require('../shared/review-groups.js');
@@ -472,7 +473,7 @@ async function runBatchFile(raw, options) {
             const started = Date.now();
             let result;
             try {
-                result = await runOne(run.spec, { ...options, keep: null }, {
+                result = await runOne(run.spec, { ...options, keep: null, scanPrior: priorOfFinishedRuns(batch.runs, manifest.items, i) }, {
                     outDir: path.join(batchDir, runDirName),
                     baselinePayload: baseline.payload,
                     baselineLabel: baseline.label,
@@ -687,6 +688,25 @@ function watchCancel(message) {
 }
 
 /**
+ * What the batch's earlier runs of the same workflow took, for the time left
+ * of the run at `index`: estimator.priorFromRuns, or null while fewer than
+ * two have finished. "The same workflow" is the same steps; the rows' urls and
+ * variables differ.
+ */
+function priorOfFinishedRuns(runs, items, index) {
+    const key = (spec) => JSON.stringify([spec.actions, spec.customSteps || []]);
+    const mine = key(runs[index].spec);
+    const finished = [];
+    for (let j = 0; j < index; j += 1) {
+        const item = items[j];
+        if (!item || item.status !== 'done' || !(item.durationMs > 0)) continue;
+        if (key(runs[j].spec) !== mine) continue;
+        finished.push({ scans: item.scansRun > 0 ? item.scansRun : item.scans, durationMs: item.durationMs, ok: true });
+    }
+    return scanTime.priorFromRuns(finished);
+}
+
+/**
  * One run, written to `outDir`: payload.json, run.log.jsonl, summary.md,
  * and diff.json against a baseline. -> { exitCode, status, payload, health,
  * comparison } (payload null when the run produced none).
@@ -702,7 +722,11 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
     const stepProgress = createStepProgress({
         actions: finalSpec.actions,
         customSteps: finalSpec.customSteps,
-        quiet: options.quiet
+        quiet: options.quiet,
+        // The scans the spec expects, and what the batch's finished runs of
+        // this workflow took, for the time left the line shows.
+        expectedScans: finalSpec.expectedScans,
+        prior: options.scanPrior || null
     });
 
     if (!options.quiet) {
@@ -890,4 +914,4 @@ if (require.main === module) {
         });
 }
 
-module.exports = { main, formatLogLine, countInstances, printComparison, batchComparison, USAGE, forceExit, worstExit };
+module.exports = { main, formatLogLine, countInstances, printComparison, batchComparison, priorOfFinishedRuns, USAGE, forceExit, worstExit };

@@ -208,6 +208,14 @@ Piped or redirected output never gets the bar — a redrawn line in a CI log is
 just thousands of half-erased copies of itself — but the `Steps` lines in the
 summary, and the **Steps** table in `summary.md`, are there either way.
 
+When the run has a number of scans it is expected to do, the bar's line also says
+how many are done and the estimated time left (`2 of 10 scans · about 8 min left`).
+The number is the spec's `expectedScans`, or the count the workflow is certain to run
+(the same number of scans on every path). A workflow whose scans depend on conditions
+or loops has no time until you set `expectedScans`. In a batch, a row that has not
+started leans on the earlier rows of the same workflow that finished, and its own pace
+takes over as it goes. The time is an estimate, and it moves when a log line prints.
+
 Add `--quiet` if you only want that summary and not the running commentary.
 
 ### Step 3: run it again tomorrow, and compare
