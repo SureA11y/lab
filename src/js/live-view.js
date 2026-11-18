@@ -267,9 +267,17 @@ export function createLiveView({
         addStreamCard,
         addScanTotals: (payload) => totals.add(payload),
         mergeScanTotals: (payload) => totals.merge(payload),
-        setStepTotals: (snapshot) => totals.setSteps(snapshot),
+        setStepTotals: (snapshot, entry) => totals.setSteps(snapshot, entry),
         getUseLiveStream: () => true
     });
+
+    // The scans the run is expected to do: the one it was given, else the one
+    // its workflow is certain to run. None, no time left.
+    function setExpectedScans(plan, given, prior) {
+        const est = globalThis.A11Y_SCAN_TIME_ESTIMATE;
+        const expected = est ? est.effectiveExpectedScans({expectedScans: given, plan}) : null;
+        totals.setExpected({expectedScans: expected, prior});
+    }
 
     return {
         appendLog,
@@ -279,13 +287,14 @@ export function createLiveView({
          * Count steps against the run's own workflow. The cards stream either
          * way: without the workflow there is just no step plan.
          */
-        start({actions = [], customSteps = []} = {}) {
+        start({actions = [], customSteps = [], expectedScans = null, prior = null} = {}) {
             if (!Array.isArray(actions) || !actions.length) return;
             const api = globalThis.A11Y_WORKFLOW_STEP_COUNTER;
             if (!api || typeof api.createStepCounter !== 'function') return;
             try {
                 stepState.counter = api.createStepCounter({actions, customSteps});
                 totals.setSteps(stepState.counter.snapshot());
+                setExpectedScans(stepState.counter.plan, expectedScans, prior);
             } catch {
                 // Watch without a step counter rather than not at all.
                 stepState.counter = null;

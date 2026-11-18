@@ -71,6 +71,11 @@ export function createLiveTotals(deps = {}) {
     const getMount = deps.getMount || (() => (doc ? doc.body : null));
     const inline = !!deps.inline;
     const idPrefix = deps.idPrefix || 'live-totals';
+    // The clock and the estimator are passed in so a test can drive both.
+    const nowMs = deps.now || (() => Date.now());
+    const startTimer = deps.setInterval || ((fn, ms) => globalThis.setInterval(fn, ms));
+    const stopTimer = deps.clearInterval || ((id) => globalThis.clearInterval(id));
+    const getEstimator = () => deps.estimator || globalThis.A11Y_SCAN_TIME_ESTIMATE || null;
 
     // scans: the scans the report will hold, a Merged scan once from its first
     // context; scansRun: every scan that ran, each context of a Merged scan.
@@ -88,6 +93,17 @@ export function createLiveTotals(deps = {}) {
     let steps = null;
     let stepEls = null;
     let stepsExpanded = false;
+
+    // Time left. The clock runs on the log entries' own times, so a run opened
+    // half way (its log replayed at once) gets the pace it really had: the
+    // first entry starts it, and each scan finishing is when its entry says.
+    let expectedScans = null;
+    let prior = null;
+    let runStartMs = null;
+    let lastEntryMs = null;
+    let lastEntryReceivedMs = null;
+    let scanTimes = [];
+    let etaTimer = null;
 
     let el = null;              // wrapper (#live-totals)
     let panelEl = null;         // the visible totals card
@@ -269,6 +285,14 @@ export function createLiveTotals(deps = {}) {
         now.className = 'live-totals-steps-now';
         now.hidden = true;
         stepEls.now = now;
+
+        // Scans done against the scans expected, and the time left. Not a live
+        // region: it changes every few seconds, and the tally is announced.
+        const eta = doc.createElement('div');
+        eta.className = 'live-totals-steps-eta';
+        eta.hidden = true;
+        stepEls.eta = eta;
+        wrap.appendChild(eta);
         wrap.appendChild(now);
 
         const table = doc.createElement('table');
@@ -400,7 +424,75 @@ export function createLiveTotals(deps = {}) {
         if (now) stepEls.now.title = now;
         else stepEls.now.removeAttribute('title');
 
+        renderEta();
         renderStepTable();
+    }
+
+    function entryTimeMs(entry) {
+        const t = entry && typeof entry.time === 'string' ? Date.parse(entry.time) : NaN;
+        return Number.isFinite(t) ? t : null;
+    }
+
+    // The scans that finished, each at its entry's time on the run's own clock.
+    function noteClock(snapshot, entry) {
+        const at = entryTimeMs(entry);
+        if (at == null) return;
+        if (runStartMs == null) runStartMs = at;
+        lastEntryMs = Math.max(lastEntryMs == null ? at : lastEntryMs, at);
+        lastEntryReceivedMs = nowMs();
+
+        const done = Math.max(0, Math.floor((snapshot && snapshot.doneByType && snapshot.doneByType.a11yScan) || 0));
+        while (scanTimes.length < done) scanTimes.push(Math.max(0, at - runStartMs));
+    }
+
+    function currentEstimate() {
+        const api = getEstimator();
+        if (!api || expectedScans == null) return null;
+        const lastAt = lastEntryMs == null ? 0 : lastEntryMs - runStartMs;
+        const sinceEntry = lastEntryReceivedMs == null ? 0 : Math.max(0, nowMs() - lastEntryReceivedMs);
+        return api.estimateRun({
+            expectedScans,
+            completedAtMs: scanTimes,
+            elapsedMs: lastAt + sinceEntry,
+            prior
+        });
+    }
+
+    // "7 of 20 scans done · about 6 min left (5 to 8 min)".
+    function etaText(est) {
+        const api = getEstimator();
+        const S = api.STATE;
+        const of = `${fmt(est.scansDone)} of ${fmt(est.expectedScans)} scans done`;
+        if (est.state === S.PAST) return `${fmt(est.scansDone)} scans done, past the ${fmt(est.expectedScans)} expected`;
+        if (est.state === S.REACHED) return `All ${fmt(est.expectedScans)} expected scans done`;
+        if (est.state === S.WARMING_UP) return `${of} · working out the time left`;
+        if (est.state !== S.ESTIMATING) return '';
+        const range = api.formatRange(est.rangeMs);
+        return `${of} · ${api.formatRemaining(est.remainingMs)} left${range ? ` (${range})` : ''}`;
+    }
+
+    function renderEta() {
+        if (!stepEls || !stepEls.eta) return;
+        const est = finished ? null : currentEstimate();
+        const text = est ? etaText(est) : '';
+        stepEls.eta.hidden = !text;
+        if (stepEls.eta.textContent !== text) stepEls.eta.textContent = text;
+        const basis = est && getEstimator().describeBasis(est);
+        if (basis) stepEls.eta.title = basis;
+        else stepEls.eta.removeAttribute('title');
+        manageEtaTimer(!!est && est.state === getEstimator().STATE.ESTIMATING);
+    }
+
+    // Once a second while a time is shown, so it counts down between scans. It
+    // writes only when the words change, which is every few seconds.
+    function manageEtaTimer(wanted) {
+        if (wanted && etaTimer == null) {
+            etaTimer = startTimer(renderEta, 1000);
+            if (etaTimer && typeof etaTimer.unref === 'function') etaTimer.unref();
+        } else if (!wanted && etaTimer != null) {
+            stopTimer(etaTimer);
+            etaTimer = null;
+        }
     }
 
     // The by-tag block: the disclosure and the ledger it opens, in that order,
@@ -687,6 +779,7 @@ export function createLiveTotals(deps = {}) {
         tagWrapEl = null;
         ledgerBodyEl = null;
         stepEls = null;
+        manageEtaTimer(false);
     }
 
     // One scan's results into (sign 1) or out of (sign -1) the totals, overall
@@ -764,18 +857,43 @@ export function createLiveTotals(deps = {}) {
          * worth seeing from the first action, long before any scan streams in.
          * Passing null hides the progress block without touching the tallies.
          */
-        setSteps(snapshot) {
+        setSteps(snapshot, entry = null) {
             steps = (snapshot && typeof snapshot === 'object') ? snapshot : null;
             if (!steps) {
                 renderSteps();
                 return;
             }
+            noteClock(steps, entry);
             ensureEl();
             render();
         },
 
+        /**
+         * How many scans the run is expected to do (null for no estimate), and
+         * what finished runs of the same workflow say about it (priorFromRuns,
+         * or null). Changing either recalculates the time left.
+         */
+        setExpected({expectedScans: expected = null, prior: priorRuns = null} = {}) {
+            expectedScans = Number.isInteger(expected) && expected > 0 ? expected : null;
+            prior = priorRuns || null;
+            renderEta();
+        },
+
+        /** The time-left line as it reads now, or '' when there is none. For tests. */
+        getEtaText() {
+            const est = finished ? null : currentEstimate();
+            return est ? etaText(est) : '';
+        },
+
         /** Zero the totals and remove the counter (start of a new run). */
         reset() {
+            expectedScans = null;
+            prior = null;
+            runStartMs = null;
+            lastEntryMs = null;
+            lastEntryReceivedMs = null;
+            scanTimes = [];
+            manageEtaTimer(false);
             totals.violations = 0;
             totals.incomplete = 0;
             totals.passes = 0;
@@ -804,6 +922,7 @@ export function createLiveTotals(deps = {}) {
          */
         finish() {
             finished = true;
+            manageEtaTimer(false);
             applyFinishedState();
             renderSteps();
             if (el) announce(tallyText());

@@ -126,6 +126,7 @@ export function createQueueRunWatch(app) {
         // The run's own workflow, for the step counter and the live cards.
         let actions = [];
         let customSteps = [];
+        let expectedScans = null;
         try {
             const manifest = await app.fetchJson(session.manifestUrl);
             const entry = (manifest.items || []).find((i) => i.id === item.id);
@@ -133,12 +134,13 @@ export function createQueueRunWatch(app) {
             if (spec) {
                 actions = Array.isArray(spec.actions) ? spec.actions : [];
                 customSteps = Array.isArray(spec.customSteps) ? spec.customSteps : [];
+                expectedScans = spec.expectedScans ?? null;
             }
         } catch {
             // Watch without a step counter rather than not at all.
         }
         if (me.stopped) return;
-        view.start({actions, customSteps});
+        view.start({actions, customSteps, expectedScans});
         view.appendLog(`Watching “${item.name}” from the queue: its log so far, then live.`, STATUS.INFO);
 
         let last = null;

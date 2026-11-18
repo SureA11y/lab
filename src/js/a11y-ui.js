@@ -1,6 +1,7 @@
 import {createActionsBuilder} from './actions-builder.module.js';
 import {createEl, escapeAttr, escapeHtml, iconButton, indentPrefix, jsonBlob, linkifyUrlsToHtml, safeBaseName, scanTagChipsHtml, svgIcon} from './a11y-ui.utils.js';
 import {setupRunSettings} from './run-settings.js';
+import {setupExpectedScansField} from './expected-scans-field.js';
 import {createConfigIO} from './config-io.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
 import {setupModeSwitch} from './tabs-ui.js';
@@ -1402,6 +1403,7 @@ function storeActiveMode(mode) {
 
     let lastWorkflowResponse = null;
     let actionsBuilder = null;
+    let expectedScansField = null;
     let customStepActionsBuilder = null;
     let customStepsData = [];
     let copiedCustomStep = null;
@@ -1965,6 +1967,7 @@ function storeActiveMode(mode) {
         if (!workflowToggleBtn) return;
         refreshWorkflowCollapseAllBtn = setupCollapseAllStepsButton(workflowCollapseAllBtn, actionsBar);
         initWorkflowRoadmap();
+        initExpectedScansField();
         setWorkflowExpanded(true);
         workflowToggleBtn.addEventListener('click', () => {
             const expanded = workflowToggleBtn.getAttribute('aria-expanded') === 'true';
@@ -1983,6 +1986,21 @@ function storeActiveMode(mode) {
 
     // The workflow's roadmap: its steps as a tree in a dialog, drawn from the
     // steps the Workflow steps panel reads. Selecting a step goes to it.
+    // The Workflow header's expected scans: what the workflow works out for
+    // itself, beside what was typed. Looks again as the steps change.
+    function initExpectedScansField() {
+        expectedScansField = setupExpectedScansField({
+            doc: document,
+            getWorkflow: () => {
+                const read = actionsBuilder && actionsBuilder.getValue({validate: false, maskValues: 'redact', markMasked: true, reveal: false});
+                if (!read || !read.ok) return null;
+                const custom = customStepsUi.getCustomStepsForConfigState();
+                return {actions: read.value, customSteps: custom && custom.ok ? custom.value : []};
+            },
+            watch: [actionsBar, customStepActionsEl],
+        });
+    }
+
     function initWorkflowRoadmap() {
         const dialog = $('#workflow-roadmap-dialog');
         const body = $('#workflow-roadmap-body');
@@ -3140,6 +3158,7 @@ function storeActiveMode(mode) {
             onStateApplied: () => {
                 runWorkflowUi.syncRunLanguageOther();
                 runSettings.sync();
+                expectedScansField?.refresh();
             },
             getLanguages: runWorkflowUi.runLanguageTags,
             getCustomSteps: customStepsUi.getCustomStepsForConfigState,

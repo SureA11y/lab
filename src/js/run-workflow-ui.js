@@ -325,7 +325,7 @@ export function createRunWorkflowUi(app) {
         const plan = app.getPlannedLiveStreamMode(actions);
         app.useLiveStream = !!plan.shouldStream;
 
-        app.liveUi.startStepCounter(actions, customSteps);
+        app.liveUi.startStepCounter(actions, customSteps, {expectedScans: payload.expectedScans});
 
         // Running UI state
         app.runStartedAtMs = performance.now();
@@ -472,7 +472,8 @@ export function createRunWorkflowUi(app) {
         }
 
         app.useLiveStream = false;
-        app.liveUi.startStepCounter(actions, customSteps);
+        // A dry run takes no scans, so there is no time to work out.
+        app.liveUi.startStepCounter(actions, customSteps, {estimate: false});
         app.runStartedAtMs = performance.now();
         app.setUiState('running', row
             ? `Dry run with the batch's first workflow, ${row.name}: every step but the scans, screenshots and evidence...`

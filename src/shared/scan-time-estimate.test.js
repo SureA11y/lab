@@ -371,3 +371,43 @@ describe('formatRange', () => {
         assert.equal(E.formatRange(null), '');
     });
 });
+
+describe('effectiveExpectedScans', () => {
+    const plan = (actions) => planWorkflowSteps(actions);
+
+    test('the number the person gave wins over the one the workflow works out', () => {
+        assert.equal(E.effectiveExpectedScans({ expectedScans: 7, plan: plan([scan(), scan()]) }), 7);
+        assert.equal(E.effectiveExpectedScans({ expectedScans: '7', plan: plan([scan(), scan()]) }), 7);
+    });
+
+    test('with none, a workflow that cannot vary its scans gives its own', () => {
+        assert.equal(E.effectiveExpectedScans({ plan: plan([scan(), click(), scan()]) }), 2);
+        assert.equal(E.effectiveExpectedScans({ expectedScans: '', plan: plan([scan()]) }), 1);
+    });
+
+    test('a number that is not one is ignored', () => {
+        for (const bad of [0, -1, 2.5, 'many', NaN]) {
+            assert.equal(E.effectiveExpectedScans({ expectedScans: bad, plan: plan([scan()]) }), 1, String(bad));
+        }
+    });
+
+    test('with none and an uncertain workflow there is no total', () => {
+        const uncertain = plan([{ type: 'forEachElement', selector: 'a', actions: [scan()] }]);
+        assert.equal(E.effectiveExpectedScans({ plan: uncertain }), null);
+        assert.equal(E.effectiveExpectedScans({}), null);
+    });
+});
+
+describe('describeBasis', () => {
+    test('says where an estimate comes from', () => {
+        assert.match(E.describeBasis({ basis: E.BASIS.OWN, priorRuns: 0 }), /this run have taken/);
+        assert.match(E.describeBasis({ basis: E.BASIS.PRIOR, priorRuns: 3 }), /3 finished runs of this workflow/);
+        assert.match(E.describeBasis({ basis: E.BASIS.PRIOR, priorRuns: 1 }), /1 finished run of this workflow/);
+        assert.match(E.describeBasis({ basis: E.BASIS.BLEND, priorRuns: 2 }), /this run have taken, with 2 finished runs/);
+    });
+
+    test('says nothing when there is no basis', () => {
+        assert.equal(E.describeBasis({ basis: E.BASIS.NONE, priorRuns: 0 }), '');
+        assert.equal(E.describeBasis(null), '');
+    });
+});

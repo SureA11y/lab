@@ -22,13 +22,20 @@
     padding: 0 0 0  3px;
 }
 
-/* The expected scans field takes the push to the right, so the header's
-   buttons follow it instead of each taking a share of the free space. */
+/* The expected scans field in the Workflow header. Where there is room it
+   takes the push to the right, so the buttons follow it instead of each
+   taking a share of the free space; on a narrow screen it goes to a row of its
+   own under the header, and the buttons stay where they were. */
+#actions-builder > legend.actions-builder-header { flex-wrap: wrap; }
+
 #actions-builder > legend.actions-builder-header .run-expected-scans {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin: 0 0 0 auto;
+    flex: 1 0 100%;
+    order: 2;
+    margin: 0;
+    padding: 2px 0 0;
     font-size: 0.8125rem;
     font-weight: 400;
     white-space: nowrap;
@@ -40,8 +47,26 @@
     padding: 2px 8px;
     text-align: right;
 }
-#actions-builder > legend.actions-builder-header .run-expected-scans ~ button.collapse-all-toggle,
-#actions-builder > legend.actions-builder-header .run-expected-scans ~ button.section-end-toggle { margin-left: 0; }
+#actions-builder > legend.actions-builder-header .run-expected-scans-note {
+    font-size: 0.75rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--surface-5);
+    color: var(--text-main);
+}
+#actions-builder > legend.actions-builder-header .run-expected-scans-note:empty { display: none; }
+
+@media (min-width: 700px) {
+    #actions-builder > legend.actions-builder-header { flex-wrap: nowrap; }
+    #actions-builder > legend.actions-builder-header .run-expected-scans {
+        flex: 0 0 auto;
+        order: 0;
+        margin: 0 0 0 auto;
+        padding: 0;
+    }
+    #actions-builder > legend.actions-builder-header .run-expected-scans ~ button.collapse-all-toggle,
+    #actions-builder > legend.actions-builder-header .run-expected-scans ~ button.section-end-toggle { margin-left: 0; }
+}
 
 :is(#actions-builder, #custom-step-actions-builder) .actions-builder-actions {
     display: flex;

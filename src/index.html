@@ -531,6 +531,7 @@
                                 <label class="run-expected-scans" for="run-expected-scans">
                                     <span>Expected scans</span>
                                     <input type="number" id="run-expected-scans" name="expectedScans" min="1" step="1" inputmode="numeric" autocomplete="off" aria-describedby="run-expected-scans-hint"/>
+                                    <span id="run-expected-scans-note" class="run-expected-scans-note" data-kind="none"></span>
                                 </label>
                                 <span id="run-expected-scans-hint" class="visually-hidden">How many scans this run is expected to do. The time left is worked out from it and from how long the scans have taken so far. Leave it empty for no estimate.</span>
                                 <button
@@ -803,6 +804,7 @@
 <script src="./shared/batch-config.js"></script>
 <script src="./shared/workflow-step-plan.js"></script>
 <script src="./shared/workflow-step-counter.js"></script>
+<script src="./shared/scan-time-estimate.js"></script>
 <script src="./shared/issue-dispersion.js"></script>
 <script src="./shared/issue-dispersion-view.js"></script>
 <script src="./shared/scan-groups.js"></script>

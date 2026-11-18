@@ -78,7 +78,7 @@ export function createProgressProcessor(deps) {
         if (!entry || !entry.extra || typeof entry.extra !== 'object' || !entry.extra.stepEvent) return;
 
         try {
-            setStepTotals(counter.accept(entry));
+            setStepTotals(counter.accept(entry), entry);
         } catch {
             // A counting slip must never cost the user the log line itself.
         }
