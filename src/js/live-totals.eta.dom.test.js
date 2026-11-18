@@ -201,3 +201,66 @@ describe('time left in the live totals', () => {
         assert.ok(totals);
     });
 });
+
+describe('time left from a loop in the live totals', () => {
+    const loopEntry = (path, index, total, seconds) => ({
+        time: at(seconds), type: 'info', message: '',
+        extra: {stepEvent: 'loop-iteration', actionPath: path, index, total, loopType: 'forEachElement'}
+    });
+    const loopEnd = (path, seconds) => ({time: at(seconds), extra: {stepEvent: 'action-end', actionPath: path}});
+
+    function inLoop(clock, upTo, total = 10, every = 10) {
+        for (let i = 0; i <= upTo; i += 1) {
+            clock.now = T0 + i * every * 1000;
+            this.setSteps(snapshot(i), loopEntry('2', i, total, i * every));
+        }
+    }
+
+    test('says it from the loop with no number typed', () => {
+        const {totals, clock} = setup();
+        inLoop.call(totals, clock, 4);
+        assert.match(etaEl().textContent, /^item 5 of 10 · about 1 min left/);
+        assert.match(etaEl().title, /From the loop it is in: 4 of 10 items done/);
+    });
+
+    test('the loop says it before the typed number of scans does', () => {
+        const {totals, clock} = setup();
+        totals.setExpected({expectedScans: 500});
+        inLoop.call(totals, clock, 4);
+        assert.match(etaEl().textContent, /^item 5 of 10 /);
+    });
+
+    test('counts down between entries, from the clock', () => {
+        const {totals, clock, timers} = setup();
+        // An iteration a minute: iteration 5 of 10 has just begun.
+        inLoop.call(totals, clock, 4, 10, 60);
+        assert.match(etaEl().textContent, /^item 5 of 10 · about 6 min left/);
+        clock.now += 40000;
+        timers.fn();
+        assert.match(etaEl().textContent, /^item 5 of 10 · about 5 min left/);
+    });
+
+    test('waits for two finished iterations', () => {
+        const {totals, clock} = setup();
+        inLoop.call(totals, clock, 1);
+        assert.equal(totals.getEtaText(), '');
+        assert.equal(etaEl().hidden, true);
+    });
+
+    test('hands back to the number of scans when the loop is over', () => {
+        const {totals, clock} = setup();
+        totals.setExpected({expectedScans: 20});
+        inLoop.call(totals, clock, 9);
+        totals.setSteps(snapshot(12), loopEnd('2', 100));
+        clock.now = T0 + 100000;
+        assert.doesNotMatch(etaEl().textContent, /^item/);
+    });
+
+    test('a new run starts without the loops of the last', () => {
+        const {totals, clock} = setup();
+        inLoop.call(totals, clock, 4);
+        totals.reset();
+        totals.setSteps(snapshot(0), entry(5000));
+        assert.equal(totals.getEtaText(), '');
+    });
+});

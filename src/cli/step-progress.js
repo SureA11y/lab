@@ -94,6 +94,10 @@ function formatNow(snapshot) {
  * result; '' for none.
  */
 function formatScans(estimate) {
+    if (estimate && estimate.basis === timing.BASIS.LOOP && estimate.loop) {
+        const range = timing.formatRange(estimate.rangeMs);
+        return `item ${estimate.loop.iteration} of ${estimate.loop.total} · ${timing.formatRemaining(estimate.remainingMs)} left${range ? ` (${range})` : ''}`;
+    }
     if (!estimate || !estimate.expectedScans) return '';
     const S = timing.STATE;
     const of = `${estimate.scansDone} of ${plural(estimate.expectedScans, 'scan')}`;
@@ -201,16 +205,21 @@ function createStepProgress({
     // The scans the run is expected to do: the number it was given, else the
     // one its workflow is certain to run. The clock runs on the log entries'
     // own times, as the app's live totals do.
-    const expected = counter
-        ? timing.effectiveExpectedScans({ expectedScans, plan: counter.plan })
-        : null;
+    const resolved = counter
+        ? timing.resolveExpectedScans({ expectedScans, plan: counter.plan })
+        : { count: null, exact: false };
+    const expected = resolved.count;
     const scanTimes = [];
+    // The loops, from the engine's "item k of n": where one is running it says the
+    // time left from its own iterations, with no number to give.
+    const loops = counter && timing.createLoopTracker ? timing.createLoopTracker() : null;
     let startMs = null;
     let lastEntryMs = null;
     let receivedMs = null;
 
     function noteClock(entry, snapshot) {
         const at = entry && typeof entry.time === 'string' ? Date.parse(entry.time) : NaN;
+        if (loops && entry) loops.accept(entry);
         if (!Number.isFinite(at)) return;
         if (startMs == null) startMs = at;
         lastEntryMs = Math.max(lastEntryMs == null ? at : lastEntryMs, at);
@@ -220,14 +229,19 @@ function createStepProgress({
     }
 
     function estimate() {
+        const sinceEntry = receivedMs == null ? 0 : Math.max(0, now() - receivedMs);
+        if (loops && lastEntryMs != null) {
+            const inLoop = loops.estimate(lastEntryMs + sinceEntry);
+            if (inLoop) return inLoop;
+        }
         if (expected == null) return null;
         const lastAt = lastEntryMs == null ? 0 : lastEntryMs - startMs;
-        const sinceEntry = receivedMs == null ? 0 : Math.max(0, now() - receivedMs);
         return timing.estimateRun({
             expectedScans: expected,
             completedAtMs: scanTimes,
             elapsedMs: lastAt + sinceEntry,
-            prior
+            prior,
+            numberUncertainty: resolved.exact ? 0 : undefined
         });
     }
 

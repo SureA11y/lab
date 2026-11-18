@@ -174,15 +174,22 @@ describe('estimateRun', () => {
         assert.ok(r.rangeMs.low < r.remainingMs && r.remainingMs < r.rangeMs.high);
     });
 
-    test('an uneven pace widens the range', () => {
-        const even = E.estimateRun({ expectedScans: 20, completedAtMs: evenly(6, MIN), elapsedMs: 6 * MIN });
-        const uneven = E.estimateRun({
-            expectedScans: 20,
-            completedAtMs: [60000, 90000, 210000, 240000, 420000, 450000],
-            elapsedMs: 450000
-        });
-        const width = (r) => (r.rangeMs.high - r.rangeMs.low) / r.remainingMs;
-        assert.ok(width(uneven) > width(even));
+    test('the range narrows as the run goes, for a number the workflow worked out', () => {
+        const at = (done) => E.estimateRun({ expectedScans: 100, completedAtMs: evenly(done, MIN), elapsedMs: done * MIN, numberUncertainty: 0 });
+        const minutes = (r) => (r.rangeMs.high - r.rangeMs.low) / MIN;
+        assert.ok(minutes(at(20)) > minutes(at(60)));
+        assert.ok(minutes(at(60)) > minutes(at(90)));
+        // The share of what is left it stands for falls too, until the slack of a few scans takes over.
+        const share = (r) => (r.rangeMs.high - r.remainingMs - 3 * MIN) / r.remainingMs;
+        assert.ok(share(at(20)) > share(at(60)));
+    });
+
+    test('a typed number widens it, by the same number of scans however far the run is', () => {
+        const calc = E.estimateRun({ expectedScans: 100, completedAtMs: evenly(50, MIN), elapsedMs: 50 * MIN, numberUncertainty: 0 });
+        const typed = E.estimateRun({ expectedScans: 100, completedAtMs: evenly(50, MIN), elapsedMs: 50 * MIN });
+        // 5% of 100 scans, at a minute each, on each side.
+        assert.equal(Math.round((typed.rangeMs.high - calc.rangeMs.high) / MIN), 5);
+        assert.equal(Math.round((calc.rangeMs.low - typed.rangeMs.low) / MIN), 5);
     });
 
     test('a not started run gets its first number from the prior', () => {
@@ -230,10 +237,10 @@ describe('estimateRun', () => {
         assert.ok(perScan < 30000, String(perScan));
     });
 
-    test('the prior alone gives a wider range than a run with its own history', () => {
+    test('a run that has not started has the widest range, as a share of what is left', () => {
         const prior = { perScanMs: 60000, runs: 3, spread: 0.4 };
-        const fromPrior = E.estimateRun({ expectedScans: 10, completedAtMs: [], prior });
-        const own = E.estimateRun({ expectedScans: 10, completedAtMs: evenly(5, MIN), elapsedMs: 5 * MIN });
+        const fromPrior = E.estimateRun({ expectedScans: 100, completedAtMs: [], prior, numberUncertainty: 0 });
+        const own = E.estimateRun({ expectedScans: 100, completedAtMs: evenly(50, MIN), elapsedMs: 50 * MIN, numberUncertainty: 0 });
         const width = (r) => (r.rangeMs.high - r.rangeMs.low) / r.remainingMs;
         assert.ok(width(fromPrior) > width(own));
     });
@@ -424,10 +431,16 @@ describe('estimateFromCounts', () => {
         assert.equal(Math.round(r.remainingMs), Math.round(6 * perScan - 30000));
     });
 
-    test('has no scatter, so the range is the wider default, not the narrowest', () => {
-        const r = E.estimateFromCounts({ expectedScans: 10, scansDone: 4, elapsedMs: 4 * MIN, sinceScanMs: 0 });
-        const width = (r.rangeMs.high - r.rangeMs.low) / r.remainingMs;
-        assert.ok(width > 0.5, String(width));
+    test('the range is the same as for a run that knows when each scan finished', () => {
+        const counts = E.estimateFromCounts({ expectedScans: 10, scansDone: 4, elapsedMs: 4 * MIN, sinceScanMs: 0 });
+        const times = E.estimateRun({ expectedScans: 10, completedAtMs: evenly(4, MIN), elapsedMs: 4 * MIN });
+        assert.equal(Math.round(counts.rangeMs.high - counts.remainingMs), Math.round(times.rangeMs.high - times.remainingMs));
+    });
+
+    test('a number the workflow worked out has no margin for the number', () => {
+        const typed = E.estimateFromCounts({ expectedScans: 10, scansDone: 4, elapsedMs: 4 * MIN, sinceScanMs: 0 });
+        const calc = E.estimateFromCounts({ expectedScans: 10, scansDone: 4, elapsedMs: 4 * MIN, sinceScanMs: 0, numberUncertainty: 0 });
+        assert.ok(calc.rangeMs.high < typed.rangeMs.high);
     });
 
     test('a run that has not started takes its number from the prior', () => {
@@ -485,5 +498,53 @@ describe('estimateBatch with a prior of its own for each queued run', () => {
     test('a queued run with no number is the mean run of its own workflow', () => {
         const b = E.estimateBatch({ running: [], queued: [{ prior: slow }], prior: fast, concurrency: 1 });
         assert.equal(b.remainingMs, 600000);
+    });
+});
+
+describe('rangeAround', () => {
+    const MINUTE = 60000;
+
+    test('is a share of the time left, a few scans of slack, and the margin for a typed number', () => {
+        // 100 of 100 scans left at a minute each: 25% of 100 minutes, 3 minutes of slack.
+        const r = E.rangeAround(100 * MINUTE, MINUTE, 100, 100, 0);
+        assert.equal(r.high - 100 * MINUTE, 28 * MINUTE);
+        assert.equal(100 * MINUTE - r.low, 28 * MINUTE);
+        // A typed number of 100 scans may be 5 off, on top.
+        const typed = E.rangeAround(100 * MINUTE, MINUTE, 100, 100);
+        assert.equal(typed.high - 100 * MINUTE, 33 * MINUTE);
+    });
+
+    test('the share shrinks with the square root of the scans left, between its floor and ceiling', () => {
+        const rel = (left) => {
+            const r = E.rangeAround(left * MINUTE, MINUTE, left, 100, 0);
+            return (r.high - left * MINUTE - 3 * MINUTE) / (left * MINUTE);
+        };
+        assert.ok(Math.abs(rel(100) - 0.25) < 1e-9);
+        assert.ok(Math.abs(rel(25) - 0.125) < 1e-9);
+        assert.ok(Math.abs(rel(1) - 0.05) < 1e-9, 'not below its floor');
+    });
+
+    test('never goes below nothing', () => {
+        assert.equal(E.rangeAround(MINUTE, MINUTE, 1, 100, 0.05).low, 0);
+    });
+
+    test('with no expected number it still gives a range', () => {
+        const r = E.rangeAround(MINUTE, MINUTE, 1, 0, 0);
+        assert.ok(Number.isFinite(r.high) && r.high >= MINUTE);
+    });
+});
+
+describe('resolveExpectedScans', () => {
+    const plan = (actions) => planWorkflowSteps(actions);
+
+    test('a typed number is a guess, a worked out one is exact', () => {
+        assert.deepEqual(E.resolveExpectedScans({ expectedScans: 7, plan: plan([scan(), scan()]) }), { count: 7, exact: false });
+        assert.deepEqual(E.resolveExpectedScans({ expectedScans: '7' }), { count: 7, exact: false });
+        assert.deepEqual(E.resolveExpectedScans({ plan: plan([scan(), scan()]) }), { count: 2, exact: true });
+    });
+
+    test('with neither there is none', () => {
+        assert.deepEqual(E.resolveExpectedScans({}), { count: null, exact: false });
+        assert.deepEqual(E.resolveExpectedScans({ expectedScans: 'many' }), { count: null, exact: false });
     });
 });

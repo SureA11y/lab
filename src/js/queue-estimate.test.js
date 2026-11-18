@@ -208,3 +208,57 @@ describe('describeBatchLeft', () => {
         assert.equal(Q.describeBatchLeft({state: 'unknown'}, estimator), '');
     });
 });
+
+describe('a run in a loop', () => {
+    const loop = { remainingMs: 4 * MIN, lowMs: 3 * MIN, highMs: 5 * MIN, path: '2', iteration: 14, total: 40, done: 13 };
+
+    test('says the time left from its loop, with no number and no finished runs', () => {
+        const e = Q.estimateItem(running('r', { expectedScans: null, loopLeft: loop }), null, estimator);
+        assert.equal(e.state, estimator.STATE.ESTIMATING);
+        assert.equal(e.basis, estimator.BASIS.LOOP);
+        assert.equal(e.from, 'loop');
+        assert.equal(e.remainingMs, 4 * MIN);
+        assert.deepEqual(e.rangeMs, { low: 3 * MIN, high: 5 * MIN });
+    });
+
+    test('says it before a typed number does', () => {
+        const e = Q.estimateItem(running('r', { expectedScans: 500, loopLeft: loop }), { perScanMs: 30000, meanScans: 10, meanDurationMs: 5 * MIN, runs: 2, spread: 0.1 }, estimator);
+        assert.equal(e.from, 'loop');
+    });
+
+    test('the tooltip says it is the loop, and that the steps after it are not in it', () => {
+        const left = Q.describeLeft(Q.estimateItem(running('r', { expectedScans: null, loopLeft: loop }), null, estimator), estimator);
+        assert.equal(left.text, '~4 min');
+        assert.match(left.title, /^Estimate: about 4 min left/);
+        assert.match(left.title, /From the loop it is in: 13 of 40 items done/);
+        assert.doesNotMatch(left.title, /scans expected/);
+    });
+
+    test('a run not in a loop, or one that is saving, does not use it', () => {
+        assert.equal(Q.estimateItem(running('r', { expectedScans: null, loopLeft: null }), null, estimator), null);
+        assert.equal(Q.estimateItem(running('r', { expectedScans: null, loopLeft: loop, phase: 'saving' }), null, estimator), null);
+        assert.equal(Q.estimateItem(waiting('w', { loopLeft: loop }), null, estimator), null);
+    });
+
+    test('a loop that did not come whole is not used', () => {
+        assert.equal(Q.estimateItem(running('r', { expectedScans: null, loopLeft: { remainingMs: 4 * MIN } }), null, estimator), null);
+    });
+
+    test('the batch counts it as the time that run has left', () => {
+        const { byItem, batch } = Q.estimateQueue([running('r', { expectedScans: null, loopLeft: loop })], { counts: { waiting: 0 }, estimator });
+        assert.equal(byItem.get('r').remainingMs, 4 * MIN);
+        assert.equal(batch.remainingMs, 4 * MIN);
+    });
+});
+
+describe('a number the workflow worked out', () => {
+    const prior = { perScanMs: 30000, meanScans: 10, meanDurationMs: 5 * MIN, runs: 2, spread: 0.1 };
+
+    test('has no margin for being off, as one that was typed has', () => {
+        const typed = Q.estimateItem(running('r'), prior, estimator);
+        const worked = Q.estimateItem(running('r', { expectedExact: true }), prior, estimator);
+        assert.equal(typed.remainingMs, worked.remainingMs);
+        assert.ok(worked.rangeMs.high < typed.rangeMs.high);
+        assert.ok(worked.rangeMs.low > typed.rangeMs.low);
+    });
+});

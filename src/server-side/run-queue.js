@@ -664,6 +664,10 @@ function createRunQueue({
         item.lastProgressMs = null;
         item.lastScanAtMs = null;
         item.scanGaps = [];
+        // The loops of the run, from the engine's "item k of n": the time left in the
+        // loop it is in, which the app shows when it has one.
+        item.loops = timeEstimate.createLoopTracker();
+        item.lastEntryTime = null;
         watchable.set(item.id, item);
         persist();
         metric({ kind: 'run-start', item: item.id, name: item.name, running: running.size });
@@ -686,6 +690,7 @@ function createRunQueue({
                 running.delete(item.id);
                 item.activity = null;
                 item.scanGaps = null;
+                item.loops = null;
                 if (owner.metrics) {
                     owner.metrics.write({
                         kind: 'run-end', item: item.id, status: item.status,
@@ -773,6 +778,11 @@ function createRunQueue({
                     }
                     if (isResultBuild(entry)) item.phase = 'saving';
                     if (item.activity) item.activity.push(entry);
+                    if (item.loops) {
+                        item.loops.accept(entry);
+                        const at = Date.parse(entry && entry.time);
+                        if (Number.isFinite(at)) item.lastEntryTime = at;
+                    }
                     item.lastProgressMs = now();
                     if (item.log) item.log.push(entry);
                 },
@@ -1526,8 +1536,18 @@ function createRunQueue({
      * What a running item is doing and how lively it is (§8.1), as ages so the
      * tab needs no clock of its own to agree with the server's.
      */
+    // The time left in the loop a running item is in, on the clock of its entries'
+    // times (moved on by the time since the last one), or null.
+    function loopLeftOf(item) {
+        if (!item.loops || item.lastEntryTime == null || !item.lastProgressMs) return null;
+        const found = item.loops.estimate(item.lastEntryTime + Math.max(0, now() - item.lastProgressMs));
+        if (!found) return null;
+        return { remainingMs: Math.round(found.remainingMs), lowMs: Math.round(found.rangeMs.low), highMs: Math.round(found.rangeMs.high), ...found.loop };
+    }
+
     function liveDetails(item) {
         return {
+            loopLeft: loopLeftOf(item),
             phase: item.phase || 'running',
             activity: item.activity ? item.activity.describe() : null,
             sinceScanMs: item.lastScanAtMs ? Math.max(0, now() - item.lastScanAtMs) : null,
@@ -1544,15 +1564,17 @@ function createRunQueue({
     function workflowInfo(item) {
         let info = workflowInfos.get(item);
         if (info) return info;
-        info = { key: null, expectedScans: null };
+        info = { key: null, expectedScans: null, expectedExact: false };
         const spec = (item.config && item.config.runSpec) || item.spec || null;
         if (spec && Array.isArray(spec.actions)) {
             try {
                 const customSteps = Array.isArray(spec.customSteps) ? spec.customSteps : [];
                 const plan = planWorkflowSteps(spec.actions, { customSteps });
+                const expected = timeEstimate.resolveExpectedScans({ expectedScans: spec.expectedScans, plan });
                 info = {
                     key: crypto.createHash('sha1').update(JSON.stringify([spec.actions, customSteps])).digest('hex').slice(0, 16),
-                    expectedScans: timeEstimate.effectiveExpectedScans({ expectedScans: spec.expectedScans, plan }),
+                    expectedScans: expected.count,
+                    expectedExact: expected.exact,
                 };
             } catch {
                 // A workflow that cannot be walked has no time to put on it.
@@ -1586,6 +1608,8 @@ function createRunQueue({
             file: item.file,
             error: item.error,
             expectedScans: workflowInfo(item).expectedScans,
+            // Worked out by the workflow (exact), not typed: no margin for it being off.
+            expectedExact: workflowInfo(item).expectedExact,
             workflowKey: workflowInfo(item).key,
             needsValues: !!item.needsValues,
             hasConfig: !!item.config,

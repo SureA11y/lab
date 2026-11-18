@@ -357,3 +357,42 @@ describe('the progress line and the time left', () => {
         assert.equal(chunks.join(''), '');
     });
 });
+
+describe('the progress line and a loop', () => {
+    const T0 = Date.parse('2026-11-18T10:00:00.000Z');
+    const at = (seconds) => new Date(T0 + seconds * 1000).toISOString();
+    const loopEntry = (index, total, seconds) => ({
+        time: at(seconds), message: 'item',
+        extra: { stepEvent: 'loop-iteration', actionPath: '2', index, total, loopType: 'forEachElement' }
+    });
+    const loop = [{ type: 'forEachElement', targetSelector: 'a', actions: [{ type: 'a11yScan' }] }];
+
+    function run(entries, options = {}) {
+        const chunks = [];
+        const progress = S.createStepProgress({
+            actions: loop, stream: { isTTY: true, columns: 300, write: (t) => chunks.push(t) },
+            isTTY: true, columns: 300, now: () => T0 + 45000, ...options
+        });
+        for (const e of entries) progress.accept(e);
+        progress.refresh();
+        return { progress, text: () => chunks.join('') };
+    }
+
+    test('says the time left from the loop, with no number given', () => {
+        const { progress, text } = run([0, 1, 2, 3, 4].map((i) => loopEntry(i, 10, i * 10)));
+        assert.match(text(), /item 5 of 10 · about 1 min left/);
+        assert.equal(progress.estimate().basis, 'loop');
+    });
+
+    test('says nothing before two iterations are done', () => {
+        const { progress } = run([0, 1].map((i) => loopEntry(i, 10, i * 10)));
+        assert.equal(progress.estimate(), null);
+    });
+
+    test('formatScans writes a loop as item and time', () => {
+        const timing = require('../shared/scan-time-estimate.js');
+        const tracker = timing.createLoopTracker();
+        for (let i = 0; i <= 4; i += 1) tracker.accept(loopEntry(i, 10, i * 10));
+        assert.match(S.formatScans(tracker.estimate(T0 + 45000)), /^item 5 of 10 · about 1 min left/);
+    });
+});

@@ -98,11 +98,17 @@ export function createLiveTotals(deps = {}) {
     // half way (its log replayed at once) gets the pace it really had: the
     // first entry starts it, and each scan finishing is when its entry says.
     let expectedScans = null;
+    // Whether that number was worked out by the workflow (exact) or typed (a guess).
+    let expectedExact = false;
     let prior = null;
     let runStartMs = null;
     let lastEntryMs = null;
     let lastEntryReceivedMs = null;
     let scanTimes = [];
+    // The loops of the run, from the engine's "item k of n": where there is one
+    // running, it says the time left better than a count of scans, and needs no
+    // number typed. Made when the estimator is on the page.
+    let loops = null;
     let etaTimer = null;
 
     let el = null;              // wrapper (#live-totals)
@@ -447,21 +453,35 @@ export function createLiveTotals(deps = {}) {
 
     function currentEstimate() {
         const api = getEstimator();
-        if (!api || expectedScans == null) return null;
-        const lastAt = lastEntryMs == null ? 0 : lastEntryMs - runStartMs;
+        if (!api) return null;
         const sinceEntry = lastEntryReceivedMs == null ? 0 : Math.max(0, nowMs() - lastEntryReceivedMs);
+
+        // A loop that is running says it from its own iterations.
+        if (loops && lastEntryMs != null) {
+            const inLoop = loops.estimate(lastEntryMs + sinceEntry);
+            if (inLoop) return inLoop;
+        }
+
+        if (expectedScans == null) return null;
+        const lastAt = lastEntryMs == null ? 0 : lastEntryMs - runStartMs;
         return api.estimateRun({
             expectedScans,
             completedAtMs: scanTimes,
             elapsedMs: lastAt + sinceEntry,
-            prior
+            prior,
+            numberUncertainty: expectedExact ? 0 : undefined
         });
     }
 
-    // "7 of 20 scans done · about 6 min left (5 to 8 min)".
+    // "7 of 20 scans done · about 6 min left (5 to 8 min)", or from a loop:
+    // "item 14 of 40 · about 3 min left (2 to 4 min)".
     function etaText(est) {
         const api = getEstimator();
         const S = api.STATE;
+        if (est.basis === api.BASIS.LOOP && est.loop) {
+            const range = api.formatRange(est.rangeMs);
+            return `item ${fmt(est.loop.iteration)} of ${fmt(est.loop.total)} · ${api.formatRemaining(est.remainingMs)} left${range ? ` (${range})` : ''}`;
+        }
         const of = `${fmt(est.scansDone)} of ${fmt(est.expectedScans)} scans done`;
         if (est.state === S.PAST) return `${fmt(est.scansDone)} scans done, past the ${fmt(est.expectedScans)} expected`;
         if (est.state === S.REACHED) return `All ${fmt(est.expectedScans)} expected scans done`;
@@ -864,6 +884,11 @@ export function createLiveTotals(deps = {}) {
                 return;
             }
             noteClock(steps, entry);
+            if (!loops) {
+                const api = getEstimator();
+                if (api && api.createLoopTracker) loops = api.createLoopTracker();
+            }
+            if (loops && entry) loops.accept(entry);
             ensureEl();
             render();
         },
@@ -871,10 +896,12 @@ export function createLiveTotals(deps = {}) {
         /**
          * How many scans the run is expected to do (null for no estimate), and
          * what finished runs of the same workflow say about it (priorFromRuns,
-         * or null). Changing either recalculates the time left.
+         * or null), and whether the workflow worked the number out itself (exact)
+         * rather than being given it. Changing any recalculates the time left.
          */
-        setExpected({expectedScans: expected = null, prior: priorRuns = null} = {}) {
+        setExpected({expectedScans: expected = null, prior: priorRuns = null, exact = false} = {}) {
             expectedScans = Number.isInteger(expected) && expected > 0 ? expected : null;
+            expectedExact = !!exact;
             prior = priorRuns || null;
             renderEta();
         },
@@ -888,11 +915,13 @@ export function createLiveTotals(deps = {}) {
         /** Zero the totals and remove the counter (start of a new run). */
         reset() {
             expectedScans = null;
+            expectedExact = false;
             prior = null;
             runStartMs = null;
             lastEntryMs = null;
             lastEntryReceivedMs = null;
             scanTimes = [];
+            loops = null;
             manageEtaTimer(false);
             totals.violations = 0;
             totals.incomplete = 0;
