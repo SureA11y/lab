@@ -325,3 +325,41 @@ describe('planWorkflowSteps: nesting', () => {
         assert.equal(out.unsized, 3);
     });
 });
+
+describe('planWorkflowSteps: the workflow\'s own steps, and what one pass of a loop runs', () => {
+    const scan = () => ({ type: 'a11yScan' });
+    const actions = [
+        scan(),
+        { type: 'click', selector: 'a', disabled: true },
+        { type: 'repeat', itemsText: 'a\nb', actions: [scan(), { type: 'forEachElement', targetSelector: 'a', actions: [scan()] }] },
+        { type: 'forEachElement', targetSelector: 'a', limit: 3, actions: [{ type: 'if', selectorExists: '.x', actions: [scan()] }] },
+        { type: 'group', actions: [scan(), scan()] }
+    ];
+
+    test('each step of the workflow\'s own says what it runs, by its path', () => {
+        const steps = plan(actions).steps;
+        assert.deepEqual(steps.map((s) => s.path), ['1', '2', '3', '4', '5']);
+        const scans = steps.map((s) => (s.byType.a11yScan ? { ...s.byType.a11yScan } : null));
+        assert.deepEqual(scans, [
+            { min: 1, max: 1, unsized: 0 },
+            null,
+            // two passes, each a scan and a loop of unknown size that scans
+            { min: 2, max: 2, unsized: 2 },
+            { min: 0, max: 3, unsized: 0 },
+            { min: 2, max: 2, unsized: 0 }
+        ]);
+    });
+
+    test('a loop says what one of its passes runs, as a range', () => {
+        const nodes = plan(actions).nodes;
+        assert.deepEqual({ ...nodes['3'].perIterationRangeByType.a11yScan }, { min: 1, max: 1, unsized: 1 });
+        assert.deepEqual({ ...nodes['3.2'].perIterationRangeByType.a11yScan }, { min: 1, max: 1, unsized: 0 });
+        assert.deepEqual({ ...nodes['4'].perIterationRangeByType.a11yScan }, { min: 0, max: 1, unsized: 0 });
+    });
+
+    test('walking the steps one by one leaves the plan as it was', () => {
+        const out = plan(actions);
+        assert.deepEqual({ ...out.byType.a11yScan }, { min: 5, max: 8, unsized: 0 });
+        assert.equal(out.unsized, 2);
+    });
+});

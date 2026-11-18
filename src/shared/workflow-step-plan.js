@@ -245,10 +245,13 @@
     /**
      * planWorkflowSteps(actions, {customSteps})
      *
-     * Returns {min, max, unsized, byType, unsizedLoops}. `unsizedLoops` entries
-     * carry `perIteration` - the cost of one pass through that loop's body - so
-     * a live counter can turn the loop into real numbers the moment the engine
-     * reports its resolved size, without re-walking the tree.
+     * Returns {min, max, unsized, byType, unsizedLoops, nodes, steps}.
+     * `unsizedLoops` entries carry `perIteration` - the cost of one pass
+     * through that loop's body - so a live counter can turn the loop into real
+     * numbers the moment the engine reports its resolved size, without
+     * re-walking the tree. `steps` are the workflow's own steps, each with
+     * what it runs by type ({min, max, unsized}, unsized counting the loops of
+     * unknown size that run that type).
      */
     function planWorkflowSteps(actions, options = {}) {
         const customSteps = customStepsById(options.customSteps);
@@ -441,12 +444,32 @@
             return m;
         }, Object.create(null));
 
+        // Each type's {min, max, unsized} for one pass through a body: whether
+        // a pass always runs the same number of scans, say, or an if or an
+        // unsized loop inside it decides.
+        const rangeByType = (count) => {
+            const out = Object.create(null);
+            for (const k of Object.keys(count.byType)) {
+                const s = count.byType[k];
+                out[k] = {min: s.min, max: s.max, unsized: s.unsized};
+            }
+            for (const loop of count.unsizedLoops) {
+                for (const k of Object.keys(loop.perIterationByType || {})) {
+                    if (!(loop.perIterationByType[k] > 0)) continue;
+                    const slot = out[k] || (out[k] = {min: 0, max: 0, unsized: 0});
+                    slot.unsized += 1;
+                }
+            }
+            return out;
+        };
+
         const loopNode = (type, ceiling, body) => ({
             kind: 'loop',
             type,
             ceiling,
             perIterationMax: body.max,
-            perIterationByType: maxByType(body)
+            perIterationByType: maxByType(body),
+            perIterationRangeByType: rangeByType(body)
         });
 
         // A loop with a declared ceiling: at most `ceiling` passes, but possibly
@@ -469,7 +492,7 @@
                 perIteration: {min: body.min, max: body.max, unsized: body.unsized},
                 perIterationByType: maxByType(body)
             };
-            nodes[here] = {kind: 'loop', type, ceiling: null, reason, perIterationMax: body.max, perIterationByType: entry.perIterationByType};
+            nodes[here] = {kind: 'loop', type, ceiling: null, reason, perIterationMax: body.max, perIterationByType: entry.perIterationByType, perIterationRangeByType: rangeByType(body)};
 
             const out = emptyCount();
             out.unsized = 1;
@@ -478,13 +501,37 @@
         };
 
         const total = walk(actions, [], '', false);
+
+        // The workflow's own steps, one by one, by their path ("1", "2", ...):
+        // what each runs by type, so a live estimate can count what is still
+        // ahead of the step running now. Disabled ones keep their number and
+        // run nothing. Walked again on their own, with no shared state.
+        const steps = [];
+        (Array.isArray(actions) ? actions : []).forEach((action, i) => {
+            if (!action || typeof action !== 'object' || !action.type) return;
+            const path = String(i + 1);
+            if (isDisabled(action)) {
+                steps.push({path, byType: Object.create(null)});
+                return;
+            }
+            const saved = slotFrames;
+            slotFrames = [];
+            try {
+                const one = walk(actions.slice(0, i + 1).map((a, j) => (j === i ? a : {...a, disabled: true})), [], '', false);
+                steps.push({path, byType: rangeByType(one)});
+            } finally {
+                slotFrames = saved;
+            }
+        });
+
         return {
             min: total.min,
             max: total.max,
             unsized: total.unsized,
             byType: total.byType,
             unsizedLoops: total.unsizedLoops,
-            nodes
+            nodes,
+            steps
         };
     }
 
