@@ -111,8 +111,11 @@
     const AGREE_SHARE = 0.05;
 
     // How far a count from the loops may be off, in scans: this many standard
-    // deviations of the scans per iteration, over the iterations to come.
-    const COUNT_SLACK_SD = 0.5;
+    // deviations of the scans per iteration, over the iterations to come. On
+    // the recorded runs, 0.3 left the real time inside the range as often as
+    // 0.5 did (at least 93% in every case), with a range 6 to 8% narrower, on
+    // the workflow it was tuned on and on another it was not.
+    const COUNT_SLACK_SD = 0.3;
 
     const BASIS = Object.freeze({
         NONE: 'none',
