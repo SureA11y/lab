@@ -99,17 +99,32 @@ describe('lastRunScans', () => {
         assert.equal(lastRunScans(current, spec), 4);
     });
 
-    test('is nothing when the last run ran other steps', () => {
+    test('is nothing when the runs before ran other steps', () => {
         writeRun('2026-08-16T10-00-00-000Z', whole({ actions: [{ type: 'a11yScan' }] }));
         const current = writeRun('2026-08-17T10-00-00-000Z', null);
         assert.equal(lastRunScans(current, spec), null);
     });
 
-    test('is nothing when the last run stopped before its last step, or failed', () => {
-        writeRun('2026-08-16T10-00-00-000Z', whole({ actionResults: [{ status: 'ok' }] }));
+    test('passes over a run that stopped early, failed a step or failed whole, for the whole one before it', () => {
+        writeRun('2026-08-12T10-00-00-000Z', whole({ scans: [{}, {}, {}, {}, {}] }));
+        writeRun('2026-08-13T10-00-00-000Z', whole({ actionResults: [{ status: 'ok' }] }));
+        writeRun('2026-08-14T10-00-00-000Z', whole({ actionResults: [{ status: 'ok' }, { status: 'failed' }] }));
+        writeRun('2026-08-15T10-00-00-000Z', whole({ errorDetails: { message: 'gone' } }));
+        writeRun('2026-08-16T10-00-00-000Z', whole({ actions: [{ type: 'a11yScan' }] }));
         const current = writeRun('2026-08-17T10-00-00-000Z', null);
-        assert.equal(lastRunScans(current, spec), null);
-        writeRun('2026-08-16T10-00-00-000Z', whole({ errorDetails: { message: 'gone' } }));
+        assert.equal(lastRunScans(current, spec), 5);
+    });
+
+    test('an optional step that failed does not count against a run', () => {
+        writeRun('2026-08-16T10-00-00-000Z', whole({ actionResults: [{ status: 'ok' }, { status: 'failed', optional: true }] }));
+        const current = writeRun('2026-08-17T10-00-00-000Z', null);
+        assert.equal(lastRunScans(current, spec), 4);
+    });
+
+    test('looks back five runs at most', () => {
+        writeRun('2026-08-10T10-00-00-000Z', whole());
+        for (let d = 11; d <= 15; d += 1) writeRun(`2026-08-${d}T10-00-00-000Z`, whole({ errorDetails: { message: 'gone' } }));
+        const current = writeRun('2026-08-17T10-00-00-000Z', null);
         assert.equal(lastRunScans(current, spec), null);
     });
 

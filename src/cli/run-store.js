@@ -109,28 +109,49 @@ function findPreviousRun(currentOutDir, scenarioName) {
     return null;
 }
 
+// How many earlier runs lastRunScans reads at most: each is a whole payload.
+const LAST_RUN_LOOKBACK = 5;
+
+/** Whether a run ran all of its workflow's steps without one failing. */
+function ranWhole(payload, spec) {
+    const steps = spec.actions.filter((a) => a && a.type).length;
+    const results = Array.isArray(payload.actionResults) ? payload.actionResults : [];
+    if (results.length < steps || payload.errorDetails) return false;
+    return !results.some((r) => r && r.status === 'failed' && !r.optional);
+}
+
 /**
- * How many scans the last run of the same workflow beside this one did, for
- * the time left of this one before its loops can count (scan-time-estimate.js),
- * or null. The last run of the scenario counts only if it ran the same steps
- * and reached every one of them; each scan inside a Merged scan counts, as the
- * time left counts them.
+ * How many scans the last whole run of the same workflow beside this one did,
+ * for the time left of this one before its loops can count (scan-time-estimate.js),
+ * or null. A run counts if it is of the same scenario, ran the same steps, and
+ * reached every one of them with none failing; a run that stopped early or
+ * failed is passed over for the one before it, up to LAST_RUN_LOOKBACK runs
+ * back, so one broken run does not take the number away. Each scan inside a
+ * Merged scan counts, as the time left counts them.
  */
 function lastRunScans(currentOutDir, spec) {
-    const previous = findPreviousRun(currentOutDir, spec && spec.scenarioName);
-    if (!previous || !spec || !Array.isArray(spec.actions)) return null;
-    const { payload } = previous;
-    if (JSON.stringify(payload.actions) !== JSON.stringify(spec.actions)) return null;
-    const steps = spec.actions.filter((a) => a && a.type).length;
-    const reached = Array.isArray(payload.actionResults) ? payload.actionResults.length : 0;
-    if (reached < steps || payload.errorDetails) return null;
-    let scans = payload.scans.length;
-    for (const scan of payload.scans) {
-        if (scan && Array.isArray(scan.contexts) && scan.contexts.length > 1) {
-            scans += Math.max(0, scan.contexts.filter((c) => c && !c.skipped).length - 1);
+    if (!spec || !Array.isArray(spec.actions)) return null;
+    const runsDir = path.dirname(path.resolve(currentOutDir));
+    const current = path.basename(path.resolve(currentOutDir));
+    const wanted = spec.scenarioName || null;
+    const actions = JSON.stringify(spec.actions);
+    let read = 0;
+    for (const name of listRunDirs(runsDir).filter((n) => n !== current).reverse()) {
+        if (read >= LAST_RUN_LOOKBACK) break;
+        const payload = readPayload(path.join(runsDir, name, PAYLOAD_FILE));
+        if (!payload) continue;
+        read += 1;
+        if (wanted && payload.scenarioName && payload.scenarioName !== wanted) continue;
+        if (JSON.stringify(payload.actions) !== actions || !ranWhole(payload, spec)) continue;
+        let scans = payload.scans.length;
+        for (const scan of payload.scans) {
+            if (scan && Array.isArray(scan.contexts) && scan.contexts.length > 1) {
+                scans += Math.max(0, scan.contexts.filter((c) => c && !c.skipped).length - 1);
+            }
         }
+        return scans > 0 ? scans : null;
     }
-    return scans > 0 ? scans : null;
+    return null;
 }
 
 function baselineFilePath(name, spec, options) {
