@@ -208,12 +208,22 @@ Piped or redirected output never gets the bar — a redrawn line in a CI log is
 just thousands of half-erased copies of itself — but the `Steps` lines in the
 summary, and the **Steps** table in `summary.md`, are there either way.
 
-When the run has a number of scans it is expected to do, the bar's line also says
-how many are done and the estimated time left (`2 of 10 scans · about 8 min left`).
-While a loop runs (a Repeat or a For each element, whose size the engine reports as "item 14 of 40"), the time left comes from how long its iterations have taken, with no number needed; it covers the loop, not the steps after it. The line then reads `item 5 of 10 · about 1 min left`.
-The number is the spec's `expectedScans`, or the count the workflow is certain to run
-(the same number of scans on every path). A workflow whose scans depend on conditions
-or loops has no time until you set `expectedScans`. In a batch, a row that has not
+Once the runner can tell how many scans the run will do, the bar's line also says
+how many are done and the estimated time left (`2 of 10 scans · about 8 min left`),
+at the pace the scans have gone so far. The number comes from, in this order:
+
+- the spec's `expectedScans`;
+- with none, the last run of the same scenario beside this one, when it ran the
+  same steps and reached all of them;
+- with none, the workflow itself, when it runs the same number of scans on every path.
+
+As the run goes, its loops (a Repeat or a For each element, whose size the engine
+reports as "item 14 of 40") count the scans it has left: the scans each iteration
+has taken, the iterations to come, and the scans the steps after the loop will run.
+The number is then shown with a tilde: `60 of ~205 scans · about 9 min left`. A loop
+whose iterations differ in size counts once two of them are done. A number given
+stands until then, and is kept while it agrees with the count to within 5%; where it
+does not, the count wins, so a wrong number only costs the start of the run. In a batch, a row that has not
 started leans on the earlier rows of the same workflow that finished, and its own pace
 takes over as it goes. The time is an estimate, and it moves when a log line prints.
 
@@ -522,7 +532,7 @@ size that is not a preset) is reported when it opens.
 | `highContrast` | no | `on` or `off`: forced colors (high contrast) from the first page. Left out, off. In the app it is the Run settings' High contrast |
 | `acceptUntrustedCerts` | no | `true` to open sites whose certificate the browser does not trust: a staging server's own, or any site on a network that inspects HTTPS. Left out, such a site fails the run, saying why. The browser cannot then tell a site from one pretending to be it, so sign in only where you trust the network; the run says so in its log and in `runDiagnostics.untrustedCertsAccepted`. In the app it is the Run settings' Certificates; `--accept-untrusted-certs` sets it for a whole run or batch |
 | `language` | no | A BCP 47 tag (`es-ES`, `de`, `pt-BR`), or a variable such as `{var:lang}` so each batch row can set its own: the language the page is shown in from the first page. Left out, the browser's own. In the app it is the Run settings' Language. Set language changes it; its Run default comes back to this |
-| `expectedScans` | no | How many scans the run is expected to do, counting every scan that runs (each scan inside a Merged scan counts, not the one scan the report keeps): a whole number above 0. The app and the runner work out the time left from it and from how long the scans have taken so far. Left out, there is no estimate, unless the workflow runs the same number of scans on every path, which then counts. Only the estimate reads it: a run with more or fewer scans is not an error. In the app it is the Expected scans field in the Workflow header |
+| `expectedScans` | no | How many scans the run is expected to do, counting every scan that runs (each scan inside a Merged scan counts, not the one scan the report keeps): a whole number above 0. The app and the runner work out the time left from it and from how long the scans have taken so far. Left out, the number comes from the last run of the same workflow when there is one, or from the workflow when it runs the same number of scans on every path; as a run goes, its loops count the scans it has left, and a number given gives way to that count where they disagree. Only the estimate reads it: a run with more or fewer scans is not an error. In the app it is the Expected scans field in the Workflow header |
 | `customSteps` | no | Reusable step definitions the actions refer to |
 
 A run has no Include or Exclude selectors: each scan step's own `context` and

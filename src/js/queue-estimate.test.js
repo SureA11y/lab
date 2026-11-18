@@ -102,10 +102,15 @@ describe('estimateQueue', () => {
         const {byItem, batch} = est([done('a'), done('b'), running('r'), waiting('w')], {counts: {waiting: 1}});
         assert.equal(byItem.has('a'), false);
         assert.ok(byItem.get('r').remainingMs > 0);
-        assert.equal(byItem.get('w').remainingMs, 10 * 30000);
         assert.equal(batch.state, estimator.STATE.ESTIMATING);
         // The run going now plus the one waiting, one at a time.
         assert.equal(Math.round(batch.remainingMs / 1000), Math.round((byItem.get('r').remainingMs + 300000) / 1000));
+        // The waiting run ends with the batch: its wait for the slot, then its 5 min.
+        const w = byItem.get('w');
+        assert.equal(w.from, 'queue');
+        assert.equal(w.startsInMs, byItem.get('r').remainingMs);
+        assert.equal(w.takesMs, 10 * 30000);
+        assert.equal(w.remainingMs, batch.remainingMs);
     });
 
     test('shares the work over the runs going at once', () => {
@@ -129,8 +134,11 @@ describe('estimateQueue', () => {
             waiting('w1'), waiting('w2', {workflowKey: 'slow'}),
         ];
         const {byItem} = est(items, {counts: {waiting: 2}});
-        assert.equal(byItem.get('w1').remainingMs, 5 * MIN);
-        assert.equal(byItem.get('w2').remainingMs, 20 * MIN);
+        assert.equal(byItem.get('w1').takesMs, 5 * MIN);
+        assert.equal(byItem.get('w2').takesMs, 20 * MIN);
+        // One slot: the second starts when the first ends.
+        assert.equal(byItem.get('w2').startsInMs, 5 * MIN);
+        assert.equal(byItem.get('w2').remainingMs, 25 * MIN);
     });
 
     test('a workflow with no finished runs uses all of them', () => {
@@ -138,10 +146,21 @@ describe('estimateQueue', () => {
         assert.equal(est(items, {counts: {waiting: 1}}).byItem.get('w').remainingMs, 5 * MIN);
     });
 
-    test('a batch that is not running has none', () => {
+    test('a batch that is not running has none, and a waiting run says how long it takes', () => {
         const {byItem, batch} = est([done('a'), done('b'), waiting('w')], {running: false});
         assert.equal(batch, null);
-        assert.equal(byItem.has('w'), true);
+        assert.equal(byItem.get('w').from, 'earlier');
+        assert.equal(byItem.get('w').remainingMs, 5 * MIN);
+    });
+
+    test('a waiting run has its end from the runs going now, before any has finished', () => {
+        const items = [running('r1', {expectedScans: 10, scansRun: 5, elapsedMs: 5 * MIN, sinceScanMs: 0}), waiting('w1')];
+        const {byItem} = est(items, {counts: {waiting: 1}, slots: 1});
+        const w = byItem.get('w1');
+        assert.equal(w.from, 'queue');
+        assert.ok(w.remainingMs > byItem.get('r1').remainingMs);
+        const left = Q.describeLeft(w, estimator);
+        assert.match(left.title, /its wait included\. It should start in .+, when a slot is free, and take /);
     });
 
     test('the batch is unknown while a run has nothing to go on', () => {
@@ -209,43 +228,45 @@ describe('describeBatchLeft', () => {
     });
 });
 
-describe('a run in a loop', () => {
-    const loop = { remainingMs: 4 * MIN, lowMs: 3 * MIN, highMs: 5 * MIN, path: '2', iteration: 14, total: 40, done: 13 };
+describe('a running run the server has an estimate for', () => {
+    const runLeft = { state: 'estimating', remainingMs: 4 * MIN, lowMs: 3 * MIN, highMs: 5 * MIN, expectedScans: 205, scansDone: 60, count: 'loops', approximate: true, loop: { path: '5', iteration: 4, total: 13, done: 3 }, basis: 'own' };
 
-    test('says the time left from its loop, with no number and no finished runs', () => {
-        const e = Q.estimateItem(running('r', { expectedScans: null, loopLeft: loop }), null, estimator);
+    test('takes it, with no number and no finished runs', () => {
+        const e = Q.estimateItem(running('r', { expectedScans: null, runLeft }), null, estimator);
         assert.equal(e.state, estimator.STATE.ESTIMATING);
-        assert.equal(e.basis, estimator.BASIS.LOOP);
-        assert.equal(e.from, 'loop');
+        assert.equal(e.from, 'run');
         assert.equal(e.remainingMs, 4 * MIN);
         assert.deepEqual(e.rangeMs, { low: 3 * MIN, high: 5 * MIN });
+        assert.equal(e.count, 'loops');
     });
 
-    test('says it before a typed number does', () => {
-        const e = Q.estimateItem(running('r', { expectedScans: 500, loopLeft: loop }), { perScanMs: 30000, meanScans: 10, meanDurationMs: 5 * MIN, runs: 2, spread: 0.1 }, estimator);
-        assert.equal(e.from, 'loop');
+    test('takes it over the counts, whatever number was given', () => {
+        const e = Q.estimateItem(running('r', { expectedScans: 500, runLeft }), { perScanMs: 30000, meanScans: 10, meanDurationMs: 5 * MIN, runs: 2, spread: 0.1 }, estimator);
+        assert.equal(e.from, 'run');
     });
 
-    test('the tooltip says it is the loop, and that the steps after it are not in it', () => {
-        const left = Q.describeLeft(Q.estimateItem(running('r', { expectedScans: null, loopLeft: loop }), null, estimator), estimator);
+    test('the tooltip says where its number of scans comes from', () => {
+        const left = Q.describeLeft(Q.estimateItem(running('r', { expectedScans: null, runLeft }), null, estimator), estimator);
         assert.equal(left.text, '~4 min');
-        assert.match(left.title, /^Estimate: about 4 min left/);
-        assert.match(left.title, /From the loop it is in: 13 of 40 items done/);
-        assert.doesNotMatch(left.title, /scans expected/);
+        assert.match(left.title, /^Estimate: about 4 min left \(3 to 5 min\)\. About 205 scans in all, counted from the loops/);
     });
 
-    test('a run not in a loop, or one that is saving, does not use it', () => {
-        assert.equal(Q.estimateItem(running('r', { expectedScans: null, loopLeft: null }), null, estimator), null);
-        assert.equal(Q.estimateItem(running('r', { expectedScans: null, loopLeft: loop, phase: 'saving' }), null, estimator), null);
-        assert.equal(Q.estimateItem(waiting('w', { loopLeft: loop }), null, estimator), null);
+    test('says finishing and over as the server says', () => {
+        assert.equal(Q.describeLeft(Q.estimateItem(running('r', { runLeft: { state: 'reached', expectedScans: 10, scansDone: 10 } }), null, estimator), estimator).text, 'finishing');
+        assert.equal(Q.describeLeft(Q.estimateItem(running('r', { runLeft: { state: 'past', expectedScans: 10, scansDone: 12 } }), null, estimator), estimator).text, 'over');
     });
 
-    test('a loop that did not come whole is not used', () => {
-        assert.equal(Q.estimateItem(running('r', { expectedScans: null, loopLeft: { remainingMs: 4 * MIN } }), null, estimator), null);
+    test('without one yet, or one that did not come whole, the counts stand in', () => {
+        assert.equal(Q.estimateItem(running('r', { runLeft: { state: 'warming-up', expectedScans: 10 } }), null, estimator).from, 'set');
+        assert.equal(Q.estimateItem(running('r', { expectedScans: null, runLeft: { state: 'estimating', remainingMs: 4 * MIN } }), null, estimator), null);
+    });
+
+    test('a run that is saving has none', () => {
+        assert.equal(Q.estimateItem(running('r', { runLeft, phase: 'saving' }), null, estimator), null);
     });
 
     test('the batch counts it as the time that run has left', () => {
-        const { byItem, batch } = Q.estimateQueue([running('r', { expectedScans: null, loopLeft: loop })], { counts: { waiting: 0 }, estimator });
+        const { byItem, batch } = Q.estimateQueue([running('r', { expectedScans: null, runLeft })], { counts: { waiting: 0 }, estimator });
         assert.equal(byItem.get('r').remainingMs, 4 * MIN);
         assert.equal(batch.remainingMs, 4 * MIN);
     });

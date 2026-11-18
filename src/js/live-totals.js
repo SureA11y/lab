@@ -97,18 +97,14 @@ export function createLiveTotals(deps = {}) {
     // Time left. The clock runs on the log entries' own times, so a run opened
     // half way (its log replayed at once) gets the pace it really had: the
     // first entry starts it, and each scan finishing is when its entry says.
-    let expectedScans = null;
-    // Whether that number was worked out by the workflow (exact) or typed (a guess).
-    let expectedExact = false;
-    let prior = null;
-    let runStartMs = null;
+    // What the run estimator needs ({plan, expectedScans, lastRunScans, prior}),
+    // the estimator, and the step entries it has been given, so that a change
+    // to the first rebuilds the second from the same run.
+    let timerConfig = null;
+    let timer = null;
+    let timerEntries = [];
     let lastEntryMs = null;
     let lastEntryReceivedMs = null;
-    let scanTimes = [];
-    // The loops of the run, from the engine's "item k of n": where there is one
-    // running, it says the time left better than a count of scans, and needs no
-    // number typed. Made when the estimator is on the page.
-    let loops = null;
     let etaTimer = null;
 
     let el = null;              // wrapper (#live-totals)
@@ -439,55 +435,43 @@ export function createLiveTotals(deps = {}) {
         return Number.isFinite(t) ? t : null;
     }
 
-    // The scans that finished, each at its entry's time on the run's own clock.
-    function noteClock(snapshot, entry) {
+    function buildTimer() {
+        const api = getEstimator();
+        timer = api && api.createRunEstimator && timerConfig ? api.createRunEstimator(timerConfig) : null;
+        if (timer) for (const entry of timerEntries) timer.accept(entry);
+    }
+
+    // The run's step entries, on its own clock: each scan finishing is when
+    // its entry says, so a run opened half way gets the pace it really had.
+    function noteClock(entry) {
+        if (!entry) return;
+        timerEntries.push(entry);
+        if (timer) timer.accept(entry);
         const at = entryTimeMs(entry);
         if (at == null) return;
-        if (runStartMs == null) runStartMs = at;
         lastEntryMs = Math.max(lastEntryMs == null ? at : lastEntryMs, at);
         lastEntryReceivedMs = nowMs();
-
-        const done = Math.max(0, Math.floor((snapshot && snapshot.doneByType && snapshot.doneByType.a11yScan) || 0));
-        while (scanTimes.length < done) scanTimes.push(Math.max(0, at - runStartMs));
     }
 
     function currentEstimate() {
-        const api = getEstimator();
-        if (!api) return null;
+        if (!timer || lastEntryMs == null) return null;
         const sinceEntry = lastEntryReceivedMs == null ? 0 : Math.max(0, nowMs() - lastEntryReceivedMs);
-
-        // A loop that is running says it from its own iterations.
-        if (loops && lastEntryMs != null) {
-            const inLoop = loops.estimate(lastEntryMs + sinceEntry);
-            if (inLoop) return inLoop;
-        }
-
-        if (expectedScans == null) return null;
-        const lastAt = lastEntryMs == null ? 0 : lastEntryMs - runStartMs;
-        return api.estimateRun({
-            expectedScans,
-            completedAtMs: scanTimes,
-            elapsedMs: lastAt + sinceEntry,
-            prior,
-            numberUncertainty: expectedExact ? 0 : undefined
-        });
+        return timer.estimate(lastEntryMs + sinceEntry);
     }
 
-    // "7 of 20 scans done · about 6 min left (5 to 8 min)", or from a loop:
-    // "item 14 of 40 · about 3 min left (2 to 4 min)".
+    // "7 of 20 scans done · about 6 min left (5 to 8 min)", or "12 of ~40 scans
+    // done · ..." where the number was counted from the loops rather than
+    // given: the same words wherever it comes from, so the line keeps its
+    // shape as the count takes over. The loop's item is under "Now:".
     function etaText(est) {
         const api = getEstimator();
         const S = api.STATE;
-        if (est.basis === api.BASIS.LOOP && est.loop) {
-            const range = api.formatRange(est.rangeMs);
-            return `item ${fmt(est.loop.iteration)} of ${fmt(est.loop.total)} · ${api.formatRemaining(est.remainingMs)} left${range ? ` (${range})` : ''}`;
-        }
-        const of = `${fmt(est.scansDone)} of ${fmt(est.expectedScans)} scans done`;
+        const of = `${fmt(est.scansDone)} of ${est.approximate ? '~' : ''}${fmt(est.expectedScans)} scans done`;
         if (est.state === S.PAST) return `${fmt(est.scansDone)} scans done, past the ${fmt(est.expectedScans)} expected`;
         if (est.state === S.REACHED) return `All ${fmt(est.expectedScans)} expected scans done`;
         if (est.state === S.WARMING_UP) return `${of} · working out the time left`;
         if (est.state !== S.ESTIMATING) return '';
-        const range = api.formatRange(est.rangeMs);
+        const range = api.formatRange(est.rangeMs, est.remainingMs);
         return `${of} · ${api.formatRemaining(est.remainingMs)} left${range ? ` (${range})` : ''}`;
     }
 
@@ -883,26 +867,22 @@ export function createLiveTotals(deps = {}) {
                 renderSteps();
                 return;
             }
-            noteClock(steps, entry);
-            if (!loops) {
-                const api = getEstimator();
-                if (api && api.createLoopTracker) loops = api.createLoopTracker();
-            }
-            if (loops && entry) loops.accept(entry);
+            noteClock(entry);
             ensureEl();
             render();
         },
 
         /**
-         * How many scans the run is expected to do (null for no estimate), and
-         * what finished runs of the same workflow say about it (priorFromRuns,
-         * or null), and whether the workflow worked the number out itself (exact)
-         * rather than being given it. Changing any recalculates the time left.
+         * What the time left is worked out from: the run's plan
+         * (planWorkflowSteps), the number of scans typed (null for none), how
+         * many the last run of the same workflow did (null when not known), and
+         * what finished runs of the same workflow say of the pace
+         * (priorFromRuns, or null). Changing any recalculates the time left
+         * from the same run. Without a call, there is no time left.
          */
-        setExpected({expectedScans: expected = null, prior: priorRuns = null, exact = false} = {}) {
-            expectedScans = Number.isInteger(expected) && expected > 0 ? expected : null;
-            expectedExact = !!exact;
-            prior = priorRuns || null;
+        setExpected({plan = null, expectedScans: given = null, lastRunScans = null, prior: priorRuns = null} = {}) {
+            timerConfig = {plan, expectedScans: given, lastRunScans, prior: priorRuns || null};
+            buildTimer();
             renderEta();
         },
 
@@ -914,14 +894,11 @@ export function createLiveTotals(deps = {}) {
 
         /** Zero the totals and remove the counter (start of a new run). */
         reset() {
-            expectedScans = null;
-            expectedExact = false;
-            prior = null;
-            runStartMs = null;
+            timerConfig = null;
+            timer = null;
+            timerEntries = [];
             lastEntryMs = null;
             lastEntryReceivedMs = null;
-            scanTimes = [];
-            loops = null;
             manageEtaTimer(false);
             totals.violations = 0;
             totals.incomplete = 0;

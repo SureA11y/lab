@@ -42,7 +42,9 @@ const snapshot = (scans, extra = {}) => ({
     ...extra
 });
 
-const entry = (seconds) => ({time: at(seconds), type: 'info', message: '', extra: {stepEvent: 'action-end'}});
+// The run's first step starting, which starts its clock, and a scan ending.
+const entry = (seconds) => ({time: at(seconds), type: 'info', message: '', extra: {stepEvent: 'action-start', actionPath: '1', actionType: 'group'}});
+const scanned = (seconds) => ({time: at(seconds), type: 'info', message: '', extra: {stepEvent: 'action-end', actionPath: '1.1', actionType: 'a11yScan'}});
 
 function setup(options = {}) {
     const clock = {now: T0};
@@ -63,7 +65,7 @@ describe('time left in the live totals', () => {
     test('shows nothing when the run has no expected number of scans', () => {
         const {totals} = setup();
         totals.setSteps(snapshot(0), entry(0));
-        totals.setSteps(snapshot(2), entry(120));
+        totals.setSteps(snapshot(2), scanned(120));
         assert.equal(totals.getEtaText(), '');
         assert.equal(etaEl().hidden, true);
     });
@@ -73,7 +75,7 @@ describe('time left in the live totals', () => {
         totals.setExpected({expectedScans: 10});
         totals.setSteps(snapshot(0), entry(0));
         clock.now = T0 + 60000;
-        totals.setSteps(snapshot(1), entry(60));
+        totals.setSteps(snapshot(1), scanned(60));
         assert.equal(totals.getEtaText(), '1 of 10 scans done · working out the time left');
         assert.equal(etaEl().hidden, false);
     });
@@ -82,9 +84,9 @@ describe('time left in the live totals', () => {
         const {totals, clock} = setup();
         totals.setExpected({expectedScans: 10});
         totals.setSteps(snapshot(0), entry(0));
-        totals.setSteps(snapshot(1), entry(60));
+        totals.setSteps(snapshot(1), scanned(60));
         clock.now = T0 + 120000;
-        totals.setSteps(snapshot(2), entry(120));
+        totals.setSteps(snapshot(2), scanned(120));
         assert.match(etaEl().textContent, /^2 of 10 scans done · about 8 min left/);
         assert.ok(etaEl().title.length > 0, 'says where the number comes from');
     });
@@ -93,9 +95,9 @@ describe('time left in the live totals', () => {
         const {totals, clock, timers} = setup();
         totals.setExpected({expectedScans: 10});
         totals.setSteps(snapshot(0), entry(0));
-        totals.setSteps(snapshot(1), entry(60));
+        totals.setSteps(snapshot(1), scanned(60));
         clock.now = T0 + 120000;
-        totals.setSteps(snapshot(2), entry(120));
+        totals.setSteps(snapshot(2), scanned(120));
         assert.equal(timers.started, 1, 'a timer runs while a time is shown');
         assert.match(etaEl().textContent, /about 8 min left/);
 
@@ -110,9 +112,9 @@ describe('time left in the live totals', () => {
         clock.now = T0 + 999999;
         // The whole log so far, at once: 30 s a scan.
         totals.setSteps(snapshot(0), entry(0));
-        totals.setSteps(snapshot(1), entry(30));
-        totals.setSteps(snapshot(2), entry(60));
-        totals.setSteps(snapshot(3), entry(90));
+        totals.setSteps(snapshot(1), scanned(30));
+        totals.setSteps(snapshot(2), scanned(60));
+        totals.setSteps(snapshot(3), scanned(90));
         assert.match(etaEl().textContent, /^3 of 10 scans done · about 4 min left/);
     });
 
@@ -132,10 +134,10 @@ describe('time left in the live totals', () => {
         const {totals} = setup();
         totals.setExpected({expectedScans: 2});
         totals.setSteps(snapshot(0), entry(0));
-        totals.setSteps(snapshot(1), entry(30));
-        totals.setSteps(snapshot(2), entry(60));
+        totals.setSteps(snapshot(1), scanned(30));
+        totals.setSteps(snapshot(2), scanned(60));
         assert.equal(totals.getEtaText(), 'All 2 expected scans done');
-        totals.setSteps(snapshot(3), entry(90));
+        totals.setSteps(snapshot(3), scanned(90));
         assert.equal(totals.getEtaText(), '3 scans done, past the 2 expected');
     });
 
@@ -143,9 +145,9 @@ describe('time left in the live totals', () => {
         const {totals, clock} = setup();
         totals.setExpected({expectedScans: 10});
         totals.setSteps(snapshot(0), entry(0));
-        totals.setSteps(snapshot(1), entry(60));
+        totals.setSteps(snapshot(1), scanned(60));
         clock.now = T0 + 120000;
-        totals.setSteps(snapshot(2), entry(120));
+        totals.setSteps(snapshot(2), scanned(120));
         totals.setExpected({expectedScans: 20});
         assert.match(etaEl().textContent, /^2 of 20 scans done · about 18 min left/);
         totals.setExpected({expectedScans: null});
@@ -156,9 +158,9 @@ describe('time left in the live totals', () => {
         const {totals, clock, timers} = setup();
         totals.setExpected({expectedScans: 10});
         totals.setSteps(snapshot(0), entry(0));
-        totals.setSteps(snapshot(1), entry(60));
+        totals.setSteps(snapshot(1), scanned(60));
         clock.now = T0 + 120000;
-        totals.setSteps(snapshot(2), entry(120));
+        totals.setSteps(snapshot(2), scanned(120));
         assert.equal(timers.started, 1);
         totals.finish();
         assert.equal(timers.stopped, 1);
@@ -170,14 +172,14 @@ describe('time left in the live totals', () => {
         const {totals, clock} = setup();
         totals.setExpected({expectedScans: 10});
         totals.setSteps(snapshot(0), entry(0));
-        totals.setSteps(snapshot(2), entry(120));
+        totals.setSteps(snapshot(2), scanned(120));
         clock.now = T0 + 120000;
         totals.reset();
         totals.setSteps(snapshot(0), entry(1000));
         assert.equal(totals.getEtaText(), '');
         totals.setExpected({expectedScans: 10});
-        totals.setSteps(snapshot(1), entry(1030));
-        totals.setSteps(snapshot(2), entry(1060));
+        totals.setSteps(snapshot(1), scanned(1030));
+        totals.setSteps(snapshot(2), scanned(1060));
         assert.match(etaEl().textContent, /^2 of 10 scans done · about 4 min left/);
     });
 
@@ -185,9 +187,9 @@ describe('time left in the live totals', () => {
         const {totals, clock} = setup();
         totals.setExpected({expectedScans: 10});
         totals.setSteps(snapshot(0), entry(0));
-        totals.setSteps(snapshot(1), entry(60));
+        totals.setSteps(snapshot(1), scanned(60));
         clock.now = T0 + 120000;
-        totals.setSteps(snapshot(2), entry(120));
+        totals.setSteps(snapshot(2), scanned(120));
         assert.equal(etaEl().closest('[aria-live]'), null);
         assert.equal(etaEl().getAttribute('aria-live'), null);
     });
@@ -196,68 +198,88 @@ describe('time left in the live totals', () => {
         const {totals} = setup({estimator: null});
         const lacking = createLiveTotals({estimator: null});
         lacking.setExpected({expectedScans: 10});
-        lacking.setSteps(snapshot(2), entry(120));
+        lacking.setSteps(snapshot(2), scanned(120));
         assert.equal(lacking.getEtaText(), '');
         assert.ok(totals);
     });
 });
 
 describe('time left from a loop in the live totals', () => {
+    const {planWorkflowSteps} = require('../shared/workflow-step-plan.js');
     const loopEntry = (path, index, total, seconds) => ({
         time: at(seconds), type: 'info', message: '',
         extra: {stepEvent: 'loop-iteration', actionPath: path, index, total, loopType: 'forEachElement'}
     });
-    const loopEnd = (path, seconds) => ({time: at(seconds), extra: {stepEvent: 'action-end', actionPath: path}});
+    const loopEnd = (path, seconds) => ({time: at(seconds), extra: {stepEvent: 'action-end', actionPath: path, actionType: 'forEachElement'}});
+    const scanIn = (seconds) => ({time: at(seconds), extra: {stepEvent: 'action-end', actionPath: '1.1', actionType: 'a11yScan'}});
 
+    // A loop over items, one scan each, then a last scan.
+    const plan = planWorkflowSteps([
+        {type: 'forEachElement', targetSelector: 'a', actions: [{type: 'a11yScan'}]},
+        {type: 'a11yScan'}
+    ]);
+    // The same, where an item scans only when a condition holds.
+    const unevenPlan = planWorkflowSteps([
+        {type: 'forEachElement', targetSelector: 'a', actions: [{type: 'if', selectorExists: '.x', actions: [{type: 'a11yScan'}]}]}
+    ]);
+
+    // Items 1 to upTo + 1 started, each `every` seconds, each scanned before the next.
     function inLoop(clock, upTo, total = 10, every = 10) {
         for (let i = 0; i <= upTo; i += 1) {
             clock.now = T0 + i * every * 1000;
-            this.setSteps(snapshot(i), loopEntry('2', i, total, i * every));
+            if (i > 0) this.setSteps(snapshot(i), scanIn(i * every - 1));
+            this.setSteps(snapshot(i), loopEntry('1', i, total, i * every));
         }
     }
 
-    test('says it from the loop with no number typed', () => {
+    test('counts the scans left from the loop with no number typed', () => {
         const {totals, clock} = setup();
+        totals.setExpected({plan});
         inLoop.call(totals, clock, 4);
-        assert.match(etaEl().textContent, /^item 5 of 10 · about 1 min left/);
-        assert.match(etaEl().title, /From the loop it is in: 4 of 10 items done/);
+        assert.match(etaEl().textContent, /^4 of ~11 scans done · about 1 min left/);
+        assert.match(etaEl().title, /^About 11 scans in all, counted from the loops so far and the steps after them\./);
     });
 
-    test('the loop says it before the typed number of scans does', () => {
+    test('a typed number far from what the loop counts gives way to it', () => {
         const {totals, clock} = setup();
-        totals.setExpected({expectedScans: 500});
+        totals.setExpected({plan, expectedScans: 500});
         inLoop.call(totals, clock, 4);
-        assert.match(etaEl().textContent, /^item 5 of 10 /);
+        assert.match(etaEl().textContent, /^4 of ~11 scans done /);
     });
 
     test('counts down between entries, from the clock', () => {
         const {totals, clock, timers} = setup();
-        // An iteration a minute: iteration 5 of 10 has just begun.
+        totals.setExpected({plan});
+        // A scan a minute: item 5 of 10 has just begun, and 7 scans are left
+        // (6 items and the scan after the loop).
         inLoop.call(totals, clock, 4, 10, 60);
-        assert.match(etaEl().textContent, /^item 5 of 10 · about 6 min left/);
+        assert.match(etaEl().textContent, /^4 of ~11 scans done · about 7 min left/);
         clock.now += 40000;
         timers.fn();
-        assert.match(etaEl().textContent, /^item 5 of 10 · about 5 min left/);
+        assert.match(etaEl().textContent, /^4 of ~11 scans done · about 6 min left/);
     });
 
-    test('waits for two finished iterations', () => {
+    test('a loop of uneven items waits for two of them', () => {
         const {totals, clock} = setup();
+        totals.setExpected({plan: unevenPlan});
         inLoop.call(totals, clock, 1);
         assert.equal(totals.getEtaText(), '');
         assert.equal(etaEl().hidden, true);
     });
 
-    test('hands back to the number of scans when the loop is over', () => {
+    test('after the loop, the steps after it', () => {
         const {totals, clock} = setup();
-        totals.setExpected({expectedScans: 20});
+        totals.setExpected({plan});
         inLoop.call(totals, clock, 9);
-        totals.setSteps(snapshot(12), loopEnd('2', 100));
+        totals.setSteps(snapshot(10), scanIn(99));
+        totals.setSteps(snapshot(10), loopEnd('1', 100));
         clock.now = T0 + 100000;
-        assert.doesNotMatch(etaEl().textContent, /^item/);
+        assert.match(etaEl().textContent, /^10 of 11 scans done · /);
     });
 
     test('a new run starts without the loops of the last', () => {
         const {totals, clock} = setup();
+        totals.setExpected({plan});
         inLoop.call(totals, clock, 4);
         totals.reset();
         totals.setSteps(snapshot(0), entry(5000));

@@ -664,9 +664,9 @@ function createRunQueue({
         item.lastProgressMs = null;
         item.lastScanAtMs = null;
         item.scanGaps = [];
-        // The loops of the run, from the engine's "item k of n": the time left in the
-        // loop it is in, which the app shows when it has one.
-        item.loops = timeEstimate.createLoopTracker();
+        // The run's time left, from its log entries as they come (the scans,
+        // its loops and the steps ahead), which the app shows for it.
+        item.timer = timeEstimate.createRunEstimator({ plan: workflowInfo(item).plan, expectedScans: workflowInfo(item).given });
         item.lastEntryTime = null;
         watchable.set(item.id, item);
         persist();
@@ -690,7 +690,7 @@ function createRunQueue({
                 running.delete(item.id);
                 item.activity = null;
                 item.scanGaps = null;
-                item.loops = null;
+                item.timer = null;
                 if (owner.metrics) {
                     owner.metrics.write({
                         kind: 'run-end', item: item.id, status: item.status,
@@ -778,8 +778,8 @@ function createRunQueue({
                     }
                     if (isResultBuild(entry)) item.phase = 'saving';
                     if (item.activity) item.activity.push(entry);
-                    if (item.loops) {
-                        item.loops.accept(entry);
+                    if (item.timer) {
+                        item.timer.accept(entry);
                         const at = Date.parse(entry && entry.time);
                         if (Number.isFinite(at)) item.lastEntryTime = at;
                     }
@@ -1536,18 +1536,31 @@ function createRunQueue({
      * What a running item is doing and how lively it is (§8.1), as ages so the
      * tab needs no clock of its own to agree with the server's.
      */
-    // The time left in the loop a running item is in, on the clock of its entries'
-    // times (moved on by the time since the last one), or null.
-    function loopLeftOf(item) {
-        if (!item.loops || item.lastEntryTime == null || !item.lastProgressMs) return null;
-        const found = item.loops.estimate(item.lastEntryTime + Math.max(0, now() - item.lastProgressMs));
+    // The time left of a running item, on the clock of its entries' times
+    // (moved on by the time since the last one), or null: {state, remainingMs,
+    // lowMs, highMs, expectedScans, scansDone, count, approximate, loop, basis}.
+    function runLeftOf(item) {
+        if (!item.timer || item.lastEntryTime == null || !item.lastProgressMs) return null;
+        const found = item.timer.estimate(item.lastEntryTime + Math.max(0, now() - item.lastProgressMs));
         if (!found) return null;
-        return { remainingMs: Math.round(found.remainingMs), lowMs: Math.round(found.rangeMs.low), highMs: Math.round(found.rangeMs.high), ...found.loop };
+        const timed = found.state === timeEstimate.STATE.ESTIMATING;
+        return {
+            state: found.state,
+            remainingMs: timed ? Math.round(found.remainingMs) : null,
+            lowMs: timed ? Math.round(found.rangeMs.low) : null,
+            highMs: timed ? Math.round(found.rangeMs.high) : null,
+            expectedScans: found.expectedScans,
+            scansDone: found.scansDone,
+            count: found.count,
+            approximate: !!found.approximate,
+            loop: found.loop,
+            basis: found.basis,
+        };
     }
 
     function liveDetails(item) {
         return {
-            loopLeft: loopLeftOf(item),
+            runLeft: runLeftOf(item),
             phase: item.phase || 'running',
             activity: item.activity ? item.activity.describe() : null,
             sinceScanMs: item.lastScanAtMs ? Math.max(0, now() - item.lastScanAtMs) : null,
@@ -1564,7 +1577,7 @@ function createRunQueue({
     function workflowInfo(item) {
         let info = workflowInfos.get(item);
         if (info) return info;
-        info = { key: null, expectedScans: null, expectedExact: false };
+        info = { key: null, expectedScans: null, expectedExact: false, plan: null, given: null };
         const spec = (item.config && item.config.runSpec) || item.spec || null;
         if (spec && Array.isArray(spec.actions)) {
             try {
@@ -1575,6 +1588,8 @@ function createRunQueue({
                     key: crypto.createHash('sha1').update(JSON.stringify([spec.actions, customSteps])).digest('hex').slice(0, 16),
                     expectedScans: expected.count,
                     expectedExact: expected.exact,
+                    plan,
+                    given: spec.expectedScans ?? null,
                 };
             } catch {
                 // A workflow that cannot be walked has no time to put on it.

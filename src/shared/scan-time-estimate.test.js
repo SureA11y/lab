@@ -187,9 +187,9 @@ describe('estimateRun', () => {
     test('a typed number widens it, by the same number of scans however far the run is', () => {
         const calc = E.estimateRun({ expectedScans: 100, completedAtMs: evenly(50, MIN), elapsedMs: 50 * MIN, numberUncertainty: 0 });
         const typed = E.estimateRun({ expectedScans: 100, completedAtMs: evenly(50, MIN), elapsedMs: 50 * MIN });
-        // 5% of 100 scans, at a minute each, on each side.
-        assert.equal(Math.round((typed.rangeMs.high - calc.rangeMs.high) / MIN), 5);
-        assert.equal(Math.round((calc.rangeMs.low - typed.rangeMs.low) / MIN), 5);
+        // 15% of 100 scans, at a minute each, on each side.
+        assert.equal(Math.round((typed.rangeMs.high - calc.rangeMs.high) / MIN), 15);
+        assert.equal(Math.round((calc.rangeMs.low - typed.rangeMs.low) / MIN), 15);
     });
 
     test('a not started run gets its first number from the prior', () => {
@@ -292,6 +292,15 @@ describe('estimateBatch', () => {
         assert.equal(b.remainingMs, 600000);
     });
 
+    test('says when each waiting run starts and ends, its wait included', () => {
+        // Two slots: runs of 10 and 4 min going; three waiting runs of 10 min each.
+        const b = E.estimateBatch({ running: [running(10 * MIN), running(4 * MIN)], queued: [{ expectedScans: 20 }, { expectedScans: 20 }, { expectedScans: 20 }], prior, concurrency: 2 });
+        assert.deepEqual(b.queued.map((q) => [q.startsInMs / MIN, q.remainingMs / MIN]), [[4, 14], [10, 20], [14, 24]]);
+        assert.equal(b.remainingMs, 24 * MIN);
+        // Its range from the same schedule with the low and high times.
+        assert.ok(b.queued[0].rangeMs.low < b.queued[0].remainingMs && b.queued[0].remainingMs < b.queued[0].rangeMs.high);
+    });
+
     test('is never less than the longest run still going', () => {
         const b = E.estimateBatch({ running: [running(30 * MIN)], queued: [{ expectedScans: 2 }], prior, concurrency: 4 });
         assert.equal(b.remainingMs, 30 * MIN);
@@ -377,6 +386,18 @@ describe('formatRange', () => {
     test('is empty for no range', () => {
         assert.equal(E.formatRange(null), '');
     });
+
+    test('says "up to" when the low end is under a minute', () => {
+        assert.equal(E.formatRange({ low: 0, high: 2.2 * MIN }), 'up to 2 min');
+        assert.equal(E.formatRange({ low: 20000, high: 3 * MIN }), 'up to 3 min');
+    });
+
+    test('always holds the estimate it surrounds, as it is shown', () => {
+        // "under a minute left (1 to 2 min)" was the range missing its own estimate.
+        assert.equal(E.formatRange({ low: 0.6 * MIN, high: 2 * MIN }, 30000), 'up to 2 min');
+        assert.equal(E.formatRange({ low: 2.6 * MIN, high: 4 * MIN }, 2.2 * MIN), '2 to 4 min');
+        assert.equal(E.formatRange({ low: 2 * MIN, high: 2.4 * MIN }, 3 * MIN), '2 to 3 min');
+    });
 });
 
 describe('effectiveExpectedScans', () => {
@@ -411,6 +432,15 @@ describe('describeBasis', () => {
         assert.match(E.describeBasis({ basis: E.BASIS.PRIOR, priorRuns: 3 }), /3 finished runs of this workflow/);
         assert.match(E.describeBasis({ basis: E.BASIS.PRIOR, priorRuns: 1 }), /1 finished run of this workflow/);
         assert.match(E.describeBasis({ basis: E.BASIS.BLEND, priorRuns: 2 }), /this run have taken, with 2 finished runs/);
+    });
+
+    test('says where the number of scans comes from, before the pace', () => {
+        const at = (count, extra = {}) => E.describeBasis({ basis: E.BASIS.OWN, priorRuns: 0, expectedScans: 205, count, ...extra });
+        assert.match(at(E.COUNT.LOOPS), /^About 205 scans in all, counted from the loops so far and the steps after them\. From how long/);
+        assert.match(at(E.COUNT.LAST_RUN), /^205 scans, as the last run of this workflow did\./);
+        assert.match(at(E.COUNT.TYPED), /^205 scans expected, as given\./);
+        assert.match(at(E.COUNT.TYPED, { loopScans: 203 }), /as given; the loops point to about 203\./);
+        assert.match(at(E.COUNT.PLAN), /^205 scans, from the steps of the workflow\./);
     });
 
     test('says nothing when there is no basis', () => {
@@ -509,9 +539,12 @@ describe('rangeAround', () => {
         const r = E.rangeAround(100 * MINUTE, MINUTE, 100, 100, 0);
         assert.equal(r.high - 100 * MINUTE, 28 * MINUTE);
         assert.equal(100 * MINUTE - r.low, 28 * MINUTE);
-        // A typed number of 100 scans may be 5 off, on top.
+        // A typed number of 100 scans may be 15 off, on top.
         const typed = E.rangeAround(100 * MINUTE, MINUTE, 100, 100);
-        assert.equal(typed.high - 100 * MINUTE, 33 * MINUTE);
+        assert.equal(typed.high - 100 * MINUTE, 43 * MINUTE);
+        // And a counted number, its own slack in scans.
+        const counted = E.rangeAround(100 * MINUTE, MINUTE, 100, 100, 0, 6);
+        assert.equal(counted.high - 100 * MINUTE, 34 * MINUTE);
     });
 
     test('the share shrinks with the square root of the scans left, between its floor and ceiling', () => {

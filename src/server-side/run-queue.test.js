@@ -1647,48 +1647,52 @@ describe('run queue: what the app needs for a run\'s time left', () => {
     });
 });
 
-describe('run queue: the time left in the loop a run is in', () => {
+describe('run queue: the time left of a running run', () => {
     const loopEntry = (path, index, total, t) => ({
         type: 'info', message: '', time: new Date(t).toISOString(),
         extra: { stepEvent: 'loop-iteration', actionPath: path, index, total, loopType: 'forEachElement' },
     });
+    const scanEntry = (path, t) => ({
+        type: 'info', message: '', time: new Date(t).toISOString(),
+        extra: { stepEvent: 'action-end', actionPath: path, actionType: 'a11yScan' },
+    });
+    const loopOfScans = { run: { url: 'https://example.com/', scenarioName: 'loop', actions: [
+        { type: 'forEachElement', targetSelector: 'a', actions: [{ type: 'a11yScan', profile: 'en301549-v4.1.1' }] },
+    ] }, config: null };
 
-    test('a running run in a loop says what the loop has left, on its own iterations', async () => {
+    test('a running run in a loop says the time its scans left take, counted from the loop', async () => {
         const t0 = Date.parse('2026-10-21T10:00:00Z');
         let t = t0;
         const runner = controlledRunner();
         const queue = newQueue(runner.executeRun, { now: () => t });
-        queue.addItems([item('A')]);
+        queue.addItems([loopOfScans]);
         const row = () => onlySession(queue).items[0];
-        assert.equal(row().loopLeft, null, 'no loop yet');
+        assert.equal(row().runLeft, null, 'nothing yet');
 
         const { progress } = runner.calls[0].hooks;
         for (let i = 0; i <= 3; i += 1) {
             t = t0 + i * 10000;
+            if (i > 0) progress(scanEntry('1.1', t - 1000));
             progress(loopEntry('1', i, 10, t));
         }
-        // Iteration 4 of 10 began 5 s ago: its average, 10 s, has 5 s left, and six more follow.
+        // Item 4 of 10 began 5 s ago; a scan each, about 10 s apart: 7 to go.
         t += 5000;
-        assert.deepEqual(
-            { remainingMs: row().loopLeft.remainingMs, iteration: row().loopLeft.iteration, total: row().loopLeft.total, done: row().loopLeft.done },
-            { remainingMs: 65000, iteration: 4, total: 10, done: 3 }
-        );
-        assert.ok(row().loopLeft.lowMs < 65000 && 65000 < row().loopLeft.highMs);
+        const left = row().runLeft;
+        assert.deepEqual([left.state, left.expectedScans, left.scansDone, left.count, left.loop.iteration, left.loop.total], ['estimating', 10, 3, 'loops', 4, 10]);
+        assert.ok(left.remainingMs > 55000 && left.remainingMs < 75000, String(left.remainingMs));
+        assert.ok(left.lowMs < left.remainingMs && left.remainingMs < left.highMs);
     });
 
-    test('says nothing before two iterations are done, or in a loop of no known size', async () => {
+    test('says nothing in a loop of no known size, before a scan', async () => {
         const t0 = Date.parse('2026-10-21T10:00:00Z');
         let t = t0;
         const runner = controlledRunner();
         const queue = newQueue(runner.executeRun, { now: () => t });
-        queue.addItems([item('A')]);
+        queue.addItems([loopOfScans]);
         const { progress } = runner.calls[0].hooks;
-        progress(loopEntry('1', 0, 10, t));
+        progress(loopEntry('1', 0, null, t));
         t += 10000;
-        progress(loopEntry('1', 1, 10, t));
-        assert.equal(onlySession(queue).items[0].loopLeft, null);
-        progress(loopEntry('2', 0, null, t));
-        assert.equal(onlySession(queue).items[0].loopLeft, null);
+        assert.equal(onlySession(queue).items[0].runLeft, null);
     });
 
     test('a run says whether its number of scans was worked out or typed', async () => {

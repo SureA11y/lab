@@ -41,13 +41,13 @@ export function describeExpectedScans(plan, estimate, type = 'a11yScan') {
 }
 
 function hintText(info, typed) {
-    const base = 'How many scans this run is expected to do, counting every scan that runs: each scan inside a Merged scan counts, not the one scan the report keeps. The time left is worked out from it and from how long the scans have taken so far; while a loop runs, from the loop itself.';
+    const base = 'How many scans this run is expected to do, counting every scan that runs: each scan inside a Merged scan counts, not the one scan the report keeps. The time left is worked out from it and from how long the scans have taken so far.';
     if (typed) return `${base} Clear it to use the workflow's own count, when it has one.`;
     if (info.kind === 'calculated') {
         return `${base} This workflow runs ${info.count} scan${info.count === 1 ? '' : 's'} on every path, so that is used. Type a number to use another.`;
     }
     if (info.kind === 'unsure') {
-        return `${base} The number of scans here depends on conditions or loops, so there is no time estimate until you type one.`;
+        return `${base} The number of scans here depends on conditions or loops. Left empty, it comes from the last run of this workflow, and, once two items of a loop are done, from the scans they took; a number typed gives way to that count where they disagree.`;
     }
     return `${base} Leave it empty for no estimate.`;
 }

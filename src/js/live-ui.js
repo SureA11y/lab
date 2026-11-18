@@ -9,6 +9,7 @@ import {createProgressProcessor} from './progress-processor.js';
 import {createLiveTotals} from './live-totals.js';
 import {collectVarsDeep, deriveScreenshotCaption as deriveLiveScreenshotCaption, findUnresolvedVars, resolveLabelTemplate as resolveLiveLabel} from './live-view.js';
 import {resolveStepRefForLogEntry} from './action-tree.js';
+import {readLastRunScans, rememberLastRunScans, scansRunOf, workflowKey} from './last-run-scans.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
@@ -30,6 +31,9 @@ export function createLiveUi(app) {
         app.groupingUi.liveStepState.counter = null;
     }
 
+    // The workflow the run going now runs, for keeping how many scans it did.
+    let runWorkflowKey = null;
+
     /**
      * Start counting steps for the run about to go out.
      *
@@ -41,6 +45,7 @@ export function createLiveUi(app) {
      */
     function startStepCounter(actions, customSteps, {expectedScans = null, estimate = true} = {}) {
         const api = globalThis.A11Y_WORKFLOW_STEP_COUNTER;
+        runWorkflowKey = null;
         if (!api || typeof api.createStepCounter !== 'function') {
             app.groupingUi.liveStepState.counter = null;
             return;
@@ -49,13 +54,19 @@ export function createLiveUi(app) {
         try {
             app.groupingUi.liveStepState.counter = api.createStepCounter({actions, customSteps});
             liveTotals.setSteps(app.groupingUi.liveStepState.counter.snapshot());
-            // The scans it is expected to do: the one the run gives, else the one
-            // its workflow is certain to run. A dry run takes no scans, so it has none.
-            const timing = globalThis.A11Y_SCAN_TIME_ESTIMATE;
-            const expected = estimate && timing
-                ? timing.resolveExpectedScans({expectedScans, plan: app.groupingUi.liveStepState.counter.plan})
-                : {count: null, exact: false};
-            liveTotals.setExpected({expectedScans: expected.count, exact: expected.exact});
+            // The time left: from the scans typed, else the last run of the same
+            // workflow, else the ones the workflow is certain to run or its
+            // loops count as it goes. A dry run takes no scans, so it has none.
+            if (estimate) {
+                runWorkflowKey = workflowKey(actions, customSteps);
+                liveTotals.setExpected({
+                    plan: app.groupingUi.liveStepState.counter.plan,
+                    expectedScans,
+                    lastRunScans: readLastRunScans(runWorkflowKey)
+                });
+            } else {
+                liveTotals.setExpected();
+            }
         } catch {
             // A workflow the planner cannot walk still deserves to run.
             app.groupingUi.liveStepState.counter = null;
@@ -247,5 +258,9 @@ export function createLiveUi(app) {
         resetLivePanels,
         get resolveLabelTemplate() { return resolveLabelTemplate; },
         startStepCounter,
+        /** A run that finished: keeps how many scans it did, for the next run of its workflow. */
+        rememberRun(payload) {
+            if (runWorkflowKey) rememberLastRunScans(runWorkflowKey, scansRunOf(payload));
+        },
     };
 }
