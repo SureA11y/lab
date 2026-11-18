@@ -131,6 +131,20 @@
     }
 
     /**
+     * The scan count a run is expected to do: the one the person gave if it is
+     * a usable count, else the one the workflow is certain to run, else null.
+     * The person's always wins, since they may know a branch hardly ever runs.
+     * `plan` is what planWorkflowSteps returns.
+     */
+    function effectiveExpectedScans({ expectedScans = null, plan = null, type = 'a11yScan' } = {}) {
+        const given = typeof expectedScans === 'string' && /^\s*\d+\s*$/.test(expectedScans)
+            ? Number(expectedScans)
+            : expectedScans;
+        if (isCount(given)) return given;
+        return exactScanCount(plan, type);
+    }
+
+    /**
      * The run's own time per scan, in ms, or null before any scan finished.
      *
      * `completedAtMs` are the active-clock times (ms since the run started,
@@ -353,6 +367,18 @@
         return { state: 'unknown', remainingMs: null, rangeMs: null, priorRuns: prior ? prior.runs : 0 };
     }
 
+    /** Where an estimate comes from, in words, for a tooltip or a screen reader. */
+    function describeBasis(estimate) {
+        if (!estimate) return '';
+        const runs = estimate.priorRuns > 0
+            ? `${estimate.priorRuns} finished run${estimate.priorRuns === 1 ? '' : 's'} of this workflow`
+            : '';
+        if (estimate.basis === BASIS.OWN) return 'From how long the scans of this run have taken.';
+        if (estimate.basis === BASIS.PRIOR) return `From ${runs}: this run has not done a scan yet.`;
+        if (estimate.basis === BASIS.BLEND) return `From how long the scans of this run have taken, with ${runs}.`;
+        return '';
+    }
+
     /**
      * A time left in words: "under a minute", "about 6 min", "about 1 h 25 min".
      * Rounded on purpose, so the text does not change every second.
@@ -388,6 +414,8 @@
         MIN_OWN_SCANS,
         MIN_PRIOR_RUNS,
         exactScanCount,
+        effectiveExpectedScans,
+        describeBasis,
         ownPace,
         priorFromRuns,
         estimateRun,

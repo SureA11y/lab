@@ -39,7 +39,7 @@ export function createLiveUi(app) {
      * in index.html); if it is missing the run proceeds without a step counter
      * rather than failing.
      */
-    function startStepCounter(actions, customSteps) {
+    function startStepCounter(actions, customSteps, {expectedScans = null, estimate = true} = {}) {
         const api = globalThis.A11Y_WORKFLOW_STEP_COUNTER;
         if (!api || typeof api.createStepCounter !== 'function') {
             app.groupingUi.liveStepState.counter = null;
@@ -49,6 +49,14 @@ export function createLiveUi(app) {
         try {
             app.groupingUi.liveStepState.counter = api.createStepCounter({actions, customSteps});
             liveTotals.setSteps(app.groupingUi.liveStepState.counter.snapshot());
+            // The scans it is expected to do: the one the run gives, else the one
+            // its workflow is certain to run. A dry run takes no scans, so it has none.
+            const timing = globalThis.A11Y_SCAN_TIME_ESTIMATE;
+            liveTotals.setExpected({
+                expectedScans: estimate && timing
+                    ? timing.effectiveExpectedScans({expectedScans, plan: app.groupingUi.liveStepState.counter.plan})
+                    : null
+            });
         } catch {
             // A workflow the planner cannot walk still deserves to run.
             app.groupingUi.liveStepState.counter = null;

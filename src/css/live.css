@@ -423,6 +423,19 @@ html.has-floating-totals body {
 
 .live-totals-steps-now[hidden] { display: none; }
 
+/* Scans done and the time left: the same one line as "Now:", above it. */
+.live-totals-steps-eta {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-main);
+}
+
+.live-totals-steps-eta[hidden] { display: none; }
+
 /* ---- disclosures and their detail tables ------------------------------
    One control, used twice: "by type" under the step bar and "by tag" under
    the scan tallies. Each sits directly beneath the numbers it breaks down and
