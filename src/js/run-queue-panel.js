@@ -665,23 +665,30 @@ function scansCell(doc, item) {
 // there, so the clock keeps going while the server is too busy to answer
 // (building and saving a long run's result holds it for a while). Every answer
 // puts the server's figure back; a finished row shows the server's duration.
-// A run's estimated time left (queue-estimate.js): "~6 min", the time and
-// nothing else; its tooltip says where the estimate comes from. Empty for a run
-// that has finished or has nothing to go on. Not a live region: it is read in
-// the row.
-function leftCell(doc, estimate) {
+// A run's time, and under it, small like the scans column's notes, its
+// estimated time left (queue-estimate.js): "~6 min left", with where the
+// estimate comes from in its tooltip. A run that has finished or has nothing to
+// go on has only its time. The clock of a running row (data-live-elapsed) is
+// its own element, so the note is not rewritten as it ticks.
+function leftNote(doc, estimate) {
     const left = describeLeft(estimate);
-    return el(doc, 'td', { className: 'queue-num queue-left', title: left.title || null }, left.text);
+    if (!left.text) return null;
+    // "~6 min" reads as a time left; "finishing" and "over" say it themselves.
+    const text = /^[~<]/.test(left.text) ? `${left.text} left` : left.text;
+    return el(doc, 'span', { className: 'queue-note queue-left', title: left.title || null, text });
 }
 
-function durationCell(doc, item, duration) {
+function durationCell(doc, item, duration, left = null) {
     const live = (item.status === 'running' || item.status === 'cancelling')
         && !Number.isFinite(item.durationMs) && Number.isFinite(item.elapsedMs);
-    return el(doc, 'td', {
-        className: 'queue-num',
-        text: formatDuration(duration),
-        ...(live ? { 'data-live-elapsed': String(item.elapsedMs) } : {}),
-    });
+    const attrs = live ? { 'data-live-elapsed': String(item.elapsedMs) } : {};
+    const note = leftNote(doc, left);
+    if (!note) return el(doc, 'td', { className: 'queue-num', text: formatDuration(duration), ...attrs });
+    const time = formatDuration(duration);
+    return el(doc, 'td', { className: 'queue-num' }, [
+        time || live ? el(doc, 'span', { text: time, ...attrs }) : null,
+        note,
+    ]);
 }
 
 function nameCell(doc, item, { rows = 1, versionsOpen = false } = {}) {
@@ -759,8 +766,7 @@ function countsCells(doc, row, { was = null, left = null } = {}) {
             : findingsCell(doc, row, findings, 'cantTell', 'queue-num queue-cantTell'),
         was ? withWas(doc, findingsCell(doc, row, findings, 'pass', 'queue-num queue-pass'), n(findings, 'pass'), n(before, 'pass'), (a, b) => a > b)
             : findingsCell(doc, row, findings, 'pass', 'queue-num queue-pass'),
-        durationCell(doc, row, duration),
-        leftCell(doc, left),
+        durationCell(doc, row, duration, left),
     ];
 }
 
@@ -818,7 +824,7 @@ function choiceRow(doc, item, active, candidate) {
         }, [label, el(doc, 'span', { className: 'visually-hidden', text: ` for ${item.name}${keep === suggest ? ' (suggested)' : ''}` })]));
     });
     return el(doc, 'tr', { className: `queue-line queue-line--choice${warn ? ' queue-line--bad' : ''}`, 'data-line-of': item.id }, [
-        el(doc, 'td', { colspan: '8' }, el(doc, 'div', { className: 'queue-choice' }, [
+        el(doc, 'td', { colspan: '7' }, el(doc, 'div', { className: 'queue-choice' }, [
             el(doc, 'p', {}, [
                 el(doc, warn ? 'span' : 'strong', { className: warn ? 'queue-choice-warn' : null, text: warn || 'Run again finished:' }),
                 ` ${text}`,
@@ -942,11 +948,11 @@ function itemsFooterRow(doc, session) {
     const shown = (session.items || []).length;
     const total = Number.isFinite(session.itemsTotal) ? session.itemsTotal : shown;
     if (session.itemsLoading && !shown) {
-        return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '9', text: 'Loading the runs…' }));
+        return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '8', text: 'Loading the runs…' }));
     }
     if (shown >= total) return null;
     const next = Math.min(ITEMS_PAGE, total - shown);
-    return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '9' }, [
+    return el(doc, 'tr', { className: 'queue-items-more' }, el(doc, 'td', { colspan: '8' }, [
         el(doc, 'span', { className: 'queue-note', text: `Showing ${formatCount(shown)} of ${formatCount(total)} runs. ` }),
         el(doc, 'button', {
             type: 'button',
@@ -1021,7 +1027,7 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
         el(doc, 'caption', { className: 'visually-hidden', text: `Runs in ${title}` }),
         // Fixed widths, so a count or a time growing as a run goes never moves
         // the columns; the name takes what is left.
-        el(doc, 'colgroup', {}, ['name', 'status', 'scans', 'fail', 'canttell', 'pass', 'duration', 'left', 'actions']
+        el(doc, 'colgroup', {}, ['name', 'status', 'scans', 'fail', 'canttell', 'pass', 'duration', 'actions']
             .map((c) => el(doc, 'col', { className: `queue-col-${c}` }))),
         el(doc, 'thead', {}, el(doc, 'tr', {}, [
             el(doc, 'th', { scope: 'col', text: 'Name' }),
@@ -1031,7 +1037,6 @@ function sessionSection(doc, session, { expanded = true, queueBusy = false, heal
             el(doc, 'th', { scope: 'col', className: 'queue-num', text: 'Can’t tell' }),
             el(doc, 'th', { scope: 'col', className: 'queue-num', text: 'Passing' }),
             el(doc, 'th', { scope: 'col', className: 'queue-num', text: 'Duration' }),
-            el(doc, 'th', { scope: 'col', className: 'queue-num', text: 'Est. left' }),
             el(doc, 'th', { scope: 'col', text: 'Actions' }),
         ])),
         el(doc, 'tbody', {}, [
