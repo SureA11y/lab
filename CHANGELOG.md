@@ -591,9 +591,9 @@ The first public release.
 
 - **The progress line's time left with no number given**: with no
   `expectedScans`, a run takes the number of scans from the last run of the
-  same scenario, when it ran the same steps and reached all of them, and, as
-  it goes, from its loops (`60 of ~205 scans · about 9 min left`). See *Expected
-  scans* above.
+  same scenario that ran the same steps whole (a run that failed or stopped
+  early is passed over, up to five runs back), and, as it goes, from its loops
+  (`60 of ~205 scans · about 9 min left`). See *Expected scans* above.
 
 - **`src/cli/run-workflow.js`** runs a workflow, a configuration or a batch
   with no window: for a nightly run that compares itself with the last one,
