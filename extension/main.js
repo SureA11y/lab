@@ -278,6 +278,8 @@ function initUi() {
     let currentScreenshotButtons = [];
 
     let lastScreenshotDataUrl = null;
+    // The session scans the results panel shows now (by scanId).
+    let shownScanIds = [];
 
     const CUSTOM_CSS_STYLE_ID = '__a11y_ext_custom_css__';
     let customCssInjected = false;
@@ -1409,6 +1411,7 @@ function initUi() {
             const count = await scanSession.add(scanObj);
 
             out.textContent = '';
+            shownScanIds = [scanObj.scanId];
             clearScreenshotDialogItems();
             ISSUES_TABLE.renderInto(out, scanObj, { enableDialogs: true });
 
@@ -1489,7 +1492,8 @@ function initUi() {
 
     // Scans' results, as the lab reports them: what they share, then each
     // scan with its page's picture and its findings.
-    function renderScansView(given) {
+    function renderScansView(given, shownIds) {
+        shownScanIds = Array.isArray(shownIds) ? shownIds : [];
         const payload = buildSessionPayload(given);
         const scans = Array.isArray(payload.scans) ? payload.scans : given;
         out.textContent = '';
@@ -1671,7 +1675,7 @@ function initUi() {
         const record = records.find((r) => r.scanId === li.dataset.scanId);
         if (!record) return;
         if (btn.dataset.action === 'show') {
-            renderScansView([record.scan]);
+            renderScansView([record.scan], [record.scanId]);
             setStatus(`Showing ${scanTitleOf(record.scan)}.`);
             return;
         }
@@ -1679,6 +1683,19 @@ function initUi() {
         // list's heading, so it is not lost with the button.
         const index = records.indexOf(record);
         await scanSession.remove(record.scanId);
+        // The scan on display went with it: clear the results and picture, or
+        // keep what is shown when it was another one (Show all: the rest stay).
+        if (shownScanIds.includes(record.scanId)) {
+            const rest = globalThis.A11Y_SCAN_SESSION.shownAfterRemoval(shownScanIds, record.scanId);
+            const remaining = records.filter((r) => rest.includes(r.scanId));
+            if (remaining.length) renderScansView(remaining.map((r) => r.scan), rest);
+            else {
+                shownScanIds = [];
+                out.textContent = '';
+                clearScreenshotUi();
+                clearScreenshotDialogItems();
+            }
+        }
         const left = await renderSessionList();
         const next = left[index] || left[index - 1];
         const focusTo = next
@@ -1691,7 +1708,7 @@ function initUi() {
     sessionShowAllBtn?.addEventListener('click', async () => {
         const records = await scanSession.list();
         if (!records.length) return;
-        renderScansView(records.map((r) => r.scan));
+        renderScansView(records.map((r) => r.scan), records.map((r) => r.scanId));
         setStatus(`Showing all ${records.length} scans.`);
     });
 
@@ -1745,6 +1762,7 @@ function initUi() {
         await scanSession.clear();
         hideNewSessionConfirm();
         out.textContent = '';
+        shownScanIds = [];
         clearScreenshotUi();
         labelInput.value = '';
         setStatus(note);
