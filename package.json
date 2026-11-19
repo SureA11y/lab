@@ -71,17 +71,17 @@
     "terser": "^5.49.1"
   },
   "dependencies": {
-    "@surea11y/core": "^1.16.1",
-    "@surea11y/pack-en301549": "^1.2.0",
-    "@surea11y/pack-rgaa": "^1.0.0",
-    "@surea11y/pack-wai-aria": "^1.0.2",
+    "@surea11y/core": "^1.17.0",
+    "@surea11y/pack-en301549": "^1.4.0",
+    "@surea11y/pack-rgaa": "^1.2.1",
+    "@surea11y/pack-wai-aria": "^1.1.0",
     "@surea11y/puppeteer": "^1.6.0",
     "archiver": "^8.0.0",
     "cheerio": "^1.2.0",
     "cross-env": "^10.1.0",
     "express": "^5.3.0",
     "jszip": "^3.10.1",
-    "puppeteer": "^25.5.0",
+    "puppeteer": "^25.17.0",
     "sharp": "^0.35.2"
   },
   "allowScripts": {
