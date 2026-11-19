@@ -695,6 +695,7 @@ input:focus, textarea:focus, select:focus{
 .resultsRow {
     display: flex;
     flex-wrap: wrap;
+    margin-top: var(--space-3);
     gap: var(--space-3);
     align-items: flex-start;
 }

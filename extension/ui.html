@@ -141,16 +141,6 @@
         </div>
     </div>
 
-    <!-- The session's scans: each to show again or remove. -->
-    <section class="session" aria-labelledby="sessionTitle">
-        <div class="session-head">
-            <h2 id="sessionTitle" class="session-title">This session <span id="sessionCount" class="session-count"></span></h2>
-            <button id="sessionShowAll" type="button" class="btn btn-small" hidden>Show all</button>
-        </div>
-        <p id="sessionEmpty" class="session-empty">No pages scanned yet. Scan a page to start a session.</p>
-        <ol id="sessionList" class="session-list" hidden></ol>
-    </section>
-
     <div class="resultsRow">
         <figure id="shotWrap" class="shotWrap" hidden>
             <div id="shotBox" class="shotBox">
@@ -161,4 +151,16 @@
 
         <pre id="out" class="out" data-scroll-name="Scan output"></pre>
     </div>
+
+    <!-- The session's scans: each to show again or remove. Under the results,
+         so the newest scan's picture and findings come first however many
+         scans there are. -->
+    <section class="session" aria-labelledby="sessionTitle">
+        <div class="session-head">
+            <h2 id="sessionTitle" class="session-title">This session <span id="sessionCount" class="session-count"></span></h2>
+            <button id="sessionShowAll" type="button" class="btn btn-small" hidden>Show all</button>
+        </div>
+        <p id="sessionEmpty" class="session-empty">No pages scanned yet. Scan a page to start a session.</p>
+        <ol id="sessionList" class="session-list" hidden></ol>
+    </section>
 </div>
