@@ -1196,6 +1196,9 @@ function initUi() {
 
     async function runScanFromUi() {
         out.textContent = '';
+        // The last scan's picture goes with its results, not when the new
+        // one arrives.
+        clearScreenshotUi();
         // "Don't check WCAG" and no standard: nothing to check against, and
         // the scan would check WCAG 2.2 AA after all.
         if (!selectedProfiles().length) {
