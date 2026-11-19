@@ -213,8 +213,9 @@ how many are done and the estimated time left (`2 of 10 scans · about 8 min lef
 at the pace the scans have gone so far. The number comes from, in this order:
 
 - the spec's `expectedScans`;
-- with none, the last run of the same scenario beside this one, when it ran the
-  same steps and reached all of them;
+- with none, the last run of the same scenario beside this one that ran the same
+  steps whole, none of them failing (a run that failed or stopped early is passed
+  over for the one before it, up to five runs back);
 - with none, the workflow itself, when it runs the same number of scans on every path.
 
 As the run goes, its loops (a Repeat or a For each element, whose size the engine
