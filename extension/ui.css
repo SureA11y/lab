@@ -1715,7 +1715,7 @@ body .dsp, body .dsp-tip, body .a11y-margins, body .scan-notices, body .scan-not
    occurrences on the first line, what it is below. The header row stays
    for screen readers, and the roles in the markup keep the cells a table to
    them. The bar that marks a row runs down the card. */
-@container out (max-width: 600px) {
+@container out (max-width: 440px) {
     .issues-table,
     .issues-table tbody,
     .issues-table tbody td { display: block; }
@@ -1756,7 +1756,7 @@ body .dsp, body .dsp-tip, body .a11y-margins, body .scan-notices, body .scan-not
 }
 
 /* The OS drops box-shadows: the card's bar is its left border. */
-@container out (max-width: 600px) {
+@container out (max-width: 440px) {
     @media (forced-colors: active) {
         .issues-table tbody tr.fail,
         .issues-table tbody tr.cantTell { border-left: 4px solid CanvasText; }
