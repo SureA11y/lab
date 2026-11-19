@@ -152,7 +152,16 @@
         };
     }
 
-    const api = { createScanSession, memoryBackend, indexedDbBackend, DB_NAME, CHANNEL };
+    /**
+     * The scans still on display once `removedId` is removed from the session:
+     * `shownIds` without it. An empty result means the results panel has
+     * nothing left to show and must clear.
+     */
+    function shownAfterRemoval(shownIds, removedId) {
+        return (Array.isArray(shownIds) ? shownIds : []).filter((id) => id !== removedId);
+    }
+
+    const api = { createScanSession, memoryBackend, indexedDbBackend, shownAfterRemoval, DB_NAME, CHANNEL };
     global.A11Y_SCAN_SESSION = api;
     if (typeof module === 'object' && module && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

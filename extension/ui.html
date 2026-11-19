@@ -27,12 +27,24 @@
             </div>
 
             <button data-selector="label" data-selector-type="getText" class="pickerBtn btn" type="button">picker</button>
+        </div>
 
+        <div class="advanced">
+            <button type="button"
+                    id="advancedToggle"
+                    class="legend-toggle"
+                    aria-expanded="false"
+                    aria-controls="advancedContent">
+                <span class="legend-toggle-label">Advanced options</span>
+                <span class="legend-toggle-badge" id="advancedBadge" hidden></span>
+            </button>
+
+            <div id="advancedContent" class="advanced-content disclosure-content" role="region" aria-label="Advanced options" hidden>
             <!-- What the scan checks against: one WCAG level (or none), and any
                  standards, as the lab's scan step offers them. The standards
                  of the packs the extension was built with are added at start.
-                 Folded, as Advanced options are: its toggle says what the
-                 scan checks ("WCAG 2.2 AA"), so the choice is seen closed. -->
+                 Inside Advanced options, folded as they are: its toggle says what
+                 the scan checks ("WCAG 2.2 AA") once those are opened. -->
             <div class="profiles-disclosure">
                 <button type="button"
                         id="profileToggle"
@@ -64,19 +76,7 @@
                     </fieldset>
                 </div>
             </div>
-        </div>
 
-        <div class="advanced">
-            <button type="button"
-                    id="advancedToggle"
-                    class="legend-toggle"
-                    aria-expanded="false"
-                    aria-controls="advancedContent">
-                <span class="legend-toggle-label">Advanced options</span>
-                <span class="legend-toggle-badge" id="advancedBadge" hidden></span>
-            </button>
-
-            <div id="advancedContent" class="advanced-content disclosure-content" role="region" aria-label="Advanced options" hidden>
             <div class="field">
                 <label class="label" for="exclude">Exclude selectors (optional, comma-separated)</label>
                 <div class="row-input-button">

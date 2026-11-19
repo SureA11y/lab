@@ -8,7 +8,7 @@
 const {test, describe} = require('node:test');
 const assert = require('node:assert/strict');
 
-const {createScanSession, memoryBackend} = require('./scan-session.js');
+const {createScanSession, memoryBackend, shownAfterRemoval} = require('./scan-session.js');
 
 function sessionAt(start = 1000) {
     let t = start;
@@ -90,5 +90,20 @@ describe('what a new session would lose', () => {
         await s.add(scan('a'));
         await s.clear();
         assert.equal(await s.unsharedCount(), 0);
+    });
+});
+
+describe('what stays on display when a scan is removed', () => {
+    test('the shown scan removed: nothing is left, so the panel clears', () => {
+        assert.deepEqual(shownAfterRemoval(['a'], 'a'), []);
+    });
+    test('another scan removed: the shown one stays', () => {
+        assert.deepEqual(shownAfterRemoval(['a'], 'b'), ['a']);
+    });
+    test('one of several shown (Show all) removed: the rest stay', () => {
+        assert.deepEqual(shownAfterRemoval(['a', 'b', 'c'], 'b'), ['a', 'c']);
+    });
+    test('nothing shown: nothing to clear', () => {
+        assert.deepEqual(shownAfterRemoval(null, 'a'), []);
     });
 });
