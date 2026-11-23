@@ -278,73 +278,6 @@
       ]
     },
     {
-      "id": "1.4.10",
-      "title": "Reflow",
-      "level": "AA",
-      "facets": [
-        {
-          "id": "reflow-320",
-          "label": "At 320 CSS pixels wide, content needs no scrolling in two directions and nothing is lost",
-          "automation": "manual",
-          "tools": [
-            "devtools",
-            "zoom"
-          ],
-          "steps": [
-            "Set the browser window to 1280 CSS pixels wide and zoom to 400%, which gives a viewport 320 CSS pixels wide. This is closer to what a person who zooms sees than the device toolbar, which can make the page load its mobile version.",
-            "Scroll down through the whole page and check that you never need to scroll sideways to read text or reach a control.",
-            "Check that nothing is cut off, overlaps or is hidden, and that menus, dialogs and forms still work.",
-            "For content that is meant to scroll sideways, such as text written vertically, do the same with the window 256 CSS pixels high and check that you never need to scroll vertically to read it.",
-            "Leave out content that needs two dimensions to be used or understood, such as images, maps, diagrams, video, games, presentations, data tables and interfaces whose toolbars must stay in view. Those parts may scroll in two directions on their own, but the rest of the page must not.",
-            "Note any sticky header, footer or banner that takes up most of the screen at this size and leaves little room to read. It doesn't fail this criterion by itself, but check it under 2.4.11 and record it as a usability issue."
-          ],
-          "passWhen": "At 320 CSS pixels wide the page reads in one column with vertical scrolling only, apart from content that needs two dimensions, and nothing is lost.",
-          "failWhen": "At 320 CSS pixels wide text must be scrolled sideways to be read, or content or controls are cut off or lost, which fails {{requirement}}."
-        }
-      ]
-    },
-    {
-      "id": "1.4.11",
-      "title": "Non-text Contrast",
-      "level": "AA",
-      "facets": [
-        {
-          "id": "ui-component-contrast",
-          "label": "The parts of a control that show it is there and its state have a contrast of at least 3:1",
-          "automation": "manual",
-          "tools": [
-            "devtools",
-            "keyboard"
-          ],
-          "steps": [
-            "Find the page's controls whose outline or shape you need to see to find them: text fields, check boxes, radio buttons, toggles, buttons without a filled background, sliders.",
-            "Measure the colour of the edge or shape that shows each one against the colour next to it, with the developer tools' colour picker or a colour contrast checker.",
-            "Do the same for what shows each control's state: a check mark, the selected tab, the focus indicator as you press Tab.",
-            "Compare each indicator with the colours next to it, not with the control's other states. A button that changes from one blue to another on hover doesn't need 3:1 between the two blues, but the edge or fill that shows the button is there does need 3:1 against its surroundings, unless its text label alone identifies it.",
-            "Leave out controls the browser draws without the page's styling, disabled controls, and controls whose presence is shown well enough by their text, such as a link or a button that is only text."
-          ],
-          "passWhen": "What shows each control and its state has a contrast of at least 3:1 with what is next to it.",
-          "failWhen": "A field border, a check box, a toggle's state or a focus indicator has less than 3:1 contrast with what is next to it, so people with low vision can't find it or tell its state, which fails {{requirement}}."
-        },
-        {
-          "id": "graphics-contrast",
-          "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
-          "automation": "manual",
-          "tools": [
-            "devtools"
-          ],
-          "steps": [
-            "Find the graphics that carry information: icons without text, charts, diagrams, maps, infographics.",
-            "Note the parts you need to understand each one: an icon's shape, a chart's lines, bars and slices, the arrows in a diagram.",
-            "Measure each part against the colours next to it with a colour contrast checker.",
-            "Leave out a part whose information is also given in text next to it, such as values labelled on a chart, and logos."
-          ],
-          "passWhen": "Every part of a graphic needed to understand it has a contrast of at least 3:1 with what is next to it, or its information is also given as text.",
-          "failWhen": "A part of a graphic needed to understand it, such as a chart's line or an icon, has less than 3:1 contrast, which fails {{requirement}}."
-        }
-      ]
-    },
-    {
       "id": "1.4.13",
       "title": "Content on Hover or Focus",
       "level": "AA",
@@ -625,76 +558,6 @@
       ]
     },
     {
-      "id": "2.4.11",
-      "title": "Focus Not Obscured (Minimum)",
-      "level": "AA",
-      "facets": [
-        {
-          "id": "focus-not-obscured",
-          "label": "An element that receives focus is not entirely hidden by content the page puts over it",
-          "automation": "manual",
-          "tools": [
-            "keyboard"
-          ],
-          "steps": [
-            "Note what the page draws over its content: a sticky header or footer, a cookie banner, a chat button, a non-modal dialog.",
-            "Reload the page and press Tab through the whole page, letting the browser scroll as it moves focus.",
-            "At each stop, check that at least part of the focused element can be seen, not covered entirely by what the page draws over it.",
-            "Where something covers it, check whether you can reveal the focused element without moving focus, for example by closing a cookie banner with Escape. Content that the user opened, such as a chat panel, doesn't fail this criterion if it can be dismissed that way.",
-            "Repeat the pass with the page zoomed to 200%, where sticky headers and footers take up more of the screen."
-          ],
-          "passWhen": "Every focused element is at least partly visible, or what covers it can be dismissed without moving focus.",
-          "failWhen": "A focused element is entirely hidden by a sticky header, a banner or other content the page puts over it, which fails {{requirement}}."
-        }
-      ]
-    },
-    {
-      "id": "2.4.12",
-      "title": "Focus Not Obscured (Enhanced)",
-      "level": "AAA",
-      "facets": [
-        {
-          "id": "focus-fully-visible",
-          "label": "No part of an element that receives focus is hidden by content the page puts over it",
-          "automation": "manual",
-          "tools": [
-            "keyboard"
-          ],
-          "steps": [
-            "Note what the page draws over its content: sticky headers and footers, banners, chat buttons.",
-            "Press Tab through the whole page, scrolling as the browser does.",
-            "At each stop, check that the whole focused element can be seen, not even partly covered."
-          ],
-          "passWhen": "Every focused element is fully visible.",
-          "failWhen": "Part of a focused element is hidden by a sticky header, a banner or other content, which fails {{requirement}}."
-        }
-      ]
-    },
-    {
-      "id": "2.4.13",
-      "title": "Focus Appearance",
-      "level": "AAA",
-      "facets": [
-        {
-          "id": "focus-appearance",
-          "label": "The focus indicator is at least as large as a 2 CSS pixel outline around the element and changes contrast by at least 3:1",
-          "automation": "manual",
-          "tools": [
-            "keyboard",
-            "devtools"
-          ],
-          "steps": [
-            "Press Tab through the page and look at the focus indicator of each kind of control.",
-            "Check that it is at least as large as a 2 CSS pixel thick line around the element's edge, as an outline of 2 pixels is.",
-            "Compare the indicator's pixels with the same pixels unfocused, with a colour contrast checker: the change must be at least 3:1.",
-            "Leave out indicators the browser draws, unstyled, and elements whose look the page doesn't change."
-          ],
-          "passWhen": "Every focus indicator is at least as large as a 2 pixel outline and changes contrast by at least 3:1.",
-          "failWhen": "A focus indicator is too thin or too faint, such as a 1 pixel light grey outline, which fails {{requirement}}."
-        }
-      ]
-    },
-    {
       "id": "2.5.1",
       "title": "Pointer Gestures",
       "level": "A",
@@ -757,28 +620,6 @@
           ],
           "passWhen": "The page uses no device motion, or each motion feature has a control that does the same and can be turned off.",
           "failWhen": "A feature can only be used by moving the device, or its response to motion can't be turned off, which fails {{requirement}}."
-        }
-      ]
-    },
-    {
-      "id": "2.5.5",
-      "title": "Target Size (Enhanced)",
-      "level": "AAA",
-      "facets": [
-        {
-          "id": "target-size-enhanced",
-          "label": "Pointer targets are at least 44 by 44 CSS pixels",
-          "automation": "manual",
-          "tools": [
-            "devtools"
-          ],
-          "steps": [
-            "Find the page's controls and links you tap or click.",
-            "Read the size of each in the developer tools' box model: check it is at least 44 by 44 CSS pixels.",
-            "Leave out links in a sentence or paragraph, controls the browser draws unstyled, targets with a 44-pixel equivalent on the page, and those whose size is essential."
-          ],
-          "passWhen": "Every target is at least 44 by 44 CSS pixels, or is an exception.",
-          "failWhen": "A target is smaller than 44 by 44 CSS pixels with no exception that applies, which fails {{requirement}}."
         }
       ]
     },

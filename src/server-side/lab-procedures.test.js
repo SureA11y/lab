@@ -100,6 +100,27 @@ const real = () => {
     return lab === core ? null : { core, lab };
 };
 
+test('the lab gives steps only where core gives none', (t) => {
+    // Core's text wins where it has a facet's steps, so a lab facet core
+    // also covers is never shown: core 1.18 took over 1.4.10, 1.4.11,
+    // 2.4.11, 2.4.12, 2.4.13 and 2.5.5 with the rules that check them. Take
+    // such a facet out of src/procedures/wcag.json when core covers it.
+    const path = require('path');
+    let en;
+    try {
+        en = require(path.join(path.dirname(require.resolve('@surea11y/core/package.json')), 'src', 'i18n', 'procedures', 'en.json'));
+    } catch {
+        return t.skip('the installed core has no procedures dictionary');
+    }
+    const both = [];
+    for (const c of WCAG.criteria) {
+        for (const f of c.facets) {
+            if (Object.keys(en).some((k) => k.startsWith(`wcag_${c.id}_${f.id}_step`))) both.push(`${c.id} ${f.id}`);
+        }
+    }
+    assert.deepEqual(both, [], 'facets core now gives steps for');
+});
+
 test('with a core that reads them, every WCAG criterion has a procedure, the lab\'s with their tools', (t) => {
     const found = real();
     if (!found) return t.skip('the installed core can\'t read the lab\'s procedures');
