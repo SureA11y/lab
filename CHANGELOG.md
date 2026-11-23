@@ -9,6 +9,15 @@ The first public release.
 
 ### The lab
 
+- **surea11y core 1.18**, in the lab and the extension, with its packs
+  (EN 301 549 1.5.0, RGAA 1.3.0, WAI-ARIA 1.1.1) and the Puppeteer binding
+  1.7.0 (the lab now needs surea11y core 1.18.1). New rules ask about focus
+  hidden behind sticky boxes (2.4.11, 2.4.12), reflow and resized text
+  (1.4.10, 1.4.4), target size enhanced (2.5.5) and more; a few findings that
+  failed now ask instead, such as a video with a poster and no name.
+  Messages name the root cause. The testing guide's steps for 1.4.10, 1.4.11,
+  2.4.11, 2.4.12, 2.4.13 and 2.5.5 are now core's own, which every surea11y
+  tool shows; the lab keeps its steps for the 45 criteria core gives none.
 - **A better time left in loops**: a run's time left is now the scans it has
   left at the pace its scans have gone, wherever the count comes from. In a
   loop, the scans each item took, the items to come and the steps after the

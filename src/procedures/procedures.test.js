@@ -28,9 +28,9 @@ function assertFacet(f, where) {
 }
 
 describe('WCAG 2.2', () => {
-    test('51 criteria, each once, in number order, with their facets', () => {
+    test('45 criteria, each once, in number order, with their facets', () => {
         const ids = WCAG.criteria.map((c) => c.id);
-        assert.equal(ids.length, 51);
+        assert.equal(ids.length, 45);
         assert.equal(new Set(ids).size, ids.length);
         const byNumber = (a, b) => {
             const pa = a.split('.').map(Number);
@@ -38,7 +38,7 @@ describe('WCAG 2.2', () => {
             return pa[0] - pb[0] || pa[1] - pb[1] || pa[2] - pb[2];
         };
         assert.deepEqual([...ids].sort(byNumber), ids);
-        assert.equal(WCAG.criteria.reduce((n, c) => n + c.facets.length, 0), 54);
+        assert.equal(WCAG.criteria.reduce((n, c) => n + c.facets.length, 0), 47);
     });
 
     test('every facet is a whole procedure that names the requirement it fails', () => {
