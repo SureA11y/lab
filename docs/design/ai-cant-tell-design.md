@@ -412,6 +412,31 @@ itself and we do not fine-tune; a person's corrections are fed back as text.
    lesson cannot silently make the AI worse. Lessons are data, never
    instructions to follow beyond the question, like page text.
 
+## Status when work stopped (2026-11-24)
+
+Everything built is committed and pushed on `design-ai-cant-tell` (latest
+code commit: the conformance link). All tests pass with `node --test`.
+
+**Open: saving the conformance remark was not verified end to end.** The
+"Add to the remarks" button writes the text into the criterion's remarks
+field, which the Conformance view saves into `payload.conformanceReview`
+(`criteria["1.1.1"].remarks`) exactly as a typed remark; that was seen working
+on screen, but not through a real save and reload. What to do: in the lab app
+load a report that has AI answers, answer a question as fail with a reason in
+"Review AI answers", open "Review conformance", press "Add to the remarks" on
+the criterion, close, download the report, load the downloaded zip again and
+open "Review conformance": the remark should be there. Capturing the download
+in the page works by wrapping `URL.createObjectURL` before pressing download,
+then putting the captured blob in `#resultsFiles`. A data-level check
+(`prepareDataForReport`, compact, `upgradeReport` keep `conformanceReview`) is
+the cheaper first step; `conformanceReview` is already in
+`requiredProperties` in `src/js/report-data.js`.
+
+**Next, in order:** that check; a person labels cases with reasons and exports
+the CSV and `ai-lessons.json`; run the pass with a real `ANTHROPIC_API_KEY` and
+`ai: { lessons: "..." }`; a script to re-run labelled cases and compare
+agreement before accepting lessons; the extension's renderer.
+
 ## Handoff: state at 2026-11-24 and how to pick it up cold
 
 Read this section first if you have no other context. Everything below is on
