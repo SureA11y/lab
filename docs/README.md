@@ -20,6 +20,10 @@
   shows. [The metrics](a11y-metrics-reference.html): what each score means and
   how it is computed.
 - [Step reference](step-definitions.html): every workflow step and its fields.
+- [AI answers](ai-answers.md) (experimental): a model answers the questions a
+  scan leaves to a person, and you review its answers; every option of the
+  scan step's AI answers field, the server's settings, and how far to trust
+  it.
 
 ## Run without the app
 

@@ -563,6 +563,15 @@ without `focus`; and in the app, a run with `{ "focus": true }` against a
 stand-in model: focus visible and focus order each a card with the 9 stops
 and their pictures.
 
+**Run with an AAA profile (2026-11-24).** On the demo shop the scanner decides
+2.4.11 and 2.4.12 itself (pass) and finds 2.4.13 not applicable, so the AI is
+not asked them. On a test page with links whose outline is removed and a fixed
+chat box, it left 2.4.12 as can't tell (asked; the walk found the last link
+entirely under the chat box) but marked 2.4.11 as passed, though that link is
+entirely hidden while focused: the walk saw what the scanner's own check did
+not, but the AI only answers what the scanner leaves open. 2.4.13 stayed "not
+applicable" there too: its measurement has run in the browser tests only.
+
 ## Giving the lab a Claude API key (built 2026-11-24)
 
 Two ways, both on the computer the lab runs on, neither saved anywhere:

@@ -16,6 +16,12 @@ Read by the server and the command-line runner alike.
 | `PUPPETEER_EXECUTABLE_PATH` | The browser to scan with, instead of the one installed with the lab |
 | `A11Y_TZ` | The time zone pages see while scanned (default: the machine's own). Set it, for instance `Europe/Madrid`, for results that don't change with where the run happens |
 | `A11Y_ACCEPT_LANGUAGE` | The `Accept-Language` pages are asked for (default `en-US,en;q=0.8`) |
+| `ANTHROPIC_API_KEY` | A Claude API key for a scan step's AI answers ([AI answers](ai-answers.md)); one given in the app's Run settings is used first |
+| `A11Y_AI_MODEL` | The Claude model for AI answers (default `claude-sonnet-5-5`) |
+| `A11Y_AI_ENDPOINT`, `A11Y_AI_ENDPOINT_KEY`, `A11Y_AI_ENDPOINT_NAME`, `A11Y_AI_ENDPOINT_PICTURE` | A service of your own that answers instead of the Claude call: its address, its key (sent as a bearer token), the name the report gives it, and `on` to send it the pictures too ([AI answers](ai-answers.md#the-servers-settings)) |
+| `A11Y_AI_ALLOWED_SITES` | The sites AI answers may send questions about, by host, comma-separated (a host includes its subdomains); unset, every site |
+| `A11Y_AI_MASK` | `off` stops masking e-mail addresses, IBANs, card-like and phone-like numbers in what AI answers send (on by default) |
+| `A11Y_AI_PREVIEW` | `on`: AI answers only preview, sending nothing, in every run |
 | `A11Y_ISOLATE_RUNS` | Each scan in a browser context of its own, for reproducible results (default on) |
 | `A11Y_DISABLE_CACHE` | No browser cache while scanning, for reproducible results (default on) |
 | `A11Y_PACKS` | More standard packs for surea11y to load, besides the `@surea11y/pack-*` packages the lab depends on: package names, or paths from the lab's folder, comma-separated ([Standards](#standards)) |

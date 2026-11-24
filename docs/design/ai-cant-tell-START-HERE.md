@@ -4,10 +4,12 @@ Branch: `design-ai-cant-tell` (on origin). No pull request: the work is
 experimental until it is decided to merge it.
 
 Read, in this order:
-1. `ai-cant-tell-design.md`: "Status when work stopped", then "Handoff: state at
+1. `../ai-answers.md`: the user guide (how to use it, every option of the
+   scan step's AI answers field, the server's settings).
+2. `ai-cant-tell-design.md`: "Status when work stopped", then "Handoff: state at
    2026-11-24 and how to pick it up cold", then the rest as needed.
-2. `ai-cant-tell-spike.md`: the earlier results.
-3. `ai-cant-tell-data-and-agents.md`: before turning the AI pass on for a
+3. `ai-cant-tell-spike.md`: the earlier results.
+4. `ai-cant-tell-data-and-agents.md`: before turning the AI pass on for a
    customer's site (what leaves the lab, agents, how to set it up well).
 
 Done: the conformance remark added with "Add to the remarks" saves in the
