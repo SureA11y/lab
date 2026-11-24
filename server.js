@@ -89,6 +89,10 @@ app.use(require("./src/server-side/gzip").gzip());
 // Large: /workflow-import takes a whole report, its screenshots included.
 app.use(express.json({ limit: '200mb' }));
 
+// A Claude API key given to the running lab, kept in memory only, and only
+// from the lab's own page on this computer (ai-answer/runtime-key.js).
+require("./src/server-side/ai-answer/runtime-key").routes(app);
+
 // Static assets
 const publicDir = path.join(__dirname, "public");
 app.use(express.static(publicDir));

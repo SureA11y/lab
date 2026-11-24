@@ -16,6 +16,7 @@ const { collectEvidence, fingerprint, sameFingerprint } = require('./evidence');
 const { resolveProvider, QUESTION_VERSION } = require('./provider');
 const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
 const { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskDeep } = require('./outgoing');
+const { withRuntimeKey } = require('./runtime-key');
 
 const DEFAULTS = { maxCalls: 10, seconds: 60, minConfidence: 0.6 };
 
@@ -165,9 +166,10 @@ async function askOne({ model, entry, finding, occurrence, evidence, lessons = n
  * Runs the pass on `page` for `canonical` (one scan). `shared` is the run's:
  * `{ calls, cache }`, so the budget and the answers span the run's scans.
  * Resolves with a summary, also set on `canonical.ai`; never rejects.
- * `env` is the server's settings (outgoing.js).
+ * `env` is the server's settings (outgoing.js), with a key given to the
+ * running app (runtime-key.js) in place of the environment's.
  */
-async function answerCantTells({ page, canonical, options = {}, shared = {}, provider = null, log = () => {}, env = process.env }) {
+async function answerCantTells({ page, canonical, options = {}, shared = {}, provider = null, log = () => {}, env = withRuntimeKey(process.env) }) {
     const started = Date.now();
     let given = options;
     if (typeof given === 'string') { try { given = JSON.parse(given); } catch { given = {}; } }

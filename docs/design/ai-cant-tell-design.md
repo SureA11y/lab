@@ -467,6 +467,33 @@ does, and how to set it up well. Agents are slower than one model call: raise
 the step's `budget` (`{ calls, seconds }`, default 10 per run and 60 per scan)
 for them.
 
+## Giving the lab a Claude API key (built 2026-11-24)
+
+Two ways, both on the computer the lab runs on, neither saved anywhere:
+
+- **In the app:** Run settings, "AI answers (experimental)", **Claude API key**,
+  then "Use this key". The page sends it once to the lab's own server
+  (`PUT /api/ai/key`, `src/server-side/ai-answer/runtime-key.js`), which keeps
+  it in memory until "Forget the key" or until the lab stops. It is used
+  before one in the environment. The page keeps nothing (the field is
+  emptied, it has no name in the configuration, its typing does not reach the
+  dialog's listeners) and is told only whether a key is set and where it came
+  from. The server takes it only from the lab's own page on the same
+  computer: not from the extension, another allowed origin or another
+  machine. So in a container or on a shared server, where the browser is
+  elsewhere, the field is refused: set `ANTHROPIC_API_KEY` in the server's
+  environment there.
+- **At start:** `ANTHROPIC_API_KEY` in the environment of `node server.js`
+  (PowerShell: `$env:ANTHROPIC_API_KEY = "..."; node server.js`). The command
+  line and `npm run ai:agreement` read it the same way.
+
+Checked in the real app, with the lab pointed at a local stand-in for the
+Claude API (`ANTHROPIC_BASE_URL`): a key typed in the field reached every
+model call of a run (3 questions answered); it was not in the page, the
+browser's storage, the server's log or the run's report. Tests:
+`src/server-side/ai-answer/runtime-key.test.js` (the store, who may set it,
+the routes) and `src/js/ai-key-field.test.js` (the field).
+
 ## Measuring agreement (built 2026-11-24)
 
 `src/cli/ai-agreement.js` (`npm run ai:agreement -- <report> ...`) re-runs the

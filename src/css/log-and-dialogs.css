@@ -567,3 +567,9 @@ a:hover { text-decoration-thickness: 2px; }
 
 /* Run settings' footer: that its settings are kept as they change, and Done. */
 .run-settings-footer .hint { margin: 0; }
+
+/* Run settings: the Claude API key and its buttons, on the field's baseline. */
+.field-inline > .run-ai-key-field { flex: 0 1 26rem; }
+#run-ai-key { display: block; width: 100%; box-sizing: border-box; }
+.field-row.field-inline > .run-ai-key-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 0 1 auto; min-width: 0; }
+.field-row.field-inline .run-ai-key-actions button { width: auto; }

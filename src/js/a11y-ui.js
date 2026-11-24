@@ -1,6 +1,7 @@
 import {createActionsBuilder} from './actions-builder.module.js';
 import {createEl, escapeAttr, escapeHtml, iconButton, indentPrefix, jsonBlob, linkifyUrlsToHtml, safeBaseName, scanTagChipsHtml, svgIcon} from './a11y-ui.utils.js';
 import {setupRunSettings} from './run-settings.js';
+import {setupAiKeyField} from './ai-key-field.js';
 import {setupExpectedScansField} from './expected-scans-field.js';
 import {createConfigIO} from './config-io.js';
 import {createRunSummaryRenderer} from './a11y-ui.run-summary.js';
@@ -324,6 +325,8 @@ function storeActiveMode(mode) {
     const expectedScansInput = $('#run-expected-scans');
     // The run settings' dialog, and a chip beside the URL for each one changed.
     const runSettings = setupRunSettings();
+    // The Claude API key for AI answers, given to the running lab only (ai-key-field.js).
+    setupAiKeyField();
     const retryUntrustedButton = $('#retry-untrusted-certs');
     const languageSelect = $('#run-language');
     const languageOtherField = $('#run-language-other-field');

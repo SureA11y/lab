@@ -308,6 +308,27 @@
                                         <p class="hint" id="run-untrusted-certs-hint">Some sites have a certificate the browser does not trust, such as a test server, or any site on a network that checks its traffic. Refuse untrusted stops the run at such a site and says why. Accept untrusted goes on, but the browser can no longer tell the real site from a fake one: only sign in there on a network you trust.</p>
                                     </div>
                                 </fieldset>
+                                <!-- The key is never part of the configuration: it has no name, its
+                                     typing does not reach the dialog's listeners, and it goes only to
+                                     the lab's own server, which keeps it in memory (ai-key-field.js). -->
+                                <fieldset class="config-group" id="run-ai-key-group">
+                                    <legend>AI answers (experimental)</legend>
+                                    <div class="field-row field-inline">
+                                        <div class="run-ai-key-field">
+                                            <label for="run-ai-key">Claude API key</label>
+                                            <input type="password" id="run-ai-key" autocomplete="off" spellcheck="false"
+                                                   aria-describedby="run-ai-key-status run-ai-key-hint"/>
+                                        </div>
+                                        <div class="run-ai-key-actions">
+                                            <button type="button" class="secondary-button" id="run-ai-key-set">Use this key</button>
+                                            <button type="button" class="secondary-button" id="run-ai-key-forget" hidden>Forget the key</button>
+                                        </div>
+                                    </div>
+                                    <div class="field-row">
+                                        <p class="hint" id="run-ai-key-status" role="status" aria-live="polite"></p>
+                                        <p class="hint" id="run-ai-key-hint">For a scan step's AI answers to the questions it could not decide. The lab keeps the key only while it runs, on this computer: it is never saved, never part of a configuration or a report, and gone when the lab stops.</p>
+                                    </div>
+                                </fieldset>
                             </div>
                             <div class="src-dialog-footer run-settings-footer">
                                 <p class="hint">Settings are kept as you change them, and apply to the next run.</p>

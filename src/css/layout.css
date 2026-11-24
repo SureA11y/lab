@@ -310,7 +310,7 @@ label {
 }
 
 /* Controls */
-:is(input[type="text"], input[type="url"], select, textarea),
+:is(input[type="text"], input[type="url"], input[type="password"], select, textarea),
 .field-row.field-inline button {
     width: 100%;
     padding: 0.5rem 0.65rem;
@@ -356,7 +356,7 @@ textarea {
     opacity: 1;
 }
 
-:is(input[type="text"], input[type="url"], select, textarea):focus {
+:is(input[type="text"], input[type="url"], input[type="password"], select, textarea):focus {
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
     border-color: var(--accent-border);
