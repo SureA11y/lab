@@ -6,7 +6,7 @@
     "AI agents"
   ],
   "purpose": "Generate valid run specs (the workflow files the headless runner takes and other tools exchange) and app configuration files, including custom steps.",
-  "generatedAt": "2026-11-24T19:02:19.671Z",
+  "generatedAt": "2026-11-24T19:36:15.052Z",
   "sourceOfTruth": {
     "actionDefinitionsFile": "src/workflow/action-definitions.js",
     "workflowEngineFile": "src/workflow/workflow-engine.js",
@@ -435,7 +435,7 @@
           "type": "string|object",
           "required": false,
           "label": "AI answers",
-          "description": "Experimental. Have a model answer the \"can't tell\" results it can settle from the page (alt text, page titles, headings, field labels), once the scan is done. The answers sit beside the scan's own outcome, which stays as it is, and carry the model's reasoning. Needs a model, set on the server: a service you run at A11Y_AI_ENDPOINT, which gets each question as data (a model or an agent with its own knowledge), or else a Claude API key: the one given in Run settings while the lab runs, or ANTHROPIC_API_KEY; without one every item stays as it was. The page's content and the element's details are sent to it; its picture only to an endpoint with A11Y_AI_ENDPOINT_PICTURE on. As an object (or the same as JSON text); fields: answer (cantTell), budget ({ calls, seconds }, default 10 and 60), minConfidence (default 0.6), lessons (the path of a lessons file exported from the review of the AI's answers), preview (true: send nothing, and keep each question as it would be sent, to see what would leave). The server decides the sites it may send about (A11Y_AI_ALLOWED_SITES) and masks personal data in what it sends unless A11Y_AI_MASK is off."
+          "description": "Experimental. Have a model answer the \"can't tell\" results it can settle from the page (alt text, page titles, headings, field labels), once the scan is done. The answers sit beside the scan's own outcome, which stays as it is, and carry the model's reasoning. Needs a model, set on the server: a service you run at A11Y_AI_ENDPOINT, which gets each question as data (a model or an agent with its own knowledge), or else a Claude API key: the one given in Run settings while the lab runs, or ANTHROPIC_API_KEY; without one every item stays as it was. The page's content and the element's details are sent to it; its picture only to an endpoint with A11Y_AI_ENDPOINT_PICTURE on. As an object (or the same as JSON text); fields: answer (cantTell), budget ({ calls, seconds }, default 10 and 60), minConfidence (default 0.6), lessons (the path of a lessons file exported from the review of the AI's answers), preview (true: send nothing, and keep each question as it would be sent, to see what would leave), focus (true: also answer focus visible, focus order and focus not obscured, from a walk through the page with Tab: the one part that acts on the page, which it puts back as it was, dropping these answers if it cannot), focusStops (the most Tab presses, default 40). The server decides the sites it may send about (A11Y_AI_ALLOWED_SITES) and masks personal data in what it sends unless A11Y_AI_MASK is off."
         },
         "screenshotView": {
           "type": "boolean",

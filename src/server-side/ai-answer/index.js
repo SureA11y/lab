@@ -15,7 +15,8 @@ const { entryFor, PROMPT_VERSION } = require('./registry');
 const { collectEvidence, fingerprint, sameFingerprint } = require('./evidence');
 const { resolveProvider, QUESTION_VERSION } = require('./provider');
 const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
-const { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskDeep } = require('./outgoing');
+const { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskDeep, withoutPictures } = require('./outgoing');
+const { walkFocus } = require('./focus-walk');
 const { withRuntimeKey } = require('./runtime-key');
 
 const DEFAULTS = { maxCalls: 10, seconds: 60, minConfidence: 0.6 };
@@ -32,8 +33,8 @@ function buildPrompt(entry, occurrence, evidence, lessons = null) {
         how.passWhen ? `Pass when: ${how.passWhen}` : '',
         how.failWhen ? `Fail when: ${how.failWhen}` : '',
         '',
-        // The proof picture is for the person reviewing the answer, not the model.
-        `<evidence>\n${JSON.stringify((({ screenshot, ...given }) => given)(evidence), null, 1)}\n</evidence>`,
+        // The pictures are for the person reviewing the answer, not the model.
+        `<evidence>\n${JSON.stringify(withoutPictures(evidence), null, 1)}\n</evidence>`,
         lessons ? lessonsPrompt(lessons) : '',
         '',
         'Decide from the evidence only. Answer "unsure" whenever it is not enough; do not guess.',
@@ -51,7 +52,7 @@ function buildPrompt(entry, occurrence, evidence, lessons = null) {
 function buildQuestion(entry, finding, occurrence, evidence, lessons = null, page = null) {
     const how = occurrence.howToCheck || {};
     return {
-        check: occurrence.atomicCheckId,
+        check: entry.check || occurrence.atomicCheckId,
         question: entry.question,
         criteria: (finding && finding.wcag && Array.isArray(finding.wcag.sc)) ? finding.wcag.sc : [],
         issue: occurrence.failureSummary || '',
@@ -96,18 +97,24 @@ function normalise(a) {
     return { verdict, confidence: Number.isFinite(confidence) ? confidence : 0, rationale: String(a.rationale || '').slice(0, 600) };
 }
 
-/** The scan's answerable occurrences, in finding order. */
-function candidatesOf(canonical) {
-    const out = [];
+/**
+ * The scan's answerable occurrences: the ones answered by reading the page
+ * first, in finding order, then the page-level focus questions, only when
+ * `focus` is on (they need the focus walk, which acts on the page).
+ */
+function candidatesOf(canonical, { focus = false } = {}) {
+    const read = [];
+    const walk = [];
     for (const f of (canonical && canonical.findings) || []) {
         if (!f || f.outcome !== 'cantTell') continue;
         for (const o of f.occurrences || []) {
             if ((o.occurrenceOutcome || o.outcome) !== 'cantTell') continue;
-            const entry = entryFor(o.atomicCheckId);
-            if (entry) out.push({ finding: f, occurrence: o, entry });
+            const entry = entryFor(o.atomicCheckId, f.ruleId);
+            if (!entry) continue;
+            if (entry.tier === 1) { if (focus) walk.push({ finding: f, occurrence: o, entry }); } else read.push({ finding: f, occurrence: o, entry });
         }
     }
-    return out;
+    return [...read, ...walk];
 }
 
 // One entry of the log of what was sent: where to, what for, and the body
@@ -182,7 +189,8 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
     const outbox = [];
     const summary = { candidates: 0, answered: 0, unresolved: 0, calls: 0, reused: 0, stateDrift: 'none', reason: null, ...(preview ? { preview: true, previewed: 0 } : {}), masking: mask, outbox };
     try {
-        const todo = candidatesOf(canonical);
+        const focus = opt.focus === true;
+        const todo = candidatesOf(canonical, { focus });
         summary.candidates = todo.length;
         if (!todo.length) return summary;
         const model = resolveProvider(provider || opt.provider, env);
@@ -201,21 +209,42 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
             log('info', `The AI pass sent nothing: ${pageUrl ? new URL(pageUrl).hostname : 'this page'} is not in A11Y_AI_ALLOWED_SITES`);
         }
 
+        // The focus walk, once for the page, before its first focus question,
+        // and only when one may go out; with its own before and after.
+        let walk = null;
+        let beforeWalk = null;
+        let afterWalk = null;
+        const canAsk = allowed && (preview || !!model);
+
         for (const { finding, occurrence, entry } of todo) {
-            const evidence = await collectEvidence(page, occurrence, entry.evidence);
+            if (entry.tier === 1 && !walk && canAsk) {
+                beforeWalk = await fingerprint(page);
+                walk = await walkFocus(page, { maxStops: Number(opt.focusStops) > 0 ? Math.min(Number(opt.focusStops), 200) : undefined });
+                afterWalk = await fingerprint(page);
+                summary.focusWalk = { stops: walk.stops.length, ended: walk.ended, restored: walk.restored, ...(walk.error ? { error: walk.error } : {}) };
+            }
+            const evidence = entry.tier === 1
+                ? (walk ? { focusWalk: walk } : {})
+                : await collectEvidence(page, occurrence, entry.evidence);
             // What was read from the page (the element's HTML is the
             // occurrence's own): kept on every result, answered or not, so a
             // person settling one the AI did not answer has the facts and
             // the picture too.
             const read = (({ element, ...rest }) => rest)(evidence);
-            const base = { promptVersion: shared.lessons ? PROMPT_VERSION + '+lessons' : PROMPT_VERSION, check: occurrence.atomicCheckId, tier: 0, evidence: read };
-            const key = JSON.stringify([occurrence.atomicCheckId, evidence.element, evidence.context, evidence.pageTitle, evidence.image]);
+            const base = {
+                promptVersion: shared.lessons ? PROMPT_VERSION + '+lessons' : PROMPT_VERSION, check: entry.check, tier: entry.tier, evidence: read,
+                // A page-level question is the page's own: its page names it.
+                ...(entry.tier === 1 ? { page: pageUrl } : {}),
+            };
+            const key = JSON.stringify([entry.check, evidence.element, evidence.context, evidence.pageTitle, evidence.image, evidence.focusWalk ? withoutPictures(evidence.focusWalk.stops) : null]);
             let ai;
             if (shared.cache.has(key)) {
                 ai = { ...shared.cache.get(key), reused: true };
                 summary.reused++;
             } else if (!allowed) {
                 ai = { ...base, provenance: 'unresolved', reason: 'site-not-allowed' };
+            } else if (entry.tier === 1 && (!walk || !walk.stops.length)) {
+                ai = { ...base, provenance: 'unresolved', reason: walk ? 'no-focus-stops' : 'no-model' };
             } else if (!preview && !model) {
                 ai = { ...base, provenance: 'unresolved', reason: 'no-model' };
             } else if (shared.calls >= maxCalls) {
@@ -224,19 +253,34 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 ai = { ...base, provenance: 'unresolved', reason: 'budget-time' };
             } else {
                 shared.calls++;
-                const lessons = shared.lessons ? lessonsFor(shared.lessons, occurrence.atomicCheckId, evidence.facts || evidence) : null;
+                const lessons = shared.lessons ? lessonsFor(shared.lessons, entry.check, evidence.facts || evidence) : null;
                 const asked = await askOne({ model, entry, finding, occurrence, evidence, lessons, pageInfo, mask, preview, minConfidence: opt.minConfidence, deadline, base, outbox });
                 if (asked.previewed) summary.previewed++; else summary.calls++;
                 ai = asked.ai;
                 shared.cache.set(key, ai);
             }
-            ai.steps = [{ action: 'read', tier: 0, target: (occurrence.target && occurrence.target[0]) || null, result: Object.keys(evidence) }];
-            results.push({ occurrence, ai });
+            ai.steps = entry.tier === 1
+                ? [{ action: 'tab', tier: 1, presses: walk ? walk.stops.length : 0, result: walk ? walk.ended : null }]
+                : [{ action: 'read', tier: 0, target: (occurrence.target && occurrence.target[0]) || null, result: Object.keys(evidence) }];
+            results.push({ occurrence, ai, tier: entry.tier });
+        }
+
+        // The focus walk must have put the page back. If not, its answers are
+        // dropped, what it saw kept, and the workflow is told: its next steps
+        // may meet a different page.
+        if (walk) {
+            if (beforeWalk && afterWalk && !sameFingerprint(beforeWalk, afterWalk)) {
+                const what = Object.keys(afterWalk).filter((k) => JSON.stringify(afterWalk[k]) !== JSON.stringify(beforeWalk[k]));
+                summary.focusWalk.drift = what;
+                log('warning', `The focus walk could not put the page back as it was (${what.join(', ')}): its answers were dropped, and the next steps may meet a different page`);
+                for (const r of results) if (r.tier === 1) r.ai = { ...r.ai, provenance: 'unresolved', reason: 'state-drift', verdict: undefined, confidence: undefined, rationale: undefined };
+            }
         }
 
         // The page must be as the workflow left it. If not, nothing the pass
-        // did can be trusted: keep no answers and say so.
-        const after = await fingerprint(page);
+        // did can be trusted: keep no answers and say so. With a focus walk,
+        // the reading questions are judged on the page as it was before it.
+        const after = walk && beforeWalk ? beforeWalk : await fingerprint(page);
         if (!before || !after) {
             // Could not be read (the page is closed or gone): nothing to compare, said.
             summary.stateDrift = 'unchecked';

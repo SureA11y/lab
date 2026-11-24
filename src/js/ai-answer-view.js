@@ -15,6 +15,8 @@ const REASON_WORDS = {
     unsure: 'The AI was not sure enough to answer.',
     preview: 'A preview: the question was not sent.',
     'site-not-allowed': 'Not sent: this site is not among the sites the server allows.',
+    'no-focus-stops': 'The focus walk reached no element: Tab moved focus nowhere on the page.',
+    'state-drift': 'The page changed while it was read, so the answer was not kept.',
 };
 
 /**
@@ -32,10 +34,14 @@ export function outboxOf(payload) {
 }
 
 // What identifies a question across pages: its check and its element, not the
-// page. The same element on many pages is one question and one answer.
+// page. The same element on many pages is one question and one answer. A
+// page-level question (the focus questions, tier 1) is the page's own: its
+// check and its page.
 export function aiReviewKey(node) {
-    const check = (Array.isArray(node?.sourceAtomicRules) && node.sourceAtomicRules[0]) || '';
-    const content = String(node?.html || '') + '|' + JSON.stringify(node?.target || []);
+    const ai = node && node.ai;
+    const pageLevel = !!(ai && ai.tier === 1 && ai.check && ai.page);
+    const check = pageLevel ? ai.check : ((Array.isArray(node?.sourceAtomicRules) && node.sourceAtomicRules[0]) || '');
+    const content = pageLevel ? 'page|' + ai.page : String(node?.html || '') + '|' + JSON.stringify(node?.target || []);
     let h = 5381;
     for (let i = 0; i < content.length; i++) h = ((h << 5) + h + content.charCodeAt(i)) | 0;
     return check + '|' + (h >>> 0).toString(36);
@@ -118,16 +124,61 @@ function factsList(evidence, { escapeHtml }) {
     return rows.length ? '<dl class="node-details-list">' + rows.join('') + '</dl>' : '';
 }
 
-// The picture of the element the AI pass took: a data URL only, as it is put in an attribute.
+// The picture of the element the AI pass took, as it is put in an attribute:
+// inline (a data URL), a file the lab serves (/reports/...: a saved run moves
+// its pictures out of the report), or a picture of an opened zip (blob:), as
+// the other pictures of the report are. Anything else is not shown.
 function proofSrc(evidence) {
     const s = evidence && evidence.screenshot;
-    return typeof s === 'string' && /^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/=]+$/.test(s) ? s : null;
+    if (typeof s !== 'string') return null;
+    if (/^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/=]+$/.test(s)) return s;
+    if (/^\/reports\/[A-Za-z0-9._\/-]+\.(jpe?g|png)$/.test(s) && !s.includes('..')) return s;
+    if (/^blob:https?:\/\/[A-Za-z0-9.:[\]-]+\/[A-Za-z0-9-]+$/.test(s)) return s;
+    return null;
 }
 
-/** The element's picture, as proof beside the facts; empty when there is none. */
-export function proofHtml(evidence, { escapeAttr }) {
+/** The element's picture, as proof beside the facts; for a focus walk, its stops. Empty when there is none. */
+export function proofHtml(evidence, { escapeAttr, escapeHtml = escapeAttr }) {
+    if (evidence && evidence.focusWalk) return focusWalkHtml(evidence.focusWalk, { escapeHtml, escapeAttr });
     const src = proofSrc(evidence);
     return src ? '<img class="air-shot" alt="The element as it looked when the AI read the page" src="' + escapeAttr(src) + '">' : '';
+}
+
+/** How a focus walk ended, in words. */
+export function focusWalkEnd(walk) {
+    if (!walk) return '';
+    if (walk.ended === 'left-page') return 'Focus left the page after the last stop.';
+    if (walk.ended === 'came-back') return 'Focus came back to stop ' + walk.endedAt + ' (it may be trapped in a loop).';
+    if (walk.ended === 'limit') return 'The walk stopped at its limit of ' + walk.limit + ' stops; the page may have more.';
+    return 'The walk could not be done.';
+}
+
+// A stop's name, for a list.
+function stopName(s) {
+    return (s.role || s.tag) + (s.name ? ' “' + s.name + '”' : ' (no name)');
+}
+
+/**
+ * The focus walk, stop by stop: where focus went, what showed it, what
+ * covered it, and the stop's picture. As the person checks the AI's answer.
+ */
+export function focusWalkHtml(walk, { escapeHtml, escapeAttr = escapeHtml }) {
+    const stops = walk && Array.isArray(walk.stops) ? walk.stops : [];
+    if (!stops.length) return '<p class="air-hint">' + escapeHtml(focusWalkEnd(walk) || 'The focus walk reached no element.') + '</p>';
+    const items = stops.map((s) => {
+        const src = proofSrc(s);
+        const changes = Array.isArray(s.changesOnFocus)
+            ? (s.changesOnFocus.length ? 'Focus shows as: ' + s.changesOnFocus.join(', ') + '.' : 'No visible change found on focus.')
+            : '';
+        const notes = [changes, s.covered ? 'Covered by ' + s.covered + ' while focused.' : '', s.hidden ? 'Not visible while focused.' : '', s.insideFrame ? 'Focus went on inside this frame.' : '']
+            .filter(Boolean).join(' ');
+        return '<li class="air-stop' + (Array.isArray(s.changesOnFocus) && !s.changesOnFocus.length ? ' air-stop--none' : '') + '">' +
+            '<span class="air-stop__name">' + escapeHtml(stopName(s)) + '</span> ' +
+            '<span class="air-hint">at ' + escapeHtml(String(s.x)) + ', ' + escapeHtml(String(s.y)) + '. ' + escapeHtml(notes) + '</span>' +
+            (src ? '<img class="air-shot air-stop__shot" alt="Stop ' + escapeAttr(String(s.n)) + ' while focused" src="' + escapeAttr(src) + '">' : '') + '</li>';
+    }).join('');
+    return '<p class="air-hint">' + escapeHtml(stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' with Tab from the top of the page. ' + focusWalkEnd(walk)) + '</p>' +
+        '<ol class="air-stops">' + items + '</ol>';
 }
 
 /** The AI's reasoning on one question, and what it was given. Empty without an AI answer. */
@@ -141,8 +192,8 @@ export function aiAnalysisHtml(ai, { escapeHtml, escapeAttr = escapeHtml }) {
         : '<p class="node-ai__verdict"><strong>The AI could not settle this.</strong> ' + escapeHtml(REASON_WORDS[ai.reason] || '') + '</p>' +
             (ai.rationale ? '<p class="node-ai__rationale">' + escapeHtml(ai.rationale) + '</p>' : '');
     const facts = factsList(ai.evidence, { escapeHtml });
-    const given = (facts || (ai.evidence && (ai.evidence.context || proofSrc(ai.evidence))))
-        ? '<details class="node-ai__given"><summary>' + (ai.model ? 'What the AI was given' : 'What was read from the page') + '</summary>' + proofHtml(ai.evidence, { escapeAttr }) + facts +
+    const given = (facts || (ai.evidence && (ai.evidence.context || ai.evidence.focusWalk || proofSrc(ai.evidence))))
+        ? '<details class="node-ai__given"><summary>' + (ai.model ? 'What the AI was given' : 'What was read from the page') + '</summary>' + proofHtml(ai.evidence, { escapeAttr, escapeHtml }) + facts +
             (ai.evidence && ai.evidence.context ? '<p>Around the element:</p><pre class="node-ai__context">' + escapeHtml(ai.evidence.context) + '</pre>' : '') +
             '</details>'
         : '';
@@ -253,13 +304,14 @@ export function collectAiCases(payload) {
             if (!f || f.outcome !== 'cantTell') continue;
             for (const o of f.occurrences || []) {
                 if (!o || !o.ai || typeof o.ai !== 'object') continue;
-                const node = { sourceAtomicRules: [o.atomicCheckId || ''], html: o.html || '', target: Array.isArray(o.target) ? o.target : [] };
+                const node = { sourceAtomicRules: [o.atomicCheckId || ''], html: o.html || '', target: Array.isArray(o.target) ? o.target : [], ai: o.ai };
                 const key = aiReviewKey(node);
-                const urls = Array.isArray(o.pageUrls) && o.pageUrls.length ? o.pageUrls : (o.pageUrl ? [o.pageUrl] : (scan.url ? [scan.url] : []));
+                const urls = o.ai.tier === 1 && o.ai.page ? [o.ai.page]
+                    : Array.isArray(o.pageUrls) && o.pageUrls.length ? o.pageUrls : (o.pageUrl ? [o.pageUrl] : (scan.url ? [scan.url] : []));
                 let c = byKey.get(key);
                 if (!c) {
                     c = {
-                        key, check: o.atomicCheckId || '', title: f.title || f.ruleId || '', criterion: (f.wcag && f.wcag.sc) || [],
+                        key, check: o.ai.check || o.atomicCheckId || '', title: f.title || f.ruleId || '', criterion: (f.wcag && f.wcag.sc) || [],
                         issue: o.failureSummary || '', hint: o.hint || '',
                         lean: o.lean && (o.lean.toward === 'fail' || o.lean.toward === 'pass') ? o.lean : null,
                         howToCheck: o.howToCheck && Array.isArray(o.howToCheck.steps) ? o.howToCheck : null,
@@ -294,7 +346,23 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
     const f = ev.facts && typeof ev.facts === 'object' ? ev.facts : null;
     const rows = [];
     const add = (label, html) => rows.push({ label, html });
-    if (check === 'page-title-patterns' && ev.pageTitle) {
+    const walk = ev.focusWalk;
+    if (walk && (check === 'focus-visible' || check === 'focus-order' || check === 'focus-not-obscured')) {
+        const stops = Array.isArray(walk.stops) ? walk.stops : [];
+        const list = (xs) => xs.length ? xs.map((s) => escapeHtml(s.n + '. ' + stopName(s))).join('<br>') : '';
+        add('Stops with Tab', escapeHtml(String(stops.length)) + ' <span class="air-hint">' + escapeHtml(focusWalkEnd(walk)) + '</span>');
+        if (check === 'focus-visible') {
+            const none = stops.filter((s) => Array.isArray(s.changesOnFocus) && !s.changesOnFocus.length);
+            const hidden = stops.filter((s) => s.hidden);
+            add('No visible change found', list(none) || '<span class="air-none">(every stop changed when focused)</span>');
+            if (hidden.length) add('Not visible while focused', list(hidden));
+        } else if (check === 'focus-order') {
+            add('Order', stops.slice(0, 25).map((s) => escapeHtml(s.n + '. ' + stopName(s) + ' (' + s.x + ', ' + s.y + ')')).join('<br>') + (stops.length > 25 ? '<br>…' : ''));
+        } else {
+            const covered = stops.filter((s) => s.covered);
+            add('Covered while focused', covered.length ? covered.map((s) => escapeHtml(s.n + '. ' + stopName(s) + ', by ' + s.covered)).join('<br>') : '<span class="air-none">(none found)</span>');
+        }
+    } else if (check === 'page-title-patterns' && ev.pageTitle) {
         add('Page title', q(ev.pageTitle.title));
         add('Main headings', (ev.pageTitle.headings || []).length ? ev.pageTitle.headings.map((h) => q(h)).join(' ') : q(undefined, '(none found)'));
     } else if (f) {

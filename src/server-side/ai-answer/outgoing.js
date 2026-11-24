@@ -84,4 +84,13 @@ function maskDeep(value) {
     return { value: walk(value, ''), count };
 }
 
-module.exports = { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskText, maskDeep };
+/** A copy of `value` without any picture (a `screenshot`), at any depth. */
+function withoutPictures(value) {
+    if (Array.isArray(value)) return value.map(withoutPictures);
+    if (value && typeof value === 'object') {
+        return Object.fromEntries(Object.entries(value).filter(([k]) => k !== 'screenshot').map(([k, v]) => [k, withoutPictures(v)]));
+    }
+    return value;
+}
+
+module.exports = { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskText, maskDeep, withoutPictures };

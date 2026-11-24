@@ -467,6 +467,62 @@ does, and how to set it up well. Agents are slower than one model call: raise
 the step's `budget` (`{ calls, seconds }`, default 10 per run and 60 per scan)
 for them.
 
+## Focus questions (built 2026-11-24)
+
+The first page-level questions (tier 1), and the only part of the AI pass that
+acts on the page. Opt-in per scan step: `ai: { focus: true }` (with
+`focusStops`, the most Tab presses, default 40). Without it nothing changes.
+
+- **Which.** The scanner leaves keyboard, focus order and focus visible to a
+  person as page-level "manual-review" questions, one per page. The registry
+  (`registry.js`, `PAGE_LEVEL`) takes them by rule: focus visible (2.4.7,
+  `focus-visible`), focus order (2.4.3, `focus-order`) and focus not obscured
+  (2.4.11, `focus-not-obscured`, when the scanner asks it). Keyboard (2.1.1)
+  stays a person's: it needs controls operated, which the walk never does. The
+  stricter 2.4.12 and 2.4.13 need the indicator measured, not yet done.
+- **The focus walk** (`focus-walk.js`), once per page, after the questions
+  answered by reading: remembers the focused element (or none) and the scroll
+  of the page and of every box that scrolls; starts from the top of the page;
+  presses only Tab, up to the limit; at each stop records the element (tag,
+  role, name, position), what looks different on it, its parent or its
+  `::before`/`::after` while focused (only what is drawn: an outline's offset
+  with no outline is no change), whether something covers its centre, and a
+  small picture. It ends when focus leaves the page, comes back to a stop
+  already visited (a possible trap) or the limit is reached. Then it puts
+  focus and every scroll position back.
+- **Checked, not trusted.** The pass's fingerprint (page HTML, address,
+  storage, cookies, scroll, focus) is taken just before and after the walk. If
+  they differ, the focus answers are dropped (`state-drift`, what the walk saw
+  kept) and the run log warns that the next steps may meet a different page.
+  The answers read before the walk are kept. What cannot be put back: when
+  nothing had focus, a later Tab starts from the top of the page, not from
+  wherever the workflow last clicked.
+- **One question per page.** A page-level answer carries `tier: 1`, its own
+  `check` and its `page`, and the review keys it by check and page
+  (`aiReviewKey`), so focus order on two pages are two questions.
+- **What goes to the model:** the stops as text. The pictures are for the
+  person, never in a prompt, and to an endpoint only with
+  `A11Y_AI_ENDPOINT_PICTURE` on.
+- **In the review:** the card lists the stops in order with their pictures,
+  what showed focus at each, and marks the stops where no change was found;
+  "What to check" sums up per question (stops without a visible change, the
+  order with positions, what covered focus).
+
+Pictures in a saved run are files (`images/...`, served as `/reports/...` or,
+from an opened zip, `blob:`); the review now shows those as the rest of the
+report does. This also fixed the single-element proof picture, which only
+showed when it was inline.
+
+Checked: a real browser walk of the demo shop's products page (9 stops in
+about 1.3 s, ended by leaving the page, the page identical afterwards); real
+browser tests (`focus-walk.browserspec.js`) of a link with its outline removed
+(no visible change found), a link under a fixed banner (covered), a focus
+trap (came back), a page that changes when focused (focus answers dropped,
+the title's kept, warning logged), focus and scroll put back, and no walk
+without `focus`; and in the app, a run with `{ "focus": true }` against a
+stand-in model: focus visible and focus order each a card with the 9 stops
+and their pictures.
+
 ## Giving the lab a Claude API key (built 2026-11-24)
 
 Two ways, both on the computer the lab runs on, neither saved anywhere:

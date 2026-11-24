@@ -23,6 +23,10 @@ piece of the page itself. For one question, this leaves the lab:
 | The project's lessons | your house rules and corrected examples, which hold earlier pages' content | the lessons file |
 | The element's picture | only to an endpoint with `A11Y_AI_ENDPOINT_PICTURE` on; never to the built-in call | a screenshot of the element |
 
+With `ai: { focus: true }`, a focus question also carries the focus walk: for
+every Tab stop, the element's tag, role, name (its text, label or alt, cut
+short), position and what changed on focus. Its pictures stay in the report.
+
 What does **not** leave: cookies, passwords, what was typed into fields (only
 the attributes in the page's HTML are read), the full page, and anything from
 questions the registry does not allow (keyboard, focus and other checks that

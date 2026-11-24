@@ -125,3 +125,27 @@ describe('a preview', () => {
         assert.ok(s.outbox[0].body.wrapped);
     });
 });
+
+describe('pictures', () => {
+    const { withoutPictures } = require('./outgoing');
+    const { endpointProvider } = require('./provider');
+    const { entryFor } = require('./registry');
+
+    test('are taken out at any depth, and an endpoint gets none unless turned on', () => {
+        const evidence = { screenshot: 'data:x', focusWalk: { stops: [{ n: 1, screenshot: 'data:y', name: 'A' }] } };
+        assert.deepEqual(withoutPictures(evidence), { focusWalk: { stops: [{ n: 1, name: 'A' }] } });
+        const off = endpointProvider({ A11Y_AI_ENDPOINT: 'http://127.0.0.1:1/a' }).bodyFor({ evidence });
+        assert.doesNotMatch(JSON.stringify(off), /data:/);
+        const on = endpointProvider({ A11Y_AI_ENDPOINT: 'http://127.0.0.1:1/a', A11Y_AI_ENDPOINT_PICTURE: 'on' }).bodyFor({ evidence });
+        assert.match(JSON.stringify(on), /data:y/);
+    });
+
+    test('the focus questions are found by their rule, and keyboard is not among them', () => {
+        assert.deepEqual([entryFor('manual-review', 'wcag-2.4.7-focus-visible').check, entryFor('manual-review', 'wcag-2.4.7-focus-visible').tier], ['focus-visible', 1]);
+        assert.equal(entryFor('focus-order').check, 'focus-order');
+        assert.equal(entryFor('manual-review', 'wcag-2.4.11-focus-not-obscured-minimum').check, 'focus-not-obscured');
+        assert.equal(entryFor('manual-review', 'wcag-2.1.1-keyboard'), null);
+        assert.equal(entryFor('manual-review'), null);
+        assert.deepEqual([entryFor('img-alt-quality').check, entryFor('img-alt-quality').tier], ['img-alt-quality', 0]);
+    });
+});

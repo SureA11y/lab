@@ -18,6 +18,8 @@
 // and `bodyFor(input)` gives the body it sends for an input: the log records
 // exactly that.
 
+const { withoutPictures } = require('./outgoing');
+
 const DEFAULT_MODEL = process.env.A11Y_AI_MODEL || 'claude-sonnet-5-5';
 
 /** The version of the question an endpoint receives. */
@@ -70,7 +72,7 @@ function endpointProvider(env = process.env) {
     const picture = yes(env.A11Y_AI_ENDPOINT_PICTURE);
     const bodyFor = (question) => {
         const body = { version: QUESTION_VERSION, ...question };
-        if (!picture && body.evidence) body.evidence = (({ screenshot, ...rest }) => rest)(body.evidence);
+        if (!picture && body.evidence) body.evidence = withoutPictures(body.evidence);
         return body;
     };
     return {

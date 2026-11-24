@@ -315,3 +315,58 @@ describe('outboxOf', () => {
         assert.deepEqual(outboxOf({}), []);
     });
 });
+
+describe('page-level focus questions', () => {
+    const walk = { ended: 'came-back', endedAt: 1, limit: 40, stops: [
+        { n: 1, tag: 'a', name: 'Home', x: 10, y: 5, changesOnFocus: ['outline'], screenshot: 'data:image/jpeg;base64,AAAA' },
+        { n: 2, tag: 'a', name: '<b>Two</b>', x: 60, y: 5, changesOnFocus: [] },
+        { n: 3, tag: 'button', role: null, name: 'Accept', x: 10, y: 600, changesOnFocus: ['outline'], covered: 'div#banner' },
+    ] };
+    const occ = (rule, check, page) => ({ atomicCheckId: 'manual-review', target: ['html'], html: '', pageUrl: page,
+        ai: { check, tier: 1, page, provenance: 'ai-supported', verdict: 'fail', evidence: { focusWalk: walk } } });
+
+    test('are one question per check and page, not one for every page', async () => {
+        const { aiReviewKey, collectAiCases } = await load();
+        const a = occ('wcag-2.4.7-focus-visible', 'focus-visible', 'https://x.test/a');
+        const b = occ('wcag-2.4.7-focus-visible', 'focus-visible', 'https://x.test/b');
+        const c = occ('wcag-2.4.3-focus-order', 'focus-order', 'https://x.test/a');
+        const node = (o) => ({ sourceAtomicRules: ['manual-review'], html: '', target: ['html'], ai: o.ai });
+        assert.notEqual(aiReviewKey(node(a)), aiReviewKey(node(b)));
+        assert.notEqual(aiReviewKey(node(a)), aiReviewKey(node(c)));
+        assert.match(aiReviewKey(node(a)), /^focus-visible\|/);
+        const payload = { scans: [{ url: 'https://x.test/a', canonical: { findings: [{ outcome: 'cantTell', ruleId: 'wcag-2.4.7-focus-visible', occurrences: [a] }, { outcome: 'cantTell', ruleId: 'wcag-2.4.3-focus-order', occurrences: [c] }] } },
+            { url: 'https://x.test/b', canonical: { findings: [{ outcome: 'cantTell', ruleId: 'wcag-2.4.7-focus-visible', occurrences: [b] }] } }] };
+        const cases = collectAiCases(payload);
+        assert.deepEqual(cases.map((x) => [x.check, x.urls]), [['focus-visible', ['https://x.test/a']], ['focus-order', ['https://x.test/a']], ['focus-visible', ['https://x.test/b']]]);
+    });
+
+    test('the review says what to look at: stops without a visible change, the order, what covers focus', async () => {
+        const { keyFactRows } = await load();
+        const text = (check) => keyFactRows(check, { focusWalk: walk }, helpers).map((r) => r.label + ': ' + r.html).join('\n');
+        assert.match(text('focus-visible'), /No visible change found: 2\. a “&lt;b&gt;Two&lt;\/b&gt;”/);
+        assert.match(text('focus-visible'), /came back to stop 1/);
+        assert.match(text('focus-order'), /1\. a “Home” \(10, 5\)<br>2\./);
+        assert.match(text('focus-not-obscured'), /3\. button “Accept”, by div#banner/);
+    });
+
+    test('the walk is shown stop by stop, with its pictures, escaped', async () => {
+        const { proofHtml } = await load();
+        const html = proofHtml({ focusWalk: walk }, helpers);
+        assert.equal((html.match(/<li/g) || []).length, 3);
+        assert.match(html, /<img class="air-shot air-stop__shot" alt="Stop 1 while focused" src="data:image\/jpeg;base64,AAAA">/);
+        assert.match(html, /class="air-stop air-stop--none"/);
+        assert.match(html, /Covered by div#banner/);
+        assert.doesNotMatch(html, /<b>Two/);
+    });
+});
+
+describe('proof pictures', () => {
+    test('are shown inline, from the lab, or from an opened zip, and nothing else', async () => {
+        const { proofHtml } = await load();
+        const shown = (src) => /<img/.test(proofHtml({ screenshot: src }, helpers));
+        assert.equal(shown('data:image/jpeg;base64,AAAA'), true);
+        assert.equal(shown('/reports/evidence/run-1/ai/stop-1.jpg'), true);
+        assert.equal(shown('blob:http://127.0.0.1:3000/0b7a2c1e-1111-2222-3333-444455556666'), true);
+        for (const bad of ['https://evil.test/x.jpg', '/reports/../server.js', 'javascript:alert(1)', 'images/a.jpg', '/reports/x.svg']) assert.equal(shown(bad), false, bad);
+    });
+});

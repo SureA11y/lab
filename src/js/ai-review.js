@@ -41,8 +41,8 @@ function cardHtml(c, review, revealed) {
     const where = '<section class="air-box"><h4>Proof and where to look</h4>' +
         (proofHtml(ai && ai.evidence, helpers) || '<p class="air-hint">No picture: the element was not shown when the AI looked (hidden, in a menu or collapsed). Use the page and the selector.</p>') +
         (pages ? '<p class="air-hint">Open the page' + (c.urls.length > 1 ? ' (first of ' + c.urls.length + ')' : '') + ':</p><ul class="air-links">' + pages + '</ul>' : '') +
-        (c.selector ? '<p>Selector: <code>' + esc(c.selector) + '</code> <button type="button" class="copy-selector-btn" data-selector="' + esc(c.selector) + '">Copy selector</button></p>' : '') +
-        '<details><summary>Element HTML</summary><pre class="air-pre">' + esc(c.html) + '</pre></details>' + steps + '</section>';
+        (c.selector && c.html ? '<p>Selector: <code>' + esc(c.selector) + '</code> <button type="button" class="copy-selector-btn" data-selector="' + esc(c.selector) + '">Copy selector</button></p>' : '') +
+        (c.html ? '<details><summary>Element HTML</summary><pre class="air-pre">' + esc(c.html) + '</pre></details>' : '') + steps + '</section>';
     return '<article class="air-card" id="' + idOf(c.key) + '" data-ai-key="' + esc(c.key) + '">' +
         '<header><h3>' + esc(c.check) + '</h3><p class="air-meta"><span class="air-pill air-pill--cant">can’t tell</span>' +
         '<span>' + esc(c.title) + (c.criterion.length ? ' · WCAG ' + esc(c.criterion.join(', ')) : '') + ' · found on ' + c.urls.length + ' page' + (c.urls.length === 1 ? '' : 's') + '</span></p></header>' +

@@ -224,3 +224,11 @@
 .acr-ai p { margin: 0 0 var(--space-1); }
 .acr-ai-slot:empty { display: none; }
 .acr-ai-note { color: var(--text-muted); font-size: 14px; }
+
+/* A focus walk: the stops in order, each with its picture; a stop where no
+   change was found on focus is marked, as the one to look at. */
+.air-stops { margin: 0 0 var(--space-2); padding-inline-start: calc(var(--space-4) + 0.75rem); max-height: 28rem; overflow: auto; }
+.air-stop { margin: 0 0 var(--space-2); }
+.air-stop__shot { max-height: 120px; margin: var(--space-1) 0; }
+.air-stop__name { font-weight: 600; }
+.air-stop--none { border-inline-start: 3px solid var(--warn); padding-inline-start: var(--space-2); }
