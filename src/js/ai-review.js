@@ -1,8 +1,9 @@
 // The review of the AI's answers (docs/design/ai-cant-tell-design.md, "In the
 // app", step 3): a dialog that goes through every can't-tell question the AI
-// had a go at, one card each, with what to check read from the page, a way to
-// the page, and the person's own answer first; the AI's analysis follows. The
-// person's answers are kept in the report (payload.aiReview), as everywhere.
+// had a go at, one card each, with what to check read from the page, the
+// proof (a picture of the element) and a way to the page, and the person's
+// own answer first; the AI's analysis follows. The person's answers are kept
+// in the report (payload.aiReview), as everywhere.
 
 import {
     agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, collectAiCases, keyFactRows, proofHtml,
@@ -11,10 +12,12 @@ import {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
 const helpers = { escapeHtml: esc, escapeAttr: esc };
 
+const idOf = (key) => 'air-' + key.replace(/[^a-z0-9]/gi, '-');
+
 function leanHtml(lean) {
-    if (!lean) return '<p class="air-lean">The tool gave no lean.</p>';
-    return '<p class="air-lean"><strong>The tool leans toward ' + esc(lean.toward) + '.</strong> ' + esc(lean.why || '') +
-        (lean.caution ? '<br><span class="air-hint">Caution: ' + esc(lean.caution) + '</span>' : '') + '</p>';
+    if (!lean) return '<p class="air-lean air-hint">The tool gave no lean.</p>';
+    return '<p class="air-lean"><span class="air-pill air-pill--' + (lean.toward === 'fail' ? 'fail' : 'pass') + '">The tool leans toward ' + esc(lean.toward) + '</span> ' +
+        esc(lean.why || '') + (lean.caution ? '<br><span class="air-hint">Caution: ' + esc(lean.caution) + '</span>' : '') + '</p>';
 }
 
 function cardHtml(c, review, revealed) {
@@ -31,21 +34,21 @@ function cardHtml(c, review, revealed) {
         : '';
     const ai = c.ai;
     const gate = revealed || r.revealed
-        ? '<div class="air-ai"><h4>AI analysis and conclusion ' + aiBadgeHtml(ai, helpers) + '</h4>' + aiAnalysisHtml(ai, helpers) + '</div>'
+        ? '<div class="air-ai" tabindex="-1"><h4>AI analysis and conclusion ' + aiBadgeHtml(ai, helpers) + '</h4>' + aiAnalysisHtml(ai, helpers) + '</div>'
         : '<div class="air-ai"><h4>AI analysis and conclusion</h4><p class="air-hint">Hidden until you have answered, so it does not steer you.</p>' +
             '<button type="button" class="secondary-button" data-air-reveal="' + esc(c.key) + '"' + (r.verdict ? '' : ' disabled') + '>Show the AI’s answer</button>' +
-            (r.verdict ? '' : '<p class="air-hint">Choose your answer first.</p>') + '</div>';
-    return '<article class="air-card" id="air-' + esc(c.key.replace(/[^a-z0-9]/gi, '-')) + '" data-ai-key="' + esc(c.key) + '">' +
-        '<h3>' + esc(c.check) + ' <span class="air-title">' + esc(c.title) + (c.criterion.length ? ' · WCAG ' + esc(c.criterion.join(', ')) : '') + '</span></h3>' +
-        '<p><strong>The issue:</strong> ' + esc(c.issue) + ' <span class="air-hint">Found on ' + c.urls.length + ' page' + (c.urls.length === 1 ? '' : 's') + '.</span></p>' +
-        leanHtml(c.lean) +
-        '<div class="air-box"><h4>What to check (read from the page)</h4>' + factsHtml + '</div>' +
-        '<div class="air-box"><h4>Proof and where to look</h4>' +
-        (proofHtml(c.ai && c.ai.evidence, helpers) || '<p class="air-hint">No picture: the element was not shown when the AI looked (hidden, in a menu or collapsed). Use the page and the selector.</p>') +
-        (pages ? '<ul>' + pages + '</ul>' : '') +
+            (r.verdict ? '' : ' <span class="air-hint">Choose your answer first.</span>') + '</div>';
+    const where = '<section class="air-box"><h4>Proof and where to look</h4>' +
+        (proofHtml(ai && ai.evidence, helpers) || '<p class="air-hint">No picture: the element was not shown when the AI looked (hidden, in a menu or collapsed). Use the page and the selector.</p>') +
+        (pages ? '<p class="air-hint">Open the page' + (c.urls.length > 1 ? ' (first of ' + c.urls.length + ')' : '') + ':</p><ul class="air-links">' + pages + '</ul>' : '') +
         (c.selector ? '<p>Selector: <code>' + esc(c.selector) + '</code> <button type="button" class="copy-selector-btn" data-selector="' + esc(c.selector) + '">Copy selector</button></p>' : '') +
-        '<details><summary>Element HTML</summary><pre class="air-pre">' + esc(c.html) + '</pre></details>' + steps + '</div>' +
-        answerFieldsetHtml(c.key, ai, r, helpers) + gate + '</article>';
+        '<details><summary>Element HTML</summary><pre class="air-pre">' + esc(c.html) + '</pre></details>' + steps + '</section>';
+    return '<article class="air-card" id="' + idOf(c.key) + '" data-ai-key="' + esc(c.key) + '">' +
+        '<header><h3>' + esc(c.check) + '</h3><p class="air-meta"><span class="air-pill air-pill--cant">can’t tell</span>' +
+        '<span>' + esc(c.title) + (c.criterion.length ? ' · WCAG ' + esc(c.criterion.join(', ')) : '') + ' · found on ' + c.urls.length + ' page' + (c.urls.length === 1 ? '' : 's') + '</span></p></header>' +
+        '<p class="air-issue"><strong>The issue:</strong> ' + esc(c.issue) + '</p>' + leanHtml(c.lean) +
+        '<section class="air-box air-box--facts"><h4>What to check (read from the page)</h4>' + factsHtml + '</section>' +
+        '<div class="air-grid">' + where + '<div class="air-side">' + answerFieldsetHtml(c.key, ai, r, helpers) + gate + '</div></div></article>';
 }
 
 /**
@@ -63,19 +66,20 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
     if (dialog) dialog.remove();
     dialog = document.createElement('dialog');
     dialog.id = 'ai-review-dialog';
-    dialog.className = 'acr-review';
+    dialog.className = 'acr-review air-review';
     dialog.setAttribute('aria-labelledby', 'ai-review-title');
     dialog.innerHTML = '<div class="acr-review-shell">' +
-        '<div class="acr-review-head"><h2 id="ai-review-title">Review the AI’s answers</h2>' +
+        '<div class="air-top">' +
+        '<div class="air-head"><h2 id="ai-review-title">Review the AI’s answers</h2>' +
         '<button type="button" class="secondary-button acr-close" data-air-close>Close</button></div>' +
         '<p class="acr-intro">For each question the scan could not decide: look at what the page says, give your answer, then see what the AI made of it. Your answers are kept in this report.</p>' +
         '<div class="air-controls">' +
-        '<label>Check <select data-air-filter="check"><option value="all">all checks</option>' + checks.map((c) => '<option>' + esc(c) + '</option>').join('') + '</select></label> ' +
-        '<label>Show <select data-air-filter="state"><option value="all">all questions</option><option value="todo">not yet answered</option><option value="done">answered</option><option value="diff">where I differ from the AI</option></select></label> ' +
-        '<label><input type="checkbox" data-air-first> Show the AI’s answer before I decide</label> ' +
+        '<label>Check <select data-air-filter="check"><option value="all">all checks</option>' + checks.map((c) => '<option>' + esc(c) + '</option>').join('') + '</select></label>' +
+        '<label>Show <select data-air-filter="state"><option value="all">all questions</option><option value="todo">not yet answered</option><option value="done">answered</option><option value="diff">where I differ from the AI</option></select></label>' +
+        '<label><input type="checkbox" data-air-first> Show the AI’s answer before I decide</label>' +
         '<button type="button" class="secondary-button" data-air-export>Export my answers (CSV)</button>' +
         '</div>' +
-        '<p class="acr-status" role="status" aria-live="polite" data-air-status></p>' +
+        '<p class="air-stats" role="status" aria-live="polite" data-air-status></p></div>' +
         '<div class="air-cards" data-air-cards></div></div>';
     document.body.appendChild(dialog);
 
@@ -105,7 +109,7 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
             else if (a === 'different') { different++; if (c.ai.verdict === 'pass') aiPassYouFail++; else aiFailYouPass++; }
             else if (a === 'unsure') unsure++;
         }
-        statusEl.textContent = done + ' of ' + cases.length + ' answered. The same as the AI: ' + same + '. Different: ' + different +
+        statusEl.innerHTML = '<strong>' + done + ' of ' + cases.length + ' answered.</strong> The same as the AI: ' + same + '. Different: ' + different +
             ' (the AI said pass where you said fail: ' + aiPassYouFail + '; fail where you said pass: ' + aiFailYouPass + '). One of you unsure: ' + unsure + '.';
     };
     const draw = () => {
@@ -132,7 +136,7 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
         if (t.matches('.ai-review-radio')) {
             applyAiReview(payload, t.dataset.aiKey, { verdict: t.value });
             onChange(payload.aiReview);
-            if (filter('state') === 'all') redrawCard(t.dataset.aiKey, '.ai-review-radio:checked'); else { draw(); }
+            if (filter('state') === 'all') redrawCard(t.dataset.aiKey, '.ai-review-radio:checked'); else draw();
         } else if (t.matches('.ai-review-note')) {
             applyAiReview(payload, t.dataset.aiKey, { note: t.value });
             onChange(payload.aiReview);
@@ -141,13 +145,14 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
         }
     });
     dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) { dialog.close(); return; }
         const t = event.target.closest('button');
         if (!t) return;
         if (t.matches('[data-air-close]')) { dialog.close(); return; }
         if (t.dataset.airReveal) {
             applyAiReview(payload, t.dataset.airReveal, { revealed: true });
             onChange(payload.aiReview);
-            redrawCard(t.dataset.airReveal, '.air-ai h4');
+            redrawCard(t.dataset.airReveal, '.air-ai');
             return;
         }
         if (t.matches('.copy-selector-btn')) {
@@ -171,7 +176,6 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
             setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         }
     });
-    dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
     dialog.addEventListener('close', () => dialog.remove());
 
     draw();
