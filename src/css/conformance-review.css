@@ -206,3 +206,15 @@
 .air-review code, .air-review pre, .air-review .air-pre, .air-facts code { font-family: var(--font-mono, "IBM Plex Mono", monospace); font-size: var(--air-s); }
 .air-review .air-top .acr-intro { font-size: var(--air-s); }
 .air-head h2 { font-size: calc(var(--air-t) + 2px); }
+
+/* Why you differ, and what the report says as a result. */
+.ai-review__note-opt { display: block; color: var(--text-muted); font-size: 14px; font-weight: 400; }
+.ai-review--needs-why .ai-review-note { border: 2px solid var(--warn); background: var(--warn-soft); }
+.ai-why-hint { display: block; margin-top: 4px; color: var(--warn); font-weight: 600; font-size: 14px; }
+.ai-why-hint:empty { display: none; }
+.ai-resolved { margin: var(--space-2) 0 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); border-inline-start: 4px solid var(--border-strong); background: var(--surface-2, var(--surface-base)); font-size: 14px; }
+.ai-resolved--reviewer.ai-resolved--fail { border-color: var(--danger); background: var(--danger-soft); }
+.ai-resolved--reviewer.ai-resolved--pass { border-color: var(--ok); background: var(--ok-soft); }
+.ai-resolved--ai { border-style: dashed; }
+.ai-resolved-slot:empty { display: none; }
+.air-warn { color: var(--warn); }

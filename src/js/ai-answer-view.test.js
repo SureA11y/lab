@@ -154,3 +154,74 @@ describe('the proof picture', () => {
         assert.match(aiAnalysisHtml(ai, helpers), /What the AI was given<\/summary><img class="air-shot"/);
     });
 });
+
+describe('why you differ, and the resolved result', () => {
+    const ai = { verdict: 'pass', confidence: 0.9, rationale: 'Names the product.', provenance: 'ai-supported' };
+
+    test('a reason is asked for when you differ or are unsure, and only then', async () => {
+        const { whyHint } = await load();
+        assert.match(whyHint('different', ''), /why you differ/);
+        assert.match(whyHint('unsure', '  '), /hard to tell/);
+        assert.equal(whyHint('different', 'only a file name'), '');
+        assert.equal(whyHint('same', ''), '');
+        assert.equal(whyHint(null, ''), '');
+    });
+
+    test('a reviewer pass or fail resolves the question; the AI alone resolves it only provisionally; unsure resolves nothing', async () => {
+        const { resolvedOf } = await load();
+        assert.deepEqual(resolvedOf({ verdict: 'fail', note: 'file name' }, ai), { source: 'reviewer', verdict: 'fail', reason: 'file name', differs: true });
+        assert.equal(resolvedOf({ verdict: 'pass' }, ai).differs, false);
+        assert.deepEqual(resolvedOf(null, ai), { source: 'ai', verdict: 'pass', reason: 'Names the product.', differs: false });
+        assert.equal(resolvedOf({ verdict: 'unsure' }, ai), null);
+        assert.equal(resolvedOf(null, { ...ai, provenance: 'unresolved' }), null);
+        assert.equal(resolvedOf(null, null), null);
+    });
+
+    test('the resolved line says who confirmed it, escapes the reason, and asks for one on a fail', async () => {
+        const { resolvedHtml } = await load();
+        const html = resolvedHtml({ verdict: 'fail', note: '<b>x</b>' }, ai, helpers);
+        assert.match(html, /Resolved: Fail<\/strong>, confirmed by a reviewer\. Reason: &lt;b&gt;x&lt;\/b&gt;/);
+        assert.doesNotMatch(html, /<b>x/);
+        assert.match(resolvedHtml({ verdict: 'fail' }, ai, helpers), /No reason given yet/);
+        assert.match(resolvedHtml(null, ai, helpers), /not yet confirmed by a person/);
+        assert.equal(resolvedHtml(null, null, helpers), '');
+    });
+
+    test('the answer block shows the prompt for a reason and the resolved line', async () => {
+        const { answerFieldsetHtml } = await load();
+        const html = answerFieldsetHtml('k', ai, { verdict: 'fail' }, helpers);
+        assert.match(html, /ai-review--needs-why/);
+        assert.match(html, /ai-why-hint[^>]*>Please say why you differ/);
+        assert.match(html, /aria-invalid="true"/);
+        const done = answerFieldsetHtml('k', ai, { verdict: 'fail', note: 'file name' }, helpers);
+        assert.doesNotMatch(done, /ai-review--needs-why/);
+        assert.match(done, /Resolved: Fail/);
+    });
+
+    test('the summary counts what a reviewer resolved, what only the AI answered, what is open and differences without a reason', async () => {
+        const { resolveSummary, aiReviewKey } = await load();
+        const occ = (html, aiv) => ({ atomicCheckId: 'img-alt-quality', html, target: ['#' + html], ai: aiv ? { ...ai, verdict: aiv } : { provenance: 'unresolved', reason: 'unsure' } });
+        const payload = { scans: [{ url: 'u', canonical: { findings: [{ outcome: 'cantTell', occurrences: [occ('a', 'pass'), occ('b', 'pass'), occ('c', 'pass'), occ('d')] }] } }] };
+        const key = (h) => aiReviewKey({ sourceAtomicRules: ['img-alt-quality'], html: h, target: ['#' + h] });
+        payload.aiReview = { [key('a')]: { verdict: 'fail' }, [key('b')]: { verdict: 'pass' } };
+        assert.deepEqual(resolveSummary(payload), { total: 4, reviewerPass: 1, reviewerFail: 1, aiOnly: 1, open: 1, withoutReason: 1 });
+    });
+});
+
+describe('buildLessons', () => {
+    test('makes an example of each question settled with a reason, with the facts and what the AI said', async () => {
+        const { buildLessons, aiReviewKey } = await load();
+        const o = (html, extra = {}) => ({ atomicCheckId: 'img-alt-quality', html, target: ['#' + html], ai: { verdict: 'pass', provenance: 'ai-supported', evidence: { facts: { alt: html }, screenshot: 'data:image/jpeg;base64,AAAA' }, ...extra } });
+        const payload = { scans: [{ url: 'u', canonical: { findings: [{ outcome: 'cantTell', occurrences: [o('a'), o('b'), o('c'), o('d', { evidence: {} })] }] } }] };
+        const k = (h) => aiReviewKey({ sourceAtomicRules: ['img-alt-quality'], html: h, target: ['#' + h] });
+        payload.aiReview = {
+            [k('a')]: { verdict: 'fail', note: 'only a file name' },
+            [k('b')]: { verdict: 'pass' },
+            [k('c')]: { verdict: 'unsure', note: 'hard' },
+            [k('d')]: { verdict: 'fail', note: 'no facts' },
+        };
+        const l = buildLessons(payload);
+        assert.deepEqual(l, { version: 1, checks: { 'img-alt-quality': { rules: [], examples: [{ facts: { alt: 'a' }, verdict: 'fail', reason: 'only a file name', aiVerdict: 'pass' }] } } });
+        assert.deepEqual(buildLessons({}), { version: 1, checks: {} });
+    });
+});

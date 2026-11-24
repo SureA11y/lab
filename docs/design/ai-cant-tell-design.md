@@ -364,7 +364,7 @@ merge it. Branch names, commits and authorship carry no references to Claude.
   `prompts.json`, write its answers to `<dir>/ai-answers.json`, then
   `build-review-sheet.js <dir>`. The data of real runs (payloads, pictures,
   sheets) is not committed: it is a customer's site.
-- **Done:** the single-scan pass, the budget and reuse, the drift check, the
+- **Done (earlier):** the single-scan pass, the budget and reuse, the drift check, the
   review sheet, and the lab app's report: an `AI answered n of m` badge on a
   review row, and in each instance's dialog the AI's verdict, reasoning and
   what it was given, with the person's answer (pass, fail, unsure, a note)
@@ -381,7 +381,9 @@ merge it. Branch names, commits and authorship carry no references to Claude.
   unsure, hence `readFacts`; a replayed workflow is not a safe restore (see
   above); pictures of "can't tell" elements are not saved by the scan.
 
-## Feedback and learning (planned 2026-11-24, built in this order)
+## Feedback and learning (built 2026-11-24, except where marked)
+
+**Status.** 1 (why) and 2 (resolved result, in the lab app) are built; 3 (lessons) is built and tested but has not been tried with a real model or with real labelled data. Not built: carrying a confirmed fail and its reason into the conformance report remarks, the extension renderer, and the re-run of labelled cases to compare agreement before accepting lessons (a script is still to write). Code: `src/js/ai-answer-view.js` (`whyHint`, `resolvedOf`, `resolvedHtml`, `syncAnswerFieldset`, `resolveSummary`, `buildLessons`), `src/js/ai-review.js` (the "In the report" count line, the CSV columns resolved and resolvedBy, the "Export lessons for the AI" button), `src/js/page-events.js` (keeps the answer block in step), `src/server-side/ai-answer/lessons.js` and its use in `index.js`.
 
 Three additions, from the review of the Avaloq sample. The AI does not learn by
 itself and we do not fine-tune; a person's corrections are fed back as text.
@@ -453,6 +455,7 @@ what the AI answered, and what remains.
    `DataTransfer`, then dispatch `change`.
 
 **Not done / next, in order**
+0. Feedback and learning is built, see its section above: the dialog now asks "Why" when you differ from the AI, shows a resolved result, counts them ("In the report"), and exports a lessons file (`ai-lessons.json`) that a scan step uses with `ai: { lessons: "path/to/ai-lessons.json" }`. Try it end to end: label some cases with reasons, export lessons, re-run a scan with a real key, and compare.
 1. A person labels the cases (the dialog, then "Export my answers (CSV)");
    compute agreement per check and, above all, how often the AI says pass where
    a person says fail. That decides which registry checks may count as answered.

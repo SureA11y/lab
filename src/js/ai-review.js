@@ -6,7 +6,7 @@
 // in the report (payload.aiReview), as everywhere.
 
 import {
-    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, collectAiCases, keyFactRows, proofHtml,
+    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, buildLessons, collectAiCases, keyFactRows, proofHtml, resolveSummary, resolvedOf,
 } from './ai-answer-view.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
@@ -78,6 +78,7 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
         '<label>Show <select data-air-filter="state"><option value="all">all questions</option><option value="todo">not yet answered</option><option value="done">answered</option><option value="diff">where I differ from the AI</option></select></label>' +
         '<label><input type="checkbox" data-air-first> Show the AI’s answer before I decide</label>' +
         '<button type="button" class="secondary-button" data-air-export>Export my answers (CSV)</button>' +
+        '<button type="button" class="secondary-button" data-air-lessons title="Your answers with a reason, as lessons for the AI (ai-lessons.json)">Export lessons for the AI</button>' +
         '</div>' +
         '<p class="air-stats" role="status" aria-live="polite" data-air-status></p></div>' +
         '<div class="air-cards" data-air-cards></div></div>';
@@ -99,6 +100,9 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
         return true;
     };
     const summary = () => {
+        const rs = resolveSummary(payload);
+        const resolvedLine = ' <br><strong>In the report:</strong> ' + rs.reviewerFail + ' failed and ' + rs.reviewerPass + ' passed by you, ' + rs.aiOnly + ' only by the AI, ' + rs.open + ' open.' +
+            (rs.withoutReason ? ' <strong class="air-warn">' + rs.withoutReason + ' without a reason yet.</strong>' : '');
         let done = 0, same = 0, different = 0, unsure = 0, aiPassYouFail = 0, aiFailYouPass = 0;
         for (const c of cases) {
             const r = reviews()[c.key];
@@ -110,7 +114,7 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
             else if (a === 'unsure') unsure++;
         }
         statusEl.innerHTML = '<strong>' + done + ' of ' + cases.length + ' answered.</strong> The same as the AI: ' + same + '. Different: ' + different +
-            ' (the AI said pass where you said fail: ' + aiPassYouFail + '; fail where you said pass: ' + aiFailYouPass + '). One of you unsure: ' + unsure + '.';
+            ' (the AI said pass where you said fail: ' + aiPassYouFail + '; fail where you said pass: ' + aiFailYouPass + '). One of you unsure: ' + unsure + '.' + resolvedLine;
     };
     const draw = () => {
         const list = cases.filter(shown);
@@ -140,6 +144,7 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
         } else if (t.matches('.ai-review-note')) {
             applyAiReview(payload, t.dataset.aiKey, { note: t.value });
             onChange(payload.aiReview);
+            summary();
         } else if (t.matches('[data-air-filter], [data-air-first]')) {
             draw();
         }
@@ -159,12 +164,25 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
             navigator.clipboard?.writeText(t.dataset.selector).catch(() => {});
             return;
         }
+        if (t.matches('[data-air-lessons]')) {
+            const lessons = buildLessons(payload);
+            const n = Object.values(lessons.checks).reduce((a, c) => a + c.examples.length, 0);
+            if (!n) { statusEl.textContent = 'No lessons yet: answer pass or fail and say why, then export.'; return; }
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(lessons, null, 2)], { type: 'application/json' }));
+            a.download = 'ai-lessons.json';
+            document.body.append(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            return;
+        }
         if (t.matches('[data-air-export]')) {
             const q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-            const head = ['check', 'page', 'selector', 'toolLean', 'yourAnswer', 'yourNote', 'aiAnswer', 'aiConfidence', 'aiRationale', 'agreement'];
+            const head = ['check', 'page', 'selector', 'toolLean', 'yourAnswer', 'yourNote', 'aiAnswer', 'aiConfidence', 'aiRationale', 'agreement', 'resolved', 'resolvedBy'];
             const rows = cases.map((c) => {
                 const r = reviews()[c.key] || {};
-                return [c.check, c.urls[0], c.selector, c.lean && c.lean.toward, r.verdict, r.note, c.ai.verdict, c.ai.confidence, c.ai.rationale, agreementOf(r, c.ai)];
+                return [c.check, c.urls[0], c.selector, c.lean && c.lean.toward, r.verdict, r.note, c.ai.verdict, c.ai.confidence, c.ai.rationale, agreementOf(r, c.ai), (resolvedOf(r, c.ai) || {}).verdict, (resolvedOf(r, c.ai) || {}).source];
             });
             const blob = new Blob([[head, ...rows].map((row) => row.map(q).join(',')).join('\n')], { type: 'text/csv' });
             const a = document.createElement('a');

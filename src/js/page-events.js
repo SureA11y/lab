@@ -7,7 +7,7 @@ import {watchForMissingPictures} from './missing-pictures.js';
 import {afterPaint} from './busy.js';
 import {openLazyDialog} from './lazy-dialogs.js';
 import {STATUS} from './ui-constants.js';
-import {agreementOf, agreementText} from './ai-answer-view.js';
+import {syncAnswerFieldset} from './ai-answer-view.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
@@ -156,16 +156,13 @@ export function createPageEvents(app) {
         const radio = event.target.closest?.('.ai-review-radio');
         if (!radio) return;
         app.setAiReview(radio.dataset.aiKey, {verdict: radio.value});
-        const block = radio.closest('.node-ai');
-        const status = block?.querySelector('.ai-agree');
-        if (status) {
-            const ai = {verdict: block.dataset.aiVerdict, provenance: block.dataset.aiVerdict ? 'ai-supported' : ''};
-            status.textContent = agreementText(agreementOf({verdict: radio.value}, ai));
-        }
+        syncAnswerFieldset(radio.closest('fieldset.ai-review'));
     });
     document.addEventListener('change', (event) => {
         const note = event.target.closest?.('.ai-review-note');
-        if (note) app.setAiReview(note.dataset.aiKey, {note: note.value});
+        if (!note) return;
+        app.setAiReview(note.dataset.aiKey, {note: note.value});
+        syncAnswerFieldset(note.closest('fieldset.ai-review'));
     });
 
     // A picture a report names that cannot be shown says why, in its place.

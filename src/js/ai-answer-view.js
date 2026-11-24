@@ -2,6 +2,8 @@
 // report shows them (docs/design/ai-cant-tell-design.md, "In the app"). Pure:
 // markup in, markup out, so the renderer and its tests share it.
 
+const escapeText = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
+
 const VERDICT_WORDS = { pass: 'pass', fail: 'fail', unsure: 'unsure' };
 
 const REASON_WORDS = {
@@ -132,16 +134,81 @@ export function aiAnalysisHtml(ai, { escapeHtml, escapeAttr = escapeHtml }) {
     return analysis + given + meta;
 }
 
-/** "Your answer": pass, fail or unsure, a note, and whether it agrees with the AI. */
+/**
+ * What the report says about a question once a person and/or the AI have
+ * answered it: { source: 'reviewer'|'ai', verdict, reason, differs } or null
+ * while it is open. A reviewer's pass or fail is the resolved result; the
+ * tool's own outcome is never changed. "unsure" resolves nothing.
+ */
+export function resolvedOf(review, ai) {
+    const r = review && typeof review === 'object' ? review : {};
+    if (r.verdict === 'pass' || r.verdict === 'fail') {
+        return { source: 'reviewer', verdict: r.verdict, reason: String(r.note || '').trim(), differs: agreementOf(r, ai) === 'different' };
+    }
+    if (ai && ai.provenance === 'ai-supported' && (ai.verdict === 'pass' || ai.verdict === 'fail') && r.verdict !== 'unsure') {
+        return { source: 'ai', verdict: ai.verdict, reason: String(ai.rationale || '').trim(), differs: false };
+    }
+    return null;
+}
+
+/** The reason is asked for when the person differs from the AI or is unsure and has not said why. */
+export function whyHint(agreement, note) {
+    if ((agreement === 'different' || agreement === 'unsure') && !String(note || '').trim()) {
+        return agreement === 'different'
+            ? 'Please say why you differ from the AI. It becomes the explanation in the report and teaches the AI.'
+            : 'Please say what makes it hard to tell.';
+    }
+    return '';
+}
+
+/** "Resolved: Fail, confirmed by a reviewer. Reason: ..." or an empty string while open. */
+export function resolvedHtml(review, ai, { escapeHtml }) {
+    const res = resolvedOf(review, ai);
+    if (!res) return '';
+    const word = res.verdict === 'fail' ? 'Fail' : 'Pass';
+    const byPerson = res.source === 'reviewer';
+    return '<p class="ai-resolved ai-resolved--' + res.source + ' ai-resolved--' + res.verdict + '"><strong>Resolved: ' + word + '</strong>, ' +
+        (byPerson ? 'confirmed by a reviewer' : 'by the AI, not yet confirmed by a person') +
+        (res.reason ? '. ' + (byPerson ? 'Reason: ' : 'The AI’s reasoning: ') + escapeHtml(res.reason) : (byPerson && res.verdict === 'fail' ? '. No reason given yet.' : '')) + '</p>';
+}
+
+/** Keeps an answer block's agreement line, reason prompt and resolved line in step with its inputs. */
+export function syncAnswerFieldset(fieldset, { escapeHtml = escapeText } = {}) {
+    if (!fieldset) return;
+    const checked = fieldset.querySelector('.ai-review-radio:checked');
+    const note = fieldset.querySelector('.ai-review-note');
+    const ai = { verdict: fieldset.dataset.aiVerdict || '', provenance: fieldset.dataset.aiVerdict ? 'ai-supported' : '', rationale: fieldset.dataset.aiRationale || '' };
+    const review = { verdict: checked ? checked.value : '', note: note ? note.value : '' };
+    const agreement = agreementOf(review, ai);
+    const status = fieldset.querySelector('.ai-agree');
+    if (status) status.textContent = agreementText(agreement);
+    const hint = whyHint(agreement, review.note);
+    const hintEl = fieldset.querySelector('.ai-why-hint');
+    if (hintEl) hintEl.textContent = hint;
+    fieldset.classList.toggle('ai-review--needs-why', !!hint);
+    if (note) note.setAttribute('aria-invalid', hint ? 'true' : 'false');
+    const slot = fieldset.querySelector('.ai-resolved-slot');
+    if (slot) slot.innerHTML = resolvedHtml(review, ai, { escapeHtml });
+}
+
+/** "Your answer": pass, fail or unsure, why, and whether it agrees with the AI. */
 export function answerFieldsetHtml(key, ai, review, { escapeHtml, escapeAttr }) {
     const r = review && typeof review === 'object' ? review : {};
     const name = 'ai-review-' + key;
     const radios = ['pass', 'fail', 'unsure'].map((v) =>
         '<label class="ai-review__option"><input type="radio" class="ai-review-radio" name="' + escapeAttr(name) + '" value="' + v + '"' +
         ' data-ai-key="' + escapeAttr(key) + '"' + (r.verdict === v ? ' checked' : '') + '> ' + v + '</label>').join(' ');
-    return '<fieldset class="ai-review"><legend>Your answer</legend>' + radios +
-        '<label class="ai-review__note-label">Note <input type="text" class="ai-review-note" data-ai-key="' + escapeAttr(key) + '" value="' + escapeAttr(r.note || '') + '" placeholder="Optional"></label>' +
-        '<span class="ai-agree" role="status" aria-live="polite">' + escapeHtml(agreementText(agreementOf(r, ai))) + '</span>' +
+    const agreement = agreementOf(r, ai);
+    const hint = whyHint(agreement, r.note);
+    const supported = ai && ai.provenance === 'ai-supported' && VERDICT_WORDS[ai.verdict];
+    return '<fieldset class="ai-review' + (hint ? ' ai-review--needs-why' : '') + '"' +
+        (supported ? ' data-ai-verdict="' + escapeAttr(ai.verdict) + '"' : '') +
+        (supported && ai.rationale ? ' data-ai-rationale="' + escapeAttr(ai.rationale) + '"' : '') + '><legend>Your answer</legend>' + radios +
+        '<label class="ai-review__note-label">Why <span class="ai-review__note-opt">(needed when you differ from the AI; it is the explanation in the report)</span>' +
+        '<input type="text" class="ai-review-note" data-ai-key="' + escapeAttr(key) + '" value="' + escapeAttr(r.note || '') + '" placeholder="For example: the alt text is only the file name" aria-invalid="' + (hint ? 'true' : 'false') + '"></label>' +
+        '<span class="ai-why-hint" role="status" aria-live="polite">' + escapeHtml(hint) + '</span>' +
+        '<span class="ai-agree" role="status" aria-live="polite">' + escapeHtml(agreementText(agreement)) + '</span>' +
+        '<span class="ai-resolved-slot">' + resolvedHtml(r, ai, { escapeHtml }) + '</span>' +
         '</fieldset>';
 }
 
@@ -256,4 +323,48 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
         add('Shown on the page', f.shown ? 'yes, ' + f.size[0] + ' x ' + f.size[1] + ' px' : '<span class="air-none">not visible when the page loads (hidden, in a menu or collapsed)</span>');
     }
     return rows;
+}
+
+/**
+ * Where the report stands on its can't-tell questions: how many a reviewer
+ * resolved (pass, fail), how many only the AI answered, how many are open, and
+ * how many differences have no reason yet.
+ */
+export function resolveSummary(payload) {
+    const cases = collectAiCases(payload);
+    const reviews = payload && payload.aiReview && typeof payload.aiReview === 'object' ? payload.aiReview : {};
+    const out = { total: cases.length, reviewerPass: 0, reviewerFail: 0, aiOnly: 0, open: 0, withoutReason: 0 };
+    for (const c of cases) {
+        const r = reviews[c.key];
+        const res = resolvedOf(r, c.ai);
+        if (!res) out.open++;
+        else if (res.source === 'ai') out.aiOnly++;
+        else if (res.verdict === 'fail') out.reviewerFail++;
+        else out.reviewerPass++;
+        if (whyHint(agreementOf(r, c.ai), r && r.note)) out.withoutReason++;
+    }
+    return out;
+}
+
+/**
+ * The lessons file (server-side/ai-answer/lessons.js) a report's answers make:
+ * every question a person settled as pass or fail and gave a reason for, as an
+ * example for its check, with the facts the AI was given and what the AI said.
+ * House rules are left for a person to write.
+ */
+export function buildLessons(payload) {
+    const reviews = payload && payload.aiReview && typeof payload.aiReview === 'object' ? payload.aiReview : {};
+    const checks = {};
+    for (const c of collectAiCases(payload)) {
+        const r = reviews[c.key];
+        const reason = r && String(r.note || '').trim();
+        const facts = c.ai && c.ai.evidence && c.ai.evidence.facts;
+        if (!r || (r.verdict !== 'pass' && r.verdict !== 'fail') || !reason || !facts || typeof facts !== 'object') continue;
+        const entry = checks[c.check] || (checks[c.check] = { rules: [], examples: [] });
+        entry.examples.push({
+            facts, verdict: r.verdict, reason,
+            ...(c.ai.provenance === 'ai-supported' && c.ai.verdict ? { aiVerdict: c.ai.verdict } : {}),
+        });
+    }
+    return { version: 1, checks };
 }

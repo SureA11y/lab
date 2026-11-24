@@ -9,10 +9,11 @@
 const { entryFor, PROMPT_VERSION } = require('./registry');
 const { collectEvidence, fingerprint, sameFingerprint } = require('./evidence');
 const { resolveProvider } = require('./provider');
+const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
 
 const DEFAULTS = { maxCalls: 10, seconds: 60, minConfidence: 0.6 };
 
-function buildPrompt(entry, occurrence, evidence) {
+function buildPrompt(entry, occurrence, evidence, lessons = null) {
     const how = occurrence.howToCheck || {};
     return [
         'You are an accessibility auditor settling one question an automated WCAG checker could not decide.',
@@ -26,6 +27,7 @@ function buildPrompt(entry, occurrence, evidence) {
         '',
         // The proof picture is for the person reviewing the answer, not the model.
         `<evidence>\n${JSON.stringify((({ screenshot, ...given }) => given)(evidence), null, 1)}\n</evidence>`,
+        lessons ? lessonsPrompt(lessons) : '',
         '',
         'Decide from the evidence only. Answer "unsure" whenever it is not enough; do not guess.',
         'Reply with JSON only: {"verdict":"pass"|"fail"|"unsure","confidence":0..1,"rationale":"one or two sentences"}',
@@ -81,11 +83,12 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         const model = resolveProvider(provider || opt.provider);
         shared.cache = shared.cache || new Map();
         shared.calls = shared.calls || 0;
+        if (opt.lessons && !shared.lessons) shared.lessons = loadLessons(opt.lessons);
         const before = await fingerprint(page);
         const results = [];
 
         for (const { occurrence, entry } of todo) {
-            const base = { promptVersion: PROMPT_VERSION, check: occurrence.atomicCheckId, tier: 0 };
+            const base = { promptVersion: shared.lessons ? PROMPT_VERSION + '+lessons' : PROMPT_VERSION, check: occurrence.atomicCheckId, tier: 0 };
             const evidence = await collectEvidence(page, occurrence, entry.evidence);
             const key = JSON.stringify([occurrence.atomicCheckId, evidence.element, evidence.context, evidence.pageTitle, evidence.image]);
             let ai;
@@ -104,7 +107,7 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 const t0 = Date.now();
                 try {
                     const signal = AbortSignal.timeout(Math.max(1000, deadline - t0));
-                    const answer = parseAnswer(await model.ask(buildPrompt(entry, occurrence, evidence), { signal }));
+                    const answer = parseAnswer(await model.ask(buildPrompt(entry, occurrence, evidence, shared.lessons ? lessonsFor(shared.lessons, occurrence.atomicCheckId, evidence.facts || evidence) : null), { signal }));
                     if (!answer) {
                         ai = { ...base, provenance: 'unresolved', reason: 'unreadable-answer' };
                     } else {
