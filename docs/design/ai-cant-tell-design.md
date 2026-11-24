@@ -380,10 +380,16 @@ Run in the lab app with a report from the demo shop's tour, answered through a
 local stub of the model: the row badges show, the instance dialog shows the AI's
 analysis and the answer controls, and answering shows whether it agrees with the
 AI. The unit tests cover the markup, the key that makes one question one answer
-across pages, the agreement, and how an answer is kept. **Not checked:** that
-the answer survives the report's download and reopening in a real session
-(the field is listed among the properties a report keeps, as the conformance
-review is), and the exported single-file HTML, where the controls would not save.
+across pages, the agreement, and how an answer is kept. **Saving was checked at the data level, not through a browser download.** A
+report with a person's answers is prepared for saving with them kept
+(`prepareDataForReport`), the compact format and `upgradeReport` leave the
+`ai` answers and `aiReview` alone, and the report schema (which now
+describes `aiReview`) accepts them and refuses a verdict it does not know. A
+report carrying `aiReview` loaded into the app shows the saved answer and note
+in the dialog, already chosen. **Not checked:** a real download of the zip in a
+browser and loading that file again (a headless browser could not capture the
+download), and the exported single-file HTML, where the controls would not
+save.
 
 ## Left out on purpose
 

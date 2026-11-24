@@ -98,3 +98,17 @@ describe('applyAiReview', () => {
         assert.equal(payload.aiReview, undefined);
     });
 });
+
+describe('saving', () => {
+    test('a report keeps the answers of a person when it is prepared for saving, and they validate against the schema', async () => {
+        const { prepareDataForReport } = await import('./report-data.js');
+        const { checkAgainstSchema } = require('../shared/json-schema-check');
+        const { reportSchema } = require('../shared/report-schemas');
+        const aiReview = { 'img-alt-quality|x1': { verdict: 'fail', note: 'n', at: '2026-11-24T10:00:00Z' } };
+        const saved = prepareDataForReport({ scans: [], screenshots: [], scenarioName: 's', url: 'u', timestamp: 't', aiReview, notAReportKey: 1 });
+        assert.deepEqual(saved.aiReview, aiReview);
+        assert.equal(saved.notAReportKey, undefined);
+        assert.deepEqual(checkAgainstSchema(reportSchema(), { ...saved, reportVersion: 4, runId: 'r' }), []);
+        assert.notDeepEqual(checkAgainstSchema(reportSchema(), { ...saved, reportVersion: 4, runId: 'r', aiReview: { k: { verdict: 'maybe' } } }), []);
+    });
+});

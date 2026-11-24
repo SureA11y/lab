@@ -107,6 +107,21 @@
                         },
                     },
                 },
+                aiReview: {
+                    type: 'object',
+                    description: 'The answers a person gave to the AI answers on questions the scan could not decide (docs/design/ai-cant-tell-design.md), by question: '
+                        + 'its check and a hash of its element and selector, so one element on many pages is one question. Each has a '
+                        + '`verdict` (pass, fail, unsure), an optional `note` and the time (`at`) it was last changed. The answer of the AI is an '
+                        + '`ai` object on the occurrence.',
+                    additionalProperties: {
+                        type: 'object',
+                        properties: {
+                            verdict: { enum: ['pass', 'fail', 'unsure'] },
+                            note: { type: 'string' },
+                            at: { type: 'string' },
+                        },
+                    },
+                },
                 conformanceReview: {
                     type: 'object',
                     description: 'A reviewer\'s conformance verdicts over the automated draft (docs/design/conformance-report-design.md): '
