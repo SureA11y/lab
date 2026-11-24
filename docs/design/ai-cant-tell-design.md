@@ -460,10 +460,12 @@ option: 10 questions on 4 pages, 7 calls (3 reused), the page unchanged, every
 answer named and carrying its facts and picture. Tests:
 `src/server-side/ai-answer/provider.test.js`.
 
-**Before using it on a customer's site:** the page's content (and its picture,
-when turned on) goes to the service, so it must be one you control or have
-approved. Agents are slower than one model call: raise the step's
-`budget` (`{ calls, seconds }`, default 10 and 60) for them.
+**Before using it on a customer's site** read
+[ai-cant-tell-data-and-agents.md](ai-cant-tell-data-and-agents.md): what
+leaves the lab, what can go wrong (with agents above all), what the lab already
+does, and how to set it up well. Agents are slower than one model call: raise
+the step's `budget` (`{ calls, seconds }`, default 10 per run and 60 per scan)
+for them.
 
 ## Status when work stopped (2026-11-24)
 

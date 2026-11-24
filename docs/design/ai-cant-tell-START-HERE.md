@@ -7,6 +7,8 @@ Read, in this order:
 1. `ai-cant-tell-design.md`: "Status when work stopped", then "Handoff: state at
    2026-11-24 and how to pick it up cold", then the rest as needed.
 2. `ai-cant-tell-spike.md`: the earlier results.
+3. `ai-cant-tell-data-and-agents.md`: before turning the AI pass on for a
+   customer's site (what leaves the lab, agents, how to set it up well).
 
 Done: the conformance remark added with "Add to the remarks" saves in the
 downloaded report and comes back when it is opened again (status section of the
