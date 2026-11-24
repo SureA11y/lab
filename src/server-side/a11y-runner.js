@@ -62,6 +62,7 @@ const { largePageNotice, httpErrorNotice } = require('../shared/scan-notes.js');
 const { languageNotice } = require('../shared/scan-notes.js');
 const { pageLanguage, canonicalLanguageTag } = require('../workflow/engine/page-language');
 const { interpolateVarTokensLoose } = require('../workflow/engine/vars');
+const { answerCantTells } = require('./ai-answer');
 
 const DEFAULT_SCAN_CSS = `{filter: opacity(.8) blur(5px);}`;
 
@@ -1649,6 +1650,8 @@ async function runA11yWorkflow(url, tags, options = {}) {
         } catch {
         }
 
+        // The scan's entry in collectedScans, for the AI pass that follows it.
+        let scanEntry = null;
         const doScan = async () => {
             // Pictures of flagged elements get their own time after the
             // scan's, and stop when the scan is given up on, so the binding
@@ -1873,7 +1876,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
             }
 
             if (!Array.isArray(workflowCtx.collectedScans)) workflowCtx.collectedScans = [];
-            workflowCtx.collectedScans.push({
+            workflowCtx.collectedScans.push(scanEntry = {
                 id: (typeof meta.id === 'string' && meta.id.trim()) ? meta.id.trim() : null,
                 scanId: (typeof meta.scanId === 'string' && meta.scanId.trim()) ? meta.scanId.trim() : ((typeof meta.id === 'string' && meta.id.trim()) ? meta.id.trim() : null),
                 orderKey: (typeof meta.orderKey === 'string' && meta.orderKey.trim()) ? meta.orderKey.trim() : null,
@@ -1967,6 +1970,20 @@ async function runA11yWorkflow(url, tags, options = {}) {
             }
         };
         await withTemporaryStyle(pageRef, beforeScanCss, doScan);
+        // The AI pass (docs/design/ai-cant-tell-design.md): only when the step
+        // asks, after the scan's result is stored and its temporary style is
+        // gone, and before the next step. It never fails the scan.
+        if (meta.ai && scanEntry && scanEntry.canonical) {
+            workflowCtx._aiShared = workflowCtx._aiShared || {};
+            await answerCantTells({
+                page: pageRef,
+                canonical: scanEntry.canonical,
+                options: meta.ai === true ? {} : meta.ai,
+                shared: workflowCtx._aiShared,
+                provider: workflowCtx.aiProvider || null,
+                log: (level, message) => pushLog(workflowCtx, level, message),
+            });
+        }
     };
 
     // Provide a single handler that workflow-engine can call for nested a11yScan actions.
@@ -2024,6 +2041,7 @@ async function runA11yWorkflow(url, tags, options = {}) {
             label: s.label || null,
             engine: s.engine || null,
             screenshotView: s.screenshotView !== false,
+            ai: s.ai || null,
             scanTags: s.scanTags || null,
             context: s.context || null,
             preserveHover: s.preserveHover === true,

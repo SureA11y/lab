@@ -1252,6 +1252,13 @@
             }
           ]
         },
+        "ai": {
+          "description": "Experimental. Have a model answer the \"can't tell\" results it can settle from the page (alt text, page titles, headings, field labels), once the scan is done. The answers sit beside the scan's own outcome, which stays as it is, and carry the model's reasoning. Needs ANTHROPIC_API_KEY in the environment; without it every item stays as it was. The page's content and the element's picture details are sent to the model. As an object (or the same as JSON text); fields: answer (cantTell), budget ({ calls, seconds }, default 10 and 60), minConfidence (default 0.6).",
+          "type": [
+            "string",
+            "object"
+          ]
+        },
         "screenshotView": {
           "description": "Take a screenshot of the page once the scan is done, shown with its results. Set to false for a scan that needs no picture of the page: it runs faster and its report is smaller. Pictures of the flagged elements (Element screenshots) are set apart.",
           "default": true,

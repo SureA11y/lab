@@ -6,7 +6,7 @@
     "AI agents"
   ],
   "purpose": "Generate valid run specs (the workflow files the headless runner takes and other tools exchange) and app configuration files, including custom steps.",
-  "generatedAt": "2026-11-18T07:48:05.436Z",
+  "generatedAt": "2026-11-24T09:41:49.701Z",
   "sourceOfTruth": {
     "actionDefinitionsFile": "src/workflow/action-definitions.js",
     "workflowEngineFile": "src/workflow/workflow-engine.js",
@@ -430,6 +430,12 @@
               "label": "Both"
             }
           ]
+        },
+        "ai": {
+          "type": "string|object",
+          "required": false,
+          "label": "AI answers",
+          "description": "Experimental. Have a model answer the \"can't tell\" results it can settle from the page (alt text, page titles, headings, field labels), once the scan is done. The answers sit beside the scan's own outcome, which stays as it is, and carry the model's reasoning. Needs ANTHROPIC_API_KEY in the environment; without it every item stays as it was. The page's content and the element's picture details are sent to the model. As an object (or the same as JSON text); fields: answer (cantTell), budget ({ calls, seconds }, default 10 and 60), minConfidence (default 0.6)."
         },
         "screenshotView": {
           "type": "boolean",

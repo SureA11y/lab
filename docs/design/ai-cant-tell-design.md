@@ -247,7 +247,7 @@ Scan time and exact repeatability are given up on purpose, within limits:
    screenshot or HTML, ask a model, and compare with human answers on the
    gallery and demo-shop reports. This shows which rules are worth
    automating.
-2. **Live prototype, single scan first.** One scan, the `ai` option, tier 0
+2. **Live prototype, single scan first** (built, see "Prototype status"). One scan, the `ai` option, tier 0
    evidence only and no clicking, through the hook above; this proves the
    wiring. Then tier 1 (page-level checks), with the fingerprint and
    drift detection, the budget and the step log.
@@ -256,6 +256,32 @@ Scan time and exact repeatability are given up on purpose, within limits:
 4. **Human review loop.** Accept or override an AI answer; overrides give an
    accuracy figure per rule, which decides when a rule may count as answered.
 5. **Later.** The isolated pass for tier 2, and showing the step log.
+
+## Prototype status
+
+Built on `design-ai-cant-tell`: `src/server-side/ai-answer/` (registry,
+evidence, provider, the pass) and an `ai` option on the scan step.
+
+- **Works:** the pass runs in `performA11yScan` after the scan's result and
+  temporary style are done, for the five checks of the spike, with tier 0
+  reads, the fingerprint before and after, a call and time budget shared by
+  the run, and reuse of a repeated question. The tool's outcome is untouched;
+  each occurrence gets `ai` with verdict, confidence, rationale, model,
+  prompt version and a step log.
+- **Tested:** unit tests with a fake model, a Chrome test that a pass which
+  changes the page keeps no answers, and a full run of the demo shop's tour
+  through the real runner with the Anthropic provider pointed at a local stub
+  (4 scans, 22 "can't tell" kept, 10 answers attached, 4 reused, no drift).
+  The stub is not a model: **no accuracy has been measured on the live path
+  yet**.
+- **Model access:** the provider reads `ANTHROPIC_API_KEY` (and
+  `ANTHROPIC_BASE_URL`, `A11Y_AI_MODEL`). No key was available to code in the
+  development environment, so a real model has not been called from it.
+  Without a key every item stays unresolved with the reason `no-model`.
+- **Not done:** the live preview's "answered" event, the provenance labels in
+  the report and the app, the report schema's description of `ai`, the
+  page-level checks (tier 1), and the `ai` field in the app's step editor
+  (it shows as a JSON text field, like `argsJson`).
 
 ## Left out on purpose
 

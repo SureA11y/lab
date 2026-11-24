@@ -222,6 +222,13 @@ const ACTION_DEFINITIONS = {
                 default: "composite",
                 options: [{value: "composite", label: "Criterion"}, {value: "atomic", label: "Single check"}, {value: "Both", label: "Both"}]
             },
+            ai: {
+                type: "string|object",
+                required: false,
+                alias: "AI answers",
+                description: "Experimental. Have a model answer the \"can't tell\" results it can settle from the page (alt text, page titles, headings, field labels), once the scan is done. The answers sit beside the scan's own outcome, which stays as it is, and carry the model's reasoning. Needs ANTHROPIC_API_KEY in the environment; without it every item stays as it was. The page's content and the element's picture details are sent to the model. As an object (or the same as JSON text); fields: answer (cantTell), budget ({ calls, seconds }, default 10 and 60), minConfidence (default 0.6).",
+                example: { answer: "cantTell", budget: { calls: 10, seconds: 60 } }
+            },
             screenshotView: {
                 type: "boolean",
                 required: false,
@@ -268,6 +275,7 @@ const ACTION_DEFINITIONS = {
                 "context",
                 "exclude",
                 "screenshotView",
+                "ai",
                 "frames",
                 "elementScreenshots",
                 "elementScreenshotsMax",
