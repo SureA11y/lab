@@ -435,6 +435,18 @@ browser has `showSaveFilePicker` the app saves through it, which a headless
 browser cannot answer, so the script removes it and the app falls back to an
 ordinary download (that is why the earlier attempt could not capture it).
 
+**Fixed (2026-11-24): a question the AI did not answer keeps its proof.** The
+pass reads the facts and takes the element's picture for every question it may
+ask, but used to keep them only on an answer: a question over the call or time
+budget, with no key, or whose call failed showed no facts and no picture. Now
+every result carries `evidence` (without the element's HTML, which is the
+occurrence's own), and the app labels it "What was read from the page" where
+no model answered. These pictures are the AI pass's own (`captureProof` in
+`evidence.js`): one per question it may ask, cropped to 1000 x 700 px, with no
+count limit. They are not the scan's element screenshots (the a11yScan step's
+"Element screenshots" option, 50 per scan by default, `element-screenshots.js`),
+which the pass does not use.
+
 **Next, in order:** a person labels cases with reasons and exports
 the CSV and `ai-lessons.json`; run the pass with a real `ANTHROPIC_API_KEY` and
 `ai: { lessons: "..." }`; a script to re-run labelled cases and compare

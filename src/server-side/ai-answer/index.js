@@ -88,8 +88,13 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         const results = [];
 
         for (const { occurrence, entry } of todo) {
-            const base = { promptVersion: shared.lessons ? PROMPT_VERSION + '+lessons' : PROMPT_VERSION, check: occurrence.atomicCheckId, tier: 0 };
             const evidence = await collectEvidence(page, occurrence, entry.evidence);
+            // What was read from the page (the element's HTML is the
+            // occurrence's own): kept on every result, answered or not, so a
+            // person settling one the AI did not answer has the facts and
+            // the picture too.
+            const read = (({ element, ...rest }) => rest)(evidence);
+            const base = { promptVersion: shared.lessons ? PROMPT_VERSION + '+lessons' : PROMPT_VERSION, check: occurrence.atomicCheckId, tier: 0, evidence: read };
             const key = JSON.stringify([occurrence.atomicCheckId, evidence.element, evidence.context, evidence.pageTitle, evidence.image]);
             let ai;
             if (shared.cache.has(key)) {
@@ -116,8 +121,6 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                             ...base, ...answer,
                             provenance: sure ? 'ai-supported' : 'unresolved',
                             ...(sure ? {} : { reason: 'unsure' }),
-                            // What it was given, so a person can judge the answer.
-                            evidence: (({ element, ...given }) => given)(evidence),
                             model: model.model || model.name || null,
                             durationMs: Date.now() - t0,
                         };

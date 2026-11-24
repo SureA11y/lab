@@ -126,7 +126,7 @@ export function aiAnalysisHtml(ai, { escapeHtml, escapeAttr = escapeHtml }) {
             (ai.rationale ? '<p class="node-ai__rationale">' + escapeHtml(ai.rationale) + '</p>' : '');
     const facts = factsList(ai.evidence, { escapeHtml });
     const given = (facts || (ai.evidence && (ai.evidence.context || proofSrc(ai.evidence))))
-        ? '<details class="node-ai__given"><summary>What the AI was given</summary>' + proofHtml(ai.evidence, { escapeAttr }) + facts +
+        ? '<details class="node-ai__given"><summary>' + (ai.model ? 'What the AI was given' : 'What was read from the page') + '</summary>' + proofHtml(ai.evidence, { escapeAttr }) + facts +
             (ai.evidence && ai.evidence.context ? '<p>Around the element:</p><pre class="node-ai__context">' + escapeHtml(ai.evidence.context) + '</pre>' : '') +
             '</details>'
         : '';

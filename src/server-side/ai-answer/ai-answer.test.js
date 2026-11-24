@@ -95,6 +95,31 @@ describe('answerCantTells', () => {
         assert.equal(b.findings[0].occurrences[0].ai.reused, true);
     });
 
+    test('a question the AI did not answer keeps what was read from the page, picture included', async () => {
+        // A page with one visible element that can be pictured, and that never changes.
+        const page = { evaluate: async () => ({ x: 0, y: 0, width: 40, height: 20 }), screenshot: async () => 'AAAA' };
+        const shared = {};
+        const provider = answering({ verdict: 'pass', confidence: 0.9, rationale: 'ok' });
+        const c = canonicalOf('img-alt-quality', 'page-title-patterns');
+        await answerCantTells({ page, canonical: c, options: { budget: { calls: 1 } }, shared, provider });
+        const [answered, over] = c.findings[0].occurrences.map((o) => o.ai);
+        assert.equal(answered.provenance, 'ai-supported');
+        assert.equal(over.reason, 'budget-calls');
+        for (const ai of [answered, over]) {
+            assert.equal(ai.evidence.screenshot, 'data:image/jpeg;base64,AAAA');
+            assert.ok(ai.evidence.facts);
+            assert.equal(ai.evidence.element, undefined, 'the HTML is the occurrence\'s own');
+        }
+
+        const none = canonicalOf('img-alt-quality');
+        const saved = process.env.ANTHROPIC_API_KEY;
+        delete process.env.ANTHROPIC_API_KEY;
+        try { await answerCantTells({ page, canonical: none }); } finally { if (saved !== undefined) process.env.ANTHROPIC_API_KEY = saved; }
+        const ai = none.findings[0].occurrences[0].ai;
+        assert.equal(ai.reason, 'no-model');
+        assert.equal(ai.evidence.screenshot, 'data:image/jpeg;base64,AAAA');
+    });
+
     test('a failing model never rejects and leaves the item unresolved', async () => {
         const c = canonicalOf('img-alt-quality');
         const s = await answerCantTells({ page: fakePage, canonical: c, provider: { ask: async () => { throw new Error('boom'); } } });

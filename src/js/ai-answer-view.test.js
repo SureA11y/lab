@@ -184,6 +184,9 @@ describe('the proof picture', () => {
         assert.equal(proofHtml(null, helpers), '');
         const ai = { ...node().ai, evidence: { ...node().ai.evidence, ...good } };
         assert.match(aiAnalysisHtml(ai, helpers), /What the AI was given<\/summary><img class="air-shot"/);
+        // Read from the page but never put to a model (no key, over the budget).
+        const unasked = { provenance: 'unresolved', reason: 'budget-calls', evidence: ai.evidence };
+        assert.match(aiAnalysisHtml(unasked, helpers), /What was read from the page<\/summary><img class="air-shot"/);
     });
 });
 
