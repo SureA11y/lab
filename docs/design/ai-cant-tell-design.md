@@ -381,6 +381,35 @@ merge it. Branch names, commits and authorship carry no references to Claude.
   unsure, hence `readFacts`; a replayed workflow is not a safe restore (see
   above); pictures of "can't tell" elements are not saved by the scan.
 
+## Feedback and learning (planned 2026-11-24, built in this order)
+
+Three additions, from the review of the Avaloq sample. The AI does not learn by
+itself and we do not fine-tune; a person's corrections are fed back as text.
+
+1. **Why you differ.** When your answer differs from the AI's, or is "unsure",
+   the note is asked for as "Why?" (required in the sense that the dialog says
+   what is missing and counts it, not that it blocks saving). It is kept as
+   `aiReview[key].note`. For a case that ends as a fail, it is the explanation
+   the report shows.
+2. **Your answers in the report.** The tool's outcome is never changed. Beside
+   it the report derives a *resolved result*: "Can't tell → Fail, confirmed by
+   reviewer" with the reason, or "Pass". An AI answer nobody confirmed stays
+   "AI-supported". `resolveCantTells(payload)` in `src/js/ai-answer-view.js`
+   computes it from `aiReview` and `ai`; the instance dialog and the review
+   dialog show it. Still to do: carry a confirmed fail and its reason into the
+   conformance report's remarks (never setting "Supports").
+3. **Lessons for the AI.** Corrections become a lessons file kept with the
+   project's config, not in the report and not in the repo (it holds a customer's
+   content): per check, a house rule and corrected examples (facts, the answer,
+   the reason). The scan step's `ai` option names the file
+   (`ai: { lessons: "ai-lessons.json" }`); the prompt gets the rules and the
+   most similar examples of that check as data, `promptVersion` records that
+   lessons were used, and the review dialog exports a lessons file from the
+   differences that have a reason. Every labelled case is also a test: before
+   lessons are accepted, re-run the labelled cases and compare agreement, so a
+   lesson cannot silently make the AI worse. Lessons are data, never
+   instructions to follow beyond the question, like page text.
+
 ## Handoff: state at 2026-11-24 and how to pick it up cold
 
 Read this section first if you have no other context. Everything below is on
