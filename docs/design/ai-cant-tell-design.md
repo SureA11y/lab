@@ -381,6 +381,73 @@ merge it. Branch names, commits and authorship carry no references to Claude.
   unsure, hence `readFacts`; a replayed workflow is not a safe restore (see
   above); pictures of "can't tell" elements are not saved by the scan.
 
+## Handoff: state at 2026-11-24 and how to pick it up cold
+
+Read this section first if you have no other context. Everything below is on
+branch `design-ai-cant-tell` (origin); no PR, on purpose.
+
+**The goal.** Scan results the engine marks `cantTell` get an AI answer beside
+them (`occurrence.ai`), never replacing the tool's outcome. A person reviews
+the AI's answers inside the lab app, and the report shows what the tool found,
+what the AI answered, and what remains.
+
+**What is built and pushed**
+- Server pass (opt-in `ai` option of the scan step, shared budget, drift check,
+  tier 0 only): `src/server-side/ai-answer/` and the hook in `a11y-runner.js`.
+- Report: row badge, per-instance AI block with the person's answer (saved as
+  `payload.aiReview`, keyed by check + element so one element on many pages is
+  one question): `src/js/ai-answer-view.js` and the rendering, event and
+  state files listed in "In the app".
+- Review dialog (the "Review AI answers (n)" button in the report toolbar):
+  `src/js/ai-review.js`, styles in `src/css/conformance-review.css` (the `air-*`
+  block; the last block of the file is the depth and colour pass). Layout: sticky
+  top bar with filters, counts and CSV export; one card per question with a
+  numbered header, the issue, the tool's lean, "What to check (read from the
+  page)", proof picture and links on the left, the person's answer and the
+  hidden-until-answered AI box on the right.
+- Tests: all pass with `node --test` (about 4400). The review dialog has no
+  browser test of its own; it was checked by eye in the real app.
+
+**See it running (Windows, PowerShell)**
+1. `node server.js` from the repo root (port 3000; or `PORT=...`).
+2. Open the app, load a report that has `ai` blocks with the report file
+   picker (`#resultsFiles`), then press "Review AI answers (n)".
+3. No such report is committed (real customer data). To make one: run a
+   workflow with the scan step's `ai` option and a model key, or build a sample
+   with `docs/design/ai-cant-tell-spike/attach-answers.js` from a run's
+   `payload.json` and an eval directory (see "Evaluation pipeline" above).
+   The author's local copy was built from the Avaloq config
+   (`avaloq.com.a11y-config.json`, trimmed to ~30 pages) and lives outside the
+   repo in the temp folder `spike/avaloq/`; it may be gone.
+4. A browser pane cannot pick a file from disk; serve the file from a tiny
+   local HTTP server with CORS and set it on the file input through
+   `DataTransfer`, then dispatch `change`.
+
+**Not done / next, in order**
+1. A person labels the cases (the dialog, then "Export my answers (CSV)");
+   compute agreement per check and, above all, how often the AI says pass where
+   a person says fail. That decides which registry checks may count as answered.
+2. Run the pass with a real `ANTHROPIC_API_KEY`; so far answers came from a
+   model run outside the code over the same prompts.
+3. Verify a real browser download of the report zip and reloading it (saving
+   was only checked at the data level); the exported single-file HTML cannot
+   save answers.
+4. The extension's renderer (`extension/main-issues-table.js`) has none of this.
+5. Step 4 of "In the app": a confirmed answer may inform conformance remarks,
+   never set "Supports". Also: live-preview event, tier 1 page-level checks.
+
+**Conventions to keep.** No references to Claude or any AI assistant in branch
+names, commit messages, authors or co-author lines; commit under the user's own
+git identity. Do not open a PR unless asked. Do not commit real-site data.
+`npm test` does not start on Windows; use `node --test`. After editing step
+fields run `npm run build:action-docs`.
+
+**Gotchas met so far.** Backslashes get lost in regexes written through shell
+heredocs (use the file tools); the engine's run uses the config's run spec, so
+trimming a config's `state` alone does not shorten a run; `dedupeWithUrlMerge`
+must ignore `ai` or merged instances split; apostrophes inside single-quoted
+strings broke `report-schemas.js` once.
+
 ## What is checked in the app
 
 Run in the lab app with a report from the demo shop's tour, answered through a
