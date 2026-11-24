@@ -157,3 +157,33 @@
 @media (max-width: 560px) { .air-facts > div { grid-template-columns: 1fr; } }
 .air-controls select { max-width: 13rem; }
 .air-controls [data-air-export] { margin-inline-start: auto; }
+
+/* Depth and contrast for the AI review: a tinted backdrop, cards that lift off it,
+   and each part of a card in its own colour so it can be told apart at a glance. */
+.air-review { background: var(--surface-2, var(--surface-base)); }
+.air-review .acr-review-shell { background: var(--surface-2, var(--surface-base)); }
+.air-top { background: var(--surface-base); box-shadow: 0 2px 8px rgba(0,0,0,.14); }
+.air-card {
+    background: var(--surface-base); border: 1px solid var(--border-strong); border-radius: var(--radius-lg);
+    padding: 0 0 var(--space-4); overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.12), 0 8px 20px rgba(0,0,0,.08);
+}
+.air-card > * { margin-inline: var(--space-4); }
+.air-card > header {
+    margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4) var(--space-2);
+    background: var(--accent-soft); border-bottom: 2px solid var(--accent-border); counter-increment: air-q;
+}
+.air-card > header h3::before { content: "Question " counter(air-q); display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.air-cards { counter-reset: air-q; }
+.air-issue { padding-bottom: var(--space-2); border-bottom: 1px dashed var(--border-strong); }
+.air-lean { background: var(--warn-soft); border-inline-start: 4px solid var(--warn); }
+.air-box { background: var(--surface-2, var(--surface-base)); border: 1px solid var(--border-strong); }
+.air-box--facts { background: var(--surface-base); border: 2px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.air-box--facts h4 { color: var(--accent-on-soft, var(--accent)); }
+.air-facts > div { border-top: 1px solid var(--border-strong); padding: 8px 0; }
+.air-facts dt { font-weight: 600; }
+.air-card fieldset.ai-review { background: var(--surface-base); border: 2px solid var(--accent); box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+.air-card .ai-review legend { background: var(--accent); color: var(--surface-base); border-radius: var(--radius-pill); padding: 2px 12px; }
+.air-card .ai-review__option { border: 2px solid var(--border-strong); min-height: 40px; }
+.air-card .ai-review__option:hover { border-color: var(--accent); }
+.air-ai { background: var(--surface-2, var(--surface-base)); border: 1px dashed var(--border-strong); border-inline-start: 5px solid var(--accent); }
+.air-ai h4 { color: var(--text-main); }
