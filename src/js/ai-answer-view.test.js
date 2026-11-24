@@ -111,6 +111,38 @@ describe('saving', () => {
         assert.deepEqual(checkAgainstSchema(reportSchema(), { ...saved, reportVersion: 4, runId: 'r' }), []);
         assert.notDeepEqual(checkAgainstSchema(reportSchema(), { ...saved, reportVersion: 4, runId: 'r', aiReview: { k: { verdict: 'maybe' } } }), []);
     });
+
+    test('the conformance remark made from confirmed fails is saved, read back, and still recognised as added', async () => {
+        const { aiReviewKey, confirmedByCriterion, remarksFromConfirmed } = await load();
+        const { prepareDataForReport, validateReportOrThrow } = await import('./report-data.js');
+        const globals = ['A11Y_REPORT_FORMAT', 'A11Y_JSON_SCHEMA_CHECK', 'A11Y_REPORT_SCHEMAS'];
+        const before = globals.map((g) => globalThis[g]);
+        globalThis.A11Y_REPORT_FORMAT = require('../shared/report-format');
+        globalThis.A11Y_JSON_SCHEMA_CHECK = require('../shared/json-schema-check');
+        globalThis.A11Y_REPORT_SCHEMAS = require('../shared/report-schemas');
+        try {
+            const occ = { atomicCheckId: 'img-alt-quality', html: 'a', target: ['#a'], pageUrls: ['https://x.test/a'], ai: { verdict: 'pass', provenance: 'ai-supported', evidence: { facts: { alt: 'a' } } } };
+            const payload = {
+                reportVersion: 4, runId: 'r', scenarioName: 's', url: 'u', timestamp: 't', screenshots: [],
+                scans: [{ id: 's1', url: 'u', canonical: { findings: [{ id: 'f1', outcome: 'cantTell', wcag: { sc: ['1.1.1'] }, occurrences: [occ] }] } }],
+                aiReview: { [aiReviewKey({ sourceAtomicRules: ['img-alt-quality'], html: 'a', target: ['#a'] })]: { verdict: 'fail', note: 'only a file name' } },
+            };
+            const text = remarksFromConfirmed(confirmedByCriterion(payload)['1.1.1']);
+            assert.ok(text);
+            payload.conformanceReview = { product: {}, criteria: { '1.1.1': { remarks: `Typed first.\n${text}` } }, clauses: {} };
+
+            // As a download writes it, then as opening that file reads it.
+            const copy = JSON.parse(JSON.stringify(payload));
+            globalThis.A11Y_REPORT_FORMAT.compactReport(copy);
+            const back = JSON.parse(JSON.stringify(prepareDataForReport(copy)));
+            validateReportOrThrow(back, 'saved');
+
+            assert.equal(back.conformanceReview.criteria['1.1.1'].remarks, `Typed first.\n${text}`);
+            assert.equal(remarksFromConfirmed(confirmedByCriterion(back)['1.1.1']), text, 'the same text, so "Add to the remarks" knows it is there');
+        } finally {
+            globals.forEach((g, i) => { if (before[i] === undefined) delete globalThis[g]; else globalThis[g] = before[i]; });
+        }
+    });
 });
 
 describe('collectAiCases and keyFactRows', () => {

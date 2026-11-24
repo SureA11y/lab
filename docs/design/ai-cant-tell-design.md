@@ -417,22 +417,25 @@ itself and we do not fine-tune; a person's corrections are fed back as text.
 Everything built is committed and pushed on `design-ai-cant-tell` (latest
 code commit: the conformance link). All tests pass with `node --test`.
 
-**Open: saving the conformance remark was not verified end to end.** The
-"Add to the remarks" button writes the text into the criterion's remarks
-field, which the Conformance view saves into `payload.conformanceReview`
-(`criteria["1.1.1"].remarks`) exactly as a typed remark; that was seen working
-on screen, but not through a real save and reload. What to do: in the lab app
-load a report that has AI answers, answer a question as fail with a reason in
-"Review AI answers", open "Review conformance", press "Add to the remarks" on
-the criterion, close, download the report, load the downloaded zip again and
-open "Review conformance": the remark should be there. Capturing the download
-in the page works by wrapping `URL.createObjectURL` before pressing download,
-then putting the captured blob in `#resultsFiles`. A data-level check
-(`prepareDataForReport`, compact, `upgradeReport` keep `conformanceReview`) is
-the cheaper first step; `conformanceReview` is already in
-`requiredProperties` in `src/js/report-data.js`.
+**Verified (2026-11-24): the conformance remark saves and comes back.** In
+the lab app, with the demo shop's tour and stub AI answers: a question answered
+as fail with a reason in "Review AI answers", "Add to the remarks" on 1.1.1 in
+"Review conformance", "Download report", then the downloaded zip opened in a
+fresh page: the remark is in `conformanceReview.criteria["1.1.1"].remarks` of
+the zip's `.a11y-report.json`, shows again in the Conformance view, and
+pressing "Add to the remarks" again says it is already there (the text is made
+again the same from the saved `aiReview`). The person's answer
+(`aiReview`) is in the zip too. Repeat it with
+`docs/design/ai-cant-tell-spike/check-remark-save.js` (usage at its top); the
+data-level path (compact, `prepareDataForReport`, schema check and
+`upgradeReport`) is a unit test in `src/js/ai-answer-view.test.js`. What a
+script driving the app has to know: a picked report loads once the "open
+report" tab is shown; "Download report" asks for a name first; and where the
+browser has `showSaveFilePicker` the app saves through it, which a headless
+browser cannot answer, so the script removes it and the app falls back to an
+ordinary download (that is why the earlier attempt could not capture it).
 
-**Next, in order:** that check; a person labels cases with reasons and exports
+**Next, in order:** a person labels cases with reasons and exports
 the CSV and `ai-lessons.json`; run the pass with a real `ANTHROPIC_API_KEY` and
 `ai: { lessons: "..." }`; a script to re-run labelled cases and compare
 agreement before accepting lessons; the extension's renderer.
@@ -486,12 +489,13 @@ what the AI answered, and what remains.
    a person says fail. That decides which registry checks may count as answered.
 2. Run the pass with a real `ANTHROPIC_API_KEY`; so far answers came from a
    model run outside the code over the same prompts.
-3. Verify a real browser download of the report zip and reloading it (saving
-   was only checked at the data level); the exported single-file HTML cannot
-   save answers.
+3. Done: a real browser download of the report zip and reloading it keeps the
+   person's answers and the conformance remark (see "Status when work
+   stopped"). The exported single-file HTML still cannot save answers.
 4. The extension's renderer (`extension/main-issues-table.js`) has none of this.
-5. Step 4 of "In the app": a confirmed answer may inform conformance remarks,
-   never set "Supports". Also: live-preview event, tier 1 page-level checks.
+5. Done: a confirmed answer informs conformance remarks ("Add to the
+   remarks"), never sets "Supports". Still open: live-preview event, tier 1
+   page-level checks.
 
 **Conventions to keep.** No references to Claude or any AI assistant in branch
 names, commit messages, authors or co-author lines; commit under the user's own
@@ -511,16 +515,16 @@ Run in the lab app with a report from the demo shop's tour, answered through a
 local stub of the model: the row badges show, the instance dialog shows the AI's
 analysis and the answer controls, and answering shows whether it agrees with the
 AI. The unit tests cover the markup, the key that makes one question one answer
-across pages, the agreement, and how an answer is kept. **Saving was checked at the data level, not through a browser download.** A
+across pages, the agreement, and how an answer is kept. **Saving was checked at the data level and, since 2026-11-24, through a real
+browser download and reload** (`ai-cant-tell-spike/check-remark-save.js`). A
 report with a person's answers is prepared for saving with them kept
 (`prepareDataForReport`), the compact format and `upgradeReport` leave the
 `ai` answers and `aiReview` alone, and the report schema (which now
 describes `aiReview`) accepts them and refuses a verdict it does not know. A
 report carrying `aiReview` loaded into the app shows the saved answer and note
-in the dialog, already chosen. **Not checked:** a real download of the zip in a
-browser and loading that file again (a headless browser could not capture the
-download), and the exported single-file HTML, where the controls would not
-save.
+in the dialog, already chosen. The downloaded zip, opened again in a fresh page, brings back the person's
+answers and the conformance remark made from them. **Not checked:** the
+exported single-file HTML, where the controls would not save.
 
 ## Left out on purpose
 

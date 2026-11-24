@@ -8,9 +8,10 @@ Read, in this order:
    2026-11-24 and how to pick it up cold", then the rest as needed.
 2. `ai-cant-tell-spike.md`: the earlier results.
 
-First task: verify that the conformance remark added with "Add to the remarks"
-(Conformance view) saves in the report and comes back when the downloaded
-report is loaded again. How is in the status section of the design note.
+Done: the conformance remark added with "Add to the remarks" saves in the
+downloaded report and comes back when it is opened again (status section of the
+design note; `ai-cant-tell-spike/check-remark-save.js` repeats it). Next: the
+"Next, in order" list in that section.
 
 Conventions: no references to Claude or any AI assistant in branch names,
 commits, authors or co-author lines; commit under the user's own identity; no
