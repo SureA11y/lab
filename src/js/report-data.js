@@ -542,6 +542,9 @@ export function prepareDataForReport(data) {
     // A reviewer's conformance verdicts (conformance-review.js): kept with
     // the report, so its downloads and a later opening carry them.
     requiredProperties.push('conformanceReview');
+    // A person's answers to the AI's answers on can't-tell questions
+    // (ai-answer-view.js), kept with the report likewise.
+    requiredProperties.push('aiReview');
     // The scan groups chosen and named (scan-group-choice.js,
     // docs/design/scan-grouping-design.md §7): kept with the report likewise.
     requiredProperties.push('scanGrouping');

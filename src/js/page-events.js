@@ -7,6 +7,7 @@ import {watchForMissingPictures} from './missing-pictures.js';
 import {afterPaint} from './busy.js';
 import {openLazyDialog} from './lazy-dialogs.js';
 import {STATUS} from './ui-constants.js';
+import {agreementOf, agreementText} from './ai-answer-view.js';
 
 /**
  * app: accessors for what the rest of the app shares with this part
@@ -147,6 +148,24 @@ export function createPageEvents(app) {
                 });
             }
         }
+    });
+
+    // A person's answer to an AI answer (ai-answer-view.js): kept in the
+    // report, and compared with the AI's where it stands.
+    document.addEventListener('change', (event) => {
+        const radio = event.target.closest?.('.ai-review-radio');
+        if (!radio) return;
+        app.setAiReview(radio.dataset.aiKey, {verdict: radio.value});
+        const block = radio.closest('.node-ai');
+        const status = block?.querySelector('.ai-agree');
+        if (status) {
+            const ai = {verdict: block.dataset.aiVerdict, provenance: block.dataset.aiVerdict ? 'ai-supported' : ''};
+            status.textContent = agreementText(agreementOf({verdict: radio.value}, ai));
+        }
+    });
+    document.addEventListener('change', (event) => {
+        const note = event.target.closest?.('.ai-review-note');
+        if (note) app.setAiReview(note.dataset.aiKey, {note: note.value});
     });
 
     // A picture a report names that cannot be shown says why, in its place.

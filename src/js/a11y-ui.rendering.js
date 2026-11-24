@@ -4,6 +4,7 @@
  * Rendering helpers for a11y-ui.
  */
 import {occurrencePagesParts} from './occurrence-pages.js';
+import {aiBadgeHtml, aiBlockHtml, aiRowSummaryHtml, aiReviewKey} from './ai-answer-view.js';
 import {elementCountText} from './occurrence-elements.js';
 import {generateA11yMetricsContents} from './a11y-metrics-renderer.js';
 import {iconButton, scanTagChipsHtml, untitledLabel} from './a11y-ui.utils.js';
@@ -42,7 +43,8 @@ export function createRenderer({
                                    onMoveScan,
                                    onRenameScan,
                                    onEditScanTags,
-                                   getScanTagSuggestions
+                                   getScanTagSuggestions,
+                                   getAiReviews = () => ({})
                                }) {
     if (!resultsEl) throw new Error('createRenderer requires resultsEl');
     if (!screenshotsEl) throw new Error('createRenderer requires screenshots');
@@ -455,6 +457,8 @@ export function createRenderer({
                 frameUrl: typeof occ?.frameUrl === 'string' ? occ.frameUrl : null,
                 frameSelectors: Array.isArray(occ?.frameSelectors) ? occ.frameSelectors : null,
                 elementScreenshot: elementScreenshotOf(occ),
+                // What the AI made of a can't-tell question (the scan step's `ai`).
+                ai: occ?.ai && typeof occ.ai === 'object' ? occ.ai : null,
                 // Its element pictured in the state the finding was made in
                 // (the text spacing), beside the page as it is.
                 elementStateScreenshots: elementStateScreenshotsOf(occ),
@@ -544,12 +548,15 @@ export function createRenderer({
         const map = new Map();
 
         for (const item of arr) {
-            const {urls, contexts, contextsTotal, ...rest} = item;
+            // The AI's answer is no part of what makes two instances the same:
+            // the first one's stays.
+            const {urls, contexts, contextsTotal, ai, ...rest} = item;
             const key = JSON.stringify(rest);
 
             if (!map.has(key)) {
                 map.set(key, {
                     ...rest,
+                    ...(ai ? {ai} : {}),
                     urls: Array.from(new Set(urls)),
                     ...(Array.isArray(contexts) ? {contexts: [...contexts], contextsTotal} : {})
                 });
@@ -1004,7 +1011,8 @@ export function createRenderer({
             const header = '<div class="example-node-header">' +
                 '<h3>' + escapeHtml(name) +
                 (inContexts ? ' <span class="node-contexts">' + escapeHtml(inContexts) + '</span>' : '') +
-                (n.lean ? ' ' + leanBadgeHtml(reviewGroupOfNode(n)) : '') + '</h3>' +
+                (n.lean ? ' ' + leanBadgeHtml(reviewGroupOfNode(n)) : '') +
+                (n.ai ? ' ' + aiBadgeHtml(n.ai, {escapeHtml}) : '') + '</h3>' +
                 '</div>';
 
             const htmlPart = shortHtml
@@ -1029,6 +1037,7 @@ export function createRenderer({
                 failureOf(n) +
                 buildOccurrenceDetailsHtml(n) +
                 buildOccurrenceGuidanceHtml(n, {stepsShown: !!stepsForAll}) +
+                aiBlockHtml(n, getAiReviews()[aiReviewKey(n)], {escapeHtml, escapeAttr}) +
                 checksOf(n) +
                 '</div>';
         };
@@ -1342,7 +1351,8 @@ export function createRenderer({
 
         const status = issueWords[type]
             ? resultGlyphHtml(type, {size: 'sm'}) + ' ' + issueWords[type] +
-                (type === 'cantTell' && reviewGroupOfIssue(issue) !== 'open' ? ' ' + leanBadgeHtml(reviewGroupOfIssue(issue)) : '')
+                (type === 'cantTell' && reviewGroupOfIssue(issue) !== 'open' ? ' ' + leanBadgeHtml(reviewGroupOfIssue(issue)) : '') +
+                (type === 'cantTell' ? ' ' + aiRowSummaryHtml(nodes, {escapeHtml}) : '')
             : '';
 
         const groupedTagsHtml = buildGroupedTagsHtml(issue);

@@ -537,6 +537,26 @@ button.run-setting-chip.is-warn {
 }
 .lean-badge-fail { border: 1px solid var(--warn); color: var(--surface-0, #fff); background: var(--warn); }
 .lean-badge-pass { border: 1px solid var(--ok); color: var(--ok); background: var(--ok-soft); }
+/* What the AI made of a can't-tell question, and the person's answer to it
+   (ai-answer-view.js). */
+.ai-badge {
+    display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px;
+    font-size: .75rem; font-weight: 600; white-space: nowrap; vertical-align: middle;
+    border: 1px solid var(--border-strong, currentColor); color: var(--text-main); background: transparent;
+}
+.ai-badge-pass { border-color: var(--ok); color: var(--ok); background: var(--ok-soft); }
+.ai-badge-fail { border-color: var(--warn); color: var(--warn); }
+.ai-badge-open, .ai-badge-row { color: var(--text-muted); }
+.node-ai { border-inline-start: 3px solid var(--accent, currentColor); padding-inline-start: 10px; }
+.node-ai__title { margin: 0 0 4px; font-size: 1rem; }
+.node-ai__rationale { margin: 2px 0 6px; }
+.node-ai__meta { margin: 6px 0; color: var(--text-muted); font-size: .85rem; }
+.node-ai__context { max-height: 12em; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-review { margin: 8px 0 0; padding: 6px 10px; border: 1px solid var(--border-strong, currentColor); border-radius: 6px; }
+.ai-review legend { font-weight: 600; padding: 0 4px; }
+.ai-review__option, .ai-review__note-label { margin-inline-end: 14px; white-space: nowrap; }
+.ai-review__note-label input { width: 16em; max-width: 100%; }
+.ai-agree { display: block; margin-top: 4px; font-weight: 600; }
 .instances-lean { font-size: .8rem; color: var(--text-muted); white-space: normal; }
 /* The cell's count line does not wrap (.instances-meta); this one may, but
    only between its parts: "1 likely fails," / "1 likely passes". */

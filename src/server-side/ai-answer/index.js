@@ -112,6 +112,8 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                             ...base, ...answer,
                             provenance: sure ? 'ai-supported' : 'unresolved',
                             ...(sure ? {} : { reason: 'unsure' }),
+                            // What it was given, so a person can judge the answer.
+                            evidence: (({ element, ...given }) => given)(evidence),
                             model: model.model || model.name || null,
                             durationMs: Date.now() - t0,
                         };

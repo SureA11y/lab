@@ -102,7 +102,8 @@ export function createScreenshotsUi(app) {
         onMoveScan: app.moveScan,
         onRenameScan: app.renameScan,
         onEditScanTags: app.updateScanTags,
-        getScanTagSuggestions: app.getScanTagSuggestions
+        getScanTagSuggestions: app.getScanTagSuggestions,
+        getAiReviews: () => app.getActiveBucket()?.payload?.aiReview || {}
     });
 
     function findSummaryScanNameEls(scanId) {

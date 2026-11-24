@@ -39,6 +39,7 @@ import {createRunQueueUi} from './run-queue-ui.js';
 import {createLiveUi} from './live-ui.js';
 import {createRunSummaryUi} from './run-summary-ui.js';
 import {createPageEvents} from './page-events.js';
+import {applyAiReview} from './ai-answer-view.js';
 import {createReportView} from './report-view.js';
 import {createOpenReportFiles} from './open-report-files.js';
 import {createBatchUi} from './batch-ui.js';
@@ -107,6 +108,7 @@ function storeActiveMode(mode) {
         get liveStreamDialog() { return liveStreamDialog; },
         get moveScan() { return moveScan; },
         get renameScan() { return renameScan; },
+        get setAiReview() { return setAiReview; },
         get results() { return results; },
         get scansDialog() { return scansDialog; },
         get screenshots() { return screenshots; },
@@ -1135,6 +1137,13 @@ function storeActiveMode(mode) {
         const label = moved?.label || moved?.id || 'Scan';
         const say = resultsState.activeMode === 'report' ? setStatusReport : setStatusRun;
         say(direction < 0 ? `${label} moved up.` : `${label} moved down.`, STATUS.OK);
+    }
+
+    // A person's answer to an AI answer, kept in the report beside the AI's
+    // (ai-answer-view.js): by question, not by page. An answer with no verdict
+    // and no note is no answer.
+    function setAiReview(key, patch) {
+        applyAiReview(getActiveBucket()?.payload, key, patch);
     }
 
     function renameScan(scanId, newLabelRaw) {
