@@ -25,6 +25,10 @@ const ANSWERABLE = Object.freeze({
         question: 'Is this image or icon purely decorative (nothing is lost for a person who cannot see it), or does it carry meaning or a name the control needs?',
         evidence: ['element', 'context', 'image'],
     },
+    'link-name-quality': {
+        question: "Does the link's text (or accessible name) tell where it goes or what it does, in its context?",
+        evidence: ['element', 'context'],
+    },
     'form-control-programmatic-label-quality': {
         question: "Is the form control's label strong enough for its purpose, as the check's steps describe?",
         evidence: ['element', 'context'],
