@@ -368,3 +368,52 @@ export function buildLessons(payload) {
     }
     return { version: 1, checks };
 }
+
+/**
+ * What the reviewer settled per WCAG criterion, for the Conformance view:
+ * { [sc]: { fails: [{ check, reason, url, selector, aiVerdict }], passes } },
+ * from the questions a person answered pass or fail. An answer only the AI gave
+ * is not here: the conformance report records what a person confirmed.
+ */
+export function confirmedByCriterion(payload) {
+    const reviews = payload && payload.aiReview && typeof payload.aiReview === 'object' ? payload.aiReview : {};
+    const out = {};
+    for (const c of collectAiCases(payload)) {
+        const r = reviews[c.key];
+        if (!r || (r.verdict !== 'pass' && r.verdict !== 'fail')) continue;
+        for (const sc of c.criterion) {
+            const e = out[sc] || (out[sc] = { fails: [], passes: 0 });
+            if (r.verdict === 'pass') { e.passes++; continue; }
+            e.fails.push({
+                check: c.check, reason: String(r.note || '').trim(), url: c.urls[0] || '', selector: c.selector,
+                aiVerdict: c.ai && c.ai.provenance === 'ai-supported' ? c.ai.verdict : '',
+            });
+        }
+    }
+    return out;
+}
+
+/**
+ * Remarks for a criterion from its confirmed fails, in plain words: what a
+ * reviewer found, where, and why. Empty when there are none. It never says
+ * anything about the conformance level.
+ */
+export function remarksFromConfirmed(entry) {
+    const fails = entry && Array.isArray(entry.fails) ? entry.fails : [];
+    if (!fails.length) return '';
+    const shown = fails.slice(0, 5).map((f, i) =>
+        (i + 1) + ') ' + (f.url ? f.url + ': ' : '') + (f.reason || 'failed on review, no reason given') + (f.check ? ' (' + f.check + ')' : '') + '.');
+    return 'Found by an AI-assisted review and confirmed by a reviewer: ' + fails.length + ' question' + (fails.length === 1 ? '' : 's') +
+        ' failed. ' + shown.join(' ') + (fails.length > shown.length ? ' And ' + (fails.length - shown.length) + ' more.' : '');
+}
+
+/** The block under a criterion's draft in the Conformance view; empty when a reviewer settled nothing for it. */
+export function confirmedBlockHtml(entry, { escapeHtml }) {
+    if (!entry || (!entry.fails.length && !entry.passes)) return '';
+    const text = remarksFromConfirmed(entry);
+    return '<div class="acr-ai"><p><span class="acr-draft-label">AI-assisted review:</span> ' +
+        escapeHtml(entry.fails.length + ' failed and ' + entry.passes + ' passed, confirmed by a reviewer.') + '</p>' +
+        (text ? '<p class="acr-ai-text">' + escapeHtml(text) + '</p>' +
+            '<button type="button" class="secondary-button" data-acr-ai-add>Add to the remarks</button>' +
+            '<span class="acr-ai-note"> The conformance level stays yours to choose.</span>' : '') + '</div>';
+}

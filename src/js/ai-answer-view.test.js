@@ -225,3 +225,45 @@ describe('buildLessons', () => {
         assert.deepEqual(buildLessons({}), { version: 1, checks: {} });
     });
 });
+
+describe('the conformance link', () => {
+    const build = async () => {
+        const { aiReviewKey } = await load();
+        const o = (html, sc) => ({ atomicCheckId: 'img-alt-quality', html, target: ['#' + html], pageUrls: ['https://x.test/' + html], ai: { verdict: 'pass', provenance: 'ai-supported', evidence: { facts: { alt: html } } } });
+        const finding = (sc, ...occ) => ({ outcome: 'cantTell', wcag: { sc: [sc] }, occurrences: occ });
+        const payload = { scans: [{ url: 'u', canonical: { findings: [finding('1.1.1', o('a'), o('b'), o('c')), finding('2.4.4', o('d'))] } }] };
+        const k = (h) => aiReviewKey({ sourceAtomicRules: ['img-alt-quality'], html: h, target: ['#' + h] });
+        payload.aiReview = { [k('a')]: { verdict: 'fail', note: 'only a file name' }, [k('b')]: { verdict: 'pass' }, [k('c')]: { verdict: 'fail' } };
+        return payload;
+    };
+
+    test('only what a person settled counts, per criterion', async () => {
+        const { confirmedByCriterion } = await load();
+        const c = confirmedByCriterion(await build());
+        assert.equal(c['1.1.1'].passes, 1);
+        assert.equal(c['1.1.1'].fails.length, 2);
+        assert.deepEqual(c['1.1.1'].fails[0], { check: 'img-alt-quality', reason: 'only a file name', url: 'https://x.test/a', selector: '#a', aiVerdict: 'pass' });
+        assert.equal(c['2.4.4'], undefined, 'an AI answer nobody confirmed is not recorded');
+    });
+
+    test('the remarks name the page, the reason and the check, and say nothing about the level', async () => {
+        const { confirmedByCriterion, remarksFromConfirmed } = await load();
+        const text = remarksFromConfirmed(confirmedByCriterion(await build())['1.1.1']);
+        assert.match(text, /confirmed by a reviewer: 2 questions failed/);
+        assert.match(text, /1\) https:\/\/x\.test\/a: only a file name \(img-alt-quality\)\./);
+        assert.match(text, /2\) https:\/\/x\.test\/c: failed on review, no reason given/);
+        assert.doesNotMatch(text, /Supports/i);
+        assert.equal(remarksFromConfirmed({ fails: [], passes: 3 }), '');
+        assert.equal(remarksFromConfirmed(undefined), '');
+    });
+
+    test('the block escapes the text, offers the button only with fails, and leaves the level to the reviewer', async () => {
+        const { confirmedBlockHtml } = await load();
+        const html = confirmedBlockHtml({ fails: [{ check: 'c', reason: '<i>x</i>', url: '', selector: '', aiVerdict: '' }], passes: 0 }, helpers);
+        assert.match(html, /data-acr-ai-add/);
+        assert.match(html, /&lt;i&gt;x&lt;\/i&gt;/);
+        assert.match(html, /stays yours to choose/);
+        assert.doesNotMatch(confirmedBlockHtml({ fails: [], passes: 2 }, helpers), /data-acr-ai-add/);
+        assert.equal(confirmedBlockHtml({ fails: [], passes: 0 }, helpers), '');
+    });
+});

@@ -19,6 +19,7 @@ const FIELDS = [
     ['notes', 'Notes', 'textarea'],
 ];
 
+import { confirmedBlockHtml, confirmedByCriterion, remarksFromConfirmed } from './ai-answer-view.js';
 import { loadProcedures, reportLocale, buildHowToAssessHTML, answeredText, suggestFromAnswers } from './procedures.js';
 
 // Which part of the review a table's rows are kept in.
@@ -91,7 +92,7 @@ export function carryReviewForward(review, other) {
     return globalThis.A11Y_CONFORMANCE_REPORT.carryReviewForward(review, other);
 }
 
-function rowHTML(table, row, levels, saved) {
+function rowHTML(table, row, levels, saved, confirmed) {
     const key = keyOf(table, row);
     const id = `acr-${table.id}-${key}`.replace(/[^A-Za-z0-9_-]/g, '-');
     const options = [`<option value="">Keep the automated draft (${esc(row.draft.conformance ? levels[row.draft.conformance] : '')})</option>`]
@@ -101,6 +102,7 @@ function rowHTML(table, row, levels, saved) {
     return `<fieldset class="acr-row" data-table="${esc(table.id)}" data-standard="${esc(table.standard || '')}" data-version="${esc(table.version || '')}" data-key="${esc(key)}">`
         + `<legend>${table.id === 'en-other' ? esc(row.name) : name}</legend>`
         + `<p class="acr-draft"><span class="acr-draft-label">Automated draft:</span> ${esc(levels[row.draft.conformance])}. ${esc(row.draft.remarks)}</p>`
+        + `<div class="acr-ai-slot" data-acr-ai="${esc(row.id)}">${table.id.startsWith('wcag-') ? confirmedBlockHtml(confirmed && confirmed[row.id], { escapeHtml: esc }) : ''}</div>`
         + `<div class="acr-how" data-acr-how="${esc(row.id)}" data-acr-standard="${esc(table.standard || 'wcag')}" data-acr-version="${esc(table.version || '')}" data-acr-name="${esc(id)}-how"></div><div class="acr-suggest" data-acr-suggest></div>`
         + `<div class="acr-fields">`
         + `<div class="acr-field"><label for="${id}-level">Conformance level</label><select id="${id}-level" data-part="conformance">${options}</select></div>`
@@ -109,13 +111,13 @@ function rowHTML(table, row, levels, saved) {
         + `</div></fieldset>`;
 }
 
-function tableSectionHTML(table, levels, review) {
+function tableSectionHTML(table, levels, review, confirmed) {
     const part = storeOf(review, table);
     const reviewed = table.rows.filter((row) => part[keyOf(table, row)]?.conformance).length;
     return `<details class="acr-section" data-section="${esc(table.id)}" data-standard="${esc(table.standard || '')}" data-version="${esc(table.version || '')}">`
         + `<summary><span class="acr-section-title">${esc(table.title)}</span> `
         + `<span class="acr-count" data-count>${reviewed} of ${table.rows.length} reviewed</span></summary>`
-        + table.rows.map((row) => rowHTML(table, row, levels, part[keyOf(table, row)])).join('')
+        + table.rows.map((row) => rowHTML(table, row, levels, part[keyOf(table, row)], confirmed)).join('')
         + `</details>`;
 }
 
@@ -144,6 +146,7 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
     const drawForm = () => {
         const acr = api.buildConformanceReport(payload);
         const tables = reviewTables(acr);
+        const confirmed = confirmedByCriterion(payload);
         const product = review.product;
         const fields = FIELDS.map(([key, label, kind]) => {
             const value = key === 'reviewer' || key === 'methods' ? review[key] : product[key];
@@ -155,7 +158,7 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
         }).join('');
 
         dialog.querySelector('.acr-form').innerHTML = `<fieldset class="acr-product"><legend>The product and the review</legend><div class="acr-fields">${fields}</div></fieldset>`
-            + tables.map((t) => tableSectionHTML(t, levels, review)).join('');
+            + tables.map((t) => tableSectionHTML(t, levels, review, confirmed)).join('');
         fillHowToAssess();
     };
 
@@ -291,6 +294,20 @@ export function openConformanceReview({ payload, onChange = () => {}, readOtherR
     dialog.addEventListener('click', async (event) => {
         if (event.target.closest('[data-acr-close]')) {
             dialog.close();
+            return;
+        }
+        const add = event.target.closest('[data-acr-ai-add]');
+        if (add) {
+            // The confirmed fails, as remarks, below what the reviewer wrote; once.
+            const rowEl = add.closest('.acr-row');
+            const text = remarksFromConfirmed(confirmedByCriterion(payload)[rowEl.dataset.key]);
+            const remarks = rowEl.querySelector('[data-part="remarks"]');
+            if (!text || !remarks) return;
+            if (remarks.value.includes(text)) { status(`${rowEl.querySelector('legend')?.textContent}: these remarks are already there.`); return; }
+            remarks.value = remarks.value.trim() ? remarks.value.trim() + '\n' + text : text;
+            remarks.dispatchEvent(new Event('input', { bubbles: true }));
+            status(`${rowEl.querySelector('legend')?.textContent}: remarks added from the AI-assisted review. Saved in this report.`);
+            remarks.focus();
             return;
         }
         const use = event.target.closest('[data-acr-use]');

@@ -218,3 +218,9 @@
 .ai-resolved--ai { border-style: dashed; }
 .ai-resolved-slot:empty { display: none; }
 .air-warn { color: var(--warn); }
+
+/* The AI-assisted review's confirmed answers, under a criterion in the Conformance view. */
+.acr-ai { margin: var(--space-2) 0; padding: var(--space-2) var(--space-3); border-inline-start: 4px solid var(--accent); background: var(--accent-soft); border-radius: var(--radius-md); font-size: 14px; }
+.acr-ai p { margin: 0 0 var(--space-1); }
+.acr-ai-slot:empty { display: none; }
+.acr-ai-note { color: var(--text-muted); font-size: 14px; }
