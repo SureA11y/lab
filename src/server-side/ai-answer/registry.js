@@ -61,7 +61,17 @@ const PAGE_LEVEL = Object.freeze({
     },
     'wcag-2.4.11-focus-not-obscured-minimum': {
         check: 'focus-not-obscured',
-        question: 'When an element has keyboard focus, is it at least partly visible, not entirely hidden by other content the page put over it (a sticky header, a cookie banner, a chat button)? The focus walk says for every stop whether something else was on top of the centre of the element, and what.',
+        question: 'When an element has keyboard focus, is it at least partly visible, not entirely hidden by other content the page put over it (a sticky header, a cookie banner, a chat button)? For every stop the focus walk gives `coveredShare`, the share of 25 points across the element that something else was on top of (1 is entirely hidden), and `covered`, what.',
+        evidence: ['focusWalk'],
+    },
+    'wcag-2.4.12-focus-not-obscured-enhanced': {
+        check: 'focus-not-obscured-enhanced',
+        question: 'When an element has keyboard focus, is no part of it hidden by other content the page put over it? For every stop the focus walk gives `coveredShare`, the share of 25 points across the element that something else was on top of (0 is none), and `covered`, what.',
+        evidence: ['focusWalk'],
+    },
+    'wcag-2.4.13-focus-appearance': {
+        check: 'focus-appearance',
+        question: 'Is the focus indicator of every stop at least as large as a 2 CSS pixel thick line around the element, with a contrast of at least 3:1 between its focused and unfocused colours? For each stop the walk compared exact pictures of the element focused and unfocused: `appearance.atContrast` is how many CSS pixels changed with a contrast of 3:1 or more, `appearance.needed` the area of that 2 pixel line, `appearance.meets` whether the first is at least the second. The criterion makes an exception when the indicator is the browser\'s own and the page did not change it, which the measurement cannot tell: weigh `changesOnFocus` and say so when it matters.',
         evidence: ['focusWalk'],
     },
 });

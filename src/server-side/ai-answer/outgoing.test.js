@@ -145,7 +145,9 @@ describe('pictures', () => {
         assert.equal(entryFor('focus-order').check, 'focus-order');
         assert.equal(entryFor('manual-review', 'wcag-2.4.11-focus-not-obscured-minimum').check, 'focus-not-obscured');
         assert.deepEqual([entryFor('manual-review', 'wcag-2.1.1-keyboard').check, entryFor('manual-review', 'wcag-2.1.1-keyboard').passAllowed], ['keyboard', false]);
-        assert.equal(entryFor('manual-review', 'wcag-2.4.13-focus-appearance'), null);
+        assert.equal(entryFor('manual-review', 'wcag-2.4.13-focus-appearance').check, 'focus-appearance');
+        assert.equal(entryFor('manual-review', 'wcag-2.4.12-focus-not-obscured-enhanced').check, 'focus-not-obscured-enhanced');
+        assert.equal(entryFor('manual-review', 'wcag-9.9.9-unknown'), null);
         assert.equal(entryFor('manual-review'), null);
         assert.deepEqual([entryFor('img-alt-quality').check, entryFor('img-alt-quality').tier], ['img-alt-quality', 0]);
     });

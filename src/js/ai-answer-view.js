@@ -159,6 +159,21 @@ function stopName(s) {
     return (s.role || s.tag) + (s.name ? ' “' + s.name + '”' : ' (no name)');
 }
 
+const FOCUS_CHECKS = new Set(['focus-visible', 'focus-order', 'focus-not-obscured', 'focus-not-obscured-enhanced', 'focus-appearance', 'keyboard']);
+
+// How much of a stop something was on top of, in words.
+function coverText(s) {
+    const share = typeof s.coveredShare === 'number' ? Math.round(s.coveredShare * 100) + '% ' : '';
+    return share + 'covered by ' + (s.covered || 'something');
+}
+
+// A stop's 2.4.13 measurement, in words.
+function appearanceText(a) {
+    if (!a) return '';
+    if (a.skipped) return { 'too-big': 'too large to measure', 'focused-before': 'had focus before the walk, not measured' }[a.skipped] || 'not measured';
+    return a.atContrast + ' px changed at 3:1 or more, ' + a.needed + ' px needed';
+}
+
 // A control Tab cannot reach, in words.
 function unreachableText(u) {
     return (u.role || u.tag) + (u.name ? ' “' + u.name + '”' : '') + ' (' + u.selector + ', at ' + u.x + ', ' + u.y + '): ' + u.why + '.';
@@ -213,7 +228,8 @@ export function focusWalkHtml(walk, { escapeHtml, escapeAttr = escapeHtml }) {
         const changes = Array.isArray(s.changesOnFocus)
             ? (s.changesOnFocus.length ? 'Focus shows as: ' + s.changesOnFocus.join(', ') + '.' : 'No visible change found on focus.')
             : '';
-        const notes = [changes, s.covered ? 'Covered by ' + s.covered + ' while focused.' : '', s.hidden ? 'Not visible while focused.' : '', s.insideFrame ? 'Focus went on inside this frame.' : '']
+        const appearance = s.appearance ? 'Indicator: ' + appearanceText(s.appearance) + (typeof s.appearance.meets === 'boolean' ? (s.appearance.meets ? ' (meets 2.4.13).' : ' (short of 2.4.13).') : '.') : '';
+        const notes = [changes, appearance, s.covered ? coverText(s).replace(/^./, (c) => c.toUpperCase()) + ' while focused.' : '', s.hidden ? 'Not visible while focused.' : '', s.insideFrame ? 'Focus went on inside this frame.' : '']
             .filter(Boolean).join(' ');
         return '<li class="air-stop' + (Array.isArray(s.changesOnFocus) && !s.changesOnFocus.length ? ' air-stop--none' : '') + '">' +
             '<span class="air-stop__name">' + escapeHtml(stopName(s)) + '</span> ' +
@@ -400,7 +416,7 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
     const rows = [];
     const add = (label, html) => rows.push({ label, html });
     const walk = ev.focusWalk;
-    if (walk && (check === 'focus-visible' || check === 'focus-order' || check === 'focus-not-obscured' || check === 'keyboard')) {
+    if (walk && FOCUS_CHECKS.has(check)) {
         const stops = Array.isArray(walk.stops) ? walk.stops : [];
         const list = (xs) => xs.length ? xs.map((s) => escapeHtml(s.n + '. ' + stopName(s))).join('<br>') : '';
         add('Stops with Tab', escapeHtml(String(stops.length)) + ' <span class="air-hint">' + escapeHtml(focusWalkEnd(walk)) + '</span>');
@@ -418,9 +434,20 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             add('Still to check by hand', escapeHtml('Use each control with Enter, Space and the arrow keys; open and close menus and dialogs. The walk only pressed Tab.'));
         } else if (check === 'focus-order') {
             add('Order', stops.slice(0, 25).map((s) => escapeHtml(s.n + '. ' + stopName(s) + (stopPlace(s) ? ', ' + stopPlace(s) : '') + ' (' + s.x + ', ' + s.y + ')')).join('<br>') + (stops.length > 25 ? '<br>…' : ''));
+        } else if (check === 'focus-appearance') {
+            const measured = stops.filter((s) => s.appearance && typeof s.appearance.meets === 'boolean');
+            const short = measured.filter((s) => !s.appearance.meets);
+            add('Indicator too small or too faint', short.length ? short.map((s) => escapeHtml(s.n + '. ' + stopName(s) + ': ' + appearanceText(s.appearance))).join('<br>') : '<span class="air-none">' + escapeHtml(measured.length ? '(every measured stop meets it)' : '(nothing measured)') + '</span>');
+            add('Measured', escapeHtml(measured.length + ' of ' + stops.length + ' stops' + (measured.length < stops.length ? ' (the others hidden, too large, or focused before the walk)' : '')));
+            add('Browser’s own indicator?', escapeHtml('The criterion does not apply where the browser draws the indicator and the page did not change it. What changed on focus is listed at each stop.'));
         } else {
-            const covered = stops.filter((s) => s.covered);
-            add('Covered while focused', covered.length ? covered.map((s) => escapeHtml(s.n + '. ' + stopName(s) + ', by ' + s.covered)).join('<br>') : '<span class="air-none">(none found)</span>');
+            // 2.4.11: entirely hidden fails; 2.4.12: any part hidden fails.
+            const entire = check === 'focus-not-obscured';
+            const hidden = stops.filter((s) => (entire ? s.coveredShare === 1 : s.coveredShare > 0) || (s.coveredShare == null && s.covered));
+            const partly = entire ? stops.filter((s) => s.coveredShare > 0 && s.coveredShare < 1) : [];
+            const line = (s) => escapeHtml(s.n + '. ' + stopName(s) + ', ' + coverText(s));
+            add(entire ? 'Entirely hidden while focused' : 'Hidden, in part or entirely, while focused', hidden.length ? hidden.map(line).join('<br>') : '<span class="air-none">(none found)</span>');
+            if (partly.length) add('Partly hidden (fine for this criterion)', partly.map(line).join('<br>'));
         }
     } else if (check === 'page-title-patterns' && ev.pageTitle) {
         add('Page title', q(ev.pageTitle.title));

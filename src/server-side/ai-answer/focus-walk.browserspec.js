@@ -145,3 +145,44 @@ test('finds what a mouse can use but Tab never reaches, and the AI may not pass 
     assert.deepEqual([ai.provenance, ai.reason, ai.rationale], ['unresolved', 'pass-needs-person', 'All reachable.']);
     await page.close();
 });
+
+test('measures each indicator against 2.4.13 and how much of each stop is hidden, and leaves the page as it was', async () => {
+    const page = await open(`<title>Shop</title>
+<style>a, button { display: inline-block; margin: 20px; font: 16px sans-serif; }
+#strong:focus { outline: 3px solid #000; outline-offset: 2px; }
+#faint:focus { outline: 1px solid #eee; }
+#half { position: fixed; top: 300px; left: 20px; width: 120px; height: 40px; margin: 0; }
+#over { position: fixed; top: 300px; left: 20px; width: 60px; height: 40px; background: #333; }</style>
+<a href="#s" id="strong">Strong focus</a><a href="#f" id="faint">Faint focus</a>
+<button id="half">Half hidden</button><div id="over"></div>`);
+    const before = await fingerprint(page);
+    const walk = await walkFocus(page, { measureAppearance: true });
+    const after = await fingerprint(page);
+    const by = Object.fromEntries(walk.stops.map((s) => [s.selector, s]));
+    assert.equal(by['#strong'].appearance.meets, true, JSON.stringify(by['#strong'].appearance));
+    assert.equal(by['#faint'].appearance.meets, false, JSON.stringify(by['#faint'].appearance));
+    assert.ok(by['#faint'].appearance.changed > 0, 'the faint outline changed pixels, just not at 3:1');
+    assert.ok(by['#half'].coveredShare > 0.2 && by['#half'].coveredShare < 0.8, String(by['#half'].coveredShare));
+    assert.match(by['#half'].covered, /div#over/);
+    assert.equal(by['#strong'].coveredShare, 0);
+    assert.ok(sameFingerprint(before, after), 'the measuring put the scroll back too');
+
+    const plain = await walkFocus(page);
+    assert.equal(plain.stops[0].appearance, undefined, 'no measuring unless 2.4.13 is asked');
+    await page.close();
+});
+
+test('the pass measures appearance only when the scanner asks 2.4.13', async () => {
+    const page = await open('<title>Shop</title><a href="#a" id="a">A</a> <a href="#b" id="b">B</a>');
+    const ask = (rule) => ({ findings: [{ ruleId: rule, outcome: 'cantTell', occurrences: [{ atomicCheckId: 'manual-review', occurrenceOutcome: 'cantTell', target: ['html'], html: '' }] }] });
+    const provider = { ask: async () => '{"verdict":"unsure","confidence":0.2,"rationale":"x"}' };
+    const appearance = ask('wcag-2.4.13-focus-appearance');
+    await answerCantTells({ page, canonical: appearance, options: { focus: true }, provider, env: {} });
+    const a = appearance.findings[0].occurrences[0].ai;
+    assert.equal(a.check, 'focus-appearance');
+    assert.ok(a.evidence.focusWalk.stops.every((s) => s.appearance && typeof s.appearance.meets === 'boolean'));
+    const order = ask('wcag-2.4.3-focus-order');
+    await answerCantTells({ page, canonical: order, options: { focus: true }, provider, env: {} });
+    assert.ok(order.findings[0].occurrences[0].ai.evidence.focusWalk.stops.every((s) => s.appearance === undefined));
+    await page.close();
+});

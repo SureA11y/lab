@@ -33,6 +33,12 @@ const PICTURE_MAX = { width: 420, height: 200 };
 const MAP_MAX = { width: 1600, height: 8000 };
 // The most controls that Tab cannot reach listed (all are counted).
 const MAX_UNREACHABLE = 30;
+// 2.4.13: the room around a stop its indicator may take (an outline with an
+// offset), the most measured, and how much a pixel must change to count
+// (lossless pictures: only rendering noise is below it).
+const MEASURE_PAD = 10;
+const MEASURE_MAX = { width: 800, height: 400 };
+const CHANGE_THRESHOLD = 24;
 const PAD = 8;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -46,6 +52,7 @@ async function walkFocus(page, options = {}) {
     // An option left out (or undefined) keeps its default.
     const opt = { ...DEFAULTS, ...Object.fromEntries(Object.entries(options || {}).filter(([, v]) => v !== undefined)) };
     const result = { stops: [], ended: null, limit: opt.maxStops, restored: false, startedWithFocus: false };
+    const measures = [];
     if (!page || typeof page.evaluate !== 'function' || !page.keyboard) return { ...result, ended: 'not-possible' };
     try {
         // 1. What to put back; and the walk's start, at the top of the page.
@@ -133,13 +140,26 @@ async function walkFocus(page, options = {}) {
                 const labelled = attr('aria-labelledby') ? attr('aria-labelledby').split(/\s+/).map((id) => document.getElementById(id)?.textContent || '').join(' ') : '';
                 const name = clip(attr('aria-label') || labelled || (a.labels && a.labels[0] && a.labels[0].textContent) || attr('alt') || a.innerText || attr('title') || attr('placeholder') || attr('value') || (a.querySelector && a.querySelector('img[alt]')?.getAttribute('alt')) || '');
                 const r = a.getBoundingClientRect();
-                const cx = r.left + r.width / 2;
-                const cy = r.top + r.height / 2;
-                let top = null;
-                try { top = document.elementFromPoint(cx, cy); } catch { top = null; }
                 const describe = (el) => el ? clip(el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.classList && el.classList.length ? '.' + [...el.classList].slice(0, 2).join('.') : ''), 60) : null;
                 const inView = r.bottom > 0 && r.right > 0 && r.top < window.innerHeight && r.left < window.innerWidth;
-                const covered = inView && top && !(top === a || a.contains(top) || top.contains(a)) ? describe(top) : null;
+                // How much of it something else is on top of: 25 points across
+                // it, those in the window. Entirely (2.4.11) or in part (2.4.12).
+                let inside = 0;
+                let hit = 0;
+                let by = null;
+                for (let i = 0; i < 5; i++) {
+                    for (let j = 0; j < 5; j++) {
+                        const px = r.left + r.width * (i + 0.5) / 5;
+                        const py = r.top + r.height * (j + 0.5) / 5;
+                        if (px < 0 || py < 0 || px >= window.innerWidth || py >= window.innerHeight) continue;
+                        inside++;
+                        let t = null;
+                        try { t = document.elementFromPoint(px, py); } catch { t = null; }
+                        if (t && !(t === a || a.contains(t) || t.contains(a))) { hit++; if (!by) by = t; }
+                    }
+                }
+                const covered = hit ? describe(by) : null;
+                const coveredShare = inside ? Math.round((hit / inside) * 100) / 100 : null;
                 const selector = a.id ? '#' + CSS.escape(a.id) : describe(a);
                 // Where the stop is: its landmark, and the heading it comes under.
                 const LANDMARKS = { HEADER: 'header', NAV: 'navigation', MAIN: 'main', FOOTER: 'footer', ASIDE: 'complementary', FORM: 'form', SECTION: 'region', DIALOG: 'dialog' };
@@ -165,6 +185,8 @@ async function walkFocus(page, options = {}) {
                     width: Math.round(r.width), height: Math.round(r.height),
                     inView,
                     covered,
+                    coveredShare,
+                    scroll: [Math.round(window.scrollX), Math.round(window.scrollY)],
                     hidden: r.width < 1 || r.height < 1 || getComputedStyle(a).visibility === 'hidden',
                 };
             }, KEY, START, i === 0);
@@ -184,6 +206,17 @@ async function walkFocus(page, options = {}) {
                     const data = await page.screenshot({ type: 'jpeg', quality: 55, clip, captureBeyondViewport: true, encoding: 'base64' });
                     if (data) stop.screenshot = 'data:image/jpeg;base64,' + data;
                 } catch { /* no picture */ }
+            }
+            // 2.4.13: an exact picture of it and around it while focused, to
+            // compare with the same unfocused once focus is put back.
+            if (opt.measureAppearance && !stop.hidden && stop.width > 0 && stop.height > 0 && typeof page.screenshot === 'function') {
+                const clip = { x: Math.max(0, stop.x - MEASURE_PAD), y: Math.max(0, stop.y - MEASURE_PAD), width: stop.width + MEASURE_PAD * 2, height: stop.height + MEASURE_PAD * 2 };
+                if (clip.width > MEASURE_MAX.width || clip.height > MEASURE_MAX.height) stop.appearance = { skipped: 'too-big' };
+                else {
+                    try {
+                        measures.push({ stop, clip, focused: await page.screenshot({ type: 'png', clip, captureBeyondViewport: true }) });
+                    } catch { stop.appearance = { skipped: 'no-picture' }; }
+                }
             }
             result.stops.push(stop);
         }
@@ -214,6 +247,24 @@ async function walkFocus(page, options = {}) {
             result.error = result.error || String((e && e.message) || e).slice(0, 200);
         }
     }
+    // 4b. 2.4.13: each measured stop unfocused, at the scroll it was focused
+    // at (so what is fixed on the page lines up), then the scroll put back.
+    if (result.restored && measures.length) {
+        let home = null;
+        try { home = await page.evaluate(() => [window.scrollX, window.scrollY]); } catch { home = null; }
+        for (const m of measures) {
+            if (m.stop.changesOnFocus === null) { m.stop.appearance = { skipped: 'focused-before' }; continue; }
+            try {
+                await page.evaluate((x, y) => window.scrollTo(x, y), m.stop.scroll[0], m.stop.scroll[1]);
+                await wait(opt.settleMs);
+                const unfocused = await page.screenshot({ type: 'png', clip: m.clip, captureBeyondViewport: true });
+                m.stop.appearance = await compareAppearance(m.focused, unfocused, m.clip, m.stop);
+            } catch (e) {
+                m.stop.appearance = { skipped: 'not-measured' };
+            }
+        }
+        if (home) { try { await page.evaluate((x, y) => window.scrollTo(x, y), home[0], home[1]); } catch { /* the fingerprint will say */ } }
+    }
     // 5. What looks usable by mouse but Tab can never reach: read only.
     if (result.restored && opt.unreachable !== false) {
         try {
@@ -233,6 +284,40 @@ async function walkFocus(page, options = {}) {
         } catch { /* no map */ }
     }
     return result;
+}
+
+// WCAG's relative luminance of an sRGB colour (0..255 each).
+function luminance(r, g, b) {
+    const c = (v) => { const x = v / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+    return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b);
+}
+
+/**
+ * 2.4.13 from two exact pictures of the same place, focused and unfocused:
+ * the pixels that changed, those that changed with a contrast of 3:1 or more,
+ * and the area needed (a 2 CSS px perimeter of the unfocused component), all
+ * in CSS pixels. -> { changed, atContrast, needed, meets }
+ */
+async function compareAppearance(focusedPng, unfocusedPng, clip, stop) {
+    const sharp = require('sharp');
+    const read = (png) => sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const [f, u] = await Promise.all([read(focusedPng), read(unfocusedPng)]);
+    if (f.info.width !== u.info.width || f.info.height !== u.info.height) return { skipped: 'not-measured' };
+    let changed = 0;
+    let atContrast = 0;
+    for (let i = 0; i < f.data.length; i += 4) {
+        const d = Math.abs(f.data[i] - u.data[i]) + Math.abs(f.data[i + 1] - u.data[i + 1]) + Math.abs(f.data[i + 2] - u.data[i + 2]);
+        if (d < CHANGE_THRESHOLD) continue;
+        changed++;
+        const a = luminance(f.data[i], f.data[i + 1], f.data[i + 2]);
+        const b = luminance(u.data[i], u.data[i + 1], u.data[i + 2]);
+        if ((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 3) atContrast++;
+    }
+    // Device pixels to CSS pixels.
+    const scale = (f.info.width / clip.width) ** 2;
+    const needed = Math.max(0, 4 * (stop.width + stop.height) - 16);
+    const measured = { changed: Math.round(changed / scale), atContrast: Math.round(atContrast / scale), needed };
+    return { ...measured, meets: measured.atContrast >= needed };
 }
 
 /* In the page: the controls a mouse user can use that Tab never reaches.
@@ -278,4 +363,4 @@ function unreachableControls(max) {
     return { total, items };
 }
 
-module.exports = { walkFocus, unreachableControls, DEFAULTS };
+module.exports = { walkFocus, unreachableControls, compareAppearance, luminance, DEFAULTS };

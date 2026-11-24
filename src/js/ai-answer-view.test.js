@@ -346,7 +346,7 @@ describe('page-level focus questions', () => {
         assert.match(text('focus-visible'), /No visible change found: 2\. a “&lt;b&gt;Two&lt;\/b&gt;”/);
         assert.match(text('focus-visible'), /came back to stop 1/);
         assert.match(text('focus-order'), /1\. a “Home” \(10, 5\)<br>2\./);
-        assert.match(text('focus-not-obscured'), /3\. button “Accept”, by div#banner/);
+        assert.match(text('focus-not-obscured'), /Entirely hidden while focused: 3\. button “Accept”, covered by div#banner/);
     });
 
     test('the walk is shown stop by stop, with its pictures, escaped', async () => {
@@ -420,5 +420,32 @@ describe('the keyboard question', () => {
         const ai = { provenance: 'unresolved', reason: 'pass-needs-person', verdict: 'pass', rationale: 'All reachable.', evidence: { focusWalk: walk } };
         assert.match(aiAnalysisHtml(ai, helpers), /reaching is not using/);
         assert.doesNotMatch(aiAnalysisHtml(ai, helpers), /The AI says pass/);
+    });
+});
+
+describe('focus not obscured and focus appearance', () => {
+    const stops = [
+        { n: 1, tag: 'a', name: 'Home', x: 0, y: 0, width: 40, height: 20, coveredShare: 0, appearance: { changed: 300, atContrast: 250, needed: 224, meets: true } },
+        { n: 2, tag: 'a', name: 'Help', x: 0, y: 600, width: 40, height: 20, coveredShare: 0.4, covered: 'div#chat', appearance: { changed: 90, atContrast: 30, needed: 224, meets: false } },
+        { n: 3, tag: 'button', name: 'Go', x: 0, y: 650, width: 60, height: 30, coveredShare: 1, covered: 'div#banner', appearance: { skipped: 'too-big' } },
+    ];
+    const text = async (check) => { const { keyFactRows } = await load(); return keyFactRows(check, { focusWalk: { ended: 'left-page', stops } }, helpers).map((r) => r.label + ': ' + r.html).join('\n'); };
+
+    test('2.4.11 fails on what is entirely hidden, 2.4.12 on any part', async () => {
+        const minimum = await text('focus-not-obscured');
+        assert.match(minimum, /Entirely hidden while focused: 3\. button “Go”, 100% covered by div#banner/);
+        assert.match(minimum, /Partly hidden \(fine for this criterion\): 2\. a “Help”, 40% covered by div#chat/);
+        const enhanced = await text('focus-not-obscured-enhanced');
+        assert.match(enhanced, /Hidden, in part or entirely, while focused: 2\. a “Help”, 40% covered by div#chat<br>3\. button “Go”, 100% covered/);
+    });
+
+    test('2.4.13 lists the stops short of it, how many were measured, and the browser exception', async () => {
+        const t = await text('focus-appearance');
+        assert.match(t, /Indicator too small or too faint: 2\. a “Help”: 30 px changed at 3:1 or more, 224 px needed/);
+        assert.match(t, /Measured: 2 of 3 stops \(the others hidden, too large/);
+        assert.match(t, /the browser draws the indicator and the page did not change it/);
+        const { focusWalkHtml } = await load();
+        assert.match(focusWalkHtml({ stops }, helpers), /Indicator: 250 px changed at 3:1 or more, 224 px needed \(meets 2\.4\.13\)/);
+        assert.match(focusWalkHtml({ stops }, helpers), /Indicator: too large to measure\./);
     });
 });

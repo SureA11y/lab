@@ -477,9 +477,29 @@ acts on the page. Opt-in per scan step: `ai: { focus: true }` (with
   person as page-level "manual-review" questions, one per page. The registry
   (`registry.js`, `PAGE_LEVEL`) takes them by rule: focus visible (2.4.7,
   `focus-visible`), focus order (2.4.3, `focus-order`) and focus not obscured
-  (2.4.11, `focus-not-obscured`, when the scanner asks it), and keyboard
-  (2.1.1, `keyboard`), in part. The stricter 2.4.12 and 2.4.13 need the
-  indicator measured, not yet done.
+  (2.4.11, `focus-not-obscured`), focus not obscured enhanced (2.4.12,
+  `focus-not-obscured-enhanced`), focus appearance (2.4.13,
+  `focus-appearance`), each when the scanner asks it, and keyboard (2.1.1,
+  `keyboard`), in part.
+- **Hidden while focused (2.4.11, 2.4.12).** At each stop, 25 points across
+  the element (those in the window) are checked for something else on top:
+  `coveredShare` (0 none, 1 entirely) and `covered`, what. Entirely hidden
+  fails 2.4.11; any part hidden fails 2.4.12.
+- **Focus appearance (2.4.13), measured.** Only when the scanner asks it (it
+  costs two more pictures per stop): at each stop an exact (PNG) picture of
+  the element and 10 px around it while focused; after focus is put back, the
+  same picture unfocused, at the scroll the stop was focused at so what is
+  fixed on the page lines up, then the scroll put back. The two are compared
+  with `sharp`: the pixels that changed, those that changed with a contrast of
+  3:1 or more between the two colours (WCAG's relative luminance), and the
+  area needed, a 2 CSS px perimeter of the element (4 × (width + height) −
+  16), all in CSS pixels (`appearance`: `changed`, `atContrast`, `needed`,
+  `meets`). Too large (over 800 × 400) or focused before the walk: not
+  measured, and said. The criterion's exception, an indicator the browser
+  draws that the page did not change, cannot be measured: the question asks
+  the AI to weigh `changesOnFocus`, and the review says so. On the demo shop's
+  products page, 7 of 9 stops meet it; its two image links, with Chrome's own
+  ring, fall short (about 530 of 864 px at 3:1).
 - **Keyboard: reaching, not operating.** The walk never presses Enter, Space or
   an arrow key, so it cannot tell whether a control works with the keyboard.
   What it can tell is what a mouse user can use that Tab never reaches: after
