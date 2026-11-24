@@ -16,7 +16,8 @@
 // 3. Ends when focus leaves the page, comes back to an element it already
 //    visited, or the limit is reached.
 // 4. After: focus back where it was (or nowhere), every scroll position back.
-// 5. A picture of the whole page, for the person to see the order at a glance.
+// 5. Looks (read only) for what a mouse user can use but Tab never reaches.
+// 6. A picture of the whole page, for the person to see the order at a glance.
 //
 // Whether the page is truly as it was is checked by the caller with the
 // pass's fingerprint (evidence.js). What it cannot put back: when nothing had
@@ -30,6 +31,8 @@ const DEFAULTS = { maxStops: 40, maxPictures: 20, settleMs: 80 };
 const PICTURE_MAX = { width: 420, height: 200 };
 // The page's picture with the stops on it: at most this much of the page.
 const MAP_MAX = { width: 1600, height: 8000 };
+// The most controls that Tab cannot reach listed (all are counted).
+const MAX_UNREACHABLE = 30;
 const PAD = 8;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -211,7 +214,13 @@ async function walkFocus(page, options = {}) {
             result.error = result.error || String((e && e.message) || e).slice(0, 200);
         }
     }
-    // 5. A picture of the whole page as it is again, for the person: the
+    // 5. What looks usable by mouse but Tab can never reach: read only.
+    if (result.restored && opt.unreachable !== false) {
+        try {
+            result.unreachable = await page.evaluate(unreachableControls, MAX_UNREACHABLE);
+        } catch { /* not read */ }
+    }
+    // 6. A picture of the whole page as it is again, for the person: the
     // review draws the stops' numbers and path over it. Nothing is drawn on
     // the page itself.
     if (result.restored && result.stops.length && opt.mapPicture !== false && typeof page.screenshot === 'function') {
@@ -226,4 +235,47 @@ async function walkFocus(page, options = {}) {
     return result;
 }
 
-module.exports = { walkFocus, DEFAULTS };
+/* In the page: the controls a mouse user can use that Tab never reaches.
+   Read only. Each with why it looks usable: a control's role, a click
+   attribute, a pointer cursor, or a link, button or field taken out of the Tab
+   order. One inside, or holding, something Tab reaches is left out (a card
+   whose link is reachable), as are hidden, disabled and inert ones.
+   -> { total, items: [...] } */
+function unreachableControls(max) {
+    const ROLES = new Set(['button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'slider', 'spinbutton', 'combobox', 'textbox', 'searchbox', 'treeitem', 'gridcell']);
+    const NATIVE = 'a[href], button, input:not([type=hidden]), select, textarea, summary, [contenteditable=""], [contenteditable="true"]';
+    const reachable = (el) => el.tabIndex >= 0 && !el.matches('[disabled]');
+    const clip = (t, n = 60) => String(t == null ? '' : t).replace(/\s+/g, ' ').trim().slice(0, n);
+    const items = [];
+    let total = 0;
+    for (const el of document.body ? document.body.querySelectorAll('*') : []) {
+        if (el.closest('[inert], [aria-disabled="true"], [disabled]')) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 4 || r.height < 4) continue;
+        const cs = getComputedStyle(el);
+        if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') continue;
+        const role = el.getAttribute('role');
+        let why = null;
+        if (el.matches(NATIVE) && el.tabIndex < 0) why = 'taken out of the Tab order (tabindex="' + el.getAttribute('tabindex') + '")';
+        else if (reachable(el)) continue;
+        else if (role && ROLES.has(role)) why = 'has the role ' + role + ' but cannot take focus';
+        else if (el.hasAttribute('onclick') || el.hasAttribute('onmousedown') || el.hasAttribute('onmouseup')) why = 'has a click attribute but cannot take focus';
+        else if (cs.cursor === 'pointer' && (!el.parentElement || getComputedStyle(el.parentElement).cursor !== 'pointer')) why = 'shows a pointer cursor but cannot take focus';
+        if (!why) continue;
+        // Reached through something around or inside it: not a mouse-only control.
+        if (el.parentElement && el.parentElement.closest(NATIVE + ', [tabindex]:not([tabindex="-1"])')) continue;
+        if (el.matches('label') || [...el.querySelectorAll(NATIVE + ', [tabindex]')].some(reachable)) continue;
+        total++;
+        if (items.length >= max) continue;
+        items.push({
+            tag: el.tagName.toLowerCase(), role: role || null,
+            name: clip(el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || el.getAttribute('alt') || ''),
+            selector: el.id ? '#' + CSS.escape(el.id) : clip(el.tagName.toLowerCase() + (el.classList.length ? '.' + [...el.classList].slice(0, 2).join('.') : ''), 60),
+            x: Math.round(r.left + window.scrollX), y: Math.round(r.top + window.scrollY), width: Math.round(r.width), height: Math.round(r.height),
+            why,
+        });
+    }
+    return { total, items };
+}
+
+module.exports = { walkFocus, unreachableControls, DEFAULTS };

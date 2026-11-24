@@ -92,13 +92,14 @@ test('the focus questions are asked from the walk, without pictures, only when a
     prompts.length = 0;
     const on = canonical();
     const s = await answerCantTells({ page, canonical: on, options: { focus: true }, provider, env: {} });
-    assert.equal(prompts.length, 3, 'the title, focus visible and focus order; keyboard stays a person\'s');
+    assert.equal(prompts.length, 4, 'the title, focus visible, focus order and keyboard');
     assert.match(prompts[1], /"focusWalk"/);
     assert.doesNotMatch(prompts.join(''), /data:image/);
     const visible = on.findings[0].occurrences[0].ai;
     assert.deepEqual([visible.check, visible.tier, visible.page, visible.provenance], ['focus-visible', 1, 'about:blank', 'ai-supported']);
     assert.ok(visible.evidence.focusWalk.stops[1].screenshot, 'the person still gets the pictures');
-    assert.equal(on.findings[2].occurrences[0].ai, undefined);
+    const keyboard = on.findings[2].occurrences[0].ai;
+    assert.deepEqual([keyboard.check, keyboard.provenance, keyboard.verdict], ['keyboard', 'ai-supported', 'fail'], 'a fail it may give');
     assert.deepEqual([s.focusWalk.stops, s.focusWalk.restored], [4, true]);
     await page.close();
 });
@@ -115,5 +116,32 @@ test('a walk that leaves the page changed drops only the focus answers, and says
     assert.equal(c.findings[3].occurrences[0].ai.provenance, 'ai-supported', 'the title, read before the walk, is kept');
     assert.ok(s.focusWalk.drift.includes('dom'));
     assert.match(logs.join('\n'), /next steps may meet a different page/);
+    await page.close();
+});
+
+test('finds what a mouse can use but Tab never reaches, and the AI may not pass keyboard', async () => {
+    const page = await open(`<title>Shop</title>
+<a href="#ok" id="ok">Reachable</a>
+<div id="clicky" onclick="void 0" style="width: 80px; height: 20px">Open menu</div>
+<span id="fake" role="button" style="display: inline-block; width: 60px; height: 20px">Buy</span>
+<a href="#skip" id="skipped" tabindex="-1">Skipped link</a>
+<div id="card" style="cursor: pointer; width: 200px; height: 40px"><a href="#in">Card link</a></div>
+<button disabled style="cursor: pointer">Off</button>`);
+    const walk = await walkFocus(page);
+    const found = Object.fromEntries(walk.unreachable.items.map((u) => [u.selector, u.why]));
+    assert.match(found['#clicky'], /click attribute/);
+    assert.match(found['#fake'], /role button/);
+    assert.match(found['#skipped'], /taken out of the Tab order/);
+    assert.equal(found['#card'], undefined, 'a card whose link Tab reaches is fine');
+    assert.equal(walk.unreachable.total, 3);
+    assert.ok(walk.map.screenshot, 'the picture is taken for the boxes too');
+
+    const c = { findings: [{ ruleId: 'wcag-2.1.1-keyboard', outcome: 'cantTell', wcag: { sc: ['2.1.1'] }, occurrences: [{ atomicCheckId: 'manual-review', occurrenceOutcome: 'cantTell', target: ['html'], html: '' }] }] };
+    let prompt = '';
+    await answerCantTells({ page, canonical: c, options: { focus: true }, env: {}, provider: { ask: async (p) => { prompt = p; return '{"verdict":"pass","confidence":0.95,"rationale":"All reachable."}'; } } });
+    assert.match(prompt, /"unreachable"/);
+    assert.match(prompt, /Do not answer "pass"/);
+    const ai = c.findings[0].occurrences[0].ai;
+    assert.deepEqual([ai.provenance, ai.reason, ai.rationale], ['unresolved', 'pass-needs-person', 'All reachable.']);
     await page.close();
 });

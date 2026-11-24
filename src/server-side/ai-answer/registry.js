@@ -51,6 +51,14 @@ const PAGE_LEVEL = Object.freeze({
         question: 'Does focus move through this page in an order that keeps its meaning and use, broadly following the order the page reads in? The focus walk lists every stop in order, with its position (x, y in pixels from the top left of the page), its landmark (header, navigation, main, footer...) and the heading it comes under.',
         evidence: ['focusWalk'],
     },
+    // Reaching is not operating: the walk never presses Enter or Space, so the
+    // AI may find a fail here but never a pass (passAllowed: false).
+    'wcag-2.1.1-keyboard': {
+        check: 'keyboard',
+        question: 'Can a keyboard user reach every control a mouse user can use on this page? The focus walk lists every stop reached with Tab, and `unreachable` lists what looks usable by mouse (a control role, a click attribute, a pointer cursor, or a link, button or field taken out of the Tab order) but can never take focus. A walk that came back to an earlier stop may be a keyboard trap. Only reaching was checked, not operating: answer "fail" when a control is clearly out of reach (or focus is trapped), otherwise "unsure". Do not answer "pass".',
+        evidence: ['focusWalk'],
+        passAllowed: false,
+    },
     'wcag-2.4.11-focus-not-obscured-minimum': {
         check: 'focus-not-obscured',
         question: 'When an element has keyboard focus, is it at least partly visible, not entirely hidden by other content the page put over it (a sticky header, a cookie banner, a chat button)? The focus walk says for every stop whether something else was on top of the centre of the element, and what.',

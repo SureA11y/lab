@@ -153,6 +153,11 @@ async function askOne({ model, entry, finding, occurrence, evidence, lessons = n
         const reply = asQuestion ? await model.answer(sent, { signal }) : await model.ask(sent, { signal });
         const answer = parseAnswer(reply);
         if (!answer) return { ai: { ...base, provenance: 'unresolved', reason: 'unreadable-answer' }, previewed: false };
+        // A question whose pass needs a person (keyboard: reached is not
+        // operated): the AI's "pass" is kept as its reasoning, not as an answer.
+        if (answer.verdict === 'pass' && entry.passAllowed === false) {
+            return { ai: { ...base, ...answer, provenance: 'unresolved', reason: 'pass-needs-person', model: answeredByOf(reply, model), durationMs: Date.now() - t0 }, previewed: false };
+        }
         const sure = answer.verdict !== 'unsure' && answer.confidence >= minConfidence;
         return {
             ai: {

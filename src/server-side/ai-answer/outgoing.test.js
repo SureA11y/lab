@@ -140,11 +140,12 @@ describe('pictures', () => {
         assert.match(JSON.stringify(on), /data:y/);
     });
 
-    test('the focus questions are found by their rule, and keyboard is not among them', () => {
+    test('the focus and keyboard questions are found by their rule; keyboard may not be passed by the AI', () => {
         assert.deepEqual([entryFor('manual-review', 'wcag-2.4.7-focus-visible').check, entryFor('manual-review', 'wcag-2.4.7-focus-visible').tier], ['focus-visible', 1]);
         assert.equal(entryFor('focus-order').check, 'focus-order');
         assert.equal(entryFor('manual-review', 'wcag-2.4.11-focus-not-obscured-minimum').check, 'focus-not-obscured');
-        assert.equal(entryFor('manual-review', 'wcag-2.1.1-keyboard'), null);
+        assert.deepEqual([entryFor('manual-review', 'wcag-2.1.1-keyboard').check, entryFor('manual-review', 'wcag-2.1.1-keyboard').passAllowed], ['keyboard', false]);
+        assert.equal(entryFor('manual-review', 'wcag-2.4.13-focus-appearance'), null);
         assert.equal(entryFor('manual-review'), null);
         assert.deepEqual([entryFor('img-alt-quality').check, entryFor('img-alt-quality').tier], ['img-alt-quality', 0]);
     });

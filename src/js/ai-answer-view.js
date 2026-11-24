@@ -17,6 +17,7 @@ const REASON_WORDS = {
     'site-not-allowed': 'Not sent: this site is not among the sites the server allows.',
     'no-focus-stops': 'The focus walk reached no element: Tab moved focus nowhere on the page.',
     'state-drift': 'The page changed while it was read, so the answer was not kept.',
+    'pass-needs-person': 'The AI found nothing out of reach, but reaching is not using: whether each control works with Enter, Space and the arrow keys needs a person.',
 };
 
 /**
@@ -158,6 +159,11 @@ function stopName(s) {
     return (s.role || s.tag) + (s.name ? ' “' + s.name + '”' : ' (no name)');
 }
 
+// A control Tab cannot reach, in words.
+function unreachableText(u) {
+    return (u.role || u.tag) + (u.name ? ' “' + u.name + '”' : '') + ' (' + u.selector + ', at ' + u.x + ', ' + u.y + '): ' + u.why + '.';
+}
+
 // Where a stop is: its landmark and the heading it comes under.
 function stopPlace(s) {
     return [s.landmark ? 'in ' + s.landmark : '', s.heading ? 'under ' + s.heading : ''].filter(Boolean).join(', ');
@@ -177,17 +183,22 @@ export function focusMapHtml(walk, { escapeHtml, escapeAttr = escapeHtml }) {
     const points = (Array.isArray(walk.stops) ? walk.stops : [])
         .filter((s) => !s.hidden && s.width > 0 && s.height > 0 && s.x < W && s.y < H)
         .map((s) => ({ n: Number(s.n), x: Math.round(s.x + s.width / 2), y: Math.round(s.y + s.height / 2) }));
-    if (!points.length) return '';
+    const missed = (walk.unreachable && Array.isArray(walk.unreachable.items) ? walk.unreachable.items : [])
+        .filter((u) => u.width > 0 && u.height > 0 && u.x < W && u.y < H);
+    if (!points.length && !missed.length) return '';
     const r = Math.max(8, Math.round(W / 50));
+    const boxes = missed.map((u) => '<rect class="air-map__miss" x="' + Number(u.x) + '" y="' + Number(u.y) + '" width="' + Number(u.width) + '" height="' + Number(u.height) +
+        '" stroke-width="' + Math.max(2, Math.round(r / 4)) + '" stroke-dasharray="' + r / 2 + ' ' + r / 3 + '"/>').join('');
     const path = points.length > 1 ? '<polyline class="air-map__line" points="' + points.map((p) => p.x + ',' + p.y).join(' ') + '" stroke-width="' + Math.max(2, Math.round(r / 4)) + '"/>' : '';
     const marks = points.map((p) => '<g class="air-map__stop"><circle cx="' + p.x + '" cy="' + p.y + '" r="' + r + '"/>' +
         '<text x="' + p.x + '" y="' + p.y + '" font-size="' + Math.round(r * 1.1) + '" dy="0.36em">' + escapeHtml(String(p.n)) + '</text></g>').join('');
     const left = (walk.stops || []).length - points.length;
     return '<figure class="air-map"><div class="air-map__scroll"><div class="air-map__frame">' +
         '<img class="air-map__page" src="' + escapeAttr(src) + '" alt="The page, with its focus stops numbered and joined in Tab order. The list gives them in words.">' +
-        '<svg class="air-map__over" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true" focusable="false">' + path + marks + '</svg>' +
+        '<svg class="air-map__over" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true" focusable="false">' + boxes + path + marks + '</svg>' +
         '</div></div><figcaption class="air-hint">' + escapeHtml('The order at a glance: ' + points.length + ' stop' + (points.length === 1 ? '' : 's') + ' on the page' +
-        (left > 0 ? ', ' + left + ' not shown (hidden or beyond the picture)' : '') + '.') + '</figcaption></figure>';
+        (left > 0 ? ', ' + left + ' not shown (hidden or beyond the picture)' : '') +
+        (missed.length ? '; dashed boxes: ' + missed.length + ' control' + (missed.length === 1 ? '' : 's') + ' usable by mouse that Tab never reached' : '') + '.') + '</figcaption></figure>';
 }
 
 /**
@@ -211,7 +222,16 @@ export function focusWalkHtml(walk, { escapeHtml, escapeAttr = escapeHtml }) {
     }).join('');
     return '<p class="air-hint">' + escapeHtml(stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' with Tab from the top of the page. ' + focusWalkEnd(walk)) + '</p>' +
         focusMapHtml(walk, { escapeHtml, escapeAttr }) +
-        '<ol class="air-stops">' + items + '</ol>';
+        '<ol class="air-stops">' + items + '</ol>' + unreachableHtml(walk, { escapeHtml });
+}
+
+// The controls Tab never reached, under the stops; nothing when none were found.
+function unreachableHtml(walk, { escapeHtml }) {
+    const un = walk && walk.unreachable;
+    if (!un || !Array.isArray(un.items) || !un.items.length) return '';
+    return '<p class="air-hint"><strong>' + escapeHtml('Usable by mouse, never reached with Tab (' + un.total + '):') + '</strong></p>' +
+        '<ul class="air-unreachable">' + un.items.map((u) => '<li>' + escapeHtml(unreachableText(u)) + '</li>').join('') + '</ul>' +
+        (un.total > un.items.length ? '<p class="air-hint">' + escapeHtml('And ' + (un.total - un.items.length) + ' more.') + '</p>' : '');
 }
 
 /** The AI's reasoning on one question, and what it was given. Empty without an AI answer. */
@@ -380,7 +400,7 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
     const rows = [];
     const add = (label, html) => rows.push({ label, html });
     const walk = ev.focusWalk;
-    if (walk && (check === 'focus-visible' || check === 'focus-order' || check === 'focus-not-obscured')) {
+    if (walk && (check === 'focus-visible' || check === 'focus-order' || check === 'focus-not-obscured' || check === 'keyboard')) {
         const stops = Array.isArray(walk.stops) ? walk.stops : [];
         const list = (xs) => xs.length ? xs.map((s) => escapeHtml(s.n + '. ' + stopName(s))).join('<br>') : '';
         add('Stops with Tab', escapeHtml(String(stops.length)) + ' <span class="air-hint">' + escapeHtml(focusWalkEnd(walk)) + '</span>');
@@ -389,6 +409,13 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             const hidden = stops.filter((s) => s.hidden);
             add('No visible change found', list(none) || '<span class="air-none">(every stop changed when focused)</span>');
             if (hidden.length) add('Not visible while focused', list(hidden));
+        } else if (check === 'keyboard') {
+            const un = walk.unreachable && Array.isArray(walk.unreachable.items) ? walk.unreachable : null;
+            add('Usable by mouse, not reachable with Tab', !un ? '<span class="air-none">(not looked for)</span>'
+                : un.items.length ? un.items.map((u) => escapeHtml(unreachableText(u))).join('<br>') + (un.total > un.items.length ? '<br>' + escapeHtml('and ' + (un.total - un.items.length) + ' more') : '')
+                    : '<span class="air-none">(none found)</span>');
+            if (walk.ended === 'came-back') add('Focus trap?', escapeHtml(focusWalkEnd(walk)));
+            add('Still to check by hand', escapeHtml('Use each control with Enter, Space and the arrow keys; open and close menus and dialogs. The walk only pressed Tab.'));
         } else if (check === 'focus-order') {
             add('Order', stops.slice(0, 25).map((s) => escapeHtml(s.n + '. ' + stopName(s) + (stopPlace(s) ? ', ' + stopPlace(s) : '') + ' (' + s.x + ', ' + s.y + ')')).join('<br>') + (stops.length > 25 ? '<br>…' : ''));
         } else {

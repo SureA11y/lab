@@ -477,9 +477,23 @@ acts on the page. Opt-in per scan step: `ai: { focus: true }` (with
   person as page-level "manual-review" questions, one per page. The registry
   (`registry.js`, `PAGE_LEVEL`) takes them by rule: focus visible (2.4.7,
   `focus-visible`), focus order (2.4.3, `focus-order`) and focus not obscured
-  (2.4.11, `focus-not-obscured`, when the scanner asks it). Keyboard (2.1.1)
-  stays a person's: it needs controls operated, which the walk never does. The
-  stricter 2.4.12 and 2.4.13 need the indicator measured, not yet done.
+  (2.4.11, `focus-not-obscured`, when the scanner asks it), and keyboard
+  (2.1.1, `keyboard`), in part. The stricter 2.4.12 and 2.4.13 need the
+  indicator measured, not yet done.
+- **Keyboard: reaching, not operating.** The walk never presses Enter, Space or
+  an arrow key, so it cannot tell whether a control works with the keyboard.
+  What it can tell is what a mouse user can use that Tab never reaches: after
+  the walk, read only, it looks for elements with a control's role, a click
+  attribute or a pointer cursor that cannot take focus, and for links, buttons
+  and fields taken out of the Tab order (`tabindex="-1"`); one inside or
+  holding something Tab reaches (a card whose link is reachable) is left out,
+  as are hidden, disabled and inert ones (`unreachable`, at most 30 listed, all
+  counted). With that and a focus trap the AI may answer "fail"; it may **not**
+  answer "pass" (`passAllowed: false` in the registry): its "pass" is kept as
+  reasoning, unresolved (`pass-needs-person`), and the review says what is left
+  to check by hand. The picture marks each unreachable control with a dashed
+  box. No false alarm on the demo shop's 14 pages; on a test page with a
+  clickable menu and two clickable tiles, all three found.
 - **The focus walk** (`focus-walk.js`), once per page, after the questions
   answered by reading: remembers the focused element (or none) and the scroll
   of the page and of every box that scrolls; starts from the top of the page;

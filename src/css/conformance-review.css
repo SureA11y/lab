@@ -246,3 +246,7 @@
 .air-map__stop circle { fill: #5b39c4; stroke: #fff; stroke-width: 2; }
 .air-map__stop text { fill: #fff; font-family: var(--font-sans, sans-serif); font-weight: 700; text-anchor: middle; }
 .air-map figcaption { margin-top: var(--space-1); }
+/* A control usable by mouse that Tab never reached: a dashed box, in a
+   second colour that holds on the page's picture (dark orange, 4.9:1 on white). */
+.air-map__miss { fill: none; stroke: #b34700; }
+.air-unreachable { margin: 0 0 var(--space-2); padding-inline-start: var(--space-4); }

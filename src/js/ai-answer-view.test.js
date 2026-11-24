@@ -397,3 +397,28 @@ describe('focusMapHtml', () => {
         assert.equal(focusMapHtml({ ...walk, map: { ...walk.map, width: 0 } }, helpers), '');
     });
 });
+
+describe('the keyboard question', () => {
+    const walk = { ended: 'came-back', endedAt: 2, stops: [{ n: 1, tag: 'a', name: 'Home', x: 0, y: 0, width: 40, height: 20 }],
+        unreachable: { total: 31, items: [{ tag: 'div', role: null, name: '<i>Menu</i>', selector: '#m', x: 100, y: 50, width: 80, height: 20, why: 'has a click attribute but cannot take focus' }] },
+        map: { screenshot: 'data:image/jpeg;base64,AAAA', width: 800, height: 600 } };
+
+    test('lists what Tab never reached, a possible trap, and what is left to a person', async () => {
+        const { keyFactRows } = await load();
+        const text = keyFactRows('keyboard', { focusWalk: walk }, helpers).map((r) => r.label + ': ' + r.html).join('\n');
+        assert.match(text, /Usable by mouse, not reachable with Tab: div “&lt;i&gt;Menu&lt;\/i&gt;” \(#m, at 100, 50\): has a click attribute/);
+        assert.match(text, /and 30 more/);
+        assert.match(text, /Focus trap\?: Focus came back to stop 2/);
+        assert.match(text, /Still to check by hand: Use each control with Enter, Space/);
+    });
+
+    test('draws a dashed box for each on the picture, and says why an AI pass is not kept', async () => {
+        const { focusMapHtml, aiAnalysisHtml } = await load();
+        const html = focusMapHtml(walk, helpers);
+        assert.match(html, /<rect class="air-map__miss" x="100" y="50" width="80" height="20"/);
+        assert.match(html, /dashed boxes: 1 control usable by mouse that Tab never reached/);
+        const ai = { provenance: 'unresolved', reason: 'pass-needs-person', verdict: 'pass', rationale: 'All reachable.', evidence: { focusWalk: walk } };
+        assert.match(aiAnalysisHtml(ai, helpers), /reaching is not using/);
+        assert.doesNotMatch(aiAnalysisHtml(ai, helpers), /The AI says pass/);
+    });
+});
