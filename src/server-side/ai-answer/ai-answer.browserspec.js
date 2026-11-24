@@ -42,3 +42,20 @@ test('a pass that changes the page keeps no answers and says so', async () => {
     assert.equal(c.findings[0].occurrences[0].ai, undefined);
     await page.close();
 });
+
+test('the facts a person would read off the element are read from the page', async () => {
+    const { readFacts } = require('./evidence');
+    const page = await browser.newPage();
+    await page.setContent('<h2>Shoes</h2><a href="/p"><img id="i" src="data:," alt="Canvas shoes"></a><a href="/q">More</a><a href="/r">More</a><button id="b"><svg aria-hidden="true" width="8" height="8"></svg></button>');
+    const img = await readFacts(page, '#i');
+    assert.equal(img.alt, 'Canvas shoes');
+    assert.equal(img.control.href, '/p');
+    assert.deepEqual(img.accessibleName, { role: 'image', name: 'Canvas shoes' });
+    assert.equal(img.nearestHeadingBefore, 'Shoes');
+    const button = await readFacts(page, '#b');
+    assert.equal(button.accessibleName.name, '');
+    const more = await readFacts(page, 'a[href="/q"]');
+    assert.deepEqual(more.sameTextLinks, { others: 1, distinctTargets: ['/r'] });
+    assert.equal(await readFacts(page, '#nothing'), null);
+    await page.close();
+});

@@ -79,6 +79,16 @@ textarea{width:100%;min-height:52px;font:inherit;padding:6px;border:1px solid va
 details{margin-top:8px}
 summary{cursor:pointer}
 .sr{position:absolute;left:-9999px}
+.facts{margin-top:10px;background:var(--code)}
+.facts dl{margin:0}
+.facts .kv{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:2px 12px;padding:4px 0;border-top:1px solid var(--line)}
+.facts .kv:first-child{border-top:0}
+.facts dt{font-size:.82rem;color:var(--muted);margin:0}
+.facts dd{margin:0;font-size:1.02rem;word-break:break-word}
+.facts q{font-weight:600}
+.facts .none{font-style:italic;color:var(--warn)}
+.facts .hint{font-size:.85rem;color:var(--muted)}
+@media(max-width:560px){.facts .kv{grid-template-columns:1fr}}
 a{color:var(--accent)}
 </style>
 </head>
@@ -109,6 +119,52 @@ function agree(r,a){if(!r||!a||!r.verdict)return null;if(r.verdict==='unsure'||a
 var checks=Array.from(new Set(DATA.map(function(d){return d.check})));
 var fCheck=document.getElementById('fCheck');fCheck.innerHTML='<option value="all">all checks</option>'+checks.map(function(c){return '<option>'+esc(c)+'</option>'}).join('');
 var fState=document.getElementById('fState'),aiFirst=document.getElementById('aiFirst');
+function q(v,none){if(v===undefined||v===null)return '<span class="none">'+esc(none||'(none)')+'</span>';if(v==='')return '<span class="none">(empty)</span>';return '<q>'+esc(v)+'</q>'}
+function row(label,html){return '<div class="kv"><dt>'+label+'</dt><dd>'+html+'</dd></div>'}
+function fileOf(u){if(!u)return q(undefined);try{var p=new URL(u).pathname.split('/');return q(p[p.length-1]||u)}catch(e){return q(u)}}
+function nameOf(f){if(!f.accessibleName)return q(undefined,'(not available)');var n=f.accessibleName.name;return (n===''||n==null)?'<span class="none">(none: nothing gives it a name)</span>':q(n)+' <span class="hint">as '+esc(f.accessibleName.role||'element')+'</span>'}
+function controlOf(f){var c=f.control;if(!c)return null;return esc(c.tag)+(c.href?' to <code>'+esc(c.href)+'</code>':'')+(c.ariaLabel?', aria-label '+q(c.ariaLabel):'')+(c.text?', text '+q(c.text):', no text of its own')}
+function keyFacts(d){
+ var ev=d.evidence||{};var f=ev.facts;var rows=[];
+ if(d.check==='page-title-patterns'&&ev.pageTitle){
+  rows.push(row('Page title',q(ev.pageTitle.title)));
+  rows.push(row('Main headings',(ev.pageTitle.headings||[]).length?ev.pageTitle.headings.map(function(h){return q(h)}).join(' '):q(undefined,'(none found)')));
+ }else if(f){
+  if(d.check==='img-alt-quality'||d.check==='img-alt-decorative'){
+   rows.push(row('Alt text',f.alt===undefined?(f.tag==='img'?'<span class="none">(no alt attribute)</span>':q(undefined,'(not an img: no alt)')):(f.alt===''?'<span class="none">(empty alt: marked decorative)</span>':q(f.alt))));
+   rows.push(row('Accessible name',nameOf(f)));
+   if(f.control)rows.push(row('Inside a control',controlOf(f)));
+   if(f['aria-label']!==undefined)rows.push(row('aria-label',q(f['aria-label'])));
+   if(f.title!==undefined)rows.push(row('title',q(f.title)));
+   if(f.src)rows.push(row('Image file',fileOf(f.src)));
+   if(f.text)rows.push(row('Text inside',q(f.text)));
+   if(f.nearestHeadingBefore)rows.push(row('Heading before it',q(f.nearestHeadingBefore)));
+  }else if(d.check==='link-name-quality'){
+   rows.push(row('Link text',q(f.text||(f.control&&f.control.text),'(no text)')));
+   rows.push(row('Accessible name',nameOf(f)));
+   var href=f.href||(f.control&&f.control.href);if(href)rows.push(row('Goes to','<code>'+esc(href)+'</code>'));
+   if(f['aria-label']!==undefined)rows.push(row('aria-label',q(f['aria-label'])));
+   if(f.sameTextLinks)rows.push(row('Links with the same text',f.sameTextLinks.others===0?'none':f.sameTextLinks.others+' other'+(f.sameTextLinks.others===1?'':'s')+(f.sameTextLinks.distinctTargets.length?', going to: '+f.sameTextLinks.distinctTargets.map(function(t){return '<code>'+esc(t)+'</code>'}).join(' '):'')));
+   if(f.nearestHeadingBefore)rows.push(row('Heading before it',q(f.nearestHeadingBefore)));
+  }else if(d.check==='form-control-programmatic-label-quality'){
+   rows.push(row('Label',f.labelText!==undefined?q(f.labelText):'<span class="none">(no label element)</span>'));
+   rows.push(row('Placeholder',q(f.placeholder,'(none)')));
+   if(f['aria-label']!==undefined)rows.push(row('aria-label',q(f['aria-label'])));
+   if(f.labelledByText!==undefined)rows.push(row('aria-labelledby text',q(f.labelledByText)));
+   rows.push(row('Accessible name',nameOf(f)));
+   rows.push(row('Field',esc(f.tag)+(f.type?' type '+esc(f.type):'')+(f.name?', name '+esc(f.name):'')));
+   if(f.nearestHeadingBefore)rows.push(row('Heading before it',q(f.nearestHeadingBefore)));
+  }else{
+   rows.push(row('Text',q(f.text,'(no text)')));
+   rows.push(row('Accessible name',nameOf(f)));
+   if(f.nearestHeadingBefore)rows.push(row('Heading before it',q(f.nearestHeadingBefore)));
+  }
+  rows.push(row('Shown on the page',f.shown?'yes, '+f.size[0]+' x '+f.size[1]+' px':'<span class="none">not visible when the page loads (hidden, in a menu or collapsed)</span>'));
+ }else{
+  rows.push(row('Not readable','The element could not be found on the live page now. Use the HTML and the page.'));
+ }
+ return '<div class="box facts"><h3>What to check (read from the page)</h3><dl>'+rows.join('')+'</dl></div>';
+}
 function cardHtml(d){
  var r=store[d.id]||{};var revealed=r.revealed||aiFirst.checked;var a=d.ai;
  var lean=d.lean?('<p><strong>Tool leans toward '+esc(d.lean.toward)+'.</strong> '+esc(d.lean.why||'')+(d.lean.caution?'<br><span class="meta">Caution: '+esc(d.lean.caution)+'</span>':'')+'</p>'):'<p>The tool gave no lean.</p>';
@@ -125,7 +181,7 @@ function cardHtml(d){
  var radios=['pass','fail','unsure'].map(function(v){return '<label><input type="radio" name="v-'+d.id+'" value="'+v+'" data-v="'+d.id+'"'+(r.verdict===v?' checked':'')+'> '+v+'</label>'}).join('');
  return '<article class="card" id="c-'+d.id+'" aria-labelledby="h-'+d.id+'">'+
  '<h2 id="h-'+d.id+'">'+esc(d.id)+' · '+esc(d.check)+'</h2><p class="meta"><span class="tag ct">can\\'t tell</span>'+esc(d.title||'')+(d.criterion?' · WCAG '+esc((d.criterion||[]).join(', ')):'')+' · found on '+d.pages.length+' page'+(d.pages.length===1?'':'s')+'</p>'+
- '<p><strong>The issue:</strong> '+esc(d.issue)+'</p>'+lean+
+ '<p><strong>The issue:</strong> '+esc(d.issue)+'</p>'+lean+keyFacts(d)+
  '<div class="grid"><div class="box"><h3>Proof and where to look</h3>'+proof+
  '<p class="meta">Page'+(d.pages.length>1?'s (first of '+d.pages.length+')':'')+':</p><ul>'+pages.split('</li>').slice(0,3).join('</li>')+(d.pages.length>3?'</li>':'')+'</ul>'+
  (d.selector?'<p class="meta">Selector: <code>'+esc(d.selector)+'</code> <button type="button" data-copy="'+esc(d.selector).replace(/"/g,'&quot;')+'">Copy</button></p>':'')+

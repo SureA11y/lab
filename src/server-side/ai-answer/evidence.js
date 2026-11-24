@@ -4,6 +4,7 @@
 // (docs/design/ai-cant-tell-design.md, "Protecting the steps that follow").
 
 const CONTEXT_CHARS = 350;
+const TEXT_CHARS = 200;
 const IMAGE_CHARS = 2000;
 
 /**
@@ -15,7 +16,11 @@ async function collectEvidence(page, occurrence, wanted) {
     const target = Array.isArray(occurrence.target) ? occurrence.target[0] : null;
     const selector = typeof target === 'string' ? target : null;
     const out = {};
-    if (wanted.includes('element')) out.element = String(occurrence.html || '').slice(0, 1500);
+    if (wanted.includes('element')) {
+        out.element = String(occurrence.html || '').slice(0, 1500);
+        const facts = await readFacts(page, selector);
+        if (facts) out.facts = facts;
+    }
     if (!wanted.includes('context') && !wanted.includes('pageTitle') && !wanted.includes('image')) return out;
     try {
         const read = await page.evaluate((sel, want, ctxChars, imgChars) => {
@@ -69,6 +74,70 @@ async function collectEvidence(page, occurrence, wanted) {
 }
 
 /**
+ * The values a person would read off the element, as the page has them now:
+ * its text, alt, label, link target, and the accessible name and role the
+ * browser computes (for an image in a link or button, also the control's).
+ * What the tool's HTML snippet may cut off or leave out. Null when the element
+ * cannot be found.
+ */
+async function readFacts(page, selector) {
+    if (!selector) return null;
+    try {
+        const facts = await page.evaluate((sel, chars) => {
+            let el = null;
+            try { el = document.querySelector(sel); } catch { return null; }
+            if (!el) return null;
+            const clip = (t) => (t == null ? null : String(t).replace(/\s+/g, ' ').trim().slice(0, chars));
+            const attr = (n, e = el) => (e.hasAttribute(n) ? e.getAttribute(n) : undefined);
+            const out = { tag: el.tagName.toLowerCase(), text: clip(el.innerText || el.textContent) };
+            for (const n of ['alt', 'aria-label', 'aria-labelledby', 'title', 'placeholder', 'href', 'src', 'role', 'type', 'name', 'id']) {
+                const v = attr(n);
+                if (v !== undefined) out[n] = clip(v);
+            }
+            if (out['aria-labelledby']) {
+                out.labelledByText = clip(out['aria-labelledby'].split(/\s+/).map((id) => { const r = document.getElementById(id); return r ? r.textContent : ''; }).join(' '));
+            }
+            if (el.labels && el.labels.length) out.labelText = clip(Array.from(el.labels).map((l) => l.textContent).join(' '));
+            const control = el.closest('a,button,[role=button],[role=link]');
+            if (control && control !== el) {
+                out.control = { tag: control.tagName.toLowerCase(), text: clip(control.innerText || control.textContent), href: clip(attr('href', control)), ariaLabel: clip(attr('aria-label', control)), title: clip(attr('title', control)) };
+            }
+            const link = el.closest('a[href]');
+            if (link) {
+                const text = clip(link.innerText || link.textContent);
+                if (text) {
+                    const same = Array.from(document.querySelectorAll('a[href]')).filter((a) => a !== link && clip(a.innerText || a.textContent) === text);
+                    out.sameTextLinks = { others: same.length, distinctTargets: Array.from(new Set(same.map((a) => a.getAttribute('href')))).slice(0, 5) };
+                }
+            }
+            let h = null;
+            for (let n = el; n && !h; n = n.parentElement) {
+                for (let p = n.previousElementSibling; p && !h; p = p.previousElementSibling) {
+                    if (/^H[1-6]$/.test(p.tagName)) h = p; else { const inner = p.querySelector && p.querySelector('h1,h2,h3,h4,h5,h6'); if (inner) h = inner; }
+                }
+            }
+            if (h) out.nearestHeadingBefore = clip(h.textContent);
+            const r = el.getBoundingClientRect();
+            out.size = [Math.round(r.width), Math.round(r.height)];
+            out.shown = r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+            return out;
+        }, selector, TEXT_CHARS);
+        if (!facts) return null;
+        try {
+            const handle = await page.$(selector);
+            if (handle) {
+                const snap = await page.accessibility.snapshot({ root: handle, interestingOnly: false });
+                if (snap) facts.accessibleName = { role: snap.role || null, name: snap.name == null ? null : String(snap.name).slice(0, TEXT_CHARS) };
+                await handle.dispose();
+            }
+        } catch { /* the tree is not available: the rest stands */ }
+        return facts;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * A fingerprint of what the AI pass must leave as it found it. Compared
  * before and after: a difference means the pass changed the page.
  */
@@ -99,4 +168,4 @@ function sameFingerprint(a, b) {
     return !!a && !!b && JSON.stringify(a) === JSON.stringify(b);
 }
 
-module.exports = { collectEvidence, fingerprint, sameFingerprint };
+module.exports = { collectEvidence, readFacts, fingerprint, sameFingerprint };

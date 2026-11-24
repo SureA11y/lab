@@ -283,6 +283,90 @@ evidence, provider, the pass) and an `ai` option on the scan step.
   page-level checks (tier 1), and the `ai` field in the app's step editor
   (it shows as a JSON text field, like `argsJson`).
 
+## Reviewing the AI's answers
+
+A person, not necessarily an accessibility specialist, has to be able to judge
+an AI answer quickly, so the review shows the evidence, not just the verdict.
+For each "can't tell" case:
+
+- the issue and the tool's lean, with its reason and caution;
+- **what to check, read from the page** as labelled facts: for an image its
+  alt text, the accessible name the browser computes, the control it sits in
+  and the heading before it; for a link its text, target and the other links
+  with the same text; for a field its label, placeholder and accessible name;
+  for a page its title and headings (`readFacts` in `ai-answer/evidence.js`;
+  the AI is given the same facts);
+- proof and a way to the page: a picture of the element, the URL, the
+  selector, the element's HTML and the tool's steps;
+- the person's own answer first, then the AI's analysis and conclusion, with
+  what the AI was given. Hiding the AI's answer until the person has decided
+  keeps the check honest; a switch shows it first.
+
+The first version is a standalone sheet built from a run (`ai-cant-tell-spike/
+build-eval-set.js` and `build-review-sheet.js`), with the answers exported as
+JSON or CSV to measure the AI per check: how often it agrees with a person,
+how often it is unsure, and above all how often it says "pass" where a person
+says "fail".
+
+## In the app
+
+Not part of the app yet. The report already has the places for it:
+`extension/main-issues-table.js` renders each "Needs review" row with a lean
+badge and a dialog per instance, and the conformance view already stores a
+reviewer's answers in the report's JSON. The proposal, in order:
+
+1. **Show the AI on the row.** A provenance badge beside the lean badge
+   (AI-supported, unresolved), and in the instance dialog the "what to check"
+   facts, the AI's analysis and what it was given.
+2. **Take the person's answer in the same dialog.** Pass, fail or unsure and a
+   note, saved in the report as `review` beside `ai` (the format above), so
+   it travels with the report and a later run can keep it. This is also what
+   turns "AI-supported" into "Human-confirmed".
+3. **A review mode.** The sheet's flow inside the report: go through the
+   cases that have an AI answer, answer first, then reveal; a summary of
+   agreement. The figures per check feed back into which rules count as
+   answered.
+4. **The same in the conformance report,** where a confirmed answer can inform
+   a criterion's remarks, never set "Supports".
+
+## Continuing this work
+
+For whoever (or whichever agent) picks this up. Branch: `design-ai-cant-tell`
+on origin, no pull request: the work is experimental until it is decided to
+merge it. Branch names, commits and authorship carry no references to Claude.
+
+- **Read first:** this note, then [the spike](ai-cant-tell-spike.md).
+- **Code:** `src/server-side/ai-answer/` (registry, evidence with
+  `readFacts`, provider, the pass), the hook in `performA11yScan`
+  (`src/server-side/a11y-runner.js`), the `ai` field in
+  `src/workflow/action-definitions.js`. After changing a step's fields run
+  `npm run build:action-docs` (it rewrites the schemas and step docs).
+- **Tests:** `node --test` (the `npm test` script does not start on
+  Windows) and `node --test src/server-side/ai-answer/ai-answer.browserspec.js`
+  for the Chrome ones.
+- **A real model:** the provider reads `ANTHROPIC_API_KEY` (and
+  `ANTHROPIC_BASE_URL`, `A11Y_AI_MODEL`). Code in the development
+  environment had no key, so the answers measured so far were produced by a
+  model run outside the code, over the same prompts (`buildPrompt`). Next
+  step: run the pass with a real key and compare.
+- **Evaluation pipeline:** run a workflow, then
+  `build-eval-set.js <payload.json> <dir>` (samples unique questions, visits the
+  pages, reads the facts and takes element pictures), have a model answer
+  `prompts.json`, write its answers to `<dir>/ai-answers.json`, then
+  `build-review-sheet.js <dir>`. The data of real runs (payloads, pictures,
+  sheets) is not committed: it is a customer's site.
+- **Done:** the single-scan pass, the budget and reuse, the drift check, the
+  review sheet. **Not done:** the app and report display, the live preview
+  event, tier 1 (page-level checks), screenshots saved for "can't tell"
+  occurrences, and the human verdict stored in the report.
+- **Findings so far:** the offline spike agreed with labels on 17 of 19 demo
+  cases (labels by the author, not a professional's); on a trimmed run of a
+  real site, 68 sampled cases got 41 pass, 6 fail and 21 unsure before the
+  facts were added, and no person has labelled them yet.
+- **Watch out for:** the tool's HTML snippet can be cut off, which made the AI
+  unsure, hence `readFacts`; a replayed workflow is not a safe restore (see
+  above); pictures of "can't tell" elements are not saved by the scan.
+
 ## Left out on purpose
 
 - Letting the AI change a tool outcome, or a conformance level to
