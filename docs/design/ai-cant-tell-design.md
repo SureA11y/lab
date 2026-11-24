@@ -560,7 +560,17 @@ what the AI answered, and what remains.
 3. Done: a real browser download of the report zip and reloading it keeps the
    person's answers and the conformance remark (see "Status when work
    stopped"). The exported single-file HTML still cannot save answers.
-4. The extension's renderer (`extension/main-issues-table.js`) has none of this.
+4. The extension's renderer (`extension/main-issues-table.js`): **on hold, and
+   not a renderer job (checked 2026-11-24).** That file draws the extension's
+   own popup and DevTools panel, from scans the extension makes of the page in
+   the person's browser; it never opens a report, and the AI pass runs only on
+   the lab server in a workflow run, so no `ai` block ever reaches it. The
+   lab's reports are drawn by the app (`a11y-ui.rendering.js`), which has the
+   AI review. Showing AI answers in the extension would mean asking the AI from
+   it (its can't-tell questions sent to the lab server, which holds the model
+   or endpoint), a feature of its own, with the data concerns of
+   `ai-cant-tell-data-and-agents.md` stronger still: the person's browser is
+   often logged in.
 5. Done: a confirmed answer informs conformance remarks ("Add to the
    remarks"), never sets "Supports". Still open: live-preview event, tier 1
    page-level checks.
