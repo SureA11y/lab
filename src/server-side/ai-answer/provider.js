@@ -1,11 +1,23 @@
 'use strict';
 
-// The model behind the AI pass. A provider is `{ name, model, ask(prompt,
-// { signal }) -> text }`. The built-in one calls the Anthropic Messages API
-// with the key in ANTHROPIC_API_KEY; a test or another backend passes its own.
-// With no key there is no provider and the pass leaves every item as it was.
+// The model behind the AI pass. A provider is `{ name, model }` with
+// `ask(prompt, { signal }) -> text`, `answer(question, { signal }) -> answer`,
+// or both; the pass uses `answer` when there is one.
+//
+// Which one, set on the server (never by a workflow or a report, which may come
+// from anyone who can open the app):
+// - A11Y_AI_ENDPOINT: a service you run, which receives each question as data
+//   and answers it (see `endpointProvider` and docs/design/ai-cant-tell-design.md,
+//   "Plugging in another model or an agent"). Behind it can be any model, or an
+//   agent with its own knowledge.
+// - else ANTHROPIC_API_KEY: the Anthropic Messages API.
+// - else none, and the pass leaves every item as it was.
+// A test or an embedding program passes its own provider object instead.
 
 const DEFAULT_MODEL = process.env.A11Y_AI_MODEL || 'claude-sonnet-5-5';
+
+/** The version of the question an endpoint receives. */
+const QUESTION_VERSION = 1;
 
 function anthropicProvider(env = process.env) {
     const key = env.ANTHROPIC_API_KEY;
@@ -29,9 +41,48 @@ function anthropicProvider(env = process.env) {
     };
 }
 
-function resolveProvider(option, env = process.env) {
-    if (option && typeof option.ask === 'function') return option;
-    return anthropicProvider(env);
+// "1", "true", "yes" and "on" are true.
+const yes = (v) => /^(1|true|yes|on)$/i.test(String(v || '').trim());
+
+/**
+ * A service you run, at A11Y_AI_ENDPOINT (http or https). Each question is
+ * POSTed to it as JSON (`question` below, with `version`), with
+ * A11Y_AI_ENDPOINT_KEY, when set, as `Authorization: Bearer <key>`. It answers
+ * `{ verdict: "pass"|"fail"|"unsure", confidence: 0..1, rationale, answeredBy?:
+ * { name, version } }`. The element's picture is sent only with
+ * A11Y_AI_ENDPOINT_PICTURE on. A11Y_AI_ENDPOINT_NAME names it in the report
+ * when its answers do not.
+ */
+function endpointProvider(env = process.env) {
+    const raw = String(env.A11Y_AI_ENDPOINT || '').trim();
+    if (!raw) return null;
+    let url;
+    try { url = new URL(raw); } catch { throw new Error('A11Y_AI_ENDPOINT is not a web address'); }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error('A11Y_AI_ENDPOINT must be an http or https address');
+    const key = env.A11Y_AI_ENDPOINT_KEY || '';
+    const picture = yes(env.A11Y_AI_ENDPOINT_PICTURE);
+    return {
+        name: 'endpoint',
+        model: String(env.A11Y_AI_ENDPOINT_NAME || '').trim() || url.host,
+        sendsPicture: picture,
+        async answer(question, { signal } = {}) {
+            const body = { version: QUESTION_VERSION, ...question };
+            if (!picture && body.evidence) body.evidence = (({ screenshot, ...rest }) => rest)(body.evidence);
+            const res = await fetch(url, {
+                method: 'POST',
+                signal,
+                headers: { 'content-type': 'application/json', accept: 'application/json', ...(key ? { authorization: `Bearer ${key}` } : {}) },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error(`endpoint call failed (${res.status})`);
+            return res.json();
+        },
+    };
 }
 
-module.exports = { anthropicProvider, resolveProvider, DEFAULT_MODEL };
+function resolveProvider(option, env = process.env) {
+    if (option && (typeof option.ask === 'function' || typeof option.answer === 'function')) return option;
+    return endpointProvider(env) || anthropicProvider(env);
+}
+
+module.exports = { anthropicProvider, endpointProvider, resolveProvider, DEFAULT_MODEL, QUESTION_VERSION };

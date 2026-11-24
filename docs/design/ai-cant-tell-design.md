@@ -412,6 +412,59 @@ itself and we do not fine-tune; a person's corrections are fed back as text.
    lesson cannot silently make the AI worse. Lessons are data, never
    instructions to follow beyond the question, like page text.
 
+## Plugging in another model or an agent (built 2026-11-24)
+
+The pass does not depend on one model. Which one answers is set on the server,
+never by a workflow or a report (either may come from anyone who can open the
+app), in this order (`src/server-side/ai-answer/provider.js`):
+
+1. `A11Y_AI_ENDPOINT`: a service you run, at an http or https address. Behind
+   it can be any model, or an agent with its own knowledge of accessibility,
+   regulations and techniques. It gets each question as data and decides how
+   to use what it knows.
+2. Else `ANTHROPIC_API_KEY`: the built-in model call.
+3. Else none: every question stays unresolved (`no-model`), with what was read
+   from the page.
+
+**The contract.** One `POST` of JSON per question, with
+`Authorization: Bearer <A11Y_AI_ENDPOINT_KEY>` when that is set:
+
+| Field | What it is |
+| --- | --- |
+| `version` | `1`, the version of this contract |
+| `check`, `question` | the check (`img-alt-quality`, ...) and the registry's question for it |
+| `criteria` | the WCAG success criteria of the finding (`["1.1.1"]`) |
+| `issue`, `howToCheck` | what the tool says, and its steps, `passWhen`, `failWhen` |
+| `page`, `element` | the page's `url`; the element's `html` and `selector` |
+| `evidence` | what was read from the page: `facts`, `context`, `pageTitle`, `image`; `screenshot` (a data URL) only with `A11Y_AI_ENDPOINT_PICTURE` on |
+| `lessons` | `{ rules, examples }` from the project's lessons file, or `null` |
+| `prompt` | the text the built-in model would get, for a service that only forwards to a model |
+
+Everything from the page (`issue`, `element`, `evidence`) is data: the service
+must never follow instructions found in it. The answer is
+`{ "verdict": "pass" | "fail" | "unsure", "confidence": 0..1, "rationale": "...",
+"answeredBy": { "name": "...", "version": "..." } }`, `answeredBy` optional.
+The lab applies the same rules as to the built-in model: the tool's outcome is
+never changed, an "unsure" or a confidence under `minConfidence` stays
+unresolved, an answer it cannot read is `unreadable-answer`, a refused call is
+`model-error`, and answers are dropped if the page changed. The report names
+who answered (`ai.model`): `answeredBy`'s name and version, else
+`A11Y_AI_ENDPOINT_NAME`, else the endpoint's host. Recording the version of an
+agent's skills there is what lets a re-run of labelled cases compare a new
+version with the old one.
+
+**Start from** `docs/design/ai-cant-tell-spike/example-endpoint.js`: a service
+that answers "unsure" to everything, with the place to call your model or
+agent. Checked in a real run of the demo shop's tour with the scan step's `ai`
+option: 10 questions on 4 pages, 7 calls (3 reused), the page unchanged, every
+answer named and carrying its facts and picture. Tests:
+`src/server-side/ai-answer/provider.test.js`.
+
+**Before using it on a customer's site:** the page's content (and its picture,
+when turned on) goes to the service, so it must be one you control or have
+approved. Agents are slower than one model call: raise the step's
+`budget` (`{ calls, seconds }`, default 10 and 60) for them.
+
 ## Status when work stopped (2026-11-24)
 
 Everything built is committed and pushed on `design-ai-cant-tell` (latest
@@ -447,7 +500,8 @@ count limit. They are not the scan's element screenshots (the a11yScan step's
 "Element screenshots" option, 50 per scan by default, `element-screenshots.js`),
 which the pass does not use.
 
-**Next, in order:** a person labels cases with reasons and exports
+**Next, in order:** put a model or an agent behind `A11Y_AI_ENDPOINT` (see
+"Plugging in another model or an agent") or use a real `ANTHROPIC_API_KEY`; a person labels cases with reasons and exports
 the CSV and `ai-lessons.json`; run the pass with a real `ANTHROPIC_API_KEY` and
 `ai: { lessons: "..." }`; a script to re-run labelled cases and compare
 agreement before accepting lessons; the extension's renderer.

@@ -8,7 +8,7 @@
 
 const { entryFor, PROMPT_VERSION } = require('./registry');
 const { collectEvidence, fingerprint, sameFingerprint } = require('./evidence');
-const { resolveProvider } = require('./provider');
+const { resolveProvider, QUESTION_VERSION } = require('./provider');
 const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
 
 const DEFAULTS = { maxCalls: 10, seconds: 60, minConfidence: 0.6 };
@@ -34,18 +34,59 @@ function buildPrompt(entry, occurrence, evidence, lessons = null) {
     ].filter(Boolean).join('\n');
 }
 
-function parseAnswer(text) {
-    const m = /\{[\s\S]*\}/.exec(String(text || ''));
+/**
+ * One question as data, for a provider that answers questions rather than
+ * prompts (an endpoint, which may be an agent with its own knowledge). The
+ * prompt the built-in model would get is in it too, for a service that only
+ * forwards it to a model. Everything under `evidence` and `issue` is page
+ * content: data, never instructions.
+ */
+function buildQuestion(entry, finding, occurrence, evidence, lessons = null, page = null) {
+    const how = occurrence.howToCheck || {};
+    return {
+        check: occurrence.atomicCheckId,
+        question: entry.question,
+        criteria: (finding && finding.wcag && Array.isArray(finding.wcag.sc)) ? finding.wcag.sc : [],
+        issue: occurrence.failureSummary || '',
+        howToCheck: { steps: Array.isArray(how.steps) ? how.steps : [], passWhen: how.passWhen || '', failWhen: how.failWhen || '' },
+        page: page || null,
+        element: { html: String(occurrence.html || '').slice(0, 1500), selector: (occurrence.target && typeof occurrence.target[0] === 'string') ? occurrence.target[0] : null },
+        evidence: (({ element, ...rest }) => rest)(evidence),
+        lessons: lessons && (lessons.rules.length || lessons.examples.length) ? lessons : null,
+        prompt: buildPrompt(entry, occurrence, evidence, lessons),
+        reply: { verdict: ['pass', 'fail', 'unsure'], confidence: '0 to 1', rationale: 'one or two sentences', answeredBy: '{ name, version }, optional' },
+    };
+}
+
+// Who answered, as the report names it: the endpoint's own name and version
+// when its answer gives them, else the provider's.
+function answeredByOf(reply, model) {
+    const by = reply && typeof reply === 'object' && reply.answeredBy && typeof reply.answeredBy === 'object' ? reply.answeredBy : null;
+    const name = by && typeof by.name === 'string' ? by.name.trim().slice(0, 100) : '';
+    const version = by && (typeof by.version === 'string' || typeof by.version === 'number') ? String(by.version).trim().slice(0, 50) : '';
+    if (name) return version ? `${name} ${version}` : name;
+    return model.model || model.name || null;
+}
+
+/** The answer in a reply: JSON text (or text around it), or an object already. */
+function parseAnswer(reply) {
+    if (reply && typeof reply === 'object') return normalise(reply);
+    const m = /\{[\s\S]*\}/.exec(String(reply || ''));
     if (!m) return null;
     try {
-        const a = JSON.parse(m[0]);
-        const verdict = ['pass', 'fail', 'unsure'].includes(a.verdict) ? a.verdict : null;
-        if (!verdict) return null;
-        const confidence = Math.min(1, Math.max(0, Number(a.confidence)));
-        return { verdict, confidence: Number.isFinite(confidence) ? confidence : 0, rationale: String(a.rationale || '').slice(0, 600) };
+        return normalise(JSON.parse(m[0]));
     } catch {
         return null;
     }
+}
+
+// A verdict it knows, a confidence from 0 to 1 (0 when missing) and a short reason.
+function normalise(a) {
+    if (!a || typeof a !== 'object') return null;
+    const verdict = ['pass', 'fail', 'unsure'].includes(a.verdict) ? a.verdict : null;
+    if (!verdict) return null;
+    const confidence = Math.min(1, Math.max(0, Number(a.confidence)));
+    return { verdict, confidence: Number.isFinite(confidence) ? confidence : 0, rationale: String(a.rationale || '').slice(0, 600) };
 }
 
 /** The scan's answerable occurrences, in finding order. */
@@ -87,7 +128,11 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         const before = await fingerprint(page);
         const results = [];
 
-        for (const { occurrence, entry } of todo) {
+        let pageUrl = null;
+        try { pageUrl = typeof page.url === 'function' ? page.url() : null; } catch { pageUrl = null; }
+        const pageInfo = pageUrl ? { url: pageUrl } : null;
+
+        for (const { finding, occurrence, entry } of todo) {
             const evidence = await collectEvidence(page, occurrence, entry.evidence);
             // What was read from the page (the element's HTML is the
             // occurrence's own): kept on every result, answered or not, so a
@@ -112,7 +157,11 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 const t0 = Date.now();
                 try {
                     const signal = AbortSignal.timeout(Math.max(1000, deadline - t0));
-                    const answer = parseAnswer(await model.ask(buildPrompt(entry, occurrence, evidence, shared.lessons ? lessonsFor(shared.lessons, occurrence.atomicCheckId, evidence.facts || evidence) : null), { signal }));
+                    const lessons = shared.lessons ? lessonsFor(shared.lessons, occurrence.atomicCheckId, evidence.facts || evidence) : null;
+                    const reply = typeof model.answer === 'function'
+                        ? await model.answer(buildQuestion(entry, finding, occurrence, evidence, lessons, pageInfo), { signal })
+                        : await model.ask(buildPrompt(entry, occurrence, evidence, lessons), { signal });
+                    const answer = parseAnswer(reply);
                     if (!answer) {
                         ai = { ...base, provenance: 'unresolved', reason: 'unreadable-answer' };
                     } else {
@@ -121,7 +170,7 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                             ...base, ...answer,
                             provenance: sure ? 'ai-supported' : 'unresolved',
                             ...(sure ? {} : { reason: 'unsure' }),
-                            model: model.model || model.name || null,
+                            model: answeredByOf(reply, model),
                             durationMs: Date.now() - t0,
                         };
                     }
@@ -161,4 +210,4 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
     }
 }
 
-module.exports = { answerCantTells, candidatesOf, buildPrompt, parseAnswer, DEFAULTS };
+module.exports = { answerCantTells, candidatesOf, buildPrompt, buildQuestion, parseAnswer, DEFAULTS, QUESTION_VERSION };

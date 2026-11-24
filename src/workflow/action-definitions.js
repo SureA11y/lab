@@ -226,7 +226,7 @@ const ACTION_DEFINITIONS = {
                 type: "string|object",
                 required: false,
                 alias: "AI answers",
-                description: "Experimental. Have a model answer the \"can't tell\" results it can settle from the page (alt text, page titles, headings, field labels), once the scan is done. The answers sit beside the scan's own outcome, which stays as it is, and carry the model's reasoning. Needs ANTHROPIC_API_KEY in the environment; without it every item stays as it was. The page's content and the element's picture details are sent to the model. As an object (or the same as JSON text); fields: answer (cantTell), budget ({ calls, seconds }, default 10 and 60), minConfidence (default 0.6).",
+                description: "Experimental. Have a model answer the \"can't tell\" results it can settle from the page (alt text, page titles, headings, field labels), once the scan is done. The answers sit beside the scan's own outcome, which stays as it is, and carry the model's reasoning. Needs a model, set on the server: a service you run at A11Y_AI_ENDPOINT, which gets each question as data (a model or an agent with its own knowledge), or else ANTHROPIC_API_KEY; without one every item stays as it was. The page's content and the element's details are sent to it; its picture only to an endpoint with A11Y_AI_ENDPOINT_PICTURE on. As an object (or the same as JSON text); fields: answer (cantTell), budget ({ calls, seconds }, default 10 and 60), minConfidence (default 0.6), lessons (the path of a lessons file exported from the review of the AI's answers).",
                 example: { answer: "cantTell", budget: { calls: 10, seconds: 60 } }
             },
             screenshotView: {
