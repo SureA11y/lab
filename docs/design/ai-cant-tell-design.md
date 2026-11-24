@@ -57,6 +57,59 @@ Alternatives considered:
 - **Inside the engine's run.** Mixes a non-deterministic step into the scan
   and makes its results unstable. Rejected.
 
+## In a workflow
+
+The scan runs in `src/server-side/engines/a11y-labs-engine.js`, which holds the
+Puppeteer page and takes the element screenshots right after the scan. The AI
+pass goes there, after the result is stored:
+
+```
+scan step
+  1. the engine scans the page            findings, including cantTell
+  2. screenshots are captured             (existing)
+  3. the result is stored                 the tool's result, final
+  4. AI pass, only if enabled:
+       a. fingerprint the page
+       b. for each answerable cantTell: collect evidence, ask the model,
+          record the answer and its steps (tiers 0 and 1, within the budget)
+       c. fingerprint again; if it differs, restore and record the drift
+  5. attach `ai` beside each finding
+the workflow's next step starts
+```
+
+The next step starts only after 4c, so the page is as the workflow expects, or
+has been restored.
+
+**Switching it on.** An `ai` option on the scan step, and the same option for
+the whole run (app toggle, runner flag, Action input, HTTP API). Without it,
+nothing changes:
+
+```json
+{ "type": "scan", "name": "cart", "ai": { "answer": "cantTell", "budget": { "seconds": 60, "calls": 10 } } }
+```
+
+In unattended runs a missing key or a spent budget leaves the items as "can't
+tell" with the reason; the AI never fails the run.
+
+**Loops and batches.** The pass runs per scan, so a loop multiplies the cost.
+A per-scan budget and a run-level cap bound it. A question that repeats with
+the same element HTML and context (the header's bold "Demo Shop" came up on
+every page in the spike) is asked once and reused.
+
+**Page-level checks** (keyboard, focus order, focus visible) are the cases no
+saved report can answer. They run in this same pass as tier 1: the AI tabs
+through the page, and the fingerprint check confirms it left focus and scroll
+as it found them.
+
+Not checked yet:
+
+- Whether the AI pass can run at that point without holding up the next step
+  on the shared page, given the workers and frames the engine uses
+  (`worker-pages.js`, `scanFrames`).
+- Whether restoring by replaying the workflow fits the engine's step state
+  (variables, loops, `repeat-items`) as simply as described; this needs a
+  read of `workflow-engine.js` before it is relied on.
+
 ## The rule registry
 
 A per-rule entry says whether a `cantTell` rule is AI-answerable and, if so:
@@ -163,12 +216,14 @@ Scan time and exact repeatability are given up on purpose, within limits:
 
 ## Plan
 
-1. **Spike on saved reports.** Pick the `cantTell` rules that need only a
+1. **Spike on saved reports** (done, see [the spike](ai-cant-tell-spike.md)). Pick the `cantTell` rules that need only a
    screenshot or HTML, ask a model, and compare with human answers on the
    gallery and demo-shop reports. This shows which rules are worth
    automating.
-2. **Live prototype, tiers 0 and 1.** The AI pass after a scan, with the
-   fingerprint, replay on drift, the budget and the step log.
+2. **Live prototype, single scan first.** One scan, the `ai` option, tier 0
+   evidence only and no clicking, through the hook above; this proves the
+   wiring. Then tier 1 (page-level checks), with the fingerprint, replay on
+   drift, the budget and the step log.
 3. **Schema and UI.** The `ai` block, the four labels, the toggle in the app,
    the runner and the report.
 4. **Human review loop.** Accept or override an AI answer; overrides give an
