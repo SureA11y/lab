@@ -37,8 +37,8 @@ the AI answered and what is still open.
   state) are saved with the report ([report package](../report-package.md)).
 - The conformance view lets a reviewer answer checks by hand, saved in the
   report's JSON ([conformance report design](conformance-report-design.md)).
-- A workflow is a recorded, replayable sequence of steps. That is what makes
-  restoring a page's state possible (see below).
+- A workflow is a recorded sequence of steps. It is not safely replayable to
+  restore a page's state (see "What the code showed").
 
 ## Where it runs
 
@@ -72,13 +72,13 @@ scan step
        a. fingerprint the page
        b. for each answerable cantTell: collect evidence, ask the model,
           record the answer and its steps (tiers 0 and 1, within the budget)
-       c. fingerprint again; if it differs, restore and record the drift
+       c. fingerprint again; if it differs, stop, drop later answers and record the drift
   5. attach `ai` beside each finding
 the workflow's next step starts
 ```
 
 The next step starts only after 4c, so the page is as the workflow expects, or
-has been restored.
+the drift is recorded and shown (see "What the code showed").
 
 **Switching it on.** An `ai` option on the scan step, and the same option for
 the whole run (app toggle, runner flag, Action input, HTTP API). Without it,
@@ -101,14 +101,34 @@ saved report can answer. They run in this same pass as tier 1: the AI tabs
 through the page, and the fingerprint check confirms it left focus and scroll
 as it found them.
 
-Not checked yet:
+### What the code showed
 
-- Whether the AI pass can run at that point without holding up the next step
-  on the shared page, given the workers and frames the engine uses
-  (`worker-pages.js`, `scanFrames`).
-- Whether restoring by replaying the workflow fits the engine's step state
-  (variables, loops, `repeat-items`) as simply as described; this needs a
-  read of `workflow-engine.js` before it is relied on.
+Read in `a11y-runner.js`, `worker-pages.js` and `workflow-engine.js`:
+
+- **The hook is `performA11yScan`** in `src/server-side/a11y-runner.js`. The
+  scan step awaits it, so the next step waits for the AI pass: the shared
+  page is not used by two things at once. The canonical findings are pushed
+  to `workflowCtx.collectedScans` there, so an `ai` block can be attached to
+  the same objects.
+- **Not inside the scan's own block.** The scan runs inside
+  `withTemporaryStyle(beforeScanCss, doScan)`, which injects a style and
+  removes it afterwards. The AI pass goes after that block, or it would see a
+  page the user never sees.
+- **The live preview needs a second event.** "a11yScan ready" is sent with
+  the counts as soon as the scan ends. The AI answers later, so it needs its
+  own event ("answered") that updates the counts and labels.
+- **Loops and crawls run scans in parallel**, each worker on its own page
+  (`createCrawlWorkerTarget`). The AI pass then also runs per worker, and the
+  budget has to be one shared counter on the run, not per scan.
+- **The AI needs its own time limit.** Scan steps run under `ctx.race`
+  timeouts; the AI pass must stop on its own budget and never be cut by, or
+  fail, the step's limits.
+- **There is no restore or replay mechanism.** Variables are in-memory scope
+  stacks, loops keep their position and a replay would repeat real effects
+  (login, add to cart, server-side state). Restore by replay is therefore
+  **not** a safe fallback and is dropped. What exists, and is used instead:
+  a second page in the same browser context (`createCrawlWorkerTarget`
+  shares cookies and storage), loaded at the scan's URL.
 
 ## The rule registry
 
@@ -139,13 +159,20 @@ then behaves differently. Four layers:
 2. **A fingerprint before and after.** Before the AI starts: URL, a DOM hash,
    storage and cookies, scroll position, the focused element. After it ends:
    compare. If they match, the workflow goes on.
-3. **Restore by replay.** If the state drifted, rebuild it by replaying the
-   workflow up to that step, or reload for a single-page scan. The result of
-   the drift is recorded on the AI's log.
-4. **Isolated mode for tier 2.** Checks that need real clicks run in a
-   separate pass: a fresh tab or browser context that replays the workflow to
-   that step, so the main run never sees it. A single-page scan has no
-   following steps and can use this mode directly.
+3. **Prevent, then detect; do not restore.** Because replay is unsafe, the
+   protection is that tier 0 and 1 leave nothing behind (each tier 1 action
+   undoes itself: focus, scroll, viewport, text spacing), and the fingerprint
+   catches what slipped. On drift the AI stops, the drift is recorded on its
+   log and shown in the report, and the answers given after the drift are
+   dropped. The workflow continues from the changed page, with a warning; it
+   is not silently repaired.
+4. **A page of its own for what cannot be undone.** Checks that need real
+   clicks run on a second page in the same browser context, loaded at the
+   scan's URL, so the main page is never touched. This works for a state
+   that the URL determines. A state that it does not (an open modal, a
+   half-filled form) cannot be reproduced there, so those checks stay
+   tier 0 and 1 on the main page, or are left to a person. A single-page
+   scan has no following steps and can use this mode directly.
 
 Guardrails for any tier: the AI's tools are an allowlist (no navigation off
 the page's origin, no form submission, no downloads); the page's text is data,
@@ -165,7 +192,7 @@ ai: {
   evidence: [refs to saved screenshots and probe results],
   steps: [ { action, tier, target, result } ],   // recorded always
   model, promptVersion, tokens, durationMs,
-  stateDrift: none | restored | replayed
+  stateDrift: none | detected   // detected: later answers dropped
 }
 review: { by, verdict, at }        // a person, later
 ```
@@ -222,8 +249,8 @@ Scan time and exact repeatability are given up on purpose, within limits:
    automating.
 2. **Live prototype, single scan first.** One scan, the `ai` option, tier 0
    evidence only and no clicking, through the hook above; this proves the
-   wiring. Then tier 1 (page-level checks), with the fingerprint, replay on
-   drift, the budget and the step log.
+   wiring. Then tier 1 (page-level checks), with the fingerprint and
+   drift detection, the budget and the step log.
 3. **Schema and UI.** The `ai` block, the four labels, the toggle in the app,
    the runner and the report.
 4. **Human review loop.** Accept or override an AI answer; overrides give an
