@@ -78,3 +78,25 @@
 .acr-suggest:empty { display: none; }
 .acr-suggest { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); font-size: var(--fs-sm); }
 .acr-suggest-text { margin: 0; }
+
+/* ==========================================================================
+   REVIEW OF THE AI'S ANSWERS (ai-review.js): a card for each can't-tell
+   question, the person's answer before the AI's
+   ========================================================================== */
+.air-controls { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; margin: 0 0 var(--space-2); }
+.air-card { border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: var(--space-3); margin: 0 0 var(--space-3); }
+.air-card h3 { margin: 0 0 var(--space-1); font-size: var(--fs-md, 1rem); }
+.air-title { font-weight: 400; color: var(--text-muted); font-size: var(--fs-sm); }
+.air-hint { color: var(--text-muted); font-size: var(--fs-sm); }
+.air-box { border: 1px solid var(--border-soft); border-radius: var(--radius-sm, 6px); padding: var(--space-2) var(--space-3); margin: var(--space-2) 0; }
+.air-box h4, .air-ai h4 { margin: 0 0 var(--space-1); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.air-facts { margin: 0; }
+.air-facts > div { display: grid; grid-template-columns: minmax(120px, 200px) 1fr; gap: 2px 12px; padding: 4px 0; border-top: 1px solid var(--border-soft); }
+.air-facts > div:first-child { border-top: 0; }
+.air-facts dt { color: var(--text-muted); font-size: var(--fs-sm); }
+.air-facts dd { margin: 0; overflow-wrap: anywhere; }
+.air-facts q { font-weight: 600; }
+.air-none { font-style: italic; color: var(--warn); }
+.air-pre { max-height: 12em; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.air-ai { margin-top: var(--space-2); padding-inline-start: var(--space-3); border-inline-start: 3px solid var(--accent); }
+@media (max-width: 560px) { .air-facts > div { grid-template-columns: 1fr; } }

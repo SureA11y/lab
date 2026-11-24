@@ -310,8 +310,8 @@ says "fail".
 
 ## In the app
 
-**Steps 1 and 2 are built in the lab app** (`src/js/ai-answer-view.js`, wired in
-`a11y-ui.rendering.js`, `page-events.js`, `a11y-ui.js`); steps 3 and 4 are not.
+**Steps 1, 2 and 3 are built in the lab app** (`src/js/ai-answer-view.js`, wired in
+`ai-review.js`, `a11y-ui.rendering.js`, `page-events.js`, `a11y-ui.js`); step 4 is not.
 The report already had the places for it:
 `extension/main-issues-table.js` renders each "Needs review" row with a lean
 badge and a dialog per instance, and the conformance view already stores a
@@ -324,7 +324,8 @@ reviewer's answers in the report's JSON. What it does now, and the rest of the p
    note, saved in the report as `review` beside `ai` (the format above), so
    it travels with the report and a later run can keep it. This is also what
    turns "AI-supported" into "Human-confirmed".
-3. **A review mode.** The sheet's flow inside the report: go through the
+3. **A review mode.** (Built: the *Review AI answers* button next to *Review conformance*, a dialog with a card per question, the person's answer first, then the AI's, a filter, a running count of agreement and a CSV export. It is the standalone sheet's flow, kept inside the report, and may be temporary.)
+   Original description: The sheet's flow inside the report: go through the
    cases that have an AI answer, answer first, then reveal; a summary of
    agreement. The figures per check feed back into which rules count as
    answered.
@@ -363,7 +364,7 @@ merge it. Branch names, commits and authorship carry no references to Claude.
   what it was given, with the person's answer (pass, fail, unsure, a note)
   kept in the report as `aiReview`, by question, not by page. **Not done:**
   the extension's own report renderer (`extension/main-issues-table.js`), the
-  review mode and the conformance link (steps 3 and 4 above), the live preview
+  conformance link (step 4 above), the live preview
   event, tier 1 (page-level checks) and screenshots saved for "can't tell"
   occurrences.
 - **Findings so far:** the offline spike agreed with labels on 17 of 19 demo

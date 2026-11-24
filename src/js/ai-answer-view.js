@@ -100,16 +100,10 @@ function factsList(evidence, { escapeHtml }) {
     return rows.length ? '<dl class="node-details-list">' + rows.join('') + '</dl>' : '';
 }
 
-/**
- * The AI's analysis of one question and a place for the person's answer.
- * `review` is what the person has answered so far ({ verdict, note }).
- */
-export function aiBlockHtml(node, review, { escapeHtml, escapeAttr }) {
-    const ai = node && node.ai;
+/** The AI's reasoning on one question, and what it was given. Empty without an AI answer. */
+export function aiAnalysisHtml(ai, { escapeHtml }) {
     if (!ai || typeof ai !== 'object') return '';
-    const key = aiReviewKey(node);
     const supported = ai.provenance === 'ai-supported' && VERDICT_WORDS[ai.verdict];
-    const r = review && typeof review === 'object' ? review : {};
     const analysis = supported
         ? '<p class="node-ai__verdict"><strong>The AI says ' + escapeHtml(ai.verdict) + '.</strong> ' +
             (typeof ai.confidence === 'number' ? '<span class="node-ai__confidence">Confidence ' + escapeHtml(String(Math.round(ai.confidence * 100))) + '%.</span>' : '') + '</p>' +
@@ -123,16 +117,131 @@ export function aiBlockHtml(node, review, { escapeHtml, escapeAttr }) {
             '</details>'
         : '';
     const meta = ai.model ? '<p class="node-ai__meta">Answered by ' + escapeHtml(ai.model) + (ai.reused ? ' (an earlier answer to the same question)' : '') + '. An AI answer is a suggestion: you decide.</p>' : '';
+    return analysis + given + meta;
+}
+
+/** "Your answer": pass, fail or unsure, a note, and whether it agrees with the AI. */
+export function answerFieldsetHtml(key, ai, review, { escapeHtml, escapeAttr }) {
+    const r = review && typeof review === 'object' ? review : {};
     const name = 'ai-review-' + key;
     const radios = ['pass', 'fail', 'unsure'].map((v) =>
         '<label class="ai-review__option"><input type="radio" class="ai-review-radio" name="' + escapeAttr(name) + '" value="' + v + '"' +
         ' data-ai-key="' + escapeAttr(key) + '"' + (r.verdict === v ? ' checked' : '') + '> ' + v + '</label>').join(' ');
-    const agreement = agreementText(agreementOf(r, ai));
-    return '<div class="node-detail node-ai" data-ai-key="' + escapeAttr(key) + '"' + (supported ? ' data-ai-verdict="' + ai.verdict + '"' : '') + '>' +
-        '<h4 class="node-ai__title">AI analysis ' + aiBadgeHtml(ai, { escapeHtml }) + '</h4>' +
-        analysis + given + meta +
-        '<fieldset class="ai-review"><legend>Your answer</legend>' + radios +
+    return '<fieldset class="ai-review"><legend>Your answer</legend>' + radios +
         '<label class="ai-review__note-label">Note <input type="text" class="ai-review-note" data-ai-key="' + escapeAttr(key) + '" value="' + escapeAttr(r.note || '') + '" placeholder="Optional"></label>' +
-        '<span class="ai-agree" role="status" aria-live="polite">' + escapeHtml(agreement) + '</span>' +
-        '</fieldset></div>';
+        '<span class="ai-agree" role="status" aria-live="polite">' + escapeHtml(agreementText(agreementOf(r, ai))) + '</span>' +
+        '</fieldset>';
+}
+
+/**
+ * The AI's analysis of one question and a place for the person's answer.
+ * `review` is what the person has answered so far ({ verdict, note }).
+ */
+export function aiBlockHtml(node, review, helpers) {
+    const ai = node && node.ai;
+    if (!ai || typeof ai !== 'object') return '';
+    const key = aiReviewKey(node);
+    const supported = ai.provenance === 'ai-supported' && VERDICT_WORDS[ai.verdict];
+    return '<div class="node-detail node-ai" data-ai-key="' + helpers.escapeAttr(key) + '"' + (supported ? ' data-ai-verdict="' + ai.verdict + '"' : '') + '>' +
+        '<h4 class="node-ai__title">AI analysis ' + aiBadgeHtml(ai, helpers) + '</h4>' +
+        aiAnalysisHtml(ai, helpers) + answerFieldsetHtml(key, ai, review, helpers) + '</div>';
+}
+
+/**
+ * Every can't-tell question of a report the AI had a go at, once each (the
+ * same element on many pages is one), for the review view.
+ */
+export function collectAiCases(payload) {
+    const byKey = new Map();
+    for (const scan of Array.isArray(payload && payload.scans) ? payload.scans : []) {
+        for (const f of (scan && scan.canonical && scan.canonical.findings) || []) {
+            if (!f || f.outcome !== 'cantTell') continue;
+            for (const o of f.occurrences || []) {
+                if (!o || !o.ai || typeof o.ai !== 'object') continue;
+                const node = { sourceAtomicRules: [o.atomicCheckId || ''], html: o.html || '', target: Array.isArray(o.target) ? o.target : [] };
+                const key = aiReviewKey(node);
+                const urls = Array.isArray(o.pageUrls) && o.pageUrls.length ? o.pageUrls : (o.pageUrl ? [o.pageUrl] : (scan.url ? [scan.url] : []));
+                let c = byKey.get(key);
+                if (!c) {
+                    c = {
+                        key, check: o.atomicCheckId || '', title: f.title || f.ruleId || '', criterion: (f.wcag && f.wcag.sc) || [],
+                        issue: o.failureSummary || '', hint: o.hint || '',
+                        lean: o.lean && (o.lean.toward === 'fail' || o.lean.toward === 'pass') ? o.lean : null,
+                        howToCheck: o.howToCheck && Array.isArray(o.howToCheck.steps) ? o.howToCheck : null,
+                        selector: node.target[0] || '', html: node.html, ai: o.ai, urls: [],
+                    };
+                    byKey.set(key, c);
+                }
+                for (const u of urls) if (u && !c.urls.includes(u)) c.urls.push(u);
+            }
+        }
+    }
+    return [...byKey.values()];
+}
+
+/**
+ * "What to check, read from the page": the values a person judges, labelled,
+ * from the evidence the AI was given. A list of { label, html } rows.
+ */
+export function keyFactRows(check, evidence, { escapeHtml }) {
+    const q = (v, none) => {
+        if (v === undefined || v === null) return '<span class="air-none">' + escapeHtml(none || '(none)') + '</span>';
+        if (v === '') return '<span class="air-none">(empty)</span>';
+        return '<q>' + escapeHtml(v) + '</q>';
+    };
+    const code = (v) => '<code>' + escapeHtml(v) + '</code>';
+    const nameOf = (f) => {
+        if (!f.accessibleName) return q(undefined, '(not available)');
+        const n = f.accessibleName.name;
+        return (n === '' || n == null) ? '<span class="air-none">(none: nothing gives it a name)</span>' : q(n) + ' <span class="air-hint">as ' + escapeHtml(f.accessibleName.role || 'element') + '</span>';
+    };
+    const ev = evidence && typeof evidence === 'object' ? evidence : {};
+    const f = ev.facts && typeof ev.facts === 'object' ? ev.facts : null;
+    const rows = [];
+    const add = (label, html) => rows.push({ label, html });
+    if (check === 'page-title-patterns' && ev.pageTitle) {
+        add('Page title', q(ev.pageTitle.title));
+        add('Main headings', (ev.pageTitle.headings || []).length ? ev.pageTitle.headings.map((h) => q(h)).join(' ') : q(undefined, '(none found)'));
+    } else if (f) {
+        if (check === 'img-alt-quality' || check === 'img-alt-decorative') {
+            add('Alt text', f.alt === undefined
+                ? (f.tag === 'img' ? '<span class="air-none">(no alt attribute)</span>' : q(undefined, '(not an img: no alt)'))
+                : (f.alt === '' ? '<span class="air-none">(empty alt: marked decorative)</span>' : q(f.alt)));
+            add('Accessible name', nameOf(f));
+            if (f.control) {
+                const c = f.control;
+                add('Inside a control', escapeHtml(c.tag) + (c.href ? ' to ' + code(c.href) : '') + (c.ariaLabel ? ', aria-label ' + q(c.ariaLabel) : '') + (c.text ? ', text ' + q(c.text) : ', no text of its own'));
+            }
+            if (f['aria-label'] !== undefined) add('aria-label', q(f['aria-label']));
+            if (f.title !== undefined) add('title', q(f.title));
+            if (f.src) { const parts = String(f.src).split('/'); add('Image file', q(parts[parts.length - 1] || f.src)); }
+            if (f.text) add('Text inside', q(f.text));
+            if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
+        } else if (check === 'link-name-quality') {
+            add('Link text', q(f.text || (f.control && f.control.text), '(no text)'));
+            add('Accessible name', nameOf(f));
+            const href = f.href || (f.control && f.control.href);
+            if (href) add('Goes to', code(href));
+            if (f['aria-label'] !== undefined) add('aria-label', q(f['aria-label']));
+            if (f.sameTextLinks) {
+                const s = f.sameTextLinks;
+                add('Links with the same text', s.others === 0 ? 'none' : s.others + ' other' + (s.others === 1 ? '' : 's') + (s.distinctTargets && s.distinctTargets.length ? ', going to: ' + s.distinctTargets.map(code).join(' ') : ''));
+            }
+            if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
+        } else if (check === 'form-control-programmatic-label-quality') {
+            add('Label', f.labelText !== undefined ? q(f.labelText) : '<span class="air-none">(no label element)</span>');
+            add('Placeholder', q(f.placeholder, '(none)'));
+            if (f['aria-label'] !== undefined) add('aria-label', q(f['aria-label']));
+            if (f.labelledByText !== undefined) add('aria-labelledby text', q(f.labelledByText));
+            add('Accessible name', nameOf(f));
+            add('Field', escapeHtml(f.tag) + (f.type ? ' type ' + escapeHtml(f.type) : '') + (f.name ? ', name ' + escapeHtml(f.name) : ''));
+            if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
+        } else {
+            add('Text', q(f.text, '(no text)'));
+            add('Accessible name', nameOf(f));
+            if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
+        }
+        add('Shown on the page', f.shown ? 'yes, ' + f.size[0] + ' x ' + f.size[1] + ' px' : '<span class="air-none">not visible when the page loads (hidden, in a menu or collapsed)</span>');
+    }
+    return rows;
 }

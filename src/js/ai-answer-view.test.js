@@ -112,3 +112,32 @@ describe('saving', () => {
         assert.notDeepEqual(checkAgainstSchema(reportSchema(), { ...saved, reportVersion: 4, runId: 'r', aiReview: { k: { verdict: 'maybe' } } }), []);
     });
 });
+
+describe('collectAiCases and keyFactRows', () => {
+    test('one case per question across pages and scans, with the pages gathered', async () => {
+        const { collectAiCases, aiReviewKey } = await load();
+        const occ = (page) => ({ atomicCheckId: 'img-alt-quality', html: '<img alt="Shoes">', target: ['#i'], pageUrl: page, failureSummary: 'check', ai: { verdict: 'pass', provenance: 'ai-supported' } });
+        const payload = { scans: [
+            { canonical: { findings: [{ outcome: 'cantTell', title: 'Alt', wcag: { sc: ['1.1.1'] }, occurrences: [occ('https://a/'), { atomicCheckId: 'x', html: '<p>', target: ['p'] }] }] } },
+            { canonical: { findings: [{ outcome: 'cantTell', title: 'Alt', occurrences: [occ('https://b/')] }, { outcome: 'fail', occurrences: [occ('https://c/')] }] } },
+        ] };
+        const cases = collectAiCases(payload);
+        assert.equal(cases.length, 1);
+        assert.deepEqual(cases[0].urls, ['https://a/', 'https://b/']);
+        assert.equal(cases[0].key, aiReviewKey({ sourceAtomicRules: ['img-alt-quality'], html: '<img alt="Shoes">', target: ['#i'] }));
+        assert.deepEqual(collectAiCases({}), []);
+    });
+
+    test('the alt text, name and control of an image are read off its facts, and an absent alt is said', async () => {
+        const { keyFactRows } = await load();
+        const rows = keyFactRows('img-alt-quality', { facts: { tag: 'img', alt: 'Canvas shoes', accessibleName: { role: 'image', name: 'Canvas shoes' }, control: { tag: 'a', href: '/p' }, shown: true, size: [200, 120] } }, helpers);
+        const byLabel = Object.fromEntries(rows.map((r) => [r.label, r.html]));
+        assert.match(byLabel['Alt text'], /<q>Canvas shoes<\/q>/);
+        assert.match(byLabel['Inside a control'], /a to <code>\/p<\/code>, no text of its own/);
+        assert.match(byLabel['Shown on the page'], /yes, 200 x 120 px/);
+        const none = keyFactRows('img-alt-quality', { facts: { tag: 'img', accessibleName: { role: 'image', name: '' }, shown: false } }, helpers);
+        assert.match(none.find((r) => r.label === 'Alt text').html, /no alt attribute/);
+        assert.match(none.find((r) => r.label === 'Accessible name').html, /nothing gives it a name/);
+        assert.deepEqual(keyFactRows('img-alt-quality', null, helpers), []);
+    });
+});
