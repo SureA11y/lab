@@ -187,3 +187,22 @@
 .air-card .ai-review__option:hover { border-color: var(--accent); }
 .air-ai { background: var(--surface-2, var(--surface-base)); border: 1px dashed var(--border-strong); border-inline-start: 5px solid var(--accent); }
 .air-ai h4 { color: var(--text-main); }
+
+/* One type scale for the AI review: 18 (titles and the values to judge), 16 (text),
+   14 (labels, hints, buttons, code). One sans family, one mono family. */
+.air-review { --air-t: 18px; --air-b: 16px; --air-s: 14px; }
+.air-review, .air-review .air-card { font-size: var(--air-b); }
+.air-card h3 { font-size: var(--air-t); }
+.air-card > header h3::before { font-size: var(--air-s); text-transform: none; letter-spacing: 0; }
+.air-pill, .air-hint, .air-meta, .air-stats, .air-controls label,
+.air-facts dt, .air-card .ai-review__note-label, .air-card .ai-review__option,
+.air-card .ai-review legend, .air-review button, .air-review summary,
+.air-review .node-ai__meta, .air-review .ai-agree { font-size: var(--air-s); }
+.air-box h4, .air-ai h4 { font-size: var(--air-s); text-transform: none; letter-spacing: 0; }
+.air-issue, .air-lean, .air-facts dd, .air-facts q, .air-ai .node-ai__rationale,
+.air-ai .node-ai__verdict { font-size: var(--air-b); }
+.air-lean .air-hint { font-size: var(--air-s); }
+.air-facts q { font-size: var(--air-t); }
+.air-review code, .air-review pre, .air-review .air-pre, .air-facts code { font-family: var(--font-mono, "IBM Plex Mono", monospace); font-size: var(--air-s); }
+.air-review .air-top .acr-intro { font-size: var(--air-s); }
+.air-head h2 { font-size: calc(var(--air-t) + 2px); }

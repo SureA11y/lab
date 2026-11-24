@@ -400,7 +400,7 @@ what the AI answered, and what remains.
   state files listed in "In the app".
 - Review dialog (the "Review AI answers (n)" button in the report toolbar):
   `src/js/ai-review.js`, styles in `src/css/conformance-review.css` (the `air-*`
-  block; the last block of the file is the depth and colour pass). Layout: sticky
+  block; the last two blocks are the depth and colour pass and the type scale: 18, 16 and 14 px, one sans and one mono family, keep to it). Layout: sticky
   top bar with filters, counts and CSV export; one card per question with a
   numbered header, the issue, the tool's lean, "What to check (read from the
   page)", proof picture and links on the left, the person's answer and the
