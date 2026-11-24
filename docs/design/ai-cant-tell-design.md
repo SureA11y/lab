@@ -310,15 +310,17 @@ says "fail".
 
 ## In the app
 
-Not part of the app yet. The report already has the places for it:
+**Steps 1 and 2 are built in the lab app** (`src/js/ai-answer-view.js`, wired in
+`a11y-ui.rendering.js`, `page-events.js`, `a11y-ui.js`); steps 3 and 4 are not.
+The report already had the places for it:
 `extension/main-issues-table.js` renders each "Needs review" row with a lean
 badge and a dialog per instance, and the conformance view already stores a
-reviewer's answers in the report's JSON. The proposal, in order:
+reviewer's answers in the report's JSON. What it does now, and the rest of the proposal, in order:
 
-1. **Show the AI on the row.** A provenance badge beside the lean badge
+1. **Show the AI on the row.** (Built.) A provenance badge beside the lean badge
    (AI-supported, unresolved), and in the instance dialog the "what to check"
    facts, the AI's analysis and what it was given.
-2. **Take the person's answer in the same dialog.** Pass, fail or unsure and a
+2. **Take the person's answer in the same dialog.** (Built.) Pass, fail or unsure and a
    note, saved in the report as `review` beside `ai` (the format above), so
    it travels with the report and a later run can keep it. This is also what
    turns "AI-supported" into "Human-confirmed".
@@ -356,9 +358,14 @@ merge it. Branch names, commits and authorship carry no references to Claude.
   `build-review-sheet.js <dir>`. The data of real runs (payloads, pictures,
   sheets) is not committed: it is a customer's site.
 - **Done:** the single-scan pass, the budget and reuse, the drift check, the
-  review sheet. **Not done:** the app and report display, the live preview
-  event, tier 1 (page-level checks), screenshots saved for "can't tell"
-  occurrences, and the human verdict stored in the report.
+  review sheet, and the lab app's report: an `AI answered n of m` badge on a
+  review row, and in each instance's dialog the AI's verdict, reasoning and
+  what it was given, with the person's answer (pass, fail, unsure, a note)
+  kept in the report as `aiReview`, by question, not by page. **Not done:**
+  the extension's own report renderer (`extension/main-issues-table.js`), the
+  review mode and the conformance link (steps 3 and 4 above), the live preview
+  event, tier 1 (page-level checks) and screenshots saved for "can't tell"
+  occurrences.
 - **Findings so far:** the offline spike agreed with labels on 17 of 19 demo
   cases (labels by the author, not a professional's); on a trimmed run of a
   real site, 68 sampled cases got 41 pass, 6 fail and 21 unsure before the
@@ -366,6 +373,17 @@ merge it. Branch names, commits and authorship carry no references to Claude.
 - **Watch out for:** the tool's HTML snippet can be cut off, which made the AI
   unsure, hence `readFacts`; a replayed workflow is not a safe restore (see
   above); pictures of "can't tell" elements are not saved by the scan.
+
+## What is checked in the app
+
+Run in the lab app with a report from the demo shop's tour, answered through a
+local stub of the model: the row badges show, the instance dialog shows the AI's
+analysis and the answer controls, and answering shows whether it agrees with the
+AI. The unit tests cover the markup, the key that makes one question one answer
+across pages, the agreement, and how an answer is kept. **Not checked:** that
+the answer survives the report's download and reopening in a real session
+(the field is listed among the properties a report keeps, as the conformance
+review is), and the exported single-file HTML, where the controls would not save.
 
 ## Left out on purpose
 
