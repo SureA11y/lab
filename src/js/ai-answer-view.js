@@ -158,6 +158,38 @@ function stopName(s) {
     return (s.role || s.tag) + (s.name ? ' “' + s.name + '”' : ' (no name)');
 }
 
+// Where a stop is: its landmark and the heading it comes under.
+function stopPlace(s) {
+    return [s.landmark ? 'in ' + s.landmark : '', s.heading ? 'under ' + s.heading : ''].filter(Boolean).join(', ');
+}
+
+/**
+ * The page's picture with the stops numbered on it and joined in Tab order,
+ * drawn over the picture (the page itself was never drawn on). Empty without
+ * a picture.
+ */
+export function focusMapHtml(walk, { escapeHtml, escapeAttr = escapeHtml }) {
+    const map = walk && walk.map;
+    const src = proofSrc(map);
+    const W = map && Number(map.width);
+    const H = map && Number(map.height);
+    if (!src || !(W > 0) || !(H > 0)) return '';
+    const points = (Array.isArray(walk.stops) ? walk.stops : [])
+        .filter((s) => !s.hidden && s.width > 0 && s.height > 0 && s.x < W && s.y < H)
+        .map((s) => ({ n: Number(s.n), x: Math.round(s.x + s.width / 2), y: Math.round(s.y + s.height / 2) }));
+    if (!points.length) return '';
+    const r = Math.max(8, Math.round(W / 50));
+    const path = points.length > 1 ? '<polyline class="air-map__line" points="' + points.map((p) => p.x + ',' + p.y).join(' ') + '" stroke-width="' + Math.max(2, Math.round(r / 4)) + '"/>' : '';
+    const marks = points.map((p) => '<g class="air-map__stop"><circle cx="' + p.x + '" cy="' + p.y + '" r="' + r + '"/>' +
+        '<text x="' + p.x + '" y="' + p.y + '" font-size="' + Math.round(r * 1.1) + '" dy="0.36em">' + escapeHtml(String(p.n)) + '</text></g>').join('');
+    const left = (walk.stops || []).length - points.length;
+    return '<figure class="air-map"><div class="air-map__scroll"><div class="air-map__frame">' +
+        '<img class="air-map__page" src="' + escapeAttr(src) + '" alt="The page, with its focus stops numbered and joined in Tab order. The list gives them in words.">' +
+        '<svg class="air-map__over" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true" focusable="false">' + path + marks + '</svg>' +
+        '</div></div><figcaption class="air-hint">' + escapeHtml('The order at a glance: ' + points.length + ' stop' + (points.length === 1 ? '' : 's') + ' on the page' +
+        (left > 0 ? ', ' + left + ' not shown (hidden or beyond the picture)' : '') + '.') + '</figcaption></figure>';
+}
+
 /**
  * The focus walk, stop by stop: where focus went, what showed it, what
  * covered it, and the stop's picture. As the person checks the AI's answer.
@@ -174,10 +206,11 @@ export function focusWalkHtml(walk, { escapeHtml, escapeAttr = escapeHtml }) {
             .filter(Boolean).join(' ');
         return '<li class="air-stop' + (Array.isArray(s.changesOnFocus) && !s.changesOnFocus.length ? ' air-stop--none' : '') + '">' +
             '<span class="air-stop__name">' + escapeHtml(stopName(s)) + '</span> ' +
-            '<span class="air-hint">at ' + escapeHtml(String(s.x)) + ', ' + escapeHtml(String(s.y)) + '. ' + escapeHtml(notes) + '</span>' +
+            '<span class="air-hint">' + escapeHtml((stopPlace(s) ? stopPlace(s) + ', ' : '') + 'at ' + s.x + ', ' + s.y + '. ' + notes) + '</span>' +
             (src ? '<img class="air-shot air-stop__shot" alt="Stop ' + escapeAttr(String(s.n)) + ' while focused" src="' + escapeAttr(src) + '">' : '') + '</li>';
     }).join('');
     return '<p class="air-hint">' + escapeHtml(stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' with Tab from the top of the page. ' + focusWalkEnd(walk)) + '</p>' +
+        focusMapHtml(walk, { escapeHtml, escapeAttr }) +
         '<ol class="air-stops">' + items + '</ol>';
 }
 
@@ -357,7 +390,7 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             add('No visible change found', list(none) || '<span class="air-none">(every stop changed when focused)</span>');
             if (hidden.length) add('Not visible while focused', list(hidden));
         } else if (check === 'focus-order') {
-            add('Order', stops.slice(0, 25).map((s) => escapeHtml(s.n + '. ' + stopName(s) + ' (' + s.x + ', ' + s.y + ')')).join('<br>') + (stops.length > 25 ? '<br>…' : ''));
+            add('Order', stops.slice(0, 25).map((s) => escapeHtml(s.n + '. ' + stopName(s) + (stopPlace(s) ? ', ' + stopPlace(s) : '') + ' (' + s.x + ', ' + s.y + ')')).join('<br>') + (stops.length > 25 ? '<br>…' : ''));
         } else {
             const covered = stops.filter((s) => s.covered);
             add('Covered while focused', covered.length ? covered.map((s) => escapeHtml(s.n + '. ' + stopName(s) + ', by ' + s.covered)).join('<br>') : '<span class="air-none">(none found)</span>');

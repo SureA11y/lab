@@ -20,8 +20,8 @@ after(async () => { if (browser) await browser.close().catch(() => {}); });
 // link under a fixed banner; long enough to scroll.
 const PAGE = `<title>Shop</title>
 <style>a.bare:focus { outline: none; } #banner { position: fixed; left: 0; right: 0; bottom: 0; height: 120px; background: #eee; }</style>
-<a href="#one" id="one">One</a> <a href="#two" class="bare" id="two">Two</a>
-<label>Name <input id="name"></label>
+<nav aria-label="Main"><a href="#one" id="one">One</a> <a href="#two" class="bare" id="two">Two</a></nav>
+<main><h1>Sign up</h1><label>Name <input id="name"></label></main>
 <div style="height: 1500px"></div>
 <a href="#three" id="three" style="position: fixed; bottom: 40px; left: 10px">Three</a>
 <div id="banner">Cookies</div>`;
@@ -48,6 +48,9 @@ test('walks from the top, says what shows focus and what covers it, and puts foc
     assert.deepEqual(walk.stops[1].changesOnFocus, [], 'no outline, nothing else: no visible change');
     assert.match(walk.stops[3].covered || '', /div#banner/);
     assert.ok(walk.stops[0].screenshot.startsWith('data:image/jpeg;base64,'));
+    assert.deepEqual(walk.stops.map((s) => [s.landmark, s.heading]), [['navigation “Main”', null], ['navigation “Main”', null], ['main', 'h1 “Sign up”'], [null, 'h1 “Sign up”']]);
+    assert.ok(walk.map.screenshot.startsWith('data:image/jpeg;base64,'), 'a picture of the whole page');
+    assert.deepEqual([walk.map.width, walk.map.height], [900, await page.evaluate(() => document.documentElement.scrollHeight)]);
     assert.ok(sameFingerprint(before, after), 'focus, scroll and page as they were');
     assert.equal(await page.evaluate(() => document.activeElement.id), 'name');
     assert.equal(await page.evaluate(() => document.querySelector('[data-a11y-focus-walk-start]')), null, 'no trace left');

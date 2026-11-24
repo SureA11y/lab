@@ -25,7 +25,8 @@ piece of the page itself. For one question, this leaves the lab:
 
 With `ai: { focus: true }`, a focus question also carries the focus walk: for
 every Tab stop, the element's tag, role, name (its text, label or alt, cut
-short), position and what changed on focus. Its pictures stay in the report.
+short), position, landmark, the heading it comes under and what changed on
+focus. Its pictures, and the picture of the whole page, stay in the report.
 
 What does **not** leave: cookies, passwords, what was typed into fields (only
 the attributes in the page's HTML are read), the full page, and anything from

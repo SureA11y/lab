@@ -232,3 +232,17 @@
 .air-stop__shot { max-height: 120px; margin: var(--space-1) 0; }
 .air-stop__name { font-weight: 600; }
 .air-stop--none { border-inline-start: 3px solid var(--warn); padding-inline-start: var(--space-2); }
+
+/* The page with the stops on it: numbered marks joined in Tab order, drawn
+   over the page's picture; a long page scrolls within the card. The marks sit
+   on the page's own picture, not on the app's theme, so they keep one colour
+   in both themes: white on deep violet, 8:1. */
+.air-map { margin: 0 0 var(--space-3); }
+.air-map__scroll { max-height: 32rem; overflow: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: #fff; }
+.air-map__frame { position: relative; }
+.air-map__page { display: block; width: 100%; height: auto; }
+.air-map__over { position: absolute; inset: 0; width: 100%; height: 100%; }
+.air-map__line { fill: none; stroke: #5b39c4; stroke-opacity: 0.7; stroke-linejoin: round; }
+.air-map__stop circle { fill: #5b39c4; stroke: #fff; stroke-width: 2; }
+.air-map__stop text { fill: #fff; font-family: var(--font-sans, sans-serif); font-weight: 700; text-anchor: middle; }
+.air-map figcaption { margin-top: var(--space-1); }

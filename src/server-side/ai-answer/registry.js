@@ -48,7 +48,7 @@ const PAGE_LEVEL = Object.freeze({
     },
     'wcag-2.4.3-focus-order': {
         check: 'focus-order',
-        question: 'Does focus move through this page in an order that keeps its meaning and use, broadly following the order the page reads in? The focus walk lists every stop in order, with its position (x, y in pixels from the top left of the page).',
+        question: 'Does focus move through this page in an order that keeps its meaning and use, broadly following the order the page reads in? The focus walk lists every stop in order, with its position (x, y in pixels from the top left of the page), its landmark (header, navigation, main, footer...) and the heading it comes under.',
         evidence: ['focusWalk'],
     },
     'wcag-2.4.11-focus-not-obscured-minimum': {

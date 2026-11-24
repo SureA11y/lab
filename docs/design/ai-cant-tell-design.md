@@ -486,10 +486,12 @@ acts on the page. Opt-in per scan step: `ai: { focus: true }` (with
   presses only Tab, up to the limit; at each stop records the element (tag,
   role, name, position), what looks different on it, its parent or its
   `::before`/`::after` while focused (only what is drawn: an outline's offset
-  with no outline is no change), whether something covers its centre, and a
-  small picture. It ends when focus leaves the page, comes back to a stop
+  with no outline is no change), whether something covers its centre, its
+  landmark (header, navigation, main, footer, a labelled region...) and the
+  heading it comes under, and a small picture. It ends when focus leaves the page, comes back to a stop
   already visited (a possible trap) or the limit is reached. Then it puts
-  focus and every scroll position back.
+  focus and every scroll position back, and takes one picture of the whole
+  page as it is again (at most 1600 by 8000 pixels), for the person.
 - **Checked, not trusted.** The pass's fingerprint (page HTML, address,
   storage, cookies, scroll, focus) is taken just before and after the walk. If
   they differ, the focus answers are dropped (`state-drift`, what the walk saw
@@ -503,10 +505,14 @@ acts on the page. Opt-in per scan step: `ai: { focus: true }` (with
 - **What goes to the model:** the stops as text. The pictures are for the
   person, never in a prompt, and to an endpoint only with
   `A11Y_AI_ENDPOINT_PICTURE` on.
+- **The order at a glance:** the review draws the stops' numbers and the path
+  between them over the page's picture (an SVG over the image; nothing is ever
+  drawn on the page itself), above the list.
 - **In the review:** the card lists the stops in order with their pictures,
   what showed focus at each, and marks the stops where no change was found;
   "What to check" sums up per question (stops without a visible change, the
-  order with positions, what covered focus).
+  order with each stop's landmark, heading and position, what covered focus).
+  The AI gets the landmarks and headings too, as text, never the pictures.
 
 Pictures in a saved run are files (`images/...`, served as `/reports/...` or,
 from an opened zip, `blob:`); the review now shows those as the rest of the

@@ -10,11 +10,13 @@
 // 2. Starts from the top of the page, as a fresh visit would, and presses Tab
 //    up to `maxStops` times. Only Tab: never Enter, Space or an arrow key, so
 //    nothing is operated. At each stop: the element, its name and role, where it
-//    is, what looks different on it (or its parent, or its ::before/::after)
-//    while focused, whether something covers it, and a small picture.
+//    is, its landmark and the heading it comes under, what looks different on
+//    it (or its parent, or its ::before/::after) while focused, whether
+//    something covers it, and a small picture.
 // 3. Ends when focus leaves the page, comes back to an element it already
 //    visited, or the limit is reached.
 // 4. After: focus back where it was (or nowhere), every scroll position back.
+// 5. A picture of the whole page, for the person to see the order at a glance.
 //
 // Whether the page is truly as it was is checked by the caller with the
 // pass's fingerprint (evidence.js). What it cannot put back: when nothing had
@@ -26,6 +28,8 @@ const START = 'data-a11y-focus-walk-start';
 
 const DEFAULTS = { maxStops: 40, maxPictures: 20, settleMs: 80 };
 const PICTURE_MAX = { width: 420, height: 200 };
+// The page's picture with the stops on it: at most this much of the page.
+const MAP_MAX = { width: 1600, height: 8000 };
 const PAD = 8;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -134,7 +138,21 @@ async function walkFocus(page, options = {}) {
                 const inView = r.bottom > 0 && r.right > 0 && r.top < window.innerHeight && r.left < window.innerWidth;
                 const covered = inView && top && !(top === a || a.contains(top) || top.contains(a)) ? describe(top) : null;
                 const selector = a.id ? '#' + CSS.escape(a.id) : describe(a);
+                // Where the stop is: its landmark, and the heading it comes under.
+                const LANDMARKS = { HEADER: 'header', NAV: 'navigation', MAIN: 'main', FOOTER: 'footer', ASIDE: 'complementary', FORM: 'form', SECTION: 'region', DIALOG: 'dialog' };
+                const ROLES = { banner: 'header', navigation: 'navigation', main: 'main', contentinfo: 'footer', complementary: 'complementary', search: 'search', form: 'form', region: 'region', dialog: 'dialog', alertdialog: 'dialog' };
+                const lm = a.closest('header,nav,main,footer,aside,form[aria-label],form[aria-labelledby],section[aria-label],section[aria-labelledby],dialog,[role=banner],[role=navigation],[role=main],[role=contentinfo],[role=complementary],[role=search],[role=form],[role=region],[role=dialog],[role=alertdialog]');
+                const lmLabel = lm ? clip(lm.getAttribute('aria-label') || (lm.getAttribute('aria-labelledby') ? lm.getAttribute('aria-labelledby').split(/\s+/).map((id) => document.getElementById(id)?.textContent || '').join(' ') : ''), 40) : '';
+                const landmark = lm ? (ROLES[lm.getAttribute('role')] || LANDMARKS[lm.tagName] || 'region') + (lmLabel ? ' “' + lmLabel + '”' : '') : null;
+                let heading = null;
+                for (const h of document.querySelectorAll('h1,h2,h3,h4,h5,h6,[role=heading]')) {
+                    if (h === a || h.contains(a) || (h.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING)) heading = h;
+                    else break;
+                }
+                const level = heading ? (heading.getAttribute('aria-level') || (/^H[1-6]$/.test(heading.tagName) ? heading.tagName[1] : '')) : '';
                 return {
+                    landmark,
+                    heading: heading ? clip((level ? 'h' + level + ' ' : '') + '“' + clip(heading.textContent, 60) + '”', 70) : null,
                     tag: a.tagName.toLowerCase(),
                     role: attr('role') || null,
                     name,
@@ -192,6 +210,18 @@ async function walkFocus(page, options = {}) {
         } catch (e) {
             result.error = result.error || String((e && e.message) || e).slice(0, 200);
         }
+    }
+    // 5. A picture of the whole page as it is again, for the person: the
+    // review draws the stops' numbers and path over it. Nothing is drawn on
+    // the page itself.
+    if (result.restored && result.stops.length && opt.mapPicture !== false && typeof page.screenshot === 'function') {
+        try {
+            const size = await page.evaluate(() => ({ w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight }));
+            const width = Math.max(1, Math.min(size.w, MAP_MAX.width));
+            const height = Math.max(1, Math.min(size.h, MAP_MAX.height));
+            const data = await page.screenshot({ type: 'jpeg', quality: 45, clip: { x: 0, y: 0, width, height }, captureBeyondViewport: true, encoding: 'base64' });
+            if (data) result.map = { screenshot: 'data:image/jpeg;base64,' + data, width, height };
+        } catch { /* no map */ }
     }
     return result;
 }

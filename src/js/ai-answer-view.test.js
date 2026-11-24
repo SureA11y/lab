@@ -370,3 +370,30 @@ describe('proof pictures', () => {
         for (const bad of ['https://evil.test/x.jpg', '/reports/../server.js', 'javascript:alert(1)', 'images/a.jpg', '/reports/x.svg']) assert.equal(shown(bad), false, bad);
     });
 });
+
+describe('focusMapHtml', () => {
+    const walk = { ended: 'left-page', stops: [
+        { n: 1, tag: 'a', name: 'Home', x: 10, y: 10, width: 40, height: 20, landmark: 'navigation “Main”' },
+        { n: 2, tag: 'a', name: 'Off', x: 10, y: 9000, width: 40, height: 20 },
+        { n: 3, tag: 'button', name: 'Go', x: 300, y: 500, width: 60, height: 30, heading: 'h1 “Sign up”' },
+    ], map: { screenshot: 'data:image/jpeg;base64,AAAA', width: 800, height: 1000 } };
+
+    test('numbers the stops on the page and joins them in Tab order, leaving out what is beyond the picture', async () => {
+        const { focusMapHtml, focusWalkHtml } = await load();
+        const html = focusMapHtml(walk, helpers);
+        assert.match(html, /<img class="air-map__page" src="data:image\/jpeg;base64,AAAA" alt="The page, with its focus stops numbered/);
+        assert.match(html, /<svg class="air-map__over" viewBox="0 0 800 1000" preserveAspectRatio="none" aria-hidden="true"/);
+        assert.match(html, /<polyline class="air-map__line" points="30,20 330,515"/);
+        assert.deepEqual([...html.matchAll(/<text[^>]*>(\d+)<\/text>/g)].map((m) => m[1]), ['1', '3']);
+        assert.match(html, /2 stops on the page, 1 not shown/);
+        assert.match(focusWalkHtml(walk, helpers), /in navigation “Main”, at 10, 10/);
+        assert.match(focusWalkHtml(walk, helpers), /under h1 “Sign up”, at 300, 500/);
+    });
+
+    test('shows nothing without a usable picture', async () => {
+        const { focusMapHtml } = await load();
+        assert.equal(focusMapHtml({ ...walk, map: null }, helpers), '');
+        assert.equal(focusMapHtml({ ...walk, map: { ...walk.map, screenshot: 'https://evil.test/x.jpg' } }, helpers), '');
+        assert.equal(focusMapHtml({ ...walk, map: { ...walk.map, width: 0 } }, helpers), '');
+    });
+});
