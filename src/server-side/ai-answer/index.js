@@ -24,7 +24,8 @@ function buildPrompt(entry, occurrence, evidence) {
         how.passWhen ? `Pass when: ${how.passWhen}` : '',
         how.failWhen ? `Fail when: ${how.failWhen}` : '',
         '',
-        `<evidence>\n${JSON.stringify(evidence, null, 1)}\n</evidence>`,
+        // The proof picture is for the person reviewing the answer, not the model.
+        `<evidence>\n${JSON.stringify((({ screenshot, ...given }) => given)(evidence), null, 1)}\n</evidence>`,
         '',
         'Decide from the evidence only. Answer "unsure" whenever it is not enough; do not guess.',
         'Reply with JSON only: {"verdict":"pass"|"fail"|"unsure","confidence":0..1,"rationale":"one or two sentences"}',

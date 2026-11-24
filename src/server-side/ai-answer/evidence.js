@@ -20,6 +20,8 @@ async function collectEvidence(page, occurrence, wanted) {
         out.element = String(occurrence.html || '').slice(0, 1500);
         const facts = await readFacts(page, selector);
         if (facts) out.facts = facts;
+        const proof = await captureProof(page, selector);
+        if (proof) out.screenshot = proof;
     }
     if (!wanted.includes('context') && !wanted.includes('pageTitle') && !wanted.includes('image')) return out;
     try {
@@ -137,6 +139,34 @@ async function readFacts(page, selector) {
     }
 }
 
+const PROOF_MAX = { width: 1000, height: 700 };
+
+/**
+ * A small picture of the element as the page shows it, as a data URL, for a
+ * person judging the answer: the proof beside the facts. Taken without
+ * scrolling (so the page is as it was left), and only of an element that is
+ * shown; null otherwise. Never throws.
+ */
+async function captureProof(page, selector) {
+    if (!selector || typeof page.screenshot !== 'function') return null;
+    try {
+        const box = await page.evaluate((sel) => {
+            let el = null;
+            try { el = document.querySelector(sel); } catch { return null; }
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            if (r.width < 2 || r.height < 2 || getComputedStyle(el).visibility === 'hidden') return null;
+            return { x: r.left + window.scrollX, y: r.top + window.scrollY, width: r.width, height: r.height };
+        }, selector);
+        if (!box) return null;
+        const clip = { x: Math.max(0, box.x), y: Math.max(0, box.y), width: Math.min(box.width, PROOF_MAX.width), height: Math.min(box.height, PROOF_MAX.height), scale: 1 };
+        const data = await page.screenshot({ type: 'jpeg', quality: 60, clip, captureBeyondViewport: true, encoding: 'base64' });
+        return data ? 'data:image/jpeg;base64,' + data : null;
+    } catch {
+        return null;
+    }
+}
+
 /**
  * A fingerprint of what the AI pass must leave as it found it. Compared
  * before and after: a difference means the pass changed the page.
@@ -168,4 +198,4 @@ function sameFingerprint(a, b) {
     return !!a && !!b && JSON.stringify(a) === JSON.stringify(b);
 }
 
-module.exports = { collectEvidence, readFacts, fingerprint, sameFingerprint };
+module.exports = { collectEvidence, readFacts, captureProof, fingerprint, sameFingerprint };

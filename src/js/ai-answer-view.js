@@ -100,8 +100,20 @@ function factsList(evidence, { escapeHtml }) {
     return rows.length ? '<dl class="node-details-list">' + rows.join('') + '</dl>' : '';
 }
 
+// The picture of the element the AI pass took: a data URL only, as it is put in an attribute.
+function proofSrc(evidence) {
+    const s = evidence && evidence.screenshot;
+    return typeof s === 'string' && /^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/=]+$/.test(s) ? s : null;
+}
+
+/** The element's picture, as proof beside the facts; empty when there is none. */
+export function proofHtml(evidence, { escapeAttr }) {
+    const src = proofSrc(evidence);
+    return src ? '<img class="air-shot" alt="The element as it looked when the AI read the page" src="' + escapeAttr(src) + '">' : '';
+}
+
 /** The AI's reasoning on one question, and what it was given. Empty without an AI answer. */
-export function aiAnalysisHtml(ai, { escapeHtml }) {
+export function aiAnalysisHtml(ai, { escapeHtml, escapeAttr = escapeHtml }) {
     if (!ai || typeof ai !== 'object') return '';
     const supported = ai.provenance === 'ai-supported' && VERDICT_WORDS[ai.verdict];
     const analysis = supported
@@ -111,8 +123,8 @@ export function aiAnalysisHtml(ai, { escapeHtml }) {
         : '<p class="node-ai__verdict"><strong>The AI could not settle this.</strong> ' + escapeHtml(REASON_WORDS[ai.reason] || '') + '</p>' +
             (ai.rationale ? '<p class="node-ai__rationale">' + escapeHtml(ai.rationale) + '</p>' : '');
     const facts = factsList(ai.evidence, { escapeHtml });
-    const given = (facts || (ai.evidence && ai.evidence.context))
-        ? '<details class="node-ai__given"><summary>What the AI was given</summary>' + facts +
+    const given = (facts || (ai.evidence && (ai.evidence.context || proofSrc(ai.evidence))))
+        ? '<details class="node-ai__given"><summary>What the AI was given</summary>' + proofHtml(ai.evidence, { escapeAttr }) + facts +
             (ai.evidence && ai.evidence.context ? '<p>Around the element:</p><pre class="node-ai__context">' + escapeHtml(ai.evidence.context) + '</pre>' : '') +
             '</details>'
         : '';

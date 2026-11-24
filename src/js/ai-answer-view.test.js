@@ -141,3 +141,16 @@ describe('collectAiCases and keyFactRows', () => {
         assert.deepEqual(keyFactRows('img-alt-quality', null, helpers), []);
     });
 });
+
+describe('the proof picture', () => {
+    test('shows a data-URL picture of the element and refuses anything else', async () => {
+        const { proofHtml, aiAnalysisHtml } = await load();
+        const good = { screenshot: 'data:image/jpeg;base64,/9j/4AAQ' };
+        assert.match(proofHtml(good, helpers), /<img class="air-shot"[^>]+src="data:image\/jpeg;base64,\/9j\/4AAQ"/);
+        assert.equal(proofHtml({ screenshot: 'https://evil/x.png' }, helpers), '');
+        assert.equal(proofHtml({ screenshot: 'data:image/jpeg;base64,"><script>' }, helpers), '');
+        assert.equal(proofHtml(null, helpers), '');
+        const ai = { ...node().ai, evidence: { ...node().ai.evidence, ...good } };
+        assert.match(aiAnalysisHtml(ai, helpers), /What the AI was given<\/summary><img class="air-shot"/);
+    });
+});

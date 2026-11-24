@@ -59,3 +59,23 @@ test('the facts a person would read off the element are read from the page', asy
     assert.equal(await readFacts(page, '#nothing'), null);
     await page.close();
 });
+
+test("the pass takes a picture of a shown element without moving the page, and keeps it out of the prompt", async () => {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 800, height: 400 });
+    await page.setContent('<div style="height:900px">top</div><p id="i" style="font-size:30px">Down below</p><p id="h" style="display:none">hidden</p>');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    let prompt = "";
+    const c = { findings: [{ outcome: "cantTell", occurrences: [
+        { atomicCheckId: "p-as-heading", occurrenceOutcome: "cantTell", target: ["#i"], html: '<p id="i">Down below</p>', failureSummary: "x" },
+        { atomicCheckId: "p-as-heading", occurrenceOutcome: "cantTell", target: ["#h"], html: '<p id="h">hidden</p>', failureSummary: "x" },
+    ] }] };
+    const s = await answerCantTells({ page, canonical: c, provider: { ask: async (p) => { prompt += p; return '{"verdict":"pass","confidence":0.9,"rationale":"ok"}'; } } });
+    assert.equal(s.stateDrift, "none");
+    const [shown, hidden] = c.findings[0].occurrences;
+    assert.match(shown.ai.evidence.screenshot, /^data:image\/jpeg;base64,/);
+    assert.equal(hidden.ai.evidence.screenshot, undefined);
+    assert.doesNotMatch(prompt, /base64/);
+    assert.equal(await page.evaluate(() => window.scrollY), 0);
+    await page.close();
+});

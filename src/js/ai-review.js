@@ -5,7 +5,7 @@
 // person's answers are kept in the report (payload.aiReview), as everywhere.
 
 import {
-    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, collectAiCases, keyFactRows,
+    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, collectAiCases, keyFactRows, proofHtml,
 } from './ai-answer-view.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
@@ -40,7 +40,8 @@ function cardHtml(c, review, revealed) {
         '<p><strong>The issue:</strong> ' + esc(c.issue) + ' <span class="air-hint">Found on ' + c.urls.length + ' page' + (c.urls.length === 1 ? '' : 's') + '.</span></p>' +
         leanHtml(c.lean) +
         '<div class="air-box"><h4>What to check (read from the page)</h4>' + factsHtml + '</div>' +
-        '<div class="air-box"><h4>Where to look</h4>' +
+        '<div class="air-box"><h4>Proof and where to look</h4>' +
+        (proofHtml(c.ai && c.ai.evidence, helpers) || '<p class="air-hint">No picture: the element was not shown when the AI looked (hidden, in a menu or collapsed). Use the page and the selector.</p>') +
         (pages ? '<ul>' + pages + '</ul>' : '') +
         (c.selector ? '<p>Selector: <code>' + esc(c.selector) + '</code> <button type="button" class="copy-selector-btn" data-selector="' + esc(c.selector) + '">Copy selector</button></p>' : '') +
         '<details><summary>Element HTML</summary><pre class="air-pre">' + esc(c.html) + '</pre></details>' + steps + '</div>' +

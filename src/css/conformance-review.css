@@ -97,6 +97,7 @@
 .air-facts dd { margin: 0; overflow-wrap: anywhere; }
 .air-facts q { font-weight: 600; }
 .air-none { font-style: italic; color: var(--warn); }
+.air-shot { display: block; max-width: 100%; max-height: 360px; margin: var(--space-1) 0 var(--space-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm, 6px); background: #fff; }
 .air-pre { max-height: 12em; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 .air-ai { margin-top: var(--space-2); padding-inline-start: var(--space-3); border-inline-start: 3px solid var(--accent); }
 @media (max-width: 560px) { .air-facts > div { grid-template-columns: 1fr; } }

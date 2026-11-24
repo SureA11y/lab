@@ -352,6 +352,12 @@ merge it. Branch names, commits and authorship carry no references to Claude.
   environment had no key, so the answers measured so far were produced by a
   model run outside the code, over the same prompts (`buildPrompt`). Next
   step: run the pass with a real key and compare.
+- **Proof picture:** the pass takes a small picture of each shown element
+  (`captureProof` in `evidence.js`: no scrolling, so the page is as it was left,
+  and kept out of the model's prompt) and stores it in `ai.evidence.screenshot`;
+  the review view and the instance dialog show it. A scan has no picture of a
+  "can't tell" element otherwise. `attach-answers.js` builds a report the app
+  can open from a run's payload and the answers a model gave to a sample.
 - **Evaluation pipeline:** run a workflow, then
   `build-eval-set.js <payload.json> <dir>` (samples unique questions, visits the
   pages, reads the facts and takes element pictures), have a model answer
