@@ -1,0 +1,21 @@
+[
+ {"caseId":"C01","verdict":"pass","confidence":0.8,"rationale":"The bold 'Demo Shop' is the site name/brand in the header, followed by the nav, not a title for the text after it; the page has a real h1.","evidenceUsed":["element","context"]},
+ {"caseId":"C02","verdict":"unsure","confidence":0.5,"rationale":"Title is only the site name while the h1 is 'Spring collection'; it identifies the shop's home page but does not state a specific topic, so it is borderline.","evidenceUsed":["element","context"]},
+ {"caseId":"C03","verdict":"pass","confidence":0.8,"rationale":"The link goes to product-shoes.html and the alt names the product, which states the destination; the image is only a placeholder with the word 'shoes'.","evidenceUsed":["element","context","imageSource"]},
+ {"caseId":"C04","verdict":"pass","confidence":0.8,"rationale":"The bold 'Demo Shop' is the site name/brand in the header, followed by the nav, not a title for the text after it; the page has a real h1.","evidenceUsed":["element","context"]},
+ {"caseId":"C05","verdict":"pass","confidence":0.92,"rationale":"The title names the page topic (matching the h1 'Products') plus the site name.","evidenceUsed":["element","context"]},
+ {"caseId":"C06","verdict":"pass","confidence":0.8,"rationale":"The bold 'Demo Shop' is the site name/brand in the header, followed by the nav, not a title for the text after it; the page has a real h1.","evidenceUsed":["element","context"]},
+ {"caseId":"C07","verdict":"pass","confidence":0.92,"rationale":"The title names the page purpose (Log in, matching the h1) plus the site name.","evidenceUsed":["element","context"]},
+ {"caseId":"C08","verdict":"pass","confidence":0.8,"rationale":"The bold 'Demo Shop' is the site name/brand in the header, followed by the nav, not a title for the text after it; the page has a real h1.","evidenceUsed":["element","context"]},
+ {"caseId":"C09","verdict":"pass","confidence":0.92,"rationale":"The title names the page topic (Cart, matching the h1 'Your cart') plus the site name.","evidenceUsed":["element","context"]},
+ {"caseId":"C10","verdict":"fail","confidence":0.65,"rationale":"Only the placeholder says 'Promo code'; the visible text after the field is just the 'Apply' button, which does not say what to enter, and there is no label.","evidenceUsed":["element","context","details"]},
+ {"caseId":"C11","verdict":"pass","confidence":0.75,"rationale":"The image is a plain placeholder showing only the word 'hero' and carries no information, so an empty alt loses nothing.","evidenceUsed":["element","imageSource","context"]},
+ {"caseId":"C12","verdict":"unsure","confidence":0.5,"rationale":"Title is only the site name while the h1 is 'Spring collection'; it identifies the shop's home page but does not state a specific topic, so it is borderline.","evidenceUsed":["element","context"]},
+ {"caseId":"C13","verdict":"pass","confidence":0.8,"rationale":"The link goes to product-shoes.html and the alt names the product, which states the destination.","evidenceUsed":["element","context","imageSource"]},
+ {"caseId":"C14","verdict":"pass","confidence":0.8,"rationale":"The link goes to product-bag.html and the alt 'Weekend bag' names the product, which states the destination.","evidenceUsed":["element","context","imageSource"]},
+ {"caseId":"C15","verdict":"pass","confidence":0.92,"rationale":"The title names the page topic (Products, matching the h1) plus the site name.","evidenceUsed":["element","context"]},
+ {"caseId":"C16","verdict":"pass","confidence":0.92,"rationale":"The title names the page purpose (Log in, matching the h1) plus the site name.","evidenceUsed":["element","context"]},
+ {"caseId":"C17","verdict":"fail","confidence":0.9,"rationale":"The button's only content is an aria-hidden heart svg, with no text, aria-label or title, so it has no accessible name.","evidenceUsed":["element","context","details"]},
+ {"caseId":"C18","verdict":"pass","confidence":0.92,"rationale":"The title names the page topic (Cart, matching the h1 'Your cart') plus the site name.","evidenceUsed":["element","context"]},
+ {"caseId":"C19","verdict":"fail","confidence":0.65,"rationale":"Only the placeholder says 'Promo code'; the visible text after the field is just the 'Apply' button, which does not say what to enter, and there is no label.","evidenceUsed":["element","context","details"]}
+]
