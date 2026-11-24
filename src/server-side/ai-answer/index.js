@@ -5,11 +5,17 @@
 // allows, from what is on the page, and attaches each answer beside the
 // tool's outcome as `occurrence.ai`. The outcome is never changed. Tier 0
 // only: it reads the page and touches nothing.
+//
+// What leaves the lab is governed on the server (outgoing.js): the sites it
+// may send about, personal data masked, and a preview that sends nothing.
+// Every question sent, or that a preview would send, is kept exactly as sent
+// in the scan's `canonical.ai.outbox`, so a person can see what left.
 
 const { entryFor, PROMPT_VERSION } = require('./registry');
 const { collectEvidence, fingerprint, sameFingerprint } = require('./evidence');
 const { resolveProvider, QUESTION_VERSION } = require('./provider');
 const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
+const { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskDeep } = require('./outgoing');
 
 const DEFAULTS = { maxCalls: 10, seconds: 60, minConfidence: 0.6 };
 
@@ -103,12 +109,28 @@ function candidatesOf(canonical) {
     return out;
 }
 
+// One entry of the log of what was sent: where to, what for, and the body
+// exactly as the provider sends it (or would, in a preview).
+function outboxEntry({ mode, model, pageUrl, occurrence, masked, body }) {
+    return {
+        at: new Date().toISOString(),
+        mode,
+        to: model ? (model.destination || model.name || 'a provider') : 'no model set',
+        page: pageUrl || null,
+        check: occurrence.atomicCheckId,
+        selector: (occurrence.target && typeof occurrence.target[0] === 'string') ? occurrence.target[0] : null,
+        masked,
+        body,
+    };
+}
+
 /**
  * Runs the pass on `page` for `canonical` (one scan). `shared` is the run's:
  * `{ calls, cache }`, so the budget and the answers span the run's scans.
  * Resolves with a summary, also set on `canonical.ai`; never rejects.
+ * `env` is the server's settings (outgoing.js).
  */
-async function answerCantTells({ page, canonical, options = {}, shared = {}, provider = null, log = () => {} }) {
+async function answerCantTells({ page, canonical, options = {}, shared = {}, provider = null, log = () => {}, env = process.env }) {
     const started = Date.now();
     let given = options;
     if (typeof given === 'string') { try { given = JSON.parse(given); } catch { given = {}; } }
@@ -116,12 +138,15 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
     const budget = opt.budget && typeof opt.budget === 'object' ? opt.budget : {};
     const maxCalls = Number(budget.calls ?? opt.maxCalls);
     const deadline = started + Number(budget.seconds ?? opt.seconds) * 1000;
-    const summary = { candidates: 0, answered: 0, unresolved: 0, calls: 0, reused: 0, stateDrift: 'none', reason: null };
+    const preview = opt.preview === true || previewForced(env);
+    const mask = maskingOn(env);
+    const outbox = [];
+    const summary = { candidates: 0, answered: 0, unresolved: 0, calls: 0, reused: 0, stateDrift: 'none', reason: null, ...(preview ? { preview: true, previewed: 0 } : {}), masking: mask, outbox };
     try {
         const todo = candidatesOf(canonical);
         summary.candidates = todo.length;
         if (!todo.length) return summary;
-        const model = resolveProvider(provider || opt.provider);
+        const model = resolveProvider(provider || opt.provider, env);
         shared.cache = shared.cache || new Map();
         shared.calls = shared.calls || 0;
         if (opt.lessons && !shared.lessons) shared.lessons = loadLessons(opt.lessons);
@@ -131,6 +156,11 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         let pageUrl = null;
         try { pageUrl = typeof page.url === 'function' ? page.url() : null; } catch { pageUrl = null; }
         const pageInfo = pageUrl ? { url: pageUrl } : null;
+        const allowed = siteAllowed(pageUrl, allowedSitesOf(env));
+        if (!allowed) {
+            summary.reason = 'site-not-allowed';
+            log('info', `The AI pass sent nothing: ${pageUrl ? new URL(pageUrl).hostname : 'this page'} is not in A11Y_AI_ALLOWED_SITES`);
+        }
 
         for (const { finding, occurrence, entry } of todo) {
             const evidence = await collectEvidence(page, occurrence, entry.evidence);
@@ -145,22 +175,38 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
             if (shared.cache.has(key)) {
                 ai = { ...shared.cache.get(key), reused: true };
                 summary.reused++;
-            } else if (!model) {
+            } else if (!allowed) {
+                ai = { ...base, provenance: 'unresolved', reason: 'site-not-allowed' };
+            } else if (!preview && !model) {
                 ai = { ...base, provenance: 'unresolved', reason: 'no-model' };
             } else if (shared.calls >= maxCalls) {
                 ai = { ...base, provenance: 'unresolved', reason: 'budget-calls' };
-            } else if (Date.now() >= deadline) {
+            } else if (!preview && Date.now() >= deadline) {
                 ai = { ...base, provenance: 'unresolved', reason: 'budget-time' };
             } else {
                 shared.calls++;
+                // What would leave: a question as data for a provider that
+                // answers questions (and in a preview with no model set), else
+                // the prompt; masked; as the provider's own body.
+                const lessons = shared.lessons ? lessonsFor(shared.lessons, occurrence.atomicCheckId, evidence.facts || evidence) : null;
+                const asQuestion = !model || typeof model.answer === 'function';
+                const input = asQuestion ? buildQuestion(entry, finding, occurrence, evidence, lessons, pageInfo) : buildPrompt(entry, occurrence, evidence, lessons);
+                const { value: sent, count: masked } = mask ? maskDeep(input) : { value: input, count: 0 };
+                const body = model && typeof model.bodyFor === 'function' ? model.bodyFor(sent) : (asQuestion ? { version: QUESTION_VERSION, ...sent } : { prompt: sent });
+                outbox.push(outboxEntry({ mode: preview ? 'preview' : 'sent', model, pageUrl, occurrence, masked, body }));
+                if (preview) {
+                    summary.previewed++;
+                    ai = { ...base, provenance: 'unresolved', reason: 'preview' };
+                    shared.cache.set(key, ai);
+                    ai.steps = [{ action: 'read', tier: 0, target: (occurrence.target && occurrence.target[0]) || null, result: Object.keys(evidence) }];
+                    results.push({ occurrence, ai });
+                    continue;
+                }
                 summary.calls++;
                 const t0 = Date.now();
                 try {
                     const signal = AbortSignal.timeout(Math.max(1000, deadline - t0));
-                    const lessons = shared.lessons ? lessonsFor(shared.lessons, occurrence.atomicCheckId, evidence.facts || evidence) : null;
-                    const reply = typeof model.answer === 'function'
-                        ? await model.answer(buildQuestion(entry, finding, occurrence, evidence, lessons, pageInfo), { signal })
-                        : await model.ask(buildPrompt(entry, occurrence, evidence, lessons), { signal });
+                    const reply = asQuestion ? await model.answer(sent, { signal }) : await model.ask(sent, { signal });
                     const answer = parseAnswer(reply);
                     if (!answer) {
                         ai = { ...base, provenance: 'unresolved', reason: 'unreadable-answer' };

@@ -302,3 +302,16 @@ describe('the conformance link', () => {
         assert.equal(confirmedBlockHtml({ fails: [], passes: 0 }, helpers), '');
     });
 });
+
+describe('outboxOf', () => {
+    test('lists what each scan sent or would send, with its scan, and nothing without a log', async () => {
+        const { outboxOf } = await load();
+        const payload = { scans: [
+            { label: 'Home', canonical: { ai: { outbox: [{ mode: 'sent', check: 'c', body: { a: 1 } }] } } },
+            { label: 'Cart', canonical: { ai: { candidates: 0 } } },
+            { url: 'https://x.test/p', canonical: { ai: { outbox: [{ mode: 'preview', check: 'd', body: {} }, null] } } },
+        ] };
+        assert.deepEqual(outboxOf(payload).map((e) => [e.scan, e.mode, e.check]), [['Home', 'sent', 'c'], ['https://x.test/p', 'preview', 'd']]);
+        assert.deepEqual(outboxOf({}), []);
+    });
+});

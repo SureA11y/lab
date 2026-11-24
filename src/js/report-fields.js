@@ -99,7 +99,10 @@ export const CANONICAL_FIELDS = Object.freeze([
     // How close each measuring rule's passes came to failing.
     'margins',
     // The best-practice findings, listed apart from the requirements.
-    'bestPractices'
+    'bestPractices',
+    // The AI pass's summary of the scan, with the log of what it sent or
+    // would send (docs/design/ai-cant-tell-data-and-agents.md).
+    'ai'
 ]);
 
 /**

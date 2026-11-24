@@ -502,6 +502,14 @@ count limit. They are not the scan's element screenshots (the a11yScan step's
 "Element screenshots" option, 50 per scan by default, `element-screenshots.js`),
 which the pass does not use.
 
+**Built (2026-11-24): the server's safeguards** for a customer's site: the
+sites allowed (`A11Y_AI_ALLOWED_SITES`), personal data masked in what is sent
+(`A11Y_AI_MASK`, on by default), a preview that sends nothing (`ai: { preview:
+true }` on a step, or `A11Y_AI_PREVIEW` on the server), and a log of each
+question exactly as sent (`canonical.ai.outbox`; `ai-sent.json` beside a CLI
+run's payload; "What was sent to the AI" in the review). How to use them is in
+[ai-cant-tell-data-and-agents.md](ai-cant-tell-data-and-agents.md).
+
 **Next, in order:** put a model or an agent behind `A11Y_AI_ENDPOINT` (see
 "Plugging in another model or an agent") or use a real `ANTHROPIC_API_KEY`; a person labels cases with reasons and exports
 the CSV and `ai-lessons.json`; run the pass with a real `ANTHROPIC_API_KEY` and

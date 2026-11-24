@@ -78,6 +78,8 @@ but "may this site's content, as in the table, go to this service?"
   is read only from the page's own site.
 - **The report says who answered** (`ai.model`, with an endpoint's name and
   version) and what was read from the page.
+- **The server's safeguards** (below): the sites allowed, personal data
+  masked, a preview that sends nothing, and a log of everything sent.
 
 ## How to make the best of it
 
@@ -113,15 +115,47 @@ In order; each step makes the next ones simpler.
 7. **Budget for agents.** Raise `budget.seconds` for an agent, and keep the
    pass off on steps where a session may expire.
 
-## Possible additions (not built)
+## The safeguards on the server (built 2026-11-24)
 
-Each would make the steps above enforceable rather than a matter of care:
+Four settings make the steps above enforceable rather than a matter of care.
+All are set on the lab's server, never by a workflow or a report
+(`src/server-side/ai-answer/outgoing.js`).
 
-- **A preview of what would be sent**: a run that writes every question to a
-  file instead of sending it, so you and the customer can see exactly what
-  would leave.
-- **An allow list of sites on the server**: the pass runs only for sites a
-  customer approved, whatever a workflow says.
-- **Removing personal data before sending**: e-mail addresses, phone and
-  card-like numbers masked in the HTML, facts and code around the element.
-- **A log of what was sent**, per run, beside the report.
+| Setting | What it does | Default |
+| --- | --- | --- |
+| `A11Y_AI_ALLOWED_SITES` | The sites the pass may send questions about, by host, separated by commas (`shop.example, example.org`); a host also allows its subdomains. A page on any other site sends nothing: its questions say "not among the sites the server allows", and the run log says so. Set but empty: no site. | unset: every site |
+| `A11Y_AI_MASK` | Masks personal data in what is sent: e-mail addresses (`[email]`), IBANs (`[iban]`), card-like numbers of 13 to 19 digits (`[number]`) and phone-like numbers of 9 digits or more (`[phone]`). Dates, prices and sizes stay. Only what is sent is masked; the report keeps what was read from the page. `off` turns it off. | on |
+| `A11Y_AI_PREVIEW` | Every run previews: nothing is sent, whatever its steps say. A single step can ask for a preview itself with `ai: { preview: true }`, which needs no model set. | off |
+| *(always)* the log | Every question sent, or that a preview would send, is kept exactly as sent: when, where to, the page, the check, the element, how many values were masked, and the body. | on |
+
+**Seeing what left, or would leave.** The log is in the report, per scan
+(`canonical.ai.outbox`):
+
+- a command-line run writes it beside the payload as `ai-sent.json`, and says
+  `AI  7 questions sent to <address>` (or, in a preview, `would be sent`);
+- in the lab app, "Review AI answers" has a button, **What was sent to the AI**,
+  that downloads the same file;
+- it is saved with the report, so it travels with it.
+
+**A first run on a customer's site, then:**
+
+1. On the server: `A11Y_AI_ALLOWED_SITES` with the customer's site, masking
+   left on, and the model or `A11Y_AI_ENDPOINT` you mean to use.
+2. Run the workflow with `ai: { preview: true }` on the scan steps you want
+   (or the server's `A11Y_AI_PREVIEW` on). Nothing is sent.
+3. Open `ai-sent.json` (or download it from the review) and go through it,
+   with the customer if they want: this is exactly what would leave.
+4. With their agreement, take `preview` off and run again. The new
+   `ai-sent.json` is the record of what did leave, kept with the report.
+
+Checked in real runs of the demo shop's tour: a preview with no model set
+listed 7 questions and sent nothing; the same run against the example endpoint
+sent those 7 and logged them; with the site left out of
+`A11Y_AI_ALLOWED_SITES` nothing was sent on any of the 4 pages. In the app, the
+report of the run offers the download, with each question and its scan. Tests:
+`src/server-side/ai-answer/outgoing.test.js`.
+
+**Limits.** Masking catches common patterns, not every personal detail: a
+person's name in an alt text ("Anna Novak") is not masked. On pages that show
+names, the allow list and leaving the pass off after a login matter more than
+masking.

@@ -13,6 +13,10 @@
 // - else ANTHROPIC_API_KEY: the Anthropic Messages API.
 // - else none, and the pass leaves every item as it was.
 // A test or an embedding program passes its own provider object instead.
+//
+// `destination` says where a provider sends (for the log of what was sent),
+// and `bodyFor(input)` gives the body it sends for an input: the log records
+// exactly that.
 
 const DEFAULT_MODEL = process.env.A11Y_AI_MODEL || 'claude-sonnet-5-5';
 
@@ -24,15 +28,18 @@ function anthropicProvider(env = process.env) {
     if (!key) return null;
     const base = (env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/+$/, '');
     const model = env.A11Y_AI_MODEL || DEFAULT_MODEL;
+    const bodyFor = (prompt) => ({ model, max_tokens: 400, messages: [{ role: 'user', content: prompt }] });
     return {
         name: 'anthropic',
         model,
+        destination: `${base}/v1/messages`,
+        bodyFor,
         async ask(prompt, { signal } = {}) {
             const res = await fetch(`${base}/v1/messages`, {
                 method: 'POST',
                 signal,
                 headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-                body: JSON.stringify({ model, max_tokens: 400, messages: [{ role: 'user', content: prompt }] }),
+                body: JSON.stringify(bodyFor(prompt)),
             });
             if (!res.ok) throw new Error(`model call failed (${res.status})`);
             const body = await res.json();
@@ -61,18 +68,23 @@ function endpointProvider(env = process.env) {
     if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error('A11Y_AI_ENDPOINT must be an http or https address');
     const key = env.A11Y_AI_ENDPOINT_KEY || '';
     const picture = yes(env.A11Y_AI_ENDPOINT_PICTURE);
+    const bodyFor = (question) => {
+        const body = { version: QUESTION_VERSION, ...question };
+        if (!picture && body.evidence) body.evidence = (({ screenshot, ...rest }) => rest)(body.evidence);
+        return body;
+    };
     return {
         name: 'endpoint',
         model: String(env.A11Y_AI_ENDPOINT_NAME || '').trim() || url.host,
+        destination: url.origin + url.pathname,
         sendsPicture: picture,
+        bodyFor,
         async answer(question, { signal } = {}) {
-            const body = { version: QUESTION_VERSION, ...question };
-            if (!picture && body.evidence) body.evidence = (({ screenshot, ...rest }) => rest)(body.evidence);
             const res = await fetch(url, {
                 method: 'POST',
                 signal,
                 headers: { 'content-type': 'application/json', accept: 'application/json', ...(key ? { authorization: `Bearer ${key}` } : {}) },
-                body: JSON.stringify(body),
+                body: JSON.stringify(bodyFor(question)),
             });
             if (!res.ok) throw new Error(`endpoint call failed (${res.status})`);
             return res.json();

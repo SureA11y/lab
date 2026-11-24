@@ -6,7 +6,7 @@
 // in the report (payload.aiReview), as everywhere.
 
 import {
-    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, buildLessons, collectAiCases, keyFactRows, proofHtml, resolveSummary, resolvedOf,
+    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, buildLessons, collectAiCases, keyFactRows, outboxOf, proofHtml, resolveSummary, resolvedOf,
 } from './ai-answer-view.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
@@ -79,6 +79,7 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
         '<label><input type="checkbox" data-air-first> Show the AI’s answer before I decide</label>' +
         '<button type="button" class="secondary-button" data-air-export>Export my answers (CSV)</button>' +
         '<button type="button" class="secondary-button" data-air-lessons title="Your answers with a reason, as lessons for the AI (ai-lessons.json)">Export lessons for the AI</button>' +
+        (outboxOf(payload).length ? '<button type="button" class="secondary-button" data-air-sent title="Every question as it was sent to the AI, or as a preview would send it (ai-sent.json)">What was sent to the AI</button>' : '') +
         '</div>' +
         '<p class="air-stats" role="status" aria-live="polite" data-air-status></p></div>' +
         '<div class="air-cards" data-air-cards></div></div>';
@@ -175,6 +176,21 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
             a.click();
             a.remove();
             setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            return;
+        }
+        if (t.matches('[data-air-sent]')) {
+            const sent = outboxOf(payload);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(sent, null, 2)], { type: 'application/json' }));
+            a.download = 'ai-sent.json';
+            document.body.append(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            const previewed = sent.filter((e) => e.mode === 'preview').length;
+            statusEl.textContent = previewed
+                ? previewed + ' question' + (previewed === 1 ? '' : 's') + ' a preview would send, in ai-sent.json.'
+                : sent.length + ' question' + (sent.length === 1 ? '' : 's') + ' sent, in ai-sent.json.';
             return;
         }
         if (t.matches('[data-air-export]')) {

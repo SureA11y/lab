@@ -13,7 +13,23 @@ const REASON_WORDS = {
     'model-error': 'The model could not be reached.',
     'unreadable-answer': 'The model answered in a form that could not be read.',
     unsure: 'The AI was not sure enough to answer.',
+    preview: 'A preview: the question was not sent.',
+    'site-not-allowed': 'Not sent: this site is not among the sites the server allows.',
 };
+
+/**
+ * The log of what the AI pass sent, or a preview would send, across the
+ * report's scans: each entry with its scan's label. Empty when none was kept.
+ */
+export function outboxOf(payload) {
+    const out = [];
+    for (const scan of Array.isArray(payload && payload.scans) ? payload.scans : []) {
+        const box = scan && scan.canonical && scan.canonical.ai && scan.canonical.ai.outbox;
+        if (!Array.isArray(box)) continue;
+        for (const entry of box) if (entry && typeof entry === 'object') out.push({ scan: scan.label || scan.url || '', ...entry });
+    }
+    return out;
+}
 
 // What identifies a question across pages: its check and its element, not the
 // page. The same element on many pages is one question and one answer.

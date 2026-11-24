@@ -16,7 +16,7 @@ test('the report view keeps the fields its renderers read', async () => {
     for (const key of ['title', 'wcag', 'occurrences', 'lang', 'titleLang', 'en301549', 'rgaa', 'verdicts', 'confidence']) {
         assert.ok(FINDING_FIELDS.includes(key), `finding field "${key}" would be dropped`);
     }
-    for (const key of ['findings', 'diagnostics', 'notices', 'margins']) {
+    for (const key of ['findings', 'diagnostics', 'notices', 'margins', 'ai']) {
         assert.ok(CANONICAL_FIELDS.includes(key), `canonical field "${key}" would be dropped`);
     }
 });

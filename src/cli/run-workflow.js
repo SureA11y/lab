@@ -119,6 +119,8 @@ steps that ran appear in the summary either way.
 
 Writes payload.json, run.log.jsonl, summary.md, and when compared diff.json
 and comparison.html, the comparison as the app's Compare tab downloads it.
+When a scan step's AI pass sent questions, or previewed them, ai-sent.json
+holds each one as it was sent.
 With --format, one file per scan and format in exports/: <nn>-<scan>.sarif,
 <nn>-<scan>.junit.xml and <nn>-<scan>.earl.jsonld; with acr, one
 conformance-report.html and conformance-report.docx for the run.
@@ -811,6 +813,22 @@ async function runOne(finalSpec, options, { outDir, baselinePayload = null, base
     }
 
     if (carried) console.log(`Review     ${carried} conformance verdict${carried === 1 ? '' : 's'} carried on from ${options.review ? options.reviewPath : 'the baseline'}`);
+
+    // What the AI pass sent, or a preview would send, beside the payload as
+    // well as in it: the file to show a customer (docs/design/
+    // ai-cant-tell-data-and-agents.md).
+    const aiSent = (payload.scans || []).flatMap((scan) => {
+        const box = scan && scan.canonical && scan.canonical.ai && scan.canonical.ai.outbox;
+        return Array.isArray(box) ? box.map((entry) => ({ scan: scan.label || scan.url || '', ...entry })) : [];
+    });
+    if (aiSent.length) {
+        fs.writeFileSync(path.join(outDir, 'ai-sent.json'), JSON.stringify(aiSent, null, 2), 'utf8');
+        const previewed = aiSent.filter((e) => e.mode === 'preview').length;
+        const to = [...new Set(aiSent.map((e) => e.to))].join(', ');
+        console.log(previewed
+            ? `AI         preview: ${previewed} question${previewed === 1 ? '' : 's'} would be sent to ${to}, nothing sent (ai-sent.json)`
+            : `AI         ${aiSent.length} question${aiSent.length === 1 ? '' : 's'} sent to ${to} (ai-sent.json)`);
+    }
 
     const perScan = options.formats.filter((f) => f !== 'acr');
     if (perScan.length) {
