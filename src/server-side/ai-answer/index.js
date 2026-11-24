@@ -125,6 +125,43 @@ function outboxEntry({ mode, model, pageUrl, occurrence, masked, body }) {
 }
 
 /**
+ * Asks one question, or in a preview only records it: what would leave (a
+ * question as data for a provider that answers questions, and in a preview
+ * with no model set; else the prompt), masked, is logged in `outbox` as the
+ * provider's own body, then sent, and the reply read by the pass's rules.
+ * Shared by the pass and the re-run of labelled cases (ai-agreement.js), so
+ * both send alike. Never rejects. Resolves with { ai, previewed }.
+ */
+async function askOne({ model, entry, finding, occurrence, evidence, lessons = null, pageInfo = null, mask = true, preview = false, minConfidence = DEFAULTS.minConfidence, deadline = Date.now() + DEFAULTS.seconds * 1000, base, outbox = [] }) {
+    const asQuestion = !model || typeof model.answer === 'function';
+    const input = asQuestion ? buildQuestion(entry, finding, occurrence, evidence, lessons, pageInfo) : buildPrompt(entry, occurrence, evidence, lessons);
+    const { value: sent, count: masked } = mask ? maskDeep(input) : { value: input, count: 0 };
+    const body = model && typeof model.bodyFor === 'function' ? model.bodyFor(sent) : (asQuestion ? { version: QUESTION_VERSION, ...sent } : { prompt: sent });
+    outbox.push(outboxEntry({ mode: preview || !model ? 'preview' : 'sent', model, pageUrl: pageInfo && pageInfo.url, occurrence, masked, body }));
+    if (preview || !model) return { ai: { ...base, provenance: 'unresolved', reason: preview ? 'preview' : 'no-model' }, previewed: true };
+    const t0 = Date.now();
+    try {
+        const signal = AbortSignal.timeout(Math.max(1000, deadline - t0));
+        const reply = asQuestion ? await model.answer(sent, { signal }) : await model.ask(sent, { signal });
+        const answer = parseAnswer(reply);
+        if (!answer) return { ai: { ...base, provenance: 'unresolved', reason: 'unreadable-answer' }, previewed: false };
+        const sure = answer.verdict !== 'unsure' && answer.confidence >= minConfidence;
+        return {
+            ai: {
+                ...base, ...answer,
+                provenance: sure ? 'ai-supported' : 'unresolved',
+                ...(sure ? {} : { reason: 'unsure' }),
+                model: answeredByOf(reply, model),
+                durationMs: Date.now() - t0,
+            },
+            previewed: false,
+        };
+    } catch (e) {
+        return { ai: { ...base, provenance: 'unresolved', reason: e && e.name === 'TimeoutError' ? 'budget-time' : 'model-error' }, previewed: false };
+    }
+}
+
+/**
  * Runs the pass on `page` for `canonical` (one scan). `shared` is the run's:
  * `{ calls, cache }`, so the budget and the answers span the run's scans.
  * Resolves with a summary, also set on `canonical.ai`; never rejects.
@@ -185,44 +222,10 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 ai = { ...base, provenance: 'unresolved', reason: 'budget-time' };
             } else {
                 shared.calls++;
-                // What would leave: a question as data for a provider that
-                // answers questions (and in a preview with no model set), else
-                // the prompt; masked; as the provider's own body.
                 const lessons = shared.lessons ? lessonsFor(shared.lessons, occurrence.atomicCheckId, evidence.facts || evidence) : null;
-                const asQuestion = !model || typeof model.answer === 'function';
-                const input = asQuestion ? buildQuestion(entry, finding, occurrence, evidence, lessons, pageInfo) : buildPrompt(entry, occurrence, evidence, lessons);
-                const { value: sent, count: masked } = mask ? maskDeep(input) : { value: input, count: 0 };
-                const body = model && typeof model.bodyFor === 'function' ? model.bodyFor(sent) : (asQuestion ? { version: QUESTION_VERSION, ...sent } : { prompt: sent });
-                outbox.push(outboxEntry({ mode: preview ? 'preview' : 'sent', model, pageUrl, occurrence, masked, body }));
-                if (preview) {
-                    summary.previewed++;
-                    ai = { ...base, provenance: 'unresolved', reason: 'preview' };
-                    shared.cache.set(key, ai);
-                    ai.steps = [{ action: 'read', tier: 0, target: (occurrence.target && occurrence.target[0]) || null, result: Object.keys(evidence) }];
-                    results.push({ occurrence, ai });
-                    continue;
-                }
-                summary.calls++;
-                const t0 = Date.now();
-                try {
-                    const signal = AbortSignal.timeout(Math.max(1000, deadline - t0));
-                    const reply = asQuestion ? await model.answer(sent, { signal }) : await model.ask(sent, { signal });
-                    const answer = parseAnswer(reply);
-                    if (!answer) {
-                        ai = { ...base, provenance: 'unresolved', reason: 'unreadable-answer' };
-                    } else {
-                        const sure = answer.verdict !== 'unsure' && answer.confidence >= opt.minConfidence;
-                        ai = {
-                            ...base, ...answer,
-                            provenance: sure ? 'ai-supported' : 'unresolved',
-                            ...(sure ? {} : { reason: 'unsure' }),
-                            model: answeredByOf(reply, model),
-                            durationMs: Date.now() - t0,
-                        };
-                    }
-                } catch (e) {
-                    ai = { ...base, provenance: 'unresolved', reason: e && e.name === 'TimeoutError' ? 'budget-time' : 'model-error' };
-                }
+                const asked = await askOne({ model, entry, finding, occurrence, evidence, lessons, pageInfo, mask, preview, minConfidence: opt.minConfidence, deadline, base, outbox });
+                if (asked.previewed) summary.previewed++; else summary.calls++;
+                ai = asked.ai;
                 shared.cache.set(key, ai);
             }
             ai.steps = [{ action: 'read', tier: 0, target: (occurrence.target && occurrence.target[0]) || null, result: Object.keys(evidence) }];
@@ -256,4 +259,4 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
     }
 }
 
-module.exports = { answerCantTells, candidatesOf, buildPrompt, buildQuestion, parseAnswer, DEFAULTS, QUESTION_VERSION };
+module.exports = { answerCantTells, askOne, candidatesOf, buildPrompt, buildQuestion, parseAnswer, DEFAULTS, QUESTION_VERSION };

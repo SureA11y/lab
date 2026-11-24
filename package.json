@@ -27,6 +27,7 @@
     "dev": "node src/scripts/launch.js dev",
     "start": "node src/scripts/launch.js start",
     "run:workflow": "node src/cli/run-workflow.js",
+    "ai:agreement": "node src/cli/ai-agreement.js",
     "batch:metrics": "node src/scripts/batch-metrics.js",
     "start:debug": "cross-env A11Y_DEBUG_MODE=1 node server.js",
     "start:debug-json": "cross-env A11Y_DUMP_RESULT_JSON=1 node server.js",

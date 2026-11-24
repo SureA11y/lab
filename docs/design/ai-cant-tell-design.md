@@ -383,7 +383,7 @@ merge it. Branch names, commits and authorship carry no references to Claude.
 
 ## Feedback and learning (built 2026-11-24, except where marked)
 
-**Status.** 1 (why) and 2 (resolved result, in the lab app) are built; 3 (lessons) is built and tested but has not been tried with a real model or with real labelled data. **The conformance link is built** (2026-11-24): in the Conformance view (`src/js/conformance-review.js`), each WCAG criterion that has questions a person settled shows "AI-assisted review: n failed and m passed, confirmed by a reviewer", the proposed remarks (page, reason, check, at most five, then a count) and an "Add to the remarks" button that appends them once to the criterion's remarks (saved in the report as usual). Only answers a person gave count; an AI answer nobody confirmed is not recorded there, and the conformance level is never touched (the block says it stays the reviewer's choice). Helpers: `confirmedByCriterion`, `remarksFromConfirmed`, `confirmedBlockHtml` in `src/js/ai-answer-view.js`. Not built: the extension renderer, and the re-run of labelled cases to compare agreement before accepting lessons (a script is still to write). Code: `src/js/ai-answer-view.js` (`whyHint`, `resolvedOf`, `resolvedHtml`, `syncAnswerFieldset`, `resolveSummary`, `buildLessons`), `src/js/ai-review.js` (the "In the report" count line, the CSV columns resolved and resolvedBy, the "Export lessons for the AI" button), `src/js/page-events.js` (keeps the answer block in step), `src/server-side/ai-answer/lessons.js` and its use in `index.js`.
+**Status.** 1 (why) and 2 (resolved result, in the lab app) are built; 3 (lessons) is built and tested but has not been tried with a real model or with real labelled data. **The conformance link is built** (2026-11-24): in the Conformance view (`src/js/conformance-review.js`), each WCAG criterion that has questions a person settled shows "AI-assisted review: n failed and m passed, confirmed by a reviewer", the proposed remarks (page, reason, check, at most five, then a count) and an "Add to the remarks" button that appends them once to the criterion's remarks (saved in the report as usual). Only answers a person gave count; an AI answer nobody confirmed is not recorded there, and the conformance level is never touched (the block says it stays the reviewer's choice). Helpers: `confirmedByCriterion`, `remarksFromConfirmed`, `confirmedBlockHtml` in `src/js/ai-answer-view.js`. Since built: the re-run of labelled cases ("Measuring agreement", `src/cli/ai-agreement.js`). The extension renderer is on hold (see "Handoff", item 4). Code: `src/js/ai-answer-view.js` (`whyHint`, `resolvedOf`, `resolvedHtml`, `syncAnswerFieldset`, `resolveSummary`, `buildLessons`), `src/js/ai-review.js` (the "In the report" count line, the CSV columns resolved and resolvedBy, the "Export lessons for the AI" button), `src/js/page-events.js` (keeps the answer block in step), `src/server-side/ai-answer/lessons.js` and its use in `index.js`.
 
 Three additions, from the review of the Avaloq sample. The AI does not learn by
 itself and we do not fine-tune; a person's corrections are fed back as text.
@@ -467,6 +467,46 @@ does, and how to set it up well. Agents are slower than one model call: raise
 the step's `budget` (`{ calls, seconds }`, default 10 per run and 60 per scan)
 for them.
 
+## Measuring agreement (built 2026-11-24)
+
+`src/cli/ai-agreement.js` (`npm run ai:agreement -- <report> ...`) re-runs the
+questions a person labelled and compares the AI's answers with theirs, per
+check. It is how to decide which checks the AI may be relied on for, and
+whether a lessons file is an improvement.
+
+- **Labelled cases** come from saved reports (`.a11y-report.json`,
+  `payload.json` or a report zip): each can't-tell question that has the AI
+  pass's evidence and a person's answer from "Review AI answers". One case per
+  question (check and element) across all the reports; two reports that label
+  it differently keep the first and count a conflict. A person's "unsure" is
+  counted, not scored.
+- **No page is opened.** The question is rebuilt from what the report kept and
+  sent through the same step as the pass (`askOne` in
+  `src/server-side/ai-answer/index.js`): the same provider
+  (`A11Y_AI_ENDPOINT`, else `ANTHROPIC_API_KEY`), allowed sites, masking and
+  log (`ai-sent.json`). `--preview` sends nothing.
+- **Scored**, per check and in total: agreement, how often the AI said "pass"
+  where a person said "fail" (the costly mistake), "fail" where a person said
+  "pass", and no answer that counts. Three columns: as the reports recorded
+  it, asked again, and asked again with `--lessons`. A check with fewer than 30
+  labelled cases is marked so.
+- **Lessons are accepted** only if, in total and in every check, they lose no
+  agreement and add no "pass" where a person said "fail"; otherwise the exit
+  code is 1 and the reasons are listed. Each case is asked without its own
+  example in the lessons, so the AI is never shown the answer it is tested
+  on. Still, lessons made from the same reports they are tested on flatter
+  them through their rules: test them on reports they were not made from.
+- **Cost guard:** it says how many calls it will make, and stops before
+  starting above `--max-calls` (default 200).
+- **Output** in `--out` (default `ai-agreement/`): `agreement.md` (the
+  tables), `agreement.json` (the figures and each case, to look into the
+  differences) and `ai-sent.json`.
+
+Tests: `src/cli/ai-agreement.test.js`, against a local endpoint (lessons that
+help are accepted, lessons that add a missed fail are refused, a preview sends
+nothing). Tried on the report zip from the remark check, as a preview and
+against the example endpoint.
+
 ## Status when work stopped (2026-11-24)
 
 Everything built is committed and pushed on `design-ai-cant-tell` (latest
@@ -510,11 +550,17 @@ question exactly as sent (`canonical.ai.outbox`; `ai-sent.json` beside a CLI
 run's payload; "What was sent to the AI" in the review). How to use them is in
 [ai-cant-tell-data-and-agents.md](ai-cant-tell-data-and-agents.md).
 
-**Next, in order:** put a model or an agent behind `A11Y_AI_ENDPOINT` (see
-"Plugging in another model or an agent") or use a real `ANTHROPIC_API_KEY`; a person labels cases with reasons and exports
-the CSV and `ai-lessons.json`; run the pass with a real `ANTHROPIC_API_KEY` and
-`ai: { lessons: "..." }`; a script to re-run labelled cases and compare
-agreement before accepting lessons; the extension's renderer.
+**Next, in order:**
+1. Put a model or an agent behind `A11Y_AI_ENDPOINT` (see "Plugging in
+   another model or an agent"), or use a real `ANTHROPIC_API_KEY`.
+2. A person labels 30 to 50 cases per check, with reasons, in "Review AI
+   answers", and saves the report; "Export lessons for the AI" gives
+   `ai-lessons.json`.
+3. `npm run ai:agreement -- <reports> --lessons ai-lessons.json` measures
+   agreement per check and tests the lessons, on reports the lessons were not
+   made from (see "Measuring agreement").
+4. Runs with `ai: { lessons: "..." }` once the lessons are accepted.
+5. The extension: on hold (see "Handoff", item 4).
 
 ## Handoff: state at 2026-11-24 and how to pick it up cold
 
