@@ -4,77 +4,86 @@ Branch: `design-ai-cant-tell` (on origin). No pull request: the work is
 experimental until it is decided to merge it.
 
 Read, in this order:
-1. This page: the state on 2026-11-25 and what is next.
+1. This page: the state and what is next.
 2. `../ai-answers.md`: the user guide (how to use it, every option of the
    scan step's AI answers field, the server's settings, the demo).
-3. `ai-cant-tell-eval/README.md`: how the AI is evaluated, the demo's result,
-   and the real-site run that is ready but not done.
+3. `ai-cant-tell-eval/README.md`: how the AI is evaluated, the demo's and the
+   W3C site's results, and how to repeat them.
 4. `ai-cant-tell-design.md`: the design, section by section (the newest are
    near the end, before "Status when work stopped"), as needed.
 5. `ai-cant-tell-data-and-agents.md`: before turning the AI pass on for a
    customer's site (what leaves the lab, agents, how to set it up well).
 6. `ai-cant-tell-spike.md`: the earliest results.
 
-## State on 2026-11-25
+## State (end of 2026-11-25)
 
-Everything below is committed and pushed, except where it says otherwise.
+Everything is committed and pushed (latest: 1.4.11 per element). The full
+suite (4484 tests) and the browser tests (`focus-walk`, `ai-answer`,
+`app-boot`: 30) pass.
 
-**Built** (code in `src/server-side/ai-answer/`, `src/js/ai-answer-view.js`,
-`src/js/ai-review.js`, `src/js/ai-key-field.js`, `src/cli/ai-agreement.js`):
-- The AI pass of a scan step (`ai` option), answering only what the scan
+**Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
+`registry.js` the questions, `focus-walk.js`, `evidence.js`, `provider.js`,
+`outgoing.js`, `runtime-key.js`, `lessons.js`), `src/js/ai-answer-view.js`,
+`src/js/ai-review.js`, `src/js/ai-key-field.js`, `src/cli/ai-agreement.js`.
+
+- **The AI pass** of a scan step (`ai` option) answers only what the scan
   leaves as can't tell; the tool's outcome never changes.
-- Questions answered by reading: page title, alt text, decorative images,
+- **Questions answered by reading:** page title, alt text, decorative images,
   bold paragraph as heading, link text, field labels.
-- The focus walk (`ai: { focus: true }`): Tab through the page, then put focus
-  and scroll back, checked by a fingerprint. Page-level questions: focus
-  visible, focus order, keyboard (fail only), focus not obscured (2.4.11,
-  2.4.12), focus appearance (2.4.13, measured from pictures). Per-element
-  questions the scanner asks: focus visible and appearance per link, keyboard
-  per control, focus not obscured per fixed/sticky box. Landmark and heading
-  per stop; a page picture with the stops numbered in the review.
-- Providers: built-in Claude call (key from Run settings, kept in memory, or
-  `ANTHROPIC_API_KEY`), or `A11Y_AI_ENDPOINT` (any model or agent).
-- Server safeguards: allowed sites, masking, preview, log of what was sent.
-- Review AI answers dialog, conformance remarks from confirmed fails, lessons
-  export, `npm run ai:agreement`.
-- Docs: `docs/ai-answers.md` (user guide), configuration reference, examples
-  README, this folder.
-- Demo: `examples/demo-site/ai/` (two pages asking every question),
-  `examples/specs/ai-answers.spec.json`, `expected.json`,
-  `examples/ai-demo-score.js`. Evaluated blind with a model outside the lab:
-  31 of 31 agree (`ai-cant-tell-eval/demo/`; 25 of 25 before 1.4.11).
+- **The focus walk** (`ai: { focus: true }`, `focusStops` default 40, max
+  200): Tab through the page in its own Tab order, then focus and scroll put
+  back, checked by a fingerprint (answers dropped and a warning logged if the
+  page changed). Links that give focus up at once (`onfocus="blur()"`) are
+  recorded with `lostFocus`. Each stop: name, landmark, heading, what changed
+  on focus, how much is covered (25 points), a picture; for 2.4.13 or 1.4.11
+  an exact picture focused and unfocused, compared pixel by pixel. Then, read
+  only, controls a mouse can use that Tab never reached, and a picture of the
+  page with the stops numbered in the review.
+  - Page-level questions: focus visible (2.4.7), focus order (2.4.3),
+    keyboard (2.1.1, fail only), focus not obscured (2.4.11 and 2.4.12),
+    focus appearance (2.4.13).
+  - Per-element questions the scanner asks: focus visible, focus appearance
+    and **focus indicator contrast (1.4.11, `focus-contrast-element`, the
+    newest)** per link whose outline a style removes; keyboard per control
+    (fail only); focus not obscured per fixed or sticky box.
+- **Providers:** the built-in Claude call (key from Run settings, kept in
+  memory, or `ANTHROPIC_API_KEY`; the evidence is sent compact and marked for
+  prompt caching, so a page's focus questions pay for the walk once;
+  `A11Y_AI_PROMPT_CACHE=off`), or `A11Y_AI_ENDPOINT` (any model or agent).
+- **Server safeguards:** allowed sites, masking, preview, a log of what was
+  sent (named by the question asked).
+- **Review AI answers:** a card per question, your answer then the AI's,
+  **By check** (per check answered and left open; per rule what the AI does
+  not take), CSV and lessons exports, What was sent to the AI. Conformance
+  remarks from confirmed fails. `npm run ai:agreement`.
+- **Docs:** `docs/ai-answers.md` (user guide), configuration reference,
+  examples README, this folder.
+- **The demo:** `examples/demo-site/ai/` (`reading.html`, `focus.html`),
+  `examples/specs/ai-answers.spec.json`, the correct answers in
+  `expected.json`, `examples/ai-demo-score.js`. 31 questions, including a Help
+  link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13 pass).
+  Evaluated blind, a model answering the lab's exact prompts outside the lab
+  (`ai-cant-tell-spike/answer-offline.js`): **31 of 31**
+  (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
+  not real-site accuracy.
+- **Real site:** the W3C's Before and After Demonstration
+  (`examples/specs/ai-answers-w3c-bad.spec.json`, `focusStops: 80`). Third
+  run: 48 of 57 (84%), focus order 4 of 5, **against labels written by the
+  assistant, not a person** (`ai-cant-tell-eval/w3c-bad/`). The blind agent
+  of run 3 summarised big prompts with a script; the README says so. Not
+  re-run since: the compact evidence (`registry-4`), By check and 1.4.11.
 
-**Update, later on 2026-11-25:** the full suite (4474) and the browser tests
-pass (a focus-appearance test now pins the light colour scheme, as the pixels
-are measured). The W3C run was done (URLs fine) and found a bug, now fixed: the
-focus walk stopped at the first link whose page code gives focus up at once
-(`onfocus="blur()"`). It now records such a link as a stop with `lostFocus`
-and lists it in `unreachable`. Agreement on the W3C pages, against labels
-written by the assistant (not a person): 63% before the fix, 81% after
-(`ai-cant-tell-eval/README.md`, "Result").
+**Not measured yet:** anything through the lab's own Claude call with a real
+key (so prompt caching too: the first real run should show cached tokens in
+the API's usage); agreement after the evidence was reordered.
 
-**Update, end of 2026-11-25 (all committed and pushed):**
-- Whole walks: the W3C spec asks for `focusStops: 80` (the pages have 48 to
-  57 stops; the default stays 40, the maximum is 200). Third run: 48 of 57
-  (84%), focus order 4 of 5. Files in `ai-cant-tell-eval/w3c-bad/`
-  (`first-run/`, `run3-full-walks/`). The blind agent of run 3 summarised big
-  prompts with a script; the README says so.
-- Prompt cost: the evidence is sent as compact JSON without null fields (28%
-  less on the W3C's 77 prompts), it comes before the question, and the
-  built-in Claude call marks it for prompt caching, so the three focus
-  questions of a page pay for the walk once (`A11Y_AI_PROMPT_CACHE=off` turns
-  it off; prompt version `registry-4`). Not measured with a real key: the
-  first real run should show cached tokens in the API's usage. Agreement was
-  not re-scored after the reordering. A single merged call was not built (it
-  would break the endpoint's one-question-per-POST contract).
-- `byCheck` in the pass summary: answered and open questions per check (by
-  the question asked; shown in the review's **By check**).
-- The branch is checked out in the main folder, `C:\Dev\surea11y\lab`; the old
-  worktree was removed (a branch can be checked out in one place only).
-
-**Do not commit** the user's local-development edits, which are in the working
-tree: `package.json`, `extension/engines/vendor/surea11y-how-to-check.min.js`,
+**On the user's machine:** the branch is checked out in the main folder,
+`C:\Dev\surea11y\lab` (the old worktree was removed). **Do not commit** the
+user's local-development edits in its working tree: `package.json`,
+`extension/engines/vendor/surea11y-how-to-check.min.js`,
 `extension/engines/vendor/surea11y.browser.min.js`, and the untracked `tmp/`.
+
+To check the state:
 
 ```bash
 node --test
@@ -89,34 +98,30 @@ Chrome or Chromium.)
 
 ## Next, in order
 
-1. Done: everything above is committed and pushed.
-2. **A person's labels on the W3C run:** open `w3c-bad/`'s run in Review AI
-   answers (`answered.json` from `ai-cant-tell-eval/README.md`), label
-   against the W3C's annotations with the AI's answer hidden, run
-   `npm run ai:agreement`, and replace the assistant's labels.
-3. A real model inside the lab: the user has a Claude API key and enters it in
-   Run settings on their own machine; nothing has been answered through the
-   lab's own call yet (only the stand-in and the offline model).
-4. The user's claude.ai project "A11y Auditor Expert Agent": its instructions
-   and knowledge files are to be carried into the built-in call (system
-   prompt, cached knowledge, structured output, official SDK), configured on
-   the server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
+The first three need the user; the rest can be done without.
+
+1. **A person's labels on the W3C run:** open its run in Review AI answers
+   (`answered.json`, as `ai-cant-tell-eval/README.md` says), label against
+   the W3C's annotations with the AI's answer hidden, run
+   `npm run ai:agreement`, and replace the assistant's labels. Until then the
+   84% is not a person's measure.
+2. **A real model inside the lab:** the user has a Claude API key and enters
+   it in Run settings on their own machine. Run the demo
+   (`ai-answers.spec.json`, then `ai-demo-score.js`) and the W3C spec through
+   the lab's own call; check the API usage for cached tokens.
+3. **The user's claude.ai project "A11y Auditor Expert Agent":** carry its
+   instructions and knowledge files into the built-in call (system prompt,
+   cached knowledge, structured output, the official SDK), configured on the
+   server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-5. Optional ideas not built: images sent to the model (only after measuring
-   that they help). Built since: a per-check count of answered and open
-   questions (`byCheck` in the pass summary, now by the question asked), and
-   **By check** in Review AI answers (2026-11-25, later): per check, answered
-   and left open; per rule, the can't-tell questions the AI does not take
-   (`coverageByCheck`, `coverageHtml` in `ai-answer-view.js`). On the demo it
-   shows 1.4.11 (non-text contrast, per element with a removed outline) as not
-   taken: the walk's measurement could answer it, a candidate next check.
-   **Built since:** 1.4.11 per element (`focus-contrast-element`): a link whose
-   outline a style removes, answered from the walk's measurement (`changed`,
-   `atContrast` against what was there, `oneLine` for scale; no indicator is a
-   fail), measured whenever 1.4.11 or 2.4.13 is asked. The demo's focus page
-   has a Help link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13
-   pass); its evaluation is now 31 of 31.
-6. On hold: the browser extension (it never receives AI answers; see the
+4. **Re-run the W3C evaluation** with the current code (compact evidence,
+   1.4.11), offline as before, to see whether agreement held; record it as
+   run 4 in `ai-cant-tell-eval/w3c-bad/`.
+5. **Optional, not built:** pictures sent to the model (only after measuring
+   that they help); 2.4.13's and 1.4.11's measurement is lossy on animated
+   focus styles (it reads after a short wait) and covered stops measure 0
+   changed (right, but worth saying in the review).
+6. **On hold:** the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 
 ## Conventions
@@ -131,6 +136,10 @@ Chrome or Chromium.)
 - `node --test` (not `npm test`) on Windows. Run `npm run build:action-docs`
   after changing step fields (the `ai` field's description lives in
   `src/workflow/action-definitions.js`).
+- A new question: an entry in `registry.js` (`ANSWERABLE`, `PAGE_LEVEL` or
+  `ELEMENT_WALK`), its facts in `keyFactRows` (and `FOCUS_CHECKS` for a walk
+  question) in `ai-answer-view.js`, a row in the user guide's tables, and a
+  case with its correct answer in the demo (`expected.json`).
 - The background servers of a cloud session (demo site on 8780, lab on 3000)
   may be stopped between turns: start them in the same command that uses them.
 
