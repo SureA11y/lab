@@ -44,13 +44,14 @@ Everything below is committed and pushed, except where it says otherwise.
   `examples/ai-demo-score.js`. Evaluated blind with a model outside the lab:
   25 of 25 agree (`ai-cant-tell-eval/demo/`).
 
-**Last session's final change, not fully re-tested:** the log of what was sent
-(`canonical.ai.outbox`, `ai-sent.json`) now names the question asked
-(`focus-visible-element`) instead of the scanner's check
-(`css-focus-indicator-suppressed`), in `index.js` (`outboxEntry`), with an
-assertion added in `focus-walk.browserspec.js`. The unit tests for the AI
-files passed before it; the full suite and the browser tests were interrupted
-before finishing. **First task:** run them.
+**Update, later on 2026-11-25:** the full suite (4474) and the browser tests
+pass (a focus-appearance test now pins the light colour scheme, as the pixels
+are measured). The W3C run was done (URLs fine) and found a bug, now fixed: the
+focus walk stopped at the first link whose page code gives focus up at once
+(`onfocus="blur()"`). It now records such a link as a stop with `lostFocus`
+and lists it in `unreachable`. Agreement on the W3C pages, against labels
+written by the assistant (not a person): 63% before the fix, 81% after
+(`ai-cant-tell-eval/README.md`, "Result"). Nothing of this is committed yet.
 
 ```bash
 node --test
@@ -65,15 +66,11 @@ Chrome or Chromium.)
 
 ## Next, in order
 
-1. Run the tests above; fix anything they show.
-2. **Real websites.** `examples/specs/ai-answers-w3c-bad.spec.json` (the W3C's
-   Before and After Demonstration, eight pages) is ready but has not been run:
-   the last session's cloud environment could not reach www.w3.org (the user
-   declined to allow it there). Run it where the network allows, then follow
-   "Real websites" in `ai-cant-tell-eval/README.md`: answer with a key or
-   offline (`ai-cant-tell-spike/answer-offline.js`), label in Review AI
-   answers against the W3C's annotations, `npm run ai:agreement`, and record
-   the result there. Check the eight URLs on the first run.
+1. Commit the work above (nothing is committed).
+2. **A person's labels on the W3C run:** open `w3c-bad/`'s run in Review AI
+   answers (`answered.json` from `ai-cant-tell-eval/README.md`), label
+   against the W3C's annotations with the AI's answer hidden, run
+   `npm run ai:agreement`, and replace the assistant's labels.
 3. A real model inside the lab: the user has a Claude API key and enters it in
    Run settings on their own machine; nothing has been answered through the
    lab's own call yet (only the stand-in and the offline model).

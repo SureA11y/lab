@@ -1,0 +1,77 @@
+{"id":"q1","verdict":"fail","confidence":0.95,"rationale":"Link's only content is an img with empty alt, so the link has no name."}
+{"id":"q2","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q3","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q4","verdict":"fail","confidence":0.8,"rationale":"343-char appearance description as link name; does not state purpose (go to home)."}
+{"id":"q5","verdict":"fail","confidence":0.5,"rationale":"Alt 'bullet' is a generic word for a decorative list marker; adds noise."}
+{"id":"q6","verdict":"fail","confidence":0.8,"rationale":"Alt '[phone]' does not convey the hotline number the image presumably shows."}
+{"id":"q7","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page, matching the h1."}
+{"id":"q8","verdict":"fail","confidence":0.55,"rationale":"'Click here' with only 'Killer bees.' as context; destination unclear."}
+{"id":"q9","verdict":"fail","confidence":0.55,"rationale":"'Read More...' twice with different targets; surrounding text does not clearly state destination."}
+{"id":"q10","verdict":"fail","confidence":0.9,"rationale":"Several links take focus and the page blurs them at once (lostFocus, unreachable list)."}
+{"id":"q11","verdict":"pass","confidence":0.5,"rationale":"Order broadly follows layout reading order; no major jumps visible."}
+{"id":"q12","verdict":"fail","confidence":0.9,"rationale":"Stops with lostFocus show no focus indicator (empty changesOnFocus)."}
+{"id":"q13","verdict":"fail","confidence":0.85,"rationale":"Chart image with empty alt under a heading about brain donations data; conveys information."}
+{"id":"q14","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q15","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q16","verdict":"fail","confidence":0.8,"rationale":"Image link alt 'picture of Clara F.' says nothing about destination and starts with 'picture of'."}
+{"id":"q17","verdict":"pass","confidence":0.7,"rationale":"Alt describes the photo reasonably in context of the story."}
+{"id":"q18","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page, matching the h1."}
+{"id":"q19","verdict":"fail","confidence":0.9,"rationale":"Several links take focus and the page blurs them at once (lostFocus, unreachable list)."}
+{"id":"q20","verdict":"pass","confidence":0.5,"rationale":"Order broadly follows page layout; minor y-jump near story links."}
+{"id":"q21","verdict":"fail","confidence":0.9,"rationale":"Stops with lostFocus show no focus indicator (empty changesOnFocus)."}
+{"id":"q22","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q23","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q24","verdict":"fail","confidence":0.8,"rationale":"Alt 'music line phone number' does not give the number the image shows."}
+{"id":"q25","verdict":"fail","confidence":0.85,"rationale":"Bold, centered, large text acts as section title for terms text; should be a heading."}
+{"id":"q26","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page, matching the h1."}
+{"id":"q27","verdict":"fail","confidence":0.9,"rationale":"Several links take focus and the page blurs them at once (lostFocus, unreachable list)."}
+{"id":"q28","verdict":"pass","confidence":0.55,"rationale":"Order follows reading order of the page; no obvious problems."}
+{"id":"q29","verdict":"fail","confidence":0.9,"rationale":"Stops with lostFocus show no focus indicator (empty changesOnFocus)."}
+{"id":"q30","verdict":"pass","confidence":0.95,"rationale":"gif.gif spacer in layout table with empty alt; decorative."}
+{"id":"q31","verdict":"pass","confidence":0.95,"rationale":"gif.gif spacer in layout table with empty alt; decorative."}
+{"id":"q32","verdict":"pass","confidence":0.95,"rationale":"gif.gif spacer in layout table with empty alt; decorative."}
+{"id":"q33","verdict":"pass","confidence":0.95,"rationale":"gif.gif spacer in layout table with empty alt; decorative."}
+{"id":"q34","verdict":"pass","confidence":0.95,"rationale":"gif.gif spacer in layout table with empty alt; decorative."}
+{"id":"q35","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q36","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q37","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page, matching the h1."}
+{"id":"q38","verdict":"fail","confidence":0.9,"rationale":"Several links take focus and the page blurs them at once (lostFocus, unreachable list)."}
+{"id":"q39","verdict":"pass","confidence":0.55,"rationale":"Order follows reading order of the page; no obvious problems."}
+{"id":"q40","verdict":"fail","confidence":0.9,"rationale":"Stops with lostFocus show no focus indicator (empty changesOnFocus)."}
+{"id":"q41","verdict":"pass","confidence":0.6,"rationale":"Illustrative thumbnail beside a linked heading with the story text; decorative."}
+{"id":"q42","verdict":"pass","confidence":0.6,"rationale":"Illustrative thumbnail beside a linked heading with the story text; decorative."}
+{"id":"q43","verdict":"pass","confidence":0.6,"rationale":"Illustrative thumbnail beside a linked heading with the story text; decorative."}
+{"id":"q44","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q45","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q46","verdict":"pass","confidence":0.85,"rationale":"Logo alt gives site name and slogan; not a real link (no href)."}
+{"id":"q47","verdict":"pass","confidence":0.8,"rationale":"Weather image alt conveys the content."}
+{"id":"q48","verdict":"pass","confidence":0.75,"rationale":"Alt describes the teaser photo adequately."}
+{"id":"q49","verdict":"pass","confidence":0.65,"rationale":"Alt describes the teaser image; acceptable."}
+{"id":"q50","verdict":"pass","confidence":0.85,"rationale":"Title names site and page."}
+{"id":"q51","verdict":"unsure","confidence":0.5,"rationale":"No unreachable controls found, but only reaching was checked (and stop limit reached)."}
+{"id":"q52","verdict":"pass","confidence":0.8,"rationale":"Order follows reading order with no unusual jumps."}
+{"id":"q53","verdict":"pass","confidence":0.8,"rationale":"Every stop shows a visible change on focus."}
+{"id":"q54","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q55","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q56","verdict":"pass","confidence":0.85,"rationale":"Logo link to home; alt gives site name and slogan."}
+{"id":"q57","verdict":"pass","confidence":0.8,"rationale":"Alt conveys the weather."}
+{"id":"q58","verdict":"pass","confidence":0.7,"rationale":"Alt describes the photo."}
+{"id":"q59","verdict":"pass","confidence":0.7,"rationale":"Alt names the destination (Clara F.'s website)."}
+{"id":"q60","verdict":"pass","confidence":0.9,"rationale":"Alt gives the chart's data."}
+{"id":"q61","verdict":"pass","confidence":0.85,"rationale":"Title names the site section and page."}
+{"id":"q62","verdict":"unsure","confidence":0.5,"rationale":"No unreachable controls found, but only reaching was checked (and stop limit reached)."}
+{"id":"q63","verdict":"pass","confidence":0.6,"rationale":"Order follows page order; one zero-width stop but position is sensible."}
+{"id":"q64","verdict":"unsure","confidence":0.4,"rationale":"One stop is zero-width/hidden (floated image link) though it shows changes; unclear if visible."}
+{"id":"q65","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q66","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q67","verdict":"pass","confidence":0.85,"rationale":"Title names the site section and page."}
+{"id":"q68","verdict":"unsure","confidence":0.5,"rationale":"No unreachable controls found, but only reaching was checked (and stop limit reached)."}
+{"id":"q69","verdict":"pass","confidence":0.8,"rationale":"Order follows reading order with no unusual jumps."}
+{"id":"q70","verdict":"pass","confidence":0.8,"rationale":"Every stop shows a visible change on focus."}
+{"id":"q71","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q72","verdict":"pass","confidence":0.6,"rationale":"Logo link; alt names the organisation and the link title gives the destination, acceptable though not ideal."}
+{"id":"q73","verdict":"pass","confidence":0.85,"rationale":"Title names the site section and page."}
+{"id":"q74","verdict":"fail","confidence":0.55,"rationale":"Select labelled only by title attribute, which is a weak label."}
+{"id":"q75","verdict":"unsure","confidence":0.5,"rationale":"No unreachable controls found, but only reaching was checked (and stop limit reached)."}
+{"id":"q76","verdict":"pass","confidence":0.55,"rationale":"Order follows reading order of the page; no obvious problems."}
+{"id":"q77","verdict":"pass","confidence":0.8,"rationale":"Every stop shows a visible change on focus."}

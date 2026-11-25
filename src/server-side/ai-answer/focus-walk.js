@@ -109,7 +109,14 @@ async function walkFocus(page, options = {}) {
                 if (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) scrollers.push([el, el.scrollTop, el.scrollLeft]);
             }
             const active = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
-            window[key] = { active, scrollX: window.scrollX, scrollY: window.scrollY, scrollers, visited: [], focusedStyles: [], reader };
+            window[key] = { active, scrollX: window.scrollX, scrollY: window.scrollY, scrollers, visited: [], focusedStyles: [], reader, lastFocus: null };
+            // What received focus, even if the page took it away at once
+            // (onfocus="blur()"): then nothing has focus when Tab is done.
+            window[key].onFocus = (e) => {
+                const t = e.composedPath ? e.composedPath()[0] : e.target;
+                if (t && t.nodeType === 1 && !t.hasAttribute(start)) window[key].lastFocus = t;
+            };
+            document.addEventListener('focus', window[key].onFocus, true);
             const mark = document.createElement('span');
             // The page's first stop in Tab order: the lowest positive tabindex,
             // first in the page, comes before every other element, so the walk
@@ -132,7 +139,16 @@ async function walkFocus(page, options = {}) {
                 if (first) document.querySelector(`[${start}]`)?.remove();
                 let a = document.activeElement;
                 while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
-                if (!a || a === document.body || a === document.documentElement) return { end: 'left-page' };
+                let lostFocus = false;
+                if (!a || a === document.body || a === document.documentElement) {
+                    // Nothing has focus: it left the page, unless an element took it
+                    // during this Tab and the page gave it up at once.
+                    const f = st.lastFocus;
+                    st.lastFocus = null;
+                    if (!f || !f.isConnected) return { end: 'left-page' };
+                    a = f;
+                    lostFocus = true;
+                } else st.lastFocus = null;
                 const last = st.visited[st.visited.length - 1];
                 // Inside an iframe, focus moves where the page cannot see: one stop.
                 if (a === last && a.tagName === 'IFRAME') return { insideFrame: true };
@@ -206,6 +222,7 @@ async function walkFocus(page, options = {}) {
                     coveredShare,
                     scroll: [Math.round(window.scrollX), Math.round(window.scrollY)],
                     hidden: r.width < 1 || r.height < 1 || getComputedStyle(a).visibility === 'hidden',
+                    ...(lostFocus ? { lostFocus: true } : {}),
                 };
             }, KEY, START, i === 0);
             if (stop.insideFrame) { result.stops[result.stops.length - 1].insideFrame = true; continue; }
@@ -248,6 +265,7 @@ async function walkFocus(page, options = {}) {
                 const st = window[key];
                 document.querySelector(`[${start}]`)?.remove();
                 if (!st) return null;
+                if (st.onFocus) document.removeEventListener('focus', st.onFocus, true);
                 if (st.active && st.active.isConnected) st.active.focus({ preventScroll: true });
                 else if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
                 for (const [el, top, left] of st.scrollers) { el.scrollTop = top; el.scrollLeft = left; }
@@ -288,6 +306,19 @@ async function walkFocus(page, options = {}) {
         try {
             result.unreachable = await page.evaluate(unreachableControls, MAX_UNREACHABLE);
         } catch { /* not read */ }
+    }
+    // A stop the page took focus away from at once (onfocus="blur()") is
+    // reached by Tab but cannot be rested on or used: it belongs with what a
+    // keyboard cannot use. These come first: they are measured, not guessed.
+    const lost = result.stops.filter((s) => s.lostFocus);
+    if (lost.length) {
+        const items = lost.map((s) => ({
+            path: s.path, tag: s.tag, role: s.role, name: s.name, selector: s.selector,
+            x: s.x, y: s.y, width: s.width, height: s.height,
+            why: 'takes focus and the page gives it up at once, so a keyboard user cannot rest on it or use it',
+        }));
+        const base = result.unreachable || { total: 0, items: [] };
+        result.unreachable = { total: base.total + items.length, items: [...items, ...base.items].slice(0, MAX_UNREACHABLE) };
     }
     // 6. A picture of the whole page as it is again, for the person: the
     // review draws the stops' numbers and path over it. Nothing is drawn on

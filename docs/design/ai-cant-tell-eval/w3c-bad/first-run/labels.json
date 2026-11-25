@@ -1,0 +1,307 @@
+{
+ "img-alt-decorative|1sis9x5": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 07: null alt on the only content of a link",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|1o9topo": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: no annotation; W3C keeps the same logo links on its accessible pages",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|twj6y0": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: no annotation; as q2",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|144txru": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 01: overly verbose alt",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|1wvjvzk": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 08: \"bullet\" on a decorative image",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|wcc75p": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 10: the phone image has a placeholder alt",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "page-title-patterns|1rvovts": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: no annotation; title names the site and page",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "link-name-quality|9b7eaw": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: generic \"Click here\" (same failure as Note 05, not itemised)",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "link-name-quality|kf1vwk": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 05: \"Read more...\" not descriptive",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "keyboard|mxaijq": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: 14 content links carry onfocus=\"blur()\" in the page code (not itemised by the W3C): a keyboard cannot rest on or use them",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-order|mxaijq": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C notes 1.3.2 reading sequence, not focus order",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-visible|mxaijq": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: onfocus=\"blur()\" on 14 links: focus is removed at once (not itemised by the W3C)",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-decorative|2v6m4r": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 09: chart with empty alt, meaning lost",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|1u9672y": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 05: alt describes the image, not the link purpose",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|1brnb0p": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 10: alt carries information not shown visually",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "page-title-patterns|19pfe44": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: no annotation; title names the site and page",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "keyboard|1w385x6": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: 4 content links carry onfocus=\"blur()\" (not itemised by the W3C)",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-order|1w385x6": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C notes 1.3.2 reading sequence, not focus order",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-visible|1w385x6": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: onfocus=\"blur()\" on 4 links (not itemised by the W3C)",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|qlnn0c": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 04: alt does not give the phone number",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "p-as-heading|9o5bhm": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 08: heading not marked up as such",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "page-title-patterns|bv83n2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: no annotation; title names the site and page",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "keyboard|115hoes": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: 4 content links carry onfocus=\"blur()\" (not itemised by the W3C)",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-order|115hoes": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: no focus-order annotation for this page",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-visible|115hoes": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: onfocus=\"blur()\" on 4 links (not itemised by the W3C)",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-decorative|zwq9vd": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: spacer gif with empty alt; no annotation",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-decorative|6bm6mi": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: spacer gif with empty alt; no annotation",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-decorative|ijumjp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: spacer gif with empty alt; no annotation",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-decorative|1dxxhx5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: spacer gif with empty alt; no annotation",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-decorative|10c24o1": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: spacer gif with empty alt; no annotation",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "page-title-patterns|1vv3thh": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: no annotation; title names the site and page",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "keyboard|1u44xkb": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: 4 content links carry onfocus=\"blur()\"; Note 05 also says the select is not easily usable by keyboard (2.1.1)",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-order|1u44xkb": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: W3C annotation Note 06: sequence of fields wrong when navigated by keyboard (2.4.3)",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-visible|1u44xkb": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: onfocus=\"blur()\" on 4 links (not itemised by the W3C)",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-decorative|pk111f": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: the accessible version: thumbnail beside its headline",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-decorative|1zskz8": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: as q41",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-decorative|18dcptg": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: as q41",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|1f6le9b": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|4pz9du": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|121mb8n": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|1w9fsjv": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "page-title-patterns|10jepjd": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "keyboard|13bqbs5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version: no onfocus=\"blur()\"",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-order|13bqbs5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-visible|13bqbs5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|d7766z": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|1dpabcr": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "img-alt-quality|c1myxu": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "page-title-patterns|10fx9uy": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "keyboard|dgjx6h": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version: no onfocus=\"blur()\"",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-order|dgjx6h": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-visible|dgjx6h": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: the zero-width image link is an adjacent duplicate of a text link to the same page; not decided without seeing it on screen",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "page-title-patterns|1e4x8f2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "keyboard|sn808j": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-order|sn808j": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-visible|sn808j": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "page-title-patterns|1a6qk6k": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "form-control-programmatic-label-quality|eed95m": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version: fixes Note 04",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "keyboard|r42fe2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-order|r42fe2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ },
+ "focus-visible|r42fe2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the W3C BAD annotations and the page code, not by a person: accessible version",
+  "at": "2026-11-25T08:23:28.625Z"
+ }
+}

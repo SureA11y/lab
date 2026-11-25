@@ -141,3 +141,48 @@ Record the result here as the demo's is: the run's `questions.jsonl` and
 
 Before running it on a customer's site, read
 [../ai-cant-tell-data-and-agents.md](../ai-cant-tell-data-and-agents.md).
+
+### Result (2026-11-25)
+
+All eight pages loaded at the URLs in the spec. 77 questions; a model (Claude,
+a separate agent that saw only the prompts) answered them blind. The labels
+are **not a person's**: the same assistant wrote them from the W3C's
+annotations (the Annotations page of each "before" page) and the pages' code,
+with the source in each note; where neither settled it, "unsure". The
+"after" pages are labelled pass, as the W3C's accessible versions. Treat the
+numbers as a first reading, to be redone with a person's labels. Files:
+[w3c-bad/](w3c-bad/) (`questions.jsonl`, `answers.jsonl`, `labels.json`,
+`agreement.md`); the first run, before the walk was fixed, is in
+[w3c-bad/first-run/](w3c-bad/first-run/).
+
+61 cases (a question about the same logo on many pages is one case); 4 unsure
+labels are not scored.
+
+| | First run | After the walk fix |
+| --- | --- | --- |
+| Agree | 36 of 57 (63%) | **46 of 57 (81%)** |
+| Of those answered | 88% | **98%** |
+| Pass where the label says fail | 5 | **1** |
+| Unresolved (low confidence, or unsure) | 16 | 10 |
+| Focus visible | 3 of 7 | **7 of 7** |
+| Keyboard | 0 of 8 | 4 of 8 (4 unresolved) |
+
+- **Fixed by the walk:** every "before" page has links with
+  `onfocus="blur()"` (14 on the home page; the W3C does not itemise it, the
+  code does). The walk used to read "nothing has focus" as leaving the page and
+  stopped at the first, so the model never saw them and passed focus visible.
+  It now records an element that took focus and lost it at once as a stop with
+  `lostFocus`, goes on, and lists it in `unreachable`. On the home page it
+  finds 15 of them within the 40 stops.
+- **The one pass where the label says fail:** the news photo whose alt carries
+  information the page does not show (the W3C's Note 10).
+- **Unresolved are mostly confidence:** for instance "Click here" and "Read
+  More..." were answered fail at 0.55, under the 0.6 threshold (0.7 and 0.8
+  in the first run). A blind model's confidence varies from run to run, so
+  read small differences with care.
+- **Focus order:** 3 of 5 labelled cases, the rest unresolved; only the survey
+  is a labelled fail (Note 06). Keyboard: the 4 unresolved are to look at in `answers.jsonl`.
+
+A model's run-to-run variation and my own labels are the two limits of this
+reading. Next: a person's labels (Review AI answers on `answered.json`), and
+a run with a key through the lab's own call.

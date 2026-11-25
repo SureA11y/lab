@@ -29,6 +29,8 @@ const PAGE = `<title>Shop</title>
 async function open(html) {
     const page = await browser.newPage();
     await page.setViewport({ width: 900, height: 700 });
+    // The pixels are measured, so the page must not turn dark with the machine's theme.
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]);
     await page.setContent(html);
     return page;
 }
@@ -66,6 +68,22 @@ test('a loop that keeps focus is reported as coming back, and the limit holds', 
     assert.equal(walk.endedAt, 1);
     const few = await walkFocus(await open(PAGE), { maxStops: 2 });
     assert.deepEqual([few.ended, few.stops.length], ['limit', 2]);
+    await page.close();
+});
+
+test('a link that gives focus up at once is a stop that lost focus, listed as unusable by keyboard, and the walk goes on', async () => {
+    const page = await open(`<title>Shop</title>
+<a href="#a" id="a">First</a>
+<a href="#b" id="b" onfocus="blur();">Second</a>
+<a href="#c" id="c" onfocus="this.blur()">Third</a>
+<a href="#d" id="d">Fourth</a>`);
+    const walk = await walkFocus(page);
+    assert.deepEqual(walk.stops.map((s) => [s.name, !!s.lostFocus]), [['First', false], ['Second', true], ['Third', true], ['Fourth', false]]);
+    assert.equal(walk.ended, 'left-page');
+    assert.deepEqual(walk.unreachable.items.map((u) => u.selector), ['#b', '#c']);
+    assert.match(walk.unreachable.items[0].why, /gives it up at once/);
+    assert.equal(walk.unreachable.total, 2);
+    assert.equal(await page.evaluate(() => typeof window.__a11yFocusWalk), 'undefined', 'no trace left');
     await page.close();
 });
 

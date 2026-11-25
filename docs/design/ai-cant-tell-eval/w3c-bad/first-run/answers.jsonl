@@ -1,0 +1,77 @@
+{"id":"q1","verdict":"fail","confidence":0.9,"rationale":"Link's only content is an image with empty alt, no text/aria-label/title; link has no accessible name."}
+{"id":"q2","verdict":"pass","confidence":0.55,"rationale":"Logo link: alt 'W3C logo' with title 'W3C Home' identifies the destination reasonably."}
+{"id":"q3","verdict":"pass","confidence":0.55,"rationale":"WAI logo link with title 'WAI Home'; alt names the organisation."}
+{"id":"q4","verdict":"fail","confidence":0.8,"rationale":"343-character visual description as the link's name; does not state destination and is far too long."}
+{"id":"q5","verdict":"fail","confidence":0.6,"rationale":"Alt 'bullet' for a decorative list bullet adds noise; should be empty."}
+{"id":"q6","verdict":"fail","confidence":0.7,"rationale":"Alt '[phone]' replaces a phone-number image; the number itself is not conveyed."}
+{"id":"q7","verdict":"pass","confidence":0.65,"rationale":"Title names the site and page type (home page); adequate though 'Welcome' is generic."}
+{"id":"q8","verdict":"fail","confidence":0.7,"rationale":"'Click here' is generic; a second same-text link exists and the context does not name the destination."}
+{"id":"q9","verdict":"fail","confidence":0.8,"rationale":"'Read More...' is generic, and another 'Read More...' goes to a different target; context not in evidence."}
+{"id":"q10","verdict":"unsure","confidence":0.4,"rationale":"All 14 stops reachable and unreachable list is empty; no clear out-of-reach control shown, and pass is not allowed."}
+{"id":"q11","verdict":"unsure","confidence":0.4,"rationale":"Order mostly sensible but Overview sub-links precede later menu items and logo/select come last; not decisive."}
+{"id":"q12","verdict":"pass","confidence":0.7,"rationale":"Every stop shows an outline/background change on focus; none hidden."}
+{"id":"q13","verdict":"fail","confidence":0.75,"rationale":"Chart image with empty alt; only a title heading is nearby, so the data is lost to non-visual users."}
+{"id":"q14","verdict":"pass","confidence":0.55,"rationale":"Logo link: alt 'W3C logo' with title 'W3C Home' identifies the destination reasonably."}
+{"id":"q15","verdict":"pass","confidence":0.55,"rationale":"WAI logo link with title 'WAI Home'; alt names the organisation."}
+{"id":"q16","verdict":"fail","confidence":0.7,"rationale":"Alt 'picture of Clara F.' is the sole content of a link and starts with 'picture of'; does not say where the link goes."}
+{"id":"q17","verdict":"pass","confidence":0.7,"rationale":"Alt describes the photo's content meaningfully for the news story."}
+{"id":"q18","verdict":"pass","confidence":0.65,"rationale":"Title names the site and the news page; acceptable."}
+{"id":"q19","verdict":"unsure","confidence":0.4,"rationale":"All 14 stops reachable and unreachable list is empty; no clear out-of-reach control shown, and pass is not allowed."}
+{"id":"q20","verdict":"unsure","confidence":0.4,"rationale":"Order mostly sensible but Overview sub-links precede later menu items and logo/select come last; not decisive."}
+{"id":"q21","verdict":"pass","confidence":0.7,"rationale":"Every stop shows an outline/background change on focus; none hidden."}
+{"id":"q22","verdict":"pass","confidence":0.55,"rationale":"Logo link: alt 'W3C logo' with title 'W3C Home' identifies the destination reasonably."}
+{"id":"q23","verdict":"pass","confidence":0.55,"rationale":"WAI logo link with title 'WAI Home'; alt names the organisation."}
+{"id":"q24","verdict":"fail","confidence":0.7,"rationale":"Alt 'music line phone number' describes the image but does not give the number the user needs."}
+{"id":"q25","verdict":"fail","confidence":0.85,"rationale":"Centred bold larger 'Citylights Terms and Conditions' titles the terms text but is a plain div, not a heading."}
+{"id":"q26","verdict":"pass","confidence":0.65,"rationale":"Title names the site and the tickets page; acceptable."}
+{"id":"q27","verdict":"unsure","confidence":0.4,"rationale":"All 14 stops reachable and unreachable list is empty; no clear out-of-reach control shown, and pass is not allowed."}
+{"id":"q28","verdict":"unsure","confidence":0.4,"rationale":"Order mostly sensible but Overview sub-links precede later menu items and logo/select come last; not decisive."}
+{"id":"q29","verdict":"pass","confidence":0.7,"rationale":"Every stop shows an outline/background change on focus; none hidden."}
+{"id":"q30","verdict":"pass","confidence":0.85,"rationale":"gif.gif spacer in a layout table with empty alt; nothing is lost."}
+{"id":"q31","verdict":"pass","confidence":0.85,"rationale":"gif.gif spacer in a layout table with empty alt; nothing is lost."}
+{"id":"q32","verdict":"pass","confidence":0.85,"rationale":"gif.gif spacer in a layout table with empty alt; nothing is lost."}
+{"id":"q33","verdict":"pass","confidence":0.85,"rationale":"gif.gif spacer in a layout table with empty alt; nothing is lost."}
+{"id":"q34","verdict":"pass","confidence":0.85,"rationale":"gif.gif spacer in a layout table with empty alt; nothing is lost."}
+{"id":"q35","verdict":"pass","confidence":0.55,"rationale":"Logo link: alt 'W3C logo' with title 'W3C Home' identifies the destination reasonably."}
+{"id":"q36","verdict":"pass","confidence":0.55,"rationale":"WAI logo link with title 'WAI Home'; alt names the organisation."}
+{"id":"q37","verdict":"pass","confidence":0.65,"rationale":"Title names the site and the survey page; acceptable."}
+{"id":"q38","verdict":"unsure","confidence":0.4,"rationale":"All 14 stops reachable and unreachable list is empty; no clear out-of-reach control shown, and pass is not allowed."}
+{"id":"q39","verdict":"unsure","confidence":0.4,"rationale":"Order mostly sensible but Overview sub-links precede later menu items and logo/select come last; not decisive."}
+{"id":"q40","verdict":"pass","confidence":0.7,"rationale":"Every stop shows an outline/background change on focus; none hidden."}
+{"id":"q41","verdict":"pass","confidence":0.65,"rationale":"Thumbnail beside a headlined news teaser with empty alt; headline carries the content."}
+{"id":"q42","verdict":"pass","confidence":0.65,"rationale":"Thumbnail beside a headlined news teaser with empty alt; headline carries the content."}
+{"id":"q43","verdict":"pass","confidence":0.65,"rationale":"Thumbnail beside a headlined news teaser with empty alt; headline carries the content."}
+{"id":"q44","verdict":"pass","confidence":0.55,"rationale":"Logo link: alt 'W3C logo' with title 'W3C Home' identifies the destination reasonably."}
+{"id":"q45","verdict":"pass","confidence":0.55,"rationale":"WAI logo link with title 'WAI Home'; alt names the organisation."}
+{"id":"q46","verdict":"pass","confidence":0.6,"rationale":"Alt 'Citylights: your access to the city.' gives the site name and slogan for the header logo."}
+{"id":"q47","verdict":"pass","confidence":0.65,"rationale":"Alt 'Sunny Spells' conveys the weather icon's meaning."}
+{"id":"q48","verdict":"pass","confidence":0.7,"rationale":"Alt describes the teaser photo relevant to the adjacent penguin story."}
+{"id":"q49","verdict":"pass","confidence":0.6,"rationale":"Alt describes the flower image; plausible informative teaser."}
+{"id":"q50","verdict":"pass","confidence":0.65,"rationale":"Title names the site and the home page; acceptable."}
+{"id":"q51","verdict":"unsure","confidence":0.3,"rationale":"All listed stops reachable and unreachable list is empty; no failure shown and pass is not allowed."}
+{"id":"q52","verdict":"pass","confidence":0.55,"rationale":"Stops follow the page's reading order; nothing unusual in the evidence."}
+{"id":"q53","verdict":"pass","confidence":0.7,"rationale":"Every stop shows an outline/background change on focus; none hidden."}
+{"id":"q54","verdict":"pass","confidence":0.55,"rationale":"Logo link: alt 'W3C logo' with title 'W3C Home' identifies the destination reasonably."}
+{"id":"q55","verdict":"pass","confidence":0.55,"rationale":"WAI logo link with title 'WAI Home'; alt names the organisation."}
+{"id":"q56","verdict":"pass","confidence":0.6,"rationale":"Header logo link to home.html; alt gives the site name and slogan."}
+{"id":"q57","verdict":"pass","confidence":0.65,"rationale":"Alt 'Sunny Spells' conveys the weather icon's meaning."}
+{"id":"q58","verdict":"pass","confidence":0.7,"rationale":"Alt describes the photo content in the news story."}
+{"id":"q59","verdict":"pass","confidence":0.6,"rationale":"Alt 'Clara F.'s website' says what the link goes to."}
+{"id":"q60","verdict":"pass","confidence":0.85,"rationale":"Alt gives the chart's actual data values."}
+{"id":"q61","verdict":"pass","confidence":0.7,"rationale":"Title names the news page of Citylights."}
+{"id":"q62","verdict":"unsure","confidence":0.3,"rationale":"One stop (Clara F.'s website) is 0 wide and hidden, but nothing shows it is unreachable; pass not allowed."}
+{"id":"q63","verdict":"unsure","confidence":0.4,"rationale":"Order looks sensible except stop 23 has zero width; not decisive."}
+{"id":"q64","verdict":"fail","confidence":0.6,"rationale":"Stop 23 (Clara F.'s website) is hidden (0 width) while focused, which counts against visible focus."}
+{"id":"q65","verdict":"pass","confidence":0.55,"rationale":"Logo link: alt 'W3C logo' with title 'W3C Home' identifies the destination reasonably."}
+{"id":"q66","verdict":"pass","confidence":0.55,"rationale":"WAI logo link with title 'WAI Home'; alt names the organisation."}
+{"id":"q67","verdict":"pass","confidence":0.7,"rationale":"Title names the tickets page of Citylights."}
+{"id":"q68","verdict":"unsure","confidence":0.3,"rationale":"All listed stops reachable and unreachable list is empty; no failure shown and pass is not allowed."}
+{"id":"q69","verdict":"pass","confidence":0.55,"rationale":"Stops follow the page's reading order; nothing unusual in the evidence."}
+{"id":"q70","verdict":"pass","confidence":0.7,"rationale":"Every stop shows an outline/background change on focus; none hidden."}
+{"id":"q71","verdict":"pass","confidence":0.55,"rationale":"Logo link: alt 'W3C logo' with title 'W3C Home' identifies the destination reasonably."}
+{"id":"q72","verdict":"pass","confidence":0.55,"rationale":"WAI logo link with title 'WAI Home'; alt names the organisation."}
+{"id":"q73","verdict":"pass","confidence":0.7,"rationale":"Title names the survey page of Citylights."}
+{"id":"q74","verdict":"pass","confidence":0.55,"rationale":"Select is named 'cities of the world' via title and sits in a fieldset with legend 'Greenest City'; weak but named."}
+{"id":"q75","verdict":"unsure","confidence":0.3,"rationale":"All listed stops reachable and unreachable list is empty; no failure shown and pass is not allowed."}
+{"id":"q76","verdict":"pass","confidence":0.55,"rationale":"Stops follow the page's reading order; nothing unusual in the evidence."}
+{"id":"q77","verdict":"pass","confidence":0.7,"rationale":"Every stop shows an outline/background change on focus; none hidden."}

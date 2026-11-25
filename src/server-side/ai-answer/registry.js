@@ -7,7 +7,7 @@
 // `atomicCheckId`, as an occurrence names it. The focus questions below are
 // the exception, and opt-in.
 
-const PROMPT_VERSION = 'registry-1';
+const PROMPT_VERSION = 'registry-2';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -43,7 +43,7 @@ const ANSWERABLE = Object.freeze({
 const PAGE_LEVEL = Object.freeze({
     'wcag-2.4.7-focus-visible': {
         check: 'focus-visible',
-        question: 'When a keyboard user moves through this page with Tab, can they always see which element has focus? The focus walk lists every stop and what looked different on the element, its parent or its ::before/::after while it had focus; an empty list means no difference was found there. A stop that is hidden or off the page while focused also counts against it.',
+        question: 'When a keyboard user moves through this page with Tab, can they always see which element has focus? The focus walk lists every stop and what looked different on the element, its parent or its ::before/::after while it had focus; an empty list means no difference was found there. A stop that is hidden or off the page while focused also counts against it. A stop with `lostFocus` took focus and the page gave it up at once: nothing stays visible on it, so it counts against it.',
         evidence: ['focusWalk'],
     },
     'wcag-2.4.3-focus-order': {
@@ -55,7 +55,7 @@ const PAGE_LEVEL = Object.freeze({
     // AI may find a fail here but never a pass (passAllowed: false).
     'wcag-2.1.1-keyboard': {
         check: 'keyboard',
-        question: 'Can a keyboard user reach every control a mouse user can use on this page? The focus walk lists every stop reached with Tab, and `unreachable` lists what looks usable by mouse (a control role, a click attribute, a pointer cursor, or a link, button or field taken out of the Tab order) but can never take focus. A walk that came back to an earlier stop may be a keyboard trap. Only reaching was checked, not operating: answer "fail" when a control is clearly out of reach (or focus is trapped), otherwise "unsure". Do not answer "pass".',
+        question: 'Can a keyboard user reach every control a mouse user can use on this page? The focus walk lists every stop reached with Tab, and `unreachable` lists what looks usable by mouse (a control role, a click attribute, a pointer cursor, or a link, button or field taken out of the Tab order) but can never take focus. A walk that came back to an earlier stop may be a keyboard trap. A stop with `lostFocus` (also in `unreachable`) took focus and the page gave it up at once: a keyboard user cannot rest on it or use it. Only reaching was checked, not operating: answer "fail" when a control is clearly out of reach (or focus is trapped), otherwise "unsure". Do not answer "pass".',
         evidence: ['focusWalk'],
         passAllowed: false,
     },
