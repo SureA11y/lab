@@ -310,7 +310,9 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         for (const { occurrence, ai } of results) {
             occurrence.ai = ai;
             if (ai.provenance === 'ai-supported') summary.answered++; else summary.unresolved++;
-            const id = occurrence.atomicCheckId || 'unknown';
+            // By the question asked: the scanner's check is shared by several
+            // (manual-review, css-focus-indicator-suppressed).
+            const id = ai.check || occurrence.atomicCheckId || 'unknown';
             const row = (summary.byCheck[id] = summary.byCheck[id] || { answered: 0, unresolved: 0 });
             if (ai.provenance === 'ai-supported') row.answered++; else row.unresolved++;
         }

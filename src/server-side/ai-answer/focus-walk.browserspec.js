@@ -112,6 +112,7 @@ test('the focus questions are asked from the walk, without pictures, only when a
     const s = await answerCantTells({ page, canonical: on, options: { focus: true }, provider, env: {} });
     assert.equal(prompts.length, 4, 'the title, focus visible, focus order and keyboard');
     assert.deepEqual(s.outbox.map((e) => e.check).sort(), ['focus-order', 'focus-visible', 'keyboard', 'page-title-patterns'], 'the log names the question asked');
+    assert.deepEqual(Object.keys(s.byCheck).sort(), ['focus-order', 'focus-visible', 'keyboard', 'page-title-patterns'], 'counted by the question asked');
     assert.match(prompts[1], /"focusWalk"/);
     assert.doesNotMatch(prompts.join(''), /data:image/);
     const visible = on.findings[0].occurrences[0].ai;

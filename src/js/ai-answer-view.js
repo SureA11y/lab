@@ -539,6 +539,60 @@ export function resolveSummary(payload) {
 }
 
 /**
+ * Which questions the AI took, per check, and which it did not, from a
+ * report: { asked: [{ check, answered, open }], notTaken: [{ rule, title,
+ * count }] }, each question counted once (as the review counts them: one per
+ * element, or per page for a page-level one). A can't-tell question the AI did
+ * not take stays a person's: its rule says what it is about.
+ */
+export function coverageByCheck(payload) {
+    const asked = new Map();
+    for (const c of collectAiCases(payload)) {
+        const row = asked.get(c.check) || { check: c.check, answered: 0, open: 0 };
+        if (c.ai && c.ai.provenance === 'ai-supported') row.answered++; else row.open++;
+        asked.set(c.check, row);
+    }
+    const notTaken = new Map();
+    const seen = new Set();
+    for (const scan of Array.isArray(payload && payload.scans) ? payload.scans : []) {
+        for (const f of (scan && scan.canonical && scan.canonical.findings) || []) {
+            if (!f || f.outcome !== 'cantTell') continue;
+            for (const o of f.occurrences || []) {
+                if (!o || o.ai) continue;
+                const target = Array.isArray(o.target) ? o.target : [];
+                const pageLevel = !o.html && (target[0] === 'html' || !target.length);
+                const id = [f.ruleId || '', o.atomicCheckId || '', o.html || '', JSON.stringify(target), pageLevel ? (o.pageUrl || scan.url || '') : ''].join('|');
+                if (seen.has(id)) continue;
+                seen.add(id);
+                const rule = f.ruleId || o.atomicCheckId || 'unknown';
+                const row = notTaken.get(rule) || { rule, title: f.title || '', count: 0 };
+                row.count++;
+                notTaken.set(rule, row);
+            }
+        }
+    }
+    const byCount = (a, b) => b.count - a.count || a.rule.localeCompare(b.rule);
+    return {
+        asked: [...asked.values()].sort((a, b) => (b.answered + b.open) - (a.answered + a.open) || a.check.localeCompare(b.check)),
+        notTaken: [...notTaken.values()].sort(byCount),
+    };
+}
+
+/** coverageByCheck as a collapsed section: what the AI took, and what it left to a person. */
+export function coverageHtml(payload, { escapeHtml }) {
+    const { asked, notTaken } = coverageByCheck(payload);
+    if (!asked.length && !notTaken.length) return '';
+    const total = (rows, f) => rows.reduce((n, r) => n + f(r), 0);
+    const askedRows = asked.map((r) => '<tr><th scope="row">' + escapeHtml(r.check) + '</th><td>' + r.answered + '</td><td>' + r.open + '</td></tr>').join('');
+    const notRows = notTaken.map((r) => '<tr><th scope="row">' + escapeHtml(r.rule) + '</th><td>' + escapeHtml(r.title) + '</td><td>' + r.count + '</td></tr>').join('');
+    return '<details class="air-coverage"><summary>By check: ' +
+        escapeHtml(total(asked, (r) => r.answered) + ' answered and ' + total(asked, (r) => r.open) + ' left open by the AI; ' + total(notTaken, (r) => r.count) + ' can’t-tell questions it does not take') + '</summary>' +
+        (asked.length ? '<table class="air-coverage__table"><caption>Questions the AI took</caption><thead><tr><th scope="col">Check</th><th scope="col">Answered</th><th scope="col">Left open</th></tr></thead><tbody>' + askedRows + '</tbody></table>' : '') +
+        (notTaken.length ? '<table class="air-coverage__table"><caption>Questions the AI does not take: a person’s</caption><thead><tr><th scope="col">Rule</th><th scope="col">About</th><th scope="col">Questions</th></tr></thead><tbody>' + notRows + '</tbody></table>' : '') +
+        '</details>';
+}
+
+/**
  * The lessons file (server-side/ai-answer/lessons.js) a report's answers make:
  * every question a person settled as pass or fail and gave a reason for, as an
  * example for its check, with the facts the AI was given and what the AI said.

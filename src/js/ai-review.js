@@ -6,7 +6,7 @@
 // in the report (payload.aiReview), as everywhere.
 
 import {
-    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, buildLessons, collectAiCases, keyFactRows, outboxOf, proofHtml, resolveSummary, resolvedOf,
+    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, buildLessons, collectAiCases, coverageHtml, keyFactRows, outboxOf, proofHtml, resolveSummary, resolvedOf,
 } from './ai-answer-view.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
@@ -81,7 +81,7 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
         '<button type="button" class="secondary-button" data-air-lessons title="Your answers with a reason, as lessons for the AI (ai-lessons.json)">Export lessons for the AI</button>' +
         (outboxOf(payload).length ? '<button type="button" class="secondary-button" data-air-sent title="Every question as it was sent to the AI, or as a preview would send it (ai-sent.json)">What was sent to the AI</button>' : '') +
         '</div>' +
-        '<p class="air-stats" role="status" aria-live="polite" data-air-status></p></div>' +
+        '<p class="air-stats" role="status" aria-live="polite" data-air-status></p>' + coverageHtml(payload, helpers) + '</div>' +
         '<div class="air-cards" data-air-cards></div></div>';
     document.body.appendChild(dialog);
 

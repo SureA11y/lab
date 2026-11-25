@@ -67,8 +67,8 @@ written by the assistant (not a person): 63% before the fix, 81% after
   first real run should show cached tokens in the API's usage. Agreement was
   not re-scored after the reordering. A single merged call was not built (it
   would break the endpoint's one-question-per-POST contract).
-- `byCheck` in the pass summary: answered and open questions per check (not
-  shown in the review yet).
+- `byCheck` in the pass summary: answered and open questions per check (by
+  the question asked; shown in the review's **By check**).
 - The branch is checked out in the main folder, `C:\Dev\surea11y\lab`; the old
   worktree was removed (a branch can be checked out in one place only).
 
@@ -104,7 +104,12 @@ Chrome or Chromium.)
    Waiting on the user to export them.
 5. Optional ideas not built: images sent to the model (only after measuring
    that they help). Built since: a per-check count of answered and open
-   questions (`byCheck` in the pass summary; not yet shown in the review).
+   questions (`byCheck` in the pass summary, now by the question asked), and
+   **By check** in Review AI answers (2026-11-25, later): per check, answered
+   and left open; per rule, the can't-tell questions the AI does not take
+   (`coverageByCheck`, `coverageHtml` in `ai-answer-view.js`). On the demo it
+   shows 1.4.11 (non-text contrast, per element with a removed outline) as not
+   taken: the walk's measurement could answer it, a candidate next check.
 6. On hold: the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 

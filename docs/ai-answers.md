@@ -171,9 +171,13 @@ unless you tick **Show the AI's answer before I decide**. Its buttons:
 the AI**. The rows of the report show **AI answered n of m**, and **View
 details** shows the AI's answer for that element too.
 
-The pass's summary (`ai` in the scan's result) also counts, per check, the
-questions it answered and the ones it left open (`byCheck`), so you can see
-which checks the AI does not take.
+Under the counts, **By check** (collapsed) shows, per check, the questions
+the AI answered and the ones it left open, and, per rule, the can't-tell
+questions it does not take at all: what stays a person's whatever the AI
+does (on a page scanned without `focus`, the focus and keyboard questions;
+always, the ones no check above covers). The pass's summary (`ai` in each
+scan's result) has the same counts for its scan in `byCheck`, by the
+question asked.
 
 Your answers are saved in the report: press **Download report** to keep them.
 In **Review conformance**, a criterion with fails you confirmed offers **Add

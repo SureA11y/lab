@@ -250,3 +250,14 @@
    second colour that holds on the page's picture (dark orange, 4.9:1 on white). */
 .air-map__miss { fill: none; stroke: #b34700; }
 .air-unreachable { margin: 0 0 var(--space-2); padding-inline-start: var(--space-4); }
+
+/* By check: what the AI took and what it leaves to a person, collapsed. */
+.air-coverage { margin-top: var(--space-2); }
+.air-coverage summary { cursor: pointer; }
+.air-coverage__table { border-collapse: collapse; margin: var(--space-2) var(--space-3) var(--space-2) 0; display: inline-table; vertical-align: top; width: auto; }
+/* The report's tables shout their headers; these name checks, read as written. */
+.air-coverage__table th { text-transform: none; letter-spacing: normal; }
+.air-coverage__table th[scope="row"] { font-family: var(--font-mono, monospace); font-size: var(--air-s, 0.875rem); font-weight: 400; }
+.air-coverage__table caption { text-align: start; font-weight: 600; padding-bottom: var(--space-1); }
+.air-coverage__table th, .air-coverage__table td { text-align: start; padding: 2px var(--space-2); border-bottom: 1px solid var(--border-subtle); }
+.air-coverage__table td { font-variant-numeric: tabular-nums; }

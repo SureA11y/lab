@@ -449,3 +449,40 @@ describe('focus not obscured and focus appearance', () => {
         assert.match(focusWalkHtml({ stops }, helpers), /Indicator: too large to measure\./);
     });
 });
+
+describe('coverageByCheck', () => {
+    const occ = (extra) => ({ target: ['#x'], html: '<a id="x">x</a>', ...extra });
+    const payload = { scans: [
+        { url: 'https://x.test/a', canonical: { findings: [
+            { outcome: 'cantTell', ruleId: 'wcag-1.1.1-non-text-content', occurrences: [
+                occ({ atomicCheckId: 'img-alt-quality', html: '<img id="a">', target: ['#a'], ai: { check: 'img-alt-quality', provenance: 'ai-supported', verdict: 'fail' } }),
+                occ({ atomicCheckId: 'img-alt-quality', html: '<img id="b">', target: ['#b'], ai: { check: 'img-alt-quality', provenance: 'unresolved', reason: 'unsure' } }),
+            ] },
+            { outcome: 'cantTell', ruleId: 'wcag-2.1.1-keyboard', title: 'Keyboard', occurrences: [{ atomicCheckId: 'manual-review', target: ['html'], html: '' }] },
+            { outcome: 'cantTell', ruleId: 'wcag-1.4.11-non-text-contrast', title: 'Non-text contrast', occurrences: [occ({ atomicCheckId: 'css-focus-indicator-suppressed' })] },
+        ] } },
+        { url: 'https://x.test/b', canonical: { findings: [
+            { outcome: 'cantTell', ruleId: 'wcag-2.1.1-keyboard', title: 'Keyboard', occurrences: [{ atomicCheckId: 'manual-review', target: ['html'], html: '' }] },
+            { outcome: 'cantTell', ruleId: 'wcag-1.4.11-non-text-contrast', title: 'Non-text contrast', occurrences: [occ({ atomicCheckId: 'css-focus-indicator-suppressed' })] },
+            { outcome: 'fail', ruleId: 'wcag-1.4.3-contrast', occurrences: [occ({})] },
+        ] } },
+    ] };
+
+    test('counts what the AI answered and left open per check, and what it did not take per rule', async () => {
+        const { coverageByCheck } = await load();
+        const c = coverageByCheck(payload);
+        assert.deepEqual(c.asked, [{ check: 'img-alt-quality', answered: 1, open: 1 }]);
+        assert.deepEqual(c.notTaken, [
+            { rule: 'wcag-2.1.1-keyboard', title: 'Keyboard', count: 2 },
+            { rule: 'wcag-1.4.11-non-text-contrast', title: 'Non-text contrast', count: 1 },
+        ], 'a page-level question once per page; an element once wherever it is; failures not counted');
+    });
+
+    test('shows it collapsed, escaped, and nothing for a report without can\'t-tell questions', async () => {
+        const { coverageHtml } = await load();
+        const html = coverageHtml(payload, helpers);
+        assert.match(html, /^<details class="air-coverage"><summary>By check: 1 answered and 1 left open by the AI; 3 can’t-tell questions it does not take<\/summary>/);
+        assert.match(html, /<th scope="row">wcag-2\.1\.1-keyboard<\/th><td>Keyboard<\/td><td>2<\/td>/);
+        assert.equal(coverageHtml({ scans: [] }, helpers), '');
+    });
+});
