@@ -7,7 +7,7 @@
 // `atomicCheckId`, as an occurrence names it. The focus questions below are
 // the exception, and opt-in.
 
-const PROMPT_VERSION = 'registry-3';
+const PROMPT_VERSION = 'registry-4';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {

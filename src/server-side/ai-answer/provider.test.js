@@ -127,3 +127,37 @@ describe('an endpoint answering the pass', () => {
         assert.deepEqual(seen[0].body.lessons.rules, ['A file name is never alt text.']);
     });
 });
+
+describe('the Claude call and the prompt cache', () => {
+    const { anthropicProvider, splitForCache } = require('./provider');
+    const { buildPrompt } = require('./index');
+    const entry = { check: 'focus-visible', question: 'Can they see focus?' };
+
+    test('the evidence comes before the question, so questions about one walk share their start', () => {
+        const walk = { focusWalk: { stops: [{ name: 'A' }] } };
+        const a = buildPrompt(entry, { failureSummary: 'x' }, walk);
+        const b = buildPrompt({ check: 'keyboard', question: 'Can they reach it?' }, { failureSummary: 'y' }, walk);
+        const cut = (p) => p.slice(0, p.indexOf('</evidence>'));
+        assert.equal(cut(a), cut(b), 'the same start for both');
+        assert.ok(a.indexOf('<evidence>') < a.indexOf('Question: '), 'evidence first');
+        assert.match(a, /Reply with JSON only/);
+    });
+
+    test('splits at the end of the evidence and marks only the first part for caching', () => {
+        const parts = splitForCache('intro\n<evidence>\n{}\n</evidence>\n\nQuestion: q');
+        assert.equal(parts.length, 2);
+        assert.deepEqual(parts[0].cache_control, { type: 'ephemeral' });
+        assert.equal(parts[1].cache_control, undefined);
+        assert.equal(parts[0].text + parts[1].text, 'intro\n<evidence>\n{}\n</evidence>\n\nQuestion: q', 'nothing lost');
+        assert.equal(splitForCache('no evidence here'), 'no evidence here');
+        assert.equal(splitForCache('ends with the evidence </evidence>'), 'ends with the evidence </evidence>');
+    });
+
+    test('the request body carries the split prompt, and A11Y_AI_PROMPT_CACHE=off sends it whole', () => {
+        const prompt = 'intro\n<evidence>\n{}\n</evidence>\n\nQuestion: q';
+        const on = anthropicProvider({ ANTHROPIC_API_KEY: 'k' }).bodyFor(prompt);
+        assert.ok(Array.isArray(on.messages[0].content));
+        const off = anthropicProvider({ ANTHROPIC_API_KEY: 'k', A11Y_AI_PROMPT_CACHE: 'off' }).bodyFor(prompt);
+        assert.equal(off.messages[0].content, prompt);
+    });
+});

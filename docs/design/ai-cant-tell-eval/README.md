@@ -208,5 +208,10 @@ page) are about 8,400 tokens each and carry the same walk three times, so they
 are about 200,000 of it; the others are 500 to 700 tokens. Sending the
 evidence compactly and without null fields (prompt version `registry-3`; same
 information) cuts it to 693,000 characters, about 173,000 tokens (-28%; a walk
-question 33,500 to 22,500 characters). Not done: sending a page's walk once for
-the three questions (they are separate calls), or a shorter record per stop.
+question 33,500 to 22,500 characters). Then the evidence was put before the
+question and marked for the Claude API's prompt cache (`registry-4`,
+`A11Y_AI_PROMPT_CACHE`): the three focus questions about a page share their
+start, so the second and third read the walk from the cache, at a fraction of
+the price (not fewer tokens sent). Not measured with a real key yet: the cached
+tokens show in the API's usage. Not done: one call for the three questions (it
+would break the endpoint's one-question contract), or a shorter record per stop.

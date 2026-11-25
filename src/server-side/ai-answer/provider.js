@@ -25,12 +25,32 @@ const DEFAULT_MODEL = process.env.A11Y_AI_MODEL || 'claude-sonnet-5-5';
 /** The version of the question an endpoint receives. */
 const QUESTION_VERSION = 1;
 
+/**
+ * A prompt as the Messages API's content: the part up to the end of the
+ * evidence is marked for caching, the question after it is not. Questions
+ * about one page's focus walk share that part, so the later ones read it from
+ * the cache (a fraction of the price) instead of paying for it again. A prompt
+ * with no evidence, or one too short to be cached, is sent as it is (a short
+ * one is simply not cached by the API).
+ */
+function splitForCache(prompt) {
+    const end = '</evidence>';
+    const at = String(prompt).indexOf(end);
+    if (at < 0 || at + end.length >= prompt.length) return prompt;
+    const cut = at + end.length;
+    return [
+        { type: 'text', text: prompt.slice(0, cut), cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: prompt.slice(cut) },
+    ];
+}
+
 function anthropicProvider(env = process.env) {
     const key = env.ANTHROPIC_API_KEY;
     if (!key) return null;
     const base = (env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/+$/, '');
     const model = env.A11Y_AI_MODEL || DEFAULT_MODEL;
-    const bodyFor = (prompt) => ({ model, max_tokens: 400, messages: [{ role: 'user', content: prompt }] });
+    const cache = !/^(0|false|no|off)$/i.test(String(env.A11Y_AI_PROMPT_CACHE || '').trim());
+    const bodyFor = (prompt) => ({ model, max_tokens: 400, messages: [{ role: 'user', content: cache ? splitForCache(prompt) : prompt }] });
     return {
         name: 'anthropic',
         model,
@@ -99,4 +119,4 @@ function resolveProvider(option, env = process.env) {
     return endpointProvider(env) || anthropicProvider(env);
 }
 
-module.exports = { anthropicProvider, endpointProvider, resolveProvider, DEFAULT_MODEL, QUESTION_VERSION };
+module.exports = { anthropicProvider, endpointProvider, resolveProvider, splitForCache, DEFAULT_MODEL, QUESTION_VERSION };

@@ -140,6 +140,7 @@ Set where the lab runs, as environment variables (also in
 | --- | --- |
 | `ANTHROPIC_API_KEY` | A Claude API key, if not given in **Run settings** (a key given there is used first). |
 | `A11Y_AI_MODEL` | The Claude model (default `claude-sonnet-5-5`). |
+| `A11Y_AI_PROMPT_CACHE` | `off` stops the Claude call from marking a page's evidence for caching. By default it is marked, so the three page-level focus questions (keyboard, focus order, focus visible), which share one walk of thousands of tokens, pay for it once and read it from the cache after. A service at `A11Y_AI_ENDPOINT` gets each question whole and can cache as it likes. |
 | `A11Y_AI_ENDPOINT` | A service of your own that answers instead of the built-in Claude call: any model, or an agent with its own knowledge. It gets each question as data; the contract is in the design note, under "Plugging in another model or an agent", with an example in `docs/design/ai-cant-tell-spike/example-endpoint.js`. Used before the Claude key. |
 | `A11Y_AI_ENDPOINT_KEY`, `A11Y_AI_ENDPOINT_NAME` | The endpoint's key (sent as a bearer token) and the name the report gives it. |
 | `A11Y_AI_ENDPOINT_PICTURE` | `on`: the endpoint also gets the pictures. Never to the built-in call. |
