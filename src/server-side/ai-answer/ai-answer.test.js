@@ -50,6 +50,7 @@ describe('answerCantTells', () => {
         assert.equal(o.ai.model, 'fake');
         assert.equal(o.ai.steps[0].tier, 0);
         assert.deepEqual([s.answered, s.unresolved, s.calls], [1, 0, 1]);
+        assert.deepEqual(s.byCheck, { 'img-alt-quality': { answered: 1, unresolved: 0 } });
         assert.equal(c.ai, s);
     });
 

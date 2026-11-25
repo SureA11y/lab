@@ -171,6 +171,10 @@ unless you tick **Show the AI's answer before I decide**. Its buttons:
 the AI**. The rows of the report show **AI answered n of m**, and **View
 details** shows the AI's answer for that element too.
 
+The pass's summary (`ai` in the scan's result) also counts, per check, the
+questions it answered and the ones it left open (`byCheck`), so you can see
+which checks the AI does not take.
+
 Your answers are saved in the report: press **Download report** to keep them.
 In **Review conformance**, a criterion with fails you confirmed offers **Add
 to the remarks**; the conformance level stays your choice.

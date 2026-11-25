@@ -198,7 +198,7 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
     const preview = opt.preview === true || previewForced(env);
     const mask = maskingOn(env);
     const outbox = [];
-    const summary = { candidates: 0, answered: 0, unresolved: 0, calls: 0, reused: 0, stateDrift: 'none', reason: null, ...(preview ? { preview: true, previewed: 0 } : {}), masking: mask, outbox };
+    const summary = { candidates: 0, answered: 0, unresolved: 0, calls: 0, reused: 0, stateDrift: 'none', reason: null, byCheck: {}, ...(preview ? { preview: true, previewed: 0 } : {}), masking: mask, outbox };
     try {
         const focus = opt.focus === true;
         const todo = candidatesOf(canonical, { focus });
@@ -310,6 +310,9 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         for (const { occurrence, ai } of results) {
             occurrence.ai = ai;
             if (ai.provenance === 'ai-supported') summary.answered++; else summary.unresolved++;
+            const id = occurrence.atomicCheckId || 'unknown';
+            const row = (summary.byCheck[id] = summary.byCheck[id] || { answered: 0, unresolved: 0 });
+            if (ai.provenance === 'ai-supported') row.answered++; else row.unresolved++;
         }
         return summary;
     } catch (e) {

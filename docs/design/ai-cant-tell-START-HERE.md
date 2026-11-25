@@ -66,7 +66,7 @@ Chrome or Chromium.)
 
 ## Next, in order
 
-1. Commit the work above (nothing is committed).
+1. Done: everything above is committed and pushed.
 2. **A person's labels on the W3C run:** open `w3c-bad/`'s run in Review AI
    answers (`answered.json` from `ai-cant-tell-eval/README.md`), label
    against the W3C's annotations with the AI's answer hidden, run
@@ -79,9 +79,9 @@ Chrome or Chromium.)
    prompt, cached knowledge, structured output, official SDK), configured on
    the server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-5. Optional ideas raised and not built: a per-check count of questions the AI
-   did not take, in the review or the run summary; images sent to the model
-   (only after measuring that they help).
+5. Optional ideas not built: images sent to the model (only after measuring
+   that they help). Built since: a per-check count of answered and open
+   questions (`byCheck` in the pass summary; not yet shown in the review).
 6. On hold: the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 
