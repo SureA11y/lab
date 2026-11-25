@@ -365,7 +365,9 @@ async function compareAppearance(focusedPng, unfocusedPng, clip, stop) {
     // Device pixels to CSS pixels.
     const scale = (f.info.width / clip.width) ** 2;
     const needed = Math.max(0, 4 * (stop.width + stop.height) - 16);
-    const measured = { changed: Math.round(changed / scale), atContrast: Math.round(atContrast / scale), needed };
+    // For 1.4.11, which sets no size: a 1 CSS px line around it, for scale.
+    const oneLine = Math.max(0, 2 * (stop.width + stop.height) - 4);
+    const measured = { changed: Math.round(changed / scale), atContrast: Math.round(atContrast / scale), needed, oneLine };
     return { ...measured, meets: measured.atContrast >= needed };
 }
 

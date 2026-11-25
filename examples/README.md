@@ -151,7 +151,7 @@ pages for [AI answers](../docs/ai-answers.md):
 | Page | What the scan asks, and the correct answer |
 | --- | --- |
 | `ai/reading.html` | A vague title ("Page", fail); alt text that is a file name (fail) and a good one (pass); a "−50%" badge hidden as decorative (fail) and a divider (pass); a bold "Delivery" paragraph that heads a section (fail) and the site name (pass); "Learn more" alone (fail); fields labelled only by `title` or `placeholder` (fail) |
-| `ai/focus.html` | Navigation links whose focus outline is removed (focus visible and appearance, fail); a `tabindex="1"` link far down that comes first (focus order, fail); a clickable menu and tiles Tab never reaches (keyboard, fail); a sticky header over two links once scrolled (focus not obscured, fail) |
+| `ai/focus.html` | Navigation links whose focus outline is removed (focus visible, appearance and non-text contrast, fail), and one that shows focus from a script instead (all three, pass); a `tabindex="1"` link far down that comes first (focus order, fail); a clickable menu and tiles Tab never reaches (keyboard, fail); a sticky header over two links once scrolled (focus not obscured, fail) |
 
 Each answer and why is in `demo-site/ai/expected.json`;
 `ai-demo-score.js` compares a run with them:
@@ -162,7 +162,7 @@ node examples/ai-demo-score.js runs/ai-demo/payload.json --why
 ```
 
 Without a key, `A11Y_AI_PREVIEW=on` shows what would be sent; the way to have
-any model answer it, and the demo's own result (25 of 25), are in
+any model answer it, and the demo's own result (31 of 31), are in
 [docs/design/ai-cant-tell-eval/](../docs/design/ai-cant-tell-eval/README.md).
 
 The examples are a few of the ways to use the lab, not the list: the use-case

@@ -486,3 +486,18 @@ describe('coverageByCheck', () => {
         assert.equal(coverageHtml({ scans: [] }, helpers), '');
     });
 });
+
+describe('the 1.4.11 focus contrast question', () => {
+    const walkWith = (appearance) => ({ focusWalk: { ended: 'left-page', stops: [{ n: 1, tag: 'a', name: 'Home', x: 0, y: 0, width: 40, height: 20, changesOnFocus: [], appearance }] }, target: { found: true, stop: 1, coveredStops: [] } });
+    const text = async (ev) => { const { keyFactRows } = await load(); return keyFactRows('focus-contrast-element', ev, helpers).map((r) => r.label + ': ' + r.html).join('\n'); };
+
+    test('says how much of what changed is at 3:1, against a 1 px line for scale', async () => {
+        assert.match(await text(walkWith({ changed: 200, atContrast: 30, needed: 224, oneLine: 116, meets: false })),
+            /Indicator contrast: 30 of 200 px that changed are at 3:1 or more against what was there; a 1 px line around it is 116 px/);
+    });
+
+    test('says there is no indicator when nothing changed, and when it was not measured', async () => {
+        assert.match(await text(walkWith({ changed: 0, atContrast: 0, needed: 224, oneLine: 116, meets: false })), /no visible change on focus: no indicator/);
+        assert.match(await text(walkWith({ skipped: 'too-big' })), /Indicator contrast: too large to measure/);
+    });
+});

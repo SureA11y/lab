@@ -162,7 +162,7 @@ function stopName(s) {
 }
 
 const FOCUS_CHECKS = new Set(['focus-visible', 'focus-order', 'focus-not-obscured', 'focus-not-obscured-enhanced-page', 'focus-appearance', 'keyboard',
-    'focus-visible-element', 'focus-appearance-element', 'keyboard-element', 'focus-not-obscured-box', 'focus-not-obscured-enhanced-box']);
+    'focus-visible-element', 'focus-appearance-element', 'focus-contrast-element', 'keyboard-element', 'focus-not-obscured-box', 'focus-not-obscured-enhanced-box']);
 
 // How much of a stop something was on top of, in words.
 function coverText(s) {
@@ -427,12 +427,18 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
         const own = target && target.stop ? stops.find((x) => x.n === target.stop) : null;
         if (/-element$|-box$/.test(check) && (!target || !target.found)) {
             add('This element', '<span class="air-none">(not found on the page after the walk)</span>');
-        } else if (check === 'focus-visible-element' || check === 'focus-appearance-element') {
+        } else if (check === 'focus-visible-element' || check === 'focus-appearance-element' || check === 'focus-contrast-element') {
             add('This element', own ? escapeHtml('Stop ' + own.n + ': ' + stopName(own)) : '<span class="air-none">(never reached with Tab)</span>');
             if (own && check === 'focus-visible-element') {
                 add('Shows focus as', Array.isArray(own.changesOnFocus) && own.changesOnFocus.length ? escapeHtml(own.changesOnFocus.join(', ')) : '<span class="air-none">(no visible change found)</span>');
             }
             if (own && check === 'focus-appearance-element') add('Indicator', escapeHtml(appearanceText(own.appearance) || 'not measured'));
+            if (own && check === 'focus-contrast-element') {
+                const a = own.appearance;
+                add('Indicator contrast', !a || a.skipped ? escapeHtml(appearanceText(a) || 'not measured')
+                    : !a.changed ? '<span class="air-none">(no visible change on focus: no indicator)</span>'
+                        : escapeHtml(a.atContrast + ' of ' + a.changed + ' px that changed are at 3:1 or more against what was there' + (a.oneLine ? '; a 1 px line around it is ' + a.oneLine + ' px' : '')));
+            }
         } else if (check === 'keyboard-element') {
             add('Reached with Tab', own ? escapeHtml('Yes, at stop ' + own.n) : '<strong>' + escapeHtml('No') + '</strong>' + (target.unreachable ? ' <span class="air-hint">' + escapeHtml('(' + target.unreachable + ')') + '</span>' : ''));
             add('Still to check by hand', escapeHtml('Whether it works with Enter, Space or the arrow keys, and whether the page offers another way to do the same with the keyboard.'));

@@ -201,6 +201,17 @@ test('the pass measures appearance only when the scanner asks 2.4.13', async () 
     const a = appearance.findings[0].occurrences[0].ai;
     assert.equal(a.check, 'focus-appearance');
     assert.ok(a.evidence.focusWalk.stops.every((s) => s.appearance && typeof s.appearance.meets === 'boolean'));
+    // 1.4.11 per element, from the same measurement.
+    const contrastPage = await open('<title>Shop</title><style>#x:focus { outline: none; }</style><a href="#x" id="x">X</a>');
+    const contrast = { findings: [{ ruleId: 'wcag-1.4.11-non-text-contrast', outcome: 'cantTell', occurrences: [{ atomicCheckId: 'css-focus-indicator-suppressed', occurrenceOutcome: 'cantTell', target: ['#x'], html: '<a href="#x" id="x">X</a>' }] }] };
+    await answerCantTells({ page: contrastPage, canonical: contrast, options: { focus: true }, provider, env: {} });
+    const c = contrast.findings[0].occurrences[0].ai;
+    assert.equal(c.check, 'focus-contrast-element');
+    const stop = c.evidence.focusWalk.stops.find((s) => s.n === c.evidence.target.stop);
+    assert.deepEqual([stop.appearance.changed, stop.appearance.atContrast], [0, 0], 'outline removed: nothing changes');
+    assert.ok(stop.appearance.oneLine > 0);
+    await contrastPage.close();
+
     const order = ask('wcag-2.4.3-focus-order');
     await answerCantTells({ page, canonical: order, options: { focus: true }, provider, env: {} });
     assert.ok(order.findings[0].occurrences[0].ai.evidence.focusWalk.stops.every((s) => s.appearance === undefined));

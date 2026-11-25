@@ -87,6 +87,10 @@ const ELEMENT_WALK = Object.freeze({
             check: 'focus-visible-element',
             question: 'A style removes this element\'s focus outline. When it has keyboard focus, is focus still visible on it by other means (a border, an underline, a background, a shadow...)? The focus walk gives its stop (`stop`): what looked different on it, its parent or its ::before/::after while focused. Never reached with Tab: say so, and answer "unsure".',
         },
+        'wcag-1.4.11-non-text-contrast': {
+            check: 'focus-contrast-element',
+            question: 'A style removes this element\'s focus outline. Does whatever shows its focus instead have a contrast of at least 3:1 against the colours next to it, enough to see that it has focus? Its stop (`stop`) has `appearance`, measured from pictures focused and unfocused: `changed` CSS pixels changed on focus, `atContrast` of them at 3:1 or more against what was there before (the colours next to the indicator), and `oneLine`, the area of a 1 CSS pixel line around the element, for scale. Unlike 2.4.13 there is no minimum size: judge whether the part at 3:1 is enough to see. If nothing changes on focus there is no indicator, so nothing meets 3:1: answer "fail" (focus visible fails too). Never reached with Tab: answer "unsure".',
+        },
         'wcag-2.4.13-focus-appearance': {
             check: 'focus-appearance-element',
             question: 'A style removes this element\'s focus outline. Is its focus indicator at least as large as a 2 CSS pixel line around it, with a contrast of at least 3:1 between focused and unfocused? Its stop (`stop`) has `appearance`, measured from pictures focused and unfocused: `atContrast` CSS pixels changed at 3:1 or more, `needed` the area required, `meets`.',

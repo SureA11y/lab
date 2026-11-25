@@ -42,7 +42,7 @@ Everything below is committed and pushed, except where it says otherwise.
 - Demo: `examples/demo-site/ai/` (two pages asking every question),
   `examples/specs/ai-answers.spec.json`, `expected.json`,
   `examples/ai-demo-score.js`. Evaluated blind with a model outside the lab:
-  25 of 25 agree (`ai-cant-tell-eval/demo/`).
+  31 of 31 agree (`ai-cant-tell-eval/demo/`; 25 of 25 before 1.4.11).
 
 **Update, later on 2026-11-25:** the full suite (4474) and the browser tests
 pass (a focus-appearance test now pins the light colour scheme, as the pixels
@@ -110,6 +110,12 @@ Chrome or Chromium.)
    (`coverageByCheck`, `coverageHtml` in `ai-answer-view.js`). On the demo it
    shows 1.4.11 (non-text contrast, per element with a removed outline) as not
    taken: the walk's measurement could answer it, a candidate next check.
+   **Built since:** 1.4.11 per element (`focus-contrast-element`): a link whose
+   outline a style removes, answered from the walk's measurement (`changed`,
+   `atContrast` against what was there, `oneLine` for scale; no indicator is a
+   fail), measured whenever 1.4.11 or 2.4.13 is asked. The demo's focus page
+   has a Help link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13
+   pass); its evaluation is now 31 of 31.
 6. On hold: the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 

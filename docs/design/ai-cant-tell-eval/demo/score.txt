@@ -18,6 +18,12 @@ focus.html    focus-visible-element                     nav[aria-label="Main"] >
 focus.html    focus-appearance-element                  nav[aria-label="Main"] > a:nth-of…  fail     fail                    agrees
 focus.html    focus-appearance-element                  nav[aria-label="Main"] > a:nth-of…  fail     fail                    agrees
 focus.html    focus-appearance-element                  nav[aria-label="Main"] > a:nth-of…  fail     fail                    agrees
+focus.html    focus-visible-element                     nav[aria-label="Main"] > a:nth-of…  pass     pass                    agrees
+focus.html    focus-appearance-element                  nav[aria-label="Main"] > a:nth-of…  pass     pass                    agrees
+focus.html    focus-contrast-element                    nav[aria-label="Main"] > a:nth-of…  fail     fail                    agrees
+focus.html    focus-contrast-element                    nav[aria-label="Main"] > a:nth-of…  fail     fail                    agrees
+focus.html    focus-contrast-element                    nav[aria-label="Main"] > a:nth-of…  fail     fail                    agrees
+focus.html    focus-contrast-element                    nav[aria-label="Main"] > a:nth-of…  pass     pass                    agrees
 focus.html    focus-order                               html                                fail     fail                    agrees
 focus.html    keyboard                                  html                                fail     fail                    agrees
 focus.html    keyboard-element                          #account-menu                       fail     fail                    agrees
@@ -25,4 +31,4 @@ focus.html    keyboard-element                          #tile-cactus            
 focus.html    focus-not-obscured-box                    #top-bar                            fail     fail                    agrees
 focus.html    focus-not-obscured-enhanced-box           #top-bar                            fail     fail                    agrees
 
-25 questions: 25 answered by the AI, 25 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+31 questions: 31 answered by the AI, 31 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.

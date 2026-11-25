@@ -33,12 +33,14 @@ its correct answer and why in `expected.json`.
 | Page | Questions |
 | --- | --- |
 | `reading.html` | Page title, alt text (a file name, a good one), images hidden as decorative (a "−50%" badge, a divider), a bold paragraph as heading (and the site name that is not one), "Learn more" alone, fields labelled only by `title` or `placeholder` |
-| `focus.html` (WCAG 2.2 AAA) | Focus visible (page and per link), focus appearance per link, focus order (a `tabindex="1"` link far down comes first), keyboard (page, a clickable menu, a `role="button"` tile), focus not obscured per sticky box (the sticky header hides two links once the page has scrolled) |
+| `focus.html` (WCAG 2.2 AAA) | Focus visible (page and per link), focus appearance and non-text contrast (1.4.11) per link, a link whose outline is removed but which shows focus from a script (all three pass), focus order (a `tabindex="1"` link far down comes first), keyboard (page, a clickable menu, a `role="button"` tile), focus not obscured per sticky box (the sticky header hides two links once the page has scrolled) |
 
-**Result:** 25 questions, 25 answered, **25 agree**; no "pass" where the answer
-is "fail", none the other way. The model: Claude, run as a separate agent that
-saw only the prompts file. The files: [demo/questions.jsonl](demo/questions.jsonl)
-(the 25 prompts as the lab writes them), [demo/answers.jsonl](demo/answers.jsonl)
+**Result:** 31 questions, 31 answered, **31 agree**; no "pass" where the answer
+is "fail", none the other way (a first run on the 25 questions before 1.4.11
+and the Help link was added also agreed on all). The model: Claude, run as a
+separate agent that saw only the prompts file. The files:
+[demo/questions.jsonl](demo/questions.jsonl) (the 31 prompts as the lab writes
+them), [demo/answers.jsonl](demo/answers.jsonl)
 (its answers, with confidence and reasoning) and [demo/score.txt](demo/score.txt).
 
 **What it shows, and what not.** The demo's cases are clear on purpose: it

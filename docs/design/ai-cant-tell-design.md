@@ -597,6 +597,8 @@ applicable" there too: its measurement has run in the browser tests only.
 - **The demo** (`examples/demo-site/ai/`, `examples/specs/ai-answers.spec.json`,
   `expected.json`, `examples/ai-demo-score.js`) makes the scan ask every
   question; a model answering the lab's exact prompts blind got 25 of 25
+  (31 of 31 once 1.4.11 per element, `focus-contrast-element`, and a link
+  showing focus from a script were added)
   (`ai-cant-tell-eval/`). Real sites: the W3C's Before and After Demonstration
   is ready (`examples/specs/ai-answers-w3c-bad.spec.json`) but not run: this
   session could not reach www.w3.org.

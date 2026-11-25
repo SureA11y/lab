@@ -94,6 +94,7 @@ and the walk answers those too:
 | --- | --- | --- | --- |
 | `focus-visible-element` | 2.4.7 | A link or control whose focus outline a style removes | Its stop: what changed on focus, its picture |
 | `focus-appearance-element` | 2.4.13 (AAA) | The same element | Its stop's measurement |
+| `focus-contrast-element` | 1.4.11 | The same element | The same measurement: the pixels that changed on focus, those at 3:1 or more against what was there, and a 1 px line around it for scale (1.4.11 sets no size). No change at all is no indicator: a fail |
 | `keyboard-element` | 2.1.1, 2.1.3 | A control with a click handler or a widget role | Whether Tab reached it, and why not. Never "pass" |
 | `focus-not-obscured-box` | 2.4.11 | A fixed or sticky box (a header, a chat button) | The stops it was on top of, and how much |
 | `focus-not-obscured-enhanced-box` | 2.4.12 (AAA) | The same box | The same; any part counts |
@@ -117,7 +118,7 @@ Once per page, after the questions answered by reading:
    positive `tabindex` first, as a browser does) it presses **only Tab** (never Enter, Space or an
    arrow key, so nothing is clicked or submitted), up to `focusStops` times.
    At each stop: the element, its name, landmark and heading, what changed on
-   focus, how much of it is covered, and a small picture. For 2.4.13, when the
+   focus, how much of it is covered, and a small picture. For 2.4.13 or 1.4.11, when the
    scan asks it, an exact picture focused and later unfocused, to measure.
 3. It ends when focus leaves the page, comes back to an earlier stop (a
    possible trap) or reaches the limit.

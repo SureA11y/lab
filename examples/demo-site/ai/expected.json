@@ -1,31 +1,222 @@
 {
   "about": "The correct answers to the questions the AI answers demo asks (examples/specs/ai-answers.spec.json), each with why. A question is its page, the AI's check and the scanner's target. examples/ai-demo-score.js compares a run with them.",
   "answers": [
-    { "page": "ai/reading.html", "check": "page-title-patterns", "target": "html > head > title", "expected": "fail", "why": "The title is \"Page\": it does not say what the page is about (garden tools)." },
-    { "page": "ai/reading.html", "check": "img-alt-quality", "target": "#photo-filename", "expected": "fail", "why": "The alt text is a file name, IMG_2041.jpg." },
-    { "page": "ai/reading.html", "check": "img-alt-quality", "target": "#photo-good", "expected": "pass", "why": "\"Canvas garden bag with two leather handles\" describes the picture of the garden bag it sits with." },
-    { "page": "ai/reading.html", "check": "img-alt-decorative", "target": "#badge", "expected": "fail", "why": "The image says −50%, which the text beside it (\"on all seeds this week\") does not: it carries meaning, so alt=\"\" hides it." },
-    { "page": "ai/reading.html", "check": "img-alt-decorative", "target": "#divider", "expected": "pass", "why": "A thin grey line between sections: decorative." },
-    { "page": "ai/reading.html", "check": "p-as-heading", "target": "html > body > main > p:nth-of-type(1)", "expected": "fail", "why": "\"Delivery\" in bold heads the paragraph after it: it should be a heading." },
-    { "page": "ai/reading.html", "check": "p-as-heading", "target": "html > body > header > p", "expected": "pass", "why": "\"Demo Shop\" in the header is the site's name, not the heading of a section." },
-    { "page": "ai/reading.html", "check": "link-name-quality", "target": "#link-vague", "expected": "fail", "why": "\"Learn more\", alone in its paragraph, does not say about what." },
-    { "page": "ai/reading.html", "check": "form-control-programmatic-label-quality", "target": "#postcode", "expected": "fail", "why": "Its only label is a title attribute: nothing visible says what to enter." },
-    { "page": "ai/reading.html", "check": "form-control-programmatic-label-quality", "target": "#name", "expected": "fail", "why": "Its only label is a placeholder, gone as soon as one types." },
-
-    { "page": "ai/focus.html", "check": "page-title-patterns", "target": "html > head > title", "expected": "pass", "why": "\"Offers - Demo Shop\" says what the page is." },
-    { "page": "ai/focus.html", "check": "p-as-heading", "target": "#top-bar > p", "expected": "pass", "why": "The site's name in the header, not a section heading." },
-    { "page": "ai/focus.html", "check": "focus-visible", "target": "html", "expected": "fail", "why": "The navigation's links show no change at all when focused: their outline is removed and nothing replaces it." },
-    { "page": "ai/focus.html", "check": "focus-visible-element", "target": "nav[aria-label=\"Main\"] > a:nth-of-type(1)", "expected": "fail", "why": "Home: outline removed, no other change on focus." },
-    { "page": "ai/focus.html", "check": "focus-visible-element", "target": "nav[aria-label=\"Main\"] > a:nth-of-type(2)", "expected": "fail", "why": "Products: outline removed, no other change on focus." },
-    { "page": "ai/focus.html", "check": "focus-visible-element", "target": "nav[aria-label=\"Main\"] > a:nth-of-type(3)", "expected": "fail", "why": "Cart: outline removed, no other change on focus." },
-    { "page": "ai/focus.html", "check": "focus-appearance-element", "target": "nav[aria-label=\"Main\"] > a:nth-of-type(1)", "expected": "fail", "why": "No indicator at all: nothing changes on focus." },
-    { "page": "ai/focus.html", "check": "focus-appearance-element", "target": "nav[aria-label=\"Main\"] > a:nth-of-type(2)", "expected": "fail", "why": "No indicator at all." },
-    { "page": "ai/focus.html", "check": "focus-appearance-element", "target": "nav[aria-label=\"Main\"] > a:nth-of-type(3)", "expected": "fail", "why": "No indicator at all." },
-    { "page": "ai/focus.html", "check": "focus-order", "target": "html", "expected": "fail", "why": "The last link on the page (\"Seeds and bulbs\", tabindex=\"1\") comes first, before the navigation." },
-    { "page": "ai/focus.html", "check": "keyboard", "target": "html", "expected": "fail", "why": "The account menu and two product tiles react to the mouse but Tab never reaches them." },
-    { "page": "ai/focus.html", "check": "keyboard-element", "target": "#account-menu", "expected": "fail", "why": "A click handler on a span that cannot take focus." },
-    { "page": "ai/focus.html", "check": "keyboard-element", "target": "#tile-cactus", "expected": "fail", "why": "role=\"button\" but it cannot take focus." },
-    { "page": "ai/focus.html", "check": "focus-not-obscured-box", "target": "#top-bar", "expected": "fail", "why": "Once the page has scrolled, the sticky header lies entirely over the Roses and Tulips links while they have focus." },
-    { "page": "ai/focus.html", "check": "focus-not-obscured-enhanced-box", "target": "#top-bar", "expected": "fail", "why": "The same links, hidden by the sticky header." }
+    {
+      "page": "ai/reading.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "fail",
+      "why": "The title is \"Page\": it does not say what the page is about (garden tools)."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "img-alt-quality",
+      "target": "#photo-filename",
+      "expected": "fail",
+      "why": "The alt text is a file name, IMG_2041.jpg."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "img-alt-quality",
+      "target": "#photo-good",
+      "expected": "pass",
+      "why": "\"Canvas garden bag with two leather handles\" describes the picture of the garden bag it sits with."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "img-alt-decorative",
+      "target": "#badge",
+      "expected": "fail",
+      "why": "The image says −50%, which the text beside it (\"on all seeds this week\") does not: it carries meaning, so alt=\"\" hides it."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "img-alt-decorative",
+      "target": "#divider",
+      "expected": "pass",
+      "why": "A thin grey line between sections: decorative."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "p-as-heading",
+      "target": "html > body > main > p:nth-of-type(1)",
+      "expected": "fail",
+      "why": "\"Delivery\" in bold heads the paragraph after it: it should be a heading."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "p-as-heading",
+      "target": "html > body > header > p",
+      "expected": "pass",
+      "why": "\"Demo Shop\" in the header is the site's name, not the heading of a section."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "link-name-quality",
+      "target": "#link-vague",
+      "expected": "fail",
+      "why": "\"Learn more\", alone in its paragraph, does not say about what."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "form-control-programmatic-label-quality",
+      "target": "#postcode",
+      "expected": "fail",
+      "why": "Its only label is a title attribute: nothing visible says what to enter."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "form-control-programmatic-label-quality",
+      "target": "#name",
+      "expected": "fail",
+      "why": "Its only label is a placeholder, gone as soon as one types."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Offers - Demo Shop\" says what the page is."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "p-as-heading",
+      "target": "#top-bar > p",
+      "expected": "pass",
+      "why": "The site's name in the header, not a section heading."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-visible",
+      "target": "html",
+      "expected": "fail",
+      "why": "Home, Products and Cart show no change at all when focused: their outline is removed and nothing replaces it (Help shows focus from a script)."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-visible-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(1)",
+      "expected": "fail",
+      "why": "Home: outline removed, no other change on focus."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-visible-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(2)",
+      "expected": "fail",
+      "why": "Products: outline removed, no other change on focus."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-visible-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(3)",
+      "expected": "fail",
+      "why": "Cart: outline removed, no other change on focus."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-appearance-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(1)",
+      "expected": "fail",
+      "why": "No indicator at all: nothing changes on focus."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-appearance-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(2)",
+      "expected": "fail",
+      "why": "No indicator at all."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-appearance-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(3)",
+      "expected": "fail",
+      "why": "No indicator at all."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-visible-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(4)",
+      "expected": "pass",
+      "why": "Help: its outline is removed, but on focus a script gives it a dark background and white text."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-appearance-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(4)",
+      "expected": "pass",
+      "why": "Help: the whole link turns dark on focus, far more than a 2 px line around it, at well over 3:1."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-contrast-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(1)",
+      "expected": "fail",
+      "why": "Home: nothing changes on focus, so there is no indicator to meet 3:1."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-contrast-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(2)",
+      "expected": "fail",
+      "why": "Products: no indicator."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-contrast-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(3)",
+      "expected": "fail",
+      "why": "Cart: no indicator."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-contrast-element",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(4)",
+      "expected": "pass",
+      "why": "Help: dark blue on the white header, far above 3:1."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-order",
+      "target": "html",
+      "expected": "fail",
+      "why": "The last link on the page (\"Seeds and bulbs\", tabindex=\"1\") comes first, before the navigation."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "keyboard",
+      "target": "html",
+      "expected": "fail",
+      "why": "The account menu and two product tiles react to the mouse but Tab never reaches them."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "keyboard-element",
+      "target": "#account-menu",
+      "expected": "fail",
+      "why": "A click handler on a span that cannot take focus."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "keyboard-element",
+      "target": "#tile-cactus",
+      "expected": "fail",
+      "why": "role=\"button\" but it cannot take focus."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-not-obscured-box",
+      "target": "#top-bar",
+      "expected": "fail",
+      "why": "Once the page has scrolled, the sticky header lies entirely over the Roses and Tulips links while they have focus."
+    },
+    {
+      "page": "ai/focus.html",
+      "check": "focus-not-obscured-enhanced-box",
+      "target": "#top-bar",
+      "expected": "fail",
+      "why": "The same links, hidden by the sticky header."
+    }
   ]
 }

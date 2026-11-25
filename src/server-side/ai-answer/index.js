@@ -232,8 +232,8 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 beforeWalk = await fingerprint(page);
                 walk = await walkFocus(page, {
                     maxStops: Number(opt.focusStops) > 0 ? Math.min(Number(opt.focusStops), 200) : undefined,
-                    // The focused and unfocused pictures of each stop, only when 2.4.13 is asked.
-                    measureAppearance: todo.some((t) => t.entry.check === 'focus-appearance' || t.entry.check === 'focus-appearance-element'),
+                    // The focused and unfocused pictures of each stop, only when 2.4.13 or 1.4.11 is asked.
+                    measureAppearance: todo.some((t) => ['focus-appearance', 'focus-appearance-element', 'focus-contrast-element'].includes(t.entry.check)),
                 });
                 afterWalk = await fingerprint(page);
                 summary.focusWalk = { stops: walk.stops.length, ended: walk.ended, restored: walk.restored, ...(walk.error ? { error: walk.error } : {}) };
