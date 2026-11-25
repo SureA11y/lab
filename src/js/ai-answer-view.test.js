@@ -435,7 +435,7 @@ describe('focus not obscured and focus appearance', () => {
         const minimum = await text('focus-not-obscured');
         assert.match(minimum, /Entirely hidden while focused: 3\. button “Go”, 100% covered by div#banner/);
         assert.match(minimum, /Partly hidden \(fine for this criterion\): 2\. a “Help”, 40% covered by div#chat/);
-        const enhanced = await text('focus-not-obscured-enhanced');
+        const enhanced = await text('focus-not-obscured-enhanced-page');
         assert.match(enhanced, /Hidden, in part or entirely, while focused: 2\. a “Help”, 40% covered by div#chat<br>3\. button “Go”, 100% covered/);
     });
 

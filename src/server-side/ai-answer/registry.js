@@ -65,7 +65,9 @@ const PAGE_LEVEL = Object.freeze({
         evidence: ['focusWalk'],
     },
     'wcag-2.4.12-focus-not-obscured-enhanced': {
-        check: 'focus-not-obscured-enhanced',
+        // Not "focus-not-obscured-enhanced": that is the scanner's name for
+        // the same question about one fixed box (ELEMENT_WALK).
+        check: 'focus-not-obscured-enhanced-page',
         question: 'When an element has keyboard focus, is no part of it hidden by other content the page put over it? For every stop the focus walk gives `coveredShare`, the share of 25 points across the element that something else was on top of (0 is none), and `covered`, what.',
         evidence: ['focusWalk'],
     },
@@ -76,20 +78,72 @@ const PAGE_LEVEL = Object.freeze({
     },
 });
 
-const PAGE_LEVEL_BY_CHECK = Object.freeze(Object.fromEntries(Object.values(PAGE_LEVEL).map((e) => [e.check, e])));
+// The same questions asked about one element (a link whose outline a style
+// removes, a control with a click handler, a fixed box that may cover others),
+// answered from the same focus walk: by check, then by rule ('*' for any).
+const ELEMENT_WALK = Object.freeze({
+    'css-focus-indicator-suppressed': {
+        'wcag-2.4.7-focus-visible': {
+            check: 'focus-visible-element',
+            question: 'A style removes this element\'s focus outline. When it has keyboard focus, is focus still visible on it by other means (a border, an underline, a background, a shadow...)? The focus walk gives its stop (`stop`): what looked different on it, its parent or its ::before/::after while focused. Never reached with Tab: say so, and answer "unsure".',
+        },
+        'wcag-2.4.13-focus-appearance': {
+            check: 'focus-appearance-element',
+            question: 'A style removes this element\'s focus outline. Is its focus indicator at least as large as a 2 CSS pixel line around it, with a contrast of at least 3:1 between focused and unfocused? Its stop (`stop`) has `appearance`, measured from pictures focused and unfocused: `atContrast` CSS pixels changed at 3:1 or more, `needed` the area required, `meets`.',
+        },
+    },
+    'click-handler-keyboard-operable': {
+        '*': {
+            check: 'keyboard-element',
+            question: 'This element reacts to the mouse. Can a keyboard user reach it? The focus walk says whether Tab ever reached it (`stop`) and, if it is among `unreachable`, why it cannot take focus. Only reaching was checked, not operating: answer "fail" when it cannot be reached and nothing else on the page does the same, otherwise "unsure". Do not answer "pass".',
+            passAllowed: false,
+        },
+    },
+    'widget-keyboard-focusable': {
+        '*': {
+            check: 'keyboard-element',
+            question: 'This element has a widget role. Can a keyboard user reach it? The focus walk says whether Tab ever reached it (`stop`) and, if it is among `unreachable`, why it cannot take focus. Only reaching was checked, not operating: answer "fail" when it cannot be reached, otherwise "unsure". Do not answer "pass".',
+            passAllowed: false,
+        },
+    },
+    'focus-not-obscured-minimum': {
+        '*': {
+            check: 'focus-not-obscured-box',
+            question: 'This box stays in place over the page (fixed or sticky). Does it ever hide an element entirely while that element has keyboard focus? The focus walk lists the stops it was on top of (`coveredStops`), each with `coveredShare` (1 is entirely).',
+        },
+    },
+    'focus-not-obscured-enhanced': {
+        '*': {
+            check: 'focus-not-obscured-enhanced-box',
+            question: 'This box stays in place over the page (fixed or sticky). Does it hide any part of an element while that element has keyboard focus? The focus walk lists the stops it was on top of (`coveredStops`), each with `coveredShare`.',
+        },
+    },
+});
+
+const PAGE_LEVEL_BY_CHECK = Object.freeze(Object.fromEntries([
+    ...Object.values(PAGE_LEVEL).map((e) => [e.check, { ...e }]),
+    ...Object.values(ELEMENT_WALK).flatMap((byRule) => Object.values(byRule)).map((e) => [e.check, { ...e, element: true }]),
+]));
 
 /**
  * The registry's entry for a check, or null when the AI may not answer it:
  * by `atomicCheckId`, by a page-level question's own check name, or for the
- * scanner's "manual-review" by its rule (`ruleId`). Each entry says its `check`
- * and, for a page-level one, `tier: 1`.
+ * scanner's "manual-review" by its rule (`ruleId`), or for an element question
+ * the focus walk answers by its check and rule. Each entry says its `check`
+ * and, when it needs the walk, `tier: 1` (and `element: true` when it is about
+ * one element rather than the page).
  */
 function entryFor(checkId, ruleId = null) {
     const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
     if (has(ANSWERABLE, checkId)) return { check: checkId, tier: 0, ...ANSWERABLE[checkId] };
     if (has(PAGE_LEVEL_BY_CHECK, checkId)) return { tier: 1, ...PAGE_LEVEL_BY_CHECK[checkId] };
     if (checkId === 'manual-review' && ruleId && has(PAGE_LEVEL, ruleId)) return { tier: 1, ...PAGE_LEVEL[ruleId] };
+    if (has(ELEMENT_WALK, checkId)) {
+        const byRule = ELEMENT_WALK[checkId];
+        const e = (ruleId && has(byRule, ruleId)) ? byRule[ruleId] : byRule['*'];
+        if (e) return { tier: 1, element: true, evidence: ['focusWalk'], ...e };
+    }
     return null;
 }
 
-module.exports = { ANSWERABLE, PAGE_LEVEL, PROMPT_VERSION, entryFor };
+module.exports = { ANSWERABLE, PAGE_LEVEL, ELEMENT_WALK, PROMPT_VERSION, entryFor };

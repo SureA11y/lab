@@ -186,3 +186,11 @@ test('the pass measures appearance only when the scanner asks 2.4.13', async () 
     assert.ok(order.findings[0].occurrences[0].ai.evidence.focusWalk.stops.every((s) => s.appearance === undefined));
     await page.close();
 });
+
+test('follows the page\'s own Tab order: positive tabindex first, in their order', async () => {
+    const page = await open('<title>Order</title><a href="#a" id="a">A</a> <a href="#b" id="b" tabindex="2">B</a> <a href="#c" id="c">C</a> <a href="#d" id="d" tabindex="1">D</a>');
+    const walk = await walkFocus(page, { mapPicture: false });
+    assert.deepEqual(walk.stops.map((s) => s.name), ['D', 'B', 'A', 'C']);
+    assert.equal(walk.ended, 'left-page');
+    await page.close();
+});

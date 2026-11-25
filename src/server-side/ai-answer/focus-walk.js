@@ -7,7 +7,8 @@
 //
 // 1. Before: remembers the element that has focus (or none), the page's scroll
 //    position and that of every box that scrolls.
-// 2. Starts from the top of the page, as a fresh visit would, and presses Tab
+// 2. Starts before the first element of the page's Tab order, as a fresh visit
+//    would (positive tabindex first), and presses Tab
 //    up to `maxStops` times. Only Tab: never Enter, Space or an arrow key, so
 //    nothing is operated. At each stop: the element, its name and role, where it
 //    is, its landmark and the heading it comes under, what looks different on
@@ -110,7 +111,11 @@ async function walkFocus(page, options = {}) {
             const active = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
             window[key] = { active, scrollX: window.scrollX, scrollY: window.scrollY, scrollers, visited: [], focusedStyles: [], reader };
             const mark = document.createElement('span');
-            mark.tabIndex = -1;
+            // The page's first stop in Tab order: the lowest positive tabindex,
+            // first in the page, comes before every other element, so the walk
+            // follows the page's own order, positive tabindex included. Gone
+            // after the first Tab.
+            mark.tabIndex = 1;
             mark.setAttribute(start, '');
             document.body.prepend(mark);
             mark.focus({ preventScroll: true });
@@ -173,7 +178,20 @@ async function walkFocus(page, options = {}) {
                     else break;
                 }
                 const level = heading ? (heading.getAttribute('aria-level') || (/^H[1-6]$/.test(heading.tagName) ? heading.tagName[1] : '')) : '';
+                // Where it is in the page, which does not move as it scrolls:
+                // to tell it apart later from the scanner's selector.
+                const pathOf = (el) => {
+                    const parts = [];
+                    while (el && el.nodeType === 1 && el !== document.documentElement) {
+                        let i = 1;
+                        for (let p = el.previousElementSibling; p; p = p.previousElementSibling) if (p.tagName === el.tagName) i++;
+                        parts.unshift(el.tagName.toLowerCase() + ':' + i);
+                        el = el.parentElement || (el.getRootNode && el.getRootNode().host) || null;
+                    }
+                    return parts.join('>');
+                };
                 return {
+                    path: pathOf(a),
                     landmark,
                     heading: heading ? clip((level ? 'h' + level + ' ' : '') + '“' + clip(heading.textContent, 60) + '”', 70) : null,
                     tag: a.tagName.toLowerCase(),
@@ -352,7 +370,14 @@ function unreachableControls(max) {
         if (el.matches('label') || [...el.querySelectorAll(NATIVE + ', [tabindex]')].some(reachable)) continue;
         total++;
         if (items.length >= max) continue;
+        const parts = [];
+        for (let n = el; n && n.nodeType === 1 && n !== document.documentElement; n = n.parentElement) {
+            let i = 1;
+            for (let p = n.previousElementSibling; p; p = p.previousElementSibling) if (p.tagName === n.tagName) i++;
+            parts.unshift(n.tagName.toLowerCase() + ':' + i);
+        }
         items.push({
+            path: parts.join('>'),
             tag: el.tagName.toLowerCase(), role: role || null,
             name: clip(el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || el.getAttribute('alt') || ''),
             selector: el.id ? '#' + CSS.escape(el.id) : clip(el.tagName.toLowerCase() + (el.classList.length ? '.' + [...el.classList].slice(0, 2).join('.') : ''), 60),
@@ -363,4 +388,46 @@ function unreachableControls(max) {
     return { total, items };
 }
 
-module.exports = { walkFocus, unreachableControls, compareAppearance, luminance, DEFAULTS };
+/**
+ * Where an element the scanner named is, after the walk (read only), and
+ * what the walk saw of it: its stop, matched by place and size, and the stops
+ * it was on top of, when it is a box that stays in place. -> { found, stop,
+ * coveredStops, selector } or { found: false }.
+ */
+async function walkFactsFor(page, selector, walk) {
+    if (!selector || typeof selector !== 'string' || !walk) return { found: false };
+    let at = null;
+    try {
+        at = await page.evaluate((sel) => {
+            let el = null;
+            try { el = document.querySelector(sel); } catch { return null; }
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            const clip = (t, n) => String(t == null ? '' : t).replace(/\s+/g, ' ').trim().slice(0, n);
+            const parts = [];
+            for (let n = el; n && n.nodeType === 1 && n !== document.documentElement; n = n.parentElement || (n.getRootNode && n.getRootNode().host) || null) {
+                let i = 1;
+                for (let p = n.previousElementSibling; p; p = p.previousElementSibling) if (p.tagName === n.tagName) i++;
+                parts.unshift(n.tagName.toLowerCase() + ':' + i);
+            }
+            return {
+                path: parts.join('>'),
+                x: Math.round(r.left + window.scrollX), y: Math.round(r.top + window.scrollY), width: Math.round(r.width), height: Math.round(r.height),
+                describe: clip(el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.classList && el.classList.length ? '.' + [...el.classList].slice(0, 2).join('.') : ''), 60),
+                fixed: ['fixed', 'sticky'].includes(getComputedStyle(el).position),
+            };
+        }, selector);
+    } catch { at = null; }
+    if (!at) return { found: false };
+    const near = (a, b) => Math.abs(a - b) <= 2;
+    // By its place in the page; by place and size for a walk without paths.
+    const same = (s) => (s.path ? s.path === at.path : (near(s.x, at.x) && near(s.y, at.y) && near(s.width, at.width) && near(s.height, at.height)));
+    const stop = (walk.stops || []).find(same) || null;
+    const coveredStops = (walk.stops || []).filter((s) => s.covered && s.covered === at.describe).map((s) => s.n);
+    const unreachable = walk.unreachable && Array.isArray(walk.unreachable.items)
+        ? walk.unreachable.items.find(same) || null
+        : null;
+    return { found: true, element: at.describe, fixed: at.fixed, stop: stop ? stop.n : null, coveredStops, ...(unreachable ? { unreachable: unreachable.why } : {}) };
+}
+
+module.exports = { walkFocus, walkFactsFor, unreachableControls, compareAppearance, luminance, DEFAULTS };

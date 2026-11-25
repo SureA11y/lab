@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page</title><link rel="stylesheet" href="../style.css"></head>
+<!-- The AI answers demo, questions answered by reading the page. Each has a
+     known answer, in expected.json beside this page. -->
+<body>
+<header><p><strong>Demo Shop</strong></p><nav aria-label="Main"><a href="../index.html">Home</a><a href="../products.html">Products</a></nav></header>
+<main>
+  <h1>Garden tools</h1>
+  <p><b>Delivery</b></p>
+  <p>Orders placed before noon leave the same day. Large items such as wheelbarrows come by courier within three working days.</p>
+  <ul class="products">
+    <li><img id="photo-filename" src="../images/shoes.svg" width="200" height="120" alt="IMG_2041.jpg"><h2>Pruning shears</h2><p class="price">24 €</p></li>
+    <li><img id="photo-good" src="../images/bag.svg" width="200" height="120" alt="Canvas garden bag with two leather handles"><h2>Garden bag</h2><p class="price">32 €</p></li>
+  </ul>
+  <p><img id="badge" src="../images/half-price.svg" width="120" height="60" alt=""> on all seeds this week.</p>
+  <svg id="divider" width="300" height="10" aria-hidden="true"><line x1="0" y1="5" x2="300" y2="5" stroke="#bbb"></line></svg>
+  <p><a id="link-vague" href="../products.html">Learn more</a></p>
+  <form action="#" onsubmit="return false">
+    <p><input id="postcode" type="text" title="Postcode" autocomplete="postal-code"></p>
+    <p><input id="name" type="text" placeholder="Name" autocomplete="name"></p>
+    <p><button type="submit">Check delivery</button></p>
+  </form>
+</main>
+<footer><p>Demo Shop is a made-up shop for surea11y-lab's examples.</p></footer>
+</body>
+</html>

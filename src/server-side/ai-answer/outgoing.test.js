@@ -146,7 +146,10 @@ describe('pictures', () => {
         assert.equal(entryFor('manual-review', 'wcag-2.4.11-focus-not-obscured-minimum').check, 'focus-not-obscured');
         assert.deepEqual([entryFor('manual-review', 'wcag-2.1.1-keyboard').check, entryFor('manual-review', 'wcag-2.1.1-keyboard').passAllowed], ['keyboard', false]);
         assert.equal(entryFor('manual-review', 'wcag-2.4.13-focus-appearance').check, 'focus-appearance');
-        assert.equal(entryFor('manual-review', 'wcag-2.4.12-focus-not-obscured-enhanced').check, 'focus-not-obscured-enhanced');
+        assert.equal(entryFor('manual-review', 'wcag-2.4.12-focus-not-obscured-enhanced').check, 'focus-not-obscured-enhanced-page');
+        assert.equal(entryFor('focus-not-obscured-enhanced', 'wcag-2.4.12-focus-not-obscured-enhanced').check, 'focus-not-obscured-enhanced-box', 'the scanner\'s per-box check');
+        assert.equal(entryFor('css-focus-indicator-suppressed', 'wcag-2.4.13-focus-appearance').check, 'focus-appearance-element');
+        assert.equal(entryFor('css-focus-indicator-suppressed', 'wcag-1.4.11-non-text-contrast'), null);
         assert.equal(entryFor('manual-review', 'wcag-9.9.9-unknown'), null);
         assert.equal(entryFor('manual-review'), null);
         assert.deepEqual([entryFor('img-alt-quality').check, entryFor('img-alt-quality').tier], ['img-alt-quality', 0]);

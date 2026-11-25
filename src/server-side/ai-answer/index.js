@@ -16,7 +16,7 @@ const { collectEvidence, fingerprint, sameFingerprint } = require('./evidence');
 const { resolveProvider, QUESTION_VERSION } = require('./provider');
 const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
 const { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskDeep, withoutPictures } = require('./outgoing');
-const { walkFocus } = require('./focus-walk');
+const { walkFocus, walkFactsFor } = require('./focus-walk');
 const { withRuntimeKey } = require('./runtime-key');
 
 const DEFAULTS = { maxCalls: 10, seconds: 60, minConfidence: 0.6 };
@@ -227,13 +227,14 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 walk = await walkFocus(page, {
                     maxStops: Number(opt.focusStops) > 0 ? Math.min(Number(opt.focusStops), 200) : undefined,
                     // The focused and unfocused pictures of each stop, only when 2.4.13 is asked.
-                    measureAppearance: todo.some((t) => t.entry.check === 'focus-appearance'),
+                    measureAppearance: todo.some((t) => t.entry.check === 'focus-appearance' || t.entry.check === 'focus-appearance-element'),
                 });
                 afterWalk = await fingerprint(page);
                 summary.focusWalk = { stops: walk.stops.length, ended: walk.ended, restored: walk.restored, ...(walk.error ? { error: walk.error } : {}) };
             }
+            // An element question: the walk, and what it saw of that element.
             const evidence = entry.tier === 1
-                ? (walk ? { focusWalk: walk } : {})
+                ? (walk ? { focusWalk: walk, ...(entry.element ? { target: await walkFactsFor(page, occurrence.target && occurrence.target[0], walk) } : {}) } : {})
                 : await collectEvidence(page, occurrence, entry.evidence);
             // What was read from the page (the element's HTML is the
             // occurrence's own): kept on every result, answered or not, so a
@@ -243,9 +244,10 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
             const base = {
                 promptVersion: shared.lessons ? PROMPT_VERSION + '+lessons' : PROMPT_VERSION, check: entry.check, tier: entry.tier, evidence: read,
                 // A page-level question is the page's own: its page names it.
-                ...(entry.tier === 1 ? { page: pageUrl } : {}),
+                // An element question is the element's, as any other.
+                ...(entry.tier === 1 && !entry.element ? { page: pageUrl } : {}),
             };
-            const key = JSON.stringify([entry.check, evidence.element, evidence.context, evidence.pageTitle, evidence.image, evidence.focusWalk ? withoutPictures(evidence.focusWalk.stops) : null]);
+            const key = JSON.stringify([entry.check, evidence.element, evidence.context, evidence.pageTitle, evidence.image, evidence.focusWalk ? withoutPictures(evidence.focusWalk.stops) : null, evidence.target || null, entry.element ? occurrence.target : null]);
             let ai;
             if (shared.cache.has(key)) {
                 ai = { ...shared.cache.get(key), reused: true };

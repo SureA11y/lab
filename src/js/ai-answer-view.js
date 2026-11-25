@@ -41,7 +41,9 @@ export function outboxOf(payload) {
 export function aiReviewKey(node) {
     const ai = node && node.ai;
     const pageLevel = !!(ai && ai.tier === 1 && ai.check && ai.page);
-    const check = pageLevel ? ai.check : ((Array.isArray(node?.sourceAtomicRules) && node.sourceAtomicRules[0]) || '');
+    // A walk question about one element is named by its own check: the
+    // scanner asks one element for several criteria (2.4.7 and 2.4.13).
+    const check = (ai && ai.tier === 1 && ai.check) ? ai.check : ((Array.isArray(node?.sourceAtomicRules) && node.sourceAtomicRules[0]) || '');
     const content = pageLevel ? 'page|' + ai.page : String(node?.html || '') + '|' + JSON.stringify(node?.target || []);
     let h = 5381;
     for (let i = 0; i < content.length; i++) h = ((h << 5) + h + content.charCodeAt(i)) | 0;
@@ -159,7 +161,8 @@ function stopName(s) {
     return (s.role || s.tag) + (s.name ? ' “' + s.name + '”' : ' (no name)');
 }
 
-const FOCUS_CHECKS = new Set(['focus-visible', 'focus-order', 'focus-not-obscured', 'focus-not-obscured-enhanced', 'focus-appearance', 'keyboard']);
+const FOCUS_CHECKS = new Set(['focus-visible', 'focus-order', 'focus-not-obscured', 'focus-not-obscured-enhanced-page', 'focus-appearance', 'keyboard',
+    'focus-visible-element', 'focus-appearance-element', 'keyboard-element', 'focus-not-obscured-box', 'focus-not-obscured-enhanced-box']);
 
 // How much of a stop something was on top of, in words.
 function coverText(s) {
@@ -420,7 +423,25 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
         const stops = Array.isArray(walk.stops) ? walk.stops : [];
         const list = (xs) => xs.length ? xs.map((s) => escapeHtml(s.n + '. ' + stopName(s))).join('<br>') : '';
         add('Stops with Tab', escapeHtml(String(stops.length)) + ' <span class="air-hint">' + escapeHtml(focusWalkEnd(walk)) + '</span>');
-        if (check === 'focus-visible') {
+        const target = ev.target;
+        const own = target && target.stop ? stops.find((x) => x.n === target.stop) : null;
+        if (/-element$|-box$/.test(check) && (!target || !target.found)) {
+            add('This element', '<span class="air-none">(not found on the page after the walk)</span>');
+        } else if (check === 'focus-visible-element' || check === 'focus-appearance-element') {
+            add('This element', own ? escapeHtml('Stop ' + own.n + ': ' + stopName(own)) : '<span class="air-none">(never reached with Tab)</span>');
+            if (own && check === 'focus-visible-element') {
+                add('Shows focus as', Array.isArray(own.changesOnFocus) && own.changesOnFocus.length ? escapeHtml(own.changesOnFocus.join(', ')) : '<span class="air-none">(no visible change found)</span>');
+            }
+            if (own && check === 'focus-appearance-element') add('Indicator', escapeHtml(appearanceText(own.appearance) || 'not measured'));
+        } else if (check === 'keyboard-element') {
+            add('Reached with Tab', own ? escapeHtml('Yes, at stop ' + own.n) : '<strong>' + escapeHtml('No') + '</strong>' + (target.unreachable ? ' <span class="air-hint">' + escapeHtml('(' + target.unreachable + ')') + '</span>' : ''));
+            add('Still to check by hand', escapeHtml('Whether it works with Enter, Space or the arrow keys, and whether the page offers another way to do the same with the keyboard.'));
+        } else if (check === 'focus-not-obscured-box' || check === 'focus-not-obscured-enhanced-box') {
+            const covered = stops.filter((x) => (target.coveredStops || []).includes(x.n));
+            const counts = check === 'focus-not-obscured-box' ? covered.filter((x) => x.coveredShare === 1) : covered;
+            add(check === 'focus-not-obscured-box' ? 'Stops it hid entirely' : 'Stops it hid, in part or entirely', counts.length ? counts.map((x) => escapeHtml(x.n + '. ' + stopName(x) + ', ' + coverText(x))).join('<br>') : '<span class="air-none">(none found)</span>');
+            if (check === 'focus-not-obscured-box' && covered.length > counts.length) add('Stops it hid in part (fine for 2.4.11)', covered.filter((x) => x.coveredShare !== 1).map((x) => escapeHtml(x.n + '. ' + stopName(x) + ', ' + coverText(x))).join('<br>'));
+        } else if (check === 'focus-visible') {
             const none = stops.filter((s) => Array.isArray(s.changesOnFocus) && !s.changesOnFocus.length);
             const hidden = stops.filter((s) => s.hidden);
             add('No visible change found', list(none) || '<span class="air-none">(every stop changed when focused)</span>');
