@@ -572,6 +572,35 @@ entirely hidden while focused: the walk saw what the scanner's own check did
 not, but the AI only answers what the scanner leaves open. 2.4.13 stayed "not
 applicable" there too: its measurement has run in the browser tests only.
 
+## Element questions, the demo and its evaluation (built 2026-11-25)
+
+- **Per-element questions from the walk.** The scanner asks focus visible and
+  focus appearance per element (`css-focus-indicator-suppressed`: a style
+  removes the outline), keyboard per control (`click-handler-keyboard-operable`,
+  `widget-keyboard-focusable`, for 2.1.1 and 2.1.3) and focus not obscured per
+  fixed or sticky box (`focus-not-obscured-minimum`, `-enhanced`). The
+  registry (`ELEMENT_WALK`) maps them, by check and rule, to
+  `focus-visible-element`, `focus-appearance-element`, `keyboard-element`
+  (never passed by the AI), `focus-not-obscured-box` and
+  `focus-not-obscured-enhanced-box`. `walkFactsFor` (focus-walk.js) finds the
+  element after the walk and gives its stop, whether Tab reached it (and why
+  not) and, for a box, the stops it covered. They are keyed by their own check
+  and element, so 2.4.7 and 2.4.13 about one link are two questions. The
+  page-level 2.4.12 question is now `focus-not-obscured-enhanced-page`: the
+  scanner names its per-box check `focus-not-obscured-enhanced`.
+- **Fixed on the way.** The walk started from a `tabindex="-1"` mark, from
+  which the browser skips elements with a positive tabindex: the mark is now
+  `tabindex="1"`, first in the page, so the walk follows the page's own Tab
+  order. Stops and elements are matched by their place in the page (`path`),
+  not their position, which a sticky header changes as the page scrolls. The
+  log of what was sent names the question asked, not the scanner's check.
+- **The demo** (`examples/demo-site/ai/`, `examples/specs/ai-answers.spec.json`,
+  `expected.json`, `examples/ai-demo-score.js`) makes the scan ask every
+  question; a model answering the lab's exact prompts blind got 25 of 25
+  (`ai-cant-tell-eval/`). Real sites: the W3C's Before and After Demonstration
+  is ready (`examples/specs/ai-answers-w3c-bad.spec.json`) but not run: this
+  session could not reach www.w3.org.
+
 ## Giving the lab a Claude API key (built 2026-11-24)
 
 Two ways, both on the computer the lab runs on, neither saved anywhere:
@@ -638,6 +667,13 @@ Tests: `src/cli/ai-agreement.test.js`, against a local endpoint (lessons that
 help are accepted, lessons that add a missed fail are refused, a preview sends
 nothing). Tried on the report zip from the remark check, as a preview and
 against the example endpoint.
+
+## Status on 2026-11-25
+
+The current state, what is next and the conventions are in
+[ai-cant-tell-START-HERE.md](ai-cant-tell-START-HERE.md): read it first. The
+sections below record each step as it was built; "Status when work stopped
+(2026-11-24)" and the Handoff that follows it are the earlier state.
 
 ## Status when work stopped (2026-11-24)
 

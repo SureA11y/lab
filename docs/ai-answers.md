@@ -83,9 +83,25 @@ From the focus walk (with `focus: true`):
 | `focus-visible` | 2.4.7 | What looked different at each stop while focused |
 | `focus-order` | 2.4.3 | The stops in order, with position, landmark and heading |
 | `focus-not-obscured` | 2.4.11 | How much of each stop something else was on top of |
-| `focus-not-obscured-enhanced` | 2.4.12 (AAA) | The same; any part hidden counts |
+| `focus-not-obscured-enhanced-page` | 2.4.12 (AAA) | The same; any part hidden counts |
 | `focus-appearance` | 2.4.13 (AAA) | The indicator measured: pixels changed at 3:1 contrast against a 2 px outline's area |
 | `keyboard` | 2.1.1 | What a mouse can use that Tab never reaches; a focus trap. The AI may answer "fail", **never "pass"**: reaching is not using |
+
+The scanner also asks some of these about one element rather than the page,
+and the walk answers those too:
+
+| Check | WCAG | Asked about | What it has to go on |
+| --- | --- | --- | --- |
+| `focus-visible-element` | 2.4.7 | A link or control whose focus outline a style removes | Its stop: what changed on focus, its picture |
+| `focus-appearance-element` | 2.4.13 (AAA) | The same element | Its stop's measurement |
+| `keyboard-element` | 2.1.1, 2.1.3 | A control with a click handler or a widget role | Whether Tab reached it, and why not. Never "pass" |
+| `focus-not-obscured-box` | 2.4.11 | A fixed or sticky box (a header, a chat button) | The stops it was on top of, and how much |
+| `focus-not-obscured-enhanced-box` | 2.4.12 (AAA) | The same box | The same; any part counts |
+
+Which questions a page gets depends on what the scan leaves open: on a page
+where the scan settles focus not obscured itself, for instance, it asks
+nothing about it. The AAA questions (2.4.12, 2.4.13) come only with an AAA
+profile (`"profile": "wcag22-aaa"` on the scan step).
 
 The AI is asked only what the scan left as can't tell. A question the scan
 decided itself (for instance 2.4.11 marked as passed) is not asked again.
@@ -97,7 +113,8 @@ person's.
 Once per page, after the questions answered by reading:
 
 1. The walk remembers which element has focus and every scroll position.
-2. From the top of the page it presses **only Tab** (never Enter, Space or an
+2. From before the first element of the page's Tab order (elements with a
+   positive `tabindex` first, as a browser does) it presses **only Tab** (never Enter, Space or an
    arrow key, so nothing is clicked or submitted), up to `focusStops` times.
    At each stop: the element, its name, landmark and heading, what changed on
    focus, how much of it is covered, and a small picture. For 2.4.13, when the
@@ -176,3 +193,26 @@ With `--lessons` it asks twice and accepts the lessons only if they lose no
 agreement and add no such pass. `--preview` sends nothing. It writes
 `agreement.md`, `agreement.json` and `ai-sent.json`; `--help` lists the rest.
 Label 30 to 50 questions per check before trusting a check.
+
+## Try it on the demo
+
+The examples come with pages that make the scan ask every question above,
+with the correct answers written down
+([examples/demo-site/ai/expected.json](../examples/demo-site/ai/expected.json)):
+
+```bash
+node examples/serve-demo-site.js &
+```
+
+```bash
+node src/cli/run-workflow.js examples/specs/ai-answers.spec.json --out runs/ai-demo
+```
+
+```bash
+node examples/ai-demo-score.js runs/ai-demo/payload.json --why
+```
+
+Or open `runs/ai-demo/payload.json` in the app's **Open report**, then
+**Review AI answers**. How it was evaluated, and how to evaluate the AI on a
+real site (the W3C's Before and After Demonstration, ready to run), is in
+[design/ai-cant-tell-eval/](design/ai-cant-tell-eval/README.md).

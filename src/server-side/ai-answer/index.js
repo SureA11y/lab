@@ -119,13 +119,15 @@ function candidatesOf(canonical, { focus = false } = {}) {
 
 // One entry of the log of what was sent: where to, what for, and the body
 // exactly as the provider sends it (or would, in a preview).
-function outboxEntry({ mode, model, pageUrl, occurrence, masked, body }) {
+function outboxEntry({ mode, model, pageUrl, occurrence, check, masked, body }) {
     return {
         at: new Date().toISOString(),
         mode,
         to: model ? (model.destination || model.name || 'a provider') : 'no model set',
         page: pageUrl || null,
-        check: occurrence.atomicCheckId,
+        // The question asked (focus-visible-element, not the scanner's
+        // css-focus-indicator-suppressed, which several questions share).
+        check: check || occurrence.atomicCheckId,
         selector: (occurrence.target && typeof occurrence.target[0] === 'string') ? occurrence.target[0] : null,
         masked,
         body,
@@ -145,7 +147,7 @@ async function askOne({ model, entry, finding, occurrence, evidence, lessons = n
     const input = asQuestion ? buildQuestion(entry, finding, occurrence, evidence, lessons, pageInfo) : buildPrompt(entry, occurrence, evidence, lessons);
     const { value: sent, count: masked } = mask ? maskDeep(input) : { value: input, count: 0 };
     const body = model && typeof model.bodyFor === 'function' ? model.bodyFor(sent) : (asQuestion ? { version: QUESTION_VERSION, ...sent } : { prompt: sent });
-    outbox.push(outboxEntry({ mode: preview || !model ? 'preview' : 'sent', model, pageUrl: pageInfo && pageInfo.url, occurrence, masked, body }));
+    outbox.push(outboxEntry({ mode: preview || !model ? 'preview' : 'sent', model, pageUrl: pageInfo && pageInfo.url, occurrence, check: entry.check, masked, body }));
     if (preview || !model) return { ai: { ...base, provenance: 'unresolved', reason: preview ? 'preview' : 'no-model' }, previewed: true };
     const t0 = Date.now();
     try {

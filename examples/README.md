@@ -46,6 +46,8 @@ with **Load config**. `--check` checks one without opening a browser.
 | `specs/every-product.spec.json` | A loop over every product link, and a custom step (accept the cookie banner when it shows) used twice |
 | `specs/site-tour.spec.json` | Home, products, log in and cart by following the shop's own links: the same workflow on either release |
 | `specs/all-pages.batch.json` | One workflow over six pages, a row each, as the app's Batch section runs them |
+| `specs/ai-answers.spec.json` | AI answers on two pages made to ask every question the AI answers, focus walk included ([below](#the-ai-answers-demo)) |
+| `specs/ai-answers-w3c-bad.spec.json` | AI answers on a real site: the W3C's Before and After Demonstration, inaccessible and repaired, eight pages |
 | `configs/shopping-flow.a11y-config.json` | `shopping-flow` as the app's **Export config** writes it |
 
 ```bash
@@ -140,6 +142,28 @@ On purpose, so the scans have something to find:
 A scan also hands some checks to a person on every page (keyboard use, focus
 order and visibility, whether the title describes the page): the report lists
 them under what needs review, apart from the failures.
+
+## The AI answers demo
+
+`demo-site/ai/` (not linked from the shop, so its tours are unchanged) has two
+pages for [AI answers](../docs/ai-answers.md):
+
+| Page | What the scan asks, and the correct answer |
+| --- | --- |
+| `ai/reading.html` | A vague title ("Page", fail); alt text that is a file name (fail) and a good one (pass); a "−50%" badge hidden as decorative (fail) and a divider (pass); a bold "Delivery" paragraph that heads a section (fail) and the site name (pass); "Learn more" alone (fail); fields labelled only by `title` or `placeholder` (fail) |
+| `ai/focus.html` | Navigation links whose focus outline is removed (focus visible and appearance, fail); a `tabindex="1"` link far down that comes first (focus order, fail); a clickable menu and tiles Tab never reaches (keyboard, fail); a sticky header over two links once scrolled (focus not obscured, fail) |
+
+Each answer and why is in `demo-site/ai/expected.json`;
+`ai-demo-score.js` compares a run with them:
+
+```bash
+ANTHROPIC_API_KEY=... node src/cli/run-workflow.js examples/specs/ai-answers.spec.json --out runs/ai-demo
+node examples/ai-demo-score.js runs/ai-demo/payload.json --why
+```
+
+Without a key, `A11Y_AI_PREVIEW=on` shows what would be sent; the way to have
+any model answer it, and the demo's own result (25 of 25), are in
+[docs/design/ai-cant-tell-eval/](../docs/design/ai-cant-tell-eval/README.md).
 
 The examples are a few of the ways to use the lab, not the list: the use-case
 guides (`docs/use-cases/`) show more, and the pieces combine in ways neither
