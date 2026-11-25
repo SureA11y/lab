@@ -177,6 +177,14 @@ function appearanceText(a) {
     return a.atContrast + ' px changed at 3:1 or more, ' + a.needed + ' px needed';
 }
 
+// What an image shows, read from its pixels, in words.
+function lookText(look) {
+    if (!look.readable) return 'could not be read (' + (look.why || 'unknown') + ')';
+    if (look.blank) return 'nothing: fully transparent (a spacer)';
+    const main = look.mainColour ? ', mostly ' + look.mainColour + ' (' + Math.round((look.mainColourShare || 0) * 100) + '%)' : '';
+    return (look.colours === 1 ? 'one colour' : look.colours + ' colours') + main + (look.transparentShare ? ', ' + Math.round(look.transparentShare * 100) + '% transparent' : '');
+}
+
 // A control Tab cannot reach, in words.
 function unreachableText(u) {
     return (u.role || u.tag) + (u.name ? ' “' + u.name + '”' : '') + ' (' + u.selector + ', at ' + u.x + ', ' + u.y + '): ' + u.why + '.';
@@ -492,6 +500,8 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             if (f['aria-label'] !== undefined) add('aria-label', q(f['aria-label']));
             if (f.title !== undefined) add('title', q(f.title));
             if (f.src) { const parts = String(f.src).split('/'); add('Image file', q(parts[parts.length - 1] || f.src)); }
+            const look = ev.image && ev.image.look;
+            if (look) add('What it shows', escapeHtml(lookText(look)));
             if (f.text) add('Text inside', q(f.text));
             if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
         } else if (check === 'link-name-quality') {

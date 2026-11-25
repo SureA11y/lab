@@ -7,7 +7,9 @@
 // `atomicCheckId`, as an occurrence names it. The focus questions below are
 // the exception, and opt-in.
 
-const PROMPT_VERSION = 'registry-4';
+// registry-5: an image's evidence says what it shows (image.look: blank,
+// colours), so a transparent spacer reads as one.
+const PROMPT_VERSION = 'registry-5';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -23,7 +25,7 @@ const ANSWERABLE = Object.freeze({
         evidence: ['element', 'context', 'image'],
     },
     'img-alt-decorative': {
-        question: 'Is this image or icon purely decorative (nothing is lost for a person who cannot see it), or does it carry meaning or a name the control needs?',
+        question: 'Is this image or icon purely decorative (nothing is lost for a person who cannot see it), or does it carry meaning or a name the control needs? `image.look` says what the picture shows when it could be read: `blank` (fully transparent, a spacer), the number of `colours` and the main one.',
         evidence: ['element', 'context', 'image'],
     },
     'link-name-quality': {

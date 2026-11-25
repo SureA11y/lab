@@ -670,6 +670,18 @@ help are accepted, lessons that add a missed fail are refused, a preview sends
 nothing). Tried on the report zip from the remark check, as a preview and
 against the example endpoint.
 
+## What an image shows (built 2026-11-25)
+
+For the image questions (`img-alt-quality`, `img-alt-decorative`) the page
+reads the picture's pixels: drawn at up to 64 × 64 on a canvas that is never
+added to the page, it gives `image.look`: `blank` (99% or more transparent),
+`transparentShare`, the number of `colours` (to 4 bits a channel) and the main
+one with its share. An image from another site cannot be read (the browser
+keeps its pixels from the page): `readable: false` with why. The review shows
+it as "What it shows". Prompt version `registry-5`. Found on the W3C site,
+where blank spacers stretched to different widths read as a bar chart (run 4);
+fixed in run 5 (`ai-cant-tell-eval/README.md`).
+
 ## Status on 2026-11-25
 
 The current state, what is next and the conventions are in

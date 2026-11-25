@@ -241,6 +241,36 @@ itself (no summarising script, unlike run 3).
   thumbnail). A person's labels, and more cases per check, are what make
   these figures more than a first reading.
 
+**Fifth run: images say what they show** (2026-11-25, later). The cause of
+run 4's wrong fail is fixed: for an image question the page now reads the
+picture's pixels from a canvas it never adds to the page, and the evidence
+says what it shows (`image.look`: `blank` when fully transparent, the number
+of colours and the main one; "could not be read" for an image from another
+site, whose pixels the browser keeps from the page). Prompt version
+`registry-5`. On the W3C pages the five survey spacers now read
+`"blank": true`; photos read as hundreds of colours. Files:
+[w3c-bad/run5-blank-images/](w3c-bad/run5-blank-images/); answered blind by
+four separate models as in run 4; same labels (the assistant's).
+
+| | Run 4 | **Run 5** |
+| --- | --- | --- |
+| Agree | 47 of 57 (82%) | **47 of 57 (82%)** |
+| Of those answered | 98% | 98% |
+| Pass where the label says fail | 0 | 1 |
+| Fail where the label says pass | 1 | **0** |
+| Unresolved | 9 | 9 |
+| Decorative images | 7 of 10 (1 wrong fail) | **8 of 10, none wrong** |
+
+- **The spacers:** all five agree now, each answered "decorative" from
+  `blank: true`.
+- **The wrong pass is the news photo again** (Note 10: its alt carries
+  information the page does not show). Run 3 passed it, run 4 left it open,
+  run 5 passed it: the same hard question moving from run to run, not a
+  change in what the model is given (its evidence is the alt text and the
+  text around it, not the picture). Over runs 3 to 5 the wrong answers are
+  each a different case: variation, which only more cases and a person's
+  labels will measure.
+
 **What a run costs in prompt size** (measured on the third run's 77 questions,
 characters ÷ 4 as tokens): 964,000 characters, about 241,000 tokens. The 24
 page-level focus questions (keyboard, focus order, focus visible: one each per

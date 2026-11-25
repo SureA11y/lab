@@ -79,3 +79,34 @@ test("the pass takes a picture of a shown element without moving the page, and k
     assert.equal(await page.evaluate(() => window.scrollY), 0);
     await page.close();
 });
+
+test('an image question says what the picture shows: blank, one colour, or not readable', async () => {
+    const SPACER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    const RED = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/></svg>');
+    const page = await browser.newPage();
+    await page.setContent(`<title>Images</title><p><img id="s" src="${SPACER}" alt="" width="10" height="25"> None</p><p><img id="r" src="${RED}" alt="" width="20" height="10"> Bar</p>`);
+    const c = { findings: [{ outcome: 'cantTell', occurrences: ['s', 'r'].map((id) => ({ atomicCheckId: 'img-alt-decorative', occurrenceOutcome: 'cantTell', target: ['#' + id], html: `<img id="${id}" alt="">` })) }] };
+    const prompts = [];
+    await answerCantTells({ page, canonical: c, env: {}, provider: { ask: async (p) => { prompts.push(p); return '{"verdict":"pass","confidence":0.9,"rationale":"ok"}'; } } });
+    const [spacer, red] = c.findings[0].occurrences.map((o) => o.ai.evidence.image.look);
+    assert.deepEqual([spacer.readable, spacer.blank], [true, true]);
+    assert.deepEqual([red.readable, red.blank, red.colours, red.mainColour], [true, false, 1, '#ff0000']);
+    assert.match(prompts[0], /"blank":true/);
+    assert.equal(await page.evaluate(() => document.querySelectorAll('canvas').length), 0, 'no canvas left in the page');
+    await page.close();
+
+    // An image from another site: its pixels are kept from the page.
+    const http = require('node:http');
+    const server = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'image/svg+xml' }); res.end('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4" fill="#00f"/></svg>'); });
+    await new Promise((r) => server.listen(0, '127.0.0.1', r));
+    const other = await browser.newPage();
+    await other.setContent(`<title>x</title><img id="o" src="http://127.0.0.1:${server.address().port}/a.svg" alt="">`);
+    await other.waitForFunction(() => document.getElementById('o').complete);
+    const o = { findings: [{ outcome: 'cantTell', occurrences: [{ atomicCheckId: 'img-alt-decorative', occurrenceOutcome: 'cantTell', target: ['#o'], html: '<img id="o" alt="">' }] }] };
+    await answerCantTells({ page: other, canonical: o, env: {}, provider: { ask: async () => '{"verdict":"unsure","confidence":0.3,"rationale":"x"}' } });
+    const look = o.findings[0].occurrences[0].ai.evidence.image.look;
+    assert.equal(look.readable, false);
+    assert.match(look.why, /another site/);
+    await other.close();
+    await new Promise((r) => server.close(r));
+});

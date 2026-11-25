@@ -501,3 +501,13 @@ describe('the 1.4.11 focus contrast question', () => {
         assert.match(await text(walkWith({ skipped: 'too-big' })), /Indicator contrast: too large to measure/);
     });
 });
+
+describe('what an image shows', () => {
+    const rows = async (look) => { const { keyFactRows } = await load(); return keyFactRows('img-alt-decorative', { facts: { tag: 'img', alt: '' }, image: { look } }, helpers).map((r) => r.label + ': ' + r.html).join('\n'); };
+    test('blank, one colour, several, or not readable and why', async () => {
+        assert.match(await rows({ readable: true, blank: true, transparentShare: 1, colours: 0 }), /What it shows: nothing: fully transparent \(a spacer\)/);
+        assert.match(await rows({ readable: true, blank: false, transparentShare: 0, colours: 1, mainColour: '#ff0000', mainColourShare: 1 }), /What it shows: one colour, mostly #ff0000 \(100%\)/);
+        assert.match(await rows({ readable: true, blank: false, transparentShare: 0.2, colours: 37, mainColour: '#ffffff', mainColourShare: 0.6 }), /37 colours, mostly #ffffff \(60%\), 20% transparent/);
+        assert.match(await rows({ readable: false, why: 'from another site: the browser does not let the page read its pixels' }), /could not be read \(from another site/);
+    });
+});

@@ -71,7 +71,7 @@ By reading the page (always):
 | --- | --- | --- |
 | `page-title-patterns` | 2.4.2 | Does the page title say what the page is about? |
 | `img-alt-quality` | 1.1.1 | Is an image's alt text accurate in its context? |
-| `img-alt-decorative` | 1.1.1 | Is an image purely decorative? |
+| `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |
 | `form-control-programmatic-label-quality` | 3.3.2 | Does a field's label say what to enter? |

@@ -47,8 +47,46 @@ async function collectEvidence(page, occurrence, wanted) {
             }
             if (want.includes('image') && el) {
                 const img = el.matches('img') ? el : el.querySelector('img');
+                // What the picture shows, read from a canvas never added to the
+                // page: blank (transparent), one colour, or how many. A spacer
+                // then reads as one. An image from another site cannot be read
+                // (the browser keeps its pixels from the page): said so.
+                const lookOf = (im) => {
+                    if (!im.complete || !im.naturalWidth) return { readable: false, why: 'not loaded' };
+                    try {
+                        const w = Math.min(im.naturalWidth, 64);
+                        const h = Math.min(im.naturalHeight, 64);
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(im, 0, 0, w, h);
+                        const d = ctx.getImageData(0, 0, w, h).data;
+                        let transparent = 0;
+                        const colours = new Map();
+                        for (let i = 0; i < d.length; i += 4) {
+                            if (d[i + 3] < 16) { transparent++; continue; }
+                            const k = (d[i] >> 4) + ',' + (d[i + 1] >> 4) + ',' + (d[i + 2] >> 4);
+                            colours.set(k, (colours.get(k) || 0) + 1);
+                        }
+                        const n = d.length / 4;
+                        const visible = n - transparent;
+                        let top = null;
+                        for (const e of colours) if (!top || e[1] > top[1]) top = e;
+                        const r2 = (x) => Math.round(x * 100) / 100;
+                        return {
+                            readable: true,
+                            blank: transparent / n >= 0.99,
+                            transparentShare: r2(transparent / n),
+                            colours: colours.size,
+                            ...(top ? { mainColour: '#' + top[0].split(',').map((v) => (Number(v) * 17).toString(16).padStart(2, '0')).join(''), mainColourShare: r2(top[1] / visible) } : {}),
+                        };
+                    } catch {
+                        return { readable: false, why: 'from another site: the browser does not let the page read its pixels' };
+                    }
+                };
                 res.image = img
-                    ? { src: img.currentSrc || img.src, alt: img.getAttribute('alt'), naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight }
+                    ? { src: img.currentSrc || img.src, alt: img.getAttribute('alt'), naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight, look: lookOf(img) }
                     : { inlineSvg: el.matches('svg') || !!el.querySelector('svg') };
                 res.imageSvgUrl = img && /\.svg(\?|$)/i.test(img.currentSrc || img.src) ? (img.currentSrc || img.src) : null;
             }

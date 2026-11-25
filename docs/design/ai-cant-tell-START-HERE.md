@@ -29,7 +29,8 @@ suite (4484 tests) and the browser tests (`focus-walk`, `ai-answer`,
 - **The AI pass** of a scan step (`ai` option) answers only what the scan
   leaves as can't tell; the tool's outcome never changes.
 - **Questions answered by reading:** page title, alt text, decorative images,
-  bold paragraph as heading, link text, field labels.
+  bold paragraph as heading, link text, field labels. An image question also
+  says what the picture shows (blank, colours), read from its pixels.
 - **The focus walk** (`ai: { focus: true }`, `focusStops` default 40, max
   200): Tab through the page in its own Tab order, then focus and scroll put
   back, checked by a fingerprint (answers dropped and a warning logged if the
@@ -69,10 +70,11 @@ suite (4484 tests) and the browser tests (`focus-walk`, `ai-answer`,
 - **Real site:** the W3C's Before and After Demonstration
   (`examples/specs/ai-answers-w3c-bad.spec.json`, `focusStops: 80`), **against
   labels written by the assistant, not a person** (`ai-cant-tell-eval/w3c-bad/`).
-  Run 4, with the current code: 47 of 57 (82%), 98% of those answered, **no
-  pass where the label says fail**, focus order 5 of 5; one wrong fail (blank
-  spacer images read as a bar chart: the model is not told an image is blank).
-  Run 3 was 48 of 57 (84%) with 2 wrong passes.
+  Run 5, with the current code (images say what they show): 47 of 57 (82%),
+  98% of those answered, no wrong fail (run 4's, blank spacers read as a bar
+  chart, is fixed), one wrong pass (the news photo of Note 10, which moves
+  between pass and open from run to run), focus order 5 of 5. Runs 3 and 4:
+  48 and 47 of 57.
 
 **Not measured yet:** anything through the lab's own Claude call with a real
 key (so prompt caching too: the first real run should show cached tokens in
@@ -115,10 +117,11 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **Say whether an image is blank or transparent** in what the page gives
-   the model for image questions (read in the page from a canvas), so a
-   spacer reads as one: the cause of run 4's one wrong fail. Then re-run the
-   W3C evaluation (as run 5) to see it go.
+4. Done: images say what they show (`image.look` in `evidence.js`: blank,
+   colours, main colour; read from a canvas not added to the page; an image
+   from another site cannot be read, and says so). Run 5 confirmed it.
+   **Next for the W3C run:** more cases per check, and a person's labels
+   (item 1), to tell real changes from run-to-run variation.
 5. **Optional, not built:** pictures sent to the model (only after measuring
    that they help); 2.4.13's and 1.4.11's measurement is lossy on animated
    focus styles (it reads after a short wait) and covered stops measure 0
