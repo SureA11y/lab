@@ -8,7 +8,7 @@ Read, in this order:
 2. `../ai-answers.md`: the user guide (how to use it, every option of the
    scan step's AI answers field, the server's settings, the demo).
 3. `ai-cant-tell-eval/README.md`: how the AI is evaluated, the demo's and the
-   W3C site's results, and how to repeat them.
+   real sites' results (W3C, UW, GOV.UK), and how to repeat them.
 4. `ai-cant-tell-design.md`: the design, section by section (the newest are
    near the end, before "Status when work stopped"), as needed.
 5. `ai-cant-tell-data-and-agents.md`: before turning the AI pass on for a
@@ -146,9 +146,14 @@ The first three need the user; the rest can be done without.
    unstable.
 5. **Optional, not built:** pictures sent to the model (only after measuring
    that they help: the news photo of the W3C's Note 10, the one question the
-   model keeps getting wrong, is about what the picture shows); 2.4.13's and 1.4.11's measurement is lossy on animated
-   focus styles (it reads after a short wait) and covered stops measure 0
-   changed (right, but worth saying in the review).
+   model keeps getting wrong, is about what the picture shows); 2.4.13's and
+   1.4.11's measurement is lossy on animated focus styles (it reads after a
+   short wait) and covered stops measure 0 changed (right, but worth saying in
+   the review). Questions still left open that better evidence might settle:
+   GOV.UK's "Read more" links (WCAG accepts the context, the audit does not),
+   a button whose focus shows only as an outline change the page-level
+   question does not measure, UW's divider images with alt "horizontal line
+   graphic".
 6. **On hold:** the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 
