@@ -67,11 +67,12 @@ suite (4484 tests) and the browser tests (`focus-walk`, `ai-answer`,
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
 - **Real site:** the W3C's Before and After Demonstration
-  (`examples/specs/ai-answers-w3c-bad.spec.json`, `focusStops: 80`). Third
-  run: 48 of 57 (84%), focus order 4 of 5, **against labels written by the
-  assistant, not a person** (`ai-cant-tell-eval/w3c-bad/`). The blind agent
-  of run 3 summarised big prompts with a script; the README says so. Not
-  re-run since: the compact evidence (`registry-4`), By check and 1.4.11.
+  (`examples/specs/ai-answers-w3c-bad.spec.json`, `focusStops: 80`), **against
+  labels written by the assistant, not a person** (`ai-cant-tell-eval/w3c-bad/`).
+  Run 4, with the current code: 47 of 57 (82%), 98% of those answered, **no
+  pass where the label says fail**, focus order 5 of 5; one wrong fail (blank
+  spacer images read as a bar chart: the model is not told an image is blank).
+  Run 3 was 48 of 57 (84%) with 2 wrong passes.
 
 **Not measured yet:** anything through the lab's own Claude call with a real
 key (so prompt caching too: the first real run should show cached tokens in
@@ -114,9 +115,10 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **Re-run the W3C evaluation** with the current code (compact evidence,
-   1.4.11), offline as before, to see whether agreement held; record it as
-   run 4 in `ai-cant-tell-eval/w3c-bad/`.
+4. **Say whether an image is blank or transparent** in what the page gives
+   the model for image questions (read in the page from a canvas), so a
+   spacer reads as one: the cause of run 4's one wrong fail. Then re-run the
+   W3C evaluation (as run 5) to see it go.
 5. **Optional, not built:** pictures sent to the model (only after measuring
    that they help); 2.4.13's and 1.4.11's measurement is lossy on animated
    focus styles (it reads after a short wait) and covered stops measure 0
@@ -142,6 +144,8 @@ The first three need the user; the rest can be done without.
   case with its correct answer in the demo (`expected.json`).
 - The background servers of a cloud session (demo site on 8780, lab on 3000)
   may be stopped between turns: start them in the same command that uses them.
+- In a cloud session, the user's "lab" environment allows www.w3.org (for the
+  W3C run) and api.anthropic.com; other sites are blocked.
 
 Not in the repo: the Avaloq sample report and evaluation files (a customer's
 site; the author's copies are in the temp folder `spike/avaloq/` and the config

@@ -203,6 +203,44 @@ stops) before answering. That is a model's workaround, not the lab's
 behaviour, but it shows that prompts for a page with 50 or more stops are
 large. Worth measuring (tokens per question) before a customer run.
 
+**Fourth run, with the current code** (2026-11-25, later: compact evidence
+before the question, `registry-4`; whole walks). Files:
+[w3c-bad/run4-current-code/](w3c-bad/run4-current-code/); same labels
+(`labels.json`, still the assistant's, not a person's). All eight walks ended
+by leaving the page and put the page back (46 to 57 stops). The same 77
+questions (on these pages the scanner asks no per-element focus question, so
+1.4.11 does not come in). The prompts, 693,000 characters (about 173,000
+tokens; a walk question about 22,500 characters), were split into four
+batches, each answered blind by a separate model that read every prompt
+itself (no summarising script, unlike run 3).
+
+| | Run 3 | **Run 4** |
+| --- | --- | --- |
+| Agree | 48 of 57 (84%) | **47 of 57 (82%)** |
+| Of those answered | 96% | **98%** |
+| Pass where the label says fail | 2 | **0** |
+| Fail where the label says pass | 0 | 1 |
+| Unresolved | 7 | 9 |
+| Focus order | 4 of 5 | **5 of 5** |
+| Focus visible | 7 of 7 | 7 of 7 |
+| Keyboard | 4 of 8 | 4 of 8 (the 4 "after" pages: the AI may not pass) |
+| Decorative images | 10 of 10 | 7 of 10 |
+
+- **No pass where the label says fail**, the costly mistake: the news photo
+  (Note 10) and the generic link are now left open rather than passed.
+- **The fail where the label says pass is the model's mistake, and shows a
+  gap in the evidence.** On the survey page, blank spacer images sit between
+  the radio buttons and their labels, stretched to different widths (5, 10,
+  17 px). Seeing the widths change row by row in 350 characters of code, the
+  model took them for a results bar chart; the live page shows a question
+  (radio buttons), not results. The page gives it the image's file name and
+  size, not what it shows. **A next step:** say whether an image is blank or
+  transparent (read in the page from a canvas), so a spacer reads as one.
+- Run-to-run variation stays the main noise: the same questions move between
+  agree and unresolved from run to run (the news photo, the "after" home
+  thumbnail). A person's labels, and more cases per check, are what make
+  these figures more than a first reading.
+
 **What a run costs in prompt size** (measured on the third run's 77 questions,
 characters ÷ 4 as tokens): 964,000 characters, about 241,000 tokens. The 24
 page-level focus questions (keyboard, focus order, focus visible: one each per
