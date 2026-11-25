@@ -17,9 +17,9 @@ Read, in this order:
 
 ## State (end of 2026-11-25)
 
-Everything is committed and pushed (latest: 1.4.11 per element). The full
-suite (4484 tests) and the browser tests (`focus-walk`, `ai-answer`,
-`app-boot`: 30) pass.
+Everything is committed and pushed (latest: images say what they show, and
+the W3C evaluation's run 5). The full suite (4485 tests) and the browser tests
+(`focus-walk`, `ai-answer`, `app-boot`: 31) pass.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `evidence.js`, `provider.js`,
@@ -103,11 +103,17 @@ Chrome or Chromium.)
 
 The first three need the user; the rest can be done without.
 
-1. **A person's labels on the W3C run:** open its run in Review AI answers
-   (`answered.json`, as `ai-cant-tell-eval/README.md` says), label against
-   the W3C's annotations with the AI's answer hidden, run
-   `npm run ai:agreement`, and replace the assistant's labels. Until then the
-   84% is not a person's measure.
+1. **A person's labels on the W3C run.** Every W3C figure so far (run 5: 47
+   of 57, 82%) is against labels the assistant wrote
+   (`ai-cant-tell-eval/w3c-bad/labels.json`), not a person's. The repo keeps
+   each run's prompts and answers, not a report to open, so: run the W3C spec
+   again (with a key in the lab, or as a preview answered offline with
+   `answer-offline.js`, see `ai-cant-tell-eval/README.md`), open the run's
+   folder in the app (its `payload.json` or `answered.json` with its
+   `images/`), answer every question in Review AI answers with the AI's
+   answer hidden, against the W3C's annotations, **Download report**, then
+   `npm run ai:agreement -- <the zip> --preview`. Save the person's labels as
+   `labels.json` (the report's `aiReview`) and record the result.
 2. **A real model inside the lab:** the user has a Claude API key and enters
    it in Run settings on their own machine. Run the demo
    (`ai-answers.spec.json`, then `ai-demo-score.js`) and the W3C spec through
@@ -117,13 +123,17 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. Done: images say what they show (`image.look` in `evidence.js`: blank,
-   colours, main colour; read from a canvas not added to the page; an image
-   from another site cannot be read, and says so). Run 5 confirmed it.
-   **Next for the W3C run:** more cases per check, and a person's labels
-   (item 1), to tell real changes from run-to-run variation.
+4. **More cases per check.** The W3C pages give 57 labelled cases, most
+   checks fewer than 10, and each run's wrong answers are a different case
+   (run-to-run variation): 30 to 50 per check are needed to trust a check
+   (`ai:agreement` marks "fewer than 30"). Other public sites built with
+   documented accessibility problems would add cases; each needs its host
+   allowed in the cloud environment (ask the user) and labels. Running each
+   set two or three times and keeping the per-case spread would show which
+   questions are unstable.
 5. **Optional, not built:** pictures sent to the model (only after measuring
-   that they help); 2.4.13's and 1.4.11's measurement is lossy on animated
+   that they help: the news photo of the W3C's Note 10, the one question the
+   model keeps getting wrong, is about what the picture shows); 2.4.13's and 1.4.11's measurement is lossy on animated
    focus styles (it reads after a short wait) and covered stops measure 0
    changed (right, but worth saying in the review).
 6. **On hold:** the browser extension (it never receives AI answers; see the
