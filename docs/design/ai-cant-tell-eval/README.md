@@ -186,3 +186,17 @@ labels are not scored.
 A model's run-to-run variation and my own labels are the two limits of this
 reading. Next: a person's labels (Review AI answers on `answered.json`), and
 a run with a key through the lab's own call.
+
+**Third run, with whole walks** (`focusStops: 80` in the spec: every page has 48
+to 57 stops, and the default of 40 cut each walk short). Files:
+[w3c-bad/run3-full-walks/](w3c-bad/run3-full-walks/). **48 of 57 agree (84%),
+96% of those answered**; focus order 4 of 5 (was 3), focus visible 7 of 7,
+keyboard 4 of 8 (the rest are "after" pages, where the AI may not pass). Two
+"pass" where the label says fail: the news photo (Note 10) and now one of the
+generic links ("Click here"/"Read More..."), which the model failed in the
+other two runs: the same questions vary from run to run. **A caveat on this
+run:** its blind agent found the prompts too large to read whole and
+summarised them with a script (counting lost-focus, hidden and unchanged
+stops) before answering. That is a model's workaround, not the lab's
+behaviour, but it shows that prompts for a page with 50 or more stops are
+large. Worth measuring (tokens per question) before a customer run.

@@ -1,0 +1,77 @@
+{"id":"q1","verdict":"fail","confidence":0.9,"rationale":"Link's only content is an alt=\"\" image, so the link has no accessible name."}
+{"id":"q2","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q3","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q4","verdict":"fail","confidence":0.6,"rationale":"Very long visual description as alt; does not say the link goes home."}
+{"id":"q5","verdict":"fail","confidence":0.55,"rationale":"Alt 'bullet' is noise for a decorative bullet and conveys nothing useful."}
+{"id":"q6","verdict":"fail","confidence":0.8,"rationale":"Image shows the hotline number but alt '[phone]' omits it."}
+{"id":"q7","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page."}
+{"id":"q8","verdict":"unsure","confidence":0.4,"rationale":"'Click here' relies on short context 'Killer bees.'; two links share the same target."}
+{"id":"q9","verdict":"pass","confidence":0.6,"rationale":"Surrounding sentence about the story makes the destination reasonably clear."}
+{"id":"q10","verdict":"fail","confidence":0.9,"rationale":"Several links take focus and the page gives it up at once (lostFocus), so keyboard users cannot use them."}
+{"id":"q11","verdict":"unsure","confidence":0.4,"rationale":"Order broadly follows layout but focus is lost on several stops; evidence does not settle meaningful order."}
+{"id":"q12","verdict":"fail","confidence":0.85,"rationale":"Several stops lose focus immediately so nothing stays visible."}
+{"id":"q13","verdict":"fail","confidence":0.85,"rationale":"Chart of brain donations hidden with alt=\"\" and no text gives its data."}
+{"id":"q14","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q15","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q16","verdict":"fail","confidence":0.6,"rationale":"Linked photo alt describes the picture, not where the link goes."}
+{"id":"q17","verdict":"pass","confidence":0.8,"rationale":"Alt describes the photo meaningfully."}
+{"id":"q18","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page."}
+{"id":"q19","verdict":"fail","confidence":0.9,"rationale":"Several links take focus and the page gives it up at once (lostFocus), so keyboard users cannot use them."}
+{"id":"q20","verdict":"unsure","confidence":0.4,"rationale":"Order broadly follows layout but focus is lost on several stops; evidence does not settle meaningful order."}
+{"id":"q21","verdict":"fail","confidence":0.85,"rationale":"Several stops lose focus immediately so nothing stays visible."}
+{"id":"q22","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q23","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q24","verdict":"fail","confidence":0.7,"rationale":"Image presumably shows the phone number; alt does not convey it."}
+{"id":"q25","verdict":"fail","confidence":0.9,"rationale":"Centered bold div titles the terms section but is not a heading."}
+{"id":"q26","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page."}
+{"id":"q27","verdict":"fail","confidence":0.9,"rationale":"Several links take focus and the page gives it up at once (lostFocus), so keyboard users cannot use them."}
+{"id":"q28","verdict":"unsure","confidence":0.4,"rationale":"Order broadly follows layout but focus is lost on several stops; evidence does not settle meaningful order."}
+{"id":"q29","verdict":"fail","confidence":0.85,"rationale":"Several stops lose focus immediately so nothing stays visible."}
+{"id":"q30","verdict":"pass","confidence":0.9,"rationale":"Tiny 10px spacer gif.gif, decorative."}
+{"id":"q31","verdict":"pass","confidence":0.9,"rationale":"Tiny 10px spacer gif.gif, decorative."}
+{"id":"q32","verdict":"pass","confidence":0.9,"rationale":"Tiny 10px spacer gif.gif, decorative."}
+{"id":"q33","verdict":"pass","confidence":0.9,"rationale":"Tiny 10px spacer gif.gif, decorative."}
+{"id":"q34","verdict":"pass","confidence":0.9,"rationale":"Tiny 10px spacer gif.gif, decorative."}
+{"id":"q35","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q36","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q37","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page."}
+{"id":"q38","verdict":"fail","confidence":0.9,"rationale":"Several links take focus and the page gives it up at once (lostFocus), so keyboard users cannot use them."}
+{"id":"q39","verdict":"unsure","confidence":0.4,"rationale":"Order broadly follows layout but focus is lost on several stops; evidence does not settle meaningful order."}
+{"id":"q40","verdict":"fail","confidence":0.85,"rationale":"Several stops lose focus immediately so nothing stays visible."}
+{"id":"q41","verdict":"pass","confidence":0.6,"rationale":"Image sits under a headline and text carries the story; alt empty is plausible."}
+{"id":"q42","verdict":"pass","confidence":0.6,"rationale":"Image sits under a headline and text carries the story; alt empty is plausible."}
+{"id":"q43","verdict":"pass","confidence":0.6,"rationale":"Image sits under a headline and text carries the story; alt empty is plausible."}
+{"id":"q44","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q45","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q46","verdict":"pass","confidence":0.65,"rationale":"Alt gives site name and slogan; link has no href so no destination needed."}
+{"id":"q47","verdict":"pass","confidence":0.8,"rationale":"Alt conveys the weather shown."}
+{"id":"q48","verdict":"pass","confidence":0.85,"rationale":"Alt describes image related to concert."}
+{"id":"q49","verdict":"pass","confidence":0.8,"rationale":"Alt describes the image reasonably."}
+{"id":"q50","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page."}
+{"id":"q51","verdict":"unsure","confidence":0.4,"rationale":"All controls reached with no unreachable items, but only reaching was checked."}
+{"id":"q52","verdict":"pass","confidence":0.75,"rationale":"Order follows reading order: skip links, nav, content, footer; no anomalies."}
+{"id":"q53","verdict":"pass","confidence":0.85,"rationale":"Every stop shows a focus change and none is hidden or lost."}
+{"id":"q54","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q55","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q56","verdict":"pass","confidence":0.75,"rationale":"Logo alt gives site name; links home."}
+{"id":"q57","verdict":"pass","confidence":0.8,"rationale":"Alt conveys weather."}
+{"id":"q58","verdict":"pass","confidence":0.85,"rationale":"Descriptive alt with caption."}
+{"id":"q59","verdict":"pass","confidence":0.7,"rationale":"Alt says it is Clara F.'s website, giving purpose of the link."}
+{"id":"q60","verdict":"pass","confidence":0.9,"rationale":"Alt reports the chart data."}
+{"id":"q61","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page."}
+{"id":"q62","verdict":"unsure","confidence":0.4,"rationale":"All controls reached with no unreachable items, but only reaching was checked."}
+{"id":"q63","verdict":"pass","confidence":0.75,"rationale":"Order follows reading order: skip links, nav, content, footer; no anomalies."}
+{"id":"q64","verdict":"unsure","confidence":0.45,"rationale":"One focused link is zero-width/hidden; other stops show focus changes."}
+{"id":"q65","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q66","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q67","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page."}
+{"id":"q68","verdict":"unsure","confidence":0.4,"rationale":"All controls reached with no unreachable items, but only reaching was checked."}
+{"id":"q69","verdict":"pass","confidence":0.75,"rationale":"Order follows reading order: skip links, nav, content, footer; no anomalies."}
+{"id":"q70","verdict":"pass","confidence":0.85,"rationale":"Every stop shows a focus change and none is hidden or lost."}
+{"id":"q71","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q72","verdict":"pass","confidence":0.6,"rationale":"Logo link alt names the organisation linked to; title also gives destination."}
+{"id":"q73","verdict":"pass","confidence":0.85,"rationale":"Title names the site and the specific page."}
+{"id":"q74","verdict":"pass","confidence":0.8,"rationale":"Visible legend and the question 'Which city do you find is the greenest?' sit next to the select."}
+{"id":"q75","verdict":"unsure","confidence":0.4,"rationale":"All controls reached with no unreachable items, but only reaching was checked."}
+{"id":"q76","verdict":"pass","confidence":0.75,"rationale":"Order follows reading order: skip links, nav, content, footer; no anomalies."}
+{"id":"q77","verdict":"pass","confidence":0.85,"rationale":"Every stop shows a focus change and none is hidden or lost."}
