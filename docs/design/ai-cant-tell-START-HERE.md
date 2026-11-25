@@ -18,8 +18,9 @@ Read, in this order:
 ## State (end of 2026-11-25)
 
 Everything is committed and pushed (latest: two more evaluated sites, UW and
-GOV.UK, and the walk and question fixes they led to). The full suite and the
-browser tests (`focus-walk`, `ai-answer`, `app-boot`) pass.
+GOV.UK, and the walk and question fixes they led to; prompt version
+`registry-6`). The full suite (4487 tests) and the browser tests
+(`focus-walk`, `ai-answer`, `app-boot`: 33) pass.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `evidence.js`, `provider.js`,
@@ -67,20 +68,24 @@ browser tests (`focus-walk`, `ai-answer`, `app-boot`) pass.
   (`ai-cant-tell-spike/answer-offline.js`): **31 of 31**
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
-- **Real site:** the W3C's Before and After Demonstration
-  (`examples/specs/ai-answers-w3c-bad.spec.json`, `focusStops: 80`), **against
-  labels written by the assistant, not a person** (`ai-cant-tell-eval/w3c-bad/`).
-  **Two more sites** (`ai-cant-tell-eval/README.md`, "More real sites"): UW
-  Accessible University, 38 of 38 answered agree, none wrong; GOV.UK tool
-  audit (23 test pages), 60 of 62 answered agree, the two wrong passes being
-  WCAG readings the audit is stricter than. They found and fixed: the walk
-  stopping at a video's controls, keyboard not asked where Tab reaches
-  nothing, and the focus order question judging other criteria.
-  W3C run 5, with the current code (images say what they show): 47 of 57 (82%),
-  98% of those answered, no wrong fail (run 4's, blank spacers read as a bar
-  chart, is fixed), one wrong pass (the news photo of Note 10, which moves
-  between pass and open from run to run), focus order 5 of 5. Runs 3 and 4:
-  48 and 47 of 57.
+- **Real sites,** each built with documented accessibility problems, scanned
+  with the current code, answered blind by separate models on the lab's exact
+  prompts (`answer-offline.js`), scored with `ai:agreement` **against labels
+  written by the assistant, not a person** (`ai-cant-tell-eval/README.md`):
+
+  | Site | Spec (`examples/specs/`) | Labelled | Agree | Of those answered | Wrong |
+  | --- | --- | --- | --- | --- | --- |
+  | W3C Before and After Demonstration, run 5 | `ai-answers-w3c-bad.spec.json` | 57 | 47 (82%) | 98% | 1 pass (news photo, Note 10; it varies run to run) |
+  | UW Accessible University | `ai-answers-uw-au.spec.json` | 47 | 38 (81%) | 100% | 0 |
+  | GOV.UK accessibility tool audit, 23 pages | `ai-answers-govuk-audit.spec.json` | 98 | 60 (61%) | 97% | 2 passes, WCAG readings the audit is stricter than |
+
+  Most of what is left open is by design: keyboard, which the AI may not
+  pass, and focus questions on pages with nothing focusable. Files per site in
+  `ai-cant-tell-eval/w3c-bad/` (runs 1 to 5), `uw-au/`, `govuk-audit/`;
+  labels for UW and GOV.UK from `label-rules.js` over `list-cases.mjs`.
+  Fixes these runs led to: links that give focus up at once, whole walks
+  (`focusStops`), blank images, a video's own controls, keyboard asked where
+  Tab reaches nothing, focus order judged on its own.
 
 **Not measured yet:** anything through the lab's own Claude call with a real
 key (so prompt caching too: the first real run should show cached tokens in
@@ -109,15 +114,16 @@ Chrome or Chromium.)
 
 The first three need the user; the rest can be done without.
 
-1. **A person's labels on the W3C run.** Every W3C figure so far (run 5: 47
-   of 57, 82%) is against labels the assistant wrote
-   (`ai-cant-tell-eval/w3c-bad/labels.json`), not a person's. The repo keeps
-   each run's prompts and answers, not a report to open, so: run the W3C spec
+1. **A person's labels on the real-site runs** (W3C, UW, GOV.UK). Every
+   figure so far is against labels the assistant wrote (`labels.json` in each
+   site's folder), not a person's. The repo keeps each run's prompts and
+   answers, not a report to open, so: run a site's spec
    again (with a key in the lab, or as a preview answered offline with
    `answer-offline.js`, see `ai-cant-tell-eval/README.md`), open the run's
    folder in the app (its `payload.json` or `answered.json` with its
    `images/`), answer every question in Review AI answers with the AI's
-   answer hidden, against the W3C's annotations, **Download report**, then
+   answer hidden, against the site's documentation (the W3C's annotations,
+   the UW info page, the GOV.UK test names), **Download report**, then
    `npm run ai:agreement -- <the zip> --preview`. Save the person's labels as
    `labels.json` (the report's `aiReview`) and record the result.
 2. **A real model inside the lab:** the user has a Claude API key and enters
@@ -129,15 +135,15 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **More cases per check.** With UW and GOV.UK there are now 202 labelled
-   cases over three sites, but most checks still have fewer than 30 (the W3C
-   pages alone gave 57, and each run's wrong answers are a different case
-   (run-to-run variation): 30 to 50 per check are needed to trust a check
-   (`ai:agreement` marks "fewer than 30"). Other public sites built with
-   documented accessibility problems would add cases; each needs its host
-   allowed in the cloud environment (ask the user) and labels. Running each
-   set two or three times and keeping the per-case spread would show which
-   questions are unstable.
+4. **More cases per check.** There are 202 labelled cases over the three
+   sites, but most checks still have fewer than 30 (`ai:agreement` marks
+   them), and each run's wrong answers are a different case (run-to-run
+   variation): 30 to 50 per check are needed to trust a check. More of the
+   GOV.UK audit's ~140 test pages, or other public sites built with
+   documented problems, would add cases; a new site needs its host allowed in
+   the cloud environment (ask the user) and labels. Running each set two or
+   three times and keeping the per-case spread would show which questions are
+   unstable.
 5. **Optional, not built:** pictures sent to the model (only after measuring
    that they help: the news photo of the W3C's Note 10, the one question the
    model keeps getting wrong, is about what the picture shows); 2.4.13's and 1.4.11's measurement is lossy on animated
