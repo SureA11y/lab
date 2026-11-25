@@ -34,7 +34,9 @@ function buildPrompt(entry, occurrence, evidence, lessons = null) {
         how.failWhen ? `Fail when: ${how.failWhen}` : '',
         '',
         // The pictures are for the person reviewing the answer, not the model.
-        `<evidence>\n${JSON.stringify(withoutPictures(evidence), null, 1)}\n</evidence>`,
+        // Compact, and without null values (an absent field says the same): a
+        // page's walk is thousands of tokens, sent with several questions.
+        `<evidence>\n${JSON.stringify(withoutPictures(evidence), (k, v) => (v === null ? undefined : v))}\n</evidence>`,
         lessons ? lessonsPrompt(lessons) : '',
         '',
         'Decide from the evidence only. Answer "unsure" whenever it is not enough; do not guess.',

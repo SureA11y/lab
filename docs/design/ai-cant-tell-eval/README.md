@@ -200,3 +200,13 @@ summarised them with a script (counting lost-focus, hidden and unchanged
 stops) before answering. That is a model's workaround, not the lab's
 behaviour, but it shows that prompts for a page with 50 or more stops are
 large. Worth measuring (tokens per question) before a customer run.
+
+**What a run costs in prompt size** (measured on the third run's 77 questions,
+characters ÷ 4 as tokens): 964,000 characters, about 241,000 tokens. The 24
+page-level focus questions (keyboard, focus order, focus visible: one each per
+page) are about 8,400 tokens each and carry the same walk three times, so they
+are about 200,000 of it; the others are 500 to 700 tokens. Sending the
+evidence compactly and without null fields (prompt version `registry-3`; same
+information) cuts it to 693,000 characters, about 173,000 tokens (-28%; a walk
+question 33,500 to 22,500 characters). Not done: sending a page's walk once for
+the three questions (they are separate calls), or a shorter record per stop.
