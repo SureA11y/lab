@@ -682,6 +682,16 @@ it as "What it shows". Prompt version `registry-5`. Found on the W3C site,
 where blank spacers stretched to different widths read as a bar chart (run 4);
 fixed in run 5 (`ai-cant-tell-eval/README.md`).
 
+## Fixes from two more sites (2026-11-25)
+
+From the UW Accessible University and GOV.UK audit runs
+(`ai-cant-tell-eval/README.md`): the focus walk treats `<video>`, `<audio>`,
+`<object>` and `<embed>` as it treats an iframe (focus moves into their own
+controls while they stay the focused element: Tab on, one stop, `stuck-inside`
+after 20 presses); keyboard and per-control keyboard questions are asked on a
+page where Tab reaches nothing (what a mouse can use is the evidence); the
+focus order question judges the order only. Prompt version `registry-6`.
+
 ## Status on 2026-11-25
 
 The current state, what is next and the conventions are in

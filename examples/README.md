@@ -48,6 +48,8 @@ with **Load config**. `--check` checks one without opening a browser.
 | `specs/all-pages.batch.json` | One workflow over six pages, a row each, as the app's Batch section runs them |
 | `specs/ai-answers.spec.json` | AI answers on two pages made to ask every question the AI answers, focus walk included ([below](#the-ai-answers-demo)) |
 | `specs/ai-answers-w3c-bad.spec.json` | AI answers on a real site: the W3C's Before and After Demonstration, inaccessible and repaired, eight pages |
+| `specs/ai-answers-uw-au.spec.json` | AI answers on the University of Washington's Accessible University demo, inaccessible and repaired |
+| `specs/ai-answers-govuk-audit.spec.json` | AI answers on 23 pages of the GOV.UK accessibility tool audit, each with one documented problem |
 | `configs/shopping-flow.a11y-config.json` | `shopping-flow` as the app's **Export config** writes it |
 
 ```bash

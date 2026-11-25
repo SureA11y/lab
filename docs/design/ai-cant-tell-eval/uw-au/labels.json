@@ -1,0 +1,237 @@
+{
+ "img-alt-quality|1mf54f6": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: the logo's alt text is its file name",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1nzwb94": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: excessive alt text (\"horizontal line graphic\") on a decorative separator",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1nzx2zd": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: excessive alt text (\"horizontal line graphic\") on a decorative separator",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1nzxupm": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: excessive alt text (\"horizontal line graphic\") on a decorative separator",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1nzymfv": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: excessive alt text (\"horizontal line graphic\") on a decorative separator",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1wenxty": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the licence badge, alt \"Creative Commons License\": accurate",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1wtcg49": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: inaccessible keyboard interface (the carousel controls cannot be reached)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard-element|caik0g": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: the carousel's controls are mouse-only",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard-element|fh3r7j": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: the carousel's controls are mouse-only",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard-element|1uqs7mp": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: the carousel's controls are mouse-only",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard-element|1azcm2r": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: the carousel's controls are mouse-only",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|dn8kcr": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the site and the version shown",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1wtcg49": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the UW info page lists no focus-order problem; the order follows the layout",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "link-name-quality|5n0bmx": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: \"Info\" in the demo's own navigation (Home, Before, After, Info): clear in its context",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|1vqfy39": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|snnvs3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|xqapa3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|12ny90x": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|17zfha1": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|1c7ute7": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|1dl0hqf": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|tu2v7h": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|fd2aq3": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|ugg0l7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible-element|4a3x0f": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1wtcg49": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: UW info page: no visible indication of focus (the \"click here\" links, the checkboxes and the footer links show none)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|1vqfy39": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|snnvs3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|xqapa3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|12ny90x": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|17zfha1": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|1c7ute7": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|1dl0hqf": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|tu2v7h": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|fd2aq3": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a checkbox whose outline is removed: nothing changes on focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|ugg0l7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-contrast-element|4a3x0f": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: its outline is removed but its border changes strongly on focus (measured)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1bqqe3f": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the accessible version's alt text, as the UW info page proposes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1lzntp3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the accessible version's alt text, as the UW info page proposes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|9b5aw": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the accessible version",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard-element|17iad7o": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the accessible version: the slide buttons take focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard-element|1ji3xi2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the accessible version: the slide buttons take focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard-element|1v8xnpa": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the accessible version: the slide buttons take focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard-element|7ynbxe": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the accessible version: the slide buttons take focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|198utec": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the site and the version shown",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|9b5aw": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the UW info page lists no focus-order problem; the order follows the layout",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|9b5aw": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the accessible version",
+  "at": "2026-11-25T18:00:00.000Z"
+ }
+}

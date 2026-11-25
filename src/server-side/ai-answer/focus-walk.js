@@ -29,6 +29,9 @@ const KEY = '__a11yFocusWalk';
 const START = 'data-a11y-focus-walk-start';
 
 const DEFAULTS = { maxStops: 40, maxPictures: 20, settleMs: 80 };
+// The most Tab presses inside one iframe or media player before the walk calls
+// it stuck there.
+const MAX_PRESSES_INSIDE = 20;
 const PICTURE_MAX = { width: 420, height: 200 };
 // The page's picture with the stops on it: at most this much of the page.
 const MAP_MAX = { width: 1600, height: 8000 };
@@ -151,7 +154,10 @@ async function walkFocus(page, options = {}) {
                 } else st.lastFocus = null;
                 const last = st.visited[st.visited.length - 1];
                 // Inside an iframe, focus moves where the page cannot see: one stop.
-                if (a === last && a.tagName === 'IFRAME') return { insideFrame: true };
+                // Inside an iframe, or the built-in controls of a video or audio
+                // player (an embedded object too), focus moves where the page
+                // cannot see: the same element stays focused. One stop, Tab on.
+                if (a === last && ['IFRAME', 'VIDEO', 'AUDIO', 'OBJECT', 'EMBED'].includes(a.tagName)) return { insideFrame: true };
                 const seen = st.visited.indexOf(a);
                 if (seen >= 0) return { end: 'came-back', index: seen };
                 st.visited.push(a);
@@ -225,7 +231,14 @@ async function walkFocus(page, options = {}) {
                     ...(lostFocus ? { lostFocus: true } : {}),
                 };
             }, KEY, START, i === 0);
-            if (stop.insideFrame) { result.stops[result.stops.length - 1].insideFrame = true; continue; }
+            if (stop.insideFrame) {
+                const lastStop = result.stops[result.stops.length - 1];
+                lastStop.insideFrame = true;
+                lastStop.pressesInside = (lastStop.pressesInside || 0) + 1;
+                // Not forever: past this many presses inside one, it holds focus.
+                if (lastStop.pressesInside >= MAX_PRESSES_INSIDE) { result.ended = 'stuck-inside'; result.endedAt = lastStop.n; break; }
+                continue;
+            }
             if (stop.end) {
                 result.ended = stop.end;
                 if (stop.end === 'came-back') result.endedAt = stop.index + 1;

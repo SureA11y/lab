@@ -1,0 +1,45 @@
+{"id":"q1","verdict":"fail","confidence":0.92,"rationale":"The logo's alt text is its file name (au123456789.gif), so it says nothing about what the image shows, and no nearby description makes up for it (F30)."}
+{"id":"q2","verdict":"fail","confidence":0.6,"rationale":"The image is a decorative 400x5 horizontal rule; alt \"horizontal line graphic\" only names the graphic and adds noise for screen reader users instead of being empty, so it does not convey anything a user needs."}
+{"id":"q3","verdict":"pass","confidence":0.75,"rationale":"The image is the only content of a link to the Creative Commons license page, and the alt 'Creative Commons License' names that destination."}
+{"id":"q4","verdict":"pass","confidence":0.65,"rationale":"The title names the site and says this is the inaccessible version of the demo, which describes the page's purpose. No headings were captured to compare against, so confidence is moderate."}
+{"id":"q5","verdict":"unsure","confidence":0.5,"rationale":"\"Info\" sits in a short demo-site navigation list (Home, Before, After, Info) with no further context; whether that makes the destination clear enough is borderline from this evidence."}
+{"id":"q6","verdict":"fail","confidence":0.7,"rationale":"Four carousel indicator list items show a pointer cursor but can never take focus, and no other stop (e.g. previous/next buttons) appears to offer the same function by keyboard."}
+{"id":"q7","verdict":"fail","confidence":0.7,"rationale":"The carousel indicator li cannot take focus and the focus walk shows no other keyboard control (prev/next or similar) that changes slides."}
+{"id":"q8","verdict":"fail","confidence":0.7,"rationale":"The fourth carousel indicator li cannot take focus and no other keyboard-reachable control on the page does the same slide switching."}
+{"id":"q9","verdict":"fail","confidence":0.7,"rationale":"The fourth carousel indicator li cannot take focus and no other keyboard-reachable control on the page does the same slide switching."}
+{"id":"q10","verdict":"fail","confidence":0.7,"rationale":"The fourth carousel indicator li cannot take focus and no other keyboard-reachable control on the page does the same slide switching."}
+{"id":"q11","verdict":"pass","confidence":0.6,"rationale":"Focus goes top nav, main menu and its submenus, content links, video, sidebar form, then footer, which follows DOM and reading order; the sidebar coming after main content is a usual layout pattern."}
+{"id":"q12","verdict":"pass","confidence":0.7,"rationale":"Stop 28 shows a border change on focus covering about 497 px, 493 of them at 3:1, roughly a full one-pixel ring around the field, so focus is visible."}
+{"id":"q13","verdict":"pass","confidence":0.6,"rationale":"At stop 29 the input's border visibly changes on focus (497 px changed, 493 at 3:1 contrast), so focus remains visible despite the removed outline."}
+{"id":"q14","verdict":"pass","confidence":0.7,"rationale":"At stop 30 the field's border changes on focus, and 493 of 497 changed pixels are at 3:1 or more, about a full 1px line around the field, so focus is visible."}
+{"id":"q15","verdict":"fail","confidence":0.85,"rationale":"Stop 31 (the checkbox) shows no change at all on focus (changed 0), so with the outline removed focus is invisible."}
+{"id":"q16","verdict":"fail","confidence":0.85,"rationale":"Stop 32 (the checkbox) shows no change at all on focus (changed 0), so with the outline removed focus is invisible."}
+{"id":"q17","verdict":"fail","confidence":0.85,"rationale":"The target is reached at stop 33 (a checkbox), and nothing on it changed on focus (changesOnFocus is empty, changed 0), so no focus indicator replaces the removed outline."}
+{"id":"q18","verdict":"fail","confidence":0.85,"rationale":"The target is reached at stop 34 (a checkbox), and nothing changed on focus (changesOnFocus is empty, changed 0), so focus is not visible."}
+{"id":"q19","verdict":"fail","confidence":0.85,"rationale":"At stop 35 the checkbox shows no change at all on focus (changesOnFocus empty, 0 px changed), so focus is not visible."}
+{"id":"q20","verdict":"fail","confidence":0.88,"rationale":"The target is stop 36, where changesOnFocus is empty and 0 pixels changed, so nothing visible shows focus once the outline is removed."}
+{"id":"q21","verdict":"pass","confidence":0.8,"rationale":"At stop 37 the border changes on focus (497 px changed, 493 of them at 3:1), so a visible indicator replaces the removed outline."}
+{"id":"q22","verdict":"pass","confidence":0.75,"rationale":"The Submit button (stop 38) changes its border on focus: 152 pixels change, about one 1px line around it, so a visible indicator replaces the outline."}
+{"id":"q23","verdict":"fail","confidence":0.9,"rationale":"Many stops show no visible change on focus, including the three click here links, six checkboxes and three footer links, so focus is not always visible."}
+{"id":"q24","verdict":"pass","confidence":0.65,"rationale":"At stop 28 the border change has 493 pixels at 3:1 or more, about the area of a full 1px line around the field (482), which is enough to see."}
+{"id":"q25","verdict":"pass","confidence":0.7,"rationale":"At stop 29 the border changes on focus, and 493 changed pixels are at 3:1 or more, about a full 1px line around the field (oneLine 482), which is enough to see."}
+{"id":"q26","verdict":"pass","confidence":0.65,"rationale":"Stop 30 changes its border on focus with 493 px at 3:1 or more, about the area of a full one-pixel line around the field (482), which is enough to see."}
+{"id":"q27","verdict":"fail","confidence":0.85,"rationale":"At stop 31 nothing changes on focus (changed 0, atContrast 0), so there is no indicator and nothing meets 3:1."}
+{"id":"q28","verdict":"fail","confidence":0.88,"rationale":"The target is stop 32, where nothing changes on focus (0 pixels changed), so there is no indicator and nothing meets 3:1."}
+{"id":"q29","verdict":"fail","confidence":0.9,"rationale":"At stop 33 nothing changes on focus (changed 0), so there is no indicator and nothing meets 3:1."}
+{"id":"q30","verdict":"fail","confidence":0.85,"rationale":"At stop 34 nothing changes on focus (changed 0, atContrast 0), so there is no indicator and nothing meets 3:1."}
+{"id":"q31","verdict":"fail","confidence":0.88,"rationale":"The target is stop 35, where nothing changes on focus (0 pixels changed), so there is no indicator and nothing meets 3:1."}
+{"id":"q32","verdict":"fail","confidence":0.9,"rationale":"At stop 36 nothing changes on focus (changed 0), so there is no focus indicator at all."}
+{"id":"q33","verdict":"pass","confidence":0.7,"rationale":"At stop 37 the border change has 493 px at 3:1 or more, about a full 1 px line around the element (482), which is enough to see focus."}
+{"id":"q34","verdict":"pass","confidence":0.7,"rationale":"The Submit button's border change puts 132 of the 152 changed pixels at 3:1 or more, close to a full 1px line around the button (oneLine 152), which is enough to see."}
+{"id":"q35","verdict":"pass","confidence":0.85,"rationale":"The logo image sits in the h1 and its alt text 'Accessible University' names the site, which is right for a logo used as the page heading."}
+{"id":"q36","verdict":"pass","confidence":0.6,"rationale":"The alt text describes a specific scene that fits a slide captioned 'A modern school', and nothing suggests it is wrong. The picture itself could not be checked, so accuracy is not confirmed."}
+{"id":"q37","verdict":"pass","confidence":0.75,"rationale":"The image is the only content of a link to the Creative Commons license page, and the alt text Creative Commons License names that destination."}
+{"id":"q38","verdict":"pass","confidence":0.75,"rationale":"The title names the Accessible University demo site and says this is its accessible version, which matches the welcome/demo content and headings."}
+{"id":"q39","verdict":"unsure","confidence":0.7,"rationale":"Nothing is listed as unreachable and the walk left the page normally with no trap; only reaching was checked, so the prompt does not allow pass."}
+{"id":"q40","verdict":"unsure","confidence":0.7,"rationale":"Slide 1 was reached by Tab at stop 12; whether Enter/Space operate it was not tested."}
+{"id":"q41","verdict":"unsure","confidence":0.7,"rationale":"Slide 2 was reached by Tab at stop 13; operation by keyboard was not tested."}
+{"id":"q42","verdict":"unsure","confidence":0.7,"rationale":"Slide 3 was reached by Tab at stop 14; operation by keyboard was not tested."}
+{"id":"q43","verdict":"unsure","confidence":0.7,"rationale":"Slide 4 was reached by Tab at stop 15; operation by keyboard was not tested."}
+{"id":"q44","verdict":"pass","confidence":0.7,"rationale":"Order runs skip link, header nav, main menu, slideshow controls in visual order, main content, sidebar form top to bottom, then footer, which matches the page's structure."}
+{"id":"q45","verdict":"pass","confidence":0.75,"rationale":"Every stop shows a change on focus (outline, or background and text colour for menu buttons), and none is hidden or loses focus."}

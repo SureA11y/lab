@@ -225,3 +225,30 @@ test('follows the page\'s own Tab order: positive tabindex first, in their order
     assert.equal(walk.ended, 'left-page');
     await page.close();
 });
+
+test('goes on past a video\'s own controls, which keep the video focused, to what follows', async () => {
+    const page = await open('<title>Video</title><a href="#a">Before</a> <video controls width="200" height="100"></video> <a href="#b">After the video</a>');
+    const walk = await walkFocus(page, { mapPicture: false });
+    const names = walk.stops.map((s) => s.name || s.tag);
+    assert.ok(names.includes('After the video'), names.join(', '));
+    assert.equal(walk.ended, 'left-page');
+    // (An empty video has no controls to Tab through here; with a source, its
+    // controls keep the video focused, counted as presses inside it.)
+    await page.close();
+});
+
+test('a page Tab reaches nothing on is still asked about the keyboard, from what a mouse can use', async () => {
+    const page = await open('<title>Fake</title><p>Pay now:</p><div id="pay" onclick="void 0" style="width:80px;height:30px;background:#036;color:#fff">Pay</div>');
+    const c = { findings: [
+        { ruleId: 'wcag-2.1.1-keyboard', outcome: 'cantTell', occurrences: [{ atomicCheckId: 'manual-review', occurrenceOutcome: 'cantTell', target: ['html'], html: '' }] },
+        { ruleId: 'wcag-2.4.3-focus-order', outcome: 'cantTell', occurrences: [{ atomicCheckId: 'manual-review', occurrenceOutcome: 'cantTell', target: ['html'], html: '' }] },
+    ] };
+    const prompts = [];
+    await answerCantTells({ page, canonical: c, options: { focus: true }, env: {}, provider: { ask: async (p) => { prompts.push(p); return '{"verdict":"fail","confidence":0.9,"rationale":"The Pay control cannot be reached."}'; } } });
+    const [keyboard, order] = c.findings.map((f) => f.findings ? null : f.occurrences[0].ai);
+    assert.equal(prompts.length, 1, 'keyboard asked; focus order not (no stops)');
+    assert.match(prompts[0], /#pay/);
+    assert.deepEqual([keyboard.provenance, keyboard.verdict], ['ai-supported', 'fail']);
+    assert.equal(order.reason, 'no-focus-stops');
+    await page.close();
+});

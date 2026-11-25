@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "https://projects.accesscomputing.uw.edu/au/before.html",
+  "scenarioName": "AI answers on the UW Accessible University demo",
+  "actions": [
+    {
+      "type": "a11yScan",
+      "label": "Before",
+      "ai": {
+        "focus": true,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://projects.accesscomputing.uw.edu/au/after.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "After",
+      "ai": {
+        "focus": true,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    }
+  ]
+}

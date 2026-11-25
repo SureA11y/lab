@@ -153,6 +153,7 @@ export function focusWalkEnd(walk) {
     if (walk.ended === 'left-page') return 'Focus left the page after the last stop.';
     if (walk.ended === 'came-back') return 'Focus came back to stop ' + walk.endedAt + ' (it may be trapped in a loop).';
     if (walk.ended === 'limit') return 'The walk stopped at its limit of ' + walk.limit + ' stops; the page may have more.';
+    if (walk.ended === 'stuck-inside') return 'Focus stayed inside stop ' + walk.endedAt + ' (a frame or a player) for 20 Tab presses: it may be trapped there.';
     return 'The walk could not be done.';
 }
 
@@ -240,7 +241,7 @@ export function focusWalkHtml(walk, { escapeHtml, escapeAttr = escapeHtml }) {
             ? (s.changesOnFocus.length ? 'Focus shows as: ' + s.changesOnFocus.join(', ') + '.' : 'No visible change found on focus.')
             : '';
         const appearance = s.appearance ? 'Indicator: ' + appearanceText(s.appearance) + (typeof s.appearance.meets === 'boolean' ? (s.appearance.meets ? ' (meets 2.4.13).' : ' (short of 2.4.13).') : '.') : '';
-        const notes = [changes, appearance, s.covered ? coverText(s).replace(/^./, (c) => c.toUpperCase()) + ' while focused.' : '', s.hidden ? 'Not visible while focused.' : '', s.insideFrame ? 'Focus went on inside this frame.' : '']
+        const notes = [changes, appearance, s.covered ? coverText(s).replace(/^./, (c) => c.toUpperCase()) + ' while focused.' : '', s.hidden ? 'Not visible while focused.' : '', s.insideFrame ? 'Focus went on inside it (a frame or a player\'s own controls)' + (s.pressesInside ? ', ' + s.pressesInside + ' Tab presses' : '') + '.' : '']
             .filter(Boolean).join(' ');
         return '<li class="air-stop' + (Array.isArray(s.changesOnFocus) && !s.changesOnFocus.length ? ' air-stop--none' : '') + '">' +
             '<span class="air-stop__name">' + escapeHtml(stopName(s)) + '</span> ' +

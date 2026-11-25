@@ -8,8 +8,10 @@
 // the exception, and opt-in.
 
 // registry-5: an image's evidence says what it shows (image.look: blank,
-// colours), so a transparent spacer reads as one.
-const PROMPT_VERSION = 'registry-5';
+// colours), so a transparent spacer reads as one. registry-6: the focus order
+// question judges the order only; keyboard is asked on a page Tab reaches
+// nothing on.
+const PROMPT_VERSION = 'registry-6';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -50,7 +52,7 @@ const PAGE_LEVEL = Object.freeze({
     },
     'wcag-2.4.3-focus-order': {
         check: 'focus-order',
-        question: 'Does focus move through this page in an order that keeps its meaning and use, broadly following the order the page reads in? The focus walk lists every stop in order, with its position (x, y in pixels from the top left of the page), its landmark (header, navigation, main, footer...) and the heading it comes under.',
+        question: 'Judge the order only (other criteria cover controls Tab cannot reach and focus that cannot be seen): does focus move through this page in an order that keeps its meaning and use, broadly following the order the page reads in? The focus walk lists every stop in order, with its position (x, y in pixels from the top left of the page), its landmark (header, navigation, main, footer...) and the heading it comes under.',
         evidence: ['focusWalk'],
     },
     // Reaching is not operating: the walk never presses Enter or Space, so the

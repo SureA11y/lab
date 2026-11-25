@@ -285,3 +285,82 @@ start, so the second and third read the walk from the cache, at a fraction of
 the price (not fewer tokens sent). Not measured with a real key yet: the cached
 tokens show in the API's usage. Not done: one call for the three questions (it
 would break the endpoint's one-question contract), or a shorter record per stop.
+
+## More real sites: UW Accessible University and the GOV.UK audit (2026-11-25)
+
+Two more public sites built with documented accessibility problems, scanned
+with the current code (`registry-6`) and answered blind as before (five
+separate models; changed prompts answered again by a sixth, unchanged ones
+reused). Labels: the assistant's, written as rules from each site's own
+documentation and the page source before any answer
+([label-rules.js](label-rules.js), with [list-cases.mjs](list-cases.mjs) to
+list a run's cases); not a person's.
+
+- **[UW Accessible University](https://projects.accesscomputing.uw.edu/au/)**
+  (University of Washington; it moved from www.washington.edu): a university
+  home page, inaccessible ("before") and repaired ("after"), with every
+  problem listed on its [info page](https://projects.accesscomputing.uw.edu/au/info.html).
+  Spec: `examples/specs/ai-answers-uw-au.spec.json`. Files: [uw-au/](uw-au/).
+- **[GOV.UK accessibility tool audit](https://alphagov.github.io/accessibility-tool-audit/test-cases.html)**
+  (the Government Digital Service): about 140 small test pages, each with one
+  documented problem, built to test tools. 23 of them, those the AI's
+  questions concern (titles, headings, images, links, labels, focus,
+  keyboard); for the page-title and keyboard-trap cases, the example pages they
+  link to. Spec: `examples/specs/ai-answers-govuk-audit.spec.json`. Files:
+  [govuk-audit/](govuk-audit/).
+
+| | UW AU | GOV.UK audit |
+| --- | --- | --- |
+| Questions sent | 45 | 79 |
+| Labelled cases | 47 | 98 (1 unsure, not scored) |
+| Agree | 38 (81%) | 60 (61%) |
+| **Of those answered** | **38 of 38 (100%)** | **60 of 62 (97%)** |
+| Pass where the label says fail | 0 | 2 |
+| Fail where the label says pass | 0 | 0 |
+| Left open | 9 | 36 |
+
+- **Left open is mostly by design.** UW: 5 keyboard questions on the
+  repaired page (the AI may not pass keyboard), 3 alt-text questions on the
+  divider images ("horizontal line graphic"), 1 link. GOV.UK: 11 keyboard
+  questions the AI may not pass, 22 focus questions on test pages with nothing
+  to focus, and 3 real hesitations ("Read more", the invisible-focus button,
+  one keyboard case).
+- **The two wrong passes are WCAG readings the audit is stricter than.**
+  "Click here" in the sentence "...for more information on the Rocky
+  Mountains" (the model: it meets 2.4.4, AA, from its sentence, not 2.4.9,
+  AAA); and a search field with only a placeholder before a "Search" button
+  (the model: the button tells what the field is for, as WCAG's technique G167
+  accepts). The labels, written from the audit's list, were kept as they were;
+  both readings are recorded here.
+- **What these sites found in the lab, fixed before the final scoring:**
+  - The focus walk stopped at a `<video>` with its own controls (focus moves
+    into the player's controls while the video stays the focused element), so
+    it never reached the UW form below it. It now treats video, audio and
+    embedded objects as it treats an iframe: Tab on inside them, as one stop,
+    and calls it stuck after 20 presses (`stuck-inside`). The UW walk went from
+    27 stops to 41.
+  - Keyboard was not asked on a page where Tab reaches nothing, though what a
+    mouse can use there (a fake button, concertina items) is the answer: it is
+    asked now (the four concertina items and the fake button are now failed).
+  - The focus order question now says to judge the order only: the model had
+    failed UW's order for its unreachable controls and invisible focus, which
+    other criteria cover.
+  - The page-title label rule passed the GOV.UK example titled "Insert title
+    here"; corrected (the model had failed it, rightly).
+
+### Replicate
+
+```bash
+A11Y_AI_PREVIEW=on node src/cli/run-workflow.js examples/specs/ai-answers-uw-au.spec.json --out runs/uw-au
+```
+
+```bash
+A11Y_AI_PREVIEW=on node src/cli/run-workflow.js examples/specs/ai-answers-govuk-audit.spec.json --out runs/govuk
+```
+
+Then for each: `answer-offline.js prompts`, a model answers, `answer-offline.js
+apply`; `list-cases.mjs` and `label-rules.js` (au or gov) for the labels, put
+into the answered report as its `aiReview`; and `npm run ai:agreement --
+<report> --preview`. With a key, run without the preview and skip the offline
+steps.
+

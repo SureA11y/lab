@@ -1,0 +1,79 @@
+{"id":"q1","verdict":"fail","confidence":0.95,"rationale":"\"Insert title here\" is placeholder text that says nothing about the page's topic."}
+{"id":"q2","verdict":"unsure","confidence":0.6,"rationale":"The walk found no stops and nothing unreachable, so no control is clearly out of reach and no trap was seen."}
+{"id":"q3","verdict":"fail","confidence":0.9,"rationale":"A div styled as a heading titles the paragraph after it, but it is exposed as generic rather than as a heading (F2)."}
+{"id":"q4","verdict":"pass","confidence":0.9,"rationale":"The title names the test topic, matching the h1 \"Text formatting used instead of an actual heading\", and the site."}
+{"id":"q5","verdict":"fail","confidence":0.9,"rationale":"The alt text is the file name bbc-blocks-dark.png, which does not convey the image's content, and no other description is given."}
+{"id":"q6","verdict":"pass","confidence":0.85,"rationale":"The title includes the page's topic, Image alt attribute contains image file name, which matches the main heading."}
+{"id":"q7","verdict":"fail","confidence":0.85,"rationale":"The image file is a BBC blocks logo but the alt says 'Twitter', so the alt text is inaccurate."}
+{"id":"q8","verdict":"pass","confidence":0.85,"rationale":"The title states the specific test topic, which matches the h1, plus the site name."}
+{"id":"q9","verdict":"fail","confidence":0.75,"rationale":"The image is a two-colour block graphic that reads as a logo (bbc-blocks), and no text on the page says what it shows, so empty alt hides its meaning."}
+{"id":"q10","verdict":"pass","confidence":0.85,"rationale":"The title names the page's topic, which matches its h1 'Image that conveys information has an empty alt attribute'."}
+{"id":"q11","verdict":"pass","confidence":0.8,"rationale":"The image is decorative line clipart under a heading about presentation-role images; hiding it loses no information."}
+{"id":"q12","verdict":"pass","confidence":0.85,"rationale":"The title names the page's topic, which matches its h1 'Image with presentation role has non-empty alt'."}
+{"id":"q13","verdict":"fail","confidence":0.8,"rationale":"The alt '25% off sale' leaves out information the image shows, such as which departments are on sale (the page text itself says so), and nothing else gives it."}
+{"id":"q14","verdict":"pass","confidence":0.9,"rationale":"The title matches the page's h1 \"Image with partial text alternative\" and identifies the site."}
+{"id":"q15","verdict":"pass","confidence":0.92,"rationale":"The image is a fully transparent 100x1 spacer GIF, so hiding it with empty alt loses nothing."}
+{"id":"q16","verdict":"pass","confidence":0.85,"rationale":"The title includes 'Spacer image found', which matches the page's h1 and content."}
+{"id":"q17","verdict":"pass","confidence":0.9,"rationale":"The title matches the h1 \"Uninformative link text\", which describes the page's purpose as a test page."}
+{"id":"q18","verdict":"pass","confidence":0.5,"rationale":"Read more on its own is generic, but it follows a Polar bear heading and paragraph, which makes the Wikipedia polar bear destination clear in context; it would still fail 2.4.9."}
+{"id":"q19","verdict":"unsure","confidence":0.7,"rationale":"The only link was reached, nothing is unreachable and no trap was seen, but operation was not checked."}
+{"id":"q20","verdict":"pass","confidence":0.85,"rationale":"There is only one focus stop, so the order cannot be confusing."}
+{"id":"q21","verdict":"pass","confidence":0.8,"rationale":"The only stop shows an outline change on focus and is in view, so focus is visible."}
+{"id":"q22","verdict":"pass","confidence":0.85,"rationale":"The title states the page's topic, which matches its h1."}
+{"id":"q23","verdict":"unsure","confidence":0.6,"rationale":"The page's only link was reached and nothing is listed as unreachable, but only reaching was checked, so the answer cannot be pass."}
+{"id":"q24","verdict":"pass","confidence":0.85,"rationale":"There is only one focus stop, so the order is trivially sensible."}
+{"id":"q25","verdict":"pass","confidence":0.7,"rationale":"The single stop shows an outline change on focus and is in view, so focus is visible."}
+{"id":"q26","verdict":"pass","confidence":0.85,"rationale":"The title states the page's topic, 'Non-specific link text', which matches its h1."}
+{"id":"q27","verdict":"pass","confidence":0.65,"rationale":"'Click here' is generic, but the sentence it is in ('for more information on the Rocky Mountains') makes the destination clear, which meets 2.4.4 (AA) though not 2.4.9."}
+{"id":"q28","verdict":"unsure","confidence":0.7,"rationale":"Tab reaches the page's one link and nothing is listed as unreachable, so no control is clearly out of reach. Operating it was not checked, and the prompt rules out answering pass."}
+{"id":"q29","verdict":"pass","confidence":0.85,"rationale":"There is only one focus stop, so the order is trivially sensible."}
+{"id":"q30","verdict":"pass","confidence":0.8,"rationale":"The only stop, the \"Click here\" link, shows an outline on focus and is in view."}
+{"id":"q31","verdict":"pass","confidence":0.85,"rationale":"The title says the page is about an uninformative alt value on an image button, which matches its h1 and content."}
+{"id":"q32","verdict":"unsure","confidence":0.75,"rationale":"The single image button is reachable, nothing is unreachable and there is no trap; operation was not checked and pass is not allowed."}
+{"id":"q33","verdict":"pass","confidence":0.85,"rationale":"There is only one focus stop, so the order is trivially sensible."}
+{"id":"q34","verdict":"pass","confidence":0.8,"rationale":"The only stop, the image button, shows an outline change on focus, so focus is visible."}
+{"id":"q35","verdict":"pass","confidence":0.9,"rationale":"The title matches the h1 \"Placeholder no label\" and identifies the test page."}
+{"id":"q36","verdict":"pass","confidence":0.8,"rationale":"A submit button labelled Search directly follows the search field and stays on screen, which tells what the field is for."}
+{"id":"q37","verdict":"unsure","confidence":0.7,"rationale":"Tab reaches both the search field and the button, in order, and nothing is listed as unreachable. Operating them was not checked, and the prompt rules out answering pass."}
+{"id":"q38","verdict":"pass","confidence":0.85,"rationale":"The search field and then its submit button, left to right on one row, follow reading order."}
+{"id":"q39","verdict":"pass","confidence":0.8,"rationale":"Both stops (search field and submit button) show an outline on focus and are in view."}
+{"id":"q40","verdict":"pass","confidence":0.85,"rationale":"The title names the page's topic, which matches its main heading."}
+{"id":"q41","verdict":"unsure","confidence":0.6,"rationale":"All three date fields were reached in order and nothing is listed as unreachable, but only reaching was checked, so the answer cannot be pass."}
+{"id":"q42","verdict":"pass","confidence":0.85,"rationale":"Day, month and year fields are focused left to right on one row, matching reading order."}
+{"id":"q43","verdict":"pass","confidence":0.85,"rationale":"All three stops show an outline change on focus and none are hidden."}
+{"id":"q44","verdict":"pass","confidence":0.85,"rationale":"The title names the topic, Focus not visible, which matches the main heading."}
+{"id":"q45","verdict":"unsure","confidence":0.75,"rationale":"Both controls are reached by Tab, nothing is listed unreachable and no trap occurred; operation was not checked and pass is not allowed."}
+{"id":"q46","verdict":"pass","confidence":0.85,"rationale":"The link and then the button are focused left to right on the same row, matching reading order."}
+{"id":"q47","verdict":"unsure","confidence":0.5,"rationale":"Both stops show outline/border changes, but there is no contrast measurement. The page heading 'Focus not visible' and the class 'not-visible-outline' suggest the indicator may not actually be visible."}
+{"id":"q48","verdict":"pass","confidence":0.85,"rationale":"The title states the page topic ('Keyboard focus is not indicated visually'), which matches its h1."}
+{"id":"q49","verdict":"unsure","confidence":0.55,"rationale":"The only link is reachable and nothing is unreachable or trapped; its focus indicator is invisible, but this question only covers reaching, so it is not answered as pass."}
+{"id":"q50","verdict":"pass","confidence":0.85,"rationale":"There is only one focus stop; visibility is judged elsewhere, so the order is fine."}
+{"id":"q51","verdict":"fail","confidence":0.9,"rationale":"The link is reached at stop 1, but nothing changes when it takes focus (changesOnFocus is empty and 0 pixels changed), so focus is invisible (F78)."}
+{"id":"q52","verdict":"fail","confidence":0.9,"rationale":"The only link shows no change at all on focus (changed 0), so keyboard focus is invisible."}
+{"id":"q53","verdict":"fail","confidence":0.9,"rationale":"The link is reached at stop 1 but nothing changes on focus (0 px changed), so there is no indicator at 3:1 and focus is not visible."}
+{"id":"q54","verdict":"pass","confidence":0.85,"rationale":"The title states the page topic ('Focus order in wrong order'), which matches its h1."}
+{"id":"q55","verdict":"unsure","confidence":0.75,"rationale":"All three links are reachable and there is no trap; the odd focus order is a separate issue, and pass is not allowed for reachability."}
+{"id":"q56","verdict":"fail","confidence":0.8,"rationale":"On one row, focus goes from First link (x=20) to Second link at the far right (x=1196), then back to Third link (x=90), which does not follow the visual reading order."}
+{"id":"q57","verdict":"pass","confidence":0.85,"rationale":"All three stops show an outline on focus and none is hidden or loses focus, so focus is always visible (the order problem is a separate check)."}
+{"id":"q58","verdict":"pass","confidence":0.85,"rationale":"The title states the page topic ('Tabindex greater than 0'), which matches its h1."}
+{"id":"q59","verdict":"unsure","confidence":0.7,"rationale":"Tab reaches the only link and nothing is listed as unreachable, so no control is clearly out of reach. Operating it was not checked, and the prompt rules out answering pass."}
+{"id":"q60","verdict":"pass","confidence":0.8,"rationale":"There is only one focus stop, so a positive tabindex causes no visible order problem here."}
+{"id":"q61","verdict":"pass","confidence":0.8,"rationale":"The page's only stop shows an outline change when focused, and it is in view and not hidden."}
+{"id":"q62","verdict":"pass","confidence":0.85,"rationale":"The title says 'Example keyboard trap', which matches the page's h1 and content."}
+{"id":"q63","verdict":"fail","confidence":0.75,"rationale":"The walk ended \"came-back\" to the only link at stop 1 instead of leaving the page, which indicates focus is trapped on it."}
+{"id":"q64","verdict":"unsure","confidence":0.5,"rationale":"There is only one stop, so the order itself is trivial, but the walk ended by coming back to that stop, which points to a trap; that is a separate issue the order question cannot settle."}
+{"id":"q65","verdict":"pass","confidence":0.55,"rationale":"The one stop reached shows an outline on focus. The walk came back to it, which suggests a keyboard trap, but that is a separate 2.1.2 issue, not a visibility one."}
+{"id":"q66","verdict":"pass","confidence":0.85,"rationale":"The title names the page's topic, Fake button is not keyboard accessible, which matches the heading."}
+{"id":"q67","verdict":"fail","confidence":0.85,"rationale":"The launch webchat div is unreachable (pointer cursor but cannot take focus), and the page has no focus stops at all, so no other control does the same job."}
+{"id":"q68","verdict":"pass","confidence":0.9,"rationale":"The title matches the h1 \"Concertina items don't get keyboard focus\" and identifies the test page."}
+{"id":"q69","verdict":"fail","confidence":0.75,"rationale":"The dt with a click handler was never reached by Tab, and the page has no focus stops at all, so nothing else gives keyboard access to its action."}
+{"id":"q70","verdict":"fail","confidence":0.75,"rationale":"The dt with a click handler was never reached by Tab, and the page has no focus stops, so no keyboard alternative exists."}
+{"id":"q71","verdict":"fail","confidence":0.75,"rationale":"The dt with a click handler was never reached by Tab, and the page has no focus stops, so no keyboard alternative exists."}
+{"id":"q72","verdict":"pass","confidence":0.85,"rationale":"The title states the page's topic, which matches its h1."}
+{"id":"q73","verdict":"fail","confidence":0.7,"rationale":"The tooltip ? icon shows a pointer cursor but cannot take focus, so keyboard users cannot open the tooltip."}
+{"id":"q74","verdict":"pass","confidence":0.8,"rationale":"There is only one focus stop; the unreachable tooltip icon is a separate criterion, so the order is fine."}
+{"id":"q75","verdict":"pass","confidence":0.8,"rationale":"The only stop shows an outline change on focus and is in view."}
+{"id":"q76","verdict":"pass","confidence":0.85,"rationale":"The title names the topic of the page and matches its main heading."}
+{"id":"q77","verdict":"unsure","confidence":0.6,"rationale":"Only the top-level 'Benefits' link was reached and nothing is listed as unreachable. Dropdown sub-items may be hidden, but the evidence does not show them as mouse-usable controls."}
+{"id":"q78","verdict":"pass","confidence":0.8,"rationale":"There is only one focus stop; missing submenu items are a reachability matter, not an order one."}
+{"id":"q79","verdict":"pass","confidence":0.75,"rationale":"The only focus stop shows an outline on focus and is in view."}

@@ -1,0 +1,69 @@
+// The labels of the UW Accessible University and GOV.UK audit runs, as rules
+// written from each site's own documentation (the UW info page, the GOV.UK
+// test-case names) and the pages' source, before any model answered. Not a
+// person's: the assistant's. One correction was made after the first scoring:
+// the GOV.UK example page titled "Insert title here" (a clear slip in the
+// page-title rule). Run on the cases list-cases.mjs writes:
+//
+//   node docs/design/ai-cant-tell-eval/label-rules.js <cases.json> <labels.json> au|gov
+//
+// The labels go into the report as its aiReview for npm run ai:agreement.
+const fs = require('fs');
+const [casesFile, outFile, site] = process.argv.slice(2);
+const cases = JSON.parse(fs.readFileSync(casesFile, 'utf8'));
+const BY = 'Labelled by Claude from the site\'s documentation and the page source, not by a person: ';
+const labels = {};
+const set = (c, verdict, why) => { labels[c.key] = { verdict, note: BY + why, at: '2026-11-25T18:00:00.000Z' }; };
+for (const c of cases) {
+  const p = c.page, k = c.check, i = c.info, sel = c.sel;
+  if (site === 'au') {
+    const before = p === 'au/before';
+    if (k === 'img-alt-quality') {
+      if (/au123456789\.gif"/.test(i) && /alt="au123456789/.test(i)) set(c, 'fail', 'UW info page: the logo\'s alt text is its file name');
+      else if (/horizontal line graphic/.test(i)) set(c, 'fail', 'UW info page: excessive alt text ("horizontal line graphic") on a decorative separator');
+      else if (/Creative Commons License/.test(i)) set(c, 'pass', 'the licence badge, alt "Creative Commons License": accurate');
+      else set(c, 'pass', 'the accessible version\'s alt text, as the UW info page proposes');
+    } else if (k === 'page-title-patterns') set(c, 'pass', 'the title names the site and the version shown');
+    else if (k === 'keyboard') set(c, before ? 'fail' : 'pass', before ? 'UW info page: inaccessible keyboard interface (the carousel controls cannot be reached)' : 'the accessible version');
+    else if (k === 'keyboard-element') set(c, before ? 'fail' : 'pass', before ? 'UW info page: the carousel\'s controls are mouse-only' : 'the accessible version: the slide buttons take focus');
+    else if (k === 'focus-order') set(c, 'pass', 'the UW info page lists no focus-order problem; the order follows the layout');
+    else if (k === 'link-name-quality') set(c, 'pass', '"Info" in the demo\'s own navigation (Home, Before, After, Info): clear in its context');
+    else if (k === 'focus-visible') set(c, before ? 'fail' : 'pass', before ? 'UW info page: no visible indication of focus (the "click here" links, the checkboxes and the footer links show none)' : 'the accessible version');
+    else if (k === 'focus-visible-element' || k === 'focus-contrast-element') {
+      if (/major_/.test(sel)) set(c, 'fail', 'a checkbox whose outline is removed: nothing changes on focus');
+      else set(c, 'pass', 'its outline is removed but its border changes strongly on focus (measured)');
+    } else set(c, 'unsure', 'not settled from the documentation');
+  } else {
+    if (k === 'page-title-patterns') {
+      if (/Insert title here/.test(i)) set(c, 'fail', 'GOV.UK audit: inappropriate page title ("Insert title here")');
+      else set(c, 'pass', 'the audit\'s test page title names the test');
+    }
+    else if (k === 'p-as-heading') set(c, 'fail', 'GOV.UK audit: text formatting used instead of an actual heading');
+    else if (k === 'img-alt-quality') {
+      if (/image-file-name/.test(p)) set(c, 'fail', 'GOV.UK audit: alt is the image file name');
+      else if (/inappropriate-alt/.test(p)) set(c, 'fail', 'GOV.UK audit: alt "Twitter" on a BBC logo, inappropriate');
+      else if (/partial-text/.test(p)) set(c, 'fail', 'GOV.UK audit: the alt gives only part of what the image says');
+      else set(c, 'unsure', 'not documented');
+    } else if (k === 'img-alt-decorative') {
+      if (/conveys-information-has-an-empty-alt/.test(p)) set(c, 'fail', 'GOV.UK audit: an image that conveys information has an empty alt');
+      else if (/presentation-role/.test(p)) set(c, 'pass', 'a decorative line: decorative (the audit\'s point is its non-empty alt beside role=presentation, which this question is not about)');
+      else if (/spacer/.test(p)) set(c, 'pass', 'a spacer image: decorative (the audit\'s point is using spacers at all)');
+      else set(c, 'unsure', 'not documented');
+    } else if (k === 'link-name-quality') set(c, 'fail', 'GOV.UK audit: ' + (/Read more/.test(i) ? 'uninformative' : 'non-specific') + ' link text');
+    else if (k === 'form-control-programmatic-label-quality') set(c, 'fail', 'GOV.UK audit: placeholder, no label');
+    else if (k === 'keyboard' || k === 'keyboard-element') {
+      if (/fake-button|concertina|tooltips|dropdown-navigation|keyboardtrap/.test(p)) set(c, 'fail', 'GOV.UK audit: ' + p.replace(/^keyboard-access-|example-pages\//, '').replace(/-/g, ' '));
+      else set(c, 'pass', 'nothing on the page a keyboard cannot reach');
+    } else if (k === 'focus-order') {
+      if (/focus-order-in-wrong-order/.test(p)) set(c, 'fail', 'GOV.UK audit: focus order in wrong order (the links are placed out of their order)');
+      else if (/tabindex-greater-than-0/.test(p)) set(c, 'unsure', 'GOV.UK audit flags tabindex above 0, but with one link the order cannot be wrong');
+      else set(c, 'pass', 'nothing out of order');
+    } else if (k === 'focus-visible' || k === 'focus-visible-element' || k === 'focus-contrast-element') {
+      if (/focus-not-visible|focus-is-not-indicated/.test(p)) set(c, 'fail', 'GOV.UK audit: ' + (/not-indicated/.test(p) ? 'keyboard focus is not indicated visually' : 'focus not visible on the Search button'));
+      else set(c, 'pass', 'focus shows (the browser\'s own outline)');
+    } else set(c, 'unsure', 'not settled from the documentation');
+  }
+}
+fs.writeFileSync(outFile, JSON.stringify(labels, null, 1) + '\n');
+const n = Object.values(labels).reduce((a, l) => (a[l.verdict] = (a[l.verdict] || 0) + 1, a), {});
+console.log(site, Object.keys(labels).length, 'labels', JSON.stringify(n));

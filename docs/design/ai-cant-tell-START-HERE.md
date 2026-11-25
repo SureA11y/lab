@@ -17,9 +17,9 @@ Read, in this order:
 
 ## State (end of 2026-11-25)
 
-Everything is committed and pushed (latest: images say what they show, and
-the W3C evaluation's run 5). The full suite (4485 tests) and the browser tests
-(`focus-walk`, `ai-answer`, `app-boot`: 31) pass.
+Everything is committed and pushed (latest: two more evaluated sites, UW and
+GOV.UK, and the walk and question fixes they led to). The full suite and the
+browser tests (`focus-walk`, `ai-answer`, `app-boot`) pass.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `evidence.js`, `provider.js`,
@@ -70,7 +70,13 @@ the W3C evaluation's run 5). The full suite (4485 tests) and the browser tests
 - **Real site:** the W3C's Before and After Demonstration
   (`examples/specs/ai-answers-w3c-bad.spec.json`, `focusStops: 80`), **against
   labels written by the assistant, not a person** (`ai-cant-tell-eval/w3c-bad/`).
-  Run 5, with the current code (images say what they show): 47 of 57 (82%),
+  **Two more sites** (`ai-cant-tell-eval/README.md`, "More real sites"): UW
+  Accessible University, 38 of 38 answered agree, none wrong; GOV.UK tool
+  audit (23 test pages), 60 of 62 answered agree, the two wrong passes being
+  WCAG readings the audit is stricter than. They found and fixed: the walk
+  stopping at a video's controls, keyboard not asked where Tab reaches
+  nothing, and the focus order question judging other criteria.
+  W3C run 5, with the current code (images say what they show): 47 of 57 (82%),
   98% of those answered, no wrong fail (run 4's, blank spacers read as a bar
   chart, is fixed), one wrong pass (the news photo of Note 10, which moves
   between pass and open from run to run), focus order 5 of 5. Runs 3 and 4:
@@ -123,8 +129,9 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **More cases per check.** The W3C pages give 57 labelled cases, most
-   checks fewer than 10, and each run's wrong answers are a different case
+4. **More cases per check.** With UW and GOV.UK there are now 202 labelled
+   cases over three sites, but most checks still have fewer than 30 (the W3C
+   pages alone gave 57, and each run's wrong answers are a different case
    (run-to-run variation): 30 to 50 per check are needed to trust a check
    (`ai:agreement` marks "fewer than 30"). Other public sites built with
    documented accessibility problems would add cases; each needs its host
@@ -157,8 +164,9 @@ The first three need the user; the rest can be done without.
   case with its correct answer in the demo (`expected.json`).
 - The background servers of a cloud session (demo site on 8780, lab on 3000)
   may be stopped between turns: start them in the same command that uses them.
-- In a cloud session, the user's "lab" environment allows www.w3.org (for the
-  W3C run) and api.anthropic.com; other sites are blocked.
+- In a cloud session, the user's "lab" environment allows www.w3.org,
+  projects.accesscomputing.uw.edu and alphagov.github.io (the evaluation
+  sites) and api.anthropic.com; other sites are blocked.
 
 Not in the repo: the Avaloq sample report and evaluation files (a customer's
 site; the author's copies are in the temp folder `spike/avaloq/` and the config

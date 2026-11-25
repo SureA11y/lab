@@ -260,7 +260,10 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 summary.reused++;
             } else if (!allowed) {
                 ai = { ...base, provenance: 'unresolved', reason: 'site-not-allowed' };
-            } else if (entry.tier === 1 && (!walk || !walk.stops.length)) {
+            // A walk that reached nothing answers no focus question, but it
+            // does say something about the keyboard: what a mouse can use and
+            // Tab never reaches is still there (a fake button, a concertina).
+            } else if (entry.tier === 1 && (!walk || (!walk.stops.length && !['keyboard', 'keyboard-element'].includes(entry.check)))) {
                 ai = { ...base, provenance: 'unresolved', reason: walk ? 'no-focus-stops' : 'no-model' };
             } else if (!preview && !model) {
                 ai = { ...base, provenance: 'unresolved', reason: 'no-model' };
