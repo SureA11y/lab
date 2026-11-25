@@ -51,7 +51,30 @@ focus walk stopped at the first link whose page code gives focus up at once
 (`onfocus="blur()"`). It now records such a link as a stop with `lostFocus`
 and lists it in `unreachable`. Agreement on the W3C pages, against labels
 written by the assistant (not a person): 63% before the fix, 81% after
-(`ai-cant-tell-eval/README.md`, "Result"). Nothing of this is committed yet.
+(`ai-cant-tell-eval/README.md`, "Result").
+
+**Update, end of 2026-11-25 (all committed and pushed):**
+- Whole walks: the W3C spec asks for `focusStops: 80` (the pages have 48 to
+  57 stops; the default stays 40, the maximum is 200). Third run: 48 of 57
+  (84%), focus order 4 of 5. Files in `ai-cant-tell-eval/w3c-bad/`
+  (`first-run/`, `run3-full-walks/`). The blind agent of run 3 summarised big
+  prompts with a script; the README says so.
+- Prompt cost: the evidence is sent as compact JSON without null fields (28%
+  less on the W3C's 77 prompts), it comes before the question, and the
+  built-in Claude call marks it for prompt caching, so the three focus
+  questions of a page pay for the walk once (`A11Y_AI_PROMPT_CACHE=off` turns
+  it off; prompt version `registry-4`). Not measured with a real key: the
+  first real run should show cached tokens in the API's usage. Agreement was
+  not re-scored after the reordering. A single merged call was not built (it
+  would break the endpoint's one-question-per-POST contract).
+- `byCheck` in the pass summary: answered and open questions per check (not
+  shown in the review yet).
+- The branch is checked out in the main folder, `C:\Dev\surea11y\lab`; the old
+  worktree was removed (a branch can be checked out in one place only).
+
+**Do not commit** the user's local-development edits, which are in the working
+tree: `package.json`, `extension/engines/vendor/surea11y-how-to-check.min.js`,
+`extension/engines/vendor/surea11y.browser.min.js`, and the untracked `tmp/`.
 
 ```bash
 node --test
