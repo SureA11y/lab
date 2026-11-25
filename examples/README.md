@@ -50,6 +50,7 @@ with **Load config**. `--check` checks one without opening a browser.
 | `specs/ai-answers-w3c-bad.spec.json` | AI answers on a real site: the W3C's Before and After Demonstration, inaccessible and repaired, eight pages |
 | `specs/ai-answers-uw-au.spec.json` | AI answers on the University of Washington's Accessible University demo, inaccessible and repaired |
 | `specs/ai-answers-govuk-audit.spec.json` | AI answers on 23 pages of the GOV.UK accessibility tool audit, each with one documented problem |
+| `specs/ai-answers-govuk-audit-more.spec.json` | AI answers on 42 more pages of the GOV.UK audit (images, buttons, links, forms, headings, keyboard, lightboxes, iframes) |
 | `configs/shopping-flow.a11y-config.json` | `shopping-flow` as the app's **Export config** writes it |
 
 ```bash

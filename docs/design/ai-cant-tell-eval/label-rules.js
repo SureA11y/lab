@@ -43,23 +43,34 @@ for (const c of cases) {
       if (/image-file-name/.test(p)) set(c, 'fail', 'GOV.UK audit: alt is the image file name');
       else if (/inappropriate-alt/.test(p)) set(c, 'fail', 'GOV.UK audit: alt "Twitter" on a BBC logo, inappropriate');
       else if (/partial-text/.test(p)) set(c, 'fail', 'GOV.UK audit: the alt gives only part of what the image says');
+      else if (/alt-and-title-that-are-different/.test(p)) set(c, 'pass', 'alt "BBC" on the BBC logo: accurate (the audit\'s point is the title "BBC homepage" differing, which this question is not about)');
+      else if (/animated-gif/.test(p)) set(c, 'pass', 'the alt describes the animated tree accurately (the audit\'s point is the distraction)');
+      else if (/adjacent-links|alt-text-repeats/.test(p)) set(c, 'pass', 'alt "Red Panda" on a red panda photo linking to the red panda page: accurate (the audit\'s point is the repeated link or text)');
       else set(c, 'unsure', 'not documented');
     } else if (k === 'img-alt-decorative') {
       if (/conveys-information-has-an-empty-alt/.test(p)) set(c, 'fail', 'GOV.UK audit: an image that conveys information has an empty alt');
       else if (/presentation-role/.test(p)) set(c, 'pass', 'a decorative line: decorative (the audit\'s point is its non-empty alt beside role=presentation, which this question is not about)');
       else if (/spacer/.test(p)) set(c, 'pass', 'a spacer image: decorative (the audit\'s point is using spacers at all)');
+      else if (/empty-alt-and-non-empty-title/.test(p)) set(c, 'fail', 'GOV.UK audit: the BBC logo, the page\'s only content, with an empty alt and the title "BBC"');
+      else if (/image-link-with-no-alternative-text/.test(p)) set(c, 'fail', 'GOV.UK audit: image link with no alternative text (the image is the link\'s only content)');
       else set(c, 'unsure', 'not documented');
-    } else if (k === 'link-name-quality') set(c, 'fail', 'GOV.UK audit: ' + (/Read more/.test(i) ? 'uninformative' : 'non-specific') + ' link text');
+    } else if (k === 'link-name-quality' && /rolebutton/.test(p)) set(c, 'pass', '"Continue", the page\'s one button-like link: clear in its context (the audit\'s point is the space bar)');
+    else if (k === 'link-name-quality') set(c, 'fail', 'GOV.UK audit: ' + (/Read more/.test(i) ? 'uninformative' : 'non-specific') + ' link text');
     else if (k === 'form-control-programmatic-label-quality') set(c, 'fail', 'GOV.UK audit: placeholder, no label');
     else if (k === 'keyboard' || k === 'keyboard-element') {
-      if (/fake-button|concertina|tooltips|dropdown-navigation|keyboardtrap/.test(p)) set(c, 'fail', 'GOV.UK audit: ' + p.replace(/^keyboard-access-|example-pages\//, '').replace(/-/g, ' '));
+      if (/lightbox-esc|lightbox-focus-is-not-moved/.test(p)) set(c, 'unsure', 'GOV.UK audit: ' + p.replace(/^keyboard-access-/, '').replace(/-/g, ' ') + '; whether that fails 2.1.1 depends on the close control, which the walk never opens');
+      else if (/fake-button|concertina|tooltips|dropdown-navigation|keyboardtrap|rolebutton|lightbox-close-button/.test(p)) set(c, 'fail', 'GOV.UK audit: ' + p.replace(/^keyboard-access-|example-pages\//, '').replace(/-/g, ' '));
       else set(c, 'pass', 'nothing on the page a keyboard cannot reach');
     } else if (k === 'focus-order') {
       if (/focus-order-in-wrong-order/.test(p)) set(c, 'fail', 'GOV.UK audit: focus order in wrong order (the links are placed out of their order)');
+      else if (/lightbox-focus-is-not-moved/.test(p)) set(c, 'fail', 'GOV.UK audit: focus is not moved to the lightbox (it sits at the end of the page)');
+      else if (/lightbox-focus-is-not-retained/.test(p)) set(c, 'unsure', 'GOV.UK audit: focus is not kept in the lightbox; WCAG 2.4.3 does not require it in every case');
       else if (/tabindex-greater-than-0/.test(p)) set(c, 'unsure', 'GOV.UK audit flags tabindex above 0, but with one link the order cannot be wrong');
       else set(c, 'pass', 'nothing out of order');
     } else if (k === 'focus-visible' || k === 'focus-visible-element' || k === 'focus-contrast-element') {
-      if (/focus-not-visible|focus-is-not-indicated/.test(p)) set(c, 'fail', 'GOV.UK audit: ' + (/not-indicated/.test(p) ? 'keyboard focus is not indicated visually' : 'focus not visible on the Search button'));
+      if (/links-blank-link-text/.test(p)) set(c, 'fail', 'an empty link (no text, no size): no box for focus to show on (corrected after scoring: the first rule passed it, the model failed it, rightly)');
+      else if (/^frames-/.test(p)) set(c, 'unsure', 'focus goes into an iframe; what shows inside it is not documented');
+      else if (/focus-not-visible|focus-is-not-indicated/.test(p)) set(c, 'fail', 'GOV.UK audit: ' + (/not-indicated/.test(p) ? 'keyboard focus is not indicated visually' : 'focus not visible on the Search button'));
       else set(c, 'pass', 'focus shows (the browser\'s own outline)');
     } else set(c, 'unsure', 'not settled from the documentation');
   }

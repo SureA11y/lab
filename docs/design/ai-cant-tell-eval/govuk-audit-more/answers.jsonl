@@ -1,0 +1,149 @@
+{"id": "q1", "verdict": "fail", "confidence": 0.8, "rationale": "The large bold div visually titles the page (the real h1 is empty) but is a generic div, not a heading."}
+{"id": "q2", "verdict": "unsure", "confidence": 0.5, "rationale": "The focus walk found no stops and nothing unreachable, so there is no evidence of an unreachable control or trap."}
+{"id": "q3", "verdict": "fail", "confidence": 0.85, "rationale": "The large bold div is the visual page title introducing the sections below, but it is a plain div rather than a heading."}
+{"id": "q4", "verdict": "pass", "confidence": 0.75, "rationale": "The image is a two-colour BBC blocks logo and its alt \"BBC\" names what it shows; it is not a link."}
+{"id": "q5", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q6", "verdict": "fail", "confidence": 0.55, "rationale": "The BBC logo is the only content in main and its brand name is not given elsewhere, yet it is hidden with empty alt (the title attribute does not count)."}
+{"id": "q7", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q8", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q9", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q10", "verdict": "pass", "confidence": 0.8, "rationale": "The alt describes the animated image of a Christmas tree with a toy train, matching its file and context."}
+{"id": "q11", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q12", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q13", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q14", "verdict": "pass", "confidence": 0.8, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q15", "verdict": "pass", "confidence": 0.75, "rationale": "Each focus stop shows a visible outline change while focused, and none is hidden or loses focus."}
+{"id": "q16", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q17", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q18", "verdict": "pass", "confidence": 0.8, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q19", "verdict": "pass", "confidence": 0.75, "rationale": "Each focus stop shows a visible outline change while focused, and none is hidden or loses focus."}
+{"id": "q20", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q21", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q22", "verdict": "pass", "confidence": 0.8, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q23", "verdict": "pass", "confidence": 0.65, "rationale": "The only stop, a small empty button, gets a visible outline change on focus and is not hidden."}
+{"id": "q24", "verdict": "pass", "confidence": 0.75, "rationale": "The alt \"Red Panda\" describes the image and the link destination, the Wikipedia Red panda article."}
+{"id": "q25", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q26", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q27", "verdict": "pass", "confidence": 0.8, "rationale": "Focus moves through the page's controls in reading order with no jumps."}
+{"id": "q28", "verdict": "pass", "confidence": 0.75, "rationale": "Each focus stop shows a visible outline change while focused, and none is hidden or loses focus."}
+{"id": "q29", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q30", "verdict": "unsure", "confidence": 0.55, "rationale": "The only link was reached by Tab and nothing is listed unreachable; it is zero-sized, but reaching it is possible."}
+{"id": "q31", "verdict": "pass", "confidence": 0.75, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q32", "verdict": "fail", "confidence": 0.8, "rationale": "The only focus stop is a zero-size link reported hidden while focused, so focus cannot be seen."}
+{"id": "q33", "verdict": "pass", "confidence": 0.65, "rationale": "The alt \"Red Panda\" accurately describes the image and the link purpose, though it repeats the link text."}
+{"id": "q34", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q35", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q36", "verdict": "pass", "confidence": 0.8, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q37", "verdict": "pass", "confidence": 0.75, "rationale": "Each focus stop shows a visible outline change while focused, and none is hidden or loses focus."}
+{"id": "q38", "verdict": "fail", "confidence": 0.9, "rationale": "The BBC logo is the only content of a link to bbc.co.uk, so with empty alt the link has no name; it is not decorative."}
+{"id": "q39", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q40", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q41", "verdict": "pass", "confidence": 0.8, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q42", "verdict": "pass", "confidence": 0.75, "rationale": "Each focus stop shows a visible outline change while focused, and none is hidden or loses focus."}
+{"id": "q43", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q44", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q45", "verdict": "pass", "confidence": 0.8, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q46", "verdict": "pass", "confidence": 0.6, "rationale": "The only stop, a tiny full-stop link, gets an outline change on focus and is not hidden."}
+{"id": "q47", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q48", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q49", "verdict": "pass", "confidence": 0.8, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q50", "verdict": "pass", "confidence": 0.75, "rationale": "Each focus stop shows a visible outline change while focused, and none is hidden or loses focus."}
+{"id": "q51", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q52", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q53", "verdict": "pass", "confidence": 0.8, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q54", "verdict": "pass", "confidence": 0.75, "rationale": "Each focus stop shows a visible outline change while focused, and none is hidden or loses focus."}
+{"id": "q55", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q56", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q57", "verdict": "pass", "confidence": 0.8, "rationale": "There is a single focus stop, so the order cannot be confusing."}
+{"id": "q58", "verdict": "pass", "confidence": 0.75, "rationale": "Each focus stop shows a visible outline change while focused, and none is hidden or loses focus."}
+{"id": "q59", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test case the page demonstrates, matching its main heading."}
+{"id": "q60", "verdict": "unsure", "confidence": 0.6, "rationale": "Every Tab stop found was reached and nothing is listed as unreachable or trapped; reaching alone cannot confirm a pass."}
+{"id": "q61", "verdict": "pass", "confidence": 0.8, "rationale": "Focus moves through 2 stop(s) in main top to bottom and left to right, matching the reading order."}
+{"id": "q62", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q63", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q64", "verdict": "unsure", "confidence": 0.6, "rationale": "All 1 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q65", "verdict": "pass", "confidence": 0.8, "rationale": "There is only one focus stop in main, so the order cannot be confusing."}
+{"id": "q66", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q67", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q68", "verdict": "unsure", "confidence": 0.6, "rationale": "All 3 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q69", "verdict": "pass", "confidence": 0.8, "rationale": "Focus moves through 3 stop(s) in main top to bottom and left to right, matching the reading order."}
+{"id": "q70", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q71", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q72", "verdict": "unsure", "confidence": 0.6, "rationale": "All 1 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q73", "verdict": "pass", "confidence": 0.8, "rationale": "There is only one focus stop in main, so the order cannot be confusing."}
+{"id": "q74", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q75", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q76", "verdict": "unsure", "confidence": 0.6, "rationale": "All 1 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q77", "verdict": "pass", "confidence": 0.8, "rationale": "There is only one focus stop in main, so the order cannot be confusing."}
+{"id": "q78", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q79", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q80", "verdict": "unsure", "confidence": 0.6, "rationale": "All 1 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q81", "verdict": "pass", "confidence": 0.8, "rationale": "There is only one focus stop in main, so the order cannot be confusing."}
+{"id": "q82", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q83", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q84", "verdict": "unsure", "confidence": 0.6, "rationale": "All 1 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q85", "verdict": "pass", "confidence": 0.8, "rationale": "There is only one focus stop in main, so the order cannot be confusing."}
+{"id": "q86", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q87", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q88", "verdict": "unsure", "confidence": 0.6, "rationale": "All 1 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q89", "verdict": "pass", "confidence": 0.8, "rationale": "There is only one focus stop in main, so the order cannot be confusing."}
+{"id": "q90", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q91", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q92", "verdict": "unsure", "confidence": 0.6, "rationale": "All 3 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q93", "verdict": "pass", "confidence": 0.8, "rationale": "Focus moves through 3 stop(s) in main top to bottom and left to right, matching the reading order."}
+{"id": "q94", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q95", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q96", "verdict": "unsure", "confidence": 0.6, "rationale": "All 2 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q97", "verdict": "pass", "confidence": 0.8, "rationale": "Focus moves through 2 stop(s) in main top to bottom and left to right, matching the reading order."}
+{"id": "q98", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q99", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q100", "verdict": "unsure", "confidence": 0.6, "rationale": "All 3 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q101", "verdict": "pass", "confidence": 0.8, "rationale": "Focus moves through 3 stop(s) in main top to bottom and left to right, matching the reading order."}
+{"id": "q102", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q103", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q104", "verdict": "unsure", "confidence": 0.6, "rationale": "All 1 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q105", "verdict": "pass", "confidence": 0.8, "rationale": "There is only one focus stop in main, so the order cannot be confusing."}
+{"id": "q106", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q107", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q108", "verdict": "unsure", "confidence": 0.6, "rationale": "All 1 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q109", "verdict": "pass", "confidence": 0.8, "rationale": "There is only one focus stop in main, so the order cannot be confusing."}
+{"id": "q110", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q111", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q112", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q113", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the specific topic of the page, matching its main heading."}
+{"id": "q114", "verdict": "unsure", "confidence": 0.5, "rationale": "The only context for \"Continue\" is the test heading, which does not say where it leads, but a role=button Continue control may be clear in a form flow; the evidence is not enough to decide."}
+{"id": "q115", "verdict": "unsure", "confidence": 0.6, "rationale": "All 1 focusable control(s) were reached, nothing is listed as unreachable and the walk left the page without a trap; operation was not checked, so pass cannot be given."}
+{"id": "q116", "verdict": "pass", "confidence": 0.8, "rationale": "There is only one focus stop in main, so the order cannot be confusing."}
+{"id": "q117", "verdict": "pass", "confidence": 0.8, "rationale": "Every stop shows an outline change on focus and is in view and not hidden."}
+{"id": "q118", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test topic, matching the page's main heading, so it says what the page is about."}
+{"id": "q119", "verdict": "unsure", "confidence": 0.6, "rationale": "The only Tab stop was reached, nothing is listed as unreachable and no trap was seen, but operating controls was not checked."}
+{"id": "q120", "verdict": "pass", "confidence": 0.8, "rationale": "The page has a single focus stop in the main content under the heading, so the order matches the reading order."}
+{"id": "q121", "verdict": "pass", "confidence": 0.8, "rationale": "The only focus stop shows an outline when focused and is in view."}
+{"id": "q122", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test topic, matching the page's main heading, so it says what the page is about."}
+{"id": "q123", "verdict": "unsure", "confidence": 0.6, "rationale": "The only Tab stop was reached, nothing is listed as unreachable and no trap was seen, but operating controls was not checked."}
+{"id": "q124", "verdict": "pass", "confidence": 0.8, "rationale": "The page has a single focus stop in the main content under the heading, so the order matches the reading order."}
+{"id": "q125", "verdict": "pass", "confidence": 0.8, "rationale": "The only focus stop shows an outline when focused and is in view."}
+{"id": "q126", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test topic, matching the page's main heading, so it says what the page is about."}
+{"id": "q127", "verdict": "unsure", "confidence": 0.6, "rationale": "The only Tab stop was reached, nothing is listed as unreachable and no trap was seen, but operating controls and the opened lightbox was not checked."}
+{"id": "q128", "verdict": "unsure", "confidence": 0.5, "rationale": "Only the opening link was walked; the focus order once the lightbox opens was not exercised, so the order cannot be judged."}
+{"id": "q129", "verdict": "pass", "confidence": 0.65, "rationale": "The walked stop showed an outline on focus; lightbox controls were not reached in the walk, so they were not checked."}
+{"id": "q130", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test topic, matching the page's main heading, so it says what the page is about."}
+{"id": "q131", "verdict": "unsure", "confidence": 0.6, "rationale": "The only Tab stop was reached, nothing is listed as unreachable and no trap was seen, but operating controls and the opened lightbox was not checked."}
+{"id": "q132", "verdict": "unsure", "confidence": 0.5, "rationale": "Only the opening link was walked; the focus order once the lightbox opens was not exercised, so the order cannot be judged."}
+{"id": "q133", "verdict": "pass", "confidence": 0.65, "rationale": "The walked stop showed an outline on focus; lightbox controls were not reached in the walk, so they were not checked."}
+{"id": "q134", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test topic, matching the page's main heading, so it says what the page is about."}
+{"id": "q135", "verdict": "unsure", "confidence": 0.6, "rationale": "The only Tab stop was reached, nothing is listed as unreachable and no trap was seen, but operating controls and the opened lightbox was not checked."}
+{"id": "q136", "verdict": "unsure", "confidence": 0.5, "rationale": "Only the opening link was walked; the focus order once the lightbox opens was not exercised, so the order cannot be judged."}
+{"id": "q137", "verdict": "pass", "confidence": 0.65, "rationale": "The walked stop showed an outline on focus; lightbox controls were not reached in the walk, so they were not checked."}
+{"id": "q138", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test topic, matching the page's main heading, so it says what the page is about."}
+{"id": "q139", "verdict": "unsure", "confidence": 0.6, "rationale": "The only Tab stop was reached, nothing is listed as unreachable and no trap was seen, but operating controls and the opened lightbox was not checked."}
+{"id": "q140", "verdict": "unsure", "confidence": 0.5, "rationale": "Only the opening link was walked; the focus order once the lightbox opens was not exercised, so the order cannot be judged."}
+{"id": "q141", "verdict": "pass", "confidence": 0.65, "rationale": "The walked stop showed an outline on focus; lightbox controls were not reached in the walk, so they were not checked."}
+{"id": "q142", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test topic, matching the page's main heading, so it says what the page is about."}
+{"id": "q143", "verdict": "unsure", "confidence": 0.6, "rationale": "The only Tab stop was reached, nothing is listed as unreachable and no trap was seen, but operating controls was not checked."}
+{"id": "q144", "verdict": "pass", "confidence": 0.8, "rationale": "The page has a single focus stop in the main content under the heading, so the order matches the reading order."}
+{"id": "q145", "verdict": "fail", "confidence": 0.65, "rationale": "The only stop, the iframe, showed no visible change while focused (empty changesOnFocus), so focus is not visible there."}
+{"id": "q146", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the test topic, matching the page's main heading, so it says what the page is about."}
+{"id": "q147", "verdict": "unsure", "confidence": 0.6, "rationale": "The only Tab stop was reached, nothing is listed as unreachable and no trap was seen, but operating controls was not checked."}
+{"id": "q148", "verdict": "pass", "confidence": 0.8, "rationale": "The page has a single focus stop in the main content under the heading, so the order matches the reading order."}
+{"id": "q149", "verdict": "fail", "confidence": 0.65, "rationale": "The only stop, the iframe, showed no visible change while focused (empty changesOnFocus), so focus is not visible there."}

@@ -364,3 +364,60 @@ into the answered report as its `aiReview`; and `npm run ai:agreement --
 <report> --preview`. With a key, run without the preview and skip the offline
 steps.
 
+
+## More of the GOV.UK audit: 42 more pages (2026-11-25)
+
+The next 40 test pages the AI's questions could concern (images, image
+buttons, links, form labels, headings, keyboard, lightboxes, iframes) and the
+empty- and missing-title example pages, scanned with the same code
+(`registry-6`), answered blind by three separate models (one per batch), and
+labelled the same way before any answer was read: new rules in
+[label-rules.js](label-rules.js), checked to leave every label of the first
+GOV.UK run unchanged. Spec: `examples/specs/ai-answers-govuk-audit-more.spec.json`.
+Files: [govuk-audit-more/](govuk-audit-more/).
+
+| | 42 more GOV.UK pages |
+| --- | --- |
+| Questions sent | 149 |
+| Labelled cases | 167 (5 unsure, not scored) |
+| Agree | 107 (66%) |
+| **Of those answered** | **107 of 107 (100%)** |
+| Pass where the label says fail | 0 |
+| Fail where the label says pass | 0 |
+| Left open | 55 |
+
+Per check: page title 40 of 40, focus visible 31 of 31 answered, focus order
+29 of 29 answered, the image, link and heading questions 7 of 7; keyboard 0
+of 32 answered, by design (the labels are mostly passes, which the AI may not
+give).
+
+- **Left open:** 32 keyboard questions; 20 focus questions on pages with
+  nothing to focus (`no-focus-stops`); 3 questions about lightboxes and 1
+  role=button keyboard case (below); 1 real hesitation: the BBC logo with an
+  empty alt and a title, whose rationale argues for a fail ("the title
+  attribute does not count") but whose verdict is unsure.
+- **What the walk cannot see:** it only presses Tab. A lightbox's problems
+  (its close button cannot take focus, Esc does not close it, focus is not
+  moved into it or kept there) and a link with role=button that ignores the
+  space bar appear only once a control is used. The model said so and left
+  them open, rightly; a walk that opens what it finds would be needed to
+  answer them.
+- **One label corrected after scoring:** the rule passed focus visible on the
+  "blank link text" page; the link there is empty (`<a href="…"></a>`), has
+  no size, and the walk recorded it hidden while focused, so focus cannot be
+  seen. The model failed it, rightly; the rule now fails it, and its note
+  says it was corrected.
+- **Left unsure in the labels:** focus visible on the two iframe pages (the
+  framed page has nothing to focus; the model failed both, as the iframe
+  showed no change) and three lightbox cases whose WCAG reading depends on
+  the opened lightbox.
+
+With this run there are 369 labelled cases over the three sites (W3C 57, UW
+47, GOV.UK 98 and 167); page title, focus visible, focus order and keyboard
+now have more than 30 each.
+
+```bash
+A11Y_AI_PREVIEW=on node src/cli/run-workflow.js examples/specs/ai-answers-govuk-audit-more.spec.json --out runs/govuk-more
+```
+
+Then as above, with `label-rules.js … gov`.

@@ -1,0 +1,677 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "https://alphagov.github.io/accessibility-tool-audit/example-pages/empty.html",
+  "scenarioName": "AI answers on more pages of the GOV.UK accessibility tool audit",
+  "actions": [
+    {
+      "type": "a11yScan",
+      "label": "example: empty page title",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/example-pages/missing.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "example: missing page title",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/images-image-has-alt-and-title-that-are-different.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "images-image-has-alt-and-title-that-are-different",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/images-image-has-empty-alt-and-non-empty-title.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "images-image-has-empty-alt-and-non-empty-title",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/images-image-with-no-alt-attribute.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "images-image-with-no-alt-attribute",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/images-background-image-that-conveys-information-does-not-have-a-text-alternative.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "images-background-image-that-conveys-information-does-not-have-a-text-alternative",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/images-a-distraction-is-present-an-animated-gif.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "images-a-distraction-is-present-an-animated-gif",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/buttons-empty-alt-attribute-on-image-button.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "buttons-empty-alt-attribute-on-image-button",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/buttons-image-button-has-no-alt-attribute.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "buttons-image-button-has-no-alt-attribute",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/buttons-empty-button.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "buttons-empty-button",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-adjacent-links-going-to-the-same-destination.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-adjacent-links-going-to-the-same-destination",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-blank-link-text.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-blank-link-text",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-image-link-alt-text-repeats-text-in-the-link.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-image-link-alt-text-repeats-text-in-the-link",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-image-link-with-no-alternative-text.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-image-link-with-no-alternative-text",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-link-contains-only-a-full-stop.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-link-contains-only-a-full-stop",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-link-launches-new-window-with-no-warning.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-link-launches-new-window-with-no-warning",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-link-text-with-identical-title.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-link-text-with-identical-title",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-link-to-pdf-does-not-include-information-on-file-format-and-file-size.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-link-to-pdf-does-not-include-information-on-file-format-and-file-size",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-links-with-the-same-text-go-to-different-pages.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-links-with-the-same-text-go-to-different-pages",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-link-to-an-image-no-text-alternative.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-link-to-an-image-no-text-alternative",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-links-not-separated-by-printable-characters.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-links-not-separated-by-printable-characters",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/links-link-not-clearly-identifiable-and-distinguishable-from-surrounding-text.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "links-link-not-clearly-identifiable-and-distinguishable-from-surrounding-text",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/forms-empty-label-found.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "forms-empty-label-found",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/forms-field-hint-not-associated-with-input.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "forms-field-hint-not-associated-with-input",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/forms-form-element-has-no-label.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "forms-form-element-has-no-label",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/forms-label-element-with-for-attribute-but-not-matching-id=-attribute-of-form-control.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "forms-label-element-with-for-attribute-but-not-matching-id=-attribute-of-form-control",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/forms-missing-labels-in-checkboxes.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "forms-missing-labels-in-checkboxes",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/forms-non-unique-field-label-found.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "forms-non-unique-field-label-found",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/forms-two-unique-labels-but-identical-for=-attributes.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "forms-two-unique-labels-but-identical-for=-attributes",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/forms-group-of-radio-buttons-not-enclosed-in-a-fieldset.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "forms-group-of-radio-buttons-not-enclosed-in-a-fieldset",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/forms-left-aligned-form-labels-with-too-much-white-space.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "forms-left-aligned-form-labels-with-too-much-white-space",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/headings-empty-heading.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "headings-empty-heading",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/headings-headings-not-structured-in-a-hierarchical-manner.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "headings-headings-not-structured-in-a-hierarchical-manner",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-link-with-a-rolebutton-does-not-work-with-space-bar.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "keyboard-access-link-with-a-rolebutton-does-not-work-with-space-bar",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-keyboard-focus-assigned-to-a-non-focusable-element-using-tabindex0.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "keyboard-access-keyboard-focus-assigned-to-a-non-focusable-element-using-tabindex0",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-accesskey-attribute-used.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "keyboard-access-accesskey-attribute-used",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-lightbox-close-button-doesnt-receive-focus.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "keyboard-access-lightbox-close-button-doesnt-receive-focus",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-lightbox-esc-key-doesnt-close-the-lightbox.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "keyboard-access-lightbox-esc-key-doesnt-close-the-lightbox",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-lightbox-focus-is-not-moved-immediately-to-lightbox.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "keyboard-access-lightbox-focus-is-not-moved-immediately-to-lightbox",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-lightbox-focus-is-not-retained-within-the-lightbox.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "keyboard-access-lightbox-focus-is-not-retained-within-the-lightbox",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/frames-iframe-is-missing-a-title-attribute.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "frames-iframe-is-missing-a-title-attribute",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/frames-iframe-title-attribute-does-not-describe-the-content-or-purpose-of-the-iframe.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "frames-iframe-title-attribute-does-not-describe-the-content-or-purpose-of-the-iframe",
+      "ai": {
+        "focus": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    }
+  ]
+}

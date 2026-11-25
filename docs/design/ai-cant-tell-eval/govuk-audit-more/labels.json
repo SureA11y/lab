@@ -1,0 +1,837 @@
+{
+ "p-as-heading|1rx9wvm": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: text formatting used instead of an actual heading",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1lgl69d": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1lgl69d": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1lgl69d": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "p-as-heading|s1zh4t": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: text formatting used instead of an actual heading",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|v8cr5o": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|v8cr5o": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|lqpjga": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: alt \"BBC\" on the BBC logo: accurate (the audit's point is the title \"BBC homepage\" differing, which this question is not about)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|7k7gyd": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|14ti6cf": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|14ti6cf": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|e5uxal": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: the BBC logo, the page's only content, with an empty alt and the title \"BBC\"",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|x74wy3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|tp68yw": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|tp68yw": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|4g1ib5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|10gegb8": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|10gegb8": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1oxr1za": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|19fi8mv": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|19fi8mv": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|4au301": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the alt describes the animated tree accurately (the audit's point is the distraction)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|uwv9iu": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|154q4n": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|154q4n": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|yxzxgp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|17qjeps": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|yxzxgp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|yxzxgp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1m8vm7q": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|8tag99": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1m8vm7q": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1m8vm7q": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1eb68rk": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|nohtd7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1eb68rk": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1eb68rk": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|dmve64": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: alt \"Red Panda\" on a red panda photo linking to the red panda page: accurate (the audit's point is the repeated link or text)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|v39xsz": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|uhrjq3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|v39xsz": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|v39xsz": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1fl094f": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1qx0xgb": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1fl094f": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1fl094f": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an empty link (no text, no size): no box for focus to show on (corrected after scoring: the first rule passed it, the model failed it, rightly)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1e47ipx": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: alt \"Red Panda\" on a red panda photo linking to the red panda page: accurate (the audit's point is the repeated link or text)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|hxgl08": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|v11riu": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|hxgl08": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|hxgl08": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|13jus3m": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: image link with no alternative text (the image is the link's only content)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|csamh": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|82exa": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|csamh": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|csamh": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1npewn8": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|12c3zt5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1npewn8": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1npewn8": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|uj50e2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|czquky": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|uj50e2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|uj50e2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|6c4goc": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|jmr6n2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|6c4goc": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|6c4goc": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1a8lhp7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|nmrfvp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1a8lhp7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1a8lhp7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|xrsjor": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|ear0dl": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|xrsjor": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|xrsjor": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|13qtnn0": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1un6x2o": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|13qtnn0": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|13qtnn0": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|x3ksiq": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1s54f5z": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|x3ksiq": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|x3ksiq": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|4pbflk": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|b6roly": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|4pbflk": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|4pbflk": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|wpwpr9": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|a8b3cb": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|wpwpr9": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|wpwpr9": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|sd3hjp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1eh4evo": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|sd3hjp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|sd3hjp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1nwpubv": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1fi9k0n": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1nwpubv": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1nwpubv": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|z42i7g": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1mc1brh": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|z42i7g": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|z42i7g": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1k24qui": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1tdyq9v": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1k24qui": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1k24qui": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|mtqyba": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|16o7axb": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|mtqyba": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|mtqyba": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|11n7cdx": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|14yv9pv": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|11n7cdx": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|11n7cdx": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|12gtcq6": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|14vi2ue": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|12gtcq6": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|12gtcq6": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|10upt12": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|os1h9q": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|10upt12": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|10upt12": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|ug7qyn": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|rp48w8": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|rp48w8": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|gh3kbl": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|y0sjkb": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|y0sjkb": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|2v8xv7": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: link with a rolebutton does not work with space bar",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|121rz0y": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|2v8xv7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "link-name-quality|1cxnqc4": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: \"Continue\", the page's one button-like link: clear in its context (the audit's point is the space bar)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|2v8xv7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1g1be9b": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|a8x3ke": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1g1be9b": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1g1be9b": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1w9mhk3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|gtx44g": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1w9mhk3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1w9mhk3": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1zz0st": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: lightbox close button doesnt receive focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|18oyp2v": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1zz0st": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1zz0st": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|6ni96p": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: lightbox esc key doesnt close the lightbox; whether that fails 2.1.1 depends on the close control, which the walk never opens",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|z58yu6": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|6ni96p": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|6ni96p": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|15rblr9": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: lightbox focus is not moved immediately to lightbox; whether that fails 2.1.1 depends on the close control, which the walk never opens",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|hims0e": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|15rblr9": {
+  "verdict": "fail",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: focus is not moved to the lightbox (it sits at the end of the page)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|15rblr9": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1x6x72r": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|17y9vek": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1x6x72r": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: focus is not kept in the lightbox; WCAG 2.4.3 does not require it in every case",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1x6x72r": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus shows (the browser's own outline)",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1fl25fd": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1mtwa0x": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1fl25fd": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1fl25fd": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus goes into an iframe; what shows inside it is not documented",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|qti0tr": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing on the page a keyboard cannot reach",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|xycfek": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the audit's test page title names the test",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|qti0tr": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: nothing out of order",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|qti0tr": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: focus goes into an iframe; what shows inside it is not documented",
+  "at": "2026-11-25T18:00:00.000Z"
+ }
+}

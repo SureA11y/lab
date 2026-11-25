@@ -17,8 +17,8 @@ Read, in this order:
 
 ## State (end of 2026-11-25)
 
-Everything is committed and pushed (latest: two more evaluated sites, UW and
-GOV.UK, and the walk and question fixes they led to; prompt version
+Everything is committed and pushed (latest: 42 more GOV.UK audit pages
+evaluated, after UW and the first 23 GOV.UK pages; prompt version
 `registry-6`). The full suite (4487 tests) and the browser tests
 (`focus-walk`, `ai-answer`, `app-boot`: 33) pass.
 
@@ -78,14 +78,18 @@ GOV.UK, and the walk and question fixes they led to; prompt version
   | W3C Before and After Demonstration, run 5 | `ai-answers-w3c-bad.spec.json` | 57 | 47 (82%) | 98% | 1 pass (news photo, Note 10; it varies run to run) |
   | UW Accessible University | `ai-answers-uw-au.spec.json` | 47 | 38 (81%) | 100% | 0 |
   | GOV.UK accessibility tool audit, 23 pages | `ai-answers-govuk-audit.spec.json` | 98 | 60 (61%) | 97% | 2 passes, WCAG readings the audit is stricter than |
+  | GOV.UK audit, 42 more pages | `ai-answers-govuk-audit-more.spec.json` | 167 | 107 (66%) | 100% | 0 |
 
   Most of what is left open is by design: keyboard, which the AI may not
   pass, and focus questions on pages with nothing focusable. Files per site in
-  `ai-cant-tell-eval/w3c-bad/` (runs 1 to 5), `uw-au/`, `govuk-audit/`;
-  labels for UW and GOV.UK from `label-rules.js` over `list-cases.mjs`.
+  `ai-cant-tell-eval/w3c-bad/` (runs 1 to 5), `uw-au/`, `govuk-audit/`,
+  `govuk-audit-more/`; labels for UW and GOV.UK from `label-rules.js` over
+  `list-cases.mjs`.
   Fixes these runs led to: links that give focus up at once, whole walks
   (`focusStops`), blank images, a video's own controls, keyboard asked where
-  Tab reaches nothing, focus order judged on its own.
+  Tab reaches nothing, focus order judged on its own. The walk only presses
+  Tab: what shows once a control is used (a lightbox, a role=button link and
+  the space bar) is left open, rightly.
 
 **Not measured yet:** anything through the lab's own Claude call with a real
 key (so prompt caching too: the first real run should show cached tokens in
@@ -114,7 +118,7 @@ Chrome or Chromium.)
 
 The first three need the user; the rest can be done without.
 
-1. **A person's labels on the real-site runs** (W3C, UW, GOV.UK). Every
+1. **A person's labels on the real-site runs** (W3C, UW, both GOV.UK runs). Every
    figure so far is against labels the assistant wrote (`labels.json` in each
    site's folder), not a person's. The repo keeps each run's prompts and
    answers, not a report to open, so: run a site's spec
@@ -135,15 +139,17 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **More cases per check.** There are 202 labelled cases over the three
-   sites, but most checks still have fewer than 30 (`ai:agreement` marks
-   them), and each run's wrong answers are a different case (run-to-run
-   variation): 30 to 50 per check are needed to trust a check. More of the
-   GOV.UK audit's ~140 test pages, or other public sites built with
-   documented problems, would add cases; a new site needs its host allowed in
-   the cloud environment (ask the user) and labels. Running each set two or
-   three times and keeping the per-case spread would show which questions are
-   unstable.
+4. **More cases per check.** There are 369 labelled cases over the three
+   sites; page title, focus visible, focus order and keyboard have more than
+   30 each, the image, link, label and heading questions still fewer
+   (`ai:agreement` marks them), and each run's wrong answers are a different
+   case (run-to-run variation): 30 to 50 per check are needed to trust a
+   check. The GOV.UK audit's remaining pages are mostly about things the AI is
+   not asked (contrast, language, tables, typography), so the reading
+   questions need other public sites built with documented problems; a new
+   site needs its host allowed in the cloud environment (ask the user) and
+   labels. Running each set two or three times and keeping the per-case spread
+   would show which questions are unstable.
 5. **Optional, not built:** pictures sent to the model (only after measuring
    that they help: the news photo of the W3C's Note 10, the one question the
    model keeps getting wrong, is about what the picture shows); 2.4.13's and
@@ -153,7 +159,10 @@ The first three need the user; the rest can be done without.
    GOV.UK's "Read more" links (WCAG accepts the context, the audit does not),
    a button whose focus shows only as an outline change the page-level
    question does not measure, UW's divider images with alt "horizontal line
-   graphic".
+   graphic", the empty-alt BBC logo (GOV.UK, a fail argued but answered
+   unsure). Also not built: a walk that opens what it finds (a lightbox, a
+   menu) and presses Enter or Space, which would let the keyboard and focus
+   order questions see a lightbox's problems.
 6. **On hold:** the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 
