@@ -2,38 +2,6 @@
 {"id":"q2","verdict":"pass","confidence":0.92,"rationale":"A single grey horizontal line used as a divider; hiding it loses nothing."}
 {"id":"q3","verdict":"fail","confidence":0.93,"rationale":"The alt is a file name, 'IMG_2041.jpg', which conveys nothing about the image's content."}
 {"id":"q4","verdict":"pass","confidence":0.75,"rationale":"The alt describes a canvas garden bag, matching the image (labelled 'bag') and its 'Garden bag' product heading."}
-{"id":"q16","verdict":"pass","confidence":0.65,"rationale":"The link's name 'Search products' fits the magnifier icon and the link leads to the products page, so it describes the control's purpose rather than the picture."}
-{"id":"q17","verdict":"fail","confidence":0.95,"rationale":"The button's name 'Layer 1' is a drawing-tool leftover that says nothing about its share action."}
-{"id":"q18","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header before the navigation, not a title for following body text."}
-{"id":"q19","verdict":"fail","confidence":0.85,"rationale":"'Delivery' titles the following paragraph about delivery times but is a bold paragraph, not a heading."}
-{"id":"q20","verdict":"fail","confidence":0.92,"rationale":"The title 'Page' is generic and does not say the page is about garden tools."}
-{"id":"q21","verdict":"fail","confidence":0.75,"rationale":"'Learn more' sits alone in its paragraph with no surrounding text saying it leads to the products page."}
-{"id":"q25","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
-{"id":"q26","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
-{"id":"q27","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
-{"id":"q28","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
-{"id":"q29","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
-{"id":"q30","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
-{"id":"q31","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
-{"id":"q32","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
-{"id":"q33","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
-{"id":"q34","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) changes background, text colour and underline on focus (682 px changed, 584 at 3:1), so focus remains visible."}
-{"id":"q35","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
-{"id":"q36","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
-{"id":"q37","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
-{"id":"q38","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) has appearance changed 0, atContrast 0 against 244 needed, meets false: no qualifying indicator."}
-{"id":"q39","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) has appearance changed 0, atContrast 0 against 336 needed, meets false."}
-{"id":"q40","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) has appearance changed 0, atContrast 0 against 192 needed, meets false."}
-{"id":"q41","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) has 584 px changed at 3:1 or more against 204 needed, meets true."}
-{"id":"q42","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) changes nothing on focus, so there is no indicator to meet 3:1."}
-{"id":"q43","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) changes nothing on focus, so there is no indicator to meet 3:1."}
-{"id":"q44","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) changes nothing on focus, so there is no indicator to meet 3:1."}
-{"id":"q45","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) changes background, text colour and underline; 584 of 682 changed px are at 3:1 or more, over five times a 1 px outline (106), clearly enough to see."}
-{"id":"q46","verdict":"pass","confidence":0.7,"rationale":"'Demo Shop' sits in the header just before the main navigation and reads as the site name, not a title for following section text."}
-{"id":"q47","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
-{"id":"q48","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
-{"id":"q49","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
-{"id":"q50","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
 {"id":"q5","verdict":"pass","confidence":0.6,"rationale":"The alt 'Plan of the garden' names the image-map picture, and its regions are conveyed by the map's area links that a screen reader reaches with it; the placeholder name on the shed area is a separate area-level issue."}
 {"id":"q6","verdict":"pass","confidence":0.85,"rationale":"The icon is a shopping cart inside a link to cart.html, and the alt 'Cart' accurately names it and the link's purpose."}
 {"id":"q7","verdict":"pass","confidence":0.95,"rationale":"The area covers the region labelled 'Greenhouse' in the SVG and links to #greenhouse; its alt 'Greenhouse' matches the region and destination."}
@@ -45,6 +13,52 @@
 {"id":"q13","verdict":"pass","confidence":0.95,"rationale":"The alt 'Check delivery' states the button's action, which matches the form's purpose and the visible 'Check' text."}
 {"id":"q14","verdict":"fail","confidence":0.97,"rationale":"The alt is the file name 'btn_submit_02.png', which does not say the button checks delivery."}
 {"id":"q15","verdict":"pass","confidence":0.85,"rationale":"The fallback text 'Bar chart of seeds sold each month, highest in March' accurately describes the SVG bar chart for Jan to Mar, where March is tallest."}
+{"id":"q16","verdict":"pass","confidence":0.65,"rationale":"The link's name 'Search products' fits the magnifier icon and the link leads to the products page, so it describes the control's purpose rather than the picture."}
+{"id":"q17","verdict":"fail","confidence":0.95,"rationale":"The button's name 'Layer 1' is a drawing-tool leftover that says nothing about its share action."}
+{"id":"q18","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header before the navigation, not a title for following body text."}
+{"id":"q19","verdict":"fail","confidence":0.85,"rationale":"'Delivery' titles the following paragraph about delivery times but is a bold paragraph, not a heading."}
+{"id":"q20","verdict":"fail","confidence":0.92,"rationale":"The title 'Page' is generic and does not say the page is about garden tools."}
+{"id":"q21","verdict":"fail","confidence":0.75,"rationale":"'Learn more' sits alone in its paragraph with no surrounding text saying it leads to the products page."}
 {"id":"q22","verdict":"fail","confidence":0.85,"rationale":"No visible text sits next to the postcode field and the next element is another input, not a button, so what to enter is given only by the hover-only title."}
 {"id":"q23","verdict":"fail","confidence":0.85,"rationale":"The field has only a placeholder 'Name', with no visible label or adjacent text, so once filled in nothing says what it is for."}
 {"id":"q24","verdict":"fail","confidence":0.9,"rationale":"The icon's alt 'Cart' repeats the link text 'Cart' beside it, so the link is read as 'Cart Cart' and the image could be alt=\"\" with nothing lost."}
+{"id":"q39","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
+{"id":"q40","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
+{"id":"q41","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
+{"id":"q42","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
+{"id":"q43","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
+{"id":"q44","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
+{"id":"q45","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
+{"id":"q46","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
+{"id":"q47","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
+{"id":"q48","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) changes background, text colour and underline on focus (682 px changed, 584 at 3:1), so focus remains visible."}
+{"id":"q49","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
+{"id":"q50","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
+{"id":"q51","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
+{"id":"q52","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) has appearance changed 0, atContrast 0 against 244 needed, meets false: no qualifying indicator."}
+{"id":"q53","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) has appearance changed 0, atContrast 0 against 336 needed, meets false."}
+{"id":"q54","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) has appearance changed 0, atContrast 0 against 192 needed, meets false."}
+{"id":"q55","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) has 584 px changed at 3:1 or more against 204 needed, meets true."}
+{"id":"q56","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) changes nothing on focus, so there is no indicator to meet 3:1."}
+{"id":"q57","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) changes nothing on focus, so there is no indicator to meet 3:1."}
+{"id":"q58","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) changes nothing on focus, so there is no indicator to meet 3:1."}
+{"id":"q59","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) changes background, text colour and underline; 584 of 682 changed px are at 3:1 or more, over five times a 1 px outline (106), clearly enough to see."}
+{"id":"q60","verdict":"pass","confidence":0.7,"rationale":"'Demo Shop' sits in the header just before the main navigation and reads as the site name, not a title for following section text."}
+{"id":"q61","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
+{"id":"q62","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
+{"id":"q63","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
+{"id":"q64","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
+{"id":"q25","verdict":"pass","confidence":0.75,"rationale":"The bold \"Demo Shop\" line is the site name in the header, followed by the navigation links rather than section content, so it is a name, not a section title."}
+{"id":"q26","verdict":"pass","confidence":0.9,"rationale":"The title \"Returns and contact - Demo Shop\" matches the main heading and the page content, which covers returns, downloads and a call-back form."}
+{"id":"q27","verdict":"fail","confidence":0.9,"rationale":"\"Heading 2\" is template placeholder text. The section after it is about returns, and the heading does not describe that."}
+{"id":"q28","verdict":"fail","confidence":0.7,"rationale":"Two tel fields are both labelled \"Phone\" under \"Call us back\", and nothing visible says how they differ or which one to fill in."}
+{"id":"q29","verdict":"fail","confidence":0.7,"rationale":"Two tel fields are both labelled \"Phone\" under \"Call us back\", and nothing visible says how they differ or which one to fill in."}
+{"id":"q30","verdict":"fail","confidence":0.85,"rationale":"The \"Download\" links lead to different files, a price list and a garden catalogue. The link text alone does not tell them apart, and the page has no setting to expand the names."}
+{"id":"q31","verdict":"fail","confidence":0.85,"rationale":"The \"Download\" links lead to different files, a garden catalogue and a price list. The link text alone does not tell them apart, and the page has no setting to expand the names."}
+{"id":"q32","verdict":"fail","confidence":0.85,"rationale":"\"Read more\" on its own does not say where the link leads, its name has no extra text, and the evidence shows no control that expands it."}
+{"id":"q33","verdict":"pass","confidence":0.85,"rationale":"\"E-mail\" and \"Email address\" differ only in hyphenation, so saying the visible label matches the start of the accessible name."}
+{"id":"q34","verdict":"fail","confidence":0.7,"rationale":"Both frames are titled \"Shop page\" but embed different pages (the home page and the products page), so their shared name does not tell them apart."}
+{"id":"q35","verdict":"fail","confidence":0.7,"rationale":"Both frames are titled \"Shop page\" but embed different pages (the products page and the home page), so their shared name does not tell them apart."}
+{"id":"q36","verdict":"fail","confidence":0.85,"rationale":"The button is an empty, colored 28px square with no visible text or icon, so its purpose is given only by the title tooltip."}
+{"id":"q37","verdict":"fail","confidence":0.85,"rationale":"The header navigation (Home, Products, Cart) and the footer navigation (About us, Jobs, Privacy) hold different links, and both are unnamed."}
+{"id":"q38","verdict":"fail","confidence":0.85,"rationale":"The footer navigation (About us, Jobs, Privacy) and the header navigation (Home, Products, Cart) hold different links, and both are unnamed."}

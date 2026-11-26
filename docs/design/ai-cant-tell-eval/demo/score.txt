@@ -23,6 +23,20 @@ reading.html  p-as-heading                              html > body > header > p
 reading.html  link-name-quality                         #link-vague                         fail     fail                    agrees
 reading.html  form-control-programmatic-label-quality   #postcode                           fail     fail                    agrees
 reading.html  form-control-programmatic-label-quality   #name                               fail     fail                    agrees
+labels.html   p-as-heading                              html > body > header > p            pass     pass                    agrees
+labels.html   page-title-patterns                       html > head > title                 pass     pass                    agrees
+labels.html   heading-quality                           html > body > main > h2:nth-of-ty…  fail     fail                    agrees
+labels.html   form-control-label-quality                #phone-1                            fail     fail                    agrees
+labels.html   form-control-label-quality                #phone-2                            fail     fail                    agrees
+labels.html   identical-links-same-purpose              html > body > main > ul > li:nth-…  fail     fail                    agrees
+labels.html   identical-links-same-purpose              html > body > main > ul > li:nth-…  fail     fail                    agrees
+labels.html   link-name-quality-link-only               html > body > main > p:nth-of-typ…  fail     fail                    agrees
+labels.html   label-in-name                             #email                              pass     pass                    agrees
+labels.html   identical-iframes-same-purpose            html > body > main > div > iframe…  fail     fail                    agrees
+labels.html   identical-iframes-same-purpose            html > body > main > div > iframe…  fail     fail                    agrees
+labels.html   control-name-title-only                   html > body > main > form > p:nth…  fail     fail                    agrees
+labels.html   landmark-unique                           html > body > header > nav          fail     fail                    agrees
+labels.html   landmark-unique                           html > body > footer > nav          fail     fail                    agrees
 focus.html    page-title-patterns                       html > head > title                 pass     pass                    agrees
 focus.html    p-as-heading                              #top-bar > p                        pass     pass                    agrees
 focus.html    focus-visible                             html                                fail     fail                    agrees
@@ -50,4 +64,4 @@ dialog.html   keyboard                                  html                    
 dialog.html   focus-order                               html                                fail     fail                    agrees
 dialog.html   focus-visible                             html                                pass     pass                    agrees
 
-50 questions: 50 answered by the AI, 50 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+64 questions: 64 answered by the AI, 64 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
