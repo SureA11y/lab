@@ -36,7 +36,7 @@ its correct answer and why in `expected.json`.
 | `focus.html` (WCAG 2.2 AAA) | Focus visible (page and per link), focus appearance and non-text contrast (1.4.11) per link, a link whose outline is removed but which shows focus from a script (all three pass), focus order (a `tabindex="1"` link far down comes first), keyboard (page, a clickable menu, a `role="button"` tile), focus not obscured per sticky box (the sticky header hides two links once the page has scrolled) |
 | `dialog.html` (`open: true`, added 2026-11-26) | Keyboard and focus order from the open walk: a modal "Size guide" dialog a keyboard user cannot close (its close control is a span, Escape does nothing) and that does not take focus; a working disclosure beside it; the site name and the title |
 
-**Result:** 36 questions, 36 answered, **36 agree**; no "pass" where the answer
+**Result:** 36 questions, 36 answered, **36 agree** (38 of 38 since the SVG cases, below); no "pass" where the answer
 is "fail", none the other way (earlier runs, on 25 questions before 1.4.11 and
 the Help link and on 31 before the dialog page, also agreed on all). On the
 dialog page the model failed keyboard because "the dialog's only close control
@@ -586,3 +586,28 @@ roving tabindex normally reached with arrow keys", not a fail.
 ```bash
 A11Y_AI_PREVIEW=on node src/cli/run-workflow.js examples/specs/ai-answers-apg-open.spec.json --out runs/apg-open
 ```
+
+## SVG text alternatives, and the combobox fix confirmed (2026-11-26)
+
+The roadmap's first `read` check: `svg-text-alternative-quality`, the most
+frequent unanswered "can't tell" in the runs (97 occurrences, from 5 distinct
+SVGs: the W3C site's header and icons repeat on every page). The evidence
+gives what an inline SVG draws without its path data (title, desc, the
+symbol it uses, classes, text in it; `registry-8`).
+
+- **Demo:** two cases added to `reading.html` (an icon named "Search
+  products" in a link, pass; one titled "Layer 1" in a button, fail). The
+  whole demo, answered blind again: **38 of 38**
+  ([demo/score.txt](demo/score.txt)).
+- **Real pages:** the 5 distinct SVGs of the W3C pages (the W3C and WAI
+  logos linking home, the search button's magnifier "Submit Search", two
+  external-link icons "External Site" and "External Link"), labelled pass
+  before any answer: **5 of 5 pass**, each for the right reason ("its name
+  says where the link goes"; "the link goes to GitHub, outside the site").
+  Files: [svg-w3c/](svg-w3c/). Five cases only: more real SVGs, with some
+  that fail, are needed before the check is trusted.
+- **The combobox fix** (after the APG run): the APG combobox page scanned
+  again, its keyboard and focus order questions answered blind: what opened
+  is now its listbox alone (14 elements, none in the Tab order, Escape closes
+  it); keyboard unsure (the only answer allowed), focus order pass. No more
+  "Back to Top".

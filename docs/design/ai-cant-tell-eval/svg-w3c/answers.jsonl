@@ -1,0 +1,5 @@
+{"id":"q11","verdict":"pass","confidence":0.9,"rationale":"The SVG is the only content of a link to https://www.w3.org/, and its name \"W3C homepage\" says where the link goes."}
+{"id":"q12","verdict":"pass","confidence":0.9,"rationale":"The SVG is the only content of a link to /WAI/, and its name \"Web Accessibility Initiative (WAI) homepage\" says where the link goes."}
+{"id":"q13","verdict":"pass","confidence":0.85,"rationale":"The search icon is the only content of the button next to the search field, and \"Submit Search\" says what the button does, not what the icon looks like."}
+{"id":"q18","verdict":"pass","confidence":0.85,"rationale":"The external-link icon is named \"External Site\", which gives its meaning: the link goes to github.com, outside the site."}
+{"id":"q31","verdict":"pass","confidence":0.85,"rationale":"The external-link icon is named \"External Link\", which gives its meaning: the link goes to YouTube, outside the site."}

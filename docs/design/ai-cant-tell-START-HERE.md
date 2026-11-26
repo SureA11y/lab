@@ -36,17 +36,18 @@ pass, 5 skipped) and the browser tests (`focus-walk` 16, `ai-answer` and
 `app-boot`) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
-AI for every "can't tell" from the rules: 12 of 132 checks are answered
-today; next the 34 `read` checks (questions like today's: SVG and other text
+AI for every "can't tell" from the rules: 13 of 132 checks are answered
+today; next the 33 remaining `read` checks (questions like today's: text
 alternatives, headings and labels, label in name, tables and structure), then
 the browser's accessibility tree for 23 "name present" checks, the walks,
 measurements, pictures and media. Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
 
-**Where to pick up without the user:** re-run the APG spec
-(`ai-answers-apg-open.spec.json`) to confirm the combobox fix in an answered
-run; then phase 1, step 1 of the roadmap (the `read` checks, family by
-family, each with demo cases, blind evaluation and the user guide). Items 1
+**Where to pick up without the user:** phase 1, step 1 of the roadmap (the
+`read` checks, family by family, each with demo cases, blind evaluation and
+the user guide). Done so far: `svg-text-alternative-quality` (2026-11-26,
+demo 2 of 2, the W3C's 5 real SVGs 5 of 5; the combobox fix is confirmed
+too). Next: `area-alt-quality`, then the image buttons. Items 1
 to 3 below need the user.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
@@ -57,7 +58,9 @@ to 3 below need the user.
 - **The AI pass** of a scan step (`ai` option) answers only what the scan
   leaves as can't tell; the tool's outcome never changes.
 - **Questions answered by reading:** page title, alt text, decorative images,
-  bold paragraph as heading, link text, field labels. An image question also
+  SVG text alternatives (with what an inline SVG draws: title, desc, symbol,
+  classes; its path data left out), bold paragraph as heading, link text,
+  field labels. An image question also
   says what the picture shows (blank, colours), read from its pixels.
 - **The focus walk** (`ai: { focus: true }`, `focusStops` default 40, max
   200): Tab through the page in its own Tab order, then focus and scroll put
@@ -104,12 +107,12 @@ to 3 below need the user.
 - **The demo:** `examples/demo-site/ai/` (`reading.html`, `focus.html`,
   `dialog.html` for the open walk),
   `examples/specs/ai-answers.spec.json`, the correct answers in
-  `expected.json`, `examples/ai-demo-score.js`. 36 questions, including a Help
+  `expected.json`, `examples/ai-demo-score.js`. 38 questions, including a Help
   link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13 pass) and a
   modal dialog a keyboard user cannot close (keyboard and focus order fail,
   found by the open walk).
   Evaluated blind, a model answering the lab's exact prompts outside the lab
-  (`ai-cant-tell-spike/answer-offline.js`): **36 of 36**
+  (`ai-cant-tell-spike/answer-offline.js`): **38 of 38**
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
 - **Real sites,** built with documented accessibility problems (the WAI
@@ -202,9 +205,8 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    Waiting on the user to export them.
 4. **Phase 1, step 1: the 34 `read` checks** (`ai-cant-tell-roadmap.md`,
    listed under `read` in `ai-cant-tell-inventory.md`). One family at a time,
-   in this order: text alternatives (start with
-   `svg-text-alternative-quality`, the most frequent in the runs: 97, then
-   `area-`, `input-image-`, `object-`, `embed-`, `canvas-`,
+   in this order: text alternatives (`svg-text-alternative-quality` done,
+   then `area-`, `input-image-`, `object-`, `embed-`, `canvas-`,
    `image-redundant-alt`, `video-poster-`), names and labels
    (`heading-quality`, `form-control-label-quality`, `label-in-name`, ...),
    structure (tables, form groups, heading order, regions), then "is it text"
