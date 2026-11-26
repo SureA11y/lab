@@ -631,3 +631,28 @@ picture).
   generic word that does not say what the button does"
   ([image-buttons/](image-buttons/)). Real image maps and image buttons are
   rare on these sites; the checks need other sources of cases.
+
+## Objects, embeds, canvas, video posters, redundant alt (2026-11-26)
+
+The rest of the text alternatives (`registry-10`): the evidence has what an
+object, embed or video embeds (`image.embedded`) and its picture when that is
+an image; a canvas is read from its own pixels.
+
+- **Best practices were never asked.** The AI pass, the review, the offline
+  tool and the demo score read only `canonical.findings`; best-practice
+  findings (`includeBestPractice`) live in `canonical.bestPractices`, and a
+  rule with one check may leave its occurrence without an `atomicCheckId`.
+  All now read both, and the rule names the check. This opens the 32
+  `code`-lane and other best-practice checks to the AI when they are added.
+- **Demo:** six cases added (an object with a bar chart, an embed titled by
+  its file name, a canvas named "canvas", a cart icon whose alt repeats its
+  link text, its alt quality, a video identified by its figcaption); the
+  reading step now includes best practices. The whole demo: **50 of 50**
+  (14 new or changed prompts answered blind; the 36 unchanged kept their
+  answers).
+- **Real pages:** four cases, labelled before any answer: GOV.UK's red panda
+  image whose alt repeats its link text (fail), GOV.UK's
+  `<object data="foo">` with fallback "Alternative text" (fail), UW's video
+  before and after the repair, each named by the text "AU Video" just before
+  it (pass, a styled div and an h2): **4 of 4**, for the right reasons
+  ([media-alt/](media-alt/)). Too few to trust these checks yet.

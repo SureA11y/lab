@@ -1,0 +1,4 @@
+{"id":"q3","verdict":"fail","confidence":0.9,"rationale":"The image alt \"Red Panda\" exactly repeats the link text \"Red Panda\" in the same link, so the words are read twice; alt=\"\" would lose nothing."}
+{"id":"q8","verdict":"fail","confidence":0.75,"rationale":"The fallback text \"Alternative text\" is a placeholder that says nothing about what the object embeds, and its computed name is empty; no other description is reachable."}
+{"id":"q68","verdict":"pass","confidence":0.7,"rationale":"Text \"AU Video\" (a heading-styled div) sits immediately before the video and names it, which is enough to identify time-based media."}
+{"id":"q74","verdict":"pass","confidence":0.85,"rationale":"An h2 \"AU Video\" directly precedes the video in the same section, identifying it for screen reader users."}
