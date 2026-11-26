@@ -16,17 +16,18 @@ Read, in this order:
    customer's site (what leaves the lab, agents, how to set it up well).
 6. `ai-cant-tell-spike.md`: the earliest results.
 
-## State (end of 2026-11-25)
+## State (end of 2026-11-26)
 
 Everything is committed and pushed (latest: the **open walk**, an opt-in
 `open: true` that presses what says it opens something and records what the
-keyboard can do with it, evaluated on the GOV.UK keyboard pages; before that
-the WAI tutorials and 42 more GOV.UK pages; prompt version `registry-7`). The
-full suite (4484 pass, 5 skipped) and the browser tests (`focus-walk`,
-`ai-answer`, `app-boot`: 36) pass.
+keyboard can do with it, evaluated on the GOV.UK keyboard pages and on a new
+demo page, `dialog.html`, with a dialog a keyboard user cannot close; before
+that the WAI tutorials and 42 more GOV.UK pages; prompt version
+`registry-7`). The full suite (4486 pass, 5 skipped) and the browser tests
+(`focus-walk` 14, `ai-answer` and `app-boot` 22) pass.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
-`registry.js` the questions, `focus-walk.js`, `evidence.js`, `provider.js`,
+`registry.js` the questions, `focus-walk.js`, `open-walk.js`, `evidence.js`, `provider.js`,
 `outgoing.js`, `runtime-key.js`, `lessons.js`), `src/js/ai-answer-view.js`,
 `src/js/ai-review.js`, `src/js/ai-key-field.js`, `src/cli/ai-agreement.js`.
 
@@ -48,8 +49,7 @@ full suite (4484 pass, 5 skipped) and the browser tests (`focus-walk`,
     keyboard (2.1.1, fail only), focus not obscured (2.4.11 and 2.4.12),
     focus appearance (2.4.13).
   - Per-element questions the scanner asks: focus visible, focus appearance
-    and **focus indicator contrast (1.4.11, `focus-contrast-element`, the
-    newest)** per link whose outline a style removes; keyboard per control
+    and focus indicator contrast (1.4.11, `focus-contrast-element`) per link whose outline a style removes; keyboard per control
     (fail only); focus not obscured per fixed or sticky box.
   - **The open walk** (`open: true` with `focus`, `openControls` default 10,
     `open-walk.js`, the newest): presses each control Tab reaches that says it
@@ -58,7 +58,12 @@ full suite (4484 pass, 5 skipped) and the browser tests (`focus-walk`,
     button), with every navigation of the page stopped; records whether its
     key worked, what opened, where focus went, whether Tab gets in and stays,
     whether the close control can take focus and Escape closes; closes it
-    again. Evidence for keyboard and focus order.
+    again (a close control is told by a short name: "Close", "X", "×"), focus
+    and scroll put back, checked by its own fingerprint: a page its script
+    changed for good keeps the answers and logs a warning (`leftChanged`).
+    Evidence for keyboard and focus order; the review lists each control
+    pressed in a sentence. User guide: "Opening menus and dialogs"; design
+    note: "Opening what the page opens".
 - **Providers:** the built-in Claude call (key from Run settings, kept in
   memory, or `ANTHROPIC_API_KEY`; the evidence is sent compact and marked for
   prompt caching, so a page's focus questions pay for the walk once;
@@ -108,7 +113,16 @@ full suite (4484 pass, 5 skipped) and the browser tests (`focus-walk`,
 
 **Not measured yet:** anything through the lab's own Claude call with a real
 key (so prompt caching too: the first real run should show cached tokens in
-the API's usage); agreement after the evidence was reordered.
+the API's usage); agreement after the evidence was reordered; the open walk
+on a real site with a dialog that truly cannot be closed or traps focus (so
+far only the demo's).
+
+**Labels that disagree with WCAG, kept on purpose:** in `label-rules.js`
+(`gov`), keyboard on the GOV.UK "lightbox close button" and "role=button"
+pages is labelled fail, as the audit lists them. With the open walk the
+model read them by WCAG 2.1.1 (Escape closes the lightbox; Enter works on the
+link, Space only is 4.1.2) and left them open. A person's labels (item 1)
+should settle which reading the lab wants.
 
 **On the user's machine:** the branch is checked out in the main folder,
 `C:\Dev\surea11y\lab` (the old worktree was removed). **Do not commit** the
@@ -133,8 +147,8 @@ Chrome or Chromium.)
 
 The first three need the user; the rest can be done without.
 
-1. **A person's labels on the real-site runs** (W3C, UW, both GOV.UK runs,
-   the WAI tutorials). Every
+1. **A person's labels on the real-site runs** (W3C, UW, the three GOV.UK
+   runs, the WAI tutorials). Every
    figure so far is against labels the assistant wrote (`labels.json` in each
    site's folder), not a person's. The repo keeps each run's prompts and
    answers, not a report to open, so: run a site's spec
@@ -155,7 +169,8 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **More cases per check.** There are 432 labelled cases over four sites;
+4. **More cases per check.** There are 432 labelled cases over four sites
+   (and 48 more from the open-walk re-run of the GOV.UK keyboard pages);
    page title, alt quality, decorative images, focus visible, focus order and
    keyboard have more than 30 each; link text (6), field labels (3) and bold
    as heading (8) still fewer, because the scanner settles most of them itself
@@ -178,12 +193,16 @@ The first three need the user; the rest can be done without.
    a button whose focus shows only as an outline change the page-level
    question does not measure, UW's divider images with alt "horizontal line
    graphic", the empty-alt BBC logo (GOV.UK, a fail argued but answered
-   unsure). The open walk does not press a menu that opens on hover and
-   says nothing (no aria-haspopup), nor plain buttons; on the GOV.UK
-   lightboxes it moved no verdict (by WCAG they are keyboard-usable: Escape
-   or an X link closes them); on the demo's dialog that cannot be closed it
-   gave the fail, so a real site with such a dialog is still to be seen.
-6. **On hold:** the browser extension (it never receives AI answers; see the
+   unsure).
+6. **The open walk, next steps (optional):** it gave the fail on the demo's
+   dialog that cannot be closed, and on the GOV.UK lightboxes it moved no
+   verdict (by WCAG they are keyboard-usable). Open points: a real site with
+   such a dialog (needs its host allowed); menus that open on hover and say
+   nothing (no `aria-haspopup`: GOV.UK's dropdown navigation) are not
+   pressed; plain buttons are never pressed, by design; arrow keys inside an
+   opened menu are not tried; a page left changed is only logged (no undo
+   beyond Escape, the control again and a close control).
+7. **On hold:** the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 
 ## Conventions
@@ -202,6 +221,14 @@ The first three need the user; the rest can be done without.
   `ELEMENT_WALK`), its facts in `keyFactRows` (and `FOCUS_CHECKS` for a walk
   question) in `ai-answer-view.js`, a row in the user guide's tables, and a
   case with its correct answer in the demo (`expected.json`).
+- New browser tests for the AI pass go in an existing spec that `test:dom`
+  already lists (`focus-walk.browserspec.js`), so `package.json`, which the
+  user edits locally, is not touched. Unit tests (`*.test.js`) are found by
+  `node --test` on their own.
+- `npm run ai:agreement` writes `ai-agreement/` into the current folder: run
+  `node src/cli/ai-agreement.js` from a scratch folder, not the repo root.
+  `answer-offline.js apply` gives an answer also to the identical elements
+  the lab asked once (`reused`).
 - The background servers of a cloud session (demo site on 8780, lab on 3000)
   may be stopped between turns: start them in the same command that uses them.
 - In a cloud session, the user's "lab" environment allows www.w3.org,
