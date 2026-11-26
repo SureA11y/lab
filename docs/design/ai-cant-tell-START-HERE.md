@@ -68,12 +68,16 @@ to 3 below need the user.
 
 - **The AI pass** of a scan step (`ai` option) answers only what the scan
   leaves as can't tell; the tool's outcome never changes.
-- **Questions answered by reading:** page title, alt text, decorative images,
-  SVG text alternatives (with what an inline SVG draws: title, desc, symbol,
-  classes; its path data left out), image map areas (with the map's picture
-  and the area's place on it) and image buttons (with their picture), bold paragraph as heading, link text,
-  field labels. An image question also
-  says what the picture shows (blank, colours), read from its pixels.
+- **Questions answered by reading:** page title, bold paragraph as heading,
+  link text, field labels, and every text alternative check: alt text,
+  decorative images, SVGs (with what an inline SVG draws: title, desc,
+  symbol, classes; its path data left out), image map areas (with the map's
+  picture and the area's place on it), image buttons, objects, embeds,
+  canvas, video posters (with what they embed, `image.embedded`) and alt
+  text that repeats the text beside it (a best practice). An image question
+  also says what the picture shows (blank, colours), read from its pixels.
+  Best-practice findings (`canonical.bestPractices`, with the scan step's
+  `includeBestPractice`) are asked like the others.
 - **The focus walk** (`ai: { focus: true }`, `focusStops` default 40, max
   200): Tab through the page in its own Tab order, then focus and scroll put
   back, checked by a fingerprint (answers dropped and a warning logged if the
@@ -152,17 +156,19 @@ to 3 below need the user.
   (`focusStops`), blank images, a video's own controls, keyboard asked where
   Tab reaches nothing, focus order judged on its own; then the open walk.
 
-**Not measured yet:** the new text alternative checks on enough real cases:
-the evaluation sites have few (5 SVGs, all correct; 1 image button; no image
-map), so they need other sources, with failing cases among them; anything
-through the lab's own Claude call with a real key (so prompt caching too: the
-first real run should show cached tokens in the API's usage); agreement after
-the evidence was reordered; the open walk on a real site with a dialog that
-truly cannot be closed or traps focus (so far only the demo's). The runs
-before 2026-11-26 were made before the walks were judged by what the page
-shows: in UW and the GOV.UK runs no walk was dropped for a changed page (every
-open case has another reason), so their figures stand; W3C run 5 was not
-re-checked.
+**Not measured yet:** the text alternative checks on enough real cases: the
+evaluation sites have about ten (5 SVGs, all correct; 1 image button; no image
+map; 2 objects or videos; 1 redundant alt, 1 object with a placeholder), so
+they need other sources, with failing cases among them; whether the report's
+Best practices section shows the AI's badge on its rows, as the findings do
+(built by the same function, not checked in the app); anything through the
+lab's own Claude call with a real key (so prompt caching too: the first real
+run should show cached tokens in the API's usage); agreement after the
+evidence was reordered; the open walk on a real site with a dialog that truly
+cannot be closed or traps focus (so far only the demo's). The runs before
+2026-11-26 were made before the walks were judged by what the page shows: in
+UW and the GOV.UK runs no walk was dropped for a changed page (every open case
+has another reason), so their figures stand; W3C run 5 was not re-checked.
 
 **Labels that disagree with WCAG, kept on purpose:** in `label-rules.js`
 (`gov`), keyboard on the GOV.UK "lightbox close button" and "role=button"
