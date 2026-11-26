@@ -24,7 +24,9 @@
 
 const KEY = '__a11yOpenWalk';
 const DEFAULTS = { maxControls: 10, maxTabs: 15, settleMs: 200 };
-const CLOSE_NAME = /^(close|×|✕|✖|x|dismiss|cancel|done|back)\b|close/i;
+// A close control's short name: "Close", "X", "×"... (no word boundary
+// after a symbol, so the next letter is what must not follow).
+const CLOSE_NAME = /^(close|×|✕|✖|x|dismiss|cancel|done)(?![a-z])|close/i;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -272,4 +274,4 @@ async function openWalk(page, options = {}) {
     return result;
 }
 
-module.exports = { openWalk, DEFAULTS };
+module.exports = { openWalk, DEFAULTS, CLOSE_NAME };
