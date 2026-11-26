@@ -1,0 +1,102 @@
+{"id": "q1", "verdict": "pass", "confidence": 0.9, "rationale": "Icon sits inside a link whose visible text already states its purpose and destination, so hiding it loses nothing."}
+{"id": "q2", "verdict": "pass", "confidence": 0.85, "rationale": "Generic icon beside the visible box header text 'Related WCAG resources'; it is ornamental and the text conveys everything."}
+{"id": "q3", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q4", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q5", "verdict": "pass", "confidence": 0.85, "rationale": "Comments icon beside the h2 'Help improve this page'; the heading text conveys the meaning, so the icon is decorative."}
+{"id": "q6", "verdict": "pass", "confidence": 0.9, "rationale": "Envelope icon next to the link 'Get News in Email'; the link text already conveys email, so hiding it loses nothing."}
+{"id": "q7", "verdict": "pass", "confidence": 0.9, "rationale": "LinkedIn logo icon next to a link whose text is 'LinkedIn'; the text gives the same information."}
+{"id": "q8", "verdict": "pass", "confidence": 0.9, "rationale": "Mastodon logo icon next to a link whose text is 'Mastodon'; the text gives the same information."}
+{"id": "q9", "verdict": "pass", "confidence": 0.9, "rationale": "YouTube logo icon next to a link whose text is 'YouTube'; the text gives the same information."}
+{"id": "q10", "verdict": "pass", "confidence": 0.9, "rationale": "Alt 'Telephone' identifies the phone icon labelling the following number, matching its purpose as described in the context."}
+{"id": "q11", "verdict": "pass", "confidence": 0.9, "rationale": "Alt 'Fax' identifies the fax icon labelling the following number, matching its purpose as described in the context."}
+{"id": "q12", "verdict": "pass", "confidence": 0.9, "rationale": "Alt 'Dog with a bell attached to its collar.' gives the visual detail the adjacent text about guide dog bells relies on."}
+{"id": "q13", "verdict": "pass", "confidence": 0.85, "rationale": "Alt gives the instruction the image conveys ('Push the cap down and turn it counter-clockwise'), as the surrounding text confirms."}
+{"id": "q14", "verdict": "pass", "confidence": 0.85, "rationale": "Alt 'We're family-friendly.' conveys the intended impression of the photo, as the context explains."}
+{"id": "q15", "verdict": "pass", "confidence": 0.9, "rationale": "Alt 'HTML' conveys the file-format icon's meaning within the link, distinguishing the format."}
+{"id": "q16", "verdict": "pass", "confidence": 0.9, "rationale": "Alt 'Word document' conveys the file format the icon represents in a link otherwise only showing the size."}
+{"id": "q17", "verdict": "pass", "confidence": 0.9, "rationale": "Alt 'PDF' conveys the file format the icon represents in a link otherwise only showing the size."}
+{"id": "q18", "verdict": "pass", "confidence": 0.6, "rationale": "'Techniques:' is a short colon-ended label introducing a single list inside a box already titled 'Related WCAG resources'; it reads as a lead-in label rather than a section title."}
+{"id": "q19", "verdict": "pass", "confidence": 0.75, "rationale": "This is the site-name link at the top of the footer followed by a tagline, a brand link rather than a section title for following content."}
+{"id": "q20", "verdict": "pass", "confidence": 0.95, "rationale": "The title 'Informative Images | Web Accessibility Initiative (WAI) | W3C' names the page topic, matching the main heading, followed by the site name."}
+{"id": "q21", "verdict": "pass", "confidence": 0.95, "rationale": "A 300x6 border image described by the page as purely decorative page design; hiding it loses nothing."}
+{"id": "q22", "verdict": "pass", "confidence": 0.9, "rationale": "Crocus image inside a link whose text 'Crocus bulbs' already conveys the destination; the image adds nothing for the link."}
+{"id": "q23", "verdict": "pass", "confidence": 0.85, "rationale": "Sleeping dog image followed by adjacent text 'The sleeping dog: ...' that already conveys its content."}
+{"id": "q24", "verdict": "pass", "confidence": 0.85, "rationale": "Image used only for ambiance beside text describing the Tropical House; it adds no information the text lacks."}
+{"id": "q25", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q26", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q27", "verdict": "pass", "confidence": 0.6, "rationale": "'Techniques:' is a short colon-ended label introducing a single list inside a box already titled 'Related WCAG resources'; it reads as a lead-in label rather than a section title."}
+{"id": "q28", "verdict": "pass", "confidence": 0.95, "rationale": "The title 'Decorative Images | Web Accessibility Initiative (WAI) | W3C' names the page topic, matching the main heading, followed by the site name."}
+{"id": "q29", "verdict": "pass", "confidence": 0.8, "rationale": "Logo image inside a link whose text 'W3C Home' already names the destination, so the empty alt loses nothing."}
+{"id": "q30", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q31", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q32", "verdict": "pass", "confidence": 0.9, "rationale": "Image is the only content of the link to w3.org and its alt 'W3C home' names the destination."}
+{"id": "q33", "verdict": "pass", "confidence": 0.85, "rationale": "Alt 'new window' conveys the icon's meaning that the link opens in a new window, complementing the link text."}
+{"id": "q34", "verdict": "pass", "confidence": 0.9, "rationale": "Image is the link's only content and its alt 'Print this page' states the control's function (javascript:print())."}
+{"id": "q35", "verdict": "pass", "confidence": 0.6, "rationale": "'Techniques:' is a short colon-ended label introducing a single list inside a box already titled 'Related WCAG resources'; it reads as a lead-in label rather than a section title."}
+{"id": "q36", "verdict": "pass", "confidence": 0.95, "rationale": "The title 'Functional Images | Web Accessibility Initiative (WAI) | W3C' names the page topic, matching the main heading, followed by the site name."}
+{"id": "q37", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q38", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q39", "verdict": "pass", "confidence": 0.85, "rationale": "Alt reproduces the slogan text shown in the image of text, which is what users need."}
+{"id": "q40", "verdict": "pass", "confidence": 0.9, "rationale": "Alt 'Web Accessibility Initiative' gives the text of the unlinked logo, as the context explains."}
+{"id": "q41", "verdict": "pass", "confidence": 0.9, "rationale": "Alt gives the value 0.3333 recurring and explains the line notation, conveying what the image shows."}
+{"id": "q42", "verdict": "pass", "confidence": 0.6, "rationale": "'Techniques:' is a short colon-ended label introducing a single list inside a box already titled 'Related WCAG resources'; it reads as a lead-in label rather than a section title."}
+{"id": "q43", "verdict": "pass", "confidence": 0.95, "rationale": "The title 'Images of Text | Web Accessibility Initiative (WAI) | W3C' names the page topic, matching the main heading, followed by the site name."}
+{"id": "q44", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q45", "verdict": "pass", "confidence": 0.9, "rationale": "Arrow icon inside a pager link whose text already says 'Previous:'/'Next:' and the target page, so the arrow adds nothing."}
+{"id": "q46", "verdict": "pass", "confidence": 0.8, "rationale": "Alt names the chart and an adjacent 'Image Description' link right after the image leads to the long description giving the data."}
+{"id": "q47", "verdict": "pass", "confidence": 0.85, "rationale": "Alt 'Male peacock head' names the image and aria-describedby points to the detailed paragraph describing it."}
+{"id": "q48", "verdict": "pass", "confidence": 0.6, "rationale": "'Techniques:' is a short colon-ended label introducing a single list inside a box already titled 'Related WCAG resources'; it reads as a lead-in label rather than a section title."}
+{"id": "q49", "verdict": "pass", "confidence": 0.95, "rationale": "The title 'Complex Images | Web Accessibility Initiative (WAI) | W3C' names the page topic, matching the main heading, followed by the site name."}
+{"id": "q50", "verdict": "pass", "confidence": 0.85, "rationale": "Star is part of a rating group whose first image already has alt '3.5 out of 5 stars', so this star's empty alt loses nothing."}
+{"id": "q51", "verdict": "pass", "confidence": 0.85, "rationale": "Half star is part of a rating group whose first image already has alt '3.5 out of 5 stars', so its empty alt loses nothing."}
+{"id": "q52", "verdict": "pass", "confidence": 0.9, "rationale": "The empty star is one of a group whose first image's alt already gives the full rating '3.5 out of 5 stars', so it is correctly hidden."}
+{"id": "q53", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q54", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q55", "verdict": "pass", "confidence": 0.9, "rationale": "The alt '3.5 out of 5 stars' on the first image conveys the rating of the whole group (three full, one half, one empty star), which fits the context."}
+{"id": "q56", "verdict": "pass", "confidence": 0.7, "rationale": "The alt describes the castle's state at that date, which fits the figure collection about the castle through the ages; the figcaption gives medium and date."}
+{"id": "q57", "verdict": "pass", "confidence": 0.7, "rationale": "The alt describes the castle's change in 1756, consistent with the figure collection and its caption."}
+{"id": "q58", "verdict": "pass", "confidence": 0.7, "rationale": "The alt describes the castle in ruins in 1936, consistent with the collection and caption."}
+{"id": "q59", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q60", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Groups of Images' matches the page's main heading and names the topic, followed by the site name."}
+{"id": "q61", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q62", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q63", "verdict": "pass", "confidence": 0.8, "rationale": "The alt names the org chart and each image-map area has alt text identifying the person, role and reporting relation, so the content is conveyed."}
+{"id": "q64", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Image Maps' matches the page's main heading and names the topic, followed by the site name."}
+{"id": "q65", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q66", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q67", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q68", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q69", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Labeling Controls' matches the page's main heading and names the topic, followed by the site name."}
+{"id": "q70", "verdict": "pass", "confidence": 0.9, "rationale": "A visible Search button directly follows the field, telling users what to enter without hovering."}
+{"id": "q71", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q72", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q73", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q74", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Form Instructions' matches the page's main heading and names the topic, followed by the site name."}
+{"id": "q75", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q76", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q77", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q78", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q79", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Grouping Controls' matches the page's main heading and names the topic, followed by the site name."}
+{"id": "q80", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q81", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q82", "verdict": "pass", "confidence": 0.8, "rationale": "The alt describes the example heading structure (h1 Space Teddy with three named h2s), which is what the illustration conveys in this headings section."}
+{"id": "q83", "verdict": "pass", "confidence": 0.7, "rationale": "The long alt describes the heading hierarchy the diagram illustrates, including the nested h3/h4 subsections, which fits the tutorial context."}
+{"id": "q84", "verdict": "unsure", "confidence": 0.5, "rationale": "The alt conveys most of the heading order but is cut off mid-sentence ('the footer which –'), and without seeing the image it is unclear whether the missing part matters."}
+{"id": "q85", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q86", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q87", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Headings' matches the page's main heading and names the topic, followed by the site name."}
+{"id": "q88", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q89", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q90", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q91", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q92", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Content Structure' matches the page's main heading and names the topic, followed by the site name."}
+{"id": "q93", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q94", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q95", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q96", "verdict": "pass", "confidence": 0.6, "rationale": "The bold line is a short colon-terminated label introducing a list of links inside a resources box, reading as a label rather than a section title."}
+{"id": "q97", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Menu Structure' matches the page's main heading and names the topic, followed by the site name."}
+{"id": "q98", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q99", "verdict": "pass", "confidence": 0.95, "rationale": "The arrow icon is aria-hidden inside a link whose visible text (Previous/Next plus the target page) already conveys its meaning, so hiding it loses nothing."}
+{"id": "q100", "verdict": "pass", "confidence": 0.9, "rationale": "The left chevron is the only content of a carousel previous button and its alt 'Previous Item' says what the button does."}
+{"id": "q101", "verdict": "pass", "confidence": 0.9, "rationale": "The right chevron is the only content of a carousel next button and its alt 'Next Item' says what the button does."}
+{"id": "q102", "verdict": "fail", "confidence": 0.55, "rationale": "The title 'Working Example' is generic and does not say what the example is of; the page headings give no more specific topic."}

@@ -8,7 +8,8 @@ Read, in this order:
 2. `../ai-answers.md`: the user guide (how to use it, every option of the
    scan step's AI answers field, the server's settings, the demo).
 3. `ai-cant-tell-eval/README.md`: how the AI is evaluated, the demo's and the
-   real sites' results (W3C, UW, GOV.UK), and how to repeat them.
+   real sites' results (W3C, UW, GOV.UK, WAI tutorials), and how to repeat
+   them.
 4. `ai-cant-tell-design.md`: the design, section by section (the newest are
    near the end, before "Status when work stopped"), as needed.
 5. `ai-cant-tell-data-and-agents.md`: before turning the AI pass on for a
@@ -17,8 +18,9 @@ Read, in this order:
 
 ## State (end of 2026-11-25)
 
-Everything is committed and pushed (latest: 42 more GOV.UK audit pages
-evaluated, after UW and the first 23 GOV.UK pages; prompt version
+Everything is committed and pushed (latest: the W3C WAI tutorials evaluated,
+correct markup that the AI should not fail, and a fix to the offline tool for
+reused answers; before that 42 more GOV.UK audit pages; prompt version
 `registry-6`). The full suite (4487 tests) and the browser tests
 (`focus-walk`, `ai-answer`, `app-boot`: 33) pass.
 
@@ -68,7 +70,8 @@ evaluated, after UW and the first 23 GOV.UK pages; prompt version
   (`ai-cant-tell-spike/answer-offline.js`): **31 of 31**
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
-- **Real sites,** each built with documented accessibility problems, scanned
+- **Real sites,** built with documented accessibility problems (the WAI
+  tutorials: with correct markup, to see that the AI does not fail it), scanned
   with the current code, answered blind by separate models on the lab's exact
   prompts (`answer-offline.js`), scored with `ai:agreement` **against labels
   written by the assistant, not a person** (`ai-cant-tell-eval/README.md`):
@@ -79,12 +82,13 @@ evaluated, after UW and the first 23 GOV.UK pages; prompt version
   | UW Accessible University | `ai-answers-uw-au.spec.json` | 47 | 38 (81%) | 100% | 0 |
   | GOV.UK accessibility tool audit, 23 pages | `ai-answers-govuk-audit.spec.json` | 98 | 60 (61%) | 97% | 2 passes, WCAG readings the audit is stricter than |
   | GOV.UK audit, 42 more pages | `ai-answers-govuk-audit-more.spec.json` | 167 | 107 (66%) | 100% | 0 |
+  | W3C WAI tutorials (correct markup, reading questions only) | `ai-answers-wai-tutorials.spec.json` | 63 | 58 (97%) | 100% | 0 |
 
   Most of what is left open is by design: keyboard, which the AI may not
   pass, and focus questions on pages with nothing focusable. Files per site in
   `ai-cant-tell-eval/w3c-bad/` (runs 1 to 5), `uw-au/`, `govuk-audit/`,
-  `govuk-audit-more/`; labels for UW and GOV.UK from `label-rules.js` over
-  `list-cases.mjs`.
+  `govuk-audit-more/`, `wai-tutorials/`; labels for all but the W3C demo from
+  `label-rules.js` (`au`, `gov`, `wai`) over `list-cases.mjs`.
   Fixes these runs led to: links that give focus up at once, whole walks
   (`focusStops`), blank images, a video's own controls, keyboard asked where
   Tab reaches nothing, focus order judged on its own. The walk only presses
@@ -118,7 +122,8 @@ Chrome or Chromium.)
 
 The first three need the user; the rest can be done without.
 
-1. **A person's labels on the real-site runs** (W3C, UW, both GOV.UK runs). Every
+1. **A person's labels on the real-site runs** (W3C, UW, both GOV.UK runs,
+   the WAI tutorials). Every
    figure so far is against labels the assistant wrote (`labels.json` in each
    site's folder), not a person's. The repo keeps each run's prompts and
    answers, not a report to open, so: run a site's spec
@@ -139,17 +144,19 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **More cases per check.** There are 369 labelled cases over the three
-   sites; page title, focus visible, focus order and keyboard have more than
-   30 each, the image, link, label and heading questions still fewer
+4. **More cases per check.** There are 432 labelled cases over four sites;
+   page title, alt quality, decorative images, focus visible, focus order and
+   keyboard have more than 30 each; link text (6), field labels (3) and bold
+   as heading (8) still fewer, because the scanner settles most of them itself
    (`ai:agreement` marks them), and each run's wrong answers are a different
    case (run-to-run variation): 30 to 50 per check are needed to trust a
    check. The GOV.UK audit's remaining pages are mostly about things the AI is
-   not asked (contrast, language, tables, typography), so the reading
-   questions need other public sites built with documented problems; a new
-   site needs its host allowed in the cloud environment (ask the user) and
-   labels. Running each set two or three times and keeping the per-case spread
-   would show which questions are unstable.
+   not asked (contrast, language, tables, typography), so link text, labels
+   and headings need content-heavy public sites (with documented problems, or
+   known-good like the WAI tutorials); a new site needs its host allowed in
+   the cloud environment (ask the user) and labels. Running each set two or
+   three times and keeping the per-case spread would show which questions are
+   unstable.
 5. **Optional, not built:** pictures sent to the model (only after measuring
    that they help: the news photo of the W3C's Note 10, the one question the
    model keeps getting wrong, is about what the picture shows); 2.4.13's and

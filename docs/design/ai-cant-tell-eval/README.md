@@ -421,3 +421,58 @@ A11Y_AI_PREVIEW=on node src/cli/run-workflow.js examples/specs/ai-answers-govuk-
 ```
 
 Then as above, with `label-rules.js … gov`.
+
+## Correct markup: the W3C WAI tutorials (2026-11-26)
+
+The sites above are built with problems; this one tests the other side,
+whether the AI fails markup that is right. The W3C's
+[WAI tutorials](https://www.w3.org/WAI/tutorials/) (Images: informative,
+decorative, functional, text, complex, groups, image maps; Forms: labels,
+instructions, grouping; Page structure: headings, content; Menus; the
+Carousels working example): each example carries the alt text, empty alt or
+label the tutorial recommends, so it is labelled pass from the tutorial's own
+text. Reading questions only (no focus walk), the same code (`registry-6`),
+answered blind by two separate models. Labels: the `wai` rules in
+[label-rules.js](label-rules.js), written before any answer. Spec:
+`examples/specs/ai-answers-wai-tutorials.spec.json`. Files:
+[wai-tutorials/](wai-tutorials/).
+
+| | WAI tutorials |
+| --- | --- |
+| Questions sent | 102 (the site's header and footer repeat on every page: 63 cases) |
+| Labelled cases | 63 (3 unsure, not scored) |
+| Agree | 58 of 60 (97%) |
+| **Of those answered** | **58 of 58 (100%)** |
+| Fail where the label says pass | 0 |
+| Left open | 2 |
+
+Per check: alt quality 25 of 26, decorative images 18 of 18, page title 13
+of 14, the label and the site name (bold as heading) 1 of 1 each.
+
+- **Left open, both reasonable:** the Headings tutorial's diagram, whose
+  long alt text is cut off in the evidence ("…including the footer which –"),
+  so the model could not judge the rest; and the title "Working Example" of
+  the Carousels example, which the model read as generic (fail, 0.55, under
+  the threshold).
+- **Unsure in the labels:** the bold "Techniques:" and "Success Criteria:"
+  lines over the link lists in the related-resources box: a label or a small
+  section title, as people read it. The models called them labels (0.6).
+- **Found in the offline tool, fixed:** when several elements ask the same
+  question with the same evidence (the same icon on every page), the lab asks
+  once and reuses the answer (`reused`). `answer-offline.js apply` gave the
+  answer only to the one asked, so the others stayed open as `preview`; it
+  now copies it to them, as the lab's own call does. Here that was 106
+  entries and one case (57 of 60 before). UW and both GOV.UK runs are
+  unaffected: every open case there has its own reason. W3C run 5 was not
+  re-checked.
+
+With this run: 432 labelled cases over four sites. Reading questions: alt
+quality 56, decorative images 33, page title 87, bold as heading 8 (5 scored), link
+text 6, field labels 3. Link text and field labels need other sources: the
+scanner settles most of them itself.
+
+```bash
+node src/cli/run-workflow.js examples/specs/ai-answers-wai-tutorials.spec.json --out runs/wai
+```
+
+(With `A11Y_AI_PREVIEW=on` for the offline steps, then `label-rules.js … wai`.)

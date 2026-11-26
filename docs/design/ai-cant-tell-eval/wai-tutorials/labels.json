@@ -1,0 +1,317 @@
+{
+ "img-alt-decorative|1x4grar": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|ionehv": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|13j61xu": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|dck1ll": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|on1o1b": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|ueferx": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside link or heading text, hidden from assistive technology: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|9frvxa": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside link or heading text, hidden from assistive technology: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|6furag": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside link or heading text, hidden from assistive technology: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|121q6qn": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside link or heading text, hidden from assistive technology: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1urxu3o": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|13fq6jp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1e0yd3u": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|qp2mbg": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|16gnx6": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1iyo2cf": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|h54ns6": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1q10fhg": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "p-as-heading|2o0hdn": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a bold line over a list of links in the related-resources box: a label or a small section title, as people read it",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "p-as-heading|1wy0a83": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the site name in the page header, not a section title",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|12qqye": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|qc0426": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|121yrwe": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|sg5yeh": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|1rhfblu": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|17jm27s": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|fzx7dr": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1ewy4p": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|164u3mk": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|19xwmck": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|qey0o5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|rbgyzu": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|12r4eej": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|nalv5p": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|w3vyvg": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|l99znt": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1ygnso4": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|fo5rka": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|3c5pp5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|3c6hfe": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|m129qb": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|el8ibc": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's example of an image that is decorative or redundant with the text beside it (alt=\"\")",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1a3ns9p": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1oogf7a": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1f7s13v": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|ksu158": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|10zsuo7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1087a64": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|rtbflc": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "p-as-heading|1iy7x4e": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a bold line over a list of links in the related-resources box: a label or a small section title, as people read it",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "p-as-heading|2o193w": {
+  "verdict": "unsure",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a bold line over a list of links in the related-resources box: a label or a small section title, as people read it",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|l4ixwu": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "form-control-programmatic-label-quality|shucoc": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the tutorial's example of a field labelled by its title attribute, beside a Search button",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|tgmhk5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1yp7pp7": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1hwqb7h": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|qkxw11": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|tbec4d": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|19reurj": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|d5q85k": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|mugvmq": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|dc0dvt": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-quality|1ej9ysf": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the WAI tutorial's own example (or the site's), with the alt text the tutorial recommends",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|p1crt5": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the tutorial page and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ }
+}

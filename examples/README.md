@@ -51,6 +51,7 @@ with **Load config**. `--check` checks one without opening a browser.
 | `specs/ai-answers-uw-au.spec.json` | AI answers on the University of Washington's Accessible University demo, inaccessible and repaired |
 | `specs/ai-answers-govuk-audit.spec.json` | AI answers on 23 pages of the GOV.UK accessibility tool audit, each with one documented problem |
 | `specs/ai-answers-govuk-audit-more.spec.json` | AI answers on 42 more pages of the GOV.UK audit (images, buttons, links, forms, headings, keyboard, lightboxes, iframes) |
+| `specs/ai-answers-wai-tutorials.spec.json` | AI answers on the W3C WAI tutorials, whose examples carry the recommended alt text and labels (reading questions only) |
 | `configs/shopping-flow.a11y-config.json` | `shopping-flow` as the app's **Export config** writes it |
 
 ```bash

@@ -67,8 +67,24 @@ function apply(payloadFile, questionsFile, answersFile, outFile, modelName = 'a 
             }
         }
     }
+    // A question the lab asked once for several identical elements (the same
+    // check and the same evidence, `reused`) gets the same answer, as the
+    // lab's own call would give it.
+    const answeredBy = new Map();
+    const occurrences = () => (payload.scans || []).flatMap((scan) => ((scan.canonical && scan.canonical.findings) || []).flatMap((f) => f.occurrences || []));
+    for (const o of occurrences()) {
+        if (o.ai && !o.ai.reused && o.ai.model === modelName) answeredBy.set(JSON.stringify([o.ai.check, o.ai.evidence]), o.ai);
+    }
+    let reused = 0;
+    for (const o of occurrences()) {
+        if (!o.ai || !o.ai.reused) continue;
+        const source = answeredBy.get(JSON.stringify([o.ai.check, o.ai.evidence]));
+        if (!source) continue;
+        o.ai = { ...source, reused: true };
+        reused++;
+    }
     fs.writeFileSync(outFile, JSON.stringify(payload));
-    console.log(`${applied} answers attached in ${outFile}${missing.length ? `; ${missing.length} answers name no question: ${missing.join(', ')}` : ''}`);
+    console.log(`${applied} answers attached in ${outFile}${reused ? `, and to ${reused} reused` : ''}${missing.length ? `; ${missing.length} answers name no question: ${missing.join(', ')}` : ''}`);
 }
 
 const [cmd, ...args] = process.argv.slice(2);
