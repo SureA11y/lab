@@ -5,10 +5,10 @@
   "url": "http://localhost:8780/ai/reading.html",
   "scenarioName": "AI answers demo",
   "actions": [
-    { "type": "a11yScan", "label": "Reading questions", "ai": { "budget": { "calls": 40, "seconds": 120 } } },
+    { "type": "a11yScan", "label": "Reading questions", "ai": { "budget": { "calls": 80, "seconds": 120 } } },
     { "type": "navigate", "url": "http://localhost:8780/ai/focus.html", "label": "Open the focus page" },
-    { "type": "a11yScan", "label": "Focus and keyboard (AAA)", "profile": "wcag22-aaa", "ai": { "focus": true, "budget": { "calls": 40, "seconds": 120 } } },
+    { "type": "a11yScan", "label": "Focus and keyboard (AAA)", "profile": "wcag22-aaa", "ai": { "focus": true, "budget": { "calls": 80, "seconds": 120 } } },
     { "type": "navigate", "url": "http://localhost:8780/ai/dialog.html", "label": "Open the dialog page" },
-    { "type": "a11yScan", "label": "Menus and dialogs opened", "ai": { "focus": true, "open": true, "budget": { "calls": 40, "seconds": 120 } } }
+    { "type": "a11yScan", "label": "Menus and dialogs opened", "ai": { "focus": true, "open": true, "budget": { "calls": 80, "seconds": 120 } } }
   ]
 }

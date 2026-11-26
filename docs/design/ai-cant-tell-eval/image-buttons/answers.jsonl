@@ -1,0 +1,1 @@
+{"id":"q1","verdict":"fail","confidence":0.93,"rationale":"The accessible name \"click\" is a generic word that does not state the button's action (the image file suggests it submits a form), so it fails WCAG 1.1.1 (H36, F30)."}

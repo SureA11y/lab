@@ -611,3 +611,23 @@ symbol it uses, classes, text in it; `registry-8`).
   is now its listbox alone (14 elements, none in the Tab order, Escape closes
   it); keyboard unsure (the only answer allowed), focus order pass. No more
   "Back to Top".
+
+## Image map areas and image buttons (2026-11-26)
+
+`area-alt-quality`, `input-image-alt-quality` and `input-image-alt-decorative`
+(`registry-9`): the evidence now has the picture behind them (an area's map
+image and its place on it, with the other areas; an image button's own
+picture).
+
+- **Demo:** six cases added to `reading.html` (a garden plan, its alt, two
+  areas "Greenhouse" and "Area 2", three image buttons: "Check delivery", a
+  file name, alt="" with aria-label "button"). The whole demo, answered blind:
+  **44 of 44** ([demo/score.txt](demo/score.txt)). On the first run the last
+  page was left open: the workflow's call budget (40 for the run) was used up
+  by the new questions; the demo now allows 80.
+- **Real pages:** scanned for these checks: three GOV.UK image-button test
+  pages, the W3C demo's eight pages, UW's two. Only one question came up:
+  GOV.UK's image button with alt "click", labelled fail: **failed**, "a
+  generic word that does not say what the button does"
+  ([image-buttons/](image-buttons/)). Real image maps and image buttons are
+  rare on these sites; the checks need other sources of cases.

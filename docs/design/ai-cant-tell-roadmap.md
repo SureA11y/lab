@@ -16,8 +16,8 @@ by what would settle it:
 
 | Lane | What settles it | Checks | Phase 1 |
 | --- | --- | --- | --- |
-| `answered` | The AI answers it today | 13 | Polish (below) |
-| `read` | The AI, from the element and the text around it, as today | 33 | Step 1 |
+| `answered` | The AI answers it today | 16 | Polish (below) |
+| `read` | The AI, from the element and the text around it, as today | 30 | Step 1 |
 | `tree` | The browser's own accessibility tree, no model | 23 | Step 2 |
 | `walk` | The AI, from the focus or open walk, or a small extension | 12 | Step 3 |
 | `measure` | A measurement by the lab, then the AI or a person | 8 | Step 4 |
@@ -55,7 +55,7 @@ family one change with its demo cases:
 
 - *Text alternatives:* `svg-text-alternative-quality` (the most frequent in
   the runs: 97; **done 2026-11-26**, `registry-8`), `area-alt-quality`, `input-image-alt-quality`,
-  `input-image-alt-decorative`, `object-`, `embed-`,
+  `input-image-alt-decorative` (**done 2026-11-26**, `registry-9`), `object-`, `embed-`,
   `canvas-text-alternative-quality`, `image-redundant-alt`,
   `video-poster-text-alternative-present`.
 - *Names and labels:* `heading-quality`, `form-control-label-quality`
