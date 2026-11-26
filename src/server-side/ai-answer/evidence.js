@@ -76,6 +76,27 @@ async function collectEvidence(page, occurrence, wanted) {
                     try { await loaded.decode(); } catch { /* not loadable */ }
                     img = loaded;
                 }
+                // An object, embed or video: what it embeds, and the picture
+                // it shows when that is an image (a video's poster).
+                let embedded = null;
+                if (el.matches('object, embed, video, canvas')) {
+                    const tag = el.tagName.toLowerCase();
+                    const url = tag === 'object' ? el.getAttribute('data') : tag === 'embed' ? el.getAttribute('src') : tag === 'video' ? el.getAttribute('poster') : null;
+                    const type = el.getAttribute('type');
+                    embedded = {
+                        tag, type, url,
+                        ...(tag === 'video' ? { src: el.currentSrc || el.getAttribute('src') || (el.querySelector('source') || {}).src || null, controls: el.hasAttribute('controls') } : {}),
+                        fallbackText: tag === 'object' || tag === 'canvas' ? (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 300) : null,
+                        title: el.getAttribute('title'), ariaLabel: el.getAttribute('aria-label'),
+                    };
+                    const looksImage = url && (/^image\//i.test(type || '') || /\.(png|jpe?g|gif|webp|svg|avif|bmp)(\?|#|$)/i.test(url) || tag === 'video');
+                    if (looksImage) {
+                        const loaded = new Image();
+                        loaded.src = new URL(url, location.href).href;
+                        try { await loaded.decode(); } catch { /* not loadable */ }
+                        img = loaded;
+                    }
+                }
                 // What the picture shows, read from a canvas never added to the
                 // page: blank (transparent), one colour, or how many. A spacer
                 // then reads as one. An image from another site cannot be read
@@ -89,7 +110,7 @@ async function collectEvidence(page, occurrence, wanted) {
                         canvas.width = w;
                         canvas.height = h;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(im, 0, 0, w, h);
+                        ctx.drawImage(im.draw || im, 0, 0, w, h);
                         const d = ctx.getImageData(0, 0, w, h).data;
                         let transparent = 0;
                         const colours = new Map();
@@ -132,8 +153,11 @@ async function collectEvidence(page, occurrence, wanted) {
                     };
                 };
                 const svgEl = !img && (el.matches('svg') ? el : el.querySelector('svg'));
-                res.image = img
-                    ? { src: img.currentSrc || img.src, alt: el.matches('input') ? el.getAttribute('alt') : img.getAttribute('alt'), naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight, look: lookOf(img), ...(area ? { area } : {}) }
+                res.image = el.matches('canvas')
+                    ? { canvas: true, width: el.width, height: el.height, look: lookOf({ complete: true, naturalWidth: el.width, naturalHeight: el.height, draw: el }), ...(embedded ? { embedded } : {}) }
+                    : img
+                    ? { src: img.currentSrc || img.src, alt: el.matches('input') ? el.getAttribute('alt') : img.getAttribute('alt'), naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight, look: lookOf(img), ...(area ? { area } : {}), ...(embedded ? { embedded } : {}) }
+                    : embedded ? { embedded }
                     : { inlineSvg: !!svgEl, ...(svgEl ? { svg: svgOf(svgEl) } : {}) };
                 res.imageSvgUrl = img && /\.svg(\?|$)/i.test(img.currentSrc || img.src) ? (img.currentSrc || img.src) : null;
             }

@@ -45,8 +45,9 @@ const LANES = {
     // Reading questions like today's: the next to add.
     'area-alt-quality': ['answered', 'with the map\'s picture, the area\'s place on it and the other areas (image.area)'],
     'input-image-alt-quality': ['answered', 'with the button\'s picture'], 'input-image-alt-decorative': ['answered', 'with the button\'s picture'],
-    'object-text-alternative-quality': ['read'], 'embed-text-alternative-quality': ['read'], 'canvas-text-alternative-quality': ['read', 'better with the picture'],
-    'image-redundant-alt': ['read'], 'video-poster-text-alternative-present': ['read'],
+    'object-text-alternative-quality': ['answered', 'with what it embeds and its picture (image.embedded)'], 'embed-text-alternative-quality': ['answered', 'with what it embeds and its picture'],
+    'canvas-text-alternative-quality': ['answered', 'with what is drawn on it, read from its pixels'],
+    'image-redundant-alt': ['answered', 'a best practice: asked with includeBestPractice'], 'video-poster-text-alternative-present': ['answered', 'with its poster and what is near it'],
     'heading-quality': ['read'], 'form-control-label-quality': ['read'], 'label-in-name': ['read'],
     'link-name-quality-link-only': ['read', 'as link text, AAA (2.4.9)'], 'identical-links-same-purpose': ['read', 'where the links go is in the page'],
     'identical-iframes-same-purpose': ['read'], 'landmark-unique': ['read'], 'control-name-title-only': ['read'],

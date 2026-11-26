@@ -411,7 +411,7 @@ export function aiBlockHtml(node, review, helpers) {
 export function collectAiCases(payload) {
     const byKey = new Map();
     for (const scan of Array.isArray(payload && payload.scans) ? payload.scans : []) {
-        for (const f of (scan && scan.canonical && scan.canonical.findings) || []) {
+        for (const f of [...((scan && scan.canonical && scan.canonical.findings) || []), ...((scan && scan.canonical && scan.canonical.bestPractices) || [])]) {
             if (!f || f.outcome !== 'cantTell') continue;
             for (const o of f.occurrences || []) {
                 if (!o || !o.ai || typeof o.ai !== 'object') continue;
@@ -525,7 +525,13 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
         add('Page title', q(ev.pageTitle.title));
         add('Main headings', (ev.pageTitle.headings || []).length ? ev.pageTitle.headings.map((h) => q(h)).join(' ') : q(undefined, '(none found)'));
     } else if (f) {
-        if (check === 'img-alt-quality' || check === 'img-alt-decorative' || check === 'area-alt-quality' || check === 'input-image-alt-quality' || check === 'input-image-alt-decorative') {
+        if (check === 'img-alt-quality' || check === 'img-alt-decorative' || check === 'area-alt-quality' || check === 'input-image-alt-quality' || check === 'input-image-alt-decorative'
+            || check === 'object-text-alternative-quality' || check === 'embed-text-alternative-quality' || check === 'canvas-text-alternative-quality' || check === 'image-redundant-alt' || check === 'video-poster-text-alternative-present') {
+            const em = ev.image && ev.image.embedded;
+            if (em) {
+                add('Embeds', escapeHtml(em.tag) + (em.type ? ' type ' + code(em.type) : '') + (em.url ? ' ' + code(em.url) : '') + (em.src ? ', video ' + code(em.src) : ''));
+                if (em.fallbackText) add('Fallback text', q(em.fallbackText));
+            }
             add('Alt text', f.alt === undefined
                 ? (f.tag === 'img' ? '<span class="air-none">(no alt attribute)</span>' : q(undefined, '(not an img: no alt)'))
                 : (f.alt === '' ? '<span class="air-none">(empty alt: marked decorative)</span>' : q(f.alt)));
@@ -629,7 +635,7 @@ export function coverageByCheck(payload) {
     const notTaken = new Map();
     const seen = new Set();
     for (const scan of Array.isArray(payload && payload.scans) ? payload.scans : []) {
-        for (const f of (scan && scan.canonical && scan.canonical.findings) || []) {
+        for (const f of [...((scan && scan.canonical && scan.canonical.findings) || []), ...((scan && scan.canonical && scan.canonical.bestPractices) || [])]) {
             if (!f || f.outcome !== 'cantTell') continue;
             for (const o of f.occurrences || []) {
                 if (!o || o.ai) continue;

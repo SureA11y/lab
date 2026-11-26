@@ -79,6 +79,10 @@ By reading the page (always):
 | `area-alt-quality` | 1.1.1 | Does an image map area's name say where its link leads, for the part of the picture it covers? (The model gets the area's place on the picture, the map's other areas and the picture itself.) |
 | `input-image-alt-quality` | 1.1.1 | Does an image button's name say what the button does? (With the button's picture.) |
 | `input-image-alt-decorative` | 1.1.1 | An image button with `alt=""` named by aria-label, aria-labelledby or title: does that name say what it does? |
+| `object-text-alternative-quality`, `embed-text-alternative-quality` | 1.1.1 | Does an `<object>`'s or `<embed>`'s text alternative describe what it shows? (With what it embeds, and the picture when that is an image.) |
+| `canvas-text-alternative-quality` | 1.1.1 | Does a `<canvas>`'s text alternative convey what it draws? (With what is drawn on it, read from its pixels.) |
+| `video-poster-text-alternative-present` | 1.1.1 | A video with a poster and no name: does something near it (a caption, a heading) identify it? |
+| `image-redundant-alt` | best practice | Does an image's alt only repeat the text beside it (read twice)? Asked only with **Include best-practice rules** on the scan step. |
 | `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |

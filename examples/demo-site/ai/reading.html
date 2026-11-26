@@ -24,6 +24,12 @@
     <area id="area-greenhouse" shape="rect" coords="10,10,140,110" href="#greenhouse" alt="Greenhouse">
     <area id="area-shed" shape="rect" coords="160,10,290,110" href="#shed" alt="Area 2">
   </map>
+  <h2>This season</h2>
+  <p><object id="object-sales" data="../images/seed-sales.svg" type="image/svg+xml" width="240" height="120">Bar chart of seeds sold each month, highest in March</object></p>
+  <p><embed id="embed-plan" src="../images/garden-plan.svg" type="image/svg+xml" width="300" height="120" title="garden-plan.svg"></p>
+  <p><canvas id="canvas-weather" width="120" height="60" aria-label="canvas">Your browser does not support the canvas element.</canvas></p>
+  <p><a id="cart-link" href="../cart.html"><img id="cart-icon" src="../images/cart.svg" width="20" height="20" alt="Cart"> Cart</a></p>
+  <figure><video id="video-pruning" poster="../images/hero.svg" width="320" height="180" controls></video><figcaption>How to prune roses (2 minutes)</figcaption></figure>
   <form action="#" onsubmit="return false">
     <p><input id="postcode" type="text" title="Postcode" autocomplete="postal-code"></p>
     <p><input id="name" type="text" placeholder="Name" autocomplete="name"></p>
@@ -33,6 +39,12 @@
        <input id="check-label" type="image" src="../images/check-button.svg" width="80" height="32" alt="" aria-label="button"></p>
   </form>
 </main>
+<script>
+  const sky = document.getElementById('canvas-weather').getContext('2d');
+  sky.fillStyle = '#9fd3f5'; sky.fillRect(0, 0, 120, 60);
+  sky.fillStyle = '#f4c430'; sky.beginPath(); sky.arc(30, 30, 16, 0, Math.PI * 2); sky.fill();
+  sky.fillStyle = '#fff'; sky.fillRect(55, 28, 50, 16);
+</script>
 <footer><p>Demo Shop is a made-up shop for surea11y-lab's examples.</p></footer>
 </body>
 </html>

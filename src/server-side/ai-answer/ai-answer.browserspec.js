@@ -155,3 +155,27 @@ test('an image map area gets the picture it is part of and the other areas; an i
     assert.deepEqual([button.look.readable, button.look.colours], [true, 2], "the button's own picture, read");
     await page.close();
 });
+
+test('an object, a canvas and a video poster bring what they show; a best practice is asked too', async () => {
+    const RED = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/></svg>');
+    const page = await browser.newPage();
+    await page.setContent(`<title>Media</title><object id="o" data="${RED}" type="image/svg+xml" width="20" height="10">Red bar</object>
+<canvas id="c" width="10" height="10" aria-label="canvas">No canvas support</canvas><script>const x = document.getElementById('c').getContext('2d'); x.fillStyle = '#00f'; x.fillRect(0, 0, 10, 10);</script>
+<figure><video id="v" poster="${RED}" controls></video><figcaption>Pruning roses</figcaption></figure>
+<a href="/cart"><img id="i" src="${RED}" alt="Cart"> Cart</a>`);
+    await page.waitForFunction(() => document.getElementById('i').complete);
+    const occ = (check, id) => ({ atomicCheckId: check, occurrenceOutcome: 'cantTell', target: ['#' + id], html: `<x id="${id}">` });
+    const c = {
+        findings: [{ outcome: 'cantTell', occurrences: [occ('object-text-alternative-quality', 'o'), occ('canvas-text-alternative-quality', 'c'), occ('video-poster-text-alternative-present', 'v')] }],
+        // A best practice, and its occurrence names no check: the rule does.
+        bestPractices: [{ ruleId: 'image-redundant-alt', outcome: 'cantTell', occurrences: [{ occurrenceOutcome: 'cantTell', target: ['#i'], html: '<img id="i" alt="Cart">' }] }],
+    };
+    await answerCantTells({ page, canonical: c, env: {}, provider: { ask: async () => '{"verdict":"pass","confidence":0.9,"rationale":"x"}' } });
+    const [o, cv, v] = c.findings[0].occurrences.map((x) => x.ai.evidence.image);
+    assert.deepEqual([o.embedded.tag, o.embedded.fallbackText, o.look.mainColour], ['object', 'Red bar', '#ff0000']);
+    assert.deepEqual([cv.canvas, cv.look.mainColour, cv.embedded.fallbackText], [true, '#0000ff', 'No canvas support']);
+    assert.deepEqual([v.embedded.tag, v.embedded.controls, v.look.mainColour], ['video', true, '#ff0000']);
+    const bp = c.bestPractices[0].occurrences[0].ai;
+    assert.deepEqual([bp.check, bp.provenance], ['image-redundant-alt', 'ai-supported']);
+    await page.close();
+});

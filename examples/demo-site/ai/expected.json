@@ -80,6 +80,48 @@
     },
     {
       "page": "ai/reading.html",
+      "check": "object-text-alternative-quality",
+      "target": "#object-sales",
+      "expected": "pass",
+      "why": "A bar chart of seeds sold in January, February and March, March the highest; its fallback text says just that."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "embed-text-alternative-quality",
+      "target": "#embed-plan",
+      "expected": "fail",
+      "why": "The garden plan embedded with the title \"garden-plan.svg\": its file name, which says nothing of what it shows."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "canvas-text-alternative-quality",
+      "target": "#canvas-weather",
+      "expected": "fail",
+      "why": "A canvas drawing the weather (a sun and a cloud) named \"canvas\", with fallback text that only says canvas is not supported."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "img-alt-quality",
+      "target": "#cart-icon",
+      "expected": "pass",
+      "why": "A shopping cart icon with alt \"Cart\": accurate for what it shows (its repetition of the link text is the redundant-alt question)."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "image-redundant-alt",
+      "target": "#cart-icon",
+      "expected": "fail",
+      "why": "The icon's alt \"Cart\" repeats the link text \"Cart\" beside it, so \"Cart Cart\" is read; alt=\"\" would lose nothing."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "video-poster-text-alternative-present",
+      "target": "#video-pruning",
+      "expected": "pass",
+      "why": "The video has no name of its own, but its figcaption \"How to prune roses (2 minutes)\" identifies it."
+    },
+    {
+      "page": "ai/reading.html",
       "check": "svg-text-alternative-quality",
       "target": "#svg-search",
       "expected": "pass",

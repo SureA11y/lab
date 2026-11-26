@@ -49,7 +49,7 @@ function apply(payloadFile, questionsFile, answersFile, outFile, modelName = 'a 
         const confidence = Math.max(0, Math.min(1, Number(a.confidence) || 0));
         for (const scan of payload.scans || []) {
             if (scan.url !== q.page) continue;
-            for (const f of (scan.canonical && scan.canonical.findings) || []) {
+            for (const f of [...((scan.canonical && scan.canonical.findings) || []), ...((scan.canonical && scan.canonical.bestPractices) || [])]) {
                 for (const o of f.occurrences || []) {
                     if (!o.ai || o.ai.check !== q.check || ((o.target && o.target[0]) || null) !== (q.selector || null)) continue;
                     const entry = entryFor(q.check) || {};
@@ -71,7 +71,7 @@ function apply(payloadFile, questionsFile, answersFile, outFile, modelName = 'a 
     // check and the same evidence, `reused`) gets the same answer, as the
     // lab's own call would give it.
     const answeredBy = new Map();
-    const occurrences = () => (payload.scans || []).flatMap((scan) => ((scan.canonical && scan.canonical.findings) || []).flatMap((f) => f.occurrences || []));
+    const occurrences = () => (payload.scans || []).flatMap((scan) => [...((scan.canonical && scan.canonical.findings) || []), ...((scan.canonical && scan.canonical.bestPractices) || [])].flatMap((f) => f.occurrences || []));
     for (const o of occurrences()) {
         if (o.ai && !o.ai.reused && o.ai.model === modelName) answeredBy.set(JSON.stringify([o.ai.check, o.ai.evidence]), o.ai);
     }

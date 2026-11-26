@@ -110,11 +110,17 @@ function normalise(a) {
 function candidatesOf(canonical, { focus = false } = {}) {
     const read = [];
     const walk = [];
-    for (const f of (canonical && canonical.findings) || []) {
+    // The scan's findings and its best-practice findings (with
+    // includeBestPractice), which count towards no criterion but are asked
+    // about the same way.
+    const all = [...((canonical && canonical.findings) || []), ...((canonical && canonical.bestPractices) || [])];
+    for (const f of all) {
         if (!f || f.outcome !== 'cantTell') continue;
         for (const o of f.occurrences || []) {
             if ((o.occurrenceOutcome || o.outcome) !== 'cantTell') continue;
-            const entry = entryFor(o.atomicCheckId, f.ruleId);
+            // A rule with one check may leave the occurrence without its id: the
+            // rule's names it then.
+            const entry = entryFor(o.atomicCheckId || f.ruleId, f.ruleId);
             if (!entry) continue;
             if (entry.tier === 1) { if (focus) walk.push({ finding: f, occurrence: o, entry }); } else read.push({ finding: f, occurrence: o, entry });
         }

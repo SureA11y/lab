@@ -8,8 +8,8 @@ page by hand.
 
 | Lane | What settles it | Checks |
 | --- | --- | --- |
-| `answered` | The AI answers it today | 16 |
-| `read` | The AI, from the element and the text around it, as today | 30 |
+| `answered` | The AI answers it today | 21 |
+| `read` | The AI, from the element and the text around it, as today | 25 |
 | `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 12 |
 | `tree` | The browser's own accessibility tree (no model needed) | 23 |
 | `measure` | A measurement by the lab, then the AI or a person for what is left | 9 |
@@ -24,20 +24,25 @@ page by hand.
 | Check | SC | Kind | Can't-tell reasons | Note |
 | --- | --- | --- | --- | --- |
 | `area-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with the map's picture, the area's place on it and the other areas (image.area) |
+| `canvas-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what is drawn on it, read from its pixels |
 | `click-handler-keyboard-operable` | 2.1.1, 2.1.3 | automatic | `CLICK_HANDLER_NO_KEY_HANDLER`, `CLICK_HANDLER_NOT_IN_TAB_ORDER`, `CLICK_HANDLER_KEY_LISTENER_ABOVE`, `CLICK_HANDLER_FOCUS_LISTENER`, `CLICK_HANDLER_NOT_FOCUSABLE` | fail only |
 | `css-focus-indicator-suppressed` | 1.4.11, 2.4.7, 2.4.13 | manual | `FOCUS_INDICATOR_SUPPRESSED` | per element: focus visible, its contrast (1.4.11) and appearance (2.4.13) |
+| `embed-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what it embeds and its picture |
 | `focus-not-obscured-enhanced` | 2.4.12 | manual | `FOCUS_OBSCURED_ENTIRELY`, `FOCUS_OBSCURED_PARTLY`, `FOCUS_OBSCURED_BEHIND_MODAL` |  |
 | `focus-not-obscured-minimum` | 2.4.11 | manual | `FOCUS_OBSCURED_ENTIRELY`, `FOCUS_OBSCURED_PARTLY`, `FOCUS_OBSCURED_BEHIND_MODAL` |  |
 | `form-control-programmatic-label-quality` | 3.3.2 | manual | `label_from_aria_label_only`, `label_from_hidden_labelledby`, `label_from_placeholder_primary`, `label_from_title_primary` |  |
+| `image-redundant-alt` | (best practice) | manual | `IMAGE_ALT_REDUNDANT` | a best practice: asked with includeBestPractice |
 | `img-alt-decorative` | 1.1.1 | manual | `EXCLUDED_ELEMENT_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |  |
 | `img-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |  |
 | `input-image-alt-decorative` | 1.1.1 | manual | `NAME_FROM_ELSEWHERE_REVIEW` | with the button's picture |
 | `input-image-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with the button's picture |
 | `link-name-quality` | 2.4.4, 2.4.9 | manual | `GENERIC_LINK_TEXT`, `AMBIGUOUS_FORMAT_NAME`, `GENERIC_LINK_TEXT_IN_CONTEXT` |  |
 | `manual-review` | 2.1.1, 2.4.3, 2.4.7 | manual | `KEYBOARD_REVIEW` | focus visible, focus order and keyboard, from the focus walk (and the open walk) |
+| `object-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what it embeds and its picture (image.embedded) |
 | `p-as-heading` | 1.3.1 | manual | `BOLD_LARGE_PARAGRAPH`, `BOLD_LARGE_DIV`, `HEADING_LIKE_LINK`, `HEADING_LIKE_NUMBER`, `BOLD_SHORT_PARAGRAPH` |  |
 | `page-title-patterns` | 2.4.2 | manual | `placeholderTitle`, `genericTitle`, `veryShortTitle`, `templateLikeTitle`, `duplicateTitlesAcrossPages`, `templatedTitlesAcrossPages`, `titleReview` |  |
 | `svg-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` | from its title, desc, the symbol it draws and its classes (image.svg) |
+| `video-poster-text-alternative-present` | 1.1.1 | automatic | `TEXT_ALTERNATIVE_MISSING`, `VIDEO_POSTER_FIGCAPTION_REVIEW` | with its poster and what is near it |
 | `widget-keyboard-focusable` | 2.1.1, 2.1.3 | manual | `WIDGET_NOT_FOCUSABLE`, `WIDGET_NOT_IN_TAB_ORDER`, `COMPOSITE_NO_TAB_STOP`, `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | fail only |
 
 ## `read`: The AI, from the element and the text around it, as today
@@ -46,12 +51,10 @@ page by hand.
 | --- | --- | --- | --- | --- |
 | `accesskeys` | (best practice) | manual | `ACCESSKEY_DUPLICATE` |  |
 | `bypass-blocks-present` | 2.4.1 | manual | `BYPASS_MECHANISM_ABSENT` | with the walk: is there a way past repeated blocks |
-| `canvas-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | better with the picture |
 | `contrast-enhanced` | 1.4.6 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `ENGINE_EXCEPTION` | is this symbol text? |
 | `contrast-minimum` | 1.4.3 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `LOGO_TEXT_BELOW_THRESHOLD`, `CONTRAST_SWITCH_OFFERED`, `SEMIBOLD_BELOW_THRESHOLD`, `PSEUDO_ELEMENT_COLOR`, `TEXT_STROKE`, `TEXT_SHADOW`, `ENGINE_EXCEPTION` | is this symbol text? (the ratio is measured) |
 | `control-name-title-only` | (best practice) | manual | `NAME_FROM_TITLE_ONLY` |  |
 | `css-orientation-lock` | 1.3.4 | automatic | `ORIENTATION_MEDIA_ROTATES_ELEMENT`, `ORIENTATION_MEDIA_HIDES_CONTENT`, `STYLESHEETS_NOT_READABLE` | does the rotated element matter? |
-| `embed-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` |  |
 | `empty-table-header` | (best practice) | manual | `TABLE_HEADER_EMPTY`, `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` |  |
 | `focus-order-semantics` | (best practice) | manual | `TABBABLE_WITH_NON_INTERACTIVE_ROLE` | or the walk |
 | `form-control-label-quality` | 2.4.6 | manual | `DUPLICATE_LABEL_TEXT`, `PARTIALLY_HIDDEN_LABEL`, `PLACEHOLDER_LABEL_TEXT` |  |
@@ -61,11 +64,9 @@ page by hand.
 | `heading-quality` | 2.4.6 | manual | `PLACEHOLDER_HEADING_TEXT`, `FILENAME_LIKE_HEADING`, `URL_LIKE_HEADING` |  |
 | `identical-iframes-same-purpose` | 4.1.2 | automatic | `IFRAME_RESOURCE_DIFFERS`, `IFRAME_RESOURCE_UNRESOLVED` |  |
 | `identical-links-same-purpose` | 2.4.9 | manual | `SAME_NAME_DIFFERENT_DESTINATION` | where the links go is in the page |
-| `image-redundant-alt` | (best practice) | manual | `IMAGE_ALT_REDUNDANT` |  |
 | `label-in-name` | 2.5.3 | automatic | `HYPHENATION_DIFFERS`, `POSSIBLE_ABBREVIATION`, `POSSIBLE_ICON_FONT_GLYPH`, `POSSIBLE_SYMBOLIC_CHARACTER` |  |
 | `landmark-unique` | (best practice) | manual | `LANDMARK_NOT_UNIQUE` |  |
 | `link-name-quality-link-only` | 2.4.9 | manual | `GENERIC_LINK_TEXT_IN_CONTEXT` | as link text, AAA (2.4.9) |
-| `object-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` |  |
 | `page-zones-landmark` | (best practice) | manual | `BANNER_NOT_EXPOSED`, `HEADER_NESTED`, `NAVIGATION_NOT_EXPOSED`, `SEARCH_NOT_EXPOSED`, `CONTENTINFO_NOT_EXPOSED`, `FOOTER_NESTED` |  |
 | `presentation-role-conflict` | (best practice) | manual | `PRESENTATION_ROLE_CONFLICT` |  |
 | `region` | (best practice) | manual | `CONTENT_OUTSIDE_LANDMARK` |  |
@@ -73,7 +74,6 @@ page by hand.
 | `table-fake-caption` | 1.3.1 | manual | `SINGLE_CELL_FIRST_ROW_NO_CAPTION` |  |
 | `table-th-has-data-cells` | 1.3.1 | automatic | `TABLE_TH_NO_ASSIGNED_CELL` |  |
 | `td-has-header` | 1.3.1 | automatic | `TD_TABLE_NO_HEADERS` | data table or layout table |
-| `video-poster-text-alternative-present` | 1.1.1 | automatic | `TEXT_ALTERNATIVE_MISSING`, `VIDEO_POSTER_FIGCAPTION_REVIEW` |  |
 
 ## `walk`: The AI, from the focus walk or the open walk, or a small extension of them
 

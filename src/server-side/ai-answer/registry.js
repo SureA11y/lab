@@ -18,7 +18,9 @@
 // registry-9: image map areas and image buttons (area-alt-quality,
 // input-image-alt-quality, input-image-alt-decorative), with the picture
 // behind them.
-const PROMPT_VERSION = 'registry-9';
+// registry-10: object, embed, canvas, redundant alt and video posters, with
+// what they embed (image.embedded) and the picture when it is an image.
+const PROMPT_VERSION = 'registry-10';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -51,6 +53,26 @@ const ANSWERABLE = Object.freeze({
     },
     'input-image-alt-decorative': {
         question: "This image button has alt=\"\" but takes its name from aria-label, aria-labelledby or title. That is fine when the name says what the button does. Does it, in its form? `image` is the button's picture. A file name, a placeholder (\"button\", \"image\") or a name that only describes the picture fails.",
+        evidence: ['element', 'context', 'image'],
+    },
+    'object-text-alternative-quality': {
+        question: "Does this <object>'s text alternative (its aria-label or aria-labelledby, else its fallback text, else its title) describe what the object shows? `image.embedded` gives its type, the file it embeds, its fallback text, title and aria-label; `image` the picture when the file is an image (what it shows, and for an SVG its source). A file name, a placeholder or only a note that a plugin or player is missing fails.",
+        evidence: ['element', 'context', 'image'],
+    },
+    'embed-text-alternative-quality': {
+        question: "Does this <embed>'s text alternative (aria-label, aria-labelledby or title) describe what it embeds? `image.embedded` gives its type, the file it embeds, its title and aria-label; `image` the picture when the file is an image. A file name or a placeholder fails.",
+        evidence: ['element', 'context', 'image'],
+    },
+    'canvas-text-alternative-quality': {
+        question: "Does this <canvas>'s text alternative (its fallback content, aria-label, aria-labelledby or title) convey what the canvas shows? `image` says what is drawn on it when it could be read (blank, the colours), and `image.embedded.fallbackText` its fallback text; the text around it often says what it draws. Only a note that the browser does not support canvas, a file name or a placeholder fails.",
+        evidence: ['element', 'context', 'image'],
+    },
+    'image-redundant-alt': {
+        question: "This image's alt text repeats visible text next to it in the same parent (often an icon beside a link's or button's text), so the same words may be read twice. A best practice, not a WCAG failure: answer \"fail\" when the alt only repeats that text and the image could be alt=\"\" with nothing lost; \"pass\" when the alt adds something the text does not say, or the repetition is not heard (role=\"none\" or \"presentation\").",
+        evidence: ['element', 'context', 'image'],
+    },
+    'video-poster-text-alternative-present': {
+        question: "This <video> shows a poster image but has no name (aria-label, aria-labelledby or title). As time-based media it only needs to be identified. Is it identified by something a screen reader user meets with it: a caption or figcaption, a heading or text right before it naming the video? `image.embedded` gives its poster, source and controls; `image` what the poster shows. Answer \"fail\" when nothing near it says what the video is.",
         evidence: ['element', 'context', 'image'],
     },
     'link-name-quality': {
