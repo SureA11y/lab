@@ -5,7 +5,7 @@
 // the GOV.UK example page titled "Insert title here" (a clear slip in the
 // page-title rule). Run on the cases list-cases.mjs writes:
 //
-//   node docs/design/ai-cant-tell-eval/label-rules.js <cases.json> <labels.json> au|gov|wai
+//   node docs/design/ai-cant-tell-eval/label-rules.js <cases.json> <labels.json> au|gov|wai|apg
 //
 // The labels go into the report as its aiReview for npm run ai:agreement.
 const fs = require('fs');
@@ -33,6 +33,16 @@ for (const c of cases) {
       if (/major_/.test(sel)) set(c, 'fail', 'a checkbox whose outline is removed: nothing changes on focus');
       else set(c, 'pass', 'its outline is removed but its border changes strongly on focus (measured)');
     } else set(c, 'unsure', 'not settled from the documentation');
+  } else if (site === 'apg') {
+    // The W3C's ARIA Authoring Practices examples: reference implementations
+    // of each widget's keyboard behaviour, on the W3C's own site.
+    if (k === 'page-title-patterns') set(c, 'pass', 'the title names the example and the site');
+    else if (k === 'keyboard') set(c, 'pass', 'an APG reference example: every control works with the keyboard as the pattern describes');
+    else if (k === 'focus-order') set(c, 'pass', 'an APG reference example: focus follows the page, and a modal dialog takes and keeps focus');
+    else if (k === 'focus-visible') set(c, 'pass', 'the W3C site and its examples show focus on every control');
+    else if (k === 'img-alt-decorative') set(c, 'pass', /pattern-/.test(i) ? 'the abstract illustration of the pattern beside its heading, alt="" by the W3C\'s choice: nothing is lost' : 'an icon beside the text of its control or heading: decorative');
+    else if (k === 'p-as-heading') set(c, 'pass', 'a site name in a header (the WAI site, or the example\'s "Mythical University"), not a section title');
+    else set(c, 'unsure', 'not settled from the documentation');
   } else if (site === 'wai') {
     // The WAI tutorials: every example is the tutorial's recommended markup,
     // so its alt text, empty alt or label is right by the tutorial's own text.
