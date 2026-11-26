@@ -255,17 +255,15 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    alt "horizontal line graphic", the empty-alt BBC logo (GOV.UK, a fail
    argued but answered unsure).
 7. **The open walk, next steps (optional):** it gave the fail on the demo's
-   dialog that cannot be closed, moved no verdict on the GOV.UK lightboxes
-   (by WCAG they are keyboard-usable), and failed none of the APG's working
+   dialog that cannot be closed, moved no verdict on the GOV.UK lightboxes (by
+   WCAG they are keyboard-usable), and failed none of the APG's working
    widgets. Open points: a real site with a dialog that cannot be closed
-   (needs its host allowed); the combobox fix (what shows noted after
-   focusing; `aria-controls` counts only its target) was checked by hand on
-   the combobox page, with no answered run yet; menus that open on hover and say
-   nothing (no `aria-haspopup`: GOV.UK's dropdown navigation) are not
-   pressed; arrow keys are not pressed (an APG menubar's submenus, a menu's
-   items); a page left changed is only logged (no undo beyond Escape, the
-   control again and a close control); what a control saves in the browser
-   (local storage) is detected, not undone.
+   (needs its host allowed); menus that open on hover and say nothing (no
+   `aria-haspopup`: GOV.UK's dropdown navigation) are not pressed; arrow keys
+   are not pressed (an APG menubar's submenus, a menu's items); a page left
+   changed is only logged (no undo beyond Escape, the control again and a
+   close control); what a control saves in the browser (local storage) is
+   detected, not undone.
 8. **On hold:** the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 
