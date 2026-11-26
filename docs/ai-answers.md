@@ -44,6 +44,8 @@ left out.
 | `lessons` | The path, on the server, of a lessons file exported from **Review AI answers** (`ai-lessons.json`): house rules and corrected examples the model is given, as data. See [Lessons](#lessons). | none |
 | `focus` | `true`: also answers the focus and keyboard questions, from a walk through the page with Tab. The one option that acts on the page. See [Focus and keyboard](#focus-and-keyboard-focus-true). | off |
 | `focusStops` | The most Tab presses in that walk (up to 200). | `40` |
+| `open` | `true` (with `focus`): after the walk, also **presses** each control that says it opens something on the page (a menu, a disclosure, a lightbox), to see whether the keyboard can use and close what opens. It operates the page, within limits. See [Opening menus and dialogs](#opening-menus-and-dialogs-open-true). | off |
+| `openControls` | The most controls pressed (up to 50). | `10` |
 | `answer` | No effect: it names the kind of result answered, `"cantTell"`, the only kind there is. | |
 
 Examples:
@@ -57,6 +59,7 @@ Examples:
 | The focus and keyboard questions too | `{ "focus": true }` |
 | Everything, on a long page | `{ "focus": true, "focusStops": 80, "budget": { "calls": 20, "seconds": 120 } }` |
 | A preview of everything, focus walk included | `{ "preview": true, "focus": true }` |
+| Menus and dialogs opened too | `{ "focus": true, "open": true }` |
 | With your lessons | `{ "lessons": "C:/audits/acme/ai-lessons.json" }` |
 
 The model, the sites it may be used for and what is masked are **not** in this
@@ -131,6 +134,39 @@ Once per page, after the questions answered by reading:
 It takes from about 1.5 to 3 seconds a page. One thing it cannot put back:
 when nothing had focus, a later Tab in the workflow starts from the top of the
 page.
+
+## Opening menus and dialogs (`open: true`)
+
+The walk only presses Tab, so what shows once a control is used is out of its
+reach: a lightbox whose close button cannot take focus, one Escape does not
+close, a dialog that does not take focus. With `{ "focus": true, "open": true }`,
+after the walk (and only if it put the page back):
+
+1. **What it presses:** only controls Tab reaches that say they open something
+   on this page: with `aria-expanded`, `aria-haspopup` or `aria-controls`, a
+   link to `#` (or to `javascript:`), or a link with `role="button"`. Never a
+   submit button, a control in a form, or a plain button (it may buy, delete
+   or send). At most `openControls` of them.
+2. **Nothing leaves the page:** while it runs, a link's navigation is
+   cancelled, a form is not sent, and any other navigation of the page (a
+   script setting `location`) is stopped at the request; each is recorded as
+   where it would have gone.
+3. **Each control** is pressed with its key: Enter, or Space for a link with
+   `role="button"` (then Enter if Space did nothing). Recorded: whether
+   anything happened, what appeared (how much can take focus, its close
+   control and whether that can take focus), where focus went, whether Tab
+   reaches into it and stays there, and whether Escape closes it.
+4. **Closed again:** with Escape, else the control again, else its close
+   control; then focus and scroll are put back, and the page is compared with
+   how it was. A page its own script changed for good (some lightboxes move
+   themselves to the end of the page) cannot be put back: what was seen is
+   kept, and the run log warns that the next steps may meet a different page.
+
+The keyboard question (still never answered "pass" by the AI) and the focus
+order question get it as evidence, and the review lists it under the stops.
+Turn it on for pages you may operate: it presses real controls, and what a
+control does on the server (a menu that also saves a preference) cannot be
+undone.
 
 ## The server's settings
 

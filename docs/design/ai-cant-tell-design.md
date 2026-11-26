@@ -692,6 +692,51 @@ after 20 presses); keyboard and per-control keyboard questions are asked on a
 page where Tab reaches nothing (what a mouse can use is the evidence); the
 focus order question judges the order only. Prompt version `registry-6`.
 
+## Opening what the page opens (built 2026-11-26)
+
+The GOV.UK audit's lightbox pages showed the focus walk's limit: it only
+presses Tab, so a dialog's problems (its close control cannot take focus,
+Escape does not close it, focus is not moved into it or kept there) and a
+link with role=button that ignores Space were left open, rightly. The open
+walk (`src/server-side/ai-answer/open-walk.js`, `ai: { focus: true, open:
+true }`, at most `openControls`, default 10) presses what says it opens
+something and records what the keyboard can do with it. It operates the
+page, so it is opt-in and held to more than the focus walk:
+
+- **What is pressed:** controls Tab reaches with `aria-expanded`,
+  `aria-haspopup` or `aria-controls`, links to `#` or `javascript:`, links
+  with role=button. Never submit or reset buttons, controls in a form (but a
+  link or a `type="button"`), plain buttons: their effect is unknown and may
+  be on the server.
+- **Nothing leaves the page:** a capture listener cancels a link's own
+  navigation and a form's submit; request interception (the page's own,
+  switched on for the walk only) aborts any other navigation of the main
+  frame. Each is recorded (`wouldLeave`); a link within the page (`#…`) is
+  not leaving.
+- **Per control:** its key (Enter; Space for role=button, then Enter if
+  Space did nothing, in `enter`), `activated` (a click reached it, something
+  showed, or aria-expanded changed), `opened` (what newly became visible:
+  how many elements can take focus, a dialog role, its close control by a
+  short name like "Close" or "X" and whether it can take focus),
+  `focusAfter` (control, inside, nowhere, elsewhere), `tabs` (`reachedInside`
+  after n presses, `leftAfter` and `leftTo`, 15 presses), `escapeCloses`;
+  then closed (Escape, the control again, its close control: `closedAfter`).
+- **Checked:** it runs only after the focus walk put the page back, with its
+  own fingerprint before and after. What it saw came from the page as
+  scanned, so a page it cannot put back keeps the answers: `leftChanged`
+  lists what differs, and the run log warns the next steps may meet a
+  different page (the GOV.UK "focus not moved" lightbox appends itself to
+  the body when it opens, as it would for a person).
+- **Questions:** keyboard and focus order get `opened` in the focus walk
+  (`registry-7`); keyboard still never "pass". Ignoring Space while Enter
+  works is said to be 4.1.2, not 2.1.1. The review lists each pressed
+  control in a sentence.
+
+Tests in `focus-walk.browserspec.js`: only the controls that qualify are
+pressed (not a plain button, not a form), the page fingerprint is the same
+after, a script's navigation is stopped, and the questions see it only when
+asked.
+
 ## Status on 2026-11-25
 
 The current state, what is next and the conventions are in
