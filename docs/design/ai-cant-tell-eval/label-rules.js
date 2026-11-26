@@ -5,7 +5,7 @@
 // the GOV.UK example page titled "Insert title here" (a clear slip in the
 // page-title rule). Run on the cases list-cases.mjs writes:
 //
-//   node docs/design/ai-cant-tell-eval/label-rules.js <cases.json> <labels.json> au|gov
+//   node docs/design/ai-cant-tell-eval/label-rules.js <cases.json> <labels.json> au|gov|wai
 //
 // The labels go into the report as its aiReview for npm run ai:agreement.
 const fs = require('fs');
@@ -33,6 +33,17 @@ for (const c of cases) {
       if (/major_/.test(sel)) set(c, 'fail', 'a checkbox whose outline is removed: nothing changes on focus');
       else set(c, 'pass', 'its outline is removed but its border changes strongly on focus (measured)');
     } else set(c, 'unsure', 'not settled from the documentation');
+  } else if (site === 'wai') {
+    // The WAI tutorials: every example is the tutorial's recommended markup,
+    // so its alt text, empty alt or label is right by the tutorial's own text.
+    if (k === 'page-title-patterns') set(c, 'pass', 'the title names the tutorial page and the site');
+    else if (k === 'img-alt-quality') set(c, 'pass', 'the WAI tutorial\'s own example (or the site\'s), with the alt text the tutorial recommends');
+    else if (k === 'img-alt-decorative') set(c, 'pass', /svg|email|linkedin|mastodon|youtube/.test(i) ? 'an icon beside link or heading text, hidden from assistive technology: decorative' : 'the WAI tutorial\'s example of an image that is decorative or redundant with the text beside it (alt="")');
+    else if (k === 'p-as-heading') {
+      if (/W3C Web Accessibility Initiative/.test(i)) set(c, 'pass', 'the site name in the page header, not a section title');
+      else set(c, 'unsure', 'a bold line over a list of links in the related-resources box: a label or a small section title, as people read it');
+    } else if (k === 'form-control-programmatic-label-quality') set(c, 'pass', 'the tutorial\'s example of a field labelled by its title attribute, beside a Search button');
+    else set(c, 'unsure', 'not settled from the documentation');
   } else {
     if (k === 'page-title-patterns') {
       if (/Insert title here/.test(i)) set(c, 'fail', 'GOV.UK audit: inappropriate page title ("Insert title here")');

@@ -1,0 +1,201 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "https://www.w3.org/WAI/tutorials/images/informative/",
+  "scenarioName": "AI answers on the W3C WAI tutorials (examples with documented alt text and labels)",
+  "actions": [
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: images/informative",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/images/decorative/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: images/decorative",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/images/functional/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: images/functional",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/images/textual/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: images/textual",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/images/complex/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: images/complex",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/images/groups/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: images/groups",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/images/imagemap/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: images/imagemap",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/forms/labels/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: forms/labels",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/forms/instructions/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: forms/instructions",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/forms/grouping/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: forms/grouping",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/page-structure/headings/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: page-structure/headings",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/page-structure/content/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: page-structure/content",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/menus/structure/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: menus/structure",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/tutorials/carousels/working-example/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "WAI tutorial: carousels/working-example",
+      "ai": {
+        "budget": {
+          "calls": 300,
+          "seconds": 300
+        }
+      }
+    }
+  ]
+}
