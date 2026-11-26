@@ -22,18 +22,19 @@ Read, in this order:
 
 ## State (end of 2026-11-26)
 
-Everything is committed and pushed (latest: the **roadmap** and the
-**inventory** of every engine check that can end in "can't tell", with a
-test that keeps it in step with the engine and the registry; before that the
-**open walk**, an opt-in
+Everything is committed and pushed (latest: **phase 1, step 1 begun**: the
+AI answers SVG text alternatives, image map areas and image buttons, with
+the evidence they need, demo 44 of 44, prompt version `registry-9`; before
+that the **roadmap** and the **inventory** of every engine check that can end
+in "can't tell", with a test that keeps it in step with the engine and the
+registry; and the **open walk**, an opt-in
 `open: true` that presses what says it opens something and records what the
 keyboard can do with it, and `open: "buttons"` that presses plain buttons too;
 evaluated on the GOV.UK keyboard pages, the demo's `dialog.html` (a dialog a
 keyboard user cannot close) and the W3C ARIA Authoring Practices examples
 (working widgets: no wrong fail); the walks now judged by what the page
-shows, not its markup; prompt version `registry-7`). The full suite (4491
-pass, 5 skipped) and the browser tests (`focus-walk` 16, `ai-answer` and
-`app-boot`) pass.
+shows, not its markup). The full suite (4491 pass, 5 skipped) and the
+browser tests (`focus-walk` 16, `ai-answer` 7, `app-boot`) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
 AI for every "can't tell" from the rules: 16 of 132 checks are answered
@@ -144,15 +145,18 @@ to 3 below need the user.
   (`focusStops`), blank images, a video's own controls, keyboard asked where
   Tab reaches nothing, focus order judged on its own; then the open walk.
 
-**Not measured yet:** anything through the lab's own Claude call with a real
-key (so prompt caching too: the first real run should show cached tokens in
-the API's usage); agreement after the evidence was reordered; the open walk
-on a real site with a dialog that truly cannot be closed or traps focus (so
-far only the demo's); the combobox fix of the open walk (after the APG run:
-checked by hand, not yet in an answered run). The runs before 2026-11-26
-were made before the walks were judged by what the page shows: in UW and the
-GOV.UK runs no walk was dropped for a changed page (every open case has
-another reason), so their figures stand; W3C run 5 was not re-checked.
+**Not measured yet:** the new text alternative checks on enough real cases:
+the evaluation sites have few (5 SVGs, all correct; 1 image button; no image
+map), so they need other sources, with failing cases among them; anything
+through the lab's own Claude call with a real key (so prompt caching too: the
+first real run should show cached tokens in the API's usage); agreement after
+the evidence was reordered; the open walk on a real site with a dialog that
+truly cannot be closed or traps focus (so far only the demo's); the combobox
+fix of the open walk (after the APG run: checked by hand, not yet in an
+answered run). The runs before 2026-11-26 were made before the walks were
+judged by what the page shows: in UW and the GOV.UK runs no walk was dropped
+for a changed page (every open case has another reason), so their figures
+stand; W3C run 5 was not re-checked.
 
 **Labels that disagree with WCAG, kept on purpose:** in `label-rules.js`
 (`gov`), keyboard on the GOV.UK "lightbox close button" and "role=button"
@@ -284,6 +288,16 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   with its correct answer in the demo (`expected.json`), and its check's lane
   set to `answered` in `ai-cant-tell-inventory.js` (then run it: the
   inventory test checks the lane against the registry).
+- Demo pages: no comment or text near a case that tells its answer. The
+  evidence includes the page source around an element, so the model would
+  read it; explanations go in `expected.json`, or in a comment above
+  `<body>` or in `<head>`, which the evidence never includes.
+- The demo workflow's call budget (`budget.calls`, per run) must cover every
+  question: when cases are added, a page left open with `budget-calls` means
+  the budget, not the AI (it is 80 now, for 44 questions).
+- Re-scoring after a change: a prompt that comes out identical can keep its
+  earlier blind answer (match the runs' `questions.jsonl` by prompt text);
+  only new or changed prompts need answering again.
 - New browser tests for the AI pass go in an existing spec that `test:dom`
   already lists (`focus-walk.browserspec.js`), so `package.json`, which the
   user edits locally, is not touched. Unit tests (`*.test.js`) are found by
