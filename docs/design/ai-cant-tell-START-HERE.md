@@ -5,16 +5,20 @@ experimental until it is decided to merge it.
 
 Read, in this order:
 1. This page: the state and what is next.
-2. `../ai-answers.md`: the user guide (how to use it, every option of the
+2. `ai-cant-tell-roadmap.md`: the plan agreed with the user: first every
+   "can't tell" the engine's rules produce (132 checks, listed with what
+   would settle each in `ai-cant-tell-inventory.md`), then success criteria no
+   rule can automate; and the decisions left for later.
+3. `../ai-answers.md`: the user guide (how to use it, every option of the
    scan step's AI answers field, the server's settings, the demo).
-3. `ai-cant-tell-eval/README.md`: how the AI is evaluated, the demo's and the
+4. `ai-cant-tell-eval/README.md`: how the AI is evaluated, the demo's and the
    real sites' results (W3C, UW, GOV.UK, WAI tutorials), and how to repeat
    them.
-4. `ai-cant-tell-design.md`: the design, section by section (the newest are
+5. `ai-cant-tell-design.md`: the design, section by section (the newest are
    near the end, before "Status when work stopped"), as needed.
-5. `ai-cant-tell-data-and-agents.md`: before turning the AI pass on for a
+6. `ai-cant-tell-data-and-agents.md`: before turning the AI pass on for a
    customer's site (what leaves the lab, agents, how to set it up well).
-6. `ai-cant-tell-spike.md`: the earliest results.
+7. `ai-cant-tell-spike.md`: the earliest results.
 
 ## State (end of 2026-11-26)
 
@@ -28,10 +32,19 @@ shows, not its markup; prompt version `registry-7`). The full suite (4488
 pass, 5 skipped) and the browser tests (`focus-walk` 16, `ai-answer` and
 `app-boot`) pass.
 
+**The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
+AI for every "can't tell" from the rules: 12 of 132 checks are answered
+today; next the 34 `read` checks (questions like today's: SVG and other text
+alternatives, headings and labels, label in name, tables and structure), then
+the browser's accessibility tree for 23 "name present" checks, the walks,
+measurements, pictures and media. Phase 2 (criteria no rule can automate)
+only after; its decisions are listed there and left open on purpose.
+
 **Where to pick up without the user:** re-run the APG spec
 (`ai-answers-apg-open.spec.json`) to confirm the combobox fix in an answered
-run, then item 6 below (the open walk's open points) or item 4 (more cases).
-Items 1 to 3 need the user.
+run; then phase 1, step 1 of the roadmap (the `read` checks, family by
+family, each with demo cases, blind evaluation and the user guide). Items 1
+to 3 below need the user.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `open-walk.js`, `evidence.js`, `provider.js`,
@@ -237,8 +250,10 @@ The first three need the user; the rest can be done without.
   `src/workflow/action-definitions.js`).
 - A new question: an entry in `registry.js` (`ANSWERABLE`, `PAGE_LEVEL` or
   `ELEMENT_WALK`), its facts in `keyFactRows` (and `FOCUS_CHECKS` for a walk
-  question) in `ai-answer-view.js`, a row in the user guide's tables, and a
-  case with its correct answer in the demo (`expected.json`).
+  question) in `ai-answer-view.js`, a row in the user guide's tables, a case
+  with its correct answer in the demo (`expected.json`), and its check's lane
+  set to `answered` in `ai-cant-tell-inventory.js` (then run it: the
+  inventory test checks the lane against the registry).
 - New browser tests for the AI pass go in an existing spec that `test:dom`
   already lists (`focus-walk.browserspec.js`), so `package.json`, which the
   user edits locally, is not touched. Unit tests (`*.test.js`) are found by

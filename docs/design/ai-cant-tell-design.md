@@ -750,6 +750,14 @@ scroll and viewport, not the markup's hash, which a component's attribute
 set as focus passes changed on every W3C page. The pass's own check keeps the
 markup.
 
+## The plan from here (2026-11-26)
+
+[ai-cant-tell-roadmap.md](ai-cant-tell-roadmap.md): first the AI for every
+"can't tell" the engine's rules produce (132 checks, each with what would
+settle it, in [ai-cant-tell-inventory.md](ai-cant-tell-inventory.md)), then
+success criteria no rule can automate; the decisions that needs are listed
+there and left open.
+
 ## Status on 2026-11-25
 
 The current state, what is next and the conventions are in

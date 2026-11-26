@@ -23,7 +23,8 @@
 - [AI answers](ai-answers.md) (experimental): a model answers the questions a
   scan leaves to a person, and you review its answers; every option of the
   scan step's AI answers field, the server's settings, and how far to trust
-  it.
+  it. What it answers so far and the plan for the rest:
+  [design/ai-cant-tell-roadmap.md](design/ai-cant-tell-roadmap.md).
 
 ## Run without the app
 
