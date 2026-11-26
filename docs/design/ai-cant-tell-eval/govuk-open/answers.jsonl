@@ -1,0 +1,48 @@
+{"id": "q1", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q2", "verdict": "unsure", "confidence": 0.6, "rationale": "The lightbox close X cannot take focus but Escape closes it and Tab reaches inside; no control clearly out of reach, and pass is not allowed."}
+{"id": "q3", "verdict": "pass", "confidence": 0.6, "rationale": "Single page stop in reading order; the lightbox content comes next in the Tab order after opening and it is not a modal dialog."}
+{"id": "q4", "verdict": "pass", "confidence": 0.65, "rationale": "The only stop shows an outline change on focus and is visible in view."}
+{"id": "q5", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q6", "verdict": "unsure", "confidence": 0.6, "rationale": "Escape does not close the lightbox but its X close link is focusable and closed it; everything was reached, and pass is not allowed."}
+{"id": "q7", "verdict": "pass", "confidence": 0.6, "rationale": "Single page stop in reading order; the lightbox content comes next in the Tab order after opening and it is not a modal dialog."}
+{"id": "q8", "verdict": "pass", "confidence": 0.65, "rationale": "The only stop shows an outline change on focus and is visible in view."}
+{"id": "q9", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q10", "verdict": "unsure", "confidence": 0.6, "rationale": "The close X is not focusable but Escape closes the lightbox and Tab reaches its link; no clear failure, and pass is not allowed."}
+{"id": "q11", "verdict": "pass", "confidence": 0.55, "rationale": "Single page stop in reading order; the lightbox content comes next in the Tab order after opening and it is not a modal dialog."}
+{"id": "q12", "verdict": "pass", "confidence": 0.65, "rationale": "The only stop shows an outline change on focus and is visible in view."}
+{"id": "q13", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q14", "verdict": "unsure", "confidence": 0.6, "rationale": "All controls, including the focusable close link inside the lightbox, were reached and Escape closes it; pass is not allowed."}
+{"id": "q15", "verdict": "pass", "confidence": 0.5, "rationale": "Focus reaches the lightbox content one Tab after opening; it is not marked as a modal dialog, so focus leaving it later is not clearly an order problem."}
+{"id": "q16", "verdict": "pass", "confidence": 0.65, "rationale": "The only stop shows an outline change on focus and is visible in view."}
+{"id": "q17", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q18", "verdict": "unsure", "confidence": 0.5, "rationale": "'Continue' is generic and the only context is a test heading; whether it is clear within a step-by-step flow cannot be judged from this evidence."}
+{"id": "q19", "verdict": "unsure", "confidence": 0.7, "rationale": "The role=button link is reachable and works with Enter (Space only is a 4.1.2 issue); nothing is unreachable, and pass is not allowed."}
+{"id": "q20", "verdict": "pass", "confidence": 0.7, "rationale": "Single stop on the page, in reading order."}
+{"id": "q21", "verdict": "pass", "confidence": 0.75, "rationale": "The only stop shows an outline change on focus and is visible in view."}
+{"id": "q22", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q23", "verdict": "fail", "confidence": 0.9, "rationale": "The 'launch webchat' div shows a pointer cursor but cannot take focus, and the page has no Tab stops at all."}
+{"id": "q24", "verdict": "fail", "confidence": 0.9, "rationale": "The webchat div cannot take focus and the page has no other focusable control that does the same."}
+{"id": "q25", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q26", "verdict": "fail", "confidence": 0.8, "rationale": "The dt with a click handler was never reached by Tab and the page has no Tab stops at all, so nothing else does the same."}
+{"id": "q27", "verdict": "fail", "confidence": 0.8, "rationale": "The dt with a click handler was never reached by Tab and the page has no Tab stops at all, so nothing else does the same."}
+{"id": "q28", "verdict": "fail", "confidence": 0.8, "rationale": "The dt with a click handler was never reached by Tab and the page has no Tab stops at all, so nothing else does the same."}
+{"id": "q29", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q30", "verdict": "fail", "confidence": 0.7, "rationale": "The '?' tooltip icon shows a pointer cursor but cannot take focus, so keyboard users cannot open the tooltip."}
+{"id": "q31", "verdict": "pass", "confidence": 0.7, "rationale": "Single stop on the page, in reading order."}
+{"id": "q32", "verdict": "pass", "confidence": 0.7, "rationale": "The only stop shows an outline change on focus and is visible in view."}
+{"id": "q33", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q34", "verdict": "unsure", "confidence": 0.6, "rationale": "Only the top-level 'Benefits' link was reached; the walk does not show whether submenu items exist that mouse users can use, and pass is not allowed."}
+{"id": "q35", "verdict": "pass", "confidence": 0.6, "rationale": "Single stop on the page, in reading order."}
+{"id": "q36", "verdict": "pass", "confidence": 0.7, "rationale": "The only stop shows an outline change on focus and is visible in view."}
+{"id": "q37", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q38", "verdict": "fail", "confidence": 0.8, "rationale": "The walk came back to the first 'trap' link and never moved on, a keyboard trap that keeps the rest of the page out of reach."}
+{"id": "q39", "verdict": "fail", "confidence": 0.6, "rationale": "Tab returns to the same 'trap' link repeatedly, so focus does not progress through the page in reading order."}
+{"id": "q40", "verdict": "pass", "confidence": 0.7, "rationale": "The only stop shows an outline change on focus and is visible in view."}
+{"id": "q41", "verdict": "pass", "confidence": 0.9, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q42", "verdict": "unsure", "confidence": 0.7, "rationale": "All three links were reached and work with Enter; no clear failure, and pass is not allowed."}
+{"id": "q43", "verdict": "fail", "confidence": 0.7, "rationale": "Focus goes First (x 20), Second (x 1196), then Third (x 90) on the same row, jumping across the page against the visual reading order."}
+{"id": "q44", "verdict": "pass", "confidence": 0.75, "rationale": "Every stop shows an outline change on focus and is in view."}
+{"id": "q45", "verdict": "pass", "confidence": 0.85, "rationale": "The title names the page topic, matching the main heading."}
+{"id": "q46", "verdict": "unsure", "confidence": 0.7, "rationale": "The single link was reached and nothing is unreachable; pass is not allowed."}
+{"id": "q47", "verdict": "pass", "confidence": 0.7, "rationale": "Only one stop, so the positive tabindex causes no misordering here."}
+{"id": "q48", "verdict": "pass", "confidence": 0.75, "rationale": "The only stop shows an outline change on focus and is visible in view."}

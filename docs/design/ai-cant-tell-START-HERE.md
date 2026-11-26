@@ -18,11 +18,12 @@ Read, in this order:
 
 ## State (end of 2026-11-25)
 
-Everything is committed and pushed (latest: the W3C WAI tutorials evaluated,
-correct markup that the AI should not fail, and a fix to the offline tool for
-reused answers; before that 42 more GOV.UK audit pages; prompt version
-`registry-6`). The full suite (4487 tests) and the browser tests
-(`focus-walk`, `ai-answer`, `app-boot`: 33) pass.
+Everything is committed and pushed (latest: the **open walk**, an opt-in
+`open: true` that presses what says it opens something and records what the
+keyboard can do with it, evaluated on the GOV.UK keyboard pages; before that
+the WAI tutorials and 42 more GOV.UK pages; prompt version `registry-7`). The
+full suite (4484 pass, 5 skipped) and the browser tests (`focus-walk`,
+`ai-answer`, `app-boot`: 36) pass.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `evidence.js`, `provider.js`,
@@ -50,6 +51,14 @@ reused answers; before that 42 more GOV.UK audit pages; prompt version
     and **focus indicator contrast (1.4.11, `focus-contrast-element`, the
     newest)** per link whose outline a style removes; keyboard per control
     (fail only); focus not obscured per fixed or sticky box.
+  - **The open walk** (`open: true` with `focus`, `openControls` default 10,
+    `open-walk.js`, the newest): presses each control Tab reaches that says it
+    opens something (aria-expanded, aria-haspopup, aria-controls, a link to
+    `#`, a role=button link; never a submit, a form's control or a plain
+    button), with every navigation of the page stopped; records whether its
+    key worked, what opened, where focus went, whether Tab gets in and stays,
+    whether the close control can take focus and Escape closes; closes it
+    again. Evidence for keyboard and focus order.
 - **Providers:** the built-in Claude call (key from Run settings, kept in
   memory, or `ANTHROPIC_API_KEY`; the evidence is sent compact and marked for
   prompt caching, so a page's focus questions pay for the walk once;
@@ -83,17 +92,16 @@ reused answers; before that 42 more GOV.UK audit pages; prompt version
   | GOV.UK accessibility tool audit, 23 pages | `ai-answers-govuk-audit.spec.json` | 98 | 60 (61%) | 97% | 2 passes, WCAG readings the audit is stricter than |
   | GOV.UK audit, 42 more pages | `ai-answers-govuk-audit-more.spec.json` | 167 | 107 (66%) | 100% | 0 |
   | W3C WAI tutorials (correct markup, reading questions only) | `ai-answers-wai-tutorials.spec.json` | 63 | 58 (97%) | 100% | 0 |
+  | GOV.UK keyboard pages, with the open walk | `ai-answers-govuk-open.spec.json` | 48 | 35 (73%) | 97% | 1 fail (focus order on the trap page, for the trap) |
 
   Most of what is left open is by design: keyboard, which the AI may not
   pass, and focus questions on pages with nothing focusable. Files per site in
   `ai-cant-tell-eval/w3c-bad/` (runs 1 to 5), `uw-au/`, `govuk-audit/`,
-  `govuk-audit-more/`, `wai-tutorials/`; labels for all but the W3C demo from
+  `govuk-audit-more/`, `wai-tutorials/`, `govuk-open/`; labels for all but the W3C demo from
   `label-rules.js` (`au`, `gov`, `wai`) over `list-cases.mjs`.
   Fixes these runs led to: links that give focus up at once, whole walks
   (`focusStops`), blank images, a video's own controls, keyboard asked where
-  Tab reaches nothing, focus order judged on its own. The walk only presses
-  Tab: what shows once a control is used (a lightbox, a role=button link and
-  the space bar) is left open, rightly.
+  Tab reaches nothing, focus order judged on its own; then the open walk.
 
 **Not measured yet:** anything through the lab's own Claude call with a real
 key (so prompt caching too: the first real run should show cached tokens in
@@ -167,9 +175,11 @@ The first three need the user; the rest can be done without.
    a button whose focus shows only as an outline change the page-level
    question does not measure, UW's divider images with alt "horizontal line
    graphic", the empty-alt BBC logo (GOV.UK, a fail argued but answered
-   unsure). Also not built: a walk that opens what it finds (a lightbox, a
-   menu) and presses Enter or Space, which would let the keyboard and focus
-   order questions see a lightbox's problems.
+   unsure). The open walk does not press a menu that opens on hover and
+   says nothing (no aria-haspopup), nor plain buttons; on the GOV.UK
+   lightboxes it moved no verdict (by WCAG they are keyboard-usable: Escape
+   or an X link closes them), so it is still to be seen on a site with a
+   dialog that truly traps or cannot be closed.
 6. **On hold:** the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 

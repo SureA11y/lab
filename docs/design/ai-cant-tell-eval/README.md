@@ -476,3 +476,59 @@ node src/cli/run-workflow.js examples/specs/ai-answers-wai-tutorials.spec.json -
 ```
 
 (With `A11Y_AI_PREVIEW=on` for the offline steps, then `label-rules.js … wai`.)
+
+## The open walk on the GOV.UK keyboard pages (2026-11-26)
+
+The 42-page run left the lightbox and role=button cases open because the
+walk only pressed Tab. With the open walk (`open: true`, built for them; see
+the user guide), the 12 keyboard and focus order pages of the audit (four
+lightboxes, a role=button link, a fake button, concertina, tooltips,
+dropdown navigation, a keyboard trap, wrong order, tabindex above 0) were
+scanned again with the same code otherwise (`registry-7`), answered blind by
+a separate model, and scored against the same `gov` labels. Spec:
+`examples/specs/ai-answers-govuk-open.spec.json`. Files:
+[govuk-open/](govuk-open/).
+
+| | 12 keyboard pages, open walk |
+| --- | --- |
+| Questions sent | 48 |
+| Agree | 35 of 48 (73%) |
+| **Of those answered** | **35 of 36 (97%)** |
+| Pass where the label says fail | 0 |
+| Fail where the label says pass | 1 |
+| Left open | 12 |
+
+**What the open walk recorded** (pressed on 6 pages): every lightbox opened
+with Enter and left focus on its link; on two the close control is a `span`
+that cannot take focus, and Escape closes them; on one Escape does not close
+it, and its X link can take focus and closes it; the role=button link does
+nothing with Space and leaves with Enter (stopped). The "focus not moved"
+lightbox moves itself to the end of the page when it opens, so the page was
+left changed (logged, answers kept).
+
+**What the model made of it:** the facts, read right, and by WCAG they settle
+less than the audit's list. Escape is a keyboard way to close, and an X link
+is another, so none of the lightboxes is out of keyboard reach: keyboard
+stayed open on all four (the AI may not pass it), with the reason stated
+("the close X cannot take focus but Escape closes it"). The role=button link
+was called a 4.1.2 problem (it works with Enter), not 2.1.1. On these small
+pages the lightbox is the next Tab stop after its link and is not marked as
+a modal dialog, so the model did not fail the order for "focus not moved" or
+"not kept" (both under the threshold). The labels for "close button" and
+"role=button" keyboard are the audit's (fail), kept as written before the
+run; by WCAG 2.1.1 the model's reading is the better one.
+
+- **The one wrong answer:** focus order failed on the keyboard trap page
+  for the trap itself (2.1.2, not the order). Nothing was pressed there:
+  run-to-run variation, not the open walk; the first GOV.UK run did not.
+- **A limit:** the dropdown navigation opens on hover and its top link says
+  nothing (`aria-haspopup` missing), so the open walk does not press it;
+  keyboard stays open there, rightly unsure.
+- **So:** the open walk makes the evidence complete for a person (the review
+  lists each pressed control in a sentence) and lets the AI fail a dialog
+  that truly cannot be closed or used with the keyboard; on these test pages
+  there was none, so it moved no verdict.
+
+```bash
+A11Y_AI_PREVIEW=on node src/cli/run-workflow.js examples/specs/ai-answers-govuk-open.spec.json --out runs/govuk-open
+```
