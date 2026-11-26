@@ -22,13 +22,16 @@ Read, in this order:
 
 ## State (end of 2026-11-26)
 
-Everything is committed and pushed (latest: the **open walk**, an opt-in
+Everything is committed and pushed (latest: the **roadmap** and the
+**inventory** of every engine check that can end in "can't tell", with a
+test that keeps it in step with the engine and the registry; before that the
+**open walk**, an opt-in
 `open: true` that presses what says it opens something and records what the
 keyboard can do with it, and `open: "buttons"` that presses plain buttons too;
 evaluated on the GOV.UK keyboard pages, the demo's `dialog.html` (a dialog a
 keyboard user cannot close) and the W3C ARIA Authoring Practices examples
 (working widgets: no wrong fail); the walks now judged by what the page
-shows, not its markup; prompt version `registry-7`). The full suite (4488
+shows, not its markup; prompt version `registry-7`). The full suite (4491
 pass, 5 skipped) and the browser tests (`focus-walk` 16, `ai-answer` and
 `app-boot`) pass.
 
@@ -172,7 +175,8 @@ Chrome or Chromium.)
 
 ## Next, in order
 
-The first three need the user; the rest can be done without.
+The first three need the user; the rest can be done without. Item 4 is the
+main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
 
 1. **A person's labels on the real-site runs** (W3C, UW, the three GOV.UK
    runs, the WAI tutorials, the APG examples). Every
@@ -196,7 +200,27 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **More cases per check.** There are 432 labelled cases over four sites (and
+4. **Phase 1, step 1: the 34 `read` checks** (`ai-cant-tell-roadmap.md`,
+   listed under `read` in `ai-cant-tell-inventory.md`). One family at a time,
+   in this order: text alternatives (start with
+   `svg-text-alternative-quality`, the most frequent in the runs: 97, then
+   `area-`, `input-image-`, `object-`, `embed-`, `canvas-`,
+   `image-redundant-alt`, `video-poster-`), names and labels
+   (`heading-quality`, `form-control-label-quality`, `label-in-name`, ...),
+   structure (tables, form groups, heading order, regions), then "is it text"
+   (symbols below the contrast ratio). For each check: read its reasons in the
+   engine (`node_modules/@surea11y/core/src/checks/manual/<id>-manual.js` or
+   `automatic/<id>.js`: what it reports, why it cannot tell); an entry in
+   `ANSWERABLE` (`registry.js`) with the evidence it needs (`evidence.js`
+   reads element, context, image, page title; add what is missing, such as an
+   SVG's title and desc); its facts in `keyFactRows`; a demo case with its
+   correct answer (`examples/demo-site/ai/reading.html`, `expected.json`); its
+   lane set to `answered` and the inventory regenerated; a row in the user
+   guide; bump `PROMPT_VERSION`. Then evaluate blind as before
+   (`ai-cant-tell-eval/README.md`): the W3C pages (most of the 97 SVG cases
+   came from them), the GOV.UK audit and the APG examples are on allowed
+   hosts; record the result in the eval README and this page.
+5. **More cases per check.** There are 432 labelled cases over four sites (and
    48 from the open-walk re-run of the GOV.UK keyboard pages, 55 from the APG
    examples); page title, alt quality, decorative images, focus visible, focus
    order and keyboard have more than 30 each; link text (6), field labels (3)
@@ -210,18 +234,18 @@ The first three need the user; the rest can be done without.
    allowed in the cloud environment (ask the user) and labels. Running each
    set two or three times and keeping the per-case spread would show which
    questions are unstable.
-5. **Optional, not built:** pictures sent to the model (only after measuring
-   that they help: the news photo of the W3C's Note 10, the one question the
-   model keeps getting wrong, is about what the picture shows); 2.4.13's and
-   1.4.11's measurement is lossy on animated focus styles (it reads after a
-   short wait) and covered stops measure 0 changed (right, but worth saying in
-   the review). Questions still left open that better evidence might settle:
-   GOV.UK's "Read more" links (WCAG accepts the context, the audit does not),
-   a button whose focus shows only as an outline change the page-level
-   question does not measure, UW's divider images with alt "horizontal line
-   graphic", the empty-alt BBC logo (GOV.UK, a fail argued but answered
-   unsure).
-6. **The open walk, next steps (optional):** it gave the fail on the demo's
+6. **Optional, not built (roadmap decision 5):** pictures sent to the model
+   (only after measuring that they help: the news photo of the W3C's Note 10,
+   the one question the model keeps getting wrong, is about what the picture
+   shows); 2.4.13's and 1.4.11's measurement is lossy on animated focus styles
+   (it reads after a short wait) and covered stops measure 0 changed (right,
+   but worth saying in the review). Questions still left open that better
+   evidence might settle: GOV.UK's "Read more" links (WCAG accepts the
+   context, the audit does not), a button whose focus shows only as an outline
+   change the page-level question does not measure, UW's divider images with
+   alt "horizontal line graphic", the empty-alt BBC logo (GOV.UK, a fail
+   argued but answered unsure).
+7. **The open walk, next steps (optional):** it gave the fail on the demo's
    dialog that cannot be closed, moved no verdict on the GOV.UK lightboxes
    (by WCAG they are keyboard-usable), and failed none of the APG's working
    widgets. Open points: a real site with a dialog that cannot be closed
@@ -233,7 +257,7 @@ The first three need the user; the rest can be done without.
    items); a page left changed is only logged (no undo beyond Escape, the
    control again and a close control); what a control saves in the browser
    (local storage) is detected, not undone.
-7. **On hold:** the browser extension (it never receives AI answers; see the
+8. **On hold:** the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 
 ## Conventions
