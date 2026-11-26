@@ -46,7 +46,7 @@ with **Load config**. `--check` checks one without opening a browser.
 | `specs/every-product.spec.json` | A loop over every product link, and a custom step (accept the cookie banner when it shows) used twice |
 | `specs/site-tour.spec.json` | Home, products, log in and cart by following the shop's own links: the same workflow on either release |
 | `specs/all-pages.batch.json` | One workflow over six pages, a row each, as the app's Batch section runs them |
-| `specs/ai-answers.spec.json` | AI answers on two pages made to ask every question the AI answers, focus walk included ([below](#the-ai-answers-demo)) |
+| `specs/ai-answers.spec.json` | AI answers on three pages made to ask every question the AI answers, focus walk and open walk included ([below](#the-ai-answers-demo)) |
 | `specs/ai-answers-w3c-bad.spec.json` | AI answers on a real site: the W3C's Before and After Demonstration, inaccessible and repaired, eight pages |
 | `specs/ai-answers-uw-au.spec.json` | AI answers on the University of Washington's Accessible University demo, inaccessible and repaired |
 | `specs/ai-answers-govuk-audit.spec.json` | AI answers on 23 pages of the GOV.UK accessibility tool audit, each with one documented problem |
@@ -150,13 +150,14 @@ them under what needs review, apart from the failures.
 
 ## The AI answers demo
 
-`demo-site/ai/` (not linked from the shop, so its tours are unchanged) has two
+`demo-site/ai/` (not linked from the shop, so its tours are unchanged) has three
 pages for [AI answers](../docs/ai-answers.md):
 
 | Page | What the scan asks, and the correct answer |
 | --- | --- |
 | `ai/reading.html` | A vague title ("Page", fail); alt text that is a file name (fail) and a good one (pass); a "−50%" badge hidden as decorative (fail) and a divider (pass); a bold "Delivery" paragraph that heads a section (fail) and the site name (pass); "Learn more" alone (fail); fields labelled only by `title` or `placeholder` (fail) |
 | `ai/focus.html` | Navigation links whose focus outline is removed (focus visible, appearance and non-text contrast, fail), and one that shows focus from a script instead (all three, pass); a `tabindex="1"` link far down that comes first (focus order, fail); a clickable menu and tiles Tab never reaches (keyboard, fail); a sticky header over two links once scrolled (focus not obscured, fail) |
+| `ai/dialog.html` (with `open: true`) | A "Size guide" link that opens a modal dialog whose only close control is a span and that Escape does not close (keyboard, fail; focus stays on the link, focus order, fail), beside a working "Delivery details" disclosure |
 
 Each answer and why is in `demo-site/ai/expected.json`;
 `ai-demo-score.js` compares a run with them:
@@ -167,7 +168,7 @@ node examples/ai-demo-score.js runs/ai-demo/payload.json --why
 ```
 
 Without a key, `A11Y_AI_PREVIEW=on` shows what would be sent; the way to have
-any model answer it, and the demo's own result (31 of 31), are in
+any model answer it, and the demo's own result (36 of 36), are in
 [docs/design/ai-cant-tell-eval/](../docs/design/ai-cant-tell-eval/README.md).
 
 The examples are a few of the ways to use the lab, not the list: the use-case

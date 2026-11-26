@@ -217,6 +217,41 @@
       "target": "#top-bar",
       "expected": "fail",
       "why": "The same links, hidden by the sticky header."
+    },
+    {
+      "page": "ai/dialog.html",
+      "check": "p-as-heading",
+      "target": "html > body > header > p",
+      "expected": "pass",
+      "why": "\"Demo Shop\" in bold is the site name in the header, not a section title."
+    },
+    {
+      "page": "ai/dialog.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Garden gloves - Demo Shop\" names the product the page is about and the site."
+    },
+    {
+      "page": "ai/dialog.html",
+      "check": "keyboard",
+      "target": "html",
+      "expected": "fail",
+      "why": "\"Size guide\" opens a modal dialog a keyboard user cannot close: its only close control is a span (it cannot take focus) and Escape does nothing (with open: true)."
+    },
+    {
+      "page": "ai/dialog.html",
+      "check": "focus-order",
+      "target": "html",
+      "expected": "fail",
+      "why": "The size guide is a modal dialog (aria-modal), and opening it leaves focus on the link behind it: focus should move into the dialog."
+    },
+    {
+      "page": "ai/dialog.html",
+      "check": "focus-visible",
+      "target": "html",
+      "expected": "pass",
+      "why": "Nothing on the page removes the browser's focus outline: every stop shows focus."
     }
   ]
 }

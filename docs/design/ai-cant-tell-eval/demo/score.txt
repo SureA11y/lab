@@ -30,5 +30,10 @@ focus.html    keyboard-element                          #account-menu           
 focus.html    keyboard-element                          #tile-cactus                        fail     fail                    agrees
 focus.html    focus-not-obscured-box                    #top-bar                            fail     fail                    agrees
 focus.html    focus-not-obscured-enhanced-box           #top-bar                            fail     fail                    agrees
+dialog.html   p-as-heading                              html > body > header > p            pass     pass                    agrees
+dialog.html   page-title-patterns                       html > head > title                 pass     pass                    agrees
+dialog.html   keyboard                                  html                                fail     fail                    agrees
+dialog.html   focus-order                               html                                fail     fail                    agrees
+dialog.html   focus-visible                             html                                pass     pass                    agrees
 
-31 questions: 31 answered by the AI, 31 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+36 questions: 36 answered by the AI, 36 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.

@@ -71,12 +71,15 @@ full suite (4484 pass, 5 skipped) and the browser tests (`focus-walk`,
   remarks from confirmed fails. `npm run ai:agreement`.
 - **Docs:** `docs/ai-answers.md` (user guide), configuration reference,
   examples README, this folder.
-- **The demo:** `examples/demo-site/ai/` (`reading.html`, `focus.html`),
+- **The demo:** `examples/demo-site/ai/` (`reading.html`, `focus.html`,
+  `dialog.html` for the open walk),
   `examples/specs/ai-answers.spec.json`, the correct answers in
-  `expected.json`, `examples/ai-demo-score.js`. 31 questions, including a Help
-  link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13 pass).
+  `expected.json`, `examples/ai-demo-score.js`. 36 questions, including a Help
+  link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13 pass) and a
+  modal dialog a keyboard user cannot close (keyboard and focus order fail,
+  found by the open walk).
   Evaluated blind, a model answering the lab's exact prompts outside the lab
-  (`ai-cant-tell-spike/answer-offline.js`): **31 of 31**
+  (`ai-cant-tell-spike/answer-offline.js`): **36 of 36**
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
 - **Real sites,** built with documented accessibility problems (the WAI
@@ -178,8 +181,8 @@ The first three need the user; the rest can be done without.
    unsure). The open walk does not press a menu that opens on hover and
    says nothing (no aria-haspopup), nor plain buttons; on the GOV.UK
    lightboxes it moved no verdict (by WCAG they are keyboard-usable: Escape
-   or an X link closes them), so it is still to be seen on a site with a
-   dialog that truly traps or cannot be closed.
+   or an X link closes them); on the demo's dialog that cannot be closed it
+   gave the fail, so a real site with such a dialog is still to be seen.
 6. **On hold:** the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 

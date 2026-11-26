@@ -1,31 +1,36 @@
-{"id": "q1", "verdict": "fail", "confidence": 0.9, "rationale": "The badge shows '−50%', and the text after it ('on all seeds this week') does not give the discount, so alt=\"\" hides information nothing else provides."}
-{"id": "q2", "verdict": "pass", "confidence": 0.95, "rationale": "The SVG is a single grey horizontal line used as a divider, so hiding it with aria-hidden loses nothing."}
-{"id": "q3", "verdict": "fail", "confidence": 0.9, "rationale": "The alt 'IMG_2041.jpg' is a file name that conveys nothing about the image content, and no reachable description provides it (F30)."}
-{"id": "q4", "verdict": "pass", "confidence": 0.8, "rationale": "The alt describes a canvas garden bag, which matches the image (labelled 'bag') and its 'Garden bag' product heading."}
-{"id": "q5", "verdict": "pass", "confidence": 0.75, "rationale": "'Demo Shop' is the site name in the header, followed by navigation links, not a title for a section of text."}
-{"id": "q6", "verdict": "fail", "confidence": 0.85, "rationale": "'Delivery' is a bold paragraph titling the delivery information that follows it, but it is not marked up as a heading (F2)."}
-{"id": "q7", "verdict": "fail", "confidence": 0.95, "rationale": "The title 'Page' is generic and says nothing about the page, whose content is about garden tools (F25)."}
-{"id": "q8", "verdict": "fail", "confidence": 0.75, "rationale": "'Learn more' stands alone in its own paragraph with no surrounding text saying what it leads to, so the destination is unclear."}
-{"id": "q9", "verdict": "fail", "confidence": 0.8, "rationale": "The postcode field has only a title tooltip, with no visible text next to it, and the button does not come right after it, so keyboard and touch users never see what to enter."}
-{"id": "q10", "verdict": "fail", "confidence": 0.85, "rationale": "The field is labelled only by a 'Name' placeholder, which disappears once text is typed, and nothing else on screen says what the field is for."}
-{"id": "q11", "verdict": "pass", "confidence": 0.75, "rationale": "'Demo Shop' is the site name at the top of the header, followed by navigation, not a section title for the text after it."}
+{"id": "q1", "verdict": "fail", "confidence": 0.85, "rationale": "The badge shows '-50%', which the adjacent text 'on all seeds this week' does not state, yet alt is empty so the discount is lost to screen reader users."}
+{"id": "q2", "verdict": "pass", "confidence": 0.9, "rationale": "A thin grey horizontal line used as a divider; it carries no information, so hiding it loses nothing."}
+{"id": "q3", "verdict": "fail", "confidence": 0.95, "rationale": "The alt text is a file name, 'IMG_2041.jpg', which says nothing about the product shown."}
+{"id": "q4", "verdict": "pass", "confidence": 0.8, "rationale": "The alt 'Canvas garden bag with two leather handles' describes the product image that matches the 'Garden bag' item it illustrates."}
+{"id": "q5", "verdict": "pass", "confidence": 0.7, "rationale": "'Demo Shop' is the site name in the header followed by navigation links, not a title for the text after it."}
+{"id": "q6", "verdict": "fail", "confidence": 0.85, "rationale": "'Delivery' is a bold paragraph that titles the delivery paragraph after it but is not marked up as a heading."}
+{"id": "q7", "verdict": "fail", "confidence": 0.9, "rationale": "The title 'Page' is generic and does not say the page is about garden tools."}
+{"id": "q8", "verdict": "fail", "confidence": 0.8, "rationale": "'Learn more' sits alone in its paragraph; neither the link text nor its surrounding context says where it leads."}
+{"id": "q9", "verdict": "fail", "confidence": 0.85, "rationale": "The postcode field has no visible label; only the title tooltip says what to enter, and the following element is another field, not a button."}
+{"id": "q10", "verdict": "fail", "confidence": 0.75, "rationale": "Once filled in, the placeholder 'Name' disappears and no visible label remains; the 'Check delivery' button does not say what to enter."}
+{"id": "q11", "verdict": "pass", "confidence": 0.7, "rationale": "'Demo Shop' is the site name in the header bar before the navigation, not a section title for following text."}
 {"id": "q12", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Offers - Demo Shop' matches the page's main heading 'Offers' and names the site."}
-{"id": "q13", "verdict": "fail", "confidence": 0.85, "rationale": "Three mouse-operable controls (the Account menu, the Fern tile and the Cactus role=button) can never take keyboard focus."}
-{"id": "q14", "verdict": "fail", "confidence": 0.8, "rationale": "The Account menu span has a click handler but cannot take focus, and no focus stop on the page offers the same action."}
-{"id": "q15", "verdict": "fail", "confidence": 0.9, "rationale": "The Cactus span has role=button but never takes keyboard focus, and no other stop on the page offers the same function."}
-{"id": "q16", "verdict": "fail", "confidence": 0.85, "rationale": "Focus starts on 'Seeds and bulbs: all offers', a link low in the main content, before the header navigation and the earlier main links, so the order does not follow the reading order."}
-{"id": "q17", "verdict": "fail", "confidence": 0.9, "rationale": "The Home link was reached at stop 2, and nothing visible changed when it took focus."}
-{"id": "q18", "verdict": "fail", "confidence": 0.9, "rationale": "The Products link was reached at stop 3, and nothing visible changed when it took focus."}
-{"id": "q19", "verdict": "fail", "confidence": 0.9, "rationale": "The Cart link was reached at stop 4, and nothing visible changed when it took focus."}
-{"id": "q20", "verdict": "pass", "confidence": 0.85, "rationale": "The Help link's background, text colour and underline change on focus, so focus is visible even without the outline."}
-{"id": "q21", "verdict": "fail", "confidence": 0.9, "rationale": "The Home, Products and Cart links show no change on focus, and the Roses and Tulips links are entirely hidden under the header while focused."}
-{"id": "q22", "verdict": "fail", "confidence": 0.9, "rationale": "Stops 6 and 7 (Roses, Tulips) take focus with coveredShare 1, so the sticky header hides them entirely (F110)."}
-{"id": "q23", "verdict": "fail", "confidence": 0.9, "rationale": "The sticky header entirely covers the Roses and Tulips links while they have focus, so part of a focused element is hidden."}
-{"id": "q24", "verdict": "fail", "confidence": 0.9, "rationale": "The Home link changes 0 px on focus (atContrast 0 against 244 needed, meets false), so there is no indicator."}
-{"id": "q25", "verdict": "fail", "confidence": 0.9, "rationale": "The Products link changes 0 px on focus (atContrast 0 against 336 needed, meets false), so there is no indicator."}
-{"id": "q26", "verdict": "fail", "confidence": 0.9, "rationale": "The Cart link changes 0 px on focus (atContrast 0 against 192 needed, meets false), so there is no indicator."}
-{"id": "q27", "verdict": "pass", "confidence": 0.85, "rationale": "The Help link's indicator has 584 px at 3:1 or more against 204 needed, and meets is true."}
-{"id": "q28", "verdict": "fail", "confidence": 0.9, "rationale": "Nothing changes when the Home link takes focus (changed 0), so no indicator reaches 3:1."}
-{"id": "q29", "verdict": "fail", "confidence": 0.9, "rationale": "Nothing changes when the Products link takes focus (changed 0), so no indicator reaches 3:1."}
-{"id": "q30", "verdict": "fail", "confidence": 0.9, "rationale": "Nothing changes when the Cart link takes focus (changed 0), so no indicator reaches 3:1."}
-{"id": "q31", "verdict": "pass", "confidence": 0.85, "rationale": "584 of 682 changed px are at 3:1 or more, far more than a 1 px outline (106 px), so the focus indicator is clearly visible."}
+{"id": "q13", "verdict": "fail", "confidence": 0.9, "rationale": "The Account menu, the Fern tile and the Cactus button respond to the mouse but cannot take keyboard focus."}
+{"id": "q14", "verdict": "fail", "confidence": 0.8, "rationale": "The Account menu span has a click handler but cannot take focus, and no other stop in the walk offers an account control."}
+{"id": "q15", "verdict": "fail", "confidence": 0.9, "rationale": "The Cactus tile has role button but never takes keyboard focus."}
+{"id": "q16", "verdict": "fail", "confidence": 0.85, "rationale": "Focus starts on 'Seeds and bulbs: all offers' near the bottom of main, then jumps to the header navigation and back up into main, which does not follow reading order."}
+{"id": "q17", "verdict": "fail", "confidence": 0.9, "rationale": "At stop 2 (Home) nothing changes on focus (changesOnFocus is empty), so focus is invisible."}
+{"id": "q18", "verdict": "fail", "confidence": 0.9, "rationale": "At stop 3 (Products) nothing changes on focus, so focus is invisible."}
+{"id": "q19", "verdict": "fail", "confidence": 0.9, "rationale": "At stop 4 (Cart) nothing changes on focus, so focus is invisible."}
+{"id": "q20", "verdict": "pass", "confidence": 0.85, "rationale": "At stop 5 (Help) the background, text colour and underline change on focus, giving a visible indicator."}
+{"id": "q21", "verdict": "fail", "confidence": 0.9, "rationale": "The Home, Products and Cart links show no change on focus, and two links take focus entirely covered by the sticky header."}
+{"id": "q22", "verdict": "fail", "confidence": 0.9, "rationale": "Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1, entirely hidden behind the sticky header."}
+{"id": "q23", "verdict": "fail", "confidence": 0.9, "rationale": "Stops 6 and 7 are entirely covered (coveredShare 1) by the sticky header while focused, so part of them is certainly hidden."}
+{"id": "q24", "verdict": "fail", "confidence": 0.9, "rationale": "Stop 2 (Home) changes nothing on focus: atContrast 0 against 244 needed, meets false."}
+{"id": "q25", "verdict": "fail", "confidence": 0.9, "rationale": "Stop 3 (Products) changes nothing on focus: atContrast 0 against 336 needed, meets false."}
+{"id": "q26", "verdict": "fail", "confidence": 0.9, "rationale": "Stop 4 (Cart) changes nothing on focus: atContrast 0 against 192 needed, meets false."}
+{"id": "q27", "verdict": "pass", "confidence": 0.85, "rationale": "Stop 5 (Help) changes 584 pixels at 3:1 or more against 204 needed, so meets is true."}
+{"id": "q28", "verdict": "fail", "confidence": 0.9, "rationale": "Stop 2 (Home) has no change on focus, so there is no indicator meeting 3:1."}
+{"id": "q29", "verdict": "fail", "confidence": 0.9, "rationale": "Stop 3 (Products) has no change on focus, so there is no indicator meeting 3:1."}
+{"id": "q30", "verdict": "fail", "confidence": 0.9, "rationale": "Stop 4 (Cart) has no change on focus, so there is no indicator meeting 3:1."}
+{"id": "q31", "verdict": "pass", "confidence": 0.85, "rationale": "Stop 5 (Help) changes 682 pixels on focus, 584 of them at 3:1, far more than a 1px line (106), so the indicator is clearly visible."}
+{"id": "q32", "verdict": "pass", "confidence": 0.7, "rationale": "'Demo Shop' is the site name in the header followed by navigation, not a title for following text."}
+{"id": "q33", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
+{"id": "q34", "verdict": "fail", "confidence": 0.9, "rationale": "The Size guide dialog's only close control is a non-focusable span and Escape does not close it, so a keyboard user cannot close it."}
+{"id": "q35", "verdict": "fail", "confidence": 0.75, "rationale": "When the Size guide modal opens, focus stays on the link instead of moving into the dialog, and after reaching it Tab leaves the modal, so the modal does not keep focus."}
+{"id": "q36", "verdict": "pass", "confidence": 0.75, "rationale": "Every Tab stop shows an outline change on focus and none is hidden or loses focus."}

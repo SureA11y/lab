@@ -26,7 +26,7 @@ a key, or a model the lab has no provider for.
 
 ## The demo (2026-11-25)
 
-[examples/demo-site/ai/](../../../examples/demo-site/ai/): two pages of the
+[examples/demo-site/ai/](../../../examples/demo-site/ai/): three pages of the
 demo shop built to make the scan ask every question the AI answers, each with
 its correct answer and why in `expected.json`.
 
@@ -34,12 +34,17 @@ its correct answer and why in `expected.json`.
 | --- | --- |
 | `reading.html` | Page title, alt text (a file name, a good one), images hidden as decorative (a "−50%" badge, a divider), a bold paragraph as heading (and the site name that is not one), "Learn more" alone, fields labelled only by `title` or `placeholder` |
 | `focus.html` (WCAG 2.2 AAA) | Focus visible (page and per link), focus appearance and non-text contrast (1.4.11) per link, a link whose outline is removed but which shows focus from a script (all three pass), focus order (a `tabindex="1"` link far down comes first), keyboard (page, a clickable menu, a `role="button"` tile), focus not obscured per sticky box (the sticky header hides two links once the page has scrolled) |
+| `dialog.html` (`open: true`, added 2026-11-26) | Keyboard and focus order from the open walk: a modal "Size guide" dialog a keyboard user cannot close (its close control is a span, Escape does nothing) and that does not take focus; a working disclosure beside it; the site name and the title |
 
-**Result:** 31 questions, 31 answered, **31 agree**; no "pass" where the answer
-is "fail", none the other way (a first run on the 25 questions before 1.4.11
-and the Help link was added also agreed on all). The model: Claude, run as a
+**Result:** 36 questions, 36 answered, **36 agree**; no "pass" where the answer
+is "fail", none the other way (earlier runs, on 25 questions before 1.4.11 and
+the Help link and on 31 before the dialog page, also agreed on all). On the
+dialog page the model failed keyboard because "the dialog's only close control
+is a non-focusable span and Escape does not close it", and focus order because
+"focus stays on the link instead of moving into the dialog": the open walk's
+evidence, read as intended. The model: Claude, run as a
 separate agent that saw only the prompts file. The files:
-[demo/questions.jsonl](demo/questions.jsonl) (the 31 prompts as the lab writes
+[demo/questions.jsonl](demo/questions.jsonl) (the 36 prompts as the lab writes
 them), [demo/answers.jsonl](demo/answers.jsonl)
 (its answers, with confidence and reasoning) and [demo/score.txt](demo/score.txt).
 
