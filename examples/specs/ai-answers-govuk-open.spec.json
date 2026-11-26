@@ -1,0 +1,209 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-lightbox-close-button-doesnt-receive-focus.html",
+  "scenarioName": "AI answers on the GOV.UK audit keyboard pages, with menus and dialogs opened",
+  "actions": [
+    {
+      "type": "a11yScan",
+      "label": "lightbox-close-button-doesnt-receive-focus",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-lightbox-esc-key-doesnt-close-the-lightbox.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "lightbox-esc-key-doesnt-close-the-lightbox",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-lightbox-focus-is-not-moved-immediately-to-lightbox.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "lightbox-focus-is-not-moved-immediately-to-lightbox",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-lightbox-focus-is-not-retained-within-the-lightbox.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "lightbox-focus-is-not-retained-within-the-lightbox",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-link-with-a-rolebutton-does-not-work-with-space-bar.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "link-with-a-rolebutton-does-not-work-with-space-bar",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-fake-button-is-not-keyboard-accessible.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "fake-button-is-not-keyboard-accessible",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-concertina-items-dont-get-keyboard-focus.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "concertina-items-dont-get-keyboard-focus",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-tooltips-dont-receive-keyboard-focus.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "tooltips-dont-receive-keyboard-focus",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-dropdown-navigation-only-the-top-level-items-receive-focus.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "dropdown-navigation-only-the-top-level-items-receive-focus",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/example-pages/keyboardtrap.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "keyboardtrap",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-focus-order-in-wrong-order.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "focus-order-in-wrong-order",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://alphagov.github.io/accessibility-tool-audit/tests/keyboard-access-tabindex-greater-than-0.html"
+    },
+    {
+      "type": "a11yScan",
+      "label": "tabindex-greater-than-0",
+      "ai": {
+        "focus": true,
+        "open": true,
+        "focusStops": 60,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    }
+  ]
+}
