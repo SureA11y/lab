@@ -191,6 +191,36 @@ function unreachableText(u) {
     return (u.role || u.tag) + (u.name ? ' “' + u.name + '”' : '') + ' (' + u.selector + ', at ' + u.x + ', ' + u.y + '): ' + u.why + '.';
 }
 
+// What the open walk saw for one control it pressed, in a sentence.
+function openedText(c) {
+    const who = (c.role || c.tag) + (c.name ? ' “' + c.name + '”' : '');
+    if (c.skipped) return who + ': could not take focus, not pressed.';
+    const parts = [];
+    if (!c.activated) {
+        parts.push(c.key + ' did nothing');
+        if (c.enter) parts.push(c.enter.activated ? 'Enter worked' : 'Enter did nothing too');
+    } else parts.push(c.key + ' worked');
+    const leave = (c.enter && c.enter.wouldLeave) || c.wouldLeave;
+    if (leave && leave.length) parts.push('it would go to ' + leave[0] + ' (stopped)');
+    if (c.opened) {
+        const o = c.opened;
+        parts.push('opened ' + (o.dialog ? 'a dialog' : 'content') + ' with ' + o.focusable + ' control' + (o.focusable === 1 ? '' : 's') + ' that can take focus');
+        parts.push('focus then ' + ({ control: 'stayed on the control', inside: 'moved into it', nowhere: 'went nowhere', elsewhere: 'went elsewhere' }[c.focusAfter] || 'unknown'));
+        if (c.tabs) parts.push(c.tabs.reachedInside ? 'Tab reached into it after ' + c.tabs.reachedInside + (c.tabs.leftAfter ? ' and left it after ' + c.tabs.leftAfter + ' (to ' + ({ control: 'the control', elsewhere: 'the page behind', nowhere: 'outside the page' }[c.tabs.leftTo] || c.tabs.leftTo) + ')' : ' and stayed in it') : 'Tab never reached into it');
+        parts.push(o.close ? 'its close control “' + o.close.name + '” ' + (o.close.focusable ? 'can' : 'cannot') + ' take focus' : 'no close control found');
+        parts.push('Escape ' + (c.escapeCloses ? 'closed it' : 'did not close it'));
+    } else if (c.activated && c.expanded && c.expanded[0] !== c.expanded[1]) parts.push('aria-expanded went from ' + c.expanded[0] + ' to ' + c.expanded[1] + ', nothing new showed');
+    return who + ' (' + c.why + '): ' + parts.join('; ') + '.';
+}
+
+function openedHtml(walk, { escapeHtml }) {
+    const o = walk && walk.opened;
+    if (!o || !Array.isArray(o.controls)) return '';
+    const head = 'Controls that open something, pressed (' + o.tried + (o.total > o.controls.length ? ' of ' + o.total : '') + ')' + (o.leftChanged ? '; the page was left changed (' + o.leftChanged.join(', ') + ')' : '') + ':';
+    return '<p class="air-hint"><strong>' + escapeHtml(head) + '</strong></p>' +
+        (o.controls.length ? '<ul class="air-unreachable">' + o.controls.map((c) => '<li>' + escapeHtml(openedText(c)) + '</li>').join('') + '</ul>' : '<p class="air-hint">' + escapeHtml('None found.') + '</p>');
+}
+
 // Where a stop is: its landmark and the heading it comes under.
 function stopPlace(s) {
     return [s.landmark ? 'in ' + s.landmark : '', s.heading ? 'under ' + s.heading : ''].filter(Boolean).join(', ');
@@ -250,7 +280,7 @@ export function focusWalkHtml(walk, { escapeHtml, escapeAttr = escapeHtml }) {
     }).join('');
     return '<p class="air-hint">' + escapeHtml(stops.length + ' stop' + (stops.length === 1 ? '' : 's') + ' with Tab from the top of the page. ' + focusWalkEnd(walk)) + '</p>' +
         focusMapHtml(walk, { escapeHtml, escapeAttr }) +
-        '<ol class="air-stops">' + items + '</ol>' + unreachableHtml(walk, { escapeHtml });
+        '<ol class="air-stops">' + items + '</ol>' + unreachableHtml(walk, { escapeHtml }) + openedHtml(walk, { escapeHtml });
 }
 
 // The controls Tab never reached, under the stops; nothing when none were found.
@@ -467,9 +497,15 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
                 : un.items.length ? un.items.map((u) => escapeHtml(unreachableText(u))).join('<br>') + (un.total > un.items.length ? '<br>' + escapeHtml('and ' + (un.total - un.items.length) + ' more') : '')
                     : '<span class="air-none">(none found)</span>');
             if (walk.ended === 'came-back') add('Focus trap?', escapeHtml(focusWalkEnd(walk)));
-            add('Still to check by hand', escapeHtml('Use each control with Enter, Space and the arrow keys; open and close menus and dialogs. The walk only pressed Tab.'));
+            const opened = walk.opened && Array.isArray(walk.opened.controls) ? walk.opened.controls : null;
+            if (opened) add('Pressed, of what opens something', opened.length ? opened.map((c) => escapeHtml(openedText(c))).join('<br>') : '<span class="air-none">(none found)</span>');
+            add('Still to check by hand', escapeHtml(opened
+                ? 'Use the other controls with Enter, Space and the arrow keys (only controls that say they open something were pressed).'
+                : 'Use each control with Enter, Space and the arrow keys; open and close menus and dialogs. The walk only pressed Tab.'));
         } else if (check === 'focus-order') {
             add('Order', stops.slice(0, 25).map((s) => escapeHtml(s.n + '. ' + stopName(s) + (stopPlace(s) ? ', ' + stopPlace(s) : '') + ' (' + s.x + ', ' + s.y + ')')).join('<br>') + (stops.length > 25 ? '<br>…' : ''));
+            const opened = walk.opened && Array.isArray(walk.opened.controls) ? walk.opened.controls.filter((c) => c.opened) : [];
+            if (opened.length) add('Focus in what opened', opened.map((c) => escapeHtml(openedText(c))).join('<br>'));
         } else if (check === 'focus-appearance') {
             const measured = stops.filter((s) => s.appearance && typeof s.appearance.meets === 'boolean');
             const short = measured.filter((s) => !s.appearance.meets);

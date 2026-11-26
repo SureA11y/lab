@@ -11,7 +11,9 @@
 // colours), so a transparent spacer reads as one. registry-6: the focus order
 // question judges the order only; keyboard is asked on a page Tab reaches
 // nothing on.
-const PROMPT_VERSION = 'registry-6';
+// registry-7: with the open walk (`open: true`), the keyboard and focus order
+// questions also see what each control that opens something did.
+const PROMPT_VERSION = 'registry-7';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -52,14 +54,14 @@ const PAGE_LEVEL = Object.freeze({
     },
     'wcag-2.4.3-focus-order': {
         check: 'focus-order',
-        question: 'Judge the order only (other criteria cover controls Tab cannot reach and focus that cannot be seen): does focus move through this page in an order that keeps its meaning and use, broadly following the order the page reads in? The focus walk lists every stop in order, with its position (x, y in pixels from the top left of the page), its landmark (header, navigation, main, footer...) and the heading it comes under.',
+        question: 'Judge the order only (other criteria cover controls Tab cannot reach and focus that cannot be seen): does focus move through this page in an order that keeps its meaning and use, broadly following the order the page reads in? The focus walk lists every stop in order, with its position (x, y in pixels from the top left of the page), its landmark (header, navigation, main, footer...) and the heading it comes under. When the walk has `opened`, each control that says it opens something was pressed: `focusAfter` says where focus was just after (still on the control, inside what opened, nowhere), `tabs.reachedInside` after how many Tab presses focus got into what opened, and `tabs.leftAfter` and `leftTo` whether it then left (to the page behind, the control, or out of the page). What opens over the page (a lightbox, a dialog) should take focus or come next in the order, and a modal one should keep focus until it is closed; a menu or a section that opens in place may leave focus on its control.',
         evidence: ['focusWalk'],
     },
     // Reaching is not operating: the walk never presses Enter or Space, so the
     // AI may find a fail here but never a pass (passAllowed: false).
     'wcag-2.1.1-keyboard': {
         check: 'keyboard',
-        question: 'Can a keyboard user reach every control a mouse user can use on this page? The focus walk lists every stop reached with Tab, and `unreachable` lists what looks usable by mouse (a control role, a click attribute, a pointer cursor, or a link, button or field taken out of the Tab order) but can never take focus. A walk that came back to an earlier stop may be a keyboard trap. A stop with `lostFocus` (also in `unreachable`) took focus and the page gave it up at once: a keyboard user cannot rest on it or use it. Only reaching was checked, not operating: answer "fail" when a control is clearly out of reach (or focus is trapped), otherwise "unsure". Do not answer "pass".',
+        question: 'Can a keyboard user reach every control a mouse user can use on this page? The focus walk lists every stop reached with Tab, and `unreachable` lists what looks usable by mouse (a control role, a click attribute, a pointer cursor, or a link, button or field taken out of the Tab order) but can never take focus. A walk that came back to an earlier stop may be a keyboard trap. A stop with `lostFocus` (also in `unreachable`) took focus and the page gave it up at once: a keyboard user cannot rest on it or use it. Only reaching was checked, not operating: answer "fail" when a control is clearly out of reach (or focus is trapped), otherwise "unsure". Do not answer "pass". When the walk has `opened`, each control that says it opens something on the page was also pressed with its key (Enter; Space for a link with role=button, then Enter if Space did nothing, in `enter`): `activated` says whether anything happened, `opened` what appeared (how many elements can take focus, its close control and whether that can take focus), `tabs` whether Tab reached into it, `escapeCloses` whether Escape closed it. Fail when such a control does nothing with the keyboard, or when what it opens cannot be closed with the keyboard (its close control cannot take focus and Escape does not close it), or its controls cannot be reached. A link with role=button that works with Enter but not Space is still usable by keyboard (it misbehaves as a button, which is 4.1.2, not asked here).',
         evidence: ['focusWalk'],
         passAllowed: false,
     },

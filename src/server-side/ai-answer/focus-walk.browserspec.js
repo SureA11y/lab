@@ -252,3 +252,89 @@ test('a page Tab reaches nothing on is still asked about the keyboard, from what
     assert.equal(order.reason, 'no-focus-stops');
     await page.close();
 });
+
+// The open walk (open-walk.js): what says it opens something is pressed, and
+// nothing else; nothing leaves the page; what opened is closed again.
+const { openWalk } = require('./open-walk');
+
+const OPENING = `<title>Shop</title>
+<a href="#" id="lb">Open lightbox</a>
+<button type="button" id="more" aria-expanded="false" aria-controls="sec">More</button>
+<section id="sec" hidden><a href="#a">Inside</a></section>
+<button type="button" id="del">Delete</button>
+<form id="f" action="https://example.invalid/send"><button id="send">Send</button></form>
+<a href="https://example.invalid/next" role="button" id="cont">Continue</a>
+<a href="https://example.invalid/away" id="away">Away</a>
+<div id="box" hidden><p>Offer</p><span class="x">X</span><a href="#b">Read the offer</a></div>
+<script>
+window.pressed = [];
+document.getElementById('lb').addEventListener('click', () => { document.getElementById('box').hidden = false; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.getElementById('box').hidden = true; });
+document.querySelector('.x').addEventListener('click', () => { document.getElementById('box').hidden = true; });
+const more = document.getElementById('more');
+more.addEventListener('click', () => { const open = more.getAttribute('aria-expanded') === 'true'; more.setAttribute('aria-expanded', String(!open)); document.getElementById('sec').hidden = open; });
+document.getElementById('del').addEventListener('click', () => window.pressed.push('delete'));
+document.getElementById('f').addEventListener('submit', () => window.pressed.push('send'));
+</script>`;
+
+test('the open walk presses only what says it opens something, and puts the page back', async () => {
+    const page = await open(OPENING);
+    const url = page.url();
+    const before = await fingerprint(page);
+    const o = await openWalk(page, { settleMs: 60 });
+    const after = await fingerprint(page);
+    assert.ok(sameFingerprint(before, after), 'the page is as it was: ' + JSON.stringify([before, after]));
+    assert.equal(page.url(), url, 'nothing left the page');
+    assert.deepEqual(await page.evaluate(() => window.pressed), [], 'not the plain button, not the form');
+    assert.deepEqual(o.controls.map((c) => [c.name, c.why]), [['Open lightbox', 'link to #'], ['More', 'aria-expanded'], ['Continue', 'role=button']]);
+
+    const [lb, more, cont] = o.controls;
+    assert.equal(lb.activated, true);
+    assert.equal(lb.focusAfter, 'control', 'focus stayed on the link');
+    assert.equal(lb.opened.focusable, 1);
+    assert.deepEqual(lb.opened.close, { name: 'X', tag: 'span', focusable: false });
+    assert.equal(lb.escapeCloses, true);
+    assert.equal(lb.tabs.reachedInside > 0, true);
+
+    assert.deepEqual(more.expanded, ['false', 'true']);
+    assert.equal(more.escapeCloses, false, 'Escape does not close a section that opens in place');
+    assert.equal(more.closedAfter, true, 'pressed again to close it');
+
+    assert.equal(cont.key, 'Space');
+    assert.equal(cont.activated, false, 'Space does nothing on a link');
+    assert.equal(cont.enter.activated, true, 'Enter works');
+    assert.deepEqual(cont.enter.wouldLeave, ['https://example.invalid/next'], 'and would leave, stopped');
+    assert.equal(o.restored, true);
+    assert.equal(await page.evaluate(() => typeof window.__a11yOpenWalk), 'undefined', 'no trace left');
+    await page.close();
+});
+
+test('a script that navigates while the open walk runs is stopped', async () => {
+    const page = await open(`<title>Shop</title><a href="#" id="go" aria-haspopup="true">Menu</a>
+<script>document.getElementById('go').addEventListener('click', () => { location.href = 'https://example.invalid/elsewhere'; });</script>`);
+    const url = page.url();
+    const o = await openWalk(page, { settleMs: 100 });
+    assert.equal(page.url(), url);
+    assert.deepEqual(o.controls[0].wouldLeave, ['https://example.invalid/elsewhere']);
+    assert.equal(o.controls[0].activated, true);
+    await page.close();
+});
+
+test('with open on, the keyboard and focus order questions see what was opened', async () => {
+    const page = await open(OPENING);
+    const prompts = [];
+    const provider = { name: 'test', ask: async (p) => { prompts.push(p); return '{"verdict":"fail","confidence":0.9,"rationale":"The close control cannot take focus."}'; } };
+    const c = canonical();
+    const s = await answerCantTells({ page, canonical: c, options: { focus: true, open: true }, provider, env: {} });
+    assert.deepEqual([s.focusWalk.opened.tried, s.focusWalk.opened.leftChanged], [3, undefined]);
+    const keyboard = c.findings[2].occurrences[0].ai;
+    assert.equal(keyboard.evidence.focusWalk.opened.controls.length, 3);
+    assert.deepEqual(keyboard.steps.map((x) => x.action), ['tab', 'open']);
+    assert.match(prompts.find((p) => /Do not answer "pass"/.test(p)), /"opened"/);
+    assert.deepEqual(await page.evaluate(() => window.pressed), []);
+
+    const off = canonical();
+    await answerCantTells({ page, canonical: off, options: { focus: true }, provider, env: {} });
+    assert.equal(off.findings[2].occurrences[0].ai.evidence.focusWalk.opened, undefined, 'nothing is pressed unless asked');
+    await page.close();
+});

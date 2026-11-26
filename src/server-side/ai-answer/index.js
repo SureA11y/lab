@@ -17,6 +17,7 @@ const { resolveProvider, QUESTION_VERSION } = require('./provider');
 const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
 const { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskDeep, withoutPictures } = require('./outgoing');
 const { walkFocus, walkFactsFor } = require('./focus-walk');
+const { openWalk } = require('./open-walk');
 const { withRuntimeKey } = require('./runtime-key');
 
 const DEFAULTS = { maxCalls: 10, seconds: 60, minConfidence: 0.6 };
@@ -237,6 +238,19 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 });
                 afterWalk = await fingerprint(page);
                 summary.focusWalk = { stops: walk.stops.length, ended: walk.ended, restored: walk.restored, ...(walk.error ? { error: walk.error } : {}) };
+                // The open walk (`open: true`): it operates the page, so only
+                // when asked, after the focus walk was checked, and with its
+                // own check. What it saw came from the page as scanned, so it
+                // stays evidence; a page it could not put back is said.
+                if (opt.open === true && walk.restored && walk.stops.length) {
+                    walk.opened = await openWalk(page, { maxControls: Number(opt.openControls) > 0 ? Math.min(Number(opt.openControls), 50) : undefined });
+                    const afterOpen = await fingerprint(page);
+                    if (afterWalk && afterOpen && !sameFingerprint(afterWalk, afterOpen)) {
+                        walk.opened.leftChanged = Object.keys(afterOpen).filter((k) => JSON.stringify(afterOpen[k]) !== JSON.stringify(afterWalk[k]));
+                        log('warning', `Opening the page's menus and dialogs left it changed (${walk.opened.leftChanged.join(', ')}): what was seen is kept, but the next steps may meet a different page`);
+                    }
+                    summary.focusWalk.opened = { tried: walk.opened.tried, total: walk.opened.total, ...(walk.opened.leftChanged ? { leftChanged: walk.opened.leftChanged } : {}), ...(walk.opened.error ? { error: walk.opened.error } : {}) };
+                }
             }
             // An element question: the walk, and what it saw of that element.
             const evidence = entry.tier === 1
@@ -253,7 +267,7 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 // An element question is the element's, as any other.
                 ...(entry.tier === 1 && !entry.element ? { page: pageUrl } : {}),
             };
-            const key = JSON.stringify([entry.check, evidence.element, evidence.context, evidence.pageTitle, evidence.image, evidence.focusWalk ? withoutPictures(evidence.focusWalk.stops) : null, evidence.target || null, entry.element ? occurrence.target : null]);
+            const key = JSON.stringify([entry.check, evidence.element, evidence.context, evidence.pageTitle, evidence.image, evidence.focusWalk ? withoutPictures(evidence.focusWalk.stops) : null, evidence.focusWalk ? evidence.focusWalk.opened || null : null, evidence.target || null, entry.element ? occurrence.target : null]);
             let ai;
             if (shared.cache.has(key)) {
                 ai = { ...shared.cache.get(key), reused: true };
@@ -280,7 +294,8 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 shared.cache.set(key, ai);
             }
             ai.steps = entry.tier === 1
-                ? [{ action: 'tab', tier: 1, presses: walk ? walk.stops.length : 0, result: walk ? walk.ended : null }]
+                ? [{ action: 'tab', tier: 1, presses: walk ? walk.stops.length : 0, result: walk ? walk.ended : null },
+                    ...(walk && walk.opened ? [{ action: 'open', tier: 1, pressed: walk.opened.tried, result: walk.opened.leftChanged ? 'left-changed' : 'put-back' }] : [])]
                 : [{ action: 'read', tier: 0, target: (occurrence.target && occurrence.target[0]) || null, result: Object.keys(evidence) }];
             results.push({ occurrence, ai, tier: entry.tier });
         }
