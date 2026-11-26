@@ -10,6 +10,12 @@ reading.html  area-alt-quality                          #area-shed              
 reading.html  input-image-alt-quality                   #check-good                         pass     pass                    agrees
 reading.html  input-image-alt-quality                   #check-file                         fail     fail                    agrees
 reading.html  input-image-alt-decorative                #check-label                        fail     fail                    agrees
+reading.html  object-text-alternative-quality           #object-sales                       pass     pass                    agrees
+reading.html  embed-text-alternative-quality            #embed-plan                         fail     fail                    agrees
+reading.html  canvas-text-alternative-quality           #canvas-weather                     fail     fail                    agrees
+reading.html  img-alt-quality                           #cart-icon                          pass     pass                    agrees
+reading.html  image-redundant-alt                       #cart-icon                          fail     fail                    agrees
+reading.html  video-poster-text-alternative-present     #video-pruning                      pass     pass                    agrees
 reading.html  svg-text-alternative-quality              #svg-search                         pass     pass                    agrees
 reading.html  svg-text-alternative-quality              #svg-share                          fail     fail                    agrees
 reading.html  p-as-heading                              html > body > main > p:nth-of-typ…  fail     fail                    agrees
@@ -44,4 +50,4 @@ dialog.html   keyboard                                  html                    
 dialog.html   focus-order                               html                                fail     fail                    agrees
 dialog.html   focus-visible                             html                                pass     pass                    agrees
 
-44 questions: 44 answered by the AI, 44 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+50 questions: 50 answered by the AI, 50 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.

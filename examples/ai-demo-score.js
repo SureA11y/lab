@@ -29,7 +29,8 @@ const { answers } = JSON.parse(fs.readFileSync(path.join(__dirname, 'demo-site',
 const found = new Map();
 for (const scan of payload.scans || []) {
     const page = String(scan.url || '').replace(/^https?:\/\/[^/]+\//, '');
-    for (const f of (scan.canonical && scan.canonical.findings) || []) {
+    // Best-practice findings (includeBestPractice) are asked too.
+    for (const f of [...((scan.canonical && scan.canonical.findings) || []), ...((scan.canonical && scan.canonical.bestPractices) || [])]) {
         if (f.outcome !== 'cantTell') continue;
         for (const o of f.occurrences || []) {
             if (!o.ai) continue;
