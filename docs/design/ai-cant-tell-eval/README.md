@@ -657,3 +657,36 @@ an image; a canvas is read from its own pixels.
   before and after the repair, each named by the text "AU Video" just before
   it (pass, a styled div and an h2): **4 of 4**, for the right reasons
   ([media-alt/](media-alt/)). Too few to trust these checks yet.
+
+## Names and labels (2026-11-26)
+
+The roadmap's second family (`registry-11`): `heading-quality`,
+`form-control-label-quality`, `label-in-name`, `control-name-title-only`,
+`link-name-quality-link-only`, `identical-links-same-purpose`,
+`identical-iframes-same-purpose`, `landmark-unique`. Their key facts are what
+the checker itself reports for each occurrence (the fields sharing a label,
+where same-named links go, the other landmarks), which never reached the
+model: questions can now ask for it (`reported`).
+
+- **Demo:** a page of its own, `labels.html` (AAA profile, best practices
+  on), 14 cases. The whole demo: **64 of 64**.
+- **Real pages:** scanned with the AAA profile and best practices: GOV.UK's
+  pages for these problems, the W3C demo, UW, three W3C pages. 24 questions
+  in four checks, labelled before any answer
+  ([names-labels/](names-labels/), `labels.json` by question):
+
+  | Check | Cases | Agree |
+  | --- | --- | --- |
+  | `form-control-label-quality` (GOV.UK: two fields "Name") | 2 | 2 |
+  | `identical-links-same-purpose` (GOV.UK "lions", W3C "read more...", UW "click here") | 7 | 7 |
+  | `landmark-unique` (the WAI forms tutorial: 14 unnamed asides) | 14 | 14 |
+  | `link-name-quality-link-only` (UW's "Info" link) | 1 | 0 |
+
+  The one difference is a reading: "Details about all known issues are on
+  the Info page", where "Info" is the page's name in the site's navigation.
+  Labelled pass (the text names the page it leads to); the model failed it
+  at 0.6 ("out of context, 'Info' does not say what information"), a
+  defensible reading of 2.4.9 (AAA). Kept for a person to settle. The 14
+  landmark cases are one problem on one page, so they weigh less than
+  their count. Headings, label in name, frames and title-only names had no
+  real case here.

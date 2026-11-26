@@ -25,8 +25,9 @@ Read, in this order:
 Everything is committed and pushed (latest: **phase 1, step 1 under way**: the
 AI answers every text alternative check (SVG, image map areas, image
 buttons, object, embed, canvas, video posters, redundant alt), with the
-evidence they need, demo 50 of 50, prompt version `registry-10`;
-best-practice findings are asked too; before
+evidence they need, and the names and labels with what the checker
+reported; demo 64 of 64, prompt version `registry-11`; best-practice
+findings are asked too; before
 that the **roadmap** and the **inventory** of every engine check that can end
 in "can't tell", with a test that keeps it in step with the engine and the
 registry; and the **open walk**, an opt-in
@@ -36,11 +37,11 @@ evaluated on the GOV.UK keyboard pages, the demo's `dialog.html` (a dialog a
 keyboard user cannot close) and the W3C ARIA Authoring Practices examples
 (working widgets: no wrong fail); the walks now judged by what the page
 shows, not its markup). The full suite (4491 pass, 5 skipped) and the
-browser tests (`focus-walk` 16, `ai-answer` 8, `app-boot`) pass.
+browser tests (`focus-walk` 16, `ai-answer` 9, `app-boot`) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
-AI for every "can't tell" from the rules: 21 of 132 checks are answered
-today; next the 25 remaining `read` checks (questions like today's: text
+AI for every "can't tell" from the rules: 29 of 132 checks are answered
+today; next the 17 remaining `read` checks (questions like today's: text
 alternatives, headings and labels, label in name, tables and structure), then
 the browser's accessibility tree for 23 "name present" checks, the walks,
 measurements, pictures and media. Phase 2 (criteria no rule can automate)
@@ -54,11 +55,16 @@ the user guide). Done so far (2026-11-26): `svg-text-alternative-quality`
 real case 1 of 1), `object-`, `embed-`, `canvas-text-alternative-quality`,
 `image-redundant-alt`, `video-poster-text-alternative-present` (demo 6 of 6,
 4 real cases 4 of 4): the text alternatives are done. Best-practice findings
-are now asked too (they were never read). Next: names and labels
-(`heading-quality`, `form-control-label-quality`, `label-in-name`,
-`control-name-title-only`, `link-name-quality-link-only`,
-`identical-links-same-purpose`, `identical-iframes-same-purpose`,
-`landmark-unique`). Items 1
+are now asked too (they were never read). Then the names and labels (8
+checks, with what the checker reported, `reported`; demo page `labels.html`,
+14 of 14; 24 real cases 23 of 24, the difference a reading of 2.4.9 for a
+person to settle). Next: structure (`form-group-name-present`,
+`form-control-single-label`, `table-fake-caption`, `td-has-header`,
+`table-th-has-data-cells`, `empty-table-header`, `heading-order`,
+`bypass-blocks-present`, `page-zones-landmark`, `region`,
+`focus-order-semantics`, `presentation-role-conflict`, `accesskeys`), then
+"is it text" (`contrast-minimum`, `contrast-enhanced`,
+`symbol-graphic-contrast`, `css-orientation-lock`). Items 1
 to 3 below need the user.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
@@ -123,12 +129,12 @@ to 3 below need the user.
 - **The demo:** `examples/demo-site/ai/` (`reading.html`, `focus.html`,
   `dialog.html` for the open walk),
   `examples/specs/ai-answers.spec.json`, the correct answers in
-  `expected.json`, `examples/ai-demo-score.js`. 50 questions, including a Help
+  `expected.json`, `examples/ai-demo-score.js`. 64 questions, including a Help
   link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13 pass) and a
   modal dialog a keyboard user cannot close (keyboard and focus order fail,
   found by the open walk).
   Evaluated blind, a model answering the lab's exact prompts outside the lab
-  (`ai-cant-tell-spike/answer-offline.js`): **50 of 50**
+  (`ai-cant-tell-spike/answer-offline.js`): **64 of 64**
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
 - **Real sites,** built with documented accessibility problems (the WAI
@@ -226,7 +232,7 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
 4. **Phase 1, step 1: the `read` checks** (34; 25 left)
    (`ai-cant-tell-roadmap.md`, listed under `read` in
    `ai-cant-tell-inventory.md`). One family at a time, in this order: text
-   alternatives (all 9 done 2026-11-26), names and labels (`heading-quality`,
+   alternatives (all 9 done 2026-11-26), names and labels (all 8 done, `heading-quality`,
    `form-control-label-quality`, `label-in-name`, ...), structure (tables,
    form groups, heading order, regions), then "is it text" (symbols below the
    contrast ratio). For each check: read its reasons in the engine
