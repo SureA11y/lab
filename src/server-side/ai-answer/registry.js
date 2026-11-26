@@ -15,7 +15,10 @@
 // questions also see what each control that opens something did.
 // registry-8: the SVG text alternative question (svg-text-alternative-quality),
 // with what an inline SVG draws (image.svg).
-const PROMPT_VERSION = 'registry-8';
+// registry-9: image map areas and image buttons (area-alt-quality,
+// input-image-alt-quality, input-image-alt-decorative), with the picture
+// behind them.
+const PROMPT_VERSION = 'registry-9';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -36,6 +39,18 @@ const ANSWERABLE = Object.freeze({
     },
     'svg-text-alternative-quality': {
         question: "Is this SVG's text alternative accurate for what the graphic shows, in its context? Its name comes from aria-label, aria-labelledby or its <title>; a <desc> adds a description. When the SVG is the only content of a link or button, its name is the control's name and should say what the control does. `image.svg` gives its title, desc, the symbols it draws (`uses`, such as an icon sprite's \"#icon-search\"), its classes, any text in it, and its markup with the path data left out. A name left over from a drawing tool or an export (\"Layer 1\", \"Created with Sketch.\"), a file name or a placeholder fails.",
+        evidence: ['element', 'context', 'image'],
+    },
+    'area-alt-quality': {
+        question: "This is a link drawn as an area of an image map. Does its text alternative (alt, aria-label or title) say where the link leads, for the part of the picture it covers? `image.area` gives its shape and coordinates on the picture, its href, its alt, title and aria-label, and the map's other areas; `image` is the picture it is part of (its alt, what it shows, and for an SVG its source). A file name, a placeholder (\"Area 2\") or a name that does not match that part of the picture fails.",
+        evidence: ['element', 'context', 'image'],
+    },
+    'input-image-alt-quality': {
+        question: "This is a button drawn as an image (input type=\"image\"). Does its text alternative say what the button does, in its form? `image` is the button's picture (what it shows, and for an SVG its source, which may hold its visible text). A file name, a web address, a placeholder or a name that only describes the picture (\"green arrow\") fails.",
+        evidence: ['element', 'context', 'image'],
+    },
+    'input-image-alt-decorative': {
+        question: "This image button has alt=\"\" but takes its name from aria-label, aria-labelledby or title. That is fine when the name says what the button does. Does it, in its form? `image` is the button's picture. A file name, a placeholder (\"button\", \"image\") or a name that only describes the picture fails.",
         evidence: ['element', 'context', 'image'],
     },
     'link-name-quality': {

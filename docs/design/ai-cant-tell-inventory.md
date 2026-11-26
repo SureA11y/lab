@@ -8,8 +8,8 @@ page by hand.
 
 | Lane | What settles it | Checks |
 | --- | --- | --- |
-| `answered` | The AI answers it today | 13 |
-| `read` | The AI, from the element and the text around it, as today | 33 |
+| `answered` | The AI answers it today | 16 |
+| `read` | The AI, from the element and the text around it, as today | 30 |
 | `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 12 |
 | `tree` | The browser's own accessibility tree (no model needed) | 23 |
 | `measure` | A measurement by the lab, then the AI or a person for what is left | 9 |
@@ -23,6 +23,7 @@ page by hand.
 
 | Check | SC | Kind | Can't-tell reasons | Note |
 | --- | --- | --- | --- | --- |
+| `area-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with the map's picture, the area's place on it and the other areas (image.area) |
 | `click-handler-keyboard-operable` | 2.1.1, 2.1.3 | automatic | `CLICK_HANDLER_NO_KEY_HANDLER`, `CLICK_HANDLER_NOT_IN_TAB_ORDER`, `CLICK_HANDLER_KEY_LISTENER_ABOVE`, `CLICK_HANDLER_FOCUS_LISTENER`, `CLICK_HANDLER_NOT_FOCUSABLE` | fail only |
 | `css-focus-indicator-suppressed` | 1.4.11, 2.4.7, 2.4.13 | manual | `FOCUS_INDICATOR_SUPPRESSED` | per element: focus visible, its contrast (1.4.11) and appearance (2.4.13) |
 | `focus-not-obscured-enhanced` | 2.4.12 | manual | `FOCUS_OBSCURED_ENTIRELY`, `FOCUS_OBSCURED_PARTLY`, `FOCUS_OBSCURED_BEHIND_MODAL` |  |
@@ -30,6 +31,8 @@ page by hand.
 | `form-control-programmatic-label-quality` | 3.3.2 | manual | `label_from_aria_label_only`, `label_from_hidden_labelledby`, `label_from_placeholder_primary`, `label_from_title_primary` |  |
 | `img-alt-decorative` | 1.1.1 | manual | `EXCLUDED_ELEMENT_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |  |
 | `img-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |  |
+| `input-image-alt-decorative` | 1.1.1 | manual | `NAME_FROM_ELSEWHERE_REVIEW` | with the button's picture |
+| `input-image-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with the button's picture |
 | `link-name-quality` | 2.4.4, 2.4.9 | manual | `GENERIC_LINK_TEXT`, `AMBIGUOUS_FORMAT_NAME`, `GENERIC_LINK_TEXT_IN_CONTEXT` |  |
 | `manual-review` | 2.1.1, 2.4.3, 2.4.7 | manual | `KEYBOARD_REVIEW` | focus visible, focus order and keyboard, from the focus walk (and the open walk) |
 | `p-as-heading` | 1.3.1 | manual | `BOLD_LARGE_PARAGRAPH`, `BOLD_LARGE_DIV`, `HEADING_LIKE_LINK`, `HEADING_LIKE_NUMBER`, `BOLD_SHORT_PARAGRAPH` |  |
@@ -42,7 +45,6 @@ page by hand.
 | Check | SC | Kind | Can't-tell reasons | Note |
 | --- | --- | --- | --- | --- |
 | `accesskeys` | (best practice) | manual | `ACCESSKEY_DUPLICATE` |  |
-| `area-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | as alt quality, for an image map link |
 | `bypass-blocks-present` | 2.4.1 | manual | `BYPASS_MECHANISM_ABSENT` | with the walk: is there a way past repeated blocks |
 | `canvas-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | better with the picture |
 | `contrast-enhanced` | 1.4.6 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `ENGINE_EXCEPTION` | is this symbol text? |
@@ -60,8 +62,6 @@ page by hand.
 | `identical-iframes-same-purpose` | 4.1.2 | automatic | `IFRAME_RESOURCE_DIFFERS`, `IFRAME_RESOURCE_UNRESOLVED` |  |
 | `identical-links-same-purpose` | 2.4.9 | manual | `SAME_NAME_DIFFERENT_DESTINATION` | where the links go is in the page |
 | `image-redundant-alt` | (best practice) | manual | `IMAGE_ALT_REDUNDANT` |  |
-| `input-image-alt-decorative` | 1.1.1 | manual | `NAME_FROM_ELSEWHERE_REVIEW` | as decorative images |
-| `input-image-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | as alt quality, for an image button |
 | `label-in-name` | 2.5.3 | automatic | `HYPHENATION_DIFFERS`, `POSSIBLE_ABBREVIATION`, `POSSIBLE_ICON_FONT_GLYPH`, `POSSIBLE_SYMBOLIC_CHARACTER` |  |
 | `landmark-unique` | (best practice) | manual | `LANDMARK_NOT_UNIQUE` |  |
 | `link-name-quality-link-only` | 2.4.9 | manual | `GENERIC_LINK_TEXT_IN_CONTEXT` | as link text, AAA (2.4.9) |

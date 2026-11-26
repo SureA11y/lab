@@ -31,7 +31,7 @@ async function collectEvidence(page, occurrence, wanted) {
     }
     if (!wanted.includes('context') && !wanted.includes('pageTitle') && !wanted.includes('image')) return out;
     try {
-        const read = await page.evaluate((sel, want, ctxChars, imgChars) => {
+        const read = await page.evaluate(async (sel, want, ctxChars, imgChars) => {
             const res = {};
             let el = null;
             try { el = sel ? document.querySelector(sel) : null; } catch { el = null; }
@@ -55,7 +55,27 @@ async function collectEvidence(page, occurrence, wanted) {
                 };
             }
             if (want.includes('image') && el) {
-                const img = el.matches('img') ? el : el.querySelector('img');
+                // The picture behind the element: its own, or for an image map
+                // area the <img usemap> of its map, or for an image button its
+                // src, loaded off the page to read its pixels.
+                let img = el.matches('img') ? el : el.querySelector('img');
+                let area = null;
+                if (el.matches('area')) {
+                    const map = el.closest('map');
+                    const key = map ? '#' + (map.getAttribute('name') || map.id) : null;
+                    img = key ? [...document.querySelectorAll('img[usemap]')].find((i) => i.getAttribute('usemap') === key) || null : null;
+                    const nameOfArea = (a) => (a.getAttribute('aria-label') || a.getAttribute('alt') || a.getAttribute('title') || '').trim().slice(0, 120);
+                    area = {
+                        shape: el.getAttribute('shape') || 'rect', coords: el.getAttribute('coords'), href: el.getAttribute('href'),
+                        alt: el.getAttribute('alt'), title: el.getAttribute('title'), ariaLabel: el.getAttribute('aria-label'),
+                        otherAreas: map ? [...map.querySelectorAll('area')].filter((a) => a !== el).slice(0, 10).map((a) => ({ name: nameOfArea(a), href: a.getAttribute('href'), coords: a.getAttribute('coords') })) : [],
+                    };
+                } else if (el.matches('input[type="image" i]')) {
+                    const loaded = new Image();
+                    loaded.src = el.src;
+                    try { await loaded.decode(); } catch { /* not loadable */ }
+                    img = loaded;
+                }
                 // What the picture shows, read from a canvas never added to the
                 // page: blank (transparent), one colour, or how many. A spacer
                 // then reads as one. An image from another site cannot be read
@@ -113,7 +133,7 @@ async function collectEvidence(page, occurrence, wanted) {
                 };
                 const svgEl = !img && (el.matches('svg') ? el : el.querySelector('svg'));
                 res.image = img
-                    ? { src: img.currentSrc || img.src, alt: img.getAttribute('alt'), naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight, look: lookOf(img) }
+                    ? { src: img.currentSrc || img.src, alt: el.matches('input') ? el.getAttribute('alt') : img.getAttribute('alt'), naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight, look: lookOf(img), ...(area ? { area } : {}) }
                     : { inlineSvg: !!svgEl, ...(svgEl ? { svg: svgOf(svgEl) } : {}) };
                 res.imageSvgUrl = img && /\.svg(\?|$)/i.test(img.currentSrc || img.src) ? (img.currentSrc || img.src) : null;
             }

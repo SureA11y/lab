@@ -525,7 +525,7 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
         add('Page title', q(ev.pageTitle.title));
         add('Main headings', (ev.pageTitle.headings || []).length ? ev.pageTitle.headings.map((h) => q(h)).join(' ') : q(undefined, '(none found)'));
     } else if (f) {
-        if (check === 'img-alt-quality' || check === 'img-alt-decorative') {
+        if (check === 'img-alt-quality' || check === 'img-alt-decorative' || check === 'area-alt-quality' || check === 'input-image-alt-quality' || check === 'input-image-alt-decorative') {
             add('Alt text', f.alt === undefined
                 ? (f.tag === 'img' ? '<span class="air-none">(no alt attribute)</span>' : q(undefined, '(not an img: no alt)'))
                 : (f.alt === '' ? '<span class="air-none">(empty alt: marked decorative)</span>' : q(f.alt)));
@@ -536,7 +536,14 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             }
             if (f['aria-label'] !== undefined) add('aria-label', q(f['aria-label']));
             if (f.title !== undefined) add('title', q(f.title));
-            if (f.src) { const parts = String(f.src).split('/'); add('Image file', q(parts[parts.length - 1] || f.src)); }
+            const ar = ev.image && ev.image.area;
+            if (ar) {
+                add('Goes to', code(ar.href || ''));
+                add('Covers', escapeHtml((ar.shape || 'rect') + ' ' + (ar.coords || '')) + ' <span class="air-hint">' + escapeHtml('of the picture, whose alt is ') + q(ev.image.alt, '(none)') + '</span>');
+                if (ar.otherAreas && ar.otherAreas.length) add('Other areas of the map', ar.otherAreas.map((o) => q(o.name, '(no name)') + ' ' + code(o.href || '')).join('<br>'));
+            }
+            const src = f.src || (ev.image && ev.image.src);
+            if (src) { const parts = String(src).split('/'); add('Image file', q(parts[parts.length - 1] || src)); }
             const look = ev.image && ev.image.look;
             if (look) add('What it shows', escapeHtml(lookText(look)));
             if (f.text) add('Text inside', q(f.text));

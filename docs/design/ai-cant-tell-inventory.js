@@ -43,8 +43,8 @@ const LANES = {
     'focus-not-obscured-minimum': ['answered'], 'focus-not-obscured-enhanced': ['answered'],
 
     // Reading questions like today's: the next to add.
-    'area-alt-quality': ['read', 'as alt quality, for an image map link'],
-    'input-image-alt-quality': ['read', 'as alt quality, for an image button'], 'input-image-alt-decorative': ['read', 'as decorative images'],
+    'area-alt-quality': ['answered', 'with the map\'s picture, the area\'s place on it and the other areas (image.area)'],
+    'input-image-alt-quality': ['answered', 'with the button\'s picture'], 'input-image-alt-decorative': ['answered', 'with the button\'s picture'],
     'object-text-alternative-quality': ['read'], 'embed-text-alternative-quality': ['read'], 'canvas-text-alternative-quality': ['read', 'better with the picture'],
     'image-redundant-alt': ['read'], 'video-poster-text-alternative-present': ['read'],
     'heading-quality': ['read'], 'form-control-label-quality': ['read'], 'label-in-name': ['read'],

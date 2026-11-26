@@ -76,6 +76,9 @@ By reading the page (always):
 | `page-title-patterns` | 2.4.2 | Does the page title say what the page is about? |
 | `img-alt-quality` | 1.1.1 | Is an image's alt text accurate in its context? |
 | `svg-text-alternative-quality` | 1.1.1 | Is an inline SVG's name (aria-label, aria-labelledby or its title) accurate for what it shows, or for what its link or button does? (The model gets its title, desc, the symbol it draws, its classes and any text in it; path data is left out.) |
+| `area-alt-quality` | 1.1.1 | Does an image map area's name say where its link leads, for the part of the picture it covers? (The model gets the area's place on the picture, the map's other areas and the picture itself.) |
+| `input-image-alt-quality` | 1.1.1 | Does an image button's name say what the button does? (With the button's picture.) |
+| `input-image-alt-decorative` | 1.1.1 | An image button with `alt=""` named by aria-label, aria-labelledby or title: does that name say what it does? |
 | `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |

@@ -18,10 +18,19 @@
   <p><a id="link-vague" href="../products.html">Learn more</a></p>
   <p><a id="search-link" href="../products.html"><svg id="svg-search" class="icon-search" role="img" aria-label="Search products" width="20" height="20" viewBox="0 0 20 20"><circle cx="8" cy="8" r="6" fill="none" stroke="#333" stroke-width="2"></circle><line x1="12.5" y1="12.5" x2="18" y2="18" stroke="#333" stroke-width="2"></line></svg></a>
      <button type="button" id="share-button"><svg id="svg-share" role="img" width="20" height="20" viewBox="0 0 20 20"><title>Layer 1</title><circle cx="5" cy="10" r="3"></circle><circle cx="15" cy="4" r="3"></circle><circle cx="15" cy="16" r="3"></circle><line x1="5" y1="10" x2="15" y2="4" stroke="#333"></line><line x1="5" y1="10" x2="15" y2="16" stroke="#333"></line></svg></button></p>
+  <h2>Our garden</h2>
+  <p><img id="garden-plan" src="../images/garden-plan.svg" width="300" height="120" alt="Plan of the garden" usemap="#garden"></p>
+  <map name="garden">
+    <area id="area-greenhouse" shape="rect" coords="10,10,140,110" href="#greenhouse" alt="Greenhouse">
+    <area id="area-shed" shape="rect" coords="160,10,290,110" href="#shed" alt="Area 2">
+  </map>
   <form action="#" onsubmit="return false">
     <p><input id="postcode" type="text" title="Postcode" autocomplete="postal-code"></p>
     <p><input id="name" type="text" placeholder="Name" autocomplete="name"></p>
     <p><button type="submit">Check delivery</button></p>
+    <p><input id="check-good" type="image" src="../images/check-button.svg" width="80" height="32" alt="Check delivery">
+       <input id="check-file" type="image" src="../images/check-button.svg" width="80" height="32" alt="btn_submit_02.png">
+       <input id="check-label" type="image" src="../images/check-button.svg" width="80" height="32" alt="" aria-label="button"></p>
   </form>
 </main>
 <footer><p>Demo Shop is a made-up shop for surea11y-lab's examples.</p></footer>

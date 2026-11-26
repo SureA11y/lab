@@ -133,3 +133,25 @@ test('an SVG question gets what the SVG draws, not its path data', async () => {
     assert.equal(layer.provenance, 'ai-supported');
     await page.close();
 });
+
+test('an image map area gets the picture it is part of and the other areas; an image button its own picture', async () => {
+    const PLAN = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="20" height="20" fill="#0a0"/><rect x="20" width="20" height="20" fill="#a50"/></svg>');
+    const page = await browser.newPage();
+    await page.setContent(`<title>Garden</title><img id="plan" src="${PLAN}" alt="Plan" usemap="#g" width="40" height="20">
+<map name="g"><area id="a1" shape="rect" coords="0,0,20,20" href="#house" alt="Greenhouse"><area id="a2" shape="rect" coords="20,0,40,20" href="#shed" alt="Area 2"></map>
+<form><input id="b" type="image" src="${PLAN}" alt="Check delivery"></form>`);
+    await page.waitForFunction(() => document.getElementById('plan').complete);
+    const c = { findings: [{ outcome: 'cantTell', occurrences: [
+        { atomicCheckId: 'area-alt-quality', occurrenceOutcome: 'cantTell', target: ['#a2'], html: '<area id="a2" alt="Area 2">' },
+        { atomicCheckId: 'input-image-alt-quality', occurrenceOutcome: 'cantTell', target: ['#b'], html: '<input id="b" type="image" alt="Check delivery">' },
+    ] }] };
+    await answerCantTells({ page, canonical: c, env: {}, provider: { ask: async () => '{"verdict":"fail","confidence":0.9,"rationale":"x"}' } });
+    const [area, button] = c.findings[0].occurrences.map((o) => o.ai.evidence.image);
+    assert.equal(area.alt, 'Plan', "the map's picture");
+    assert.deepEqual([area.area.coords, area.area.href, area.area.alt], ['20,0,40,20', '#shed', 'Area 2']);
+    assert.deepEqual(area.area.otherAreas, [{ name: 'Greenhouse', href: '#house', coords: '0,0,20,20' }]);
+    assert.equal(area.look.readable, true);
+    assert.equal(button.alt, 'Check delivery');
+    assert.deepEqual([button.look.readable, button.look.colours], [true, 2], "the button's own picture, read");
+    await page.close();
+});

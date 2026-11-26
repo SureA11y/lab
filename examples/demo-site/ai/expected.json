@@ -38,6 +38,48 @@
     },
     {
       "page": "ai/reading.html",
+      "check": "img-alt-quality",
+      "target": "#garden-plan",
+      "expected": "pass",
+      "why": "\"Plan of the garden\" says what the picture of the image map is; its areas name the parts."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "area-alt-quality",
+      "target": "#area-greenhouse",
+      "expected": "pass",
+      "why": "The area over the greenhouse, linking to it, is named \"Greenhouse\"."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "area-alt-quality",
+      "target": "#area-shed",
+      "expected": "fail",
+      "why": "The area over the tool shed is named \"Area 2\", a placeholder that says nothing of where it leads."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "input-image-alt-quality",
+      "target": "#check-good",
+      "expected": "pass",
+      "why": "An image button showing \"Check\" in the delivery form, named \"Check delivery\": it says what the button does."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "input-image-alt-quality",
+      "target": "#check-file",
+      "expected": "fail",
+      "why": "The same button named \"btn_submit_02.png\", a file name."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "input-image-alt-decorative",
+      "target": "#check-label",
+      "expected": "fail",
+      "why": "alt=\"\" with the name \"button\" from aria-label: a placeholder, not what the button does."
+    },
+    {
+      "page": "ai/reading.html",
       "check": "svg-text-alternative-quality",
       "target": "#svg-search",
       "expected": "pass",
