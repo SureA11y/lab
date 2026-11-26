@@ -217,9 +217,21 @@ async function fingerprint(page) {
             let ls = '', ss = '', ck = '';
             try { ls = JSON.stringify(localStorage); ss = JSON.stringify(sessionStorage); } catch { /* blocked */ }
             try { ck = document.cookie; } catch { /* blocked */ }
+            // What the page shows: its elements in order, its rendered text
+            // (innerText holds only what is shown) and how many elements are
+            // visible. An attribute a component sets as focus passes
+            // (focus="none", a roving tabindex) does not change it; something
+            // left open, added or removed does.
+            let view = 0;
+            try {
+                const all = [...document.body.querySelectorAll('*')];
+                const shown = all.filter((e) => (typeof e.checkVisibility === 'function' ? e.checkVisibility() : true)).length;
+                view = hash(all.map((e) => e.tagName).join(',') + '|' + document.body.innerText + '|' + shown);
+            } catch { /* no body */ }
             return {
                 url: location.href,
                 dom: hash(document.documentElement.outerHTML),
+                view,
                 storage: hash(ls + '|' + ss),
                 cookies: hash(ck),
                 scroll: [Math.round(window.scrollX), Math.round(window.scrollY)],
@@ -236,4 +248,13 @@ function sameFingerprint(a, b) {
     return !!a && !!b && JSON.stringify(a) === JSON.stringify(b);
 }
 
-module.exports = { collectEvidence, readFacts, captureProof, fingerprint, sameFingerprint };
+// For the walks: the same page as far as anyone can see or use it, its
+// markup aside (`dom` left out: a component's attribute changed as focus
+// passed is not a changed page). Returns the keys that differ, [] when the
+// same, or null when one could not be read.
+function viewChanges(a, b) {
+    if (!a || !b) return null;
+    return Object.keys(b).filter((k) => k !== 'dom' && JSON.stringify(a[k]) !== JSON.stringify(b[k]));
+}
+
+module.exports = { collectEvidence, readFacts, captureProof, fingerprint, sameFingerprint, viewChanges };

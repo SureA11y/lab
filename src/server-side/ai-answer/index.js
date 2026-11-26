@@ -12,7 +12,7 @@
 // in the scan's `canonical.ai.outbox`, so a person can see what left.
 
 const { entryFor, PROMPT_VERSION } = require('./registry');
-const { collectEvidence, fingerprint, sameFingerprint } = require('./evidence');
+const { collectEvidence, fingerprint, sameFingerprint, viewChanges } = require('./evidence');
 const { resolveProvider, QUESTION_VERSION } = require('./provider');
 const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
 const { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskDeep, withoutPictures } = require('./outgoing');
@@ -242,11 +242,12 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 // when asked, after the focus walk was checked, and with its
                 // own check. What it saw came from the page as scanned, so it
                 // stays evidence; a page it could not put back is said.
-                if (opt.open === true && walk.restored && walk.stops.length) {
-                    walk.opened = await openWalk(page, { maxControls: Number(opt.openControls) > 0 ? Math.min(Number(opt.openControls), 50) : undefined });
+                if ((opt.open === true || opt.open === 'buttons') && walk.restored && walk.stops.length) {
+                    walk.opened = await openWalk(page, { maxControls: Number(opt.openControls) > 0 ? Math.min(Number(opt.openControls), 50) : undefined, buttons: opt.open === 'buttons' });
                     const afterOpen = await fingerprint(page);
-                    if (afterWalk && afterOpen && !sameFingerprint(afterWalk, afterOpen)) {
-                        walk.opened.leftChanged = Object.keys(afterOpen).filter((k) => JSON.stringify(afterOpen[k]) !== JSON.stringify(afterWalk[k]));
+                    const changed = viewChanges(afterWalk, afterOpen);
+                    if (changed && changed.length) {
+                        walk.opened.leftChanged = changed;
                         log('warning', `Opening the page's menus and dialogs left it changed (${walk.opened.leftChanged.join(', ')}): what was seen is kept, but the next steps may meet a different page`);
                     }
                     summary.focusWalk.opened = { tried: walk.opened.tried, total: walk.opened.total, ...(walk.opened.leftChanged ? { leftChanged: walk.opened.leftChanged } : {}), ...(walk.opened.error ? { error: walk.opened.error } : {}) };
@@ -304,8 +305,8 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         // dropped, what it saw kept, and the workflow is told: its next steps
         // may meet a different page.
         if (walk) {
-            if (beforeWalk && afterWalk && !sameFingerprint(beforeWalk, afterWalk)) {
-                const what = Object.keys(afterWalk).filter((k) => JSON.stringify(afterWalk[k]) !== JSON.stringify(beforeWalk[k]));
+            const what = viewChanges(beforeWalk, afterWalk);
+            if (what && what.length) {
                 summary.focusWalk.drift = what;
                 log('warning', `The focus walk could not put the page back as it was (${what.join(', ')}): its answers were dropped, and the next steps may meet a different page`);
                 for (const r of results) if (r.tier === 1) r.ai = { ...r.ai, provenance: 'unresolved', reason: 'state-drift', verdict: undefined, confidence: undefined, rationale: undefined };

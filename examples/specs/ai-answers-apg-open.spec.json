@@ -1,0 +1,167 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/dialog/",
+  "scenarioName": "AI answers on the W3C ARIA Authoring Practices examples, with menus, dialogs and buttons opened",
+  "actions": [
+    {
+      "type": "a11yScan",
+      "label": "APG: dialog-modal",
+      "ai": {
+        "focus": true,
+        "open": "buttons",
+        "openControls": 20,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/examples/alertdialog/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "APG: alertdialog",
+      "ai": {
+        "focus": true,
+        "open": "buttons",
+        "openControls": 20,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "APG: disclosure",
+      "ai": {
+        "focus": true,
+        "open": "buttons",
+        "openControls": 20,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-navigation/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "APG: disclosure",
+      "ai": {
+        "focus": true,
+        "open": "buttons",
+        "openControls": 20,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/examples/menu-button-actions/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "APG: menu-button",
+      "ai": {
+        "focus": true,
+        "open": "buttons",
+        "openControls": 20,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/examples/menu-button-links/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "APG: menu-button",
+      "ai": {
+        "focus": true,
+        "open": "buttons",
+        "openControls": 20,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/accordion/examples/accordion/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "APG: accordion",
+      "ai": {
+        "focus": true,
+        "open": "buttons",
+        "openControls": 20,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/menubar/examples/menubar-navigation/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "APG: menubar",
+      "ai": {
+        "focus": true,
+        "open": "buttons",
+        "openControls": 20,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    },
+    {
+      "type": "navigate",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/"
+    },
+    {
+      "type": "a11yScan",
+      "label": "APG: combobox",
+      "ai": {
+        "focus": true,
+        "open": "buttons",
+        "openControls": 20,
+        "focusStops": 80,
+        "budget": {
+          "calls": 200,
+          "seconds": 180
+        }
+      }
+    }
+  ]
+}

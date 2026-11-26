@@ -134,8 +134,21 @@ test('a walk that leaves the page changed drops only the focus answers, and says
     assert.equal(c.findings[0].occurrences[0].ai.reason, 'state-drift');
     assert.ok(c.findings[0].occurrences[0].ai.evidence.focusWalk, 'what it saw is kept');
     assert.equal(c.findings[3].occurrences[0].ai.provenance, 'ai-supported', 'the title, read before the walk, is kept');
-    assert.ok(s.focusWalk.drift.includes('dom'));
+    assert.ok(s.focusWalk.drift.includes('view'), 'an element was added: the page shows something new');
     assert.match(logs.join('\n'), /next steps may meet a different page/);
+    await page.close();
+});
+
+test('an attribute a component sets as focus passes is not a changed page', async () => {
+    // As the W3C's skip-to-content element does (focus="none" once focus leaves it).
+    const marking = PAGE + `<script>for (const a of document.querySelectorAll('a')) a.addEventListener('blur', () => document.body.setAttribute('data-focus', 'none'));</script>`;
+    const page = await open(marking);
+    const provider = { ask: async () => '{"verdict":"pass","confidence":0.9,"rationale":"ok"}' };
+    const c = canonical();
+    const s = await answerCantTells({ page, canonical: c, options: { focus: true }, provider, env: {} });
+    assert.equal(s.focusWalk.drift, undefined);
+    assert.equal(c.findings[0].occurrences[0].ai.provenance, 'ai-supported', 'the focus answers are kept');
+    assert.equal(await page.evaluate(() => document.body.getAttribute('data-focus')), 'none', 'the attribute did change');
     await page.close();
 });
 
@@ -336,5 +349,36 @@ test('with open on, the keyboard and focus order questions see what was opened',
     const off = canonical();
     await answerCantTells({ page, canonical: off, options: { focus: true }, provider, env: {} });
     assert.equal(off.findings[2].occurrences[0].ai.evidence.focusWalk.opened, undefined, 'nothing is pressed unless asked');
+    await page.close();
+});
+
+test('with buttons, plain buttons are pressed too, except one that says it acts, and nothing reaches the server', async () => {
+    const page = await open(`<title>Shop</title>
+<button type="button" id="dlg">Add delivery address</button>
+<button type="button" id="del">Delete</button>
+<button type="button" id="ping">Show stock</button>
+<div role="dialog" aria-modal="true" id="d" hidden><p>Address</p><button type="button" id="x">Close</button></div>
+<script>
+window.pressed = [];
+const d = document.getElementById('d');
+document.getElementById('dlg').addEventListener('click', () => { d.hidden = false; document.getElementById('x').focus(); });
+document.getElementById('x').addEventListener('click', () => { d.hidden = true; document.getElementById('dlg').focus(); });
+d.addEventListener('keydown', (e) => { if (e.key === 'Escape') { d.hidden = true; document.getElementById('dlg').focus(); } });
+document.getElementById('del').addEventListener('click', () => window.pressed.push('delete'));
+document.getElementById('ping').addEventListener('click', () => { fetch('https://example.invalid/stock', { method: 'POST', body: 'x' }).catch(() => window.pressed.push('post-failed')); });
+</script>`);
+    const before = await fingerprint(page);
+    const plain = await openWalk(page, { settleMs: 100 });
+    assert.equal(plain.controls.length, 0, 'without buttons, no plain button is pressed');
+    const o = await openWalk(page, { settleMs: 100, buttons: true });
+    assert.deepEqual(o.controls.map((c) => c.name), ['Add delivery address', 'Show stock'], 'not Delete');
+    const [dlg, ping] = o.controls;
+    assert.equal(dlg.opened.dialog, true);
+    assert.equal(dlg.focusAfter, 'inside', 'the dialog takes focus');
+    assert.deepEqual(dlg.opened.close, { name: 'Close', tag: 'button', focusable: true });
+    assert.equal(dlg.escapeCloses, true);
+    assert.deepEqual(ping.blockedRequests, ['POST https://example.invalid/stock'], 'the POST never left');
+    assert.deepEqual(await page.evaluate(() => window.pressed.filter((x) => x === 'delete')), []);
+    assert.ok(sameFingerprint(before, await fingerprint(page)));
     await page.close();
 });
