@@ -108,11 +108,18 @@ function setUp(key, maxControls, closeSource, buttons, actsSource) {
 function beforePress(key, i) {
     const st = window[key];
     const el = st.controls[i];
-    st.shown = new Set([...document.body.querySelectorAll('*')].filter(st.visible));
-    st.clicks = []; st.leaving = [];
     st.expanded = el.getAttribute('aria-expanded');
     el.focus();
     return document.activeElement === el;
+}
+
+// In the page: what shows once the control has focus and the page has
+// settled (focusing may scroll it, and a "Back to top" button may appear
+// then, which is not what the control opens).
+function noteShown(key) {
+    const st = window[key];
+    st.shown = new Set([...document.body.querySelectorAll('*')].filter(st.visible));
+    st.clicks = []; st.leaving = [];
 }
 
 // In the page: after pressing: what opened (newly visible), what of it can
@@ -121,7 +128,10 @@ function afterPress(key, i) {
     const st = window[key];
     const el = st.controls[i];
     const now = [...document.body.querySelectorAll('*')].filter(st.visible);
-    const fresh = now.filter((e) => !st.shown.has(e));
+    let fresh = now.filter((e) => !st.shown.has(e));
+    // A control that names what it controls (aria-controls): only that.
+    const controlled = (el.getAttribute('aria-controls') || '').split(/\s+/).map((id) => id && document.getElementById(id)).filter(Boolean);
+    if (controlled.length) fresh = fresh.filter((e) => controlled.some((c) => c === e || c.contains(e)));
     // The tops of what opened: newly shown, with no newly shown parent.
     const freshSet = new Set(fresh);
     st.opened = fresh.filter((e) => !freshSet.has(e.parentElement));
@@ -234,6 +244,8 @@ async function openWalk(page, options = {}) {
             const blockedBefore = blocked.length;
             c.key = key;
             if (!(await page.evaluate(beforePress, KEY, i))) { c.skipped = 'could-not-focus'; result.controls.push(c); continue; }
+            await wait(opt.settleMs);
+            await page.evaluate(noteShown, KEY);
             await page.evaluate((k, n) => { window[k].current = n; }, KEY, i);
             await page.keyboard.press(key === 'Space' ? ' ' : key);
             await wait(opt.settleMs);
@@ -245,6 +257,7 @@ async function openWalk(page, options = {}) {
             // (then the keyboard can still use it)?
             if (key === 'Space' && !c.activated) {
                 await page.evaluate(beforePress, KEY, i);
+                await page.evaluate(noteShown, KEY);
                 const before = stopped.length;
                 await page.keyboard.press('Enter');
                 await wait(opt.settleMs);
