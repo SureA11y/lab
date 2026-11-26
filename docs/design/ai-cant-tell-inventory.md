@@ -8,8 +8,8 @@ page by hand.
 
 | Lane | What settles it | Checks |
 | --- | --- | --- |
-| `answered` | The AI answers it today | 12 |
-| `read` | The AI, from the element and the text around it, as today | 34 |
+| `answered` | The AI answers it today | 13 |
+| `read` | The AI, from the element and the text around it, as today | 33 |
 | `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 12 |
 | `tree` | The browser's own accessibility tree (no model needed) | 23 |
 | `measure` | A measurement by the lab, then the AI or a person for what is left | 9 |
@@ -34,6 +34,7 @@ page by hand.
 | `manual-review` | 2.1.1, 2.4.3, 2.4.7 | manual | `KEYBOARD_REVIEW` | focus visible, focus order and keyboard, from the focus walk (and the open walk) |
 | `p-as-heading` | 1.3.1 | manual | `BOLD_LARGE_PARAGRAPH`, `BOLD_LARGE_DIV`, `HEADING_LIKE_LINK`, `HEADING_LIKE_NUMBER`, `BOLD_SHORT_PARAGRAPH` |  |
 | `page-title-patterns` | 2.4.2 | manual | `placeholderTitle`, `genericTitle`, `veryShortTitle`, `templateLikeTitle`, `duplicateTitlesAcrossPages`, `templatedTitlesAcrossPages`, `titleReview` |  |
+| `svg-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` | from its title, desc, the symbol it draws and its classes (image.svg) |
 | `widget-keyboard-focusable` | 2.1.1, 2.1.3 | manual | `WIDGET_NOT_FOCUSABLE`, `WIDGET_NOT_IN_TAB_ORDER`, `COMPOSITE_NO_TAB_STOP`, `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | fail only |
 
 ## `read`: The AI, from the element and the text around it, as today
@@ -68,7 +69,6 @@ page by hand.
 | `page-zones-landmark` | (best practice) | manual | `BANNER_NOT_EXPOSED`, `HEADER_NESTED`, `NAVIGATION_NOT_EXPOSED`, `SEARCH_NOT_EXPOSED`, `CONTENTINFO_NOT_EXPOSED`, `FOOTER_NESTED` |  |
 | `presentation-role-conflict` | (best practice) | manual | `PRESENTATION_ROLE_CONFLICT` |  |
 | `region` | (best practice) | manual | `CONTENT_OUTSIDE_LANDMARK` |  |
-| `svg-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` | as alt quality |
 | `symbol-graphic-contrast` | 1.4.11 | manual | `SYMBOLS_BELOW_GRAPHIC_THRESHOLD` | does the symbol carry information? (the ratio is measured) |
 | `table-fake-caption` | 1.3.1 | manual | `SINGLE_CELL_FIRST_ROW_NO_CAPTION` |  |
 | `table-th-has-data-cells` | 1.3.1 | automatic | `TABLE_TH_NO_ASSIGNED_CELL` |  |

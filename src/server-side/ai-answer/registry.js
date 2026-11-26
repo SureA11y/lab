@@ -13,7 +13,9 @@
 // nothing on.
 // registry-7: with the open walk (`open: true`), the keyboard and focus order
 // questions also see what each control that opens something did.
-const PROMPT_VERSION = 'registry-7';
+// registry-8: the SVG text alternative question (svg-text-alternative-quality),
+// with what an inline SVG draws (image.svg).
+const PROMPT_VERSION = 'registry-8';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -30,6 +32,10 @@ const ANSWERABLE = Object.freeze({
     },
     'img-alt-decorative': {
         question: 'Is this image or icon purely decorative (nothing is lost for a person who cannot see it), or does it carry meaning or a name the control needs? `image.look` says what the picture shows when it could be read: `blank` (fully transparent, a spacer), the number of `colours` and the main one.',
+        evidence: ['element', 'context', 'image'],
+    },
+    'svg-text-alternative-quality': {
+        question: "Is this SVG's text alternative accurate for what the graphic shows, in its context? Its name comes from aria-label, aria-labelledby or its <title>; a <desc> adds a description. When the SVG is the only content of a link or button, its name is the control's name and should say what the control does. `image.svg` gives its title, desc, the symbols it draws (`uses`, such as an icon sprite's \"#icon-search\"), its classes, any text in it, and its markup with the path data left out. A name left over from a drawing tool or an export (\"Layer 1\", \"Created with Sketch.\"), a file name or a placeholder fails.",
         evidence: ['element', 'context', 'image'],
     },
     'link-name-quality': {

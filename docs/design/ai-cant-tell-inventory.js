@@ -36,13 +36,14 @@ const LANES = {
     // Answered today.
     'img-alt-quality': ['answered'], 'img-alt-decorative': ['answered'], 'p-as-heading': ['answered'],
     'page-title-patterns': ['answered'], 'link-name-quality': ['answered'], 'form-control-programmatic-label-quality': ['answered'],
+    'svg-text-alternative-quality': ['answered', 'from its title, desc, the symbol it draws and its classes (image.svg)'],
     'manual-review': ['answered', 'focus visible, focus order and keyboard, from the focus walk (and the open walk)'],
     'css-focus-indicator-suppressed': ['answered', 'per element: focus visible, its contrast (1.4.11) and appearance (2.4.13)'],
     'click-handler-keyboard-operable': ['answered', 'fail only'], 'widget-keyboard-focusable': ['answered', 'fail only'],
     'focus-not-obscured-minimum': ['answered'], 'focus-not-obscured-enhanced': ['answered'],
 
     // Reading questions like today's: the next to add.
-    'svg-text-alternative-quality': ['read', 'as alt quality'], 'area-alt-quality': ['read', 'as alt quality, for an image map link'],
+    'area-alt-quality': ['read', 'as alt quality, for an image map link'],
     'input-image-alt-quality': ['read', 'as alt quality, for an image button'], 'input-image-alt-decorative': ['read', 'as decorative images'],
     'object-text-alternative-quality': ['read'], 'embed-text-alternative-quality': ['read'], 'canvas-text-alternative-quality': ['read', 'better with the picture'],
     'image-redundant-alt': ['read'], 'video-poster-text-alternative-present': ['read'],

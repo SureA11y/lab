@@ -541,6 +541,20 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             if (look) add('What it shows', escapeHtml(lookText(look)));
             if (f.text) add('Text inside', q(f.text));
             if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
+        } else if (check === 'svg-text-alternative-quality') {
+            const svg = (ev.image && ev.image.svg) || {};
+            add('Accessible name', nameOf(f));
+            if (f['aria-label'] !== undefined) add('aria-label', q(f['aria-label']));
+            add('title', q(svg.title, '(none)'));
+            if (svg.desc) add('desc', q(svg.desc));
+            if (svg.uses && svg.uses.length) add('Draws the symbol', svg.uses.map(code).join(' '));
+            if (svg.classes) add('Classes', code(svg.classes));
+            if (svg.texts && svg.texts.length) add('Text in it', svg.texts.map((t) => q(t)).join(' '));
+            if (f.control) {
+                const c = f.control;
+                add('Inside a control', escapeHtml(c.tag) + (c.href ? ' to ' + code(c.href) : '') + (c.ariaLabel ? ', aria-label ' + q(c.ariaLabel) : '') + (c.text ? ', text ' + q(c.text) : ', no text of its own'));
+            }
+            if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
         } else if (check === 'link-name-quality') {
             add('Link text', q(f.text || (f.control && f.control.text), '(no text)'));
             add('Accessible name', nameOf(f));

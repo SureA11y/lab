@@ -38,6 +38,20 @@
     },
     {
       "page": "ai/reading.html",
+      "check": "svg-text-alternative-quality",
+      "target": "#svg-search",
+      "expected": "pass",
+      "why": "A magnifying glass, the only content of a link to the products, named \"Search products\": it says what the link does."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "svg-text-alternative-quality",
+      "target": "#svg-share",
+      "expected": "fail",
+      "why": "The only content of a button, named by its title \"Layer 1\", a layer name left over from the drawing tool: it says nothing of what the button does."
+    },
+    {
+      "page": "ai/reading.html",
       "check": "p-as-heading",
       "target": "html > body > main > p:nth-of-type(1)",
       "expected": "fail",

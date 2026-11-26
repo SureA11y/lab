@@ -12,12 +12,18 @@ const IMAGE_CHARS = 2000;
  * element, the page's title and headings, an image's source. Never throws:
  * what could not be read is left out.
  */
+function elidePaths(html) {
+    return html.replace(/\s(d|points)="[^"]{40,}"/g, ' $1="…"');
+}
+
 async function collectEvidence(page, occurrence, wanted) {
     const target = Array.isArray(occurrence.target) ? occurrence.target[0] : null;
     const selector = typeof target === 'string' ? target : null;
     const out = {};
     if (wanted.includes('element')) {
-        out.element = String(occurrence.html || '').slice(0, 1500);
+        // Long path data says nothing a reader can use: it is elided, so the
+        // rest of the element fits.
+        out.element = elidePaths(String(occurrence.html || '')).slice(0, 1500);
         const facts = await readFacts(page, selector);
         if (facts) out.facts = facts;
         const proof = await captureProof(page, selector);
@@ -33,10 +39,13 @@ async function collectEvidence(page, occurrence, wanted) {
                 let box = el.parentElement;
                 const wide = new Set(['LI', 'SECTION', 'FORM', 'HEADER', 'MAIN', 'ARTICLE', 'FOOTER', 'NAV', 'BODY']);
                 while (box && !wide.has(box.tagName) && box.parentElement) box = box.parentElement;
-                const html = (box || el).outerHTML || '';
-                const at = html.indexOf((el.outerHTML || '').slice(0, 60));
+                // Path data elided before the cut, so a cut never lands in it.
+                const elide = (h) => h.replace(/\s(d|points)="[^"]{40,}"/g, ' $1="…"');
+                const html = elide((box || el).outerHTML || '');
+                const own = elide(el.outerHTML || '');
+                const at = html.indexOf(own.slice(0, 60));
                 res.context = at >= 0
-                    ? html.slice(Math.max(0, at - ctxChars), at + (el.outerHTML || '').length + ctxChars)
+                    ? html.slice(Math.max(0, at - ctxChars), at + own.length + ctxChars)
                     : html.slice(0, ctxChars * 2);
             }
             if (want.includes('pageTitle')) {
@@ -85,9 +94,27 @@ async function collectEvidence(page, occurrence, wanted) {
                         return { readable: false, why: 'from another site: the browser does not let the page read its pixels' };
                     }
                 };
+                // An inline SVG: what says what it draws, not its path data:
+                // its title and desc, the symbols it uses (an icon sprite's
+                // "#icon-search"), its classes and role, and its markup with
+                // the path data left out.
+                const svgOf = (svg) => {
+                    const text = (sel2) => { const n = svg.querySelector(sel2); return n ? n.textContent.replace(/\s+/g, ' ').trim().slice(0, 200) : null; };
+                    const uses = [...svg.querySelectorAll('use')].map((u) => u.getAttribute('href') || u.getAttribute('xlink:href')).filter(Boolean).slice(0, 5);
+                    const markup = svg.outerHTML.replace(/\s(d|points|transform)="[^"]{24,}"/g, ' $1="…"').replace(/>\s+</g, '><');
+                    return {
+                        title: text('title'), desc: text('desc'), uses,
+                        classes: svg.getAttribute('class') || null, role: svg.getAttribute('role'),
+                        viewBox: svg.getAttribute('viewBox'), size: [Math.round(svg.getBoundingClientRect().width), Math.round(svg.getBoundingClientRect().height)],
+                        shapes: svg.querySelectorAll('path,circle,rect,ellipse,line,polyline,polygon,text,image,use').length,
+                        texts: [...svg.querySelectorAll('text')].map((t) => t.textContent.trim()).filter(Boolean).slice(0, 5),
+                        markup: markup.slice(0, 600),
+                    };
+                };
+                const svgEl = !img && (el.matches('svg') ? el : el.querySelector('svg'));
                 res.image = img
                     ? { src: img.currentSrc || img.src, alt: img.getAttribute('alt'), naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight, look: lookOf(img) }
-                    : { inlineSvg: el.matches('svg') || !!el.querySelector('svg') };
+                    : { inlineSvg: !!svgEl, ...(svgEl ? { svg: svgOf(svgEl) } : {}) };
                 res.imageSvgUrl = img && /\.svg(\?|$)/i.test(img.currentSrc || img.src) ? (img.currentSrc || img.src) : null;
             }
             return res;

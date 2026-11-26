@@ -110,3 +110,26 @@ test('an image question says what the picture shows: blank, one colour, or not r
     await other.close();
     await new Promise((r) => server.close(r));
 });
+
+test('an SVG question gets what the SVG draws, not its path data', async () => {
+    const page = await browser.newPage();
+    const LONG = 'M' + '10,10 L20,20 '.repeat(40);
+    await page.setContent(`<title>Icons</title><svg style="display:none"><symbol id="icon-search"><path d="${LONG}"/></symbol></svg>
+<p><a href="/s"><svg id="s" class="icon-search" role="img" aria-label="Search"><use href="#icon-search"/></svg></a></p>
+<p><button type="button"><svg id="l" role="img" width="20" height="20"><title>Layer 1</title><desc>Exported</desc><path d="${LONG}"/><text x="2" y="12">Go</text></svg></button></p>`);
+    const html = await page.$eval('#l', (e) => e.outerHTML);
+    const c = { findings: [{ outcome: 'cantTell', occurrences: [
+        { atomicCheckId: 'svg-text-alternative-quality', occurrenceOutcome: 'cantTell', target: ['#s'], html: '<svg id="s" aria-label="Search"></svg>' },
+        { atomicCheckId: 'svg-text-alternative-quality', occurrenceOutcome: 'cantTell', target: ['#l'], html },
+    ] }] };
+    const prompts = [];
+    await answerCantTells({ page, canonical: c, env: {}, provider: { ask: async (p) => { prompts.push(p); return '{"verdict":"fail","confidence":0.9,"rationale":"Layer 1 names nothing."}'; } } });
+    const [search, layer] = c.findings[0].occurrences.map((o) => o.ai);
+    assert.deepEqual(search.evidence.image.svg.uses, ['#icon-search']);
+    assert.equal(search.evidence.image.svg.classes, 'icon-search');
+    assert.deepEqual([layer.evidence.image.svg.title, layer.evidence.image.svg.desc, layer.evidence.image.svg.texts], ['Layer 1', 'Exported', ['Go']]);
+    assert.doesNotMatch(layer.evidence.image.svg.markup, /L20,20 L20/, 'the path data is left out');
+    assert.doesNotMatch(prompts[1], /10,10 L20,20 10,10/, 'from the element too');
+    assert.equal(layer.provenance, 'ai-supported');
+    await page.close();
+});
