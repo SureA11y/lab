@@ -24,8 +24,14 @@ keyboard can do with it, and `open: "buttons"` that presses plain buttons too;
 evaluated on the GOV.UK keyboard pages, the demo's `dialog.html` (a dialog a
 keyboard user cannot close) and the W3C ARIA Authoring Practices examples
 (working widgets: no wrong fail); the walks now judged by what the page
-shows, not its markup; prompt version `registry-7`). The full suite and the
-browser tests (`focus-walk` 16, `ai-answer`, `app-boot`) pass.
+shows, not its markup; prompt version `registry-7`). The full suite (4488
+pass, 5 skipped) and the browser tests (`focus-walk` 16, `ai-answer` and
+`app-boot`) pass.
+
+**Where to pick up without the user:** re-run the APG spec
+(`ai-answers-apg-open.spec.json`) to confirm the combobox fix in an answered
+run, then item 6 below (the open walk's open points) or item 4 (more cases).
+Items 1 to 3 need the user.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `open-walk.js`, `evidence.js`, `provider.js`,
@@ -119,7 +125,11 @@ browser tests (`focus-walk` 16, `ai-answer`, `app-boot`) pass.
 key (so prompt caching too: the first real run should show cached tokens in
 the API's usage); agreement after the evidence was reordered; the open walk
 on a real site with a dialog that truly cannot be closed or traps focus (so
-far only the demo's).
+far only the demo's); the combobox fix of the open walk (after the APG run:
+checked by hand, not yet in an answered run). The runs before 2026-11-26
+were made before the walks were judged by what the page shows: in UW and the
+GOV.UK runs no walk was dropped for a changed page (every open case has
+another reason), so their figures stand; W3C run 5 was not re-checked.
 
 **Labels that disagree with WCAG, kept on purpose:** in `label-rules.js`
 (`gov`), keyboard on the GOV.UK "lightbox close button" and "role=button"
@@ -152,7 +162,7 @@ Chrome or Chromium.)
 The first three need the user; the rest can be done without.
 
 1. **A person's labels on the real-site runs** (W3C, UW, the three GOV.UK
-   runs, the WAI tutorials). Every
+   runs, the WAI tutorials, the APG examples). Every
    figure so far is against labels the assistant wrote (`labels.json` in each
    site's folder), not a person's. The repo keeps each run's prompts and
    answers, not a report to open, so: run a site's spec
@@ -173,20 +183,20 @@ The first three need the user; the rest can be done without.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **More cases per check.** There are 432 labelled cases over four sites
-   (and 48 more from the open-walk re-run of the GOV.UK keyboard pages);
-   page title, alt quality, decorative images, focus visible, focus order and
-   keyboard have more than 30 each; link text (6), field labels (3) and bold
-   as heading (8) still fewer, because the scanner settles most of them itself
-   (`ai:agreement` marks them), and each run's wrong answers are a different
-   case (run-to-run variation): 30 to 50 per check are needed to trust a
-   check. The GOV.UK audit's remaining pages are mostly about things the AI is
-   not asked (contrast, language, tables, typography), so link text, labels
-   and headings need content-heavy public sites (with documented problems, or
-   known-good like the WAI tutorials); a new site needs its host allowed in
-   the cloud environment (ask the user) and labels. Running each set two or
-   three times and keeping the per-case spread would show which questions are
-   unstable.
+4. **More cases per check.** There are 432 labelled cases over four sites (and
+   48 from the open-walk re-run of the GOV.UK keyboard pages, 55 from the APG
+   examples); page title, alt quality, decorative images, focus visible, focus
+   order and keyboard have more than 30 each; link text (6), field labels (3)
+   and bold as heading (8) still fewer, because the scanner settles most of
+   them itself (`ai:agreement` marks them), and each run's wrong answers are a
+   different case (run-to-run variation): 30 to 50 per check are needed to
+   trust a check. The GOV.UK audit's remaining pages are mostly about things
+   the AI is not asked (contrast, language, tables, typography), so link text,
+   labels and headings need content-heavy public sites (with documented
+   problems, or known-good like the WAI tutorials); a new site needs its host
+   allowed in the cloud environment (ask the user) and labels. Running each
+   set two or three times and keeping the per-case spread would show which
+   questions are unstable.
 5. **Optional, not built:** pictures sent to the model (only after measuring
    that they help: the news photo of the W3C's Note 10, the one question the
    model keeps getting wrong, is about what the picture shows); 2.4.13's and
