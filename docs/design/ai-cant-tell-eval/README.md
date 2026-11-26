@@ -34,6 +34,7 @@ its correct answer and why in `expected.json`.
 | --- | --- |
 | `reading.html` | Page title, alt text (a file name, a good one), images hidden as decorative (a "−50%" badge, a divider), a bold paragraph as heading (and the site name that is not one), "Learn more" alone, fields labelled only by `title` or `placeholder` |
 | `focus.html` (WCAG 2.2 AAA) | Focus visible (page and per link), focus appearance and non-text contrast (1.4.11) per link, a link whose outline is removed but which shows focus from a script (all three pass), focus order (a `tabindex="1"` link far down comes first), keyboard (page, a clickable menu, a `role="button"` tile), focus not obscured per sticky box (the sticky header hides two links once the page has scrolled) |
+| `labels.html` (AAA, best practices on, added 2026-11-26) | Names and labels: a placeholder heading, two fields sharing a label, label in name, a generic link (2.4.9), same-name links and frames, a control named only by its tooltip, unnamed landmarks |
 | `dialog.html` (`open: true`, added 2026-11-26) | Keyboard and focus order from the open walk: a modal "Size guide" dialog a keyboard user cannot close (its close control is a span, Escape does nothing) and that does not take focus; a working disclosure beside it; the site name and the title |
 
 **Result:** 36 questions, 36 answered, **36 agree** (38 of 38 since the SVG cases, below); no "pass" where the answer

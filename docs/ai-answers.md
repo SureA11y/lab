@@ -83,6 +83,14 @@ By reading the page (always):
 | `canvas-text-alternative-quality` | 1.1.1 | Does a `<canvas>`'s text alternative convey what it draws? (With what is drawn on it, read from its pixels.) |
 | `video-poster-text-alternative-present` | 1.1.1 | A video with a poster and no name: does something near it (a caption, a heading) identify it? |
 | `image-redundant-alt` | best practice | Does an image's alt only repeat the text beside it (read twice)? Asked only with **Include best-practice rules** on the scan step. |
+| `heading-quality` | 2.4.6 | Does a heading that looks like a placeholder, a file name or an address describe its section? |
+| `form-control-label-quality` | 2.4.6 | Can a field be told apart from the others with the same label (or a placeholder one)? (With the fields the checker found sharing it.) |
+| `label-in-name` | 2.5.3 | Does a control's name contain its visible label (hyphens, abbreviations, icon glyphs, symbols)? |
+| `link-name-quality-link-only` | 2.4.9 (AAA) | Does a generic link's text alone say where it leads? Asked with an AAA profile. |
+| `identical-links-same-purpose` | 2.4.9 (AAA) | Do links with the same name and different addresses serve the same purpose? Asked with an AAA profile. |
+| `identical-iframes-same-purpose` | 4.1.2 | Do frames with the same name and different content serve the same purpose? |
+| `control-name-title-only` | best practice | A control named only by its tooltip: is its purpose visible without it? |
+| `landmark-unique` | best practice | Do landmarks of the same role that share a name (or none) need names to be told apart? |
 | `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |

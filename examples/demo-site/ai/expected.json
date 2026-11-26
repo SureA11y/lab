@@ -170,6 +170,104 @@
       "why": "Its only label is a placeholder, gone as soon as one types."
     },
     {
+      "page": "ai/labels.html",
+      "check": "p-as-heading",
+      "target": "html > body > header > p",
+      "expected": "pass",
+      "why": "\"Demo Shop\" in bold is the site name in the header, not a section title."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Returns and contact - Demo Shop\" says what the page is about and names the site."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "heading-quality",
+      "target": "html > body > main > h2:nth-of-type(1)",
+      "expected": "fail",
+      "why": "\"Heading 2\" is a template placeholder over the text on returns: it does not describe it."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "form-control-label-quality",
+      "target": "#phone-1",
+      "expected": "fail",
+      "why": "Two fields labelled \"Phone\" with nothing visible telling them apart (which phone? whose?)."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "form-control-label-quality",
+      "target": "#phone-2",
+      "expected": "fail",
+      "why": "The second of two fields labelled \"Phone\", nothing visible telling them apart."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "identical-links-same-purpose",
+      "target": "html > body > main > ul > li:nth-of-type(1) > a",
+      "expected": "fail",
+      "why": "\"Download\" leads to the price list here and to the catalogue in the next item: same name, different things (2.4.9)."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "identical-links-same-purpose",
+      "target": "html > body > main > ul > li:nth-of-type(2) > a",
+      "expected": "fail",
+      "why": "\"Download\" leads to the catalogue here and to the price list in the item before: same name, different things (2.4.9)."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "link-name-quality-link-only",
+      "target": "html > body > main > p:nth-of-type(2) > a",
+      "expected": "fail",
+      "why": "\"Read more\" alone does not say where it leads; only the sentence around it does, which meets 2.4.4 but not 2.4.9."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "label-in-name",
+      "target": "#email",
+      "expected": "pass",
+      "why": "The visible label \"E-mail\" and the name \"Email address\": a speech input user saying \"email\" matches it (only the hyphen differs)."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "identical-iframes-same-purpose",
+      "target": "html > body > main > div > iframe:nth-of-type(1)",
+      "expected": "fail",
+      "why": "Two frames both titled \"Shop page\" show different pages (the home page and the products): their names do not tell them apart."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "identical-iframes-same-purpose",
+      "target": "html > body > main > div > iframe:nth-of-type(2)",
+      "expected": "fail",
+      "why": "The second frame titled \"Shop page\" shows the products, the first the home page."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "control-name-title-only",
+      "target": "html > body > main > form > p:nth-of-type(4) > button:nth-of-type(2)",
+      "expected": "fail",
+      "why": "An empty pink square whose only name is its tooltip \"Add to wishlist\": nothing visible says what it does."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "landmark-unique",
+      "target": "html > body > header > nav",
+      "expected": "fail",
+      "why": "The header's navigation and the footer's are both unnamed but hold different links (shop pages; about us, jobs, privacy)."
+    },
+    {
+      "page": "ai/labels.html",
+      "check": "landmark-unique",
+      "target": "html > body > footer > nav",
+      "expected": "fail",
+      "why": "The footer's navigation, unnamed like the header's, holds different links."
+    },
+    {
       "page": "ai/focus.html",
       "check": "page-title-patterns",
       "target": "html > head > title",

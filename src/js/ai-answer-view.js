@@ -592,6 +592,12 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             add('Accessible name', nameOf(f));
             if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
         }
+        // What the checker itself reported (`reported`), as it said it.
+        if (ev.reported && typeof ev.reported === 'object') {
+            const show = (v) => (Array.isArray(v) ? v.map(show).join(', ') : v && typeof v === 'object' ? JSON.stringify(v) : String(v));
+            const items = Object.entries(ev.reported).filter(([, v]) => v !== null && v !== undefined && v !== '');
+            if (items.length) add('The checker found', items.map(([k, v]) => code(k) + ' ' + escapeHtml(show(v))).join('<br>'));
+        }
         add('Shown on the page', f.shown ? 'yes, ' + f.size[0] + ' x ' + f.size[1] + ' px' : '<span class="air-none">not visible when the page loads (hidden, in a menu or collapsed)</span>');
     }
     return rows;

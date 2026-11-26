@@ -12,6 +12,20 @@ const IMAGE_CHARS = 2000;
  * element, the page's title and headings, an image's source. Never throws:
  * what could not be read is left out.
  */
+// A copy of a plain object whose JSON stays under `max` characters: long
+// strings are cut, long lists shortened, then keys dropped from the end.
+function boundedCopy(value, max) {
+    const cut = (v, depth) => {
+        if (typeof v === 'string') return v.length > 200 ? v.slice(0, 200) + '…' : v;
+        if (Array.isArray(v)) return v.slice(0, 10).map((x) => cut(x, depth + 1));
+        if (v && typeof v === 'object' && depth < 3) return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, cut(x, depth + 1)]));
+        return v && typeof v === 'object' ? '…' : v;
+    };
+    const out = cut(value, 0);
+    while (JSON.stringify(out).length > max && Object.keys(out).length > 1) delete out[Object.keys(out).pop()];
+    return out;
+}
+
 function elidePaths(html) {
     return html.replace(/\s(d|points)="[^"]{40,}"/g, ' $1="…"');
 }
@@ -28,6 +42,12 @@ async function collectEvidence(page, occurrence, wanted) {
         if (facts) out.facts = facts;
         const proof = await captureProof(page, selector);
         if (proof) out.screenshot = proof;
+    }
+    // What the checker itself reported for this occurrence (the values its
+    // documentation lists under @reports: the other fields sharing a label,
+    // where same-named links go...), bounded.
+    if (wanted.includes('reported') && occurrence.details && typeof occurrence.details === 'object') {
+        out.reported = boundedCopy(occurrence.details, 1500);
     }
     if (!wanted.includes('context') && !wanted.includes('pageTitle') && !wanted.includes('image')) return out;
     try {

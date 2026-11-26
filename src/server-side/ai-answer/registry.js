@@ -20,7 +20,11 @@
 // behind them.
 // registry-10: object, embed, canvas, redundant alt and video posters, with
 // what they embed (image.embedded) and the picture when it is an image.
-const PROMPT_VERSION = 'registry-10';
+// registry-11: names and labels (heading-quality, form-control-label-quality,
+// label-in-name, control-name-title-only, link-name-quality-link-only,
+// identical-links-same-purpose, identical-iframes-same-purpose,
+// landmark-unique), with what the checker reported (`reported`).
+const PROMPT_VERSION = 'registry-11';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -74,6 +78,38 @@ const ANSWERABLE = Object.freeze({
     'video-poster-text-alternative-present': {
         question: "This <video> shows a poster image but has no name (aria-label, aria-labelledby or title). As time-based media it only needs to be identified. Is it identified by something a screen reader user meets with it: a caption or figcaption, a heading or text right before it naming the video? `image.embedded` gives its poster, source and controls; `image` what the poster shows. Answer \"fail\" when nothing near it says what the video is.",
         evidence: ['element', 'context', 'image'],
+    },
+    'heading-quality': {
+        question: "Does this heading describe the topic or purpose of the content it introduces? The checker found its text looks like a placeholder, a file name or a web address (`reported`: its name and why). `context` shows what follows it. Fail when it is text a template or a tool left (\"Heading 2\", \"lorem ipsum\", a file name); pass when it names its section, even if short (\"Section 3\" in numbered terms).",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'form-control-label-quality': {
+        question: "Does this field's visible label say what to enter, so a user can tell it apart from the page's other fields? The checker found its label is the same as another field's with nothing visible telling them apart, partly hidden, or a placeholder word (`reported`: the label, the fields sharing it, what is hidden). `context` shows what is around it. Fail when a user could not tell what this field is for; pass when something visible near it (a legend, a heading, a row's text) does.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'label-in-name': {
+        question: "Does this control's accessible name contain its visible label, so a speech input user can say what they see? The checker could not tell (`reported`: the visible label, the accessible name, where each comes from, and why: hyphens, a possible abbreviation, an icon font glyph or a symbol). Pass when saying the visible words would match the name (\"E-mail\" for \"Email address\"); fail when the name does not hold the visible words or what they mean.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'control-name-title-only': {
+        question: "This button or link takes its only name from its title attribute, which only mouse users see, as a tooltip. A best practice, not a WCAG failure: does the control show its purpose to everyone without the tooltip (visible text, or an icon whose meaning is plain), and does the title say what it does? Fail when its purpose can only be learnt from the tooltip.",
+        evidence: ['element', 'context', 'reported', 'image'],
+    },
+    'link-name-quality-link-only': {
+        question: "This link's whole text is generic (\"read more\"), and only the text around it says where it leads. That meets 2.4.4 (AA); this question is 2.4.9 (AAA): does the link's text alone (or its accessible name) say where it leads? Fail when it does not; pass when its name (aria-label, aria-labelledby, visually hidden text) says it.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'identical-links-same-purpose': {
+        question: "Links with the same name lead to different addresses (`reported`: the name, this link's address and the others'). 2.4.9 (AAA): do they serve the same purpose (the same page in another form, the same thing tracked differently), so the same name is right? Fail when they lead to different things a user would need to tell apart by their name.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'identical-iframes-same-purpose': {
+        question: "Frames with the same accessible name embed different resources (`reported`: the name, what this frame embeds, how many share it). Do they serve the same purpose? Fail when their shared name does not tell apart frames that show different things (4.1.2: a frame's name says what it is).",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'landmark-unique': {
+        question: "Two or more landmarks of the same role share one name, or are all unnamed (`reported`: the role, the name, the others). A best practice, not a WCAG failure: does a user moving by landmarks need different names to tell them apart (a main navigation and a footer navigation)? Fail when they hold different things and nothing names them apart; pass when they are the same thing repeated, or a name does tell them apart.",
+        evidence: ['element', 'context', 'reported'],
     },
     'link-name-quality': {
         question: "Does the link's text (or accessible name) tell where it goes or what it does, in its context?",

@@ -179,3 +179,21 @@ test('an object, a canvas and a video poster bring what they show; a best practi
     assert.deepEqual([bp.check, bp.provenance], ['image-redundant-alt', 'ai-supported']);
     await page.close();
 });
+
+test('a question that asks for it gets what the checker reported, bounded', async () => {
+    const page = await browser.newPage();
+    await page.setContent('<title>Form</title><p><label for="a">Phone</label> <input id="a"></p><p><label for="b">Phone</label> <input id="b"></p>');
+    const details = { label: 'Phone', sharedWith: 1, sharedWithFields: ['#b'], long: 'x'.repeat(500), list: Array.from({ length: 30 }, (_, i) => i) };
+    const c = { findings: [{ outcome: 'cantTell', occurrences: [
+        { atomicCheckId: 'form-control-label-quality', occurrenceOutcome: 'cantTell', target: ['#a'], html: '<input id="a">', details },
+        { atomicCheckId: 'img-alt-quality', occurrenceOutcome: 'cantTell', target: ['#b'], html: '<input id="b">', details },
+    ] }] };
+    const prompts = [];
+    await answerCantTells({ page, canonical: c, env: {}, provider: { ask: async (p) => { prompts.push(p); return '{"verdict":"fail","confidence":0.9,"rationale":"x"}'; } } });
+    const [label, alt] = c.findings[0].occurrences.map((o) => o.ai.evidence);
+    assert.deepEqual(label.reported.sharedWithFields, ['#b']);
+    assert.ok(label.reported.long.length <= 201 && label.reported.list.length === 10, 'long values are cut');
+    assert.match(prompts[0], /"sharedWithFields":\["#b"\]/);
+    assert.equal(alt.reported, undefined, 'only for a question that asks for it');
+    await page.close();
+});
