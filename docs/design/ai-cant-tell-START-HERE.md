@@ -20,11 +20,12 @@ Read, in this order:
 
 Everything is committed and pushed (latest: the **open walk**, an opt-in
 `open: true` that presses what says it opens something and records what the
-keyboard can do with it, evaluated on the GOV.UK keyboard pages and on a new
-demo page, `dialog.html`, with a dialog a keyboard user cannot close; before
-that the WAI tutorials and 42 more GOV.UK pages; prompt version
-`registry-7`). The full suite (4486 pass, 5 skipped) and the browser tests
-(`focus-walk` 14, `ai-answer` and `app-boot` 22) pass.
+keyboard can do with it, and `open: "buttons"` that presses plain buttons too;
+evaluated on the GOV.UK keyboard pages, the demo's `dialog.html` (a dialog a
+keyboard user cannot close) and the W3C ARIA Authoring Practices examples
+(working widgets: no wrong fail); the walks now judged by what the page
+shows, not its markup; prompt version `registry-7`). The full suite and the
+browser tests (`focus-walk` 16, `ai-answer`, `app-boot`) pass.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `open-walk.js`, `evidence.js`, `provider.js`,
@@ -54,8 +55,10 @@ that the WAI tutorials and 42 more GOV.UK pages; prompt version
   - **The open walk** (`open: true` with `focus`, `openControls` default 10,
     `open-walk.js`, the newest): presses each control Tab reaches that says it
     opens something (aria-expanded, aria-haspopup, aria-controls, a link to
-    `#`, a role=button link; never a submit, a form's control or a plain
-    button), with every navigation of the page stopped; records whether its
+    `#`, a role=button link; with `open: "buttons"` plain buttons too, unless
+    the name says they act; never a submit or a form's control), with every
+    navigation of the page and every request that could change something on
+    a server stopped; records whether its
     key worked, what opened, where focus went, whether Tab gets in and stays,
     whether the close control can take focus and Escape closes; closes it
     again (a close control is told by a short name: "Close", "X", "×"), focus
@@ -101,12 +104,13 @@ that the WAI tutorials and 42 more GOV.UK pages; prompt version
   | GOV.UK audit, 42 more pages | `ai-answers-govuk-audit-more.spec.json` | 167 | 107 (66%) | 100% | 0 |
   | W3C WAI tutorials (correct markup, reading questions only) | `ai-answers-wai-tutorials.spec.json` | 63 | 58 (97%) | 100% | 0 |
   | GOV.UK keyboard pages, with the open walk | `ai-answers-govuk-open.spec.json` | 48 | 35 (73%) | 97% | 1 fail (focus order on the trap page, for the trap) |
+  | W3C ARIA Authoring Practices examples (working widgets), `open: "buttons"` | `ai-answers-apg-open.spec.json` | 55 | 46 (84%) | 100% | 0 |
 
   Most of what is left open is by design: keyboard, which the AI may not
   pass, and focus questions on pages with nothing focusable. Files per site in
   `ai-cant-tell-eval/w3c-bad/` (runs 1 to 5), `uw-au/`, `govuk-audit/`,
-  `govuk-audit-more/`, `wai-tutorials/`, `govuk-open/`; labels for all but the W3C demo from
-  `label-rules.js` (`au`, `gov`, `wai`) over `list-cases.mjs`.
+  `govuk-audit-more/`, `wai-tutorials/`, `govuk-open/`, `apg-open/`; labels for all but the W3C demo from
+  `label-rules.js` (`au`, `gov`, `wai`, `apg`) over `list-cases.mjs`.
   Fixes these runs led to: links that give focus up at once, whole walks
   (`focusStops`), blank images, a video's own controls, keyboard asked where
   Tab reaches nothing, focus order judged on its own; then the open walk.
@@ -195,13 +199,17 @@ The first three need the user; the rest can be done without.
    graphic", the empty-alt BBC logo (GOV.UK, a fail argued but answered
    unsure).
 6. **The open walk, next steps (optional):** it gave the fail on the demo's
-   dialog that cannot be closed, and on the GOV.UK lightboxes it moved no
-   verdict (by WCAG they are keyboard-usable). Open points: a real site with
-   such a dialog (needs its host allowed); menus that open on hover and say
+   dialog that cannot be closed, moved no verdict on the GOV.UK lightboxes
+   (by WCAG they are keyboard-usable), and failed none of the APG's working
+   widgets. Open points: a real site with a dialog that cannot be closed
+   (needs its host allowed); the combobox fix (what shows noted after
+   focusing; `aria-controls` counts only its target) was checked by hand on
+   the combobox page, with no answered run yet; menus that open on hover and say
    nothing (no `aria-haspopup`: GOV.UK's dropdown navigation) are not
-   pressed; plain buttons are never pressed, by design; arrow keys inside an
-   opened menu are not tried; a page left changed is only logged (no undo
-   beyond Escape, the control again and a close control).
+   pressed; arrow keys are not pressed (an APG menubar's submenus, a menu's
+   items); a page left changed is only logged (no undo beyond Escape, the
+   control again and a close control); what a control saves in the browser
+   (local storage) is detected, not undone.
 7. **On hold:** the browser extension (it never receives AI answers; see the
    design note's Handoff, item 4).
 

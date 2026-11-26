@@ -737,6 +737,19 @@ pressed (not a plain button, not a form), the page fingerprint is the same
 after, a script's navigation is stopped, and the questions see it only when
 asked.
 
+Then, from the W3C ARIA Authoring Practices examples (eval README): `open:
+"buttons"` presses plain buttons outside a form too, except those whose name
+says they act (`ACTS_NAME`); every mode stops requests other than GET, HEAD
+and OPTIONS (`blockedRequests`); a control whose aria-expanded changed is
+pressed back; close controls are real controls first (`CLOSE_NAME`, with
+"No"); what shows is noted after the control is focused and the page has
+settled, and with aria-controls only what it controls counts. Both walks are
+now judged by `viewChanges` (evidence.js): the fingerprint's `view` (elements
+in order, rendered text, visible count) with URL, storage, cookies, focus,
+scroll and viewport, not the markup's hash, which a component's attribute
+set as focus passes changed on every W3C page. The pass's own check keeps the
+markup.
+
 ## Status on 2026-11-25
 
 The current state, what is next and the conventions are in

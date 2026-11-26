@@ -1,0 +1,277 @@
+{
+ "img-alt-decorative|1iip89i": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the abstract illustration of the pattern beside its heading, alt=\"\" by the W3C's choice: nothing is lost",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|on1o1b": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|ueferx": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|9frvxa": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|6furag": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|121q6qn": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "p-as-heading|1wy0a83": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a site name in a header (the WAI site, or the example's \"Mythical University\"), not a section title",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|9nzkpg": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: every control works with the keyboard as the pattern describes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|4q3hws": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the example and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|9nzkpg": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: focus follows the page, and a modal dialog takes and keeps focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|9nzkpg": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the W3C site and its examples show focus on every control",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|1lxub90": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the abstract illustration of the pattern beside its heading, alt=\"\" by the W3C's choice: nothing is lost",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1xl8sui": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: every control works with the keyboard as the pattern describes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1c1g653": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the example and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1xl8sui": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: focus follows the page, and a modal dialog takes and keeps focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1xl8sui": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the W3C site and its examples show focus on every control",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|lwg8dl": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the abstract illustration of the pattern beside its heading, alt=\"\" by the W3C's choice: nothing is lost",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1kpcazd": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: every control works with the keyboard as the pattern describes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|vv8m1i": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the example and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1kpcazd": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: focus follows the page, and a modal dialog takes and keeps focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1kpcazd": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the W3C site and its examples show focus on every control",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|6hij8x": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: every control works with the keyboard as the pattern describes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|zi3vtd": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the example and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|6hij8x": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: focus follows the page, and a modal dialog takes and keeps focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|6hij8x": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the W3C site and its examples show focus on every control",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|1lja2oa": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the abstract illustration of the pattern beside its heading, alt=\"\" by the W3C's choice: nothing is lost",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|ehe5ty": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1535tx0": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: every control works with the keyboard as the pattern describes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|pqj8pr": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the example and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1535tx0": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: focus follows the page, and a modal dialog takes and keeps focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1535tx0": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the W3C site and its examples show focus on every control",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|1wn6ket": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1sxikro": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: every control works with the keyboard as the pattern describes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|730r5c": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the example and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1sxikro": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: focus follows the page, and a modal dialog takes and keeps focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1sxikro": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the W3C site and its examples show focus on every control",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|1pw9e4e": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the abstract illustration of the pattern beside its heading, alt=\"\" by the W3C's choice: nothing is lost",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|1qo6sv2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: every control works with the keyboard as the pattern describes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1xnbeyp": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the example and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|1qo6sv2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: focus follows the page, and a modal dialog takes and keeps focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|1qo6sv2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the W3C site and its examples show focus on every control",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|16q2z7a": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the abstract illustration of the pattern beside its heading, alt=\"\" by the W3C's choice: nothing is lost",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|1equm1w": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|1v6ovd1": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|clf2p2": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an icon beside the text of its control or heading: decorative",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "p-as-heading|1yz72fh": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: a site name in a header (the WAI site, or the example's \"Mythical University\"), not a section title",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|xr2nor": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: every control works with the keyboard as the pattern describes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|1lgy4ll": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the example and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|xr2nor": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: focus follows the page, and a modal dialog takes and keeps focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|xr2nor": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the W3C site and its examples show focus on every control",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "img-alt-decorative|1w7bvid": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the abstract illustration of the pattern beside its heading, alt=\"\" by the W3C's choice: nothing is lost",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "keyboard|ni3kh4": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: every control works with the keyboard as the pattern describes",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "page-title-patterns|4xf4zb": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the title names the example and the site",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-order|ni3kh4": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: an APG reference example: focus follows the page, and a modal dialog takes and keeps focus",
+  "at": "2026-11-25T18:00:00.000Z"
+ },
+ "focus-visible|ni3kh4": {
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: the W3C site and its examples show focus on every control",
+  "at": "2026-11-25T18:00:00.000Z"
+ }
+}

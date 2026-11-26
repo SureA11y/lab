@@ -53,6 +53,7 @@ with **Load config**. `--check` checks one without opening a browser.
 | `specs/ai-answers-govuk-audit-more.spec.json` | AI answers on 42 more pages of the GOV.UK audit (images, buttons, links, forms, headings, keyboard, lightboxes, iframes) |
 | `specs/ai-answers-wai-tutorials.spec.json` | AI answers on the W3C WAI tutorials, whose examples carry the recommended alt text and labels (reading questions only) |
 | `specs/ai-answers-govuk-open.spec.json` | AI answers on the 12 GOV.UK audit keyboard pages with menus and dialogs opened (`open: true`) |
+| `specs/ai-answers-apg-open.spec.json` | AI answers on the W3C ARIA Authoring Practices examples (working dialogs, menus, disclosures), with `open: "buttons"` |
 | `configs/shopping-flow.a11y-config.json` | `shopping-flow` as the app's **Export config** writes it |
 
 ```bash

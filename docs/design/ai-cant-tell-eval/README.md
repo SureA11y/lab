@@ -537,3 +537,52 @@ run; by WCAG 2.1.1 the model's reading is the better one.
 ```bash
 A11Y_AI_PREVIEW=on node src/cli/run-workflow.js examples/specs/ai-answers-govuk-open.spec.json --out runs/govuk-open
 ```
+
+## The open walk on working widgets: the W3C ARIA Authoring Practices (2026-11-26)
+
+The GOV.UK pages test the open walk on problems; the W3C's
+[ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/) examples test it
+on widgets that work: their reference implementations of a modal dialog, an
+alert dialog, two disclosures, two menu buttons, an accordion, a menubar and
+a select-only combobox, on the W3C site. Scanned with
+`open: "buttons"` (built for them: the modal dialog opens from a plain
+button), answered blind by five separate models (the walks of 53 to 61 stops
+make long prompts), labelled pass throughout (`apg` rules in
+[label-rules.js](label-rules.js), before any answer). Spec:
+`examples/specs/ai-answers-apg-open.spec.json`. Files: [apg-open/](apg-open/).
+
+| | APG examples, open walk |
+| --- | --- |
+| Questions sent | 57 (55 cases) |
+| Agree | 46 of 55 (84%) |
+| **Of those answered** | **46 of 46 (100%)** |
+| Fail where the label says pass | 0 |
+| Left open | 9: keyboard on every page, which the AI may not pass |
+
+Focus visible, focus order, page title, decorative images and site names
+all agreed. On keyboard the model stayed unsure with the right reasons: "the
+dialog opened with Enter, took focus, has a focusable Cancel button and
+closes with Escape"; on the menubar, the three items Tab never reaches are "a
+roving tabindex normally reached with arrow keys", not a fail.
+
+**What these pages found in the lab, fixed:**
+
+- Most dialogs open from a plain button, which the open walk never pressed:
+  `open: "buttons"` now does, except a button whose name says it acts, and
+  every mode now stops any request that could change something on a server.
+- On every W3C page the Tab walk counted as a changed page (a skip-to-content
+  element sets an attribute as focus passes), so all focus answers would have
+  been dropped. The walks are now judged by what the page shows, not its
+  markup; this run is the first with the fix.
+- An accordion section open from the start was left closed; it is now
+  pressed back. A dialog box whose text ends in "Close" was taken for its
+  close control; real controls come first. "No" closes a confirmation, and a
+  "Discard" button is not pressed.
+- After this run: on the combobox, focusing it scrolled the page and the
+  site's "Back to Top" button appeared, which was taken for what opened (the
+  model rightly distrusted it). What shows is now noted after focusing and
+  settling, and a control with `aria-controls` counts only what it controls.
+
+```bash
+A11Y_AI_PREVIEW=on node src/cli/run-workflow.js examples/specs/ai-answers-apg-open.spec.json --out runs/apg-open
+```
