@@ -151,12 +151,11 @@ map), so they need other sources, with failing cases among them; anything
 through the lab's own Claude call with a real key (so prompt caching too: the
 first real run should show cached tokens in the API's usage); agreement after
 the evidence was reordered; the open walk on a real site with a dialog that
-truly cannot be closed or traps focus (so far only the demo's); the combobox
-fix of the open walk (after the APG run: checked by hand, not yet in an
-answered run). The runs before 2026-11-26 were made before the walks were
-judged by what the page shows: in UW and the GOV.UK runs no walk was dropped
-for a changed page (every open case has another reason), so their figures
-stand; W3C run 5 was not re-checked.
+truly cannot be closed or traps focus (so far only the demo's). The runs
+before 2026-11-26 were made before the walks were judged by what the page
+shows: in UW and the GOV.UK runs no walk was dropped for a changed page (every
+open case has another reason), so their figures stand; W3C run 5 was not
+re-checked.
 
 **Labels that disagree with WCAG, kept on purpose:** in `label-rules.js`
 (`gov`), keyboard on the GOV.UK "lightbox close button" and "role=button"
