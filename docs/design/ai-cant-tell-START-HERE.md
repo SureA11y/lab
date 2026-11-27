@@ -33,7 +33,8 @@ page's pixels (`pixels`); the walk lane from what the checker reported and, with
 text alternatives, the names and labels (with what the checker reported),
 the structure checks (with the table, the heading outline and the
 landmarks) and "is it text"; best-practice findings are asked too; demo 103
-of 103, prompt version `registry-16`. Before that: the **roadmap** and the
+of 103, prompt version `registry-17`; 6 checks trusted by the user's rule
+(`ai-cant-tell-eval/trust.md`). Before that: the **roadmap** and the
 **inventory** of every engine check that can end in "can't tell" (with a
 test that keeps it in step with the engine and the registry), and the
 **open walk** (`open: true` presses what says it opens something,
@@ -54,44 +55,30 @@ only after; its decisions are listed there and left open on purpose.
 are in `ai-cant-tell-roadmap.md`, "Decisions": every recommended option.
 **Where to pick up**, the work they and the plan leave, in this order:
 
-1. **Exact contrast in the lab** (no decision needed): `pixels`
-   (`measurePixels` in `evidence.js`) tells text from background by colour,
-   so antialiased glyph edges count as background and 7 real cases of
-   readable text were left unsure. Bring in the method of
-   `ai-cant-tell-eval/contrast-reference.js` (the picture with the text,
-   then with the text made transparent for a moment, the background under
-   the glyphs read directly), with a fingerprint before and after
-   (`fingerprint`, `viewChanges`, as the walks), the style put back, the
-   current method as fallback, never failing the scan. Re-run the measure
-   lane's real cases and the demo.
-2. **Labels by WCAG's reading (decision 7):** re-read the labels written by
-   an audit's stricter reading (`label-rules.js` `gov`: "Read more", "Click
-   here" in its sentence, the search field labelled by its button, the
-   lightbox close button with Escape, the role=button link; the UW "Info"
-   link) and re-score; note each changed case in the eval README.
-3. **Trust (decision 8):** `ai:agreement` marks a check trusted at 30 or
-   more labelled real cases and 95% agreement when answered with no wrong
-   pass; a table of checks and their trust in the eval README; answers
-   stay suggestions in the app until then (showing trusted ones as settled
-   is a later step).
-4. **Pictures (decision 5):** `ai: { pictures: true }` per step, off by
+1. **Done 2026-11-27:** exact contrast in the lab (`registry-17`; the
+   measure lane's real cases 144 of 144), labels by WCAG's reading (15
+   GOV.UK labels re-read; the first GOV.UK run 62 of 62 answered), and
+   trust (`ai:agreement`'s Trusted column; `ai-cant-tell-eval/trust.md`
+   from `trust-table.js`: 6 of 33 checks trusted). Details in the eval
+   README.
+2. **Pictures (decision 5), next:** `ai: { pictures: true }` per step, off by
    default, forbidden by the server unless `A11Y_AI_PICTURES` allows it
    (and per allowed site); masked areas never sent; the built-in call sends
    the element's picture as an image block, the endpoint as today
    (`A11Y_AI_ENDPOINT_PICTURE`). Then `image-of-text` (the `picture` lane)
    and a measurement on the alt questions and the W3C news photo.
-5. **Forms (decision 6):** `ai: { forms: true }` per step, only on hosts in
+3. **Forms (decision 6):** `ai: { forms: true }` per step, only on hosts in
    `A11Y_AI_FORM_HOSTS` (test systems); fill and submit with invalid input
    for `invalid-field-error-message`, paste for `password-paste-enabled`,
    watch `live-region-announcements`; data-changing requests stay blocked
    elsewhere.
-6. **The `tree` lane in the engine (decision 4):** in the engine's own
+4. **The `tree` lane in the engine (decision 4):** in the engine's own
    repository (`@surea11y/core`), not this one: ask the user which
    repository and add it (`add_repo`) before starting; the lab's inventory
    moves those checks to "the engine".
-7. **The `code` lane (decision 3):** a person confirms; nothing to build;
+5. **The `code` lane (decision 3):** a person confirms; nothing to build;
    the inventory's lane note says so.
-8. **Phase 2 (decisions 1 and 2):** AI-raised items in a section of their
+6. **Phase 2 (decisions 1 and 2):** AI-raised items in a section of their
    own, unconfirmed, counting towards nothing until a person confirms; the
    AI only flags, never passes. Only after phase 1.
 
@@ -102,7 +89,7 @@ are in `ai-cant-tell-roadmap.md`, "Decisions": every recommended option.
 | 1, structure | 13 | all agree (one ambiguous case dropped) | 37 of 37 |
 | 1, "is it text" | 4 | 4 of 4 | none came up |
 | 3, walk lane | 12 | 16 of 16 | 10 of 10 read only (8 unsure), 23 of 24 with the walk |
-| 4, measure lane | 9 | 6 of 6 | 137 of 144 (contrast labelled by a reference measurement; none wrong) |
+| 4, measure lane | 9 | 6 of 6 | 144 of 144 with the exact contrast measurement (137 before; labelled by a reference measurement) |
 | 2, accessibility tree | 23 | | waiting on roadmap decision 4 (item 3b) |
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
@@ -204,7 +191,7 @@ are in `ai-cant-tell-roadmap.md`, "Decisions": every recommended option.
   | --- | --- | --- | --- | --- | --- |
   | W3C Before and After Demonstration, run 5 | `ai-answers-w3c-bad.spec.json` | 57 | 47 (82%) | 98% | 1 pass (news photo, Note 10; it varies run to run) |
   | UW Accessible University | `ai-answers-uw-au.spec.json` | 47 | 38 (81%) | 100% | 0 |
-  | GOV.UK accessibility tool audit, 23 pages | `ai-answers-govuk-audit.spec.json` | 98 | 60 (61%) | 97% | 2 passes, WCAG readings the audit is stricter than |
+  | GOV.UK accessibility tool audit, 23 pages | `ai-answers-govuk-audit.spec.json` | 98 | 62 (63%) | 100% | 0 (the 2 "wrong passes" were WCAG's reading; relabelled, decision 7) |
   | GOV.UK audit, 42 more pages | `ai-answers-govuk-audit-more.spec.json` | 167 | 107 (66%) | 100% | 0 |
   | W3C WAI tutorials (correct markup, reading questions only) | `ai-answers-wai-tutorials.spec.json` | 63 | 58 (97%) | 100% | 0 |
   | GOV.UK keyboard pages, with the open walk | `ai-answers-govuk-open.spec.json` | 48 | 35 (73%) | 97% | 1 fail (focus order on the trap page, for the trap) |
@@ -245,15 +232,12 @@ cannot be closed or traps focus (so far only the demo's). The runs before
 UW and the GOV.UK runs no walk was dropped for a changed page (every open case
 has another reason), so their figures stand; W3C run 5 was not re-checked.
 
-**Labels that disagree with WCAG, kept on purpose:** in `label-rules.js`
-(`gov`), keyboard on the GOV.UK "lightbox close button" and "role=button"
-pages is labelled fail, as the audit lists them. With the open walk the
-model read them by WCAG 2.1.1 (Escape closes the lightbox; Enter works on the
-link, Space only is 4.1.2) and left them open. And in
-`ai-cant-tell-eval/names-labels/labels.json`, UW's "Info" link (2.4.9, AAA:
-"Details about all known issues are on the Info page") is labelled pass, as
-the page's name; the model failed it at 0.6. A person's labels (item 1)
-should settle which reading the lab wants.
+**Labels follow WCAG's reading** (decision 7, 2026-11-27): the GOV.UK labels
+written by the audit's stricter reading were re-read (15, each note says
+so). One case is still a judgement the AI read differently: UW's "Info" link
+(2.4.9, AAA: "Details about all known issues are on the Info page"),
+labelled pass as the page's name, failed by the model at 0.6. A person's
+labels (item 1) remain the reference.
 
 **On the user's machine:** the branch is checked out in the main folder,
 `C:\Dev\surea11y\lab` (the old worktree was removed). **Do not commit** the

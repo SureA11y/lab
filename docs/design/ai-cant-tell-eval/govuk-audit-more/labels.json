@@ -650,8 +650,8 @@
   "at": "2026-11-25T18:00:00.000Z"
  },
  "keyboard|2v8xv7": {
-  "verdict": "fail",
-  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: link with a rolebutton does not work with space bar",
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit lists it; by WCAG 2.1.1 it is usable by keyboard (Escape or an X link closes the lightbox; Enter works on the link; Space only is 4.1.2) (relabelled by WCAG's reading, decision 7, 2026-11-27)",
   "at": "2026-11-25T18:00:00.000Z"
  },
  "page-title-patterns|121rz0y": {
@@ -715,8 +715,8 @@
   "at": "2026-11-25T18:00:00.000Z"
  },
  "keyboard|1zz0st": {
-  "verdict": "fail",
-  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: lightbox close button doesnt receive focus",
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit lists it; by WCAG 2.1.1 it is usable by keyboard (Escape or an X link closes the lightbox; Enter works on the link; Space only is 4.1.2) (relabelled by WCAG's reading, decision 7, 2026-11-27)",
   "at": "2026-11-25T18:00:00.000Z"
  },
  "page-title-patterns|18oyp2v": {
@@ -735,8 +735,8 @@
   "at": "2026-11-25T18:00:00.000Z"
  },
  "keyboard|6ni96p": {
-  "verdict": "unsure",
-  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: lightbox esc key doesnt close the lightbox; whether that fails 2.1.1 depends on the close control, which the walk never opens",
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit lists it; by WCAG 2.1.1 it is usable by keyboard (Escape or an X link closes the lightbox; Enter works on the link; Space only is 4.1.2) (relabelled by WCAG's reading, decision 7, 2026-11-27)",
   "at": "2026-11-25T18:00:00.000Z"
  },
  "page-title-patterns|z58yu6": {
@@ -755,8 +755,8 @@
   "at": "2026-11-25T18:00:00.000Z"
  },
  "keyboard|15rblr9": {
-  "verdict": "unsure",
-  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: lightbox focus is not moved immediately to lightbox; whether that fails 2.1.1 depends on the close control, which the walk never opens",
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit lists it; by WCAG 2.1.1 it is usable by keyboard (Escape or an X link closes the lightbox; Enter works on the link; Space only is 4.1.2) (relabelled by WCAG's reading, decision 7, 2026-11-27)",
   "at": "2026-11-25T18:00:00.000Z"
  },
  "page-title-patterns|hims0e": {
@@ -765,8 +765,8 @@
   "at": "2026-11-25T18:00:00.000Z"
  },
  "focus-order|15rblr9": {
-  "verdict": "fail",
-  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: focus is not moved to the lightbox (it sits at the end of the page)",
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit lists focus not moved to or kept in the lightbox; by WCAG 2.4.3 it is not a modal dialog and is the next Tab stop (relabelled by WCAG's reading, decision 7, 2026-11-27)",
   "at": "2026-11-25T18:00:00.000Z"
  },
  "focus-visible|15rblr9": {
@@ -785,8 +785,8 @@
   "at": "2026-11-25T18:00:00.000Z"
  },
  "focus-order|1x6x72r": {
-  "verdict": "unsure",
-  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: focus is not kept in the lightbox; WCAG 2.4.3 does not require it in every case",
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit lists focus not moved to or kept in the lightbox; by WCAG 2.4.3 it is not a modal dialog and is the next Tab stop (relabelled by WCAG's reading, decision 7, 2026-11-27)",
   "at": "2026-11-25T18:00:00.000Z"
  },
  "focus-visible|1x6x72r": {

@@ -60,6 +60,15 @@ describe('score', () => {
         assert.equal(s.total.answered, 0.75);
         assert.equal(s.perCheck.k.agree, 1);
     });
+
+    test('a check is trusted at 30 cases, 95% agreement when answered and no wrong pass', () => {
+        const ok = (verdict) => ({ provenance: 'ai-supported', verdict });
+        const many = (check, n, answer) => Array.from({ length: n }, (_, i) => ({ key: check + i, person: 'pass', check, answer }));
+        const all = [...many('good', 30, ok('pass')), ...many('few', 29, ok('pass')), ...many('missed', 30, ok('pass'))];
+        all[all.length - 1].person = 'fail';
+        const s = score(all, new Map(all.map((c) => [c.key, c.answer])));
+        assert.deepEqual([s.perCheck.good.trusted, s.perCheck.few.trusted, s.perCheck.missed.trusted], [true, false, false]);
+    });
 });
 
 describe('leaveOneOut and judgeLessons', () => {

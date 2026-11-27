@@ -76,16 +76,20 @@ for (const c of cases) {
       else if (/image-link-with-no-alternative-text/.test(p)) set(c, 'fail', 'GOV.UK audit: image link with no alternative text (the image is the link\'s only content)');
       else set(c, 'unsure', 'not documented');
     } else if (k === 'link-name-quality' && /rolebutton/.test(p)) set(c, 'pass', '"Continue", the page\'s one button-like link: clear in its context (the audit\'s point is the space bar)');
-    else if (k === 'link-name-quality') set(c, 'fail', 'GOV.UK audit: ' + (/Read more/.test(i) ? 'uninformative' : 'non-specific') + ' link text');
-    else if (k === 'form-control-programmatic-label-quality') set(c, 'fail', 'GOV.UK audit: placeholder, no label');
+    // WCAG's reading (decision 7): "Read more" after the paragraph under the
+    // heading "Polar bear" meets 2.4.4 by H80; "Click here for more
+    // information on the Rocky Mountains" by G53 (the audit fails both).
+    else if (k === 'link-name-quality') set(c, 'pass', 'GOV.UK audit lists ' + (/Read more/.test(i) ? 'uninformative' : 'non-specific') + ' link text; by WCAG 2.4.4 its ' + (/Read more/.test(i) ? 'preceding heading (H80)' : 'sentence (G53)') + ' gives its purpose');
+    else if (k === 'form-control-programmatic-label-quality') set(c, 'pass', 'GOV.UK audit lists a placeholder with no label; by WCAG the Search button beside it labels its purpose (G167)');
     else if (k === 'keyboard' || k === 'keyboard-element') {
-      if (/lightbox-esc|lightbox-focus-is-not-moved/.test(p)) set(c, 'unsure', 'GOV.UK audit: ' + p.replace(/^keyboard-access-/, '').replace(/-/g, ' ') + '; whether that fails 2.1.1 depends on the close control, which the walk never opens');
-      else if (/fake-button|concertina|tooltips|dropdown-navigation|keyboardtrap|rolebutton|lightbox-close-button/.test(p)) set(c, 'fail', 'GOV.UK audit: ' + p.replace(/^keyboard-access-|example-pages\//, '').replace(/-/g, ' '));
+      // WCAG's reading (decision 7): the lightboxes close with Escape or an
+      // X link, and Enter works on the role=button link: usable by keyboard.
+      if (/lightbox|rolebutton/.test(p)) set(c, 'pass', 'GOV.UK audit lists ' + p.replace(/^keyboard-access-/, '').replace(/-/g, ' ') + '; by WCAG 2.1.1 it is usable by keyboard (Escape or an X link closes it; Enter works on the link; Space only is 4.1.2)');
+      else if (/fake-button|concertina|tooltips|dropdown-navigation|keyboardtrap/.test(p)) set(c, 'fail', 'GOV.UK audit: ' + p.replace(/^keyboard-access-|example-pages\//, '').replace(/-/g, ' '));
       else set(c, 'pass', 'nothing on the page a keyboard cannot reach');
     } else if (k === 'focus-order') {
       if (/focus-order-in-wrong-order/.test(p)) set(c, 'fail', 'GOV.UK audit: focus order in wrong order (the links are placed out of their order)');
-      else if (/lightbox-focus-is-not-moved/.test(p)) set(c, 'fail', 'GOV.UK audit: focus is not moved to the lightbox (it sits at the end of the page)');
-      else if (/lightbox-focus-is-not-retained/.test(p)) set(c, 'unsure', 'GOV.UK audit: focus is not kept in the lightbox; WCAG 2.4.3 does not require it in every case');
+      else if (/lightbox-focus-is-not-moved|lightbox-focus-is-not-retained/.test(p)) set(c, 'pass', 'GOV.UK audit lists focus not ' + (/moved/.test(p) ? 'moved to' : 'kept in') + ' the lightbox; by WCAG 2.4.3 the lightbox is not a modal dialog and is the next Tab stop, so the order keeps its meaning');
       else if (/tabindex-greater-than-0/.test(p)) set(c, 'unsure', 'GOV.UK audit flags tabindex above 0, but with one link the order cannot be wrong');
       else set(c, 'pass', 'nothing out of order');
     } else if (k === 'focus-visible' || k === 'focus-visible-element' || k === 'focus-contrast-element') {

@@ -146,6 +146,10 @@ const empty = () => ({ labelled: 0, personUnsure: 0, agree: 0, missedFail: 0, fa
  * fail, the costly mistake. falseFail: the AI said fail where a person said
  * pass. unresolved: the AI gave no answer that counts.
  */
+// When a check is trusted: at least 30 labelled cases, 95% agreement on the
+// answers the AI gave, no "pass" where the person said "fail".
+const TRUST = Object.freeze({ cases: 30, agreement: 0.95 });
+
 function score(cases, answers) {
     const perCheck = {};
     const total = empty();
@@ -166,6 +170,9 @@ function score(cases, answers) {
         row.agreement = row.labelled ? row.agree / row.labelled : null;
         row.answered = row.labelled ? answered / row.labelled : null;
         row.agreementWhenAnswered = answered ? row.agree / answered : null;
+        // The user's rule for trusting a check (decision 8): enough cases, the
+        // answers it gave right, never a pass where the person said fail.
+        row.trusted = row.labelled >= TRUST.cases && row.agreementWhenAnswered !== null && row.agreementWhenAnswered >= TRUST.agreement && row.missedFail === 0;
     }
     return { perCheck, total };
 }
@@ -219,10 +226,10 @@ function markdown(result) {
         lines.push(`Left out: ${result.skipped.notInRegistry} not answerable by the AI, ${result.skipped.noEvidence} without the evidence the pass read, ${result.skipped.conflicting} labelled differently in two reports (the first kept).`, '');
     }
     for (const [name, run] of Object.entries(result.runs)) {
-        lines.push(`## ${run.title}`, '', '| Check | Labelled | Agree | AI pass, person fail | AI fail, person pass | Unresolved | Agreement | Answered | Agreement when answered |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+        lines.push(`## ${run.title}`, '', '| Check | Labelled | Agree | AI pass, person fail | AI fail, person pass | Unresolved | Agreement | Answered | Agreement when answered | Trusted |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
         const rows = Object.entries(run.score.perCheck).sort(([a], [b]) => a.localeCompare(b));
         for (const [check, r] of [...rows, ['**Total**', run.score.total]]) {
-            lines.push(`| ${check}${r.labelled && r.labelled < 30 && check !== '**Total**' ? ' (fewer than 30)' : ''} | ${r.labelled} | ${r.agree} | ${r.missedFail} | ${r.falseFail} | ${r.unresolved} | ${pct(r.agreement)} | ${pct(r.answered)} | ${pct(r.agreementWhenAnswered)} |`);
+            lines.push(`| ${check}${r.labelled && r.labelled < 30 && check !== '**Total**' ? ' (fewer than 30)' : ''} | ${r.labelled} | ${r.agree} | ${r.missedFail} | ${r.falseFail} | ${r.unresolved} | ${pct(r.agreement)} | ${pct(r.answered)} | ${pct(r.agreementWhenAnswered)} | ${check === '**Total**' ? '' : (r.trusted ? 'yes' : 'no')} |`);
         }
         lines.push('');
         if (name === 'recorded') lines.push('The answers the reports already hold, from the runs that made them.', '');

@@ -168,7 +168,8 @@ what it means for the work:
    is noted but scored by WCAG and its Understanding documents. The labels
    written by the audit's reading (`label-rules.js`, `gov`) are to be
    re-read by this rule.
-8. **Trust: 30 cases, 95% when answered.** A check is trusted once it has
+8. **Trust: 30 cases, 95% when answered** (in `ai:agreement` and
+   `ai-cant-tell-eval/trust.md` since 2026-11-27: 6 of 33 checks trusted). A check is trusted once it has
    at least 30 labelled real cases and 95% agreement on the answers the AI
    gave, with no wrong pass; the confidence threshold stays 0.6 for all.
    Until then its answers stay suggestions a person confirms. `ai:agreement`

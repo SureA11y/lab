@@ -175,8 +175,8 @@
   "at": "2026-11-25T18:00:00.000Z"
  },
  "link-name-quality|1a8xl8c": {
-  "verdict": "fail",
-  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: uninformative link text",
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit lists uninformative link text; by WCAG 2.4.4 its preceding heading (H80) gives its purpose (relabelled by WCAG's reading, decision 7, 2026-11-27)",
   "at": "2026-11-25T18:00:00.000Z"
  },
  "focus-visible|1vzydhq": {
@@ -220,8 +220,8 @@
   "at": "2026-11-25T18:00:00.000Z"
  },
  "link-name-quality|1el3zag": {
-  "verdict": "fail",
-  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: non-specific link text",
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit lists non-specific link text; by WCAG 2.4.4 its sentence (G53) gives its purpose (relabelled by WCAG's reading, decision 7, 2026-11-27)",
   "at": "2026-11-25T18:00:00.000Z"
  },
  "focus-visible|1bzptqd": {
@@ -270,8 +270,8 @@
   "at": "2026-11-25T18:00:00.000Z"
  },
  "form-control-programmatic-label-quality|4lb7qm": {
-  "verdict": "fail",
-  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit: placeholder, no label",
+  "verdict": "pass",
+  "note": "Labelled by Claude from the site's documentation and the page source, not by a person: GOV.UK audit lists a placeholder with no label; by WCAG the Search button beside it labels its purpose (G167) (relabelled by WCAG's reading, decision 7, 2026-11-27)",
   "at": "2026-11-25T18:00:00.000Z"
  },
  "keyboard|kojq6z": {

@@ -836,3 +836,41 @@ colour shows: the ratios cannot).
   these, at the cost of changing the page for a moment, which the walks'
   fingerprint check would have to cover. One answering model applied its
   readings with a script keyed on the measured values (it said so).
+
+## Exact contrast, WCAG's reading, and trust (2026-11-27)
+
+Three items of the work the user's decisions left (START-HERE, "Where to
+pick up").
+
+- **Exact contrast in the lab** (`registry-17`): `pixels` now reads the
+  background under each glyph as `contrast-reference.js` does (a picture
+  with the text, then with the text made transparent for a moment, every
+  touched style attribute put back, a fingerprint before and after; the
+  colour method as fallback). The measure lane's real pages again
+  ([measure-lane-exact/](measure-lane-exact/)): all 158 contrast cases
+  measured exactly, no page left changed; **144 of 144 agree, none open**
+  (the 7 left open by the colour method are settled). The demo: 103 of 103;
+  its near-white banner falls back to the colour method (the glyphs are
+  invisible on it, so hiding them changes nothing), whose "nearly all the
+  text colour" sign gives the fail.
+- **Labels by WCAG's reading** (decision 7): 15 GOV.UK labels written by the
+  audit's stricter reading were re-read (each note says so):
+  "Read more" after the paragraph under its heading (2.4.4 by H80) and
+  "Click here for more information on the Rocky Mountains" (G53) pass, the
+  search field with a "Search" button beside it passes (G167), the
+  lightboxes and the role=button link pass keyboard (Escape or an X link
+  closes them, Enter works), and focus order on the non-modal lightboxes
+  passes. Effect: the first GOV.UK run's two "wrong passes" were these
+  readings, so its answered agreement is **62 of 62**; the other changed
+  cases were left open by the AI and move nothing. `label-rules.js` writes
+  them so.
+- **Trust** (decision 8): `ai:agreement` has a Trusted column (30 labelled
+  cases, 95% agreement when answered, no wrong pass), and
+  [trust.md](trust.md) (`trust-table.js`) sums the real-site runs per check,
+  one run per set of pages: **6 of 33 checks trusted**:
+  `contrast-computable` (142 cases), `page-title-patterns` (96),
+  `focus-visible` (81), `focus-order` (80), `keyboard` (67, but only 7
+  answered: it may only fail), `img-alt-decorative` (50). `img-alt-quality`
+  (56 cases, 98%) is held back by its one wrong pass (the W3C news photo).
+  The rest have fewer than 30 cases. Labels are the assistant's: trust is
+  provisional until a person labels the runs.
