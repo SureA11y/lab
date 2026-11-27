@@ -46,6 +46,7 @@ left out.
 | `focusStops` | The most Tab presses in that walk (up to 200). | `40` |
 | `open` | `true` (with `focus`): after the walk, also **presses** each control that says it opens something on the page (a menu, a disclosure, a lightbox), to see whether the keyboard can use and close what opens. `"buttons"`: plain buttons too (most dialogs open from one), except those whose name says they act. It operates the page, within limits. See [Opening menus and dialogs](#opening-menus-and-dialogs-open-true). | off |
 | `openControls` | The most controls pressed (up to 50). | `10` |
+| `pictures` | `true`: the questions that use one (the image and text alternative questions, `image-of-text`, a control named by its tooltip) also send the **picture of the element**, so the model sees it. Sent only where the server allows it (`A11Y_AI_PICTURES`); a picture showing a value typed in a field is never sent. See [Pictures](#pictures-pictures-true). | off |
 | `answer` | No effect: it names the kind of result answered, `"cantTell"`, the only kind there is. | |
 
 Examples:
@@ -61,6 +62,7 @@ Examples:
 | A preview of everything, focus walk included | `{ "preview": true, "focus": true }` |
 | Menus and dialogs opened too | `{ "focus": true, "open": true }` |
 | Dialogs opened from plain buttons too | `{ "focus": true, "open": "buttons" }` |
+| The model sees the images it is asked about | `{ "pictures": true }` (with `A11Y_AI_PICTURES` on the server) |
 | With your lessons | `{ "lessons": "C:/audits/acme/ai-lessons.json" }` |
 
 The model, the sites it may be used for and what is masked are **not** in this
@@ -108,6 +110,7 @@ By reading the page (always):
 | `text-spacing-content-loss`, `avoid-inline-spacing` | 1.4.12 | With the text spacing applied, is content lost (cut, overlapping), or is spacing forced in a way that matters? |
 | `reflow-horizontal-scroll`, `resize-text-content-loss`, `meta-viewport-zoom-enabled` | 1.4.10, 1.4.4 | Is wide content excepted (a data table, a map) or lost; is resized text cut; does the viewport tag browsers apply allow zoom? |
 | `target-size-minimum`, `target-size-enhanced` | 2.5.8, 2.5.5 (AAA) | Does an exception hold for a small target (a sentence, an equivalent, an essential size)? |
+| `image-of-text` | 1.4.5 | Does an image button, or an image showing an SVG with text, hold text that could be real text? (From the SVG's source; for a picture-only button, with `pictures`.) |
 | `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |
@@ -227,10 +230,34 @@ Set where the lab runs, as environment variables (also in
 | `A11Y_AI_PROMPT_CACHE` | `off` stops the Claude call from marking a page's evidence for caching. By default it is marked, so the three page-level focus questions (keyboard, focus order, focus visible), which share one walk of thousands of tokens, pay for it once and read it from the cache after. A service at `A11Y_AI_ENDPOINT` gets each question whole and can cache as it likes. |
 | `A11Y_AI_ENDPOINT` | A service of your own that answers instead of the built-in Claude call: any model, or an agent with its own knowledge. It gets each question as data; the contract is in the design note, under "Plugging in another model or an agent", with an example in `docs/design/ai-cant-tell-spike/example-endpoint.js`. Used before the Claude key. |
 | `A11Y_AI_ENDPOINT_KEY`, `A11Y_AI_ENDPOINT_NAME` | The endpoint's key (sent as a bearer token) and the name the report gives it. |
-| `A11Y_AI_ENDPOINT_PICTURE` | `on`: the endpoint also gets the pictures. Never to the built-in call. |
+| `A11Y_AI_ENDPOINT_PICTURE` | `on`: the endpoint gets the pictures with every question (without it, only with the questions a step sends them with, below). |
+| `A11Y_AI_PICTURES` | Whether a step's `pictures` may send the element's picture to the model, built-in call or endpoint. Unset or `off`: never. `on`: on every site questions may be sent about. Hosts, comma-separated: on those only (and their subdomains), for instance your test systems. |
 | `A11Y_AI_ALLOWED_SITES` | The sites questions may be sent about, by host, comma-separated (a host includes its subdomains). Any other site sends nothing. Unset: every site. |
 | `A11Y_AI_MASK` | `off` turns off masking. On by default: e-mail addresses, IBANs, card-like and phone-like numbers are masked in what is sent (not in the report). |
 | `A11Y_AI_PREVIEW` | `on`: every run previews, whatever its steps say. |
+
+## Pictures (`pictures: true`)
+
+By default the model gets **text only**: the element's markup, the text
+around it and what was read of its picture (blank, its colours, an SVG's
+source). Some questions are settled faster by seeing it: is this photo what
+the alt says, is there text in this image button. With `{ "pictures": true }`
+those questions also send the element's **picture** as the page shows it
+(the one in the review, at most 1000 by 700 pixels), as an image beside the
+evidence.
+
+- Only the questions that use one: the image and text alternative questions,
+  `image-of-text`, and `control-name-title-only` (an icon named by its tooltip).
+- Only where the server allows it: `A11Y_AI_PICTURES` (`on`, or the hosts).
+  Unset, nothing is sent, and the step's summary says `pictures:
+  "not-allowed"`. A site not in `A11Y_AI_ALLOWED_SITES` sends nothing at all.
+- Never a picture that shows a value typed in a field (a password, a filled
+  text field): the picture of such an element stays in the review only.
+  Masking covers text, not pictures, so turn pictures on only for pages whose
+  images you may send.
+- The answer says so: **Answered by … , who saw the picture of the
+  element.** In a preview, each question says `picture: true` and holds the
+  picture.
 
 ## Preview: see what would leave
 

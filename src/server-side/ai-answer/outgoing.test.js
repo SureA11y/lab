@@ -156,3 +156,64 @@ describe('pictures', () => {
         assert.deepEqual([entryFor('img-alt-quality').check, entryFor('img-alt-quality').tier], ['img-alt-quality', 0]);
     });
 });
+
+describe('pictures to the model (a step\'s pictures, A11Y_AI_PICTURES)', () => {
+    const { picturesAllowed } = require('./outgoing');
+    const { anthropicProvider, contentFor } = require('./provider');
+    const { withPictureOf } = require('./index');
+    const { entryFor } = require('./registry');
+    const JPEG = 'data:image/jpeg;base64,QUJD';
+
+    test('the server allows none unless set: on for every site, or hosts', () => {
+        assert.equal(picturesAllowed('https://shop.example/', {}), false);
+        assert.equal(picturesAllowed('https://shop.example/', { A11Y_AI_PICTURES: 'off' }), false);
+        assert.equal(picturesAllowed('https://shop.example/', { A11Y_AI_PICTURES: 'on' }), true);
+        assert.equal(picturesAllowed('https://www.shop.example/', { A11Y_AI_PICTURES: 'shop.example' }), true);
+        assert.equal(picturesAllowed('https://other.example/', { A11Y_AI_PICTURES: 'shop.example' }), false);
+    });
+
+    test('the built-in call sends the picture as an image block, after the cached evidence', () => {
+        const body = anthropicProvider({ ANTHROPIC_API_KEY: 'k' }).bodyFor('<evidence>\n{}\n</evidence>\nQuestion: q', { picture: JPEG });
+        const content = body.messages[0].content;
+        assert.deepEqual(content.map((p) => p.type), ['text', 'image', 'text']);
+        assert.ok(content[0].cache_control);
+        assert.deepEqual(content[1].source, { type: 'base64', media_type: 'image/jpeg', data: 'QUJD' });
+        assert.equal(typeof anthropicProvider({ ANTHROPIC_API_KEY: 'k' }).bodyFor('x').messages[0].content, 'string', 'no picture: as before');
+        assert.deepEqual(contentFor('plain', { cache: false, picture: JPEG }).map((p) => p.type), ['image', 'text']);
+        assert.equal(contentFor('plain', { picture: 'data:text/html;base64,QUJD' }), 'plain', 'not an image: left out');
+    });
+
+    test('only the questions that use one, and never a picture of a typed value', () => {
+        const ev = { screenshot: JPEG };
+        assert.equal(withPictureOf(entryFor('img-alt-quality'), ev, true), JPEG);
+        assert.equal(withPictureOf(entryFor('image-of-text'), ev, true), JPEG);
+        assert.equal(withPictureOf(entryFor('img-alt-quality'), ev, false), null, 'not asked by the step');
+        assert.equal(withPictureOf(entryFor('heading-quality'), ev, true), null, 'a question that does not use one');
+        assert.equal(withPictureOf(entryFor('img-alt-quality'), { ...ev, pictureNotSent: 'typed' }, true), null);
+    });
+
+    test('the pass sends it when the step asks and the server allows, and says so', async () => {
+        const got = [];
+        const provider = { name: 'test', model: 'test', ask: async (prompt, o) => { got.push({ prompt, picture: o.picture }); return '{"verdict":"pass","confidence":0.9,"rationale":"ok"}'; } };
+        const page = { url: () => 'https://shop.example/p', evaluate: async () => ({ x: 0, y: 0, width: 40, height: 20 }), screenshot: async () => 'QUJD' };
+        const asked = canonical('<img id="a" alt="Red shoes">');
+        const s = await answerCantTells({ page, canonical: asked, provider, options: { pictures: true }, env: { A11Y_AI_PICTURES: 'shop.example' } });
+        assert.equal(s.pictures, 'allowed');
+        assert.equal(got[0].picture, JPEG);
+        assert.match(got[0].prompt, /image attached is a picture of the element/);
+        assert.equal(asked.findings[0].occurrences[0].ai.pictureSent, true);
+        got.length = 0;
+        const s2 = await answerCantTells({ page, canonical: canonical('<img id="a" alt="Red shoes">'), provider, options: { pictures: true }, env: {} });
+        assert.equal(s2.pictures, 'not-allowed');
+        assert.equal(got[0].picture, null);
+        assert.doesNotMatch(got[0].prompt, /image attached/);
+    });
+
+    test('an endpoint gets the picture of a question sent with one, never of a typed value', () => {
+        const { endpointProvider } = require('./provider');
+        const ep = endpointProvider({ A11Y_AI_ENDPOINT: 'http://127.0.0.1:1/a' });
+        assert.match(JSON.stringify(ep.bodyFor({ picture: true, evidence: { screenshot: JPEG } })), /QUJD/);
+        const on = endpointProvider({ A11Y_AI_ENDPOINT: 'http://127.0.0.1:1/a', A11Y_AI_ENDPOINT_PICTURE: 'on' });
+        assert.doesNotMatch(JSON.stringify(on.bodyFor({ evidence: { screenshot: JPEG, pictureNotSent: 'typed' } })), /QUJD/);
+    });
+});

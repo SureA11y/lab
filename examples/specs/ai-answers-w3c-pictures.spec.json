@@ -1,0 +1,24 @@
+{
+  "$schema": "../../schemas/run-spec.v1.schema.json",
+  "type": "a11y-run-spec",
+  "specVersion": 1,
+  "url": "https://www.w3.org/WAI/demos/bad/before/home.html",
+  "scenarioName": "AI answers on the W3C's Before and After Demonstration, pictures sent",
+  "actions": [
+    { "type": "a11yScan", "label": "Before: home", "ai": { "pictures": true, "budget": { "calls": 200, "seconds": 180 } } },
+    { "type": "navigate", "url": "https://www.w3.org/WAI/demos/bad/before/news.html" },
+    { "type": "a11yScan", "label": "Before: news", "ai": { "pictures": true, "budget": { "calls": 200, "seconds": 180 } } },
+    { "type": "navigate", "url": "https://www.w3.org/WAI/demos/bad/before/tickets.html" },
+    { "type": "a11yScan", "label": "Before: tickets", "ai": { "pictures": true, "budget": { "calls": 200, "seconds": 180 } } },
+    { "type": "navigate", "url": "https://www.w3.org/WAI/demos/bad/before/survey.html" },
+    { "type": "a11yScan", "label": "Before: survey", "ai": { "pictures": true, "budget": { "calls": 200, "seconds": 180 } } },
+    { "type": "navigate", "url": "https://www.w3.org/WAI/demos/bad/after/home.html" },
+    { "type": "a11yScan", "label": "After: home", "ai": { "pictures": true, "budget": { "calls": 200, "seconds": 180 } } },
+    { "type": "navigate", "url": "https://www.w3.org/WAI/demos/bad/after/news.html" },
+    { "type": "a11yScan", "label": "After: news", "ai": { "pictures": true, "budget": { "calls": 200, "seconds": 180 } } },
+    { "type": "navigate", "url": "https://www.w3.org/WAI/demos/bad/after/tickets.html" },
+    { "type": "a11yScan", "label": "After: tickets", "ai": { "pictures": true, "budget": { "calls": 200, "seconds": 180 } } },
+    { "type": "navigate", "url": "https://www.w3.org/WAI/demos/bad/after/survey.html" },
+    { "type": "a11yScan", "label": "After: survey", "ai": { "pictures": true, "budget": { "calls": 200, "seconds": 180 } } }
+  ]
+}

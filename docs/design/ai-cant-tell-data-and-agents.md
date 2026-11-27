@@ -21,7 +21,7 @@ piece of the page itself. For one question, this leaves the lab:
 | The page title and first headings | for page-title checks | the live page |
 | An image's address and, for an SVG of the same site, its source | for image checks | the live page |
 | The project's lessons | your house rules and corrected examples, which hold earlier pages' content | the lessons file |
-| The element's picture | only to an endpoint with `A11Y_AI_ENDPOINT_PICTURE` on; never to the built-in call | a screenshot of the element |
+| The element's picture | to an endpoint with `A11Y_AI_ENDPOINT_PICTURE` on; with a step's `pictures: true`, where `A11Y_AI_PICTURES` allows it, to the built-in call or an endpoint, for the questions that use one; never one showing a value typed in a field | a screenshot of the element |
 
 With `ai: { focus: true }`, a focus question also carries the focus walk: for
 every Tab stop, the element's tag, role, name (its text, label or alt, cut

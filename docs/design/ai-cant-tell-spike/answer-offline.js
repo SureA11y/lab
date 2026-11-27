@@ -8,7 +8,8 @@
 // 1. Run the workflow as a preview (A11Y_AI_PREVIEW=on, or ai: { preview: true }):
 //    its ai-sent.json holds every question as it would be sent, masked.
 // 2. node answer-offline.js prompts <ai-sent.json> <questions.jsonl>
-//    One line per question: { id, page, check, selector, prompt }.
+//    One line per question: { id, page, check, selector, prompt }, and
+//    `picture` (pictures/<id>.jpg beside it) for a question sent with one.
 // 3. A model answers each prompt, blind (the prompt only), one line per
 //    question in answers.jsonl: { id, verdict, confidence, rationale }.
 // 4. node answer-offline.js apply <payload.json> <questions.jsonl> <answers.jsonl> <out.json> [model name]
@@ -19,20 +20,48 @@
 // lab's Review AI answers.
 
 const fs = require('fs');
+const path = require('path');
 const { entryFor, PROMPT_VERSION } = require('../../../src/server-side/ai-answer/registry');
 
 const MIN_CONFIDENCE = 0.6;
 const readJsonl = (file) => fs.readFileSync(file, 'utf8').split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l));
 
+// A question sent with the element's picture (a step's `pictures`): the
+// picture is written beside questions.jsonl (pictures/q7.jpg), and the line
+// names it, for a model that answers from files.
+// A run writes its pictures as files (images/<hash>.jpg beside ai-sent.json);
+// a question kept in memory has it as a data URL.
+function pictureOf(body, runDir) {
+    const shot = body && body.picture === true && body.evidence && typeof body.evidence.screenshot === 'string' ? body.evidence.screenshot : null;
+    if (!shot) return null;
+    const m = /^data:image\/(jpeg|png|webp|gif);base64,(.+)$/.exec(shot);
+    if (m) return { ext: m[1] === 'jpeg' ? 'jpg' : m[1], data: Buffer.from(m[2], 'base64') };
+    const file = path.resolve(runDir, shot);
+    if (!file.startsWith(path.resolve(runDir) + path.sep) || !fs.existsSync(file)) return null;
+    return { ext: path.extname(file).slice(1) || 'jpg', data: fs.readFileSync(file) };
+}
+
 function prompts(sentFile, outFile) {
     const sent = JSON.parse(fs.readFileSync(sentFile, 'utf8'));
-    const lines = sent.map((e, i) => ({
-        id: 'q' + (i + 1),
-        page: e.page,
-        check: e.check,
-        selector: e.selector,
-        prompt: (e.body && (e.body.prompt || (e.body.messages && e.body.messages[0] && e.body.messages[0].content))) || '',
-    }));
+    const dir = path.join(path.dirname(outFile), 'pictures');
+    const lines = sent.map((e, i) => {
+        const id = 'q' + (i + 1);
+        const line = {
+            id,
+            page: e.page,
+            check: e.check,
+            selector: e.selector,
+            prompt: (e.body && (e.body.prompt || (e.body.messages && e.body.messages[0] && e.body.messages[0].content))) || '',
+        };
+        const pic = pictureOf(e.body, path.dirname(sentFile));
+        if (pic) {
+            fs.mkdirSync(dir, { recursive: true });
+            const file = path.join(dir, `${id}.${pic.ext}`);
+            fs.writeFileSync(file, pic.data);
+            line.picture = path.relative(path.dirname(outFile), file);
+        }
+        return line;
+    });
     fs.writeFileSync(outFile, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
     console.log(`${lines.length} questions in ${outFile}`);
 }

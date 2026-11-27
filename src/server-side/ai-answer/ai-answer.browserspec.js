@@ -80,6 +80,27 @@ test("the pass takes a picture of a shown element without moving the page, and k
     await page.close();
 });
 
+test('with pictures allowed, an image question sends its picture; one showing a typed value never', async () => {
+    const page = await browser.newPage();
+    await page.setContent(`<title>Sign in</title><p><img id="i" src="${'data:image/svg+xml,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='40' height='20'><rect width='40' height='20' fill='red'/></svg>")}" alt="Red" width="40" height="20"></p>
+        <p id="f"><input type="image" id="go" alt="Go" src="${'data:image/svg+xml,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='40' height='20'><text y='15'>Go</text></svg>")}" width="40" height="20"> <input id="pw" type="password" value="secret1"></p>`);
+    const got = [];
+    const c = { findings: [{ outcome: 'cantTell', occurrences: [
+        { atomicCheckId: 'img-alt-quality', occurrenceOutcome: 'cantTell', target: ['#i'], html: '<img id="i" alt="Red">', failureSummary: 'x' },
+        { atomicCheckId: 'control-name-title-only', occurrenceOutcome: 'cantTell', target: ['#f'], html: '<p id="f">', failureSummary: 'x' },
+    ] }] };
+    const provider = { ask: async (prompt, o) => { got.push(o.picture); return '{"verdict":"pass","confidence":0.9,"rationale":"ok"}'; } };
+    const s = await answerCantTells({ page, canonical: c, provider, options: { pictures: true }, env: { A11Y_AI_PICTURES: 'on' } });
+    assert.equal(s.stateDrift, 'none');
+    assert.match(got[0], /^data:image\/jpeg;base64,/);
+    assert.equal(got[1], null, 'the paragraph holds a password field');
+    const [img, form] = c.findings[0].occurrences;
+    assert.equal(img.ai.pictureSent, true);
+    assert.match(form.ai.evidence.pictureNotSent, /typed/);
+    assert.match(form.ai.evidence.screenshot, /^data:image/, 'kept for the review');
+    await page.close();
+});
+
 test('an image question says what the picture shows: blank, one colour, or not readable', async () => {
     const SPACER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     const RED = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/></svg>');

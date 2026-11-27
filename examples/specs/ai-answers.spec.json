@@ -5,7 +5,7 @@
   "url": "http://localhost:8780/ai/reading.html",
   "scenarioName": "AI answers demo",
   "actions": [
-    { "type": "a11yScan", "label": "Reading questions", "includeBestPractice": true, "ai": { "budget": { "calls": 120, "seconds": 120 } } },
+    { "type": "a11yScan", "label": "Reading questions", "includeBestPractice": true, "ai": { "pictures": true, "budget": { "calls": 120, "seconds": 120 } } },
     { "type": "navigate", "url": "http://localhost:8780/ai/labels.html", "label": "Open the names and labels page" },
     { "type": "a11yScan", "label": "Names and labels (AAA)", "profile": "wcag22-aaa", "includeBestPractice": true, "ai": { "budget": { "calls": 120, "seconds": 120 } } },
     { "type": "navigate", "url": "http://localhost:8780/ai/structure.html", "label": "Open the structure page" },

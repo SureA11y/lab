@@ -11,6 +11,10 @@
 //   sent is masked; the report keeps what was read from the page.
 // - A11Y_AI_PREVIEW: every run previews (nothing is sent), whatever its steps
 //   say. A step can also ask for a preview itself (`ai: { preview: true }`).
+// - A11Y_AI_PICTURES: whether the element's picture may go to the model with
+//   the questions that use one, for a step that asks (`ai: { pictures: true }`).
+//   Unset or "off": never. "on": on every site the pass may send about. Hosts
+//   ("shop.example, example.org"): on those only (and their subdomains).
 
 const off = (v) => /^(0|false|no|off)$/i.test(String(v == null ? '' : v).trim());
 const on = (v) => /^(1|true|yes|on)$/i.test(String(v == null ? '' : v).trim());
@@ -49,6 +53,19 @@ const PATTERNS = [
     // Nine digits or more, with the separators phone numbers are written with.
     [/(?<![\w/=])\+?\(?\d(?:[\d ()./-]*\d)?(?![\w/])/g, (m) => ((m.match(/\d/g) || []).length >= 9 ? '[phone]' : m)],
 ];
+
+/**
+ * Whether the element's picture may be sent about this page: never unless
+ * A11Y_AI_PICTURES says so, on every site with "on", else on the hosts it
+ * lists.
+ */
+function picturesAllowed(pageUrl, env = process.env) {
+    const v = String(env.A11Y_AI_PICTURES == null ? '' : env.A11Y_AI_PICTURES).trim();
+    if (!v || off(v)) return false;
+    if (on(v) || /^all$/i.test(v)) return true;
+    const hosts = v.split(/[\s,]+/).map((h) => h.trim().toLowerCase().replace(/^\*\./, '').replace(/\.$/, '')).filter(Boolean);
+    return hosts.length > 0 && siteAllowed(pageUrl, hosts);
+}
 
 /** A string with personal data masked, and how many were. */
 function maskText(text) {
@@ -93,4 +110,4 @@ function withoutPictures(value) {
     return value;
 }
 
-module.exports = { allowedSitesOf, siteAllowed, maskingOn, previewForced, maskText, maskDeep, withoutPictures };
+module.exports = { allowedSitesOf, siteAllowed, picturesAllowed, maskingOn, previewForced, maskText, maskDeep, withoutPictures };

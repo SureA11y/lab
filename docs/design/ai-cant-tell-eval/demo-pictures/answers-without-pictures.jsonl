@@ -1,0 +1,26 @@
+{"id": "q1", "verdict": "fail", "confidence": 0.85, "rationale": "The badge SVG draws '−50%', and the following text 'on all seeds this week' depends on it; with alt=\"\" the discount is lost to screen reader users."}
+{"id": "q2", "verdict": "pass", "confidence": 0.9, "rationale": "A single grey horizontal line used as a divider, hidden with aria-hidden; nothing is lost."}
+{"id": "q3", "verdict": "pass", "confidence": 0.9, "rationale": "The logo is the only content of a link to the home page and its alt 'Demo Shop, home' names the site and the destination."}
+{"id": "q4", "verdict": "pass", "confidence": 0.9, "rationale": "The SVG draws 'Free delivery on orders over 50 €' and the alt repeats that text exactly."}
+{"id": "q5", "verdict": "fail", "confidence": 0.9, "rationale": "The alt 'IMG_2041.jpg' is a file name and conveys nothing about the product image."}
+{"id": "q6", "verdict": "pass", "confidence": 0.75, "rationale": "The alt describes a garden bag, matching the 'Garden bag' product it illustrates; the placeholder picture shows only the word 'bag', consistent with it."}
+{"id": "q7", "verdict": "pass", "confidence": 0.6, "rationale": "The alt names the plan, and the image map areas (Greenhouse, though the second is poorly named 'Area 2') carry the region details; the img alt itself is accurate for the overall image."}
+{"id": "q8", "verdict": "pass", "confidence": 0.6, "rationale": "The cart icon's alt 'Cart' is accurate for a link to the cart, though it duplicates the adjacent visible 'Cart' text and could be empty."}
+{"id": "q11", "verdict": "fail", "confidence": 0.9, "rationale": "The canvas name 'canvas' is a placeholder and the fallback only says canvas is unsupported; nothing conveys what it draws."}
+{"id": "q12", "verdict": "pass", "confidence": 0.75, "rationale": "The figcaption 'How to prune roses (2 minutes)' identifies the video; the poster is only a placeholder graphic."}
+{"id": "q13", "verdict": "fail", "confidence": 0.9, "rationale": "The title 'garden-plan.svg' is a file name; it does not describe the garden plan showing the greenhouse and tool shed."}
+{"id": "q14", "verdict": "fail", "confidence": 0.9, "rationale": "The name 'button' is a generic placeholder and does not state the action (check delivery)."}
+{"id": "q15", "verdict": "pass", "confidence": 0.9, "rationale": "The alt 'Check delivery' states the button's action, matching the form's purpose and the 'Check' text drawn in the image."}
+{"id": "q16", "verdict": "fail", "confidence": 0.95, "rationale": "The alt 'btn_submit_02.png' is a file name and does not say what the button does."}
+{"id": "q17", "verdict": "pass", "confidence": 0.85, "rationale": "In a search form labelled 'Search the shop', the alt 'Search' states the button's action."}
+{"id": "q18", "verdict": "pass", "confidence": 0.85, "rationale": "In a recipe search form, the alt 'Find recipes' states the button's action."}
+{"id": "q19", "verdict": "pass", "confidence": 0.75, "rationale": "The fallback text describes a bar chart of monthly seed sales with March highest, which matches the SVG's three bars Jan to Mar with Mar tallest."}
+{"id": "q20", "verdict": "pass", "confidence": 0.6, "rationale": "The icon is a magnifier and 'Search products' says the link's purpose; it goes to the products page, which roughly fits."}
+{"id": "q21", "verdict": "fail", "confidence": 0.95, "rationale": "The SVG's title 'Layer 1' is a drawing-tool leftover and becomes the share button's name, which does not say what it does."}
+{"id": "q26", "verdict": "fail", "confidence": 0.85, "rationale": "The SVG button draws the word 'Check' as its label, text that could be real styled text."}
+{"id": "q27", "verdict": "fail", "confidence": 0.85, "rationale": "The SVG button draws the word 'Check' as its label, text that could be real styled text."}
+{"id": "q28", "verdict": "fail", "confidence": 0.85, "rationale": "The SVG button draws the word 'Check' as its label, text that could be real styled text."}
+{"id": "q29", "verdict": "unsure", "confidence": 0.5, "rationale": "The image is a PNG with no source or picture available, so whether it holds text such as 'Go' cannot be told."}
+{"id": "q30", "verdict": "unsure", "confidence": 0.5, "rationale": "The image is a PNG with no source or picture available, so whether it holds text or only an icon cannot be told."}
+{"id": "q31", "verdict": "pass", "confidence": 0.85, "rationale": "The drawn text 'Demo Shop' is part of the logo, which is exempt from 1.4.5."}
+{"id": "q32", "verdict": "fail", "confidence": 0.85, "rationale": "The banner draws a promotional sentence in plain sans-serif that could be real text; it is not a logo."}

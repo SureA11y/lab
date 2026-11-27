@@ -41,7 +41,12 @@ async function collectEvidence(page, occurrence, wanted) {
         const facts = await readFacts(page, selector);
         if (facts) out.facts = facts;
         const proof = await captureProof(page, selector);
-        if (proof) out.screenshot = proof;
+        if (proof) {
+            out.screenshot = proof;
+            // A picture that shows what was typed in a field (a password, a
+            // masked value) is kept for the person reviewing, never sent.
+            if ((await showsTypedValue(page, selector)) === true) out.pictureNotSent = 'it shows a value typed in a field';
+        }
     }
     // What the checker itself reported for this occurrence (the values its
     // documentation lists under @reports: the other fields sharing a label,
@@ -462,6 +467,29 @@ async function measurePixelsByColour(page, selector) {
         };
     } catch {
         return null;
+    }
+}
+
+// Whether the element is or holds a field with a value in it (a password
+// field, a text field, a text area), which its picture would show.
+async function showsTypedValue(page, selector) {
+    try {
+        return await page.evaluate((sel) => {
+            let el = null;
+            try { el = document.querySelector(sel); } catch { return false; }
+            if (!el) return false;
+            const fields = [el, ...el.querySelectorAll('input, textarea, [contenteditable=""], [contenteditable="true"]')];
+            return fields.some((f) => {
+                if (f.matches('textarea')) return !!f.value;
+                if (f.matches('[contenteditable=""], [contenteditable="true"]')) return !!f.textContent.trim();
+                if (!f.matches('input')) return false;
+                const type = (f.getAttribute('type') || 'text').toLowerCase();
+                if (['hidden', 'submit', 'button', 'reset', 'image', 'checkbox', 'radio', 'range', 'color', 'file'].includes(type)) return false;
+                return type === 'password' || !!f.value;
+            });
+        }, selector);
+    } catch {
+        return false;
     }
 }
 

@@ -8,12 +8,12 @@ page by hand.
 
 | Lane | What settles it | Checks |
 | --- | --- | --- |
-| `answered` | The AI answers it today | 67 |
+| `answered` | The AI answers it today | 68 |
 | `read` | The AI, from the element and the text around it, as today | 0 |
 | `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 0 |
 | `tree` | The browser's own accessibility tree (no model needed) | 23 |
 | `measure` | A measurement by the lab, then the AI or a person for what is left | 0 |
-| `picture` | The AI, once it can see the picture | 1 |
+| `picture` | The AI, once it can see the picture | 0 |
 | `media` | Audio, video or time: a person, or the AI with the media | 5 |
 | `interact` | Using the page beyond opening things (errors, announcements): a person, later the AI | 3 |
 | `code` | The markup states it: little for the AI to add; a person confirms | 33 |
@@ -54,6 +54,7 @@ page by hand.
 | `identical-iframes-same-purpose` | 4.1.2 | automatic | `IFRAME_RESOURCE_DIFFERS`, `IFRAME_RESOURCE_UNRESOLVED` | with what the checker reported (reported) |
 | `identical-links-same-purpose` | 2.4.9 | manual | `SAME_NAME_DIFFERENT_DESTINATION` | AAA (2.4.9): with the AAA profile |
 | `iframe-focusable-content` | 2.1.1, 2.1.3 | automatic | `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` | by reading what the checker reported (its own runtime probe); the walk could add more |
+| `image-of-text` | 1.4.5 | manual | `IMAGE_BUTTON_TEXT_REVIEW`, `SVG_IMAGE_TEXT_REVIEW` | from the SVG source, or the picture when a step sends it |
 | `image-redundant-alt` | (best practice) | manual | `IMAGE_ALT_REDUNDANT` | a best practice: asked with includeBestPractice |
 | `img-alt-decorative` | 1.1.1 | manual | `EXCLUDED_ELEMENT_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |  |
 | `img-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |  |
@@ -118,12 +119,6 @@ page by hand.
 | `textbox-name-present` | 4.1.2 | automatic | `name_internals` |  |
 | `tooltip-name-present` | 4.1.2 | automatic | `name_missing`, `name_closedContent`, `name_contentTooDeep`, `name_internals` |  |
 | `treeitem-name-present` | 4.1.2 | automatic | `name_closedContent`, `name_contentTooDeep`, `name_internals` |  |
-
-## `picture`: The AI, once it can see the picture
-
-| Check | SC | Kind | Can't-tell reasons | Note |
-| --- | --- | --- | --- | --- |
-| `image-of-text` | 1.4.5 | manual | `IMAGE_BUTTON_TEXT_REVIEW`, `SVG_IMAGE_TEXT_REVIEW` | is there text in the image |
 
 ## `media`: Audio, video or time: a person, or the AI with the media
 

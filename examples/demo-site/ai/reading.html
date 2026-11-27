@@ -4,11 +4,12 @@
 <!-- The AI answers demo, questions answered by reading the page. Each has a
      known answer, in expected.json beside this page. -->
 <body>
-<header><p><strong>Demo Shop</strong></p><nav aria-label="Main"><a href="../index.html">Home</a><a href="../products.html">Products</a></nav></header>
+<header><div><a id="home-logo" href="../index.html"><img id="logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%232d6a4f'/%3E%3Cpath d='M10 18 Q16 4 22 14 Q16 14 10 18Z' fill='%23b7e4c7'/%3E%3Ctext x='34' y='22' font-family='Georgia%2C serif' font-size='17' font-style='italic' fill='%231b4332'%3EDemo Shop%3C/text%3E%3C/svg%3E" width="140" height="32" alt="Demo Shop, home"></a></div><p><strong>Demo Shop</strong></p><nav aria-label="Main"><a href="../index.html">Home</a><a href="../products.html">Products</a></nav></header>
 <main>
   <h1>Garden tools</h1>
   <p><b>Delivery</b></p>
   <p>Orders placed before noon leave the same day. Large items such as wheelbarrows come by courier within three working days.</p>
+  <p><img id="delivery-banner" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='40'%3E%3Crect width='300' height='40' fill='%23ffe8a3'/%3E%3Ctext x='150' y='26' font-family='sans-serif' font-size='16' fill='%23333' text-anchor='middle'%3EFree delivery on orders over 50 %E2%82%AC%3C/text%3E%3C/svg%3E" width="300" height="40" alt="Free delivery on orders over 50 €"></p>
   <ul class="products">
     <li><img id="photo-filename" src="../images/shoes.svg" width="200" height="120" alt="IMG_2041.jpg"><h2>Pruning shears</h2><p class="price">24 €</p></li>
     <li><img id="photo-good" src="../images/bag.svg" width="200" height="120" alt="Canvas garden bag with two leather handles"><h2>Garden bag</h2><p class="price">32 €</p></li>
@@ -37,6 +38,12 @@
     <p><input id="check-good" type="image" src="../images/check-button.svg" width="80" height="32" alt="Check delivery">
        <input id="check-file" type="image" src="../images/check-button.svg" width="80" height="32" alt="btn_submit_02.png">
        <input id="check-label" type="image" src="../images/check-button.svg" width="80" height="32" alt="" aria-label="button"></p>
+  </form>
+  <form action="#" role="search" aria-label="Shop" onsubmit="return false">
+    <p><label for="q">Search the shop</label> <input id="q" type="search"> <input id="search-go" type="image" src="../images/go-button.png" width="48" height="32" alt="Search"></p>
+  </form>
+  <form action="#" role="search" aria-label="Recipes" onsubmit="return false">
+    <p><label for="recipe">Find a recipe</label> <input id="recipe" type="search"> <input id="recipe-search" type="image" src="../images/search-icon.png" width="32" height="32" alt="Find recipes"></p>
   </form>
 </main>
 <script>

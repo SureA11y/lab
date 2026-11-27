@@ -3,7 +3,8 @@
 // Which "can't tell" checks an AI may answer, and what each needs
 // (docs/design/ai-cant-tell-design.md, "The rule registry"). Only checks
 // that a person could settle from the element, the page around it and, for an
-// image, its source: nothing that needs interaction. Keyed by the check's
+// image, its source (and its picture, `picture: true`, where a step and the
+// server allow it): nothing that needs interaction. Keyed by the check's
 // `atomicCheckId`, as an occurrence names it. The focus questions below are
 // the exception, and opt-in.
 
@@ -43,7 +44,10 @@
 // reflow, resized text, target size, a replaced viewport tag.
 // registry-17: contrast over what the checker cannot compute measured
 // exactly (the text made transparent for a moment), by colour as fallback.
-const PROMPT_VERSION = 'registry-17';
+// registry-18: the element's picture may go with the questions that use one
+// (`picture: true`), when a step asks (`pictures`) and the server allows it
+// (A11Y_AI_PICTURES); image-of-text.
+const PROMPT_VERSION = 'registry-18';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -57,38 +61,47 @@ const ANSWERABLE = Object.freeze({
     'img-alt-quality': {
         question: "Is the image's alt text accurate and does it fit its context (for an image that is a link or button, does it say what the control does)?",
         evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'img-alt-decorative': {
         question: 'Is this image or icon purely decorative (nothing is lost for a person who cannot see it), or does it carry meaning or a name the control needs? `image.look` says what the picture shows when it could be read: `blank` (fully transparent, a spacer), the number of `colours` and the main one.',
         evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'svg-text-alternative-quality': {
         question: "Is this SVG's text alternative accurate for what the graphic shows, in its context? Its name comes from aria-label, aria-labelledby or its <title>; a <desc> adds a description. When the SVG is the only content of a link or button, its name is the control's name and should say what the control does. `image.svg` gives its title, desc, the symbols it draws (`uses`, such as an icon sprite's \"#icon-search\"), its classes, any text in it, and its markup with the path data left out. A name left over from a drawing tool or an export (\"Layer 1\", \"Created with Sketch.\"), a file name or a placeholder fails.",
         evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'area-alt-quality': {
         question: "This is a link drawn as an area of an image map. Does its text alternative (alt, aria-label or title) say where the link leads, for the part of the picture it covers? `image.area` gives its shape and coordinates on the picture, its href, its alt, title and aria-label, and the map's other areas; `image` is the picture it is part of (its alt, what it shows, and for an SVG its source). A file name, a placeholder (\"Area 2\") or a name that does not match that part of the picture fails.",
         evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'input-image-alt-quality': {
         question: "This is a button drawn as an image (input type=\"image\"). Does its text alternative say what the button does, in its form? `image` is the button's picture (what it shows, and for an SVG its source, which may hold its visible text). A file name, a web address, a placeholder or a name that only describes the picture (\"green arrow\") fails.",
         evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'input-image-alt-decorative': {
         question: "This image button has alt=\"\" but takes its name from aria-label, aria-labelledby or title. That is fine when the name says what the button does. Does it, in its form? `image` is the button's picture. A file name, a placeholder (\"button\", \"image\") or a name that only describes the picture fails.",
         evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'object-text-alternative-quality': {
         question: "Does this <object>'s text alternative (its aria-label or aria-labelledby, else its fallback text, else its title) describe what the object shows? `image.embedded` gives its type, the file it embeds, its fallback text, title and aria-label; `image` the picture when the file is an image (what it shows, and for an SVG its source). A file name, a placeholder or only a note that a plugin or player is missing fails.",
         evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'embed-text-alternative-quality': {
         question: "Does this <embed>'s text alternative (aria-label, aria-labelledby or title) describe what it embeds? `image.embedded` gives its type, the file it embeds, its title and aria-label; `image` the picture when the file is an image. A file name or a placeholder fails.",
         evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'canvas-text-alternative-quality': {
         question: "Does this <canvas>'s text alternative (its fallback content, aria-label, aria-labelledby or title) convey what the canvas shows? `image` says what is drawn on it when it could be read (blank, the colours), and `image.embedded.fallbackText` its fallback text; the text around it often says what it draws. Only a note that the browser does not support canvas, a file name or a placeholder fails.",
         evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'image-redundant-alt': {
         question: "This image's alt text repeats visible text next to it in the same parent (often an icon beside a link's or button's text), so the same words may be read twice. A best practice, not a WCAG failure: answer \"fail\" when the alt only repeats that text and the image could be alt=\"\" with nothing lost; \"pass\" when the alt adds something the text does not say, or the repetition is not heard (role=\"none\" or \"presentation\").",
@@ -97,6 +110,12 @@ const ANSWERABLE = Object.freeze({
     'video-poster-text-alternative-present': {
         question: "This <video> shows a poster image but has no name (aria-label, aria-labelledby or title). As time-based media it only needs to be identified. Is it identified by something a screen reader user meets with it: a caption or figcaption, a heading or text right before it naming the video? `image.embedded` gives its poster, source and controls; `image` what the poster shows. Answer \"fail\" when nothing near it says what the video is.",
         evidence: ['element', 'context', 'image'],
+        picture: true,
+    },
+    'image-of-text': {
+        question: "Does this image hold text that could be real text (WCAG 1.4.5)? It is an image button (input type=\"image\") or an image showing an SVG with text drawn in it. Read the text from `image` (for an SVG its source, the text it draws) or, when it is attached, the picture. Pass when it holds no text, or the text is part of a logo or brand name, or its look is essential (a sample of a typeface, a diagram's labels where real text could not sit); fail when it is text such as a button's label (\"Search\", \"Go\") or a heading drawn as an image, which CSS could style as real text. Unsure when neither the source nor a picture shows what it holds.",
+        evidence: ['element', 'context', 'image'],
+        picture: true,
     },
     'heading-quality': {
         question: "Does this heading describe the topic or purpose of the content it introduces? The checker found its text looks like a placeholder, a file name or a web address (`reported`: its name and why). `context` shows what follows it. Fail when it is text a template or a tool left (\"Heading 2\", \"lorem ipsum\", a file name); pass when it names its section, even if short (\"Section 3\" in numbered terms).",
@@ -113,6 +132,7 @@ const ANSWERABLE = Object.freeze({
     'control-name-title-only': {
         question: "This button or link takes its only name from its title attribute, which only mouse users see, as a tooltip. A best practice, not a WCAG failure: does the control show its purpose to everyone without the tooltip (visible text, or an icon whose meaning is plain), and does the title say what it does? Fail when its purpose can only be learnt from the tooltip.",
         evidence: ['element', 'context', 'reported', 'image'],
+        picture: true,
     },
     'link-name-quality-link-only': {
         question: "This link's whole text is generic (\"read more\"), and only the text around it says where it leads. That meets 2.4.4 (AA); this question is 2.4.9 (AAA): does the link's text alone (or its accessible name) say where it leads? Fail when it does not; pass when its name (aria-label, aria-labelledby, visually hidden text) says it.",

@@ -308,7 +308,7 @@ export function aiAnalysisHtml(ai, { escapeHtml, escapeAttr = escapeHtml }) {
             (ai.evidence && ai.evidence.context ? '<p>Around the element:</p><pre class="node-ai__context">' + escapeHtml(ai.evidence.context) + '</pre>' : '') +
             '</details>'
         : '';
-    const meta = ai.model ? '<p class="node-ai__meta">Answered by ' + escapeHtml(ai.model) + (ai.reused ? ' (an earlier answer to the same question)' : '') + '. An AI answer is a suggestion: you decide.</p>' : '';
+    const meta = ai.model ? '<p class="node-ai__meta">Answered by ' + escapeHtml(ai.model) + (ai.reused ? ' (an earlier answer to the same question)' : '') + (ai.pictureSent ? ', who saw the picture of the element' : '') + '. An AI answer is a suggestion: you decide.</p>' : '';
     return analysis + given + meta;
 }
 

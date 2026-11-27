@@ -44,24 +44,48 @@ function splitForCache(prompt) {
     ];
 }
 
+/**
+ * A picture (a data URL) as the Messages API's image block, or null when it
+ * is not a base64 JPEG, PNG, GIF or WebP.
+ */
+function imageBlock(dataUrl) {
+    const m = /^data:(image\/(?:jpeg|png|gif|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+    return m ? { type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } } : null;
+}
+
+/**
+ * The content of one question: its text (split for caching, or not) and,
+ * when one is given, the element's picture, after the evidence (so the
+ * cached part stays the same) and before the question.
+ */
+function contentFor(prompt, { cache = true, picture = null } = {}) {
+    const text = cache ? splitForCache(prompt) : prompt;
+    const image = picture ? imageBlock(picture) : null;
+    if (!image) return text;
+    if (Array.isArray(text)) return [text[0], image, ...text.slice(1)];
+    return [image, { type: 'text', text }];
+}
+
 function anthropicProvider(env = process.env) {
     const key = env.ANTHROPIC_API_KEY;
     if (!key) return null;
     const base = (env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/+$/, '');
     const model = env.A11Y_AI_MODEL || DEFAULT_MODEL;
     const cache = !/^(0|false|no|off)$/i.test(String(env.A11Y_AI_PROMPT_CACHE || '').trim());
-    const bodyFor = (prompt) => ({ model, max_tokens: 400, messages: [{ role: 'user', content: cache ? splitForCache(prompt) : prompt }] });
+    // `picture`: the element's picture, sent only when the pass allows it
+    // (a step's `pictures`, the server's A11Y_AI_PICTURES).
+    const bodyFor = (prompt, { picture = null } = {}) => ({ model, max_tokens: 400, messages: [{ role: 'user', content: contentFor(prompt, { cache, picture }) }] });
     return {
         name: 'anthropic',
         model,
         destination: `${base}/v1/messages`,
         bodyFor,
-        async ask(prompt, { signal } = {}) {
+        async ask(prompt, { signal, picture = null } = {}) {
             const res = await fetch(`${base}/v1/messages`, {
                 method: 'POST',
                 signal,
                 headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-                body: JSON.stringify(bodyFor(prompt)),
+                body: JSON.stringify(bodyFor(prompt, { picture })),
             });
             if (!res.ok) throw new Error(`model call failed (${res.status})`);
             const body = await res.json();
@@ -78,8 +102,10 @@ const yes = (v) => /^(1|true|yes|on)$/i.test(String(v || '').trim());
  * POSTed to it as JSON (`question` below, with `version`), with
  * A11Y_AI_ENDPOINT_KEY, when set, as `Authorization: Bearer <key>`. It answers
  * `{ verdict: "pass"|"fail"|"unsure", confidence: 0..1, rationale, answeredBy?:
- * { name, version } }`. The element's picture is sent only with
- * A11Y_AI_ENDPOINT_PICTURE on. A11Y_AI_ENDPOINT_NAME names it in the report
+ * { name, version } }`. The element's picture is sent with
+ * A11Y_AI_ENDPOINT_PICTURE on, or for a question the pass sends with its
+ * picture (`picture: true`: a step's `pictures`, allowed by A11Y_AI_PICTURES);
+ * never one that shows a value typed in a field (`evidence.pictureNotSent`). A11Y_AI_ENDPOINT_NAME names it in the report
  * when its answers do not.
  */
 function endpointProvider(env = process.env) {
@@ -92,7 +118,7 @@ function endpointProvider(env = process.env) {
     const picture = yes(env.A11Y_AI_ENDPOINT_PICTURE);
     const bodyFor = (question) => {
         const body = { version: QUESTION_VERSION, ...question };
-        if (!picture && body.evidence) body.evidence = withoutPictures(body.evidence);
+        if (body.evidence && ((!picture && body.picture !== true) || body.evidence.pictureNotSent)) body.evidence = withoutPictures(body.evidence);
         return body;
     };
     return {
@@ -119,4 +145,4 @@ function resolveProvider(option, env = process.env) {
     return endpointProvider(env) || anthropicProvider(env);
 }
 
-module.exports = { anthropicProvider, endpointProvider, resolveProvider, splitForCache, DEFAULT_MODEL, QUESTION_VERSION };
+module.exports = { anthropicProvider, endpointProvider, resolveProvider, splitForCache, contentFor, imageBlock, DEFAULT_MODEL, QUESTION_VERSION };

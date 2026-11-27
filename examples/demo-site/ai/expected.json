@@ -721,6 +721,83 @@
       "target": "html",
       "expected": "pass",
       "why": "Nothing on the page removes the browser's focus outline: every stop shows focus."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "img-alt-quality",
+      "target": "#logo",
+      "expected": "pass",
+      "why": "The logo is the only content of a link to the home page; \"Demo Shop, home\" names the shop and where the link goes."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "img-alt-quality",
+      "target": "#delivery-banner",
+      "expected": "pass",
+      "why": "A banner whose picture is the words \"Free delivery on orders over 50 €\"; the alt says exactly that."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "input-image-alt-quality",
+      "target": "#search-go",
+      "expected": "pass",
+      "why": "The search form's button, named \"Search\": it says what the button does (its picture says \"Go\")."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "input-image-alt-quality",
+      "target": "#recipe-search",
+      "expected": "pass",
+      "why": "A magnifier button in the recipe search, named \"Find recipes\": it says what it does."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "image-of-text",
+      "target": "#check-good",
+      "expected": "fail",
+      "why": "The button's picture is the word \"Check\" on a green box: a label CSS could draw as real text on a <button>."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "image-of-text",
+      "target": "#check-file",
+      "expected": "fail",
+      "why": "The same picture of the word \"Check\"."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "image-of-text",
+      "target": "#check-label",
+      "expected": "fail",
+      "why": "The same picture of the word \"Check\"."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "image-of-text",
+      "target": "#search-go",
+      "expected": "fail",
+      "why": "A PNG of the word \"Go\" on a dark box: only the picture shows it is text, a label that could be real text."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "image-of-text",
+      "target": "#recipe-search",
+      "expected": "pass",
+      "why": "A PNG of a magnifier, no text: only the picture shows there is no text in it."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "image-of-text",
+      "target": "#logo",
+      "expected": "pass",
+      "why": "The shop's logo: text that is part of a logo is excepted (1.4.5)."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "image-of-text",
+      "target": "#delivery-banner",
+      "expected": "fail",
+      "why": "A banner that is only a sentence drawn in an SVG (\"Free delivery on orders over 50 €\"): real text styled with CSS would do."
     }
   ]
 }

@@ -87,8 +87,8 @@ const LANES = {
     'target-size-enhanced': ['answered', 'does an exception hold (AAA)'],
     'meta-viewport-zoom-enabled': ['answered', 'does the tag browsers apply allow zoom'],
 
-    // Needs the picture.
-    'image-of-text': ['picture', 'is there text in the image'],
+    // Read from an SVG's source, or seen in the picture (a step's `pictures`).
+    'image-of-text': ['answered', 'from the SVG source, or the picture when a step sends it'],
 
     // Needs the media, or time.
     'video-caption': ['media'], 'media-alternative-transcript-evidence': ['media', 'or read: is there a transcript near it'],
