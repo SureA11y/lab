@@ -151,12 +151,13 @@ them under what needs review, apart from the failures.
 
 ## The AI answers demo
 
-`demo-site/ai/` (not linked from the shop, so its tours are unchanged) has seven
+`demo-site/ai/` (not linked from the shop, so its tours are unchanged) has eight
 pages for [AI answers](../docs/ai-answers.md):
 
 | Page | What the scan asks, and the correct answer |
 | --- | --- |
 | `ai/reading.html` | A vague title ("Page", fail); alt text that is a file name (fail) and a good one (pass); a "−50%" badge hidden as decorative (fail) and a divider (pass); a bold "Delivery" paragraph that heads a section (fail) and the site name (pass); "Learn more" alone (fail); fields labelled only by `title` or `placeholder` (fail) |
+| `ai/measure.html` (AAA) | White text on a near-white gradient (fail) and on a dark one (pass), measured from pixels; a teaser box that cuts its text with spacing applied (fail); a one-word label with forced spacing (pass); a viewport tag that blocks zoom, replaced by one that allows it (pass) |
 | `ai/keyboard.html` (best practices on) | A tabindex 1 footer link, a link that blurs itself on focus, a picture enlarged only on hover, an off-screen "Back to top", a wrong aria-expanded and aria-checked, a skip link to nothing, a button inside a link, a scrolling box nothing in which takes focus (all fail); a cosmetic hover and a server-side map whose places are links below (pass) |
 | `ai/text.html` (AAA) | A star rating in light grey with no text (fail) and a light arrow after "Next page" (pass), as non-text contrast; content hidden in portrait (orientation, fail) |
 | `ai/structure.html` (best practices on) | Radio buttons whose question is only a paragraph (fail); a field with two labels (fail); a table whose first row is its title (fail); a header with no cells (fail); an empty corner header (pass); an h2 then an h4 (fail); a header made of a div, outside every landmark (fail); a focusable clickable card with role article (fail); an alt="" image named "Sale" (fail); two links with accesskey s (fail) |

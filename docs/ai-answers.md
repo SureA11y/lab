@@ -103,6 +103,11 @@ By reading the page (always):
 | `focus-not-removed-by-script`, `iframe-focusable-content`, `scrollable-region-focusable`, `mouse-only-event-handlers`, `server-side-image-map-absent` | 2.1.1 | Does a focus handler take focus away; is a frame's content reachable; does a scrolling box need the keyboard; do pointer-only handlers do something a keyboard user needs; are a server-side map's places offered as links? (From what the checker reported, including its own runtime probe.) |
 | `css-hidden-focus` | 2.4.7 | Does focus land on something hidden by CSS? |
 | `aria-expanded-state-mismatch`, `aria-checked-state-mismatch`, `aria-hidden-focus`, `nested-interactive-controls-absent` | 4.1.2 | Is a screen reader told the wrong state; can focus land inside aria-hidden; is a control nested in another? |
+| `contrast-computable` | 1.4.3, 1.4.6 | Text over a background image, a gradient, a blend or a filter, whose contrast the checker cannot compute: measured from a picture of the text as drawn (the contrast against the pixels behind it, and how much of the box is near the text colour). |
+| `link-in-text-block` | 1.4.1 | A link told apart by colour alone: does focus (with `focus: true`) add an underline or another cue? |
+| `text-spacing-content-loss`, `avoid-inline-spacing` | 1.4.12 | With the text spacing applied, is content lost (cut, overlapping), or is spacing forced in a way that matters? |
+| `reflow-horizontal-scroll`, `resize-text-content-loss`, `meta-viewport-zoom-enabled` | 1.4.10, 1.4.4 | Is wide content excepted (a data table, a map) or lost; is resized text cut; does the viewport tag browsers apply allow zoom? |
+| `target-size-minimum`, `target-size-enhanced` | 2.5.8, 2.5.5 (AAA) | Does an exception hold for a small target (a sentence, an equivalent, an essential size)? |
 | `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |

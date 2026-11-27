@@ -49,6 +49,10 @@ async function collectEvidence(page, occurrence, wanted) {
     if (wanted.includes('reported') && occurrence.details && typeof occurrence.details === 'object') {
         out.reported = boundedCopy(occurrence.details, 1500);
     }
+    if (wanted.includes('pixels')) {
+        const px = await measurePixels(page, typeof target === 'string' ? target : null);
+        if (px) out.pixels = px;
+    }
     if (!['context', 'pageTitle', 'image', 'table', 'outline', 'landmarks'].some((w) => wanted.includes(w))) return out;
     try {
         const read = await page.evaluate(async (sel, want, ctxChars, imgChars) => {
@@ -317,6 +321,60 @@ const PROOF_MAX = { width: 1000, height: 700 };
  * scrolling (so the page is as it was left), and only of an element that is
  * shown; null otherwise. Never throws.
  */
+/**
+ * The contrast of an element's text against what is drawn behind it, read
+ * from a picture of it as it is on screen (nothing on the page is changed):
+ * pixels unlike the text's colour are taken as its background, and the
+ * ratio of the text colour against each is summed up. For text over an
+ * image, a gradient, a blend or a filter, which the checker cannot compute.
+ * Antialiased edges mix both colours, so the lowest values run low: the
+ * tenth percentile is given, not the minimum. Null when not measurable.
+ */
+async function measurePixels(page, selector) {
+    if (!selector || typeof page.screenshot !== 'function') return null;
+    try {
+        const box = await page.evaluate((sel) => {
+            let el = null;
+            try { el = document.querySelector(sel); } catch { return null; }
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            if (r.width < 2 || r.height < 2) return null;
+            const m = getComputedStyle(el).color.match(/rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?/);
+            if (!m) return null;
+            return { x: r.left + window.scrollX, y: r.top + window.scrollY, width: r.width, height: r.height, color: [Number(m[1]), Number(m[2]), Number(m[3])], alpha: m[4] === undefined ? 1 : Number(m[4]), fontSize: parseFloat(getComputedStyle(el).fontSize), fontWeight: Number(getComputedStyle(el).fontWeight) || 400 };
+        }, selector);
+        if (!box) return null;
+        const clip = { x: Math.max(0, box.x), y: Math.max(0, box.y), width: Math.min(box.width, 800), height: Math.min(box.height, 300) };
+        const png = await page.screenshot({ type: 'png', clip, captureBeyondViewport: true });
+        const sharp = require('sharp');
+        const { data } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+        const lum = (r, g, b) => { const c = (v) => { const x = v / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b); };
+        const text = lum(...box.color);
+        const ratios = [];
+        let near = 0;
+        for (let i = 0; i < data.length; i += 3) {
+            const l = lum(data[i], data[i + 1], data[i + 2]);
+            const ratio = (Math.max(l, text) + 0.05) / (Math.min(l, text) + 0.05);
+            if (ratio >= 1.3) ratios.push(ratio); else near++;
+        }
+        // Pixels almost the text's colour: the glyphs, and any background of
+        // that colour. Glyphs cover about a fifth of a text box; far more
+        // means the background itself is close to the text colour.
+        const nearTextShare = Math.round((near / (data.length / 3)) * 100) / 100;
+        if (ratios.length < 20) return { measured: true, nearTextShare, why: 'nearly everything is the text colour' };
+        ratios.sort((a, b) => a - b);
+        const at = (q) => Math.round(ratios[Math.floor(q * (ratios.length - 1))] * 100) / 100;
+        const share = (t) => Math.round((ratios.filter((x) => x < t).length / ratios.length) * 100) / 100;
+        return {
+            measured: true, textColour: '#' + box.color.map((v) => Math.round(v).toString(16).padStart(2, '0')).join(''), textAlpha: box.alpha,
+            fontSize: box.fontSize, fontWeight: box.fontWeight,
+            nearTextShare, ratioP10: at(0.1), ratioMedian: at(0.5), shareBelow4_5: share(4.5), shareBelow3: share(3), backgroundPixels: ratios.length,
+        };
+    } catch {
+        return null;
+    }
+}
+
 async function captureProof(page, selector) {
     if (!selector || typeof page.screenshot !== 'function') return null;
     try {
@@ -389,4 +447,4 @@ function viewChanges(a, b) {
     return Object.keys(b).filter((k) => k !== 'dom' && JSON.stringify(a[k]) !== JSON.stringify(b[k]));
 }
 
-module.exports = { collectEvidence, readFacts, captureProof, fingerprint, sameFingerprint, viewChanges };
+module.exports = { collectEvidence, readFacts, captureProof, measurePixels, fingerprint, sameFingerprint, viewChanges };

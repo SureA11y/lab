@@ -592,6 +592,11 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             add('Accessible name', nameOf(f));
             if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
         }
+        // Contrast measured from the picture of the text (pixels).
+        if (ev.pixels && ev.pixels.measured) {
+            const x = ev.pixels;
+            add('Contrast measured on screen', escapeHtml('Text ' + x.textColour + ' at ' + x.fontSize + 'px, weight ' + x.fontWeight + ': against what is drawn behind it, ' + x.ratioP10 + ':1 at the 10th percentile, ' + x.ratioMedian + ':1 median; ' + Math.round(x.shareBelow4_5 * 100) + '% below 4.5:1, ' + Math.round(x.shareBelow3 * 100) + '% below 3:1; ' + Math.round((x.nearTextShare || 0) * 100) + '% of it drawn almost in the text colour.'));
+        }
         // Its own stop in the focus walk (walkStop), when there was a walk.
         if (ev.walkStop && ev.walkStop.found) {
             const w = ev.walkStop;

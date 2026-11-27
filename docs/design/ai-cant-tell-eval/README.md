@@ -34,6 +34,7 @@ its correct answer and why in `expected.json`.
 | --- | --- |
 | `reading.html` | Page title, alt text (a file name, a good one), images hidden as decorative (a "−50%" badge, a divider), a bold paragraph as heading (and the site name that is not one), "Learn more" alone, fields labelled only by `title` or `placeholder` |
 | `focus.html` (WCAG 2.2 AAA) | Focus visible (page and per link), focus appearance and non-text contrast (1.4.11) per link, a link whose outline is removed but which shows focus from a script (all three pass), focus order (a `tabindex="1"` link far down comes first), keyboard (page, a clickable menu, a `role="button"` tile), focus not obscured per sticky box (the sticky header hides two links once the page has scrolled) |
+| `measure.html` (AAA, added 2026-11-27) | The measure lane: contrast over gradients measured from pixels, text spacing, a replaced viewport tag |
 | `keyboard.html` (best practices on, added 2026-11-27) | The walk lane answered by reading: tab order, focus taken by a script, mouse-only handlers, hidden focus, state mismatches, a skip link, nested controls, a server-side map, a scrolling box |
 | `text.html` (AAA, added 2026-11-27) | "Is it text": low-contrast symbols that carry information or not, content hidden in one orientation |
 | `structure.html` (best practices on, added 2026-11-27) | Structure: form groups, two labels, tables (a title row, a header with no cells, an empty corner), heading order, a header made of a div, a focusable card, a presentation conflict, shared access keys |

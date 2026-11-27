@@ -499,6 +499,48 @@
       "why": "The footer's Privacy link has tabindex 1, so Tab reaches it before everything else on the page."
     },
     {
+      "page": "ai/measure.html",
+      "check": "contrast-computable",
+      "target": "#banner-light",
+      "expected": "fail",
+      "why": "White text on a near-white gradient: nearly the whole box is drawn almost in the text colour; far below 4.5:1."
+    },
+    {
+      "page": "ai/measure.html",
+      "check": "contrast-computable",
+      "target": "#banner-dark",
+      "expected": "pass",
+      "why": "White text on a dark green gradient: about 14:1 measured."
+    },
+    {
+      "page": "ai/measure.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Seeds - Demo Shop\" says what the page is about and names the site."
+    },
+    {
+      "page": "ai/measure.html",
+      "check": "text-spacing-content-loss",
+      "target": "#teaser",
+      "expected": "fail",
+      "why": "The teaser box has a fixed height and hides its overflow: with the spacing applied its text is cut, and nothing leads to the rest."
+    },
+    {
+      "page": "ai/measure.html",
+      "check": "text-spacing-content-loss",
+      "target": "#badge",
+      "expected": "pass",
+      "why": "\"SALE\" with letter-spacing forced to 0 by !important: a one-word label that loses nothing, and a user's own !important spacing still wins."
+    },
+    {
+      "page": "ai/measure.html",
+      "check": "meta-viewport-zoom-enabled",
+      "target": "html > head > meta:nth-of-type(2)",
+      "expected": "pass",
+      "why": "The first viewport tag says user-scalable=no, but the later one, which browsers apply, allows zoom."
+    },
+    {
       "page": "ai/focus.html",
       "check": "page-title-patterns",
       "target": "html > head > title",

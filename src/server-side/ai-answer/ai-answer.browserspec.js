@@ -212,3 +212,20 @@ test('structure questions get the table, the heading outline and the landmarks',
     assert.match(region.landmarks.outsideLandmarks[0], /^<div#top> Shop/);
     await page.close();
 });
+
+test('contrast the checker cannot compute is measured from the picture of the text', async () => {
+    const page = await browser.newPage();
+    await page.setContent(`<title>Sale</title><style>p { font: 16px sans-serif; padding: 8px; width: 300px; color: #fff; }</style>
+<p id="light" style="background: linear-gradient(#fafafa, #e0e0e0)">Spring sale on all seeds</p>
+<p id="dark" style="background: linear-gradient(#1b4332, #081c15)">Spring sale on all seeds</p>`);
+    const occ = (id) => ({ atomicCheckId: 'contrast-computable', occurrenceOutcome: 'cantTell', target: ['#' + id], html: `<p id="${id}">`, details: { reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT' } });
+    const c = { findings: [{ outcome: 'cantTell', occurrences: [occ('light'), occ('dark')] }] };
+    await answerCantTells({ page, canonical: c, env: {}, provider: { ask: async () => '{"verdict":"fail","confidence":0.9,"rationale":"x"}' } });
+    const [light, dark] = c.findings[0].occurrences.map((o) => o.ai.evidence.pixels);
+    assert.equal(light.measured, true);
+    assert.ok(light.nearTextShare > 0.5, 'white on near white: most of the box is near the text colour: ' + JSON.stringify(light));
+    assert.ok(dark.nearTextShare < 0.35, 'white on dark green: only the glyphs: ' + JSON.stringify(dark));
+    assert.ok(dark.ratioMedian > 10 && dark.shareBelow4_5 < 0.1, 'white on dark green: ' + JSON.stringify(dark));
+    assert.equal(light.textColour, '#ffffff');
+    await page.close();
+});

@@ -79,13 +79,13 @@ const LANES = {
     'aria-role-name-present': ['tree'], 'landmark-role-name-present': ['tree'],
 
     // Measured by the lab first.
-    'contrast-computable': ['measure', 'text over an image or gradient: measure the pixels behind it'],
-    'link-in-text-block': ['measure', 'hover and focus cues: measure, as the walk does'],
-    'text-spacing-content-loss': ['measure', 'with the spacing applied: picture before and after'],
-    'avoid-inline-spacing': ['measure'], 'reflow-horizontal-scroll': ['measure', 'at 320 px: is the content lost or only a table or map'],
-    'resize-text-content-loss': ['measure'], 'target-size-minimum': ['measure', 'inline links and spacing exceptions'],
-    'target-size-enhanced': ['measure', 'AAA (2.5.5)'],
-    'meta-viewport-zoom-enabled': ['measure'],
+    'contrast-computable': ['answered', 'measured from the picture of the text (pixels)'],
+    'link-in-text-block': ['answered', 'with what focus changes (walkStop)'],
+    'text-spacing-content-loss': ['answered', 'by reading what the checker measured'],
+    'avoid-inline-spacing': ['answered', 'by reading what the checker measured'], 'reflow-horizontal-scroll': ['answered', 'is the wide content excepted (a data table, a map)'],
+    'resize-text-content-loss': ['answered', 'is content lost'], 'target-size-minimum': ['answered', 'does an exception hold'],
+    'target-size-enhanced': ['answered', 'does an exception hold (AAA)'],
+    'meta-viewport-zoom-enabled': ['answered', 'does the tag browsers apply allow zoom'],
 
     // Needs the picture.
     'image-of-text': ['picture', 'is there text in the image'],

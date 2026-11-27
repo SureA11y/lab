@@ -8,11 +8,11 @@ page by hand.
 
 | Lane | What settles it | Checks |
 | --- | --- | --- |
-| `answered` | The AI answers it today | 58 |
+| `answered` | The AI answers it today | 67 |
 | `read` | The AI, from the element and the text around it, as today | 0 |
 | `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 0 |
 | `tree` | The browser's own accessibility tree (no model needed) | 23 |
-| `measure` | A measurement by the lab, then the AI or a person for what is left | 9 |
+| `measure` | A measurement by the lab, then the AI or a person for what is left | 0 |
 | `picture` | The AI, once it can see the picture | 1 |
 | `media` | Audio, video or time: a person, or the AI with the media | 5 |
 | `interact` | Using the page beyond opening things (errors, announcements): a person, later the AI | 3 |
@@ -28,9 +28,11 @@ page by hand.
 | `aria-checked-state-mismatch` | 4.1.2 | manual | `ARIA_CHECKED_STATE_MISMATCH` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `aria-expanded-state-mismatch` | 4.1.2 | manual | `EXPANDED_FALSE_CONTROLLED_SHOWN`, `EXPANDED_TRUE_CONTROLLED_HIDDEN` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `aria-hidden-focus` | 4.1.2 | automatic | `ariaHiddenFocusable_modalOpen_needsReview`, `ariaHiddenFocusable_runtimeRedirect_needsReview` | by reading what the checker reported (its own runtime probe); the walk could add more |
+| `avoid-inline-spacing` | 1.4.12 | automatic | `INLINE_SPACING_NO_SOFT_WRAP`, `INLINE_SPACING_SHORT_TEXT`, `INLINE_SPACING_NOT_RESOLVABLE` | by reading what the checker measured |
 | `bypass-blocks-present` | 2.4.1 | manual | `BYPASS_MECHANISM_ABSENT` | with the landmarks (landmarks) |
 | `canvas-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what is drawn on it, read from its pixels |
 | `click-handler-keyboard-operable` | 2.1.1, 2.1.3 | automatic | `CLICK_HANDLER_NO_KEY_HANDLER`, `CLICK_HANDLER_NOT_IN_TAB_ORDER`, `CLICK_HANDLER_KEY_LISTENER_ABOVE`, `CLICK_HANDLER_FOCUS_LISTENER`, `CLICK_HANDLER_NOT_FOCUSABLE` | fail only |
+| `contrast-computable` | 1.4.3, 1.4.6 | automatic | `BACKGROUND_IMAGE_OR_GRADIENT`, `BACKGROUND_OVERLAP`, `BACKGROUND_NOT_COMPUTABLE`, `BACKGROUND_NOT_OPAQUE_AT_ROOT`, `BACKGROUND_UNPARSABLE`, `FOREGROUND_UNPARSABLE`, `BACKGROUND_FILTER_OR_BACKDROP_FILTER`, `MIX_BLEND_MODE`, `ANCESTOR_OPACITY`, `ELEMENT_OPACITY`, `TEXT_SHADOW`, `TEXT_STROKE`, `PSEUDO_ELEMENT_COLOR`, `SELECT_OPTION_COLOR`, `GENERATED_TEXT_UNREADABLE`, `GENERATED_TEXT_POSITIONED`, `COLOR_SCHEME_NOT_RENDERED`, `ENGINE_EXCEPTION` | measured from the picture of the text (pixels) |
 | `contrast-enhanced` | 1.4.6 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `ENGINE_EXCEPTION` | as contrast-minimum, AAA |
 | `contrast-minimum` | 1.4.3 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `LOGO_TEXT_BELOW_THRESHOLD`, `CONTRAST_SWITCH_OFFERED`, `SEMIBOLD_BELOW_THRESHOLD`, `PSEUDO_ELEMENT_COLOR`, `TEXT_STROKE`, `TEXT_SHADOW`, `ENGINE_EXCEPTION` | for the reasons reading can settle (a symbol, logo text, a contrast switch, a placeholder); the others need a measurement |
 | `control-name-title-only` | (best practice) | manual | `NAME_FROM_TITLE_ONLY` | a best practice: with includeBestPractice |
@@ -59,9 +61,11 @@ page by hand.
 | `input-image-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with the button's picture |
 | `label-in-name` | 2.5.3 | automatic | `HYPHENATION_DIFFERS`, `POSSIBLE_ABBREVIATION`, `POSSIBLE_ICON_FONT_GLYPH`, `POSSIBLE_SYMBOLIC_CHARACTER` | with what the checker reported (reported) |
 | `landmark-unique` | (best practice) | manual | `LANDMARK_NOT_UNIQUE` | a best practice: with includeBestPractice |
+| `link-in-text-block` | 1.4.1 | automatic | `LINK_COLOR_CONTRAST_ONLY`, `TEXT_DECORATION_NOT_RESOLVABLE`, `COLOR_NOT_COMPUTABLE`, `BACKGROUND_IMAGE_OR_GRADIENT`, `BACKGROUND_NOT_OPAQUE_AT_ROOT`, `BACKGROUND_OVERLAP`, `BACKGROUND_FILTER_OR_BACKDROP_FILTER`, `MIX_BLEND_MODE`, `ANCESTOR_OPACITY`, `ELEMENT_OPACITY`, `TEXT_SHADOW`, `TEXT_STROKE`, `PSEUDO_ELEMENT_COLOR`, `SELECT_OPTION_COLOR`, `CONTRAST_HELPERS_UNAVAILABLE`, `ENGINE_EXCEPTION` | with what focus changes (walkStop) |
 | `link-name-quality` | 2.4.4, 2.4.9 | manual | `GENERIC_LINK_TEXT`, `AMBIGUOUS_FORMAT_NAME`, `GENERIC_LINK_TEXT_IN_CONTEXT` |  |
 | `link-name-quality-link-only` | 2.4.9 | manual | `GENERIC_LINK_TEXT_IN_CONTEXT` | AAA (2.4.9): with the AAA profile |
 | `manual-review` | 2.1.1, 2.4.3, 2.4.7 | manual | `KEYBOARD_REVIEW` | focus visible, focus order and keyboard, from the focus walk (and the open walk) |
+| `meta-viewport-zoom-enabled` | 1.4.4 | automatic | `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` | does the tag browsers apply allow zoom |
 | `mouse-only-event-handlers` | 2.1.1, 2.1.3 | manual | `MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT`, `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `nested-interactive-controls-absent` | 4.1.2 | automatic | `NESTED_INTERACTIVE_CONTROL` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `object-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what it embeds and its picture (image.embedded) |
@@ -69,7 +73,9 @@ page by hand.
 | `page-title-patterns` | 2.4.2 | manual | `placeholderTitle`, `genericTitle`, `veryShortTitle`, `templateLikeTitle`, `duplicateTitlesAcrossPages`, `templatedTitlesAcrossPages`, `titleReview` |  |
 | `page-zones-landmark` | (best practice) | manual | `BANNER_NOT_EXPOSED`, `HEADER_NESTED`, `NAVIGATION_NOT_EXPOSED`, `SEARCH_NOT_EXPOSED`, `CONTENTINFO_NOT_EXPOSED`, `FOOTER_NESTED` | a best practice, with the landmarks |
 | `presentation-role-conflict` | (best practice) | manual | `PRESENTATION_ROLE_CONFLICT` | a best practice |
+| `reflow-horizontal-scroll` | 1.4.10 | manual | `HORIZONTAL_SCROLL`, `HORIZONTAL_SCROLL_UNATTRIBUTED`, `WIDE_TABLE`, `WIDE_MEDIA`, `WIDE_PREFORMATTED`, `SCROLLS_IN_CONTAINER`, `CLIPPED_BY_CONTAINER`, `CLIPPED_AT_VIEWPORT_EDGE` | is the wide content excepted (a data table, a map) |
 | `region` | (best practice) | manual | `CONTENT_OUTSIDE_LANDMARK` | a best practice, with the landmarks |
+| `resize-text-content-loss` | 1.4.4 | manual | `TEXT_CLIPPED_AT_640`, `TEXT_TRUNCATED_AT_640` | is content lost |
 | `scrollable-region-focusable` | 2.1.1, 2.1.3 | manual | `SCROLLABLE_OVERFLOW_NOT_FOCUSABLE` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `server-side-image-map-absent` | 2.1.1, 2.1.3 | automatic | `SERVER_SIDE_IMAGE_MAP` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `skip-link` | (best practice) | manual | `SKIP_LINK_TARGET_MISSING`, `SKIP_LINK_TARGET_UNUSABLE` | by reading what the checker reported (its own runtime probe); the walk could add more |
@@ -78,7 +84,10 @@ page by hand.
 | `tabindex` | (best practice) | manual | `TABINDEX_POSITIVE` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `table-fake-caption` | 1.3.1 | manual | `SINGLE_CELL_FIRST_ROW_NO_CAPTION` | with the table (table) |
 | `table-th-has-data-cells` | 1.3.1 | automatic | `TABLE_TH_NO_ASSIGNED_CELL` | with the table |
+| `target-size-enhanced` | 2.5.5 | automatic | `undersized-inline-link-run`, `undersized-plausibly-essential` | does an exception hold (AAA) |
+| `target-size-minimum` | 2.5.8 | automatic | `undersized-inline-link-run`, `undersized-pinned-over-page`, `undersized-plausibly-essential` | does an exception hold |
 | `td-has-header` | 1.3.1 | automatic | `TD_TABLE_NO_HEADERS` | with the table |
+| `text-spacing-content-loss` | 1.4.12 | automatic | `TEXT_CLIPPED_PARTLY`, `TEXT_CLIPPED_MOVING`, `TEXT_CLIPPED_SCRIPT_SIZED`, `TEXT_CLIPPED_FURTHER`, `TEXT_OVERLAPS`, `VIEWPORT_SCROLL_LOCKED`, `SPACING_NOT_APPLIED`, `STYLESHEET_IMPORTANT` | by reading what the checker measured |
 | `video-poster-text-alternative-present` | 1.1.1 | automatic | `TEXT_ALTERNATIVE_MISSING`, `VIDEO_POSTER_FIGCAPTION_REVIEW` | with its poster and what is near it |
 | `widget-keyboard-focusable` | 2.1.1, 2.1.3 | manual | `WIDGET_NOT_FOCUSABLE`, `WIDGET_NOT_IN_TAB_ORDER`, `COMPOSITE_NO_TAB_STOP`, `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | fail only |
 
@@ -109,20 +118,6 @@ page by hand.
 | `textbox-name-present` | 4.1.2 | automatic | `name_internals` |  |
 | `tooltip-name-present` | 4.1.2 | automatic | `name_missing`, `name_closedContent`, `name_contentTooDeep`, `name_internals` |  |
 | `treeitem-name-present` | 4.1.2 | automatic | `name_closedContent`, `name_contentTooDeep`, `name_internals` |  |
-
-## `measure`: A measurement by the lab, then the AI or a person for what is left
-
-| Check | SC | Kind | Can't-tell reasons | Note |
-| --- | --- | --- | --- | --- |
-| `avoid-inline-spacing` | 1.4.12 | automatic | `INLINE_SPACING_NO_SOFT_WRAP`, `INLINE_SPACING_SHORT_TEXT`, `INLINE_SPACING_NOT_RESOLVABLE` |  |
-| `contrast-computable` | 1.4.3, 1.4.6 | automatic | `BACKGROUND_IMAGE_OR_GRADIENT`, `BACKGROUND_OVERLAP`, `BACKGROUND_NOT_COMPUTABLE`, `BACKGROUND_NOT_OPAQUE_AT_ROOT`, `BACKGROUND_UNPARSABLE`, `FOREGROUND_UNPARSABLE`, `BACKGROUND_FILTER_OR_BACKDROP_FILTER`, `MIX_BLEND_MODE`, `ANCESTOR_OPACITY`, `ELEMENT_OPACITY`, `TEXT_SHADOW`, `TEXT_STROKE`, `PSEUDO_ELEMENT_COLOR`, `SELECT_OPTION_COLOR`, `GENERATED_TEXT_UNREADABLE`, `GENERATED_TEXT_POSITIONED`, `COLOR_SCHEME_NOT_RENDERED`, `ENGINE_EXCEPTION` | text over an image or gradient: measure the pixels behind it |
-| `link-in-text-block` | 1.4.1 | automatic | `LINK_COLOR_CONTRAST_ONLY`, `TEXT_DECORATION_NOT_RESOLVABLE`, `COLOR_NOT_COMPUTABLE`, `BACKGROUND_IMAGE_OR_GRADIENT`, `BACKGROUND_NOT_OPAQUE_AT_ROOT`, `BACKGROUND_OVERLAP`, `BACKGROUND_FILTER_OR_BACKDROP_FILTER`, `MIX_BLEND_MODE`, `ANCESTOR_OPACITY`, `ELEMENT_OPACITY`, `TEXT_SHADOW`, `TEXT_STROKE`, `PSEUDO_ELEMENT_COLOR`, `SELECT_OPTION_COLOR`, `CONTRAST_HELPERS_UNAVAILABLE`, `ENGINE_EXCEPTION` | hover and focus cues: measure, as the walk does |
-| `meta-viewport-zoom-enabled` | 1.4.4 | automatic | `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` |  |
-| `reflow-horizontal-scroll` | 1.4.10 | manual | `HORIZONTAL_SCROLL`, `HORIZONTAL_SCROLL_UNATTRIBUTED`, `WIDE_TABLE`, `WIDE_MEDIA`, `WIDE_PREFORMATTED`, `SCROLLS_IN_CONTAINER`, `CLIPPED_BY_CONTAINER`, `CLIPPED_AT_VIEWPORT_EDGE` | at 320 px: is the content lost or only a table or map |
-| `resize-text-content-loss` | 1.4.4 | manual | `TEXT_CLIPPED_AT_640`, `TEXT_TRUNCATED_AT_640` |  |
-| `target-size-enhanced` | 2.5.5 | automatic | `undersized-inline-link-run`, `undersized-plausibly-essential` | AAA (2.5.5) |
-| `target-size-minimum` | 2.5.8 | automatic | `undersized-inline-link-run`, `undersized-pinned-over-page`, `undersized-plausibly-essential` | inline links and spacing exceptions |
-| `text-spacing-content-loss` | 1.4.12 | automatic | `TEXT_CLIPPED_PARTLY`, `TEXT_CLIPPED_MOVING`, `TEXT_CLIPPED_SCRIPT_SIZED`, `TEXT_CLIPPED_FURTHER`, `TEXT_OVERLAPS`, `VIEWPORT_SCROLL_LOCKED`, `SPACING_NOT_APPLIED`, `STYLESHEET_IMPORTANT` | with the spacing applied: picture before and after |
 
 ## `picture`: The AI, once it can see the picture
 

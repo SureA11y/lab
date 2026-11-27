@@ -38,7 +38,10 @@
 // server-side-image-map-absent.
 // registry-15: with the focus walk, the walk lane's reading questions also
 // get the element's own stop (walkStop).
-const PROMPT_VERSION = 'registry-15';
+// registry-16: the measure lane: contrast over what the checker cannot
+// compute (measured from pixels), links told by colour, text spacing,
+// reflow, resized text, target size, a replaced viewport tag.
+const PROMPT_VERSION = 'registry-16';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -239,6 +242,42 @@ const ANSWERABLE = Object.freeze({
     },
     'server-side-image-map-absent': {
         question: "This link holds an <img ismap>, a server-side image map, which a keyboard cannot use. 2.1.1: are the same destinations offered as ordinary links nearby (pass), or only by clicking parts of the picture (fail)? `context` shows what is around it.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'contrast-computable': {
+        question: "The checker could not compute this text's contrast because of what is drawn behind or over it (`reported`: the reason: a background image or gradient, an overlapping element, opacity, a blend mode, a filter, a text shadow or stroke...). `pixels` measures it from a picture of the text as drawn: the ratio of the text colour against the pixels unlike it (the 10th percentile `ratioP10`, the median, the share below 4.5:1 and 3:1), `nearTextShare`, the share of the box drawn almost in the text's own colour (glyphs cover about a fifth of a text box: far more means the background itself is close to the text colour, a fail), and the font size and weight. 1.4.3 asks 4.5:1, or 3:1 for large text (24px, or 18.66px bold). Fail when much of the background is below the ratio where the text sits (a light part of an image under light text); pass when the measured background is clearly above it. Antialiased edges pull the lowest values down, so judge by the share and the median, not one pixel. Unsure when `pixels` is missing or the reason is something a picture cannot show (an option list, an unrendered colour scheme).",
+        evidence: ['element', 'context', 'reported', 'pixels'],
+    },
+    'link-in-text-block': {
+        question: "A link in a block of text is told apart from the text around it by colour alone (`reported`: the reason). 1.4.1 asks for a cue other than colour, at least on hover and focus (an underline, a border, bold). With the focus walk, `walkStop` gives what changed on the link when it had focus. Fail when nothing but colour marks it and focus shows no other cue; pass when focus (and so presumably hover) adds an underline or another non-colour cue, or the link is underlined after all. Unsure when the colours could not be worked out and nothing settles it.",
+        evidence: ['element', 'context', 'reported', 'walkStop'],
+    },
+    'text-spacing-content-loss': {
+        question: "With the text spacing of 1.4.12 applied (line height 1.5, paragraph spacing 2, letter spacing 0.12, word spacing 0.16), the checker found this text partly cut off, overlapping other text, moved out of reach, or the spacing could not be applied (`reported`: the reason and the text). Is content or function lost to a reader: fail; or is it an excerpt already meant to be cut (with a way to read the rest), a moving decoration, or a cut of a few pixels that loses nothing: pass? Unsure when the spacing could not be applied.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'avoid-inline-spacing': {
+        question: "Spacing (line height, letter or word spacing) is forced below the 1.4.12 values with !important on this text (`reported`: which), so a user's own spacing cannot override it. The checker could not tell whether it matters: the text may not wrap, or is short enough to stay on one line. Fail when it is running text a user may need to space out; pass when it is a short label or a single line that cannot lose anything. Unsure when the value could not be worked out.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'reflow-horizontal-scroll': {
+        question: "At 320 CSS pixels wide (1.4.10) this element sticks out past the edge, makes the page scroll sideways, or is cut off (`reported`: how far, its width, the reason: a wide table, media, preformatted text, a box that scrolls or clips). Content that needs two-dimensional layout is excepted: a data table, a map, a diagram, a video, code whose layout carries meaning. Fail when it is text or a control that should reflow (a layout table, a fixed-width box, a long word in a heading) or when the clipped part is lost; pass when it is excepted content, or only a box of its own scrolls and nothing is lost.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'resize-text-content-loss': {
+        question: "With text resized to 200% (1.4.4), the checker found this text cut off by its box (`reported`: the text and the edge it goes past). Is content lost to a reader (fail), or is the cut part decorative, repeated elsewhere, or reachable by scrolling the box (pass)?",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'target-size-minimum': {
+        question: "This target is under 24 by 24 CSS pixels and too close to a neighbour (`reported`: the reason and the neighbour). 2.5.8 excepts inline links in a sentence, a spacing that leaves room, an equivalent control elsewhere, a size the user agent sets, and targets whose size is essential (a map's points, a chart). Pass when an exception holds (an \"Edit | Delete\" run is not a sentence, so it does not); fail when none does.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'target-size-enhanced': {
+        question: "This target is under 44 by 44 CSS pixels (`reported`: the reason). 2.5.5 (AAA) excepts inline links in a sentence, an equivalent control elsewhere, a size the user agent sets, and essential sizes (inside an SVG, a canvas or an image map). Pass when an exception holds; fail when none does.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'meta-viewport-zoom-enabled': {
+        question: "A viewport meta tag restricts zoom (`reported`: the settings), but a later one replaces it, and browsers have not always agreed which applies. 1.4.4: does the tag that browsers apply let users zoom to 200% and more (pass), or does the restricting one apply or could it (fail)? `context` shows the page's head as far as it reaches.",
         evidence: ['element', 'context', 'reported'],
     },
     'link-name-quality': {
