@@ -732,3 +732,25 @@ outside them).
   problem repeated; one table labelled unsure (a one-row table holding an
   empty header) not scored. Tables, `focus-order-semantics`,
   `presentation-role-conflict` and `accesskeys` had no real case here.
+
+## "Is it text", and step 1 done (2026-11-27)
+
+The last `read` family (`registry-13`): `contrast-minimum` and
+`contrast-enhanced` for the reasons reading can settle (a symbol that may
+not be text, logo text, a contrast switch, a placeholder; reasons that need
+a measurement stay "unsure"), `symbol-graphic-contrast` (do low-contrast
+symbols carry information) and `css-orientation-lock` (does a rotation or a
+block hidden in one orientation restrict use). With it every check of the
+inventory's `read` lane is answered: 46 of 132.
+
+- **Demo:** a page of its own, `text.html` (AAA): a grey star rating with no
+  text (fail), a grey arrow after "Next page" (pass), content hidden in
+  portrait (fail). The whole demo: **81 of 81**, after the call budget was
+  raised again (81 questions, 80 allowed: one left open; now 120). The two
+  contrast checks get no demo case: the engine sends symbols to
+  `symbol-graphic-contrast` and fails a light placeholder outright; their
+  other reasons need engine settings (`logoText: 'ask'`,
+  `contrastSwitch: 'ask'`) or a measurement.
+- **Real pages:** 22 pages scanned with the AAA profile (GOV.UK's colour and
+  contrast pages, the W3C demo, UW, W3C and APG pages): no question of this
+  family came up. These checks have no real case yet.

@@ -37,41 +37,45 @@
 {"id":"q37","verdict":"fail","confidence":0.85,"rationale":"The header navigation (Home, Products, Cart) and the footer navigation (About us, Jobs, Privacy) hold different links, and both are unnamed."}
 {"id":"q38","verdict":"fail","confidence":0.85,"rationale":"The footer navigation (About us, Jobs, Privacy) and the header navigation (Home, Products, Cart) hold different links, and both are unnamed."}
 {"id":"q39","verdict":"fail","confidence":0.6,"rationale":"The badge shows '−50%', which the nearby text ('on pots') does not give, so it is not decorative; alt=\"\" marks it decorative and the aria-label 'Sale' does not convey the half-price information."}
+{"id":"q40","verdict":"fail","confidence":0.8,"rationale":"The single spanning first-row cell 'Opening hours' titles the whole table rather than heading a column or holding data, and the table has no caption and an empty accessible name."}
 {"id":"q41","verdict":"fail","confidence":0.8,"rationale":"The labels 'Standard' and 'Express' do not say what is chosen; the question 'How fast should it come?' is only a nearby paragraph with no fieldset/legend or named group."}
 {"id":"q42","verdict":"pass","confidence":0.95,"rationale":"The title 'Delivery and care - Demo Shop' matches the h1 'Delivery and care' and the page sections about ordering delivery and care guides."}
 {"id":"q43","verdict":"fail","confidence":0.9,"rationale":"The joined name 'Card number Name on card' runs two unrelated labels together; 'Name on card' belongs to a different field, so the name is misleading."}
 {"id":"q44","verdict":"fail","confidence":0.85,"rationale":"The 'Shop' and 'Search' links share accesskey 's' but go to different pages (index.html vs products.html), so one cannot be reached reliably by the shortcut."}
 {"id":"q45","verdict":"fail","confidence":0.85,"rationale":"The 'Search' and 'Shop' links share accesskey 's' but lead to different targets, so the shortcut may reach only one of them."}
+{"id":"q46","verdict":"pass","confidence":0.9,"rationale":"The empty th is the top-left corner cell above the row headers (Pots, Soil) and beside the column headers (Small, Large), so it heads no data cells."}
 {"id":"q47","verdict":"fail","confidence":0.9,"rationale":"The div has an onclick that navigates to products.html, so it acts as a link but is announced as an article with no name."}
+{"id":"q48","verdict":"fail","confidence":0.85,"rationale":"The h4 'Roses' comes straight after the h2 'Care guides' with no h3 between them, so the outline has a gap. It is a plain subsection, not a sidebar or a card set at a fixed level."}
 {"id":"q49","verdict":"fail","confidence":0.85,"rationale":"The block at the top holds the site name 'Demo Shop' and main links, so it is the page header, yet the only landmark is main and there is no banner."}
 {"id":"q50","verdict":"fail","confidence":0.75,"rationale":"alt=\"\" says decorative but aria-label 'Sale' exposes it as an image; whichever was intended, the markup conflicts and the exposed name does not match the '−50%' content."}
 {"id":"q51","verdict":"fail","confidence":0.85,"rationale":"The site header with the site name and Shop/Search links is real page content and lies outside every landmark (only main exists)."}
-{"id":"q52","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
-{"id":"q53","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
-{"id":"q54","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
-{"id":"q55","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
-{"id":"q56","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
-{"id":"q57","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
-{"id":"q58","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
-{"id":"q59","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
-{"id":"q60","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
-{"id":"q61","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) changes background, text colour and underline on focus (682 px changed, 584 at 3:1), so focus remains visible."}
-{"id":"q62","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
-{"id":"q63","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
-{"id":"q64","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
-{"id":"q65","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) has appearance changed 0, atContrast 0 against 244 needed, meets false: no qualifying indicator."}
-{"id":"q66","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) has appearance changed 0, atContrast 0 against 336 needed, meets false."}
-{"id":"q67","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) has appearance changed 0, atContrast 0 against 192 needed, meets false."}
-{"id":"q68","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) has 584 px changed at 3:1 or more against 204 needed, meets true."}
-{"id":"q69","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) changes nothing on focus, so there is no indicator to meet 3:1."}
-{"id":"q70","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) changes nothing on focus, so there is no indicator to meet 3:1."}
-{"id":"q71","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) changes nothing on focus, so there is no indicator to meet 3:1."}
-{"id":"q72","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) changes background, text colour and underline; 584 of 682 changed px are at 3:1 or more, over five times a 1 px outline (106), clearly enough to see."}
-{"id":"q73","verdict":"pass","confidence":0.7,"rationale":"'Demo Shop' sits in the header just before the main navigation and reads as the site name, not a title for following section text."}
-{"id":"q74","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
-{"id":"q75","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
-{"id":"q76","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
-{"id":"q77","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
-{"id":"q40","verdict":"fail","confidence":0.8,"rationale":"The single spanning first-row cell 'Opening hours' titles the whole table rather than heading a column or holding data, and the table has no caption and an empty accessible name."}
-{"id":"q46","verdict":"pass","confidence":0.9,"rationale":"The empty th is the top-left corner cell above the row headers (Pots, Soil) and beside the column headers (Small, Large), so it heads no data cells."}
-{"id":"q48","verdict":"fail","confidence":0.85,"rationale":"The h4 'Roses' comes straight after the h2 'Care guides' with no h3 between them, so the outline has a gap. It is a plain subsection, not a sidebar or a card set at a fixed level."}
+{"id":"q52","verdict":"pass","confidence":0.9,"rationale":"The title \"Reviews - Demo Shop\" matches the main heading \"Reviews\" and names the site, so it says what the page is about."}
+{"id":"q53","verdict":"fail","confidence":0.92,"rationale":"In portrait, main (all the page content) is set to display:none and only a \"Please turn your device to landscape\" message shows. A reviews page does not need one orientation, so this is F100."}
+{"id":"q54","verdict":"fail","confidence":0.85,"rationale":"The stars carry the rating, and the only text beside them is \"Rated\", which gives no value. At 1.43:1 they fall below the 3:1 that information-bearing graphics need."}
+{"id":"q55","verdict":"pass","confidence":0.88,"rationale":"The arrow sits inside a link whose visible text \"Next page\" already gives its meaning, so the arrow only decorates."}
+{"id":"q56","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
+{"id":"q57","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
+{"id":"q58","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
+{"id":"q59","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
+{"id":"q60","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
+{"id":"q61","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
+{"id":"q62","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
+{"id":"q63","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
+{"id":"q64","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) shows no change at all on focus (changesOnFocus empty, changed 0), so focus is not visible."}
+{"id":"q65","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) changes background, text colour and underline on focus (682 px changed, 584 at 3:1), so focus remains visible."}
+{"id":"q66","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
+{"id":"q67","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
+{"id":"q68","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
+{"id":"q69","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) has appearance changed 0, atContrast 0 against 244 needed, meets false: no qualifying indicator."}
+{"id":"q70","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) has appearance changed 0, atContrast 0 against 336 needed, meets false."}
+{"id":"q71","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) has appearance changed 0, atContrast 0 against 192 needed, meets false."}
+{"id":"q72","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) has 584 px changed at 3:1 or more against 204 needed, meets true."}
+{"id":"q73","verdict":"fail","confidence":0.9,"rationale":"Stop 2 (Home) changes nothing on focus, so there is no indicator to meet 3:1."}
+{"id":"q74","verdict":"fail","confidence":0.9,"rationale":"Stop 3 (Products) changes nothing on focus, so there is no indicator to meet 3:1."}
+{"id":"q75","verdict":"fail","confidence":0.9,"rationale":"Stop 4 (Cart) changes nothing on focus, so there is no indicator to meet 3:1."}
+{"id":"q76","verdict":"pass","confidence":0.85,"rationale":"Stop 5 (Help) changes background, text colour and underline; 584 of 682 changed px are at 3:1 or more, over five times a 1 px outline (106), clearly enough to see."}
+{"id":"q77","verdict":"pass","confidence":0.7,"rationale":"'Demo Shop' sits in the header just before the main navigation and reads as the site name, not a title for following section text."}
+{"id":"q78","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
+{"id":"q79","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
+{"id":"q80","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
+{"id":"q81","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}

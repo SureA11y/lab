@@ -16,8 +16,8 @@ by what would settle it:
 
 | Lane | What settles it | Checks | Phase 1 |
 | --- | --- | --- | --- |
-| `answered` | The AI answers it today | 42 | Polish (below) |
-| `read` | The AI, from the element and the text around it, as today | 4 | Step 1 |
+| `answered` | The AI answers it today | 46 | Polish (below) |
+| `read` | The AI, from the element and the text around it, as today | 0 | Step 1 (done 2026-11-27) |
 | `tree` | The browser's own accessibility tree, no model | 23 | Step 2 |
 | `walk` | The AI, from the focus or open walk, or a small extension | 12 | Step 3 |
 | `measure` | A measurement by the lab, then the AI or a person | 8 | Step 4 |
@@ -70,7 +70,8 @@ family one change with its demo cases:
   `empty-table-header`, `heading-order`, `bypass-blocks-present`,
   `page-zones-landmark`, `region`, `focus-order-semantics`,
   `presentation-role-conflict`, `accesskeys`.
-- *Is it text, does it matter:* `contrast-minimum`, `contrast-enhanced`,
+- *Is it text, does it matter* (**done 2026-11-27**, `registry-13`; the
+  contrast checks only for the reasons reading can settle): `contrast-minimum`, `contrast-enhanced`,
   `symbol-graphic-contrast` (the ratio is measured; the question is whether
   the symbol is text or carries information), `css-orientation-lock`.
 

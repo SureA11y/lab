@@ -50,6 +50,10 @@ structure.htmlheading-order                             html > body > main > h4 
 structure.htmlpage-zones-landmark                       #site-header                        fail     fail                    agrees
 structure.htmlpresentation-role-conflict                #sale-badge                         fail     fail                    agrees
 structure.htmlregion                                    #site-header                        fail     fail                    agrees
+text.html     page-title-patterns                       html > head > title                 pass     pass                    agrees
+text.html     css-orientation-lock                      html > body > main                  fail     fail                    agrees
+text.html     symbol-graphic-contrast                   #rating                             fail     fail                    agrees
+text.html     symbol-graphic-contrast                   #next-arrow                         pass     pass                    agrees
 focus.html    page-title-patterns                       html > head > title                 pass     pass                    agrees
 focus.html    p-as-heading                              #top-bar > p                        pass     pass                    agrees
 focus.html    focus-visible                             html                                fail     fail                    agrees
@@ -77,4 +81,4 @@ dialog.html   keyboard                                  html                    
 dialog.html   focus-order                               html                                fail     fail                    agrees
 dialog.html   focus-visible                             html                                pass     pass                    agrees
 
-77 questions: 77 answered by the AI, 77 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+81 questions: 81 answered by the AI, 81 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.

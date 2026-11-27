@@ -27,7 +27,7 @@ AI answers every text alternative check (SVG, image map areas, image
 buttons, object, embed, canvas, video posters, redundant alt), with the
 evidence they need, and the names and labels with what the checker
 reported, and the structure checks with the table, outline and landmarks;
-demo 77 of 77, prompt version `registry-12`; best-practice
+and "is it text"; step 1 done; demo 81 of 81, prompt version `registry-13`; best-practice
 findings are asked too; before
 that the **roadmap** and the **inventory** of every engine check that can end
 in "can't tell", with a test that keeps it in step with the engine and the
@@ -41,10 +41,9 @@ shows, not its markup). The full suite (4491 pass, 5 skipped) and the
 browser tests (`focus-walk` 16, `ai-answer` 10, `app-boot`) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
-AI for every "can't tell" from the rules: 42 of 132 checks are answered
-today (the text alternatives, the names and labels and the structure checks
-are done); next the 4 remaining `read` checks ("is it text": symbols below
-the contrast ratio, orientation lock), then
+AI for every "can't tell" from the rules: 46 of 132 checks are answered
+today: step 1, every `read` check, is done (text alternatives, names and
+labels, structure, "is it text"); next
 the browser's accessibility tree for 23 "name present" checks, the walks,
 measurements, pictures and media. Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
@@ -63,10 +62,18 @@ checks, with what the checker reported, `reported`; demo page `labels.html`,
 person to settle). Then the structure checks (13, with the table, the
 heading outline and the landmarks read from the page: `table`, `outline`,
 `landmarks`; demo page `structure.html`; 37 real cases 37 of 37, 2026-11-27).
-Next: "is it text" (`contrast-minimum`, `contrast-enhanced`,
-`symbol-graphic-contrast`, `css-orientation-lock`), which ends step 1; then
-step 2, the 23 "name present" checks from the browser's accessibility
-tree (roadmap decision 4 first: in the lab or in the engine). Items 1
+Then "is it text" (`contrast-minimum`, `contrast-enhanced` for the reasons
+reading can settle, `symbol-graphic-contrast`, `css-orientation-lock`; demo
+page `text.html`; no real case on the evaluation sites): **step 1 is done**
+(2026-11-27). Next: step 2, the 23 "name present" checks from the browser's
+accessibility tree, waits on roadmap decision 4 (in the lab or in the
+engine: ask the user); so go on with step 3, the `walk` lane (12 checks:
+`tabindex`, `focus-not-removed-by-script`, `iframe-focusable-content`,
+`scrollable-region-focusable`, `mouse-only-event-handlers`,
+`css-hidden-focus`, `aria-expanded-state-mismatch`,
+`aria-checked-state-mismatch`, `skip-link`, `aria-hidden-focus`,
+`nested-interactive-controls-absent`, `server-side-image-map-absent`),
+whose evidence the focus and open walks mostly already collect. Items 1
 to 3 below need the user.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
@@ -142,12 +149,12 @@ to 3 below need the user.
 - **The demo:** `examples/demo-site/ai/` (`reading.html`, `focus.html`,
   `dialog.html` for the open walk),
   `examples/specs/ai-answers.spec.json`, the correct answers in
-  `expected.json`, `examples/ai-demo-score.js`. 77 questions, including a Help
+  `expected.json`, `examples/ai-demo-score.js`. 81 questions, including a Help
   link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13 pass) and a
   modal dialog a keyboard user cannot close (keyboard and focus order fail,
   found by the open walk).
   Evaluated blind, a model answering the lab's exact prompts outside the lab
-  (`ai-cant-tell-spike/answer-offline.js`): **77 of 77**
+  (`ai-cant-tell-spike/answer-offline.js`): **81 of 81**
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
 - **Real sites,** built with documented accessibility problems (the WAI
@@ -251,12 +258,12 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **Phase 1, step 1: the `read` checks** (34; 4 left)
+4. **Phase 1, step 1: the `read` checks** (34; all done)
    (`ai-cant-tell-roadmap.md`, listed under `read` in
    `ai-cant-tell-inventory.md`). One family at a time, in this order: text
    alternatives (all 9 done 2026-11-26), names and labels (all 8 done),
-   structure (all 13 done 2026-11-27), then "is it text" (symbols below the
-   contrast ratio, orientation lock: 4 left). For each check: read its reasons
+   structure (all 13 done 2026-11-27), "is it text" (all 4 done):
+   step 1 is complete. For each check: read its reasons
    in the engine
    (`node_modules/@surea11y/core/src/checks/manual/<id>-manual.js` or
    `automatic/<id>.js`: what it reports, why it cannot tell); an entry in
@@ -347,7 +354,7 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   `<body>` or in `<head>`, which the evidence never includes.
 - The demo workflow's call budget (`budget.calls`, per run) must cover every
   question: when cases are added, a page left open with `budget-calls` means
-  the budget, not the AI (it is 80 now, for 44 questions).
+  the budget, not the AI (it is 120 now, for 81 questions).
 - Re-scoring after a change: a prompt that comes out identical can keep its
   earlier blind answer (match the runs' `questions.jsonl` by prompt text);
   only new or changed prompts need answering again.
