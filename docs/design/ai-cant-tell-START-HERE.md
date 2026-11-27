@@ -47,22 +47,50 @@ media or further use of the page) and the 32 `code` checks (roadmap
 decision 3). Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
 
-**Where to pick up without the user:** steps 1, 3 and 4 are done (see the
-progress table). Next, **exact contrast in the lab**: `pixels`
-(`measurePixels` in `evidence.js`) tells text from background by colour, so
-antialiased glyph edges count as background and 7 real cases of readable
-text were left unsure. `ai-cant-tell-eval/contrast-reference.js` reads the
-background exactly: the element's picture with its text and again with the
-text made transparent for a moment. Bring that into the lab as the
-measurement for `contrast-computable`: it changes the page for a moment, so
-take a fingerprint before and after (`fingerprint`, `viewChanges` in
-`evidence.js`, as the walks do), put the style back, and drop the
-measurement with a logged warning if the page is not the same; keep the
-current method as the fallback when the page cannot be changed (it should
-never fail the scan). Then re-run the measure lane's real cases
-(`ai-cant-tell-eval/measure-lane/`, spec as in the eval README) and the
-demo. After that, what is left needs the user's decisions (roadmap 3, 4,
-5, 6: the `code` lane, the accessibility tree, pictures, using forms).
+**The user's decisions (2026-11-27)** on the roadmap's eight open questions
+are in `ai-cant-tell-roadmap.md`, "Decisions": every recommended option.
+**Where to pick up**, the work they and the plan leave, in this order:
+
+1. **Exact contrast in the lab** (no decision needed): `pixels`
+   (`measurePixels` in `evidence.js`) tells text from background by colour,
+   so antialiased glyph edges count as background and 7 real cases of
+   readable text were left unsure. Bring in the method of
+   `ai-cant-tell-eval/contrast-reference.js` (the picture with the text,
+   then with the text made transparent for a moment, the background under
+   the glyphs read directly), with a fingerprint before and after
+   (`fingerprint`, `viewChanges`, as the walks), the style put back, the
+   current method as fallback, never failing the scan. Re-run the measure
+   lane's real cases and the demo.
+2. **Labels by WCAG's reading (decision 7):** re-read the labels written by
+   an audit's stricter reading (`label-rules.js` `gov`: "Read more", "Click
+   here" in its sentence, the search field labelled by its button, the
+   lightbox close button with Escape, the role=button link; the UW "Info"
+   link) and re-score; note each changed case in the eval README.
+3. **Trust (decision 8):** `ai:agreement` marks a check trusted at 30 or
+   more labelled real cases and 95% agreement when answered with no wrong
+   pass; a table of checks and their trust in the eval README; answers
+   stay suggestions in the app until then (showing trusted ones as settled
+   is a later step).
+4. **Pictures (decision 5):** `ai: { pictures: true }` per step, off by
+   default, forbidden by the server unless `A11Y_AI_PICTURES` allows it
+   (and per allowed site); masked areas never sent; the built-in call sends
+   the element's picture as an image block, the endpoint as today
+   (`A11Y_AI_ENDPOINT_PICTURE`). Then `image-of-text` (the `picture` lane)
+   and a measurement on the alt questions and the W3C news photo.
+5. **Forms (decision 6):** `ai: { forms: true }` per step, only on hosts in
+   `A11Y_AI_FORM_HOSTS` (test systems); fill and submit with invalid input
+   for `invalid-field-error-message`, paste for `password-paste-enabled`,
+   watch `live-region-announcements`; data-changing requests stay blocked
+   elsewhere.
+6. **The `tree` lane in the engine (decision 4):** in the engine's own
+   repository (`@surea11y/core`), not this one: ask the user which
+   repository and add it (`add_repo`) before starting; the lab's inventory
+   moves those checks to "the engine".
+7. **The `code` lane (decision 3):** a person confirms; nothing to build;
+   the inventory's lane note says so.
+8. **Phase 2 (decisions 1 and 2):** AI-raised items in a section of their
+   own, unconfirmed, counting towards nothing until a person confirms; the
+   AI only flags, never passes. Only after phase 1.
 
 | Step | Checks | Demo | Real cases |
 | --- | --- | --- | --- |
@@ -270,10 +298,10 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-3b. **Roadmap decision 4, for step 2:** the 23 "name present" checks are
-   settled by the browser's computed names (its accessibility tree), no
-   model needed. In the lab's AI pass, or in the engine (every user of it
-   would get them)? Ask the user; the other decisions are left for later.
+3b. **Roadmap decisions:** made by the user on 2026-11-27 (all eight, see
+   the roadmap's "Decisions"); the work they lead to is listed under
+   "Where to pick up". Only the engine's repository (for decision 4) is
+   still to ask.
 4. **Next without the user: exact contrast in the lab**, as "Where to pick
    up" says. Steps 3 (the `walk` lane) and 4 (the `measure` lane) are done;
    the recipe below, written for step 3, holds for any new question. Step 3 (12 checks, listed under `walk` in `ai-cant-tell-inventory.md` with a

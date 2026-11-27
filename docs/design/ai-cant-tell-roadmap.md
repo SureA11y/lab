@@ -18,13 +18,13 @@ by what would settle it:
 | --- | --- | --- | --- |
 | `answered` | The AI answers it today | 67 | Polish (below) |
 | `read` | The AI, from the element and the text around it, as today | 0 | Step 1 (done 2026-11-27) |
-| `tree` | The browser's own accessibility tree, no model | 23 | Step 2 |
+| `tree` | The browser's own accessibility tree, no model | 23 | Step 2, in the engine (decision 4) |
 | `walk` | The AI, from the focus or open walk, or a small extension | 0 | Step 3 (done 2026-11-27) |
 | `measure` | A measurement by the lab, then the AI or a person | 0 | Step 4 (done 2026-11-27) |
 | `picture` | The AI, once it can see the picture | 1 | Step 5 |
 | `media` | Audio, video or time | 5 | Step 5 |
 | `interact` | Using the page further (errors, announcements) | 3 | Step 5 |
-| `code` | The markup states it; a person confirms | 32 | Decision 3 |
+| `code` | The markup states it; a person confirms | 32 | A person, no AI (decision 3) |
 
 The lanes are a judgement made from each check's documented reasons; move a
 check when its reasons say otherwise.
@@ -79,7 +79,8 @@ family one change with its demo cases:
 tell" when the name may come from a closed shadow root, a custom element's
 internals or content nested too deep. Chrome's accessibility tree (the
 DevTools protocol) has the computed name: no model needed, and a name found
-can then go to the matching `read` question. Decision 4 is where this lives.
+can then go to the matching `read` question. Decision 4: in the engine's
+repository, so every user of it gets pass or fail.
 
 **Step 3: `walk` (12 checks; done 2026-11-27, `registry-15`: reading
 questions on what the checker reported, with the element's walk stop when
@@ -130,30 +131,48 @@ its own items (Decisions 1 and 2). Candidates, by the evidence they need:
 4. **Seeing the page:** 1.4.1 use of colour, 1.4.5 images of text, the
    visual side of reflow (Decision 5).
 
-## Decisions left for later
+## Decisions (made by the user on 2026-11-27)
 
-1. **AI-raised items (phase 2):** how they show in the report (for example
-   "raised by the AI, not confirmed"), apart from the engine's results, and
-   never counted towards conformance until a person confirms them.
-2. **Whether the AI may pass a phase 2 item** or only flag it, as keyboard
-   today (fail only).
-3. **The `code` lane (32 checks):** the markup states the problem and the
-   engine leans fail; does the AI add anything (whether a script fixes it
-   later, whether it matters), or does the person confirm without it?
-4. **Where the `tree` lane lives:** in the lab's AI pass, or in the engine
-   (the engine computing the name from the browser's accessibility tree
-   would settle these for every user of it).
-5. **Pictures to the model:** for `image-of-text`, 1.4.1 and the visual
-   checks; what leaves the lab grows (customer sites,
-   `ai-cant-tell-data-and-agents.md`), and the cost; to be measured first, on
-   the one question the model keeps getting wrong (the W3C news photo).
-6. **Using forms further:** submitting with errors only on test systems,
-   opt-in, as `open` is.
-7. **The reading the labels follow:** WCAG's or a stricter audit's (the
-   GOV.UK "Read more" links, the lightbox close button), to be settled with a
-   person's labels.
-8. **When a check is trusted:** how many cases, which agreement, and whether
-   the confidence threshold (0.6) is per check.
+The eight questions this plan left open, answered by the user, each with
+what it means for the work:
+
+1. **AI-raised items (phase 2): separate and unconfirmed.** A section of
+   their own, "raised by the AI, not confirmed", apart from the engine's
+   results; they count towards no criterion, score or conformance until a
+   person confirms one, which then becomes a manual finding.
+2. **AI pass in phase 2: only flag problems.** The AI raises what it finds
+   and never passes such a criterion (finding nothing is not proof, as with
+   keyboard today); a person passes it.
+3. **The `code` lane (32 checks): a person confirms, no AI.** No questions
+   are added for them; the review lists them as they are. Their lane stays
+   `code`, now settled as "a person", not "to do".
+4. **The `tree` lane (23 "name present" checks): in the engine.** The scan
+   engine (`@surea11y/core`) reads the browser's accessibility tree and
+   settles these itself, so every user of it gets pass or fail instead of
+   can't tell. The work is in the engine's repository, not this one; the
+   lab then has nothing to ask for them. Their lane becomes "the engine".
+5. **Pictures to the model: opt-in per step.** Off by default; a scan step
+   turns it on (`ai: { pictures: true }`), and the server can forbid it
+   (an `A11Y_AI_PICTURES` setting, off on customer sites unless allowed);
+   masked areas are never sent. Measured first on the questions that need
+   it (`image-of-text`, the alt questions, the W3C news photo the model
+   keeps getting wrong) before wider use.
+6. **Using forms further: opt-in, test hosts only.** Off by default; a step
+   turns it on, and the server allows it only on hosts listed as test
+   systems (an `A11Y_AI_FORM_HOSTS` setting); requests that change data stay
+   blocked elsewhere, as the open walk blocks them. For
+   `invalid-field-error-message`, `password-paste-enabled`,
+   `live-region-announcements`.
+7. **Labels follow WCAG's reading.** Where an audit is stricter (GOV.UK's
+   "Read more", the lightbox close button, the role=button link), the case
+   is noted but scored by WCAG and its Understanding documents. The labels
+   written by the audit's reading (`label-rules.js`, `gov`) are to be
+   re-read by this rule.
+8. **Trust: 30 cases, 95% when answered.** A check is trusted once it has
+   at least 30 labelled real cases and 95% agreement on the answers the AI
+   gave, with no wrong pass; the confidence threshold stays 0.6 for all.
+   Until then its answers stay suggestions a person confirms. `ai:agreement`
+   recomputes it.
 
 ## Keeping it current
 
