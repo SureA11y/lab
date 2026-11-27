@@ -242,13 +242,13 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **Phase 1, step 1: the `read` checks** (34; 25 left)
+4. **Phase 1, step 1: the `read` checks** (34; 4 left)
    (`ai-cant-tell-roadmap.md`, listed under `read` in
    `ai-cant-tell-inventory.md`). One family at a time, in this order: text
-   alternatives (all 9 done 2026-11-26), names and labels (all 8 done), structure (all 13 done, 2026-11-27, `heading-quality`,
-   `form-control-label-quality`, `label-in-name`, ...), structure (tables,
-   form groups, heading order, regions), then "is it text" (symbols below the
-   contrast ratio). For each check: read its reasons in the engine
+   alternatives (all 9 done 2026-11-26), names and labels (all 8 done),
+   structure (all 13 done 2026-11-27), then "is it text" (symbols below the
+   contrast ratio, orientation lock: 4 left). For each check: read its reasons
+   in the engine
    (`node_modules/@surea11y/core/src/checks/manual/<id>-manual.js` or
    `automatic/<id>.js`: what it reports, why it cannot tell); an entry in
    `ANSWERABLE` (`registry.js`) with the evidence it needs (`evidence.js`
