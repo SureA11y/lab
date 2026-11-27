@@ -22,7 +22,10 @@ Read, in this order:
 
 ## State (end of 2026-11-27)
 
-Everything is committed and pushed. Latest: **phase 1, steps 1, 3 and 4 are done**:
+Everything is committed and pushed. Latest: **the user decided the roadmap's
+eight open questions** (2026-11-27; the work they lead to is under "Where to
+pick up"; the engine's repository, for decision 4, is still to ask), after
+**phase 1, steps 1, 3 and 4 done**:
 the AI answers every check of the inventory's `read`, `walk` and `measure`
 lanes (67 of 132), contrast the engine cannot compute measured from the
 page's pixels (`pixels`); the walk lane from what the checker reported and, with
