@@ -597,7 +597,7 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             const w = ev.walkStop;
             const sf = w.stopFacts;
             add('In the focus walk', w.stop == null
-                ? '<strong>' + escapeHtml('Never reached with Tab') + '</strong>' + (w.unreachable ? ' <span class="air-hint">' + escapeHtml('(' + w.unreachable + ')') + '</span>') : '')
+                ? '<strong>' + escapeHtml('Never reached with Tab') + '</strong>' + (w.unreachable ? ' <span class="air-hint">' + escapeHtml('(' + w.unreachable + ')') + '</span>' : '')
                 : escapeHtml('Stop ' + w.stop + (sf ? ' of ' + sf.ofStops + (sf.before ? ', after ' + sf.before : '') + (sf.after ? ', before ' + sf.after : '') : '') + (sf && sf.hidden ? '; hidden or off the page while focused' : '; visible while focused') + (sf && sf.lostFocus ? '; the page took focus away at once' : '') + (sf && Array.isArray(sf.changesOnFocus) ? '; on focus: ' + (sf.changesOnFocus.length ? sf.changesOnFocus.join(', ') : 'no visible change') : '')));
         }
         // The table, the heading outline, the landmarks, as the model got them.
