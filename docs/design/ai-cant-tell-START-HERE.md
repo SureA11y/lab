@@ -41,8 +41,9 @@ browser tests (`focus-walk` 16, `ai-answer` 9, `app-boot`) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
 AI for every "can't tell" from the rules: 29 of 132 checks are answered
-today; next the 17 remaining `read` checks (questions like today's: text
-alternatives, headings and labels, label in name, tables and structure), then
+today (the text alternatives and the names and labels are done); next the 17
+remaining `read` checks (structure: form groups, tables, heading order,
+regions; then "is it text"), then
 the browser's accessibility tree for 23 "name present" checks, the walks,
 measurements, pictures and media. Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
@@ -83,7 +84,13 @@ to 3 below need the user.
   text that repeats the text beside it (a best practice). An image question
   also says what the picture shows (blank, colours), read from its pixels.
   Best-practice findings (`canonical.bestPractices`, with the scan step's
-  `includeBestPractice`) are asked like the others.
+  `includeBestPractice`) are asked like the others. Names and labels:
+  placeholder headings, fields sharing a label, label in name, controls named
+  only by a tooltip, generic link text alone (2.4.9, AAA), same-name links
+  (2.4.9) and frames, unnamed landmarks; their questions get what the
+  checker itself reported for the occurrence (`reported`: the fields sharing
+  a label, where same-named links go...), shown in the review as "The
+  checker found".
 - **The focus walk** (`ai: { focus: true }`, `focusStops` default 40, max
   200): Tab through the page in its own Tab order, then focus and scroll put
   back, checked by a fingerprint (answers dropped and a warning logged if the
@@ -162,25 +169,30 @@ to 3 below need the user.
   (`focusStops`), blank images, a video's own controls, keyboard asked where
   Tab reaches nothing, focus order judged on its own; then the open walk.
 
-**Not measured yet:** the text alternative checks on enough real cases: the
-evaluation sites have about ten (5 SVGs, all correct; 1 image button; no image
-map; 2 objects or videos; 1 redundant alt, 1 object with a placeholder), so
-they need other sources, with failing cases among them; whether the report's
-Best practices section shows the AI's badge on its rows, as the findings do
-(built by the same function, not checked in the app); anything through the
-lab's own Claude call with a real key (so prompt caching too: the first real
-run should show cached tokens in the API's usage); agreement after the
-evidence was reordered; the open walk on a real site with a dialog that truly
-cannot be closed or traps focus (so far only the demo's). The runs before
-2026-11-26 were made before the walks were judged by what the page shows: in
-UW and the GOV.UK runs no walk was dropped for a changed page (every open case
-has another reason), so their figures stand; W3C run 5 was not re-checked.
+**Not measured yet:** the names and labels on enough real cases (24, in four
+of the eight checks; headings, label in name, frames and tooltip-only names
+had none); the text alternative checks on enough real cases: the evaluation
+sites have about ten (5 SVGs, all correct; 1 image button; no image map; 2
+objects or videos; 1 redundant alt, 1 object with a placeholder), so they need
+other sources, with failing cases among them; whether the report's Best
+practices section shows the AI's badge on its rows, as the findings do (built
+by the same function, not checked in the app); anything through the lab's own
+Claude call with a real key (so prompt caching too: the first real run should
+show cached tokens in the API's usage); agreement after the evidence was
+reordered; the open walk on a real site with a dialog that truly cannot be
+closed or traps focus (so far only the demo's). The runs before 2026-11-26
+were made before the walks were judged by what the page shows: in UW and the
+GOV.UK runs no walk was dropped for a changed page (every open case has
+another reason), so their figures stand; W3C run 5 was not re-checked.
 
 **Labels that disagree with WCAG, kept on purpose:** in `label-rules.js`
 (`gov`), keyboard on the GOV.UK "lightbox close button" and "role=button"
 pages is labelled fail, as the audit lists them. With the open walk the
 model read them by WCAG 2.1.1 (Escape closes the lightbox; Enter works on the
-link, Space only is 4.1.2) and left them open. A person's labels (item 1)
+link, Space only is 4.1.2) and left them open. And in
+`ai-cant-tell-eval/names-labels/labels.json`, UW's "Info" link (2.4.9, AAA:
+"Details about all known issues are on the Info page") is labelled pass, as
+the page's name; the model failed it at 0.6. A person's labels (item 1)
 should settle which reading the lab wants.
 
 **On the user's machine:** the branch is checked out in the main folder,
@@ -303,6 +315,12 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   with its correct answer in the demo (`expected.json`), and its check's lane
   set to `answered` in `ai-cant-tell-inventory.js` (then run it: the
   inventory test checks the lane against the registry).
+- A check that only runs with the AAA profile (2.4.9) or as a best practice
+  is only asked when the scan step turns it on (`"profile": "wcag22-aaa"`,
+  `"includeBestPractice": true`); the demo's steps do. A family's demo cases
+  can get a page of their own and a step (as `labels.html`).
+- A question that needs what the checker reported lists `reported` in its
+  `evidence` (`occurrence.details`, bounded); others are unchanged by it.
 - Demo pages: no comment or text near a case that tells its answer. The
   evidence includes the page source around an element, so the model would
   read it; explanations go in `expected.json`, or in a comment above
