@@ -16,8 +16,8 @@ by what would settle it:
 
 | Lane | What settles it | Checks | Phase 1 |
 | --- | --- | --- | --- |
-| `answered` | The AI answers it today | 29 | Polish (below) |
-| `read` | The AI, from the element and the text around it, as today | 17 | Step 1 |
+| `answered` | The AI answers it today | 42 | Polish (below) |
+| `read` | The AI, from the element and the text around it, as today | 4 | Step 1 |
 | `tree` | The browser's own accessibility tree, no model | 23 | Step 2 |
 | `walk` | The AI, from the focus or open walk, or a small extension | 12 | Step 3 |
 | `measure` | A measurement by the lab, then the AI or a person | 8 | Step 4 |
@@ -64,7 +64,8 @@ family one change with its demo cases:
   (2.4.6), `label-in-name` (2.5.3), `control-name-title-only`,
   `link-name-quality-link-only` (2.4.9), `identical-links-same-purpose`,
   `identical-iframes-same-purpose`, `landmark-unique`.
-- *Structure:* `form-group-name-present`, `form-control-single-label`,
+- *Structure* (**done 2026-11-27**, `registry-12`, with the table, the
+  heading outline and the landmarks): `form-group-name-present`, `form-control-single-label`,
   `table-fake-caption`, `td-has-header`, `table-th-has-data-cells`,
   `empty-table-header`, `heading-order`, `bypass-blocks-present`,
   `page-zones-landmark`, `region`, `focus-order-semantics`,

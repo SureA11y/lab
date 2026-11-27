@@ -37,6 +37,19 @@ labels.html   identical-iframes-same-purpose            html > body > main > div
 labels.html   control-name-title-only                   html > body > main > form > p:nth…  fail     fail                    agrees
 labels.html   landmark-unique                           html > body > header > nav          fail     fail                    agrees
 labels.html   landmark-unique                           html > body > footer > nav          fail     fail                    agrees
+structure.htmlimg-alt-decorative                        #sale-badge                         fail     fail                    agrees
+structure.htmltable-fake-caption                        #hours                              fail     fail                    agrees
+structure.htmlform-group-name-present                   #speed-standard                     fail     fail                    agrees
+structure.htmlpage-title-patterns                       html > head > title                 pass     pass                    agrees
+structure.htmlform-control-single-label                 #card                               fail     fail                    agrees
+structure.htmlaccesskeys                                #site-header > a:nth-of-type(1)     fail     fail                    agrees
+structure.htmlaccesskeys                                #site-header > a:nth-of-type(2)     fail     fail                    agrees
+structure.htmlempty-table-header                        #prices > tbody > tr:nth-of-type(…  pass     pass                    agrees
+structure.htmlfocus-order-semantics                     #card-tulips                        fail     fail                    agrees
+structure.htmlheading-order                             html > body > main > h4             fail     fail                    agrees
+structure.htmlpage-zones-landmark                       #site-header                        fail     fail                    agrees
+structure.htmlpresentation-role-conflict                #sale-badge                         fail     fail                    agrees
+structure.htmlregion                                    #site-header                        fail     fail                    agrees
 focus.html    page-title-patterns                       html > head > title                 pass     pass                    agrees
 focus.html    p-as-heading                              #top-bar > p                        pass     pass                    agrees
 focus.html    focus-visible                             html                                fail     fail                    agrees
@@ -64,4 +77,4 @@ dialog.html   keyboard                                  html                    
 dialog.html   focus-order                               html                                fail     fail                    agrees
 dialog.html   focus-visible                             html                                pass     pass                    agrees
 
-64 questions: 64 answered by the AI, 64 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+77 questions: 77 answered by the AI, 77 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.

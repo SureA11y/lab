@@ -691,3 +691,43 @@ model: questions can now ask for it (`reported`).
   landmark cases are one problem on one page, so they weigh less than
   their count. Headings, label in name, frames and title-only names had no
   real case here.
+
+## Structure (2026-11-27)
+
+The roadmap's third family (`registry-12`): form groups, multiple labels,
+tables (a title row, no headers, headers with no cells, empty headers),
+heading order, bypass blocks, page zones, region, focusable non-controls,
+presentation conflicts, shared access keys. A person looks at more than the
+element, so three evidence kinds are read from the page: `table` (caption,
+first rows cell by cell), `outline` (the page's headings, the element marked)
+and `landmarks` (landmarks with names and first text, skip links, what lies
+outside them).
+
+- **Demo:** a page of its own, `structure.html` (best practices on). The
+  whole demo: **77 of 77**. One case was dropped: a "Notes" header over a
+  missing cell, labelled fail, which the model passed as "an empty column",
+  a reading the question itself allows; the case was ambiguous, not the
+  answer. A table of header cells only, tried instead, is not asked about by
+  the engine. `td-has-header` and `bypass-blocks-present` have no demo case
+  (the engine takes a two-cell table for layout; the page has headings).
+- **Real pages:** GOV.UK's pages for form groups, tables, headings, labels,
+  access keys and presentation roles, the W3C demo, UW, with the AAA profile
+  and best practices on. 37 questions scored in seven checks, labelled before
+  any answer ([structure/](structure/)): **37 of 37**, no wrong answer
+  either way.
+
+  | Check | Cases | Agree |
+  | --- | --- | --- |
+  | `td-has-header` (the W3C demo's layout tables, pass; its concert table, fail; GOV.UK's table without headings, fail) | 11 | 11 |
+  | `page-zones-landmark` (the W3C demo's header, nav and footer divs, UW's banner and menu, fail; an h2 classed "header", pass) | 14 | 14 |
+  | `form-group-name-present` (GOV.UK's radios and checkboxes, the W3C survey) | 4 | 4 |
+  | `heading-order` | 4 | 4 |
+  | `empty-table-header` (corner cells over row headers, pass, though the GOV.UK audit lists one) | 2 | 2 |
+  | `form-control-single-label` | 1 | 1 |
+  | `bypass-blocks-present` (UW's inaccessible page) | 1 | 1 |
+
+  Left out: `region`, 179 questions about the same few blocks outside
+  landmarks on these pages, too many to label by hand and mostly one
+  problem repeated; one table labelled unsure (a one-row table holding an
+  empty header) not scored. Tables, `focus-order-semantics`,
+  `presentation-role-conflict` and `accesskeys` had no real case here.
