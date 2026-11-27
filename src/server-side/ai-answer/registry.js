@@ -47,7 +47,10 @@
 // registry-18: the element's picture may go with the questions that use one
 // (`picture: true`), when a step asks (`pictures`) and the server allows it
 // (A11Y_AI_PICTURES); image-of-text.
-const PROMPT_VERSION = 'registry-18';
+// registry-19: forms: invalid-field-error-message (with the field's texts),
+// password-paste-enabled (with a paste tried, `forms`, on
+// A11Y_AI_FORM_HOSTS), live-region-announcements.
+const PROMPT_VERSION = 'registry-19';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -116,6 +119,19 @@ const ANSWERABLE = Object.freeze({
         question: "Does this image hold text that could be real text (WCAG 1.4.5)? It is an image button (input type=\"image\") or an image showing an SVG with text drawn in it. Read the text from `image` (for an SVG its source, the text it draws) or, when it is attached, the picture. Pass when it holds no text, or the text is part of a logo or brand name, or its look is essential (a sample of a typeface, a diagram's labels where real text could not sit); fail when it is text such as a button's label (\"Search\", \"Go\") or a heading drawn as an image, which CSS could style as real text. Unsure when neither the source nor a picture shows what it holds.",
         evidence: ['element', 'context', 'image'],
         picture: true,
+    },
+    'invalid-field-error-message': {
+        question: "This field says it is invalid (aria-invalid), and no shown message is tied to it in the markup, or the one tied to it is hidden, empty or missing (`reported`: why, and the ids it names). WCAG 3.3.1: is the user told, in text, that this field is in error and what is wrong? `field` gives its label, what describes it and its error message, each with whether it is shown and heard by a screen reader (`heard`), and the text of its group; `context` what is around it. Pass when text the user meets with the field (its label, a message beside it, a description) says what is wrong; fail when nothing in text does (only a colour, an icon, a hidden or empty message). A summary at the top of the form that names the field counts.",
+        evidence: ['element', 'context', 'reported', 'field'],
+        picture: true,
+    },
+    'password-paste-enabled': {
+        question: "This sign-in field has a paste handler (`reported.handler`) that may stop a password manager or the clipboard filling it (WCAG 3.3.8). `field` gives the field (its type, autocomplete, maxLength, onpaste); when the pass could try it, `paste` says what pasting did: `cancelled` (the page stopped the paste), `filledByPage` (the page's own script filled the field, as a split one-time code spreading digits across its boxes does), `alerted` (it showed an alert). Pass when pasting works: not cancelled, or cancelled and filled by the page's script. Fail when the paste is cancelled and nothing fills the field (`return false`, `preventDefault`, a 'disablePaste' function). Without `paste`, judge from the handler; unsure when it calls script that cannot be read.",
+        evidence: ['element', 'context', 'reported', 'field', 'paste'],
+    },
+    'live-region-announcements': {
+        question: "This live region may not be able to announce its messages (WCAG 4.1.3), for the reason in `reported`: hidden from screen readers (aria-hidden, inert, behind a modal dialog: `hiddenBy`), busy when scanned (aria-busy), added to the page with its text already in it, or shown and filled at the same moment (`text`: what it said). Does the page rely on it for a status message a screen reader user needs (an item added to a cart, a search's results count, a form saved)? Fail when it carries such a message and the reason keeps it from being announced (hidden while it speaks, a status inserted with its text); pass when it carries no status message users need, when it is hidden only while a dialog that holds the user's attention is open and says nothing meanwhile, or when its busy state is a loading moment that ends. Unsure when its use cannot be told.",
+        evidence: ['element', 'context', 'reported'],
     },
     'heading-quality': {
         question: "Does this heading describe the topic or purpose of the content it introduces? The checker found its text looks like a placeholder, a file name or a web address (`reported`: its name and why). `context` shows what follows it. Fail when it is text a template or a tool left (\"Heading 2\", \"lorem ipsum\", a file name); pass when it names its section, even if short (\"Section 3\" in numbered terms).",

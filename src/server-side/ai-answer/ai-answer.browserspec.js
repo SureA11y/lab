@@ -101,6 +101,42 @@ test('with pictures allowed, an image question sends its picture; one showing a 
     await page.close();
 });
 
+test('with forms allowed, a paste is tried and the page put back; the field\'s texts are read', async () => {
+    const page = await browser.newPage();
+    await page.setContent(`<title>Sign in</title><form>
+        <p><label for="pw">Password</label> <input id="pw" type="password" autocomplete="current-password" onpaste="return false"></p>
+        <p><label for="pw2">Password again</label> <input id="pw2" type="password" autocomplete="new-password" onpaste="checkPaste(event)"></p>
+        <p id="otp">Code <input class="d" maxlength="1" autocomplete="one-time-code" onpaste="spread(event)"><input class="d" maxlength="1"><input class="d" maxlength="1"><input class="d" maxlength="1"></p>
+        <p><label for="mail">Email</label> <input id="mail" aria-invalid="true" aria-describedby="mail-hint"> <span id="mail-hint">We never share it.</span> <span style="color:#b00">Enter an email address like name@example.com</span></p>
+      </form>
+      <script>
+        function checkPaste(e) { console.log('pasted'); }
+        function spread(e) { e.preventDefault(); const t = e.clipboardData.getData('text'); [...document.querySelectorAll('.d')].forEach((b, i) => { b.value = t[i] || ''; }); }
+      </script>`);
+    const got = {};
+    const provider = { name: 't', model: 't', answer: async (q) => { got[q.element.selector] = q.evidence; return { verdict: 'unsure', confidence: 0 }; } };
+    const occ = (check, sel) => ({ atomicCheckId: check, occurrenceOutcome: 'cantTell', target: [sel], html: '<input>', failureSummary: 'x' });
+    const c = { findings: [{ outcome: 'cantTell', occurrences: [occ('password-paste-enabled', '#pw'), occ('password-paste-enabled', '#pw2'), occ('password-paste-enabled', '#otp > input:nth-of-type(1)'), occ('invalid-field-error-message', '#mail')] }] };
+    const s = await answerCantTells({ page, canonical: c, provider, options: { forms: true }, env: { A11Y_AI_FORM_HOSTS: 'not-this.test' } });
+    assert.deepEqual(s.forms, { allowed: false, probed: 0 }, 'about:blank is no listed host');
+    assert.equal(got['#pw'].paste, undefined);
+    assert.equal(got['#pw'].field.onpaste, 'return false', 'the handler is read without trying');
+    // The page's address is not on a host, so the probe itself is tried directly.
+    const { collectEvidence } = require('./evidence');
+    const ev = async (sel) => (await collectEvidence(page, { target: [sel], html: '' }, ['paste', 'field'], { forms: true }));
+    assert.deepEqual((await ev('#pw')).paste, { tried: true, cancelled: true, filledByPage: false, boxes: 4, alerted: false });
+    assert.equal((await ev('#pw2')).paste.cancelled, false);
+    const otp = (await ev('#otp > input:nth-of-type(1)')).paste;
+    assert.equal(otp.cancelled, true);
+    assert.equal(otp.filledByPage, true);
+    assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('.d')].map((b) => b.value)), ['', '', '', ''], 'put back');
+    const mail = got['#mail'].field;
+    assert.deepEqual(mail.describedBy, [{ id: 'mail-hint', text: 'We never share it.', shown: true, heard: true }]);
+    assert.match(mail.groupText, /Enter an email address/);
+    assert.equal(mail.hasValue, false);
+    await page.close();
+});
+
 test('an image question says what the picture shows: blank, one colour, or not readable', async () => {
     const SPACER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     const RED = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/></svg>');

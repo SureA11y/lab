@@ -20,6 +20,7 @@ Read by the server and the command-line runner alike.
 | `A11Y_AI_MODEL` | The Claude model for AI answers (default `claude-sonnet-5-5`) |
 | `A11Y_AI_PROMPT_CACHE` | `off` stops the Claude call from marking a page's evidence for caching (on by default) |
 | `A11Y_AI_ENDPOINT`, `A11Y_AI_ENDPOINT_KEY`, `A11Y_AI_ENDPOINT_NAME`, `A11Y_AI_ENDPOINT_PICTURE` | A service of your own that answers instead of the Claude call: its address, its key (sent as a bearer token), the name the report gives it, and `on` to send it the pictures too ([AI answers](ai-answers.md#the-servers-settings)) |
+| `A11Y_AI_FORM_HOSTS` | The test hosts where a scan step's `ai: { forms: true }` may use the page's forms (a paste tried in a sign-in field); unset, nowhere ([AI answers](ai-answers.md#forms-forms-true)) |
 | `A11Y_AI_PICTURES` | Whether a scan step's `ai: { pictures: true }` may send the element's picture to the model: unset or `off` never, `on` on every site, or the hosts listed ([AI answers](ai-answers.md#pictures-pictures-true)) |
 | `A11Y_AI_ALLOWED_SITES` | The sites AI answers may send questions about, by host, comma-separated (a host includes its subdomains); unset, every site |
 | `A11Y_AI_MASK` | `off` stops masking e-mail addresses, IBANs, card-like and phone-like numbers in what AI answers send (on by default) |

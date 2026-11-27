@@ -217,3 +217,31 @@ describe('pictures to the model (a step\'s pictures, A11Y_AI_PICTURES)', () => {
         assert.doesNotMatch(JSON.stringify(on.bodyFor({ evidence: { screenshot: JPEG, pictureNotSent: 'typed' } })), /QUJD/);
     });
 });
+
+describe('using the page\'s forms (a step\'s forms, A11Y_AI_FORM_HOSTS)', () => {
+    const { formHostAllowed } = require('./outgoing');
+    const { candidatesOf } = require('./index');
+
+    test('only on the hosts listed; unset, or "on", allows none', () => {
+        assert.equal(formHostAllowed('https://test.shop.example/', {}), false);
+        assert.equal(formHostAllowed('https://test.shop.example/', { A11Y_AI_FORM_HOSTS: 'on' }), false);
+        assert.equal(formHostAllowed('https://test.shop.example/', { A11Y_AI_FORM_HOSTS: 'test.shop.example, staging.example' }), true);
+        assert.equal(formHostAllowed('https://www.shop.example/', { A11Y_AI_FORM_HOSTS: 'test.shop.example' }), false);
+    });
+
+    test('a question that pastes is asked after the reading ones, only when forms may be used', () => {
+        const occ = (check) => ({ atomicCheckId: check, occurrenceOutcome: 'cantTell', target: ['#x'] });
+        const c = { findings: [{ outcome: 'cantTell', occurrences: [occ('password-paste-enabled'), occ('img-alt-quality')] }] };
+        assert.deepEqual(candidatesOf(c).map((t) => t.entry.check), ['password-paste-enabled', 'img-alt-quality']);
+        assert.deepEqual(candidatesOf(c, { forms: true }).map((t) => t.entry.check), ['img-alt-quality', 'password-paste-enabled']);
+    });
+
+    test('a step that asks on a host not listed says so, and tries nothing', async () => {
+        const got = [];
+        const provider = { name: 't', model: 't', answer: async (q) => { got.push(q); return { verdict: 'unsure', confidence: 0 }; } };
+        const c = { findings: [{ outcome: 'cantTell', occurrences: [{ atomicCheckId: 'password-paste-enabled', occurrenceOutcome: 'cantTell', target: ['#pw'], html: '<input id="pw" type="password" onpaste="return false">' }] }] };
+        const s = await answerCantTells({ page: pageAt('https://www.shop.example/login'), canonical: c, provider, options: { forms: true }, env: {} });
+        assert.deepEqual(s.forms, { allowed: false, probed: 0 });
+        assert.equal(got[0].evidence.paste, undefined);
+    });
+});

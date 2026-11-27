@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Your account - Demo Shop</title><link rel="stylesheet" href="../style.css">
+<style>
+  .bad { border: 2px solid #b00020; }
+  .error { color: #b00020; }
+  .code input { width: 2em; text-align: center; }
+  .ticker { font-size: 12px; color: #555; }
+</style></head>
+<!-- The AI answers demo, the forms lane: a form left as it is after a
+     submission with errors, sign-in fields with paste handlers, and live
+     regions. Each case has a known answer, in expected.json beside this page. -->
+<body>
+<header><p><strong>Demo Shop</strong></p><nav aria-label="Main"><a href="../index.html">Home</a> <a href="../products.html">Products</a></nav></header>
+<main>
+  <h1>Your account</h1>
+  <div aria-hidden="true"><p role="status" id="basket-status">Seed tray added to your basket</p></div>
+  <p class="ticker" aria-hidden="true">Spring is here <span aria-live="polite" id="ticker-live">&#127793; &#127793; &#127793;</span></p>
+  <h2>Delivery details</h2>
+  <form action="#" onsubmit="return false">
+    <p><label for="email">Email</label> <input id="email" type="email" aria-invalid="true" class="bad"> <span class="error">Enter an email address in the correct format, like name@example.com</span></p>
+    <p><label for="phone">Phone</label> <input id="phone" type="tel" aria-invalid="true" class="bad"></p>
+    <p><label for="postcode">Postcode</label> <input id="postcode" aria-invalid="true" aria-errormessage="postcode-error" class="bad"> <span id="postcode-error" hidden>Enter a postcode</span></p>
+    <p><button type="submit">Save</button></p>
+  </form>
+  <h2>Sign in</h2>
+  <form action="#" onsubmit="return false">
+    <p><label for="password">Password</label> <input id="password" type="password" autocomplete="current-password" onpaste="return false"></p>
+    <p><label for="new-password">New password</label> <input id="new-password" type="password" autocomplete="new-password" onpaste="noteStrength(event)"></p>
+    <p class="code">Code from your text message <input id="code-1" maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="Digit 1" onpaste="spreadCode(event)"><input maxlength="1" inputmode="numeric" aria-label="Digit 2"><input maxlength="1" inputmode="numeric" aria-label="Digit 3"><input maxlength="1" inputmode="numeric" aria-label="Digit 4"></p>
+    <p><button type="submit">Sign in</button></p>
+  </form>
+</main>
+<footer><p>Demo Shop is a made-up shop for surea11y-lab's examples.</p></footer>
+<script>
+  function noteStrength(e) { window.lastPaste = Date.now(); }
+  function spreadCode(e) {
+    e.preventDefault();
+    const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '');
+    [...document.querySelectorAll('.code input')].forEach((box, i) => { box.value = digits[i] || ''; });
+  }
+</script>
+</body>
+</html>

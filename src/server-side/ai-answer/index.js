@@ -15,7 +15,7 @@ const { entryFor, PROMPT_VERSION } = require('./registry');
 const { collectEvidence, fingerprint, sameFingerprint, viewChanges } = require('./evidence');
 const { resolveProvider, QUESTION_VERSION } = require('./provider');
 const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
-const { allowedSitesOf, siteAllowed, picturesAllowed, maskingOn, previewForced, maskDeep, withoutPictures } = require('./outgoing');
+const { allowedSitesOf, siteAllowed, picturesAllowed, formHostAllowed, maskingOn, previewForced, maskDeep, withoutPictures } = require('./outgoing');
 const { walkFocus, walkFactsFor } = require('./focus-walk');
 const { openWalk } = require('./open-walk');
 const { withRuntimeKey } = require('./runtime-key');
@@ -112,7 +112,7 @@ function normalise(a) {
  * first, in finding order, then the page-level focus questions, only when
  * `focus` is on (they need the focus walk, which acts on the page).
  */
-function candidatesOf(canonical, { focus = false } = {}) {
+function candidatesOf(canonical, { focus = false, forms = false } = {}) {
     const read = [];
     const walk = [];
     // The scan's findings and its best-practice findings (with
@@ -129,7 +129,9 @@ function candidatesOf(canonical, { focus = false } = {}) {
             if (!entry) continue;
             // A reading question that can use the walk (walkStop) waits for it
             // when there is one; without focus it is asked as it is.
-            const usesWalk = entry.tier !== 1 && focus && (entry.evidence || []).includes('walkStop');
+            // So does one that uses the page's forms (a paste tried), when
+            // they may be used: it acts on the page, so after the reading.
+            const usesWalk = entry.tier !== 1 && ((focus && (entry.evidence || []).includes('walkStop')) || (forms && (entry.evidence || []).includes('paste')));
             if (entry.tier === 1) { if (focus) walk.push({ finding: f, occurrence: o, entry }); } else if (usesWalk) walk.push({ finding: f, occurrence: o, entry }); else read.push({ finding: f, occurrence: o, entry });
         }
     }
@@ -231,7 +233,16 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
     const summary = { candidates: 0, answered: 0, unresolved: 0, calls: 0, reused: 0, stateDrift: 'none', reason: null, byCheck: {}, ...(preview ? { preview: true, previewed: 0 } : {}), masking: mask, outbox };
     try {
         const focus = opt.focus === true;
-        const todo = candidatesOf(canonical, { focus });
+        let pageUrlEarly = null;
+        try { pageUrlEarly = typeof page.url === 'function' ? page.url() : null; } catch { pageUrlEarly = null; }
+        // The page's forms (`forms: true`): used only on a test host the
+        // server lists (A11Y_AI_FORM_HOSTS).
+        const forms = opt.forms === true && formHostAllowed(pageUrlEarly, env);
+        if (opt.forms === true) {
+            summary.forms = { allowed: forms, probed: 0 };
+            if (!forms) log('info', `The AI pass leaves the forms alone: ${pageUrlEarly ? new URL(pageUrlEarly).hostname : 'this page'} is not in A11Y_AI_FORM_HOSTS`);
+        }
+        const todo = candidatesOf(canonical, { focus, forms });
         summary.candidates = todo.length;
         if (!todo.length) return summary;
         const model = resolveProvider(provider || opt.provider, env);
@@ -260,12 +271,17 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         // and only when one may go out; with its own before and after.
         let walk = null;
         let beforeWalk = null;
+        let beforeForms = null;
+        // The page before the first thing the pass did to it (the walk or a
+        // paste), whichever came first.
+        let beforeActs = null;
         let afterWalk = null;
         const canAsk = allowed && (preview || !!model);
 
         for (const { finding, occurrence, entry } of todo) {
             if ((entry.tier === 1 || (focus && (entry.evidence || []).includes('walkStop'))) && !walk && canAsk) {
                 beforeWalk = await fingerprint(page);
+                if (!beforeActs) beforeActs = beforeWalk;
                 walk = await walkFocus(page, {
                     maxStops: Number(opt.focusStops) > 0 ? Math.min(Number(opt.focusStops), 200) : undefined,
                     // The focused and unfocused pictures of each stop, only when 2.4.13 or 1.4.11 is asked.
@@ -291,7 +307,13 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
             // An element question: the walk, and what it saw of that element.
             const evidence = entry.tier === 1
                 ? (walk ? { focusWalk: walk, ...(entry.element ? { target: await walkFactsFor(page, occurrence.target && occurrence.target[0], walk) } : {}) } : {})
-                : await collectEvidence(page, occurrence, entry.evidence);
+                : await (async () => {
+                    const usesForms = forms && (entry.evidence || []).includes('paste');
+                    if (usesForms && !beforeForms) { beforeForms = await fingerprint(page); if (!beforeActs) beforeActs = beforeForms; }
+                    const ev = await collectEvidence(page, occurrence, entry.evidence, { forms: usesForms && canAsk });
+                    if (ev.paste) summary.forms.probed++;
+                    return ev;
+                })();
             // The element's own stop in the walk, when the question can use it.
             if (entry.tier !== 1 && walk && (entry.evidence || []).includes('walkStop')) {
                 evidence.walkStop = await walkFactsFor(page, occurrence.target && occurrence.target[0], walk);
@@ -307,7 +329,7 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 // An element question is the element's, as any other.
                 ...(entry.tier === 1 && !entry.element ? { page: pageUrl } : {}),
             };
-            const key = JSON.stringify([entry.check, !!withPictureOf(entry, evidence, pictures), evidence.element, evidence.context, evidence.pageTitle, evidence.image, evidence.focusWalk ? withoutPictures(evidence.focusWalk.stops) : null, evidence.focusWalk ? evidence.focusWalk.opened || null : null, evidence.target || null, evidence.walkStop || null, entry.element ? occurrence.target : null]);
+            const key = JSON.stringify([entry.check, !!withPictureOf(entry, evidence, pictures), evidence.paste || null, evidence.element, evidence.context, evidence.pageTitle, evidence.image, evidence.focusWalk ? withoutPictures(evidence.focusWalk.stops) : null, evidence.focusWalk ? evidence.focusWalk.opened || null : null, evidence.target || null, evidence.walkStop || null, entry.element ? occurrence.target : null]);
             let ai;
             if (shared.cache.has(key)) {
                 ai = { ...shared.cache.get(key), reused: true };
@@ -355,7 +377,16 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         // The page must be as the workflow left it. If not, nothing the pass
         // did can be trusted: keep no answers and say so. With a focus walk,
         // the reading questions are judged on the page as it was before it.
-        const after = walk && beforeWalk ? beforeWalk : await fingerprint(page);
+        // Likewise before the first paste tried; what the tries left changed
+        // is said, as the open walk's is.
+        if (beforeForms) {
+            const changed = viewChanges(beforeForms, await fingerprint(page));
+            if (changed && changed.length && !(walk && walk.opened)) {
+                summary.forms.leftChanged = changed;
+                log('warning', `Pasting into the page's fields left it changed (${changed.join(', ')}): what was seen is kept, but the next steps may meet a different page`);
+            }
+        }
+        const after = beforeActs || await fingerprint(page);
         if (!before || !after) {
             // Could not be read (the page is closed or gone): nothing to compare, said.
             summary.stateDrift = 'unchecked';

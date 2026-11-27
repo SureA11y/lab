@@ -96,8 +96,9 @@ const LANES = {
     'deprecated-elements-not-used': ['media', 'a marquee: is there a pause control'],
 
     // Needs the page used further.
-    'live-region-announcements': ['interact'], 'invalid-field-error-message': ['interact', 'submit with errors, on a test system'],
-    'password-paste-enabled': ['interact', 'paste into the field'],
+    'live-region-announcements': ['answered', 'from what the checker and its live-region hook reported'],
+    'invalid-field-error-message': ['answered', 'from the field\'s texts, once a step left it invalid'],
+    'password-paste-enabled': ['answered', 'from the handler, or a paste tried (forms, on A11Y_AI_FORM_HOSTS)'],
 
     // The markup says it; a person confirms.
     'aria-allowed-attr': ['code'], 'aria-allowed-role': ['code'], 'aria-braille-equivalent': ['code'], 'aria-conditional-attr': ['code'],

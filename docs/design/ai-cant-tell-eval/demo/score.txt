@@ -113,6 +113,20 @@ reading.html  image-of-text                             #search-go              
 reading.html  image-of-text                             #recipe-search                      pass     pass                    agrees
 reading.html  image-of-text                             #logo                               pass     pass                    agrees
 reading.html  image-of-text                             #delivery-banner                    fail     fail                    agrees
+forms.html    p-as-heading                              html > body > header > p            pass     pass                    agrees
+forms.html    page-title-patterns                       html > head > title                 pass     pass                    agrees
+forms.html    invalid-field-error-message               #email                              pass     pass                    agrees
+forms.html    invalid-field-error-message               #phone                              fail     fail                    agrees
+forms.html    invalid-field-error-message               #postcode                           fail     fail                    agrees
+forms.html    form-control-programmatic-label-quality   #code-1                             pass     pass                    agrees
+forms.html    form-control-programmatic-label-quality   input[aria-label="Digit 2"]         pass     pass                    agrees
+forms.html    form-control-programmatic-label-quality   input[aria-label="Digit 3"]         pass     pass                    agrees
+forms.html    form-control-programmatic-label-quality   input[aria-label="Digit 4"]         pass     pass                    agrees
+forms.html    password-paste-enabled                    #password                           fail     fail                    agrees
+forms.html    password-paste-enabled                    #new-password                       pass     pass                    agrees
+forms.html    password-paste-enabled                    #code-1                             pass     pass                    agrees
+forms.html    live-region-announcements                 #basket-status                      fail     fail                    agrees
+forms.html    live-region-announcements                 #ticker-live                        pass     pass                    agrees
 
-114 questions: 114 answered by the AI, 114 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+128 questions: 128 answered by the AI, 128 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
 

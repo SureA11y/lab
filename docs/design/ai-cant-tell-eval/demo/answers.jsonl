@@ -1,6 +1,35 @@
+{"id":"q1","verdict":"fail","confidence":0.9,"rationale":"The badge shows '-50%', which the sentence 'on all seeds this week' needs to make sense; with alt=\"\" that discount information is lost to screen reader users."}
+{"id":"q2","verdict":"pass","confidence":0.95,"rationale":"A single grey horizontal line used as a divider; it is purely decorative and correctly hidden with aria-hidden."}
+{"id":"q3","verdict":"pass","confidence":0.9,"rationale":"The logo is the only content of a link to the home page and its alt 'Demo Shop, home' names the site and the link's destination."}
+{"id":"q4","verdict":"pass","confidence":0.95,"rationale":"The alt text reproduces exactly the text drawn in the banner, 'Free delivery on orders over 50 €'."}
+{"id":"q5","verdict":"fail","confidence":0.95,"rationale":"The alt 'IMG_2041.jpg' is a file name and conveys nothing about the product image (F30)."}
+{"id":"q6","verdict":"pass","confidence":0.8,"rationale":"The alt describes the garden bag product the image depicts and fits its product-card context; the picture is a placeholder labelled 'bag', consistent with the alt."}
+{"id":"q7","verdict":"pass","confidence":0.65,"rationale":"For an image map, 'Plan of the garden' identifies the image while the area elements carry the region names; the plan only shows two labelled areas, so the img alt itself is adequate (the 'Area 2' area alt is a separate issue)."}
+{"id":"q8","verdict":"pass","confidence":0.75,"rationale":"The icon shows a shopping cart and its alt 'Cart' is accurate for a link to the cart page; it duplicates the adjacent link text, which is redundant but not a 1.1.1 failure."}
 {"id":"q9","verdict":"pass","confidence":0.95,"rationale":"The area covers the region labelled 'Greenhouse' in the SVG and links to #greenhouse; its alt 'Greenhouse' matches the region and destination."}
 {"id":"q10","verdict":"fail","confidence":0.97,"rationale":"The area covers the 'Tool shed' region and links to #shed, but its alt is the placeholder 'Area 2', which does not say where the link leads."}
+{"id":"q11","verdict":"fail","confidence":0.9,"rationale":"The canvas draws a weather graphic (sun and cloud) but its name is just 'canvas' and its fallback only says canvas is unsupported; nothing nearby describes it."}
+{"id":"q12","verdict":"pass","confidence":0.85,"rationale":"The figcaption 'How to prune roses (2 minutes)' sits with the video in its figure and identifies what the video is; the poster is only a placeholder."}
+{"id":"q13","verdict":"fail","confidence":0.95,"rationale":"The embed's title is the file name 'garden-plan.svg', which does not describe the embedded plan of the greenhouse and tool shed."}
+{"id":"q14","verdict":"fail","confidence":0.95,"rationale":"The button's name is the placeholder 'button', which does not say it checks delivery."}
+{"id":"q15","verdict":"pass","confidence":0.95,"rationale":"The alt 'Check delivery' states the button's action in the delivery form and matches its visible 'Check' label."}
+{"id":"q16","verdict":"fail","confidence":0.95,"rationale":"The button's name 'btn_submit_02.png' is a file name and does not say what the button does."}
+{"id":"q17","verdict":"pass","confidence":0.85,"rationale":"In the shop search form, the alt 'Search' states the button's action; the image shows 'Go', which is consistent with submitting the search."}
+{"id":"q18","verdict":"pass","confidence":0.9,"rationale":"The magnifier button in the recipe search form is named 'Find recipes', which states its action."}
+{"id":"q19","verdict":"pass","confidence":0.8,"rationale":"The chart shows three bars (Jan, Feb, Mar) with no numeric values, rising to a peak in March; the fallback 'Bar chart of seeds sold each month, highest in March' conveys that."}
+{"id":"q20","verdict":"pass","confidence":0.85,"rationale":"The magnifier icon is the only content of a link to the products page and its name 'Search products' states the control's purpose."}
+{"id":"q21","verdict":"fail","confidence":0.95,"rationale":"The share button's name comes from the SVG title 'Layer 1', a leftover from a drawing tool that does not say what the button does."}
+{"id":"q22","verdict":"pass","confidence":0.8,"rationale":"The bold 'Demo Shop' in the header is the site name repeated next to the logo and followed by navigation, not a title for a following section of text."}
+{"id":"q23","verdict":"fail","confidence":0.9,"rationale":"'Delivery' in bold titles the paragraph about delivery times that follows, yet it is a plain paragraph rather than a heading (F2)."}
+{"id":"q24","verdict":"fail","confidence":0.95,"rationale":"The title 'Page' is generic and does not say the page is about garden tools (F25)."}
 {"id":"q25","verdict":"fail","confidence":0.75,"rationale":"'Learn more' sits alone in its paragraph with no surrounding text saying it leads to the products page."}
+{"id":"q26","verdict":"fail","confidence":0.9,"rationale":"The image button draws its label 'Check' as text in an image, which could be real styled text."}
+{"id":"q27","verdict":"fail","confidence":0.9,"rationale":"The image button draws its label 'Check' as text in an image, which could be real styled text."}
+{"id":"q28","verdict":"fail","confidence":0.9,"rationale":"The image button draws its label 'Check' as text in an image, which could be real styled text."}
+{"id":"q29","verdict":"fail","confidence":0.9,"rationale":"The picture shows the button label 'Go' rendered as text in a PNG, which could be real text styled with CSS."}
+{"id":"q30","verdict":"pass","confidence":0.9,"rationale":"The picture shows only a magnifying-glass icon with no text."}
+{"id":"q31","verdict":"pass","confidence":0.9,"rationale":"The text 'Demo Shop' is part of the site's logo/wordmark beside its emblem, which is exempt."}
+{"id":"q32","verdict":"fail","confidence":0.9,"rationale":"The banner is a plain sentence 'Free delivery on orders over 50 €' drawn as an image, which could be real styled text and is not a logo."}
 {"id":"q33","verdict":"fail","confidence":0.85,"rationale":"No visible text sits next to the postcode field and the next element is another input, not a button, so what to enter is given only by the hover-only title."}
 {"id":"q34","verdict":"fail","confidence":0.85,"rationale":"The field has only a placeholder 'Name', with no visible label or adjacent text, so once filled in nothing says what it is for."}
 {"id":"q35","verdict":"fail","confidence":0.9,"rationale":"The icon's alt 'Cart' repeats the link text 'Cart' beside it, so the link is read as 'Cart Cart' and the image could be alt=\"\" with nothing lost."}
@@ -57,58 +86,42 @@
 {"id":"q86","verdict":"fail","confidence":0.7,"rationale":"The teaser has a fixed height of 2.6em with overflow hidden. With the spacing applied it shows only 1 of its 2 lines, and the context has no 'read more' link or other way to reach the full text."}
 {"id":"q87","verdict":"pass","confidence":0.6,"rationale":"The !important letter-spacing comes from a style sheet rule, not an inline style, so a user style sheet or an inline !important style can still override it. 'SALE' is one short word that reads fine either way."}
 {"id":"q88","verdict":"pass","confidence":0.6,"rationale":"A later viewport tag (width=device-width, initial-scale=1) replaces the restricting one, and current browsers apply the last viewport tag, so pinch zoom is not blocked. Browsers have not always agreed on this, so confidence is moderate."}
-{"id":"q89","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
-{"id":"q90","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
-{"id":"q91","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
-{"id":"q92","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
-{"id":"q93","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
-{"id":"q94","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
-{"id":"q95","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Home link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
-{"id":"q96","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Products link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
-{"id":"q97","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Cart link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
-{"id":"q98","verdict":"pass","confidence":0.9,"rationale":"On focus the Help link changes background, text colour and underline (682 pixels changed), so focus remains visible without an outline."}
-{"id":"q99","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
-{"id":"q100","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
-{"id":"q101","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
-{"id":"q102","verdict":"fail","confidence":0.9,"rationale":"The Home link shows no focus indicator: 0 pixels changed at 3:1 against 244 needed, meets false."}
-{"id":"q103","verdict":"fail","confidence":0.9,"rationale":"The Products link shows no focus indicator: 0 pixels changed at 3:1 against 336 needed, meets false."}
-{"id":"q104","verdict":"fail","confidence":0.9,"rationale":"The Cart link shows no focus indicator: 0 pixels changed at 3:1 against 192 needed, meets false."}
-{"id":"q105","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change covers 584 pixels at 3:1 or more, above the 204 needed, and meets is true."}
-{"id":"q106","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Home link on focus, so there is no indicator to meet 3:1."}
-{"id":"q107","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Products link on focus, so there is no indicator to meet 3:1."}
-{"id":"q108","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Cart link on focus, so there is no indicator to meet 3:1."}
-{"id":"q109","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change has 584 of 682 changed pixels at 3:1 or more, far more than a one-pixel outline (106), so it is clearly visible."}
-{"id":"q110","verdict":"pass","confidence":0.7,"rationale":"'Demo Shop' sits in the header just before the main navigation and reads as the site name, not a title for following section text."}
-{"id":"q111","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
-{"id":"q112","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
-{"id":"q113","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
-{"id":"q114","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
-{"id":"q1","verdict":"fail","confidence":0.9,"rationale":"The badge shows '-50%', which the sentence 'on all seeds this week' needs to make sense; with alt=\"\" that discount information is lost to screen reader users."}
-{"id":"q2","verdict":"pass","confidence":0.95,"rationale":"A single grey horizontal line used as a divider; it is purely decorative and correctly hidden with aria-hidden."}
-{"id":"q3","verdict":"pass","confidence":0.9,"rationale":"The logo is the only content of a link to the home page and its alt 'Demo Shop, home' names the site and the link's destination."}
-{"id":"q4","verdict":"pass","confidence":0.95,"rationale":"The alt text reproduces exactly the text drawn in the banner, 'Free delivery on orders over 50 €'."}
-{"id":"q5","verdict":"fail","confidence":0.95,"rationale":"The alt 'IMG_2041.jpg' is a file name and conveys nothing about the product image (F30)."}
-{"id":"q6","verdict":"pass","confidence":0.8,"rationale":"The alt describes the garden bag product the image depicts and fits its product-card context; the picture is a placeholder labelled 'bag', consistent with the alt."}
-{"id":"q7","verdict":"pass","confidence":0.65,"rationale":"For an image map, 'Plan of the garden' identifies the image while the area elements carry the region names; the plan only shows two labelled areas, so the img alt itself is adequate (the 'Area 2' area alt is a separate issue)."}
-{"id":"q8","verdict":"pass","confidence":0.75,"rationale":"The icon shows a shopping cart and its alt 'Cart' is accurate for a link to the cart page; it duplicates the adjacent link text, which is redundant but not a 1.1.1 failure."}
-{"id":"q11","verdict":"fail","confidence":0.9,"rationale":"The canvas draws a weather graphic (sun and cloud) but its name is just 'canvas' and its fallback only says canvas is unsupported; nothing nearby describes it."}
-{"id":"q12","verdict":"pass","confidence":0.85,"rationale":"The figcaption 'How to prune roses (2 minutes)' sits with the video in its figure and identifies what the video is; the poster is only a placeholder."}
-{"id":"q13","verdict":"fail","confidence":0.95,"rationale":"The embed's title is the file name 'garden-plan.svg', which does not describe the embedded plan of the greenhouse and tool shed."}
-{"id":"q14","verdict":"fail","confidence":0.95,"rationale":"The button's name is the placeholder 'button', which does not say it checks delivery."}
-{"id":"q15","verdict":"pass","confidence":0.95,"rationale":"The alt 'Check delivery' states the button's action in the delivery form and matches its visible 'Check' label."}
-{"id":"q16","verdict":"fail","confidence":0.95,"rationale":"The button's name 'btn_submit_02.png' is a file name and does not say what the button does."}
-{"id":"q17","verdict":"pass","confidence":0.85,"rationale":"In the shop search form, the alt 'Search' states the button's action; the image shows 'Go', which is consistent with submitting the search."}
-{"id":"q18","verdict":"pass","confidence":0.9,"rationale":"The magnifier button in the recipe search form is named 'Find recipes', which states its action."}
-{"id":"q19","verdict":"pass","confidence":0.8,"rationale":"The chart shows three bars (Jan, Feb, Mar) with no numeric values, rising to a peak in March; the fallback 'Bar chart of seeds sold each month, highest in March' conveys that."}
-{"id":"q20","verdict":"pass","confidence":0.85,"rationale":"The magnifier icon is the only content of a link to the products page and its name 'Search products' states the control's purpose."}
-{"id":"q21","verdict":"fail","confidence":0.95,"rationale":"The share button's name comes from the SVG title 'Layer 1', a leftover from a drawing tool that does not say what the button does."}
-{"id":"q22","verdict":"pass","confidence":0.8,"rationale":"The bold 'Demo Shop' in the header is the site name repeated next to the logo and followed by navigation, not a title for a following section of text."}
-{"id":"q23","verdict":"fail","confidence":0.9,"rationale":"'Delivery' in bold titles the paragraph about delivery times that follows, yet it is a plain paragraph rather than a heading (F2)."}
-{"id":"q24","verdict":"fail","confidence":0.95,"rationale":"The title 'Page' is generic and does not say the page is about garden tools (F25)."}
-{"id":"q26","verdict":"fail","confidence":0.9,"rationale":"The image button draws its label 'Check' as text in an image, which could be real styled text."}
-{"id":"q27","verdict":"fail","confidence":0.9,"rationale":"The image button draws its label 'Check' as text in an image, which could be real styled text."}
-{"id":"q28","verdict":"fail","confidence":0.9,"rationale":"The image button draws its label 'Check' as text in an image, which could be real styled text."}
-{"id":"q29","verdict":"fail","confidence":0.9,"rationale":"The picture shows the button label 'Go' rendered as text in a PNG, which could be real text styled with CSS."}
-{"id":"q30","verdict":"pass","confidence":0.9,"rationale":"The picture shows only a magnifying-glass icon with no text."}
-{"id":"q31","verdict":"pass","confidence":0.9,"rationale":"The text 'Demo Shop' is part of the site's logo/wordmark beside its emblem, which is exempt."}
-{"id":"q32","verdict":"fail","confidence":0.9,"rationale":"The banner is a plain sentence 'Free delivery on orders over 50 €' drawn as an image, which could be real styled text and is not a logo."}
+{"id":"q89","verdict":"pass","confidence":0.7,"rationale":"'Demo Shop' sits in the header just before the main navigation and reads as the site name, not a title for following section text."}
+{"id":"q103","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
+{"id":"q104","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
+{"id":"q105","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
+{"id":"q106","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
+{"id":"q107","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
+{"id":"q108","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
+{"id":"q109","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Home link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
+{"id":"q110","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Products link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
+{"id":"q111","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Cart link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
+{"id":"q112","verdict":"pass","confidence":0.9,"rationale":"On focus the Help link changes background, text colour and underline (682 pixels changed), so focus remains visible without an outline."}
+{"id":"q113","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
+{"id":"q114","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
+{"id":"q115","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
+{"id":"q116","verdict":"fail","confidence":0.9,"rationale":"The Home link shows no focus indicator: 0 pixels changed at 3:1 against 244 needed, meets false."}
+{"id":"q117","verdict":"fail","confidence":0.9,"rationale":"The Products link shows no focus indicator: 0 pixels changed at 3:1 against 336 needed, meets false."}
+{"id":"q118","verdict":"fail","confidence":0.9,"rationale":"The Cart link shows no focus indicator: 0 pixels changed at 3:1 against 192 needed, meets false."}
+{"id":"q119","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change covers 584 pixels at 3:1 or more, above the 204 needed, and meets is true."}
+{"id":"q120","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Home link on focus, so there is no indicator to meet 3:1."}
+{"id":"q121","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Products link on focus, so there is no indicator to meet 3:1."}
+{"id":"q122","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Cart link on focus, so there is no indicator to meet 3:1."}
+{"id":"q123","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change has 584 of 682 changed pixels at 3:1 or more, far more than a one-pixel outline (106), so it is clearly visible."}
+{"id":"q124","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
+{"id":"q125","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
+{"id":"q126","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
+{"id":"q127","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
+{"id":"q90","verdict":"pass","confidence":0.9,"rationale":"The title 'Your account - Demo Shop' matches the main heading 'Your account' and names the site, so it says what the page is about."}
+{"id":"q91","verdict":"pass","confidence":0.85,"rationale":"A visible message right beside the Email field says 'Enter an email address in the correct format', identifying the field and the problem in text, even though it is not tied with aria-describedby."}
+{"id":"q92","verdict":"fail","confidence":0.85,"rationale":"The Phone field is marked invalid and shown only with a red border; no text beside it, in its label, or in a summary says what is wrong."}
+{"id":"q93","verdict":"fail","confidence":0.85,"rationale":"The only error text, 'Enter a postcode', is hidden with the hidden attribute and the picture shows only a red border, so no visible text tells the user the field is in error."}
+{"id":"q94","verdict":"pass","confidence":0.8,"rationale":"The visible text 'Code from your text message' sits directly before the digit boxes and tells the user what to enter."}
+{"id":"q95","verdict":"pass","confidence":0.8,"rationale":"The visible text 'Code from your text message' precedes the row of digit boxes, telling the user what to enter in this one too."}
+{"id":"q96","verdict":"pass","confidence":0.8,"rationale":"The visible text 'Code from your text message' precedes the row of digit boxes, telling the user what to enter."}
+{"id":"q97","verdict":"pass","confidence":0.8,"rationale":"The visible text 'Code from your text message' precedes the row of digit boxes, telling the user what to enter."}
+{"id":"q98","verdict":"fail","confidence":0.9,"rationale":"The status region carries a needed message ('Seed tray added to your basket') but sits inside an aria-hidden div, so screen readers will not announce it, and no other status area is shown."}
+{"id":"q99","verdict":"pass","confidence":0.75,"rationale":"The live region is a decorative ticker of seedling emoji ('Spring is here'), not a status message users need, so hiding it does not lose information."}
+{"id":"q100","verdict":"fail","confidence":0.9,"rationale":"Pasting into the current-password field was cancelled and nothing filled it (onpaste='return false'), and no alternative sign-in method appears in the evidence."}
+{"id":"q101","verdict":"pass","confidence":0.85,"rationale":"The paste test shows the paste was not cancelled, so pasting into the new-password field works."}
+{"id":"q102","verdict":"pass","confidence":0.85,"rationale":"The paste was cancelled but the page's script filled the field, spreading the code across the boxes, so pasting works."}

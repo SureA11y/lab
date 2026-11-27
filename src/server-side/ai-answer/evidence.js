@@ -30,7 +30,7 @@ function elidePaths(html) {
     return html.replace(/\s(d|points)="[^"]{40,}"/g, ' $1="…"');
 }
 
-async function collectEvidence(page, occurrence, wanted) {
+async function collectEvidence(page, occurrence, wanted, options = {}) {
     const target = Array.isArray(occurrence.target) ? occurrence.target[0] : null;
     const selector = typeof target === 'string' ? target : null;
     const out = {};
@@ -57,6 +57,18 @@ async function collectEvidence(page, occurrence, wanted) {
     if (wanted.includes('pixels')) {
         const px = await measurePixels(page, typeof target === 'string' ? target : null);
         if (px) out.pixels = px;
+    }
+    // A form field's own texts: its label, what describes it, its error
+    // message and whether each is shown (never the value typed in it).
+    if (wanted.includes('field')) {
+        const f = await readField(page, selector);
+        if (f) out.field = f;
+    }
+    // What pasting into the field does, tried only when the step allows the
+    // page's forms to be used (`forms`, on A11Y_AI_FORM_HOSTS): `options.forms`.
+    if (wanted.includes('paste') && options.forms === true) {
+        const p = await probePaste(page, selector);
+        if (p) out.paste = p;
     }
     if (!['context', 'pageTitle', 'image', 'table', 'outline', 'landmarks'].some((w) => wanted.includes(w))) return out;
     try {
@@ -467,6 +479,95 @@ async function measurePixelsByColour(page, selector) {
         };
     } catch {
         return null;
+    }
+}
+
+// A field's texts, as a person reading the form meets them: its label(s),
+// placeholder, the elements aria-describedby and aria-errormessage name (their
+// text, and whether each is shown and heard), whether it is required, and
+// whether it holds a value (never the value).
+async function readField(page, selector) {
+    if (!selector) return null;
+    try {
+        return await page.evaluate((sel) => {
+            let el = null;
+            try { el = document.querySelector(sel); } catch { return null; }
+            if (!el) return null;
+            const clip = (t) => String(t || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+            const shown = (n) => { const r = n.getBoundingClientRect(); const cs = getComputedStyle(n); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
+            const heard = (n) => !n.closest('[aria-hidden="true"]');
+            const byIds = (attr) => String(el.getAttribute(attr) || '').split(/\s+/).filter(Boolean).map((id) => {
+                const t = document.getElementById(id);
+                return t ? { id, text: clip(t.textContent), shown: shown(t), heard: heard(t) } : { id, missing: true };
+            });
+            const labels = el.labels ? [...el.labels].map((l) => ({ text: clip(l.textContent), shown: shown(l) })) : [];
+            const out = {
+                tag: el.tagName.toLowerCase(),
+                type: el.getAttribute('type') || null,
+                labels,
+                ariaLabel: el.getAttribute('aria-label') || null,
+                placeholder: el.getAttribute('placeholder') || null,
+                describedBy: byIds('aria-describedby'),
+                errorMessage: byIds('aria-errormessage'),
+                ariaInvalid: el.getAttribute('aria-invalid'),
+                required: el.required === true || el.getAttribute('aria-required') === 'true',
+                hasValue: 'value' in el ? !!el.value : null,
+                onpaste: el.getAttribute('onpaste'),
+                maxLength: el.maxLength > 0 ? el.maxLength : null,
+            };
+            // The text right around it, in its group (a form row, a fieldset).
+            const group = el.closest('fieldset, .govuk-form-group, .form-group, li, p, div');
+            if (group) out.groupText = clip(group.innerText);
+            return out;
+        }, selector);
+    } catch {
+        return null;
+    }
+}
+
+// Pasting into a field, tried: a paste event with test text is sent to it,
+// as the browser sends one, and what the page does is seen: whether it
+// cancels the paste, and whether its own script fills the field (a split
+// one-time code spreads the digits across its boxes). A synthetic paste does
+// not insert text itself, so a paste the page lets through is noted as not
+// cancelled. The field's value (and the boxes around it) are put back.
+async function probePaste(page, selector) {
+    if (!selector) return null;
+    // A handler that answers with an alert would hold the page: dismissed,
+    // and counted.
+    let dialogs = 0;
+    const onDialog = (d) => { dialogs++; d.dismiss().catch(() => {}); };
+    if (typeof page.on === 'function') page.on('dialog', onDialog);
+    try {
+        const res = await page.evaluate((sel) => {
+            let el = null;
+            try { el = document.querySelector(sel); } catch { return null; }
+            if (!el || !('value' in el)) return null;
+            const form = el.form || el.closest('form') || el.parentElement;
+            const fields = form ? [...form.querySelectorAll('input, textarea')] : [el];
+            const before = fields.map((f) => f.value);
+            const text = '246810';
+            let event;
+            try {
+                const data = new DataTransfer();
+                data.setData('text/plain', text);
+                event = new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true, composed: true });
+            } catch {
+                return { tried: false };
+            }
+            const prev = document.activeElement;
+            el.focus();
+            const notCancelled = el.dispatchEvent(event);
+            const filled = fields.some((f, i) => f.value !== before[i]);
+            fields.forEach((f, i) => { if (f.value !== before[i]) f.value = before[i]; });
+            if (prev && prev !== document.body && typeof prev.focus === 'function') prev.focus(); else el.blur();
+            return { tried: true, cancelled: !notCancelled, filledByPage: filled, boxes: fields.filter((f) => f.maxLength === 1).length };
+        }, selector);
+        return res && res.tried ? { ...res, alerted: dialogs > 0 } : res;
+    } catch {
+        return null;
+    } finally {
+        if (typeof page.off === 'function') page.off('dialog', onDialog);
     }
 }
 

@@ -8,14 +8,14 @@ page by hand.
 
 | Lane | What settles it | Checks |
 | --- | --- | --- |
-| `answered` | The AI answers it today | 68 |
+| `answered` | The AI answers it today | 71 |
 | `read` | The AI, from the element and the text around it, as today | 0 |
 | `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 0 |
 | `tree` | The browser's own accessibility tree (no model needed) | 23 |
 | `measure` | A measurement by the lab, then the AI or a person for what is left | 0 |
 | `picture` | The AI, once it can see the picture | 0 |
 | `media` | Audio, video or time: a person, or the AI with the media | 5 |
-| `interact` | Using the page beyond opening things (errors, announcements): a person, later the AI | 3 |
+| `interact` | Using the page beyond opening things (errors, announcements): a person, later the AI | 0 |
 | `code` | The markup states it: little for the AI to add; a person confirms | 33 |
 | | **All** | **132** |
 
@@ -60,11 +60,13 @@ page by hand.
 | `img-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |  |
 | `input-image-alt-decorative` | 1.1.1 | manual | `NAME_FROM_ELSEWHERE_REVIEW` | with the button's picture |
 | `input-image-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with the button's picture |
+| `invalid-field-error-message` | 3.3.1 | automatic | `ERROR_MESSAGE_HIDDEN`, `ERROR_MESSAGE_EMPTY`, `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED`, `ERROR_MESSAGE_ARIA_HIDDEN`, `ERROR_MESSAGE_TARGET_MISSING`, `NO_ERROR_MESSAGE` | from the field's texts, once a step left it invalid |
 | `label-in-name` | 2.5.3 | automatic | `HYPHENATION_DIFFERS`, `POSSIBLE_ABBREVIATION`, `POSSIBLE_ICON_FONT_GLYPH`, `POSSIBLE_SYMBOLIC_CHARACTER` | with what the checker reported (reported) |
 | `landmark-unique` | (best practice) | manual | `LANDMARK_NOT_UNIQUE` | a best practice: with includeBestPractice |
 | `link-in-text-block` | 1.4.1 | automatic | `LINK_COLOR_CONTRAST_ONLY`, `TEXT_DECORATION_NOT_RESOLVABLE`, `COLOR_NOT_COMPUTABLE`, `BACKGROUND_IMAGE_OR_GRADIENT`, `BACKGROUND_NOT_OPAQUE_AT_ROOT`, `BACKGROUND_OVERLAP`, `BACKGROUND_FILTER_OR_BACKDROP_FILTER`, `MIX_BLEND_MODE`, `ANCESTOR_OPACITY`, `ELEMENT_OPACITY`, `TEXT_SHADOW`, `TEXT_STROKE`, `PSEUDO_ELEMENT_COLOR`, `SELECT_OPTION_COLOR`, `CONTRAST_HELPERS_UNAVAILABLE`, `ENGINE_EXCEPTION` | with what focus changes (walkStop) |
 | `link-name-quality` | 2.4.4, 2.4.9 | manual | `GENERIC_LINK_TEXT`, `AMBIGUOUS_FORMAT_NAME`, `GENERIC_LINK_TEXT_IN_CONTEXT` |  |
 | `link-name-quality-link-only` | 2.4.9 | manual | `GENERIC_LINK_TEXT_IN_CONTEXT` | AAA (2.4.9): with the AAA profile |
+| `live-region-announcements` | 4.1.3 | manual | `LIVE_REGION_HIDDEN`, `LIVE_REGION_BUSY`, `LIVE_REGION_INSERTED_WITH_CONTENT`, `LIVE_REGION_SHOWN_AND_FILLED` | from what the checker and its live-region hook reported |
 | `manual-review` | 2.1.1, 2.4.3, 2.4.7 | manual | `KEYBOARD_REVIEW` | focus visible, focus order and keyboard, from the focus walk (and the open walk) |
 | `meta-viewport-zoom-enabled` | 1.4.4 | automatic | `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` | does the tag browsers apply allow zoom |
 | `mouse-only-event-handlers` | 2.1.1, 2.1.3 | manual | `MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT`, `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE` | by reading what the checker reported (its own runtime probe); the walk could add more |
@@ -73,6 +75,7 @@ page by hand.
 | `p-as-heading` | 1.3.1 | manual | `BOLD_LARGE_PARAGRAPH`, `BOLD_LARGE_DIV`, `HEADING_LIKE_LINK`, `HEADING_LIKE_NUMBER`, `BOLD_SHORT_PARAGRAPH` |  |
 | `page-title-patterns` | 2.4.2 | manual | `placeholderTitle`, `genericTitle`, `veryShortTitle`, `templateLikeTitle`, `duplicateTitlesAcrossPages`, `templatedTitlesAcrossPages`, `titleReview` |  |
 | `page-zones-landmark` | (best practice) | manual | `BANNER_NOT_EXPOSED`, `HEADER_NESTED`, `NAVIGATION_NOT_EXPOSED`, `SEARCH_NOT_EXPOSED`, `CONTENTINFO_NOT_EXPOSED`, `FOOTER_NESTED` | a best practice, with the landmarks |
+| `password-paste-enabled` | 3.3.8 | manual | `PASTE_CANCELLED`, `PASTE_HANDLER_OPAQUE` | from the handler, or a paste tried (forms, on A11Y_AI_FORM_HOSTS) |
 | `presentation-role-conflict` | (best practice) | manual | `PRESENTATION_ROLE_CONFLICT` | a best practice |
 | `reflow-horizontal-scroll` | 1.4.10 | manual | `HORIZONTAL_SCROLL`, `HORIZONTAL_SCROLL_UNATTRIBUTED`, `WIDE_TABLE`, `WIDE_MEDIA`, `WIDE_PREFORMATTED`, `SCROLLS_IN_CONTAINER`, `CLIPPED_BY_CONTAINER`, `CLIPPED_AT_VIEWPORT_EDGE` | is the wide content excepted (a data table, a map) |
 | `region` | (best practice) | manual | `CONTENT_OUTSIDE_LANDMARK` | a best practice, with the landmarks |
@@ -129,14 +132,6 @@ page by hand.
 | `moving-content-pausable` | 2.2.2 | manual | `MOVING_CONTENT_LOOPS`, `MOVING_CONTENT_OVER_5S` | or the walk: is there a pause control |
 | `no-autoplay-audio` | 1.4.2 | manual | `AUTOPLAY_NO_CONTROLS_MECHANISM`, `AUTOPLAY_CONTROLS_HIDDEN`, `EMBEDDED_SOUND_SOURCE` |  |
 | `video-caption` | 1.2.2 | manual | `CAPTIONS_REVIEW`, `CAPTIONS_TRACK_NOT_DETECTED`, `SUBTITLES_TRACK_ONLY` |  |
-
-## `interact`: Using the page beyond opening things (errors, announcements): a person, later the AI
-
-| Check | SC | Kind | Can't-tell reasons | Note |
-| --- | --- | --- | --- | --- |
-| `invalid-field-error-message` | 3.3.1 | automatic | `ERROR_MESSAGE_HIDDEN`, `ERROR_MESSAGE_EMPTY`, `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED`, `ERROR_MESSAGE_ARIA_HIDDEN`, `ERROR_MESSAGE_TARGET_MISSING`, `NO_ERROR_MESSAGE` | submit with errors, on a test system |
-| `live-region-announcements` | 4.1.3 | manual | `LIVE_REGION_HIDDEN`, `LIVE_REGION_BUSY`, `LIVE_REGION_INSERTED_WITH_CONTENT`, `LIVE_REGION_SHOWN_AND_FILLED` |  |
-| `password-paste-enabled` | 3.3.8 | manual | `PASTE_CANCELLED`, `PASTE_HANDLER_OPAQUE` | paste into the field |
 
 ## `code`: The markup states it: little for the AI to add; a person confirms
 

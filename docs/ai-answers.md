@@ -46,6 +46,7 @@ left out.
 | `focusStops` | The most Tab presses in that walk (up to 200). | `40` |
 | `open` | `true` (with `focus`): after the walk, also **presses** each control that says it opens something on the page (a menu, a disclosure, a lightbox), to see whether the keyboard can use and close what opens. `"buttons"`: plain buttons too (most dialogs open from one), except those whose name says they act. It operates the page, within limits. See [Opening menus and dialogs](#opening-menus-and-dialogs-open-true). | off |
 | `openControls` | The most controls pressed (up to 50). | `10` |
+| `forms` | `true`: on a test system the server lists (`A11Y_AI_FORM_HOSTS`), the pass may **use the page's forms**: today, it tries a paste into a sign-in field with a paste handler, and puts the field back. Anywhere else nothing is tried and the question is answered from the handler's markup. See [Forms](#forms-forms-true). | off |
 | `pictures` | `true`: the questions that use one (the image and text alternative questions, `image-of-text`, a control named by its tooltip) also send the **picture of the element**, so the model sees it. Sent only where the server allows it (`A11Y_AI_PICTURES`); a picture showing a value typed in a field is never sent. See [Pictures](#pictures-pictures-true). | off |
 | `answer` | No effect: it names the kind of result answered, `"cantTell"`, the only kind there is. | |
 
@@ -62,6 +63,7 @@ Examples:
 | A preview of everything, focus walk included | `{ "preview": true, "focus": true }` |
 | Menus and dialogs opened too | `{ "focus": true, "open": true }` |
 | Dialogs opened from plain buttons too | `{ "focus": true, "open": "buttons" }` |
+| Paste tried in sign-in fields, on a test system | `{ "forms": true }` (with `A11Y_AI_FORM_HOSTS` on the server) |
 | The model sees the images it is asked about | `{ "pictures": true }` (with `A11Y_AI_PICTURES` on the server) |
 | With your lessons | `{ "lessons": "C:/audits/acme/ai-lessons.json" }` |
 
@@ -111,6 +113,9 @@ By reading the page (always):
 | `reflow-horizontal-scroll`, `resize-text-content-loss`, `meta-viewport-zoom-enabled` | 1.4.10, 1.4.4 | Is wide content excepted (a data table, a map) or lost; is resized text cut; does the viewport tag browsers apply allow zoom? |
 | `target-size-minimum`, `target-size-enhanced` | 2.5.8, 2.5.5 (AAA) | Does an exception hold for a small target (a sentence, an equivalent, an essential size)? |
 | `image-of-text` | 1.4.5 | Does an image button, or an image showing an SVG with text, hold text that could be real text? (From the SVG's source; for a picture-only button, with `pictures`.) |
+| `invalid-field-error-message` | 3.3.1 | A field marked invalid with no shown message tied to it: does text the user meets with it say what is wrong? (With its label, description and error message, each with whether it is shown and heard, and the text of its row.) |
+| `password-paste-enabled` | 3.3.8 | Does a sign-in field's paste handler stop pasting? (From the handler; with `forms`, from a paste tried.) |
+| `live-region-announcements` | 4.1.3 | A live region hidden, busy, or added with its text: does the page rely on it for a status message users need? |
 | `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |
@@ -231,6 +236,7 @@ Set where the lab runs, as environment variables (also in
 | `A11Y_AI_ENDPOINT` | A service of your own that answers instead of the built-in Claude call: any model, or an agent with its own knowledge. It gets each question as data; the contract is in the design note, under "Plugging in another model or an agent", with an example in `docs/design/ai-cant-tell-spike/example-endpoint.js`. Used before the Claude key. |
 | `A11Y_AI_ENDPOINT_KEY`, `A11Y_AI_ENDPOINT_NAME` | The endpoint's key (sent as a bearer token) and the name the report gives it. |
 | `A11Y_AI_ENDPOINT_PICTURE` | `on`: the endpoint gets the pictures with every question (without it, only with the questions a step sends them with, below). |
+| `A11Y_AI_FORM_HOSTS` | The hosts (test systems), comma-separated, where a step's `forms` may use the page's forms. Unset: nowhere; there is no `on`, a host must be named. |
 | `A11Y_AI_PICTURES` | Whether a step's `pictures` may send the element's picture to the model, built-in call or endpoint. Unset or `off`: never. `on`: on every site questions may be sent about. Hosts, comma-separated: on those only (and their subdomains), for instance your test systems. |
 | `A11Y_AI_ALLOWED_SITES` | The sites questions may be sent about, by host, comma-separated (a host includes its subdomains). Any other site sends nothing. Unset: every site. |
 | `A11Y_AI_MASK` | `off` turns off masking. On by default: e-mail addresses, IBANs, card-like and phone-like numbers are masked in what is sent (not in the report). |
@@ -258,6 +264,32 @@ evidence.
 - The answer says so: **Answered by … , who saw the picture of the
   element.** In a preview, each question says `picture: true` and holds the
   picture.
+
+## Forms (`forms: true`)
+
+The engine asks about forms in three ways; the AI answers each.
+
+- **A field marked invalid** (`invalid-field-error-message`). The page is in
+  that state only after a submission with errors, so put it there with the
+  workflow's own steps (fill, click **Submit**) before the scan step. The
+  question is then answered by reading: the field's label, description and
+  error message (whether each is shown, and heard by a screen reader) and
+  the text of its row. No option needed.
+- **A live region that may not speak** (`live-region-announcements`):
+  answered by reading what the engine and its live-region hook saw.
+- **A sign-in field with a paste handler** (`password-paste-enabled`). A
+  handler that only cancels the paste (`return false`) is answered by
+  reading; one that calls other script cannot be read. With `{ "forms": true
+  }`, on a host in `A11Y_AI_FORM_HOSTS`, the pass **tries a paste**: it sends
+  the field a paste event with test digits, sees whether the page cancels it
+  and whether its own script fills the field (a split one-time code does),
+  dismisses any alert, and puts every field of the form back as it was. On
+  any other host nothing is tried. The tries come after the reading
+  questions, and what they left changed is said (`forms.leftChanged`), as for
+  the open walk.
+
+Nothing is submitted: the pass never sends a form, and data a user typed is
+never sent to the model (only whether a field holds a value).
 
 ## Preview: see what would leave
 

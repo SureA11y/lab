@@ -15,6 +15,9 @@
 //   the questions that use one, for a step that asks (`ai: { pictures: true }`).
 //   Unset or "off": never. "on": on every site the pass may send about. Hosts
 //   ("shop.example, example.org"): on those only (and their subdomains).
+// - A11Y_AI_FORM_HOSTS: the hosts (test systems) where a step that asks
+//   (`ai: { forms: true }`) may use the page's forms: paste into a field.
+//   Unset: nowhere.
 
 const off = (v) => /^(0|false|no|off)$/i.test(String(v == null ? '' : v).trim());
 const on = (v) => /^(1|true|yes|on)$/i.test(String(v == null ? '' : v).trim());
@@ -67,6 +70,18 @@ function picturesAllowed(pageUrl, env = process.env) {
     return hosts.length > 0 && siteAllowed(pageUrl, hosts);
 }
 
+/**
+ * Whether the pass may use this page's forms (`forms: true`: paste into a
+ * field): only on the hosts A11Y_AI_FORM_HOSTS lists as test systems (and
+ * their subdomains). Unset or empty: nowhere. There is no "on": a host must
+ * be named.
+ */
+function formHostAllowed(pageUrl, env = process.env) {
+    const hosts = String(env.A11Y_AI_FORM_HOSTS == null ? '' : env.A11Y_AI_FORM_HOSTS)
+        .split(/[\s,]+/).map((h) => h.trim().toLowerCase().replace(/^\*\./, '').replace(/\.$/, '')).filter((h) => h && !on(h) && !off(h));
+    return hosts.length > 0 && siteAllowed(pageUrl, hosts);
+}
+
 /** A string with personal data masked, and how many were. */
 function maskText(text) {
     let count = 0;
@@ -110,4 +125,4 @@ function withoutPictures(value) {
     return value;
 }
 
-module.exports = { allowedSitesOf, siteAllowed, picturesAllowed, maskingOn, previewForced, maskText, maskDeep, withoutPictures };
+module.exports = { allowedSitesOf, siteAllowed, picturesAllowed, formHostAllowed, maskingOn, previewForced, maskText, maskDeep, withoutPictures };

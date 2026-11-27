@@ -798,6 +798,104 @@
       "target": "#delivery-banner",
       "expected": "fail",
       "why": "A banner that is only a sentence drawn in an SVG (\"Free delivery on orders over 50 €\"): real text styled with CSS would do."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "p-as-heading",
+      "target": "html > body > header > p",
+      "expected": "pass",
+      "why": "\"Demo Shop\" in bold in the header is the shop's name, not a section title."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Your account - Demo Shop\" says what the page is."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "invalid-field-error-message",
+      "target": "#email",
+      "expected": "pass",
+      "why": "The text beside the field says what is wrong (\"Enter an email address in the correct format…\"), though the markup does not tie it to the field: 3.3.1 is met."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "invalid-field-error-message",
+      "target": "#phone",
+      "expected": "fail",
+      "why": "Marked invalid with only a red border: nothing in text says it is in error or what is wrong."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "invalid-field-error-message",
+      "target": "#postcode",
+      "expected": "fail",
+      "why": "Its error message is hidden, and nothing else in text says what is wrong."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "form-control-programmatic-label-quality",
+      "target": "#code-1",
+      "expected": "pass",
+      "why": "\"Digit 1\" of the code from the text message: with the visible text before the boxes, it says what to enter."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "form-control-programmatic-label-quality",
+      "target": "input[aria-label=\"Digit 2\"]",
+      "expected": "pass",
+      "why": "\"Digit 2\" of the same code."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "form-control-programmatic-label-quality",
+      "target": "input[aria-label=\"Digit 3\"]",
+      "expected": "pass",
+      "why": "\"Digit 3\" of the same code."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "form-control-programmatic-label-quality",
+      "target": "input[aria-label=\"Digit 4\"]",
+      "expected": "pass",
+      "why": "\"Digit 4\" of the same code."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "password-paste-enabled",
+      "target": "#password",
+      "expected": "fail",
+      "why": "onpaste=\"return false\": the paste is cancelled and nothing fills the field, so a password manager or the clipboard cannot."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "password-paste-enabled",
+      "target": "#new-password",
+      "expected": "pass",
+      "why": "Its handler only notes the time; pasting is not cancelled (only a paste tried shows it: the handler calls script)."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "password-paste-enabled",
+      "target": "#code-1",
+      "expected": "pass",
+      "why": "A split one-time code: the handler cancels the paste and spreads the digits over the four boxes itself, so pasting works."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "live-region-announcements",
+      "target": "#basket-status",
+      "expected": "fail",
+      "why": "The status \"Seed tray added to your basket\" is inside aria-hidden: a screen reader user is never told the item was added."
+    },
+    {
+      "page": "ai/forms.html",
+      "check": "live-region-announcements",
+      "target": "#ticker-live",
+      "expected": "pass",
+      "why": "A decorative ticker of seedling emoji: no status message anyone needs."
     }
   ]
 }

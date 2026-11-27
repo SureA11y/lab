@@ -1,0 +1,3 @@
+{"id":"q100","verdict":"fail","confidence":0.9,"rationale":"The handler is 'return false', which only cancels the paste and fills nothing, and no alternative sign-in method appears in the evidence."}
+{"id":"q101","verdict":"unsure","confidence":0.5,"rationale":"The handler calls noteStrength(event), a script whose code is not in the evidence, so whether it cancels the paste cannot be told."}
+{"id":"q102","verdict":"unsure","confidence":0.5,"rationale":"The handler calls spreadCode(event), whose code is not in the evidence; its name suggests it spreads digits across the boxes, but whether pasting works cannot be confirmed."}

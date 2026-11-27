@@ -34,18 +34,21 @@ true }` per step, allowed by the server's `A11Y_AI_PICTURES`, and
 `image-of-text` answered; measured on the demo (114 of 114; the two
 picture-only cases open without pictures) and the W3C pages (40 of 41 both
 ways; the news photo leans fail with its picture, pass without, open both
-times). Phase 1 so far: steps 1, 3 and 4 done and step 5's picture check,
-the AI answers 68 of the 132 checks that can end in "can't tell"; demo 114
-of 114; prompt version `registry-18`. Still to ask the user: the engine's
-repository, for decision 4. The full suite (4498 pass) and the browser
-tests (`ai-answer` 12) pass.
+times). Then **forms (decision 6)**: `invalid-field-error-message` and
+`live-region-announcements` read, `password-paste-enabled` with a paste
+tried (`ai: { forms: true }`, only on `A11Y_AI_FORM_HOSTS`). Phase 1 so far:
+steps 1, 3 and 4 done, and step 5's picture and forms checks; the AI
+answers 71 of the 132 checks that can end in "can't tell" (left: 23 `tree`,
+5 `media`, 32 `code`); demo 128 of 128; prompt version `registry-19`. Still to ask the user: the engine's
+repository, for decision 4. The full suite (4501 pass) and the browser
+tests (`ai-answer` 13) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
-AI for every "can't tell" from the rules: 68 of 132 checks are answered
+AI for every "can't tell" from the rules: 71 of 132 checks are answered
 today: steps 1, 3 and 4 are done (every `read`, `walk` and `measure`
 check); left: step 2 (23 "name present" checks, from the browser's
-accessibility tree, waiting on the user), step 5 (8 checks needing
-media or further use of the page) and the 32 `code` checks (roadmap
+accessibility tree, waiting on the user), step 5 (5 checks needing
+media or time) and the 32 `code` checks (roadmap
 decision 3). Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
 
@@ -71,18 +74,30 @@ are in `ai-cant-tell-roadmap.md`, "Decisions": every recommended option.
    how to repeat: the eval README, "Pictures to the model". Open: more
    picture-only cases on a real site (raster image buttons, photos whose
    alt claims more than they show) before wider use.
-3. **Forms (decision 6), next:** `ai: { forms: true }` per step, only on hosts in
-   `A11Y_AI_FORM_HOSTS` (test systems); fill and submit with invalid input
-   for `invalid-field-error-message`, paste for `password-paste-enabled`,
-   watch `live-region-announcements`; data-changing requests stay blocked
-   elsewhere.
-4. **The `tree` lane in the engine (decision 4):** in the engine's own
+3. **Done 2026-11-27: forms (decision 6).** `invalid-field-error-message`
+   (with the field's texts, `field` in `evidence.js`) and
+   `live-region-announcements` are answered by reading: the state they ask
+   about is one the workflow's own steps (a submission with errors) or the
+   engine's live-region hook already give. `password-paste-enabled` with
+   `ai: { forms: true }`, only on hosts in `A11Y_AI_FORM_HOSTS`: a paste
+   event tried (`probePaste`: cancelled, filled by the page, alerts
+   dismissed), the form's fields put back, after the reading questions,
+   never a submission. Demo 128 of 128; the paste settles the two
+   script handlers reading leaves open. Open: real sites (GOV.UK error
+   pages, a sign-in form on a test system).
+4. **Next: the `media` lane (5 checks)**, the last of step 5:
+   `video-caption`, `media-alternative-transcript-evidence`,
+   `no-autoplay-audio`, `moving-content-pausable`,
+   `deprecated-elements-not-used`. Some can be read (a transcript link near
+   the video, a pause control near a marquee or carousel); the rest need the
+   media played or time watched, to design first.
+5. **The `tree` lane in the engine (decision 4):** in the engine's own
    repository (`@surea11y/core`), not this one: ask the user which
    repository and add it (`add_repo`) before starting; the lab's inventory
    moves those checks to "the engine".
-5. **The `code` lane (decision 3):** a person confirms; nothing to build;
+6. **The `code` lane (decision 3):** a person confirms; nothing to build;
    the inventory's lane note says so.
-6. **Phase 2 (decisions 1 and 2):** AI-raised items in a section of their
+7. **Phase 2 (decisions 1 and 2):** AI-raised items in a section of their
    own, unconfirmed, counting towards nothing until a person confirms; the
    AI only flags, never passes. Only after phase 1.
 

@@ -16,14 +16,14 @@ by what would settle it:
 
 | Lane | What settles it | Checks | Phase 1 |
 | --- | --- | --- | --- |
-| `answered` | The AI answers it today | 68 | Polish (below) |
+| `answered` | The AI answers it today | 71 | Polish (below) |
 | `read` | The AI, from the element and the text around it, as today | 0 | Step 1 (done 2026-11-27) |
 | `tree` | The browser's own accessibility tree, no model | 23 | Step 2, in the engine (decision 4) |
 | `walk` | The AI, from the focus or open walk, or a small extension | 0 | Step 3 (done 2026-11-27) |
 | `measure` | A measurement by the lab, then the AI or a person | 0 | Step 4 (done 2026-11-27) |
 | `picture` | The AI, once it can see the picture | 0 | Step 5 (`image-of-text` done 2026-11-27) |
 | `media` | Audio, video or time | 5 | Step 5 |
-| `interact` | Using the page further (errors, announcements) | 3 | Step 5 |
+| `interact` | Using the page further (errors, announcements) | 0 | Step 5 (done 2026-11-27) |
 | `code` | The markup states it; a person confirms | 32 | A person, no AI (decision 3) |
 
 The lanes are a judgement made from each check's documented reasons; move a
@@ -108,7 +108,9 @@ the picture a step sends with `pictures: true`, Decision 5); `video-caption`,
 `moving-content-pausable`, `deprecated-elements-not-used` need the media or
 time (a pause control can be looked for by reading); `live-region-announcements`,
 `invalid-field-error-message`, `password-paste-enabled` need the page used
-further (Decision 6).
+further (Decision 6; **done 2026-11-27**, `registry-19`: the first two by
+reading the state a workflow left, the third with a paste tried on a test
+host, `forms: true`).
 
 ## Phase 2: success criteria no rule can automate
 
@@ -164,7 +166,8 @@ what it means for the work:
    systems (an `A11Y_AI_FORM_HOSTS` setting); requests that change data stay
    blocked elsewhere, as the open walk blocks them. For
    `invalid-field-error-message`, `password-paste-enabled`,
-   `live-region-announcements`.
+   `live-region-announcements`. **Built 2026-11-27** (eval README, "Forms"):
+   only the paste needed it; the other two are read.
 7. **Labels follow WCAG's reading.** Where an audit is stricter (GOV.UK's
    "Read more", the lightbox close button, the role=button link), the case
    is noted but scored by WCAG and its Understanding documents. The labels

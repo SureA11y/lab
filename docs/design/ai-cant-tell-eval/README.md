@@ -935,3 +935,44 @@ node docs/design/ai-cant-tell-spike/answer-offline.js prompts runs/w3c-pictures/
 
 A question with a `picture` field names its file (`pictures/q7.jpg`, beside
 `questions.jsonl`); the answerer looks at it with the prompt.
+
+## Forms: decision 6 (2026-11-27)
+
+The `interact` lane's three checks, answered (`registry-19`):
+
+- `invalid-field-error-message` and `live-region-announcements` by
+  **reading**: the page is in the state they ask about once the workflow put
+  it there (a submission with errors; the live-region hook's record), so no
+  option is needed. A field's texts are read for it (`field`: its labels,
+  description and error message, each with whether it is shown and heard,
+  the text of its row; whether it holds a value, never the value).
+- `password-paste-enabled` from the paste handler, and with `ai: { forms:
+  true }` on a host in `A11Y_AI_FORM_HOSTS` from a **paste tried** (`paste`:
+  cancelled, filled by the page's script, an alert), every field of the form
+  put back. The tries come after the reading questions; the pass never
+  submits a form.
+
+**The demo** gains a forms page (`examples/demo-site/ai/forms.html`): three
+invalid fields (error text beside but not tied: pass; only a red border:
+fail; a hidden message and nothing else: fail), three sign-in fields
+(`return false`: fail; a handler that only notes the time: pass; a split
+one-time code whose handler spreads the digits: pass), two live regions (a
+basket status inside aria-hidden: fail; a decorative emoji ticker: pass),
+and four incidental questions it raises. **128 of 128 agree**
+([demo/score.txt](demo/score.txt)).
+
+**What the paste adds**, the three sign-in questions answered blind again
+without it ([demo-forms/](demo-forms/)): `return false` is failed either way
+(0.9); the two handlers that call script are left **open** without the paste
+("its code is not in the evidence") and answered **pass** at 0.85 with it.
+As with pictures: the action settles only what reading cannot.
+
+Not yet on real sites: the GOV.UK pages with errors (its design system's
+error pattern) and a real sign-in form on a test system are next.
+
+### Replicate
+
+```bash
+node examples/serve-demo-site.js &
+A11Y_AI_PREVIEW=on A11Y_AI_PICTURES=localhost A11Y_AI_FORM_HOSTS=localhost node src/cli/run-workflow.js examples/specs/ai-answers.spec.json --out runs/ai-demo
+```
