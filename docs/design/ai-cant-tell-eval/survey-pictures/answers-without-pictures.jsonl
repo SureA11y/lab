@@ -1,0 +1,50 @@
+{"id": "q64", "verdict": "fail", "confidence": 0.85, "rationale": "The fallback text \"Alternative text\" is a placeholder that says nothing about what the object embeds, and no other description is given."}
+{"id": "q170", "verdict": "pass", "confidence": 0.75, "rationale": "The 84px pattern icon sits next to the heading and a paragraph that name the Carousel Pattern, so hiding it loses nothing."}
+{"id": "q171", "verdict": "pass", "confidence": 0.8, "rationale": "The reload icon is inside a link whose visible text \"reload needed\" already gives its meaning."}
+{"id": "q172", "verdict": "pass", "confidence": 0.85, "rationale": "The comments icon is next to the heading \"Help improve this page\", which carries the meaning."}
+{"id": "q173", "verdict": "pass", "confidence": 0.9, "rationale": "The email icon sits beside the link text \"Get News in Email\", so it is decorative."}
+{"id": "q174", "verdict": "pass", "confidence": 0.9, "rationale": "The LinkedIn icon sits beside the link text \"LinkedIn\", so it adds nothing."}
+{"id": "q175", "verdict": "pass", "confidence": 0.9, "rationale": "The Mastodon icon sits beside the link text \"Mastodon\", so it adds nothing."}
+{"id": "q176", "verdict": "pass", "confidence": 0.9, "rationale": "The YouTube icon sits beside the link text \"YouTube\", so it adds nothing."}
+{"id": "q177", "verdict": "unsure", "confidence": 0.5, "rationale": "The alt \"Walking Tour in Amsterdam\" fits the slide and its caption, but without the picture its accuracy cannot be checked, and the link points only to \"#\"."}
+{"id": "q178", "verdict": "pass", "confidence": 0.85, "rationale": "The W3C logo is the only content of a link to w3.org, and its name \"W3C homepage\" says where the link goes."}
+{"id": "q179", "verdict": "pass", "confidence": 0.85, "rationale": "The WAI logo is the only content of a link to the WAI site, and its name \"Web Accessibility Initiative (WAI) homepage\" says where it goes."}
+{"id": "q186", "verdict": "pass", "confidence": 0.75, "rationale": "The 84px pattern icon sits next to the heading and a paragraph that name the Carousel Pattern, so hiding it loses nothing."}
+{"id": "q187", "verdict": "unsure", "confidence": 0.5, "rationale": "The alt \"Walking Tour in Amsterdam\" fits the slide and its caption, but without the picture its accuracy cannot be checked, and the link points only to \"#\"."}
+{"id": "q193", "verdict": "pass", "confidence": 0.85, "rationale": "The translations icon is inside a link whose text \"All Translations\" already gives its meaning."}
+{"id": "q194", "verdict": "pass", "confidence": 0.85, "rationale": "A generic default icon next to the heading text \"Related WCAG resources\" adds no information."}
+{"id": "q195", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q196", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q197", "verdict": "pass", "confidence": 0.85, "rationale": "The W3C logo is the only content of a link to w3.org, and its name \"W3C homepage\" says where the link goes."}
+{"id": "q198", "verdict": "pass", "confidence": 0.85, "rationale": "The WAI logo is the only content of a link to the WAI site, and its name \"Web Accessibility Initiative (WAI) homepage\" says where it goes."}
+{"id": "q199", "verdict": "pass", "confidence": 0.8, "rationale": "The search icon is the only content of the search form's submit button, and \"Submit Search\" says what the button does."}
+{"id": "q232", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q233", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q247", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q248", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q249", "verdict": "pass", "confidence": 0.75, "rationale": "The page text says the image shows the City Lights slogan \"your access to the city\", and the alt gives that text."}
+{"id": "q250", "verdict": "pass", "confidence": 0.85, "rationale": "The page text says this is the unlinked WAI logo with the alternative \"Web Accessibility Initiative\", which matches."}
+{"id": "q251", "verdict": "pass", "confidence": 0.8, "rationale": "The page text says the image shows 0.3333 recurring with a line over the last 3, which the alt states."}
+{"id": "q274", "verdict": "pass", "confidence": 0.75, "rationale": "The logo is inside a link whose text \"W3C Home\" already names the destination, so an empty alt avoids repeating it."}
+{"id": "q275", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q276", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q277", "verdict": "pass", "confidence": 0.85, "rationale": "The W3C logo is the only content of a link to w3.org, and \"W3C home\" gives the destination."}
+{"id": "q278", "verdict": "pass", "confidence": 0.85, "rationale": "The page says the icon shows that the link opens in a new window, and the alt \"new window\" conveys that."}
+{"id": "q279", "verdict": "pass", "confidence": 0.85, "rationale": "The page says it is a printer icon that opens the print dialog, and \"Print this page\" gives that function."}
+{"id": "q280", "verdict": "pass", "confidence": 0.9, "rationale": "The image button submits the search form, and the alt \"Search\" says what it does."}
+{"id": "q283", "verdict": "unsure", "confidence": 0.5, "rationale": "Neither an image source nor a picture shows whether searchbutton.png has a text label or only an icon."}
+{"id": "q299", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q300", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}
+{"id": "q301", "verdict": "pass", "confidence": 0.8, "rationale": "The short alt names the chart and its scope, and the \"Image Description\" link right after it gives the long description."}
+{"id": "q302", "verdict": "pass", "confidence": 0.8, "rationale": "The alt \"Male peacock head\" matches what the page says the image shows, and aria-describedby points to a detailed description in the text."}
+{"id": "q315", "verdict": "pass", "confidence": 0.85, "rationale": "The translations icon is inside a link whose text \"All Translations\" already gives its meaning."}
+{"id": "q316", "verdict": "pass", "confidence": 0.8, "rationale": "The illustration is inside a link whose visible text already names the topic, so hiding it loses nothing."}
+{"id": "q317", "verdict": "pass", "confidence": 0.8, "rationale": "The illustration is inside a link whose visible text already names the topic, so hiding it loses nothing."}
+{"id": "q318", "verdict": "pass", "confidence": 0.8, "rationale": "The illustration is inside a link whose visible text already names the topic, so hiding it loses nothing."}
+{"id": "q319", "verdict": "pass", "confidence": 0.8, "rationale": "The illustration is inside a link whose visible text already names the topic, so hiding it loses nothing."}
+{"id": "q320", "verdict": "pass", "confidence": 0.8, "rationale": "The illustration is inside a link whose visible text already names the topic, so hiding it loses nothing."}
+{"id": "q321", "verdict": "pass", "confidence": 0.8, "rationale": "The illustration is inside a link whose visible text already names the topic, so hiding it loses nothing."}
+{"id": "q322", "verdict": "pass", "confidence": 0.8, "rationale": "The illustration is inside a link whose visible text already names the topic, so hiding it loses nothing."}
+{"id": "q323", "verdict": "pass", "confidence": 0.8, "rationale": "The illustration is inside a link whose visible text already names the topic, so hiding it loses nothing."}
+{"id": "q324", "verdict": "pass", "confidence": 0.65, "rationale": "The video still is inside a link whose text names the Colors with Good Contrast page, so the thumbnail looks decorative, though its content is not shown."}
+{"id": "q325", "verdict": "pass", "confidence": 0.9, "rationale": "The arrow icon in the pager link repeats the \"Previous:\"/\"Next:\" text that is already in the link, so hiding it loses nothing."}

@@ -1005,3 +1005,48 @@ plus the reading page's how-to video now asked about. **148 of 148 agree**
 Not yet on real sites: pages with real video players (YouTube or Vimeo
 frames are outside the page and not read), podcasts with transcripts, and
 carousels.
+
+## The new families on real pages: a survey, pictures sent (2026-11-27)
+
+`examples/specs/ai-answers-survey-pictures.spec.json`: the 77 GOV.UK audit
+pages not scanned before and 8 W3C pages chosen for the new families (the
+APG carousels, the WAI forms tutorials on notifications and validation, the
+image tutorials on text, functional and complex images, the WAI media
+guide), with `pictures: true`. 326 questions; **only a few were for the new
+families**, so the real pages say little about them yet:
+
+- **Media:** 3 (GOV.UK's audio and video "missing text alternative" pages:
+  2 transcripts, 1 captions) and 1 marquee. No autoplay, no moving content:
+  the APG carousels rotate by a script timer, which the engine's
+  `moving-content-pausable` (CSS and Web Animations) does not see.
+- **Forms:** none. GOV.UK's error pages mark errors by colour or not at all,
+  never with `aria-invalid`, so the engine has nothing to ask; the WAI
+  tutorials' examples are static.
+- **Pictures:** 1 `image-of-text` (the WAI functional-images search button)
+  and 49 alt and SVG questions that send a picture.
+
+The 54 (all the new-family questions and every question with a picture)
+were labelled before any answer was read (5 fail: GOV.UK's object with
+"Alternative text" as its fallback, the audio and video with no
+transcript or captions, the marquee; 49 pass: W3C's own pages and the
+tutorials' good examples), then answered blind twice. In
+[survey-pictures/](survey-pictures/):
+
+| | Agree | Open | Wrong |
+| --- | --- | --- | --- |
+| All 54, with pictures | **54** | 0 | 0 |
+| The 50 picture questions, with pictures | 50 | 0 | 0 |
+| The same 50, without | 47 | 3 | 0 |
+
+The three the picture settles: the two carousel photos ("Walking Tour in
+Amsterdam": without the picture "its accuracy cannot be checked"; with it
+"an Amsterdam canal scene", pass at 0.6) and the search button (a
+magnifier, no text: `image-of-text` pass at 0.9, unsure without). As on the
+demo and the W3C pages: pictures change no answer the text settles, and
+settle what only seeing can. These pages are new to the evaluation, so the
+run counts in [trust.md](trust.md) (now 37 checks; `img-alt-decorative`
+trusted with 82 cases).
+
+Still needed for the new families: pages that use `aria-invalid` with their
+errors (a design system's error pattern), live regions, autoplaying media
+and animated content, on hosts the environment allows.

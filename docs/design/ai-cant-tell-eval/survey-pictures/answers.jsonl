@@ -1,0 +1,54 @@
+{"id": "q64", "verdict": "fail", "confidence": 0.8, "rationale": "The object embeds \"foo\", which does not render; its fallback \"Alternative text\" is a placeholder that says nothing about the content."}
+{"id": "q109", "verdict": "fail", "confidence": 0.75, "rationale": "The audio player has no transcript, track or nearby link offering its text; nothing in the context provides an alternative."}
+{"id": "q112", "verdict": "fail", "confidence": 0.65, "rationale": "The video has no tracks and nothing in its context offers a transcript or full text description."}
+{"id": "q113", "verdict": "fail", "confidence": 0.6, "rationale": "The video has controls, is not muted and appears to be a talk with sound, yet it has no captions track and no captioned version is linked."}
+{"id": "q165", "verdict": "fail", "confidence": 0.9, "rationale": "The marquee scrolls continuously and there are no page controls or handlers to pause, stop or hide it."}
+{"id": "q170", "verdict": "pass", "confidence": 0.85, "rationale": "A generic carousel-pattern illustration beside the About This Example heading; the adjacent text conveys everything, so it is decorative."}
+{"id": "q171", "verdict": "pass", "confidence": 0.85, "rationale": "The reload arrow sits inside a link whose text \"reload needed\" already gives its meaning, so empty alt loses nothing."}
+{"id": "q172", "verdict": "pass", "confidence": 0.85, "rationale": "A comment-bubble icon next to the heading \"Help improve this page\"; the heading carries the meaning."}
+{"id": "q173", "verdict": "pass", "confidence": 0.9, "rationale": "Envelope icon next to the link text \"Get News in Email\", which already says the same."}
+{"id": "q174", "verdict": "pass", "confidence": 0.9, "rationale": "LinkedIn logo icon next to the link text \"LinkedIn\", which names it."}
+{"id": "q175", "verdict": "pass", "confidence": 0.9, "rationale": "Mastodon logo icon next to the link text \"Mastodon\", which names it."}
+{"id": "q176", "verdict": "pass", "confidence": 0.9, "rationale": "YouTube logo icon next to the link text \"YouTube\", which names it."}
+{"id": "q177", "verdict": "pass", "confidence": 0.6, "rationale": "The picture shows an Amsterdam canal scene for the slide whose offer is a European tour; \"Walking Tour in Amsterdam\" identifies the slide the link represents, though its href is only \"#\"."}
+{"id": "q178", "verdict": "pass", "confidence": 0.9, "rationale": "The W3C logo is the only content of a link to w3.org and its name \"W3C homepage\" states the destination."}
+{"id": "q179", "verdict": "pass", "confidence": 0.9, "rationale": "The WAI logo links to /WAI/ and its name \"Web Accessibility Initiative (WAI) homepage\" matches the visible text and the destination."}
+{"id": "q186", "verdict": "pass", "confidence": 0.85, "rationale": "A generic carousel-pattern illustration beside the About This Example heading; the adjacent text conveys everything, so it is decorative."}
+{"id": "q187", "verdict": "pass", "confidence": 0.6, "rationale": "The picture shows an Amsterdam canal scene for the slide whose offer is a European tour; \"Walking Tour in Amsterdam\" identifies the slide the link represents, though its href is only \"#\"."}
+{"id": "q193", "verdict": "pass", "confidence": 0.85, "rationale": "Translation icon inside a link whose text \"All Translations\" already gives its meaning."}
+{"id": "q194", "verdict": "pass", "confidence": 0.8, "rationale": "A generic decorative asterisk/flower icon before the box heading \"Related WCAG resources\"; it adds no information."}
+{"id": "q195", "verdict": "pass", "confidence": 0.9, "rationale": "Left arrow inside a pager link whose text begins \"Previous:\", so the direction is already given in text."}
+{"id": "q196", "verdict": "pass", "confidence": 0.9, "rationale": "Right arrow inside a pager link whose text begins \"Next:\", so the direction is already given in text."}
+{"id": "q197", "verdict": "pass", "confidence": 0.9, "rationale": "The W3C logo is the only content of a link to w3.org and its name \"W3C homepage\" states the destination."}
+{"id": "q198", "verdict": "pass", "confidence": 0.9, "rationale": "The WAI logo links to /WAI/ and its name \"Web Accessibility Initiative (WAI) homepage\" matches the visible text and the destination."}
+{"id": "q199", "verdict": "pass", "confidence": 0.9, "rationale": "A magnifying-glass icon is the only content of the search form button, and \"Submit Search\" states its action."}
+{"id": "q232", "verdict": "pass", "confidence": 0.9, "rationale": "Left arrow inside a pager link whose text begins \"Previous:\", so the direction is already given in text."}
+{"id": "q233", "verdict": "pass", "confidence": 0.9, "rationale": "Right arrow inside a pager link whose text begins \"Next:\", so the direction is already given in text."}
+{"id": "q247", "verdict": "pass", "confidence": 0.9, "rationale": "Left arrow inside a pager link whose text begins \"Previous:\", so the direction is already given in text."}
+{"id": "q248", "verdict": "pass", "confidence": 0.9, "rationale": "Right arrow inside a pager link whose text begins \"Next:\", so the direction is already given in text."}
+{"id": "q249", "verdict": "pass", "confidence": 0.6, "rationale": "The image shows the stylised slogan \"your access to the city\" and the alt gives that slogan; the extra \"City Lights:\" is not visible in the picture but does not mislead."}
+{"id": "q250", "verdict": "pass", "confidence": 0.9, "rationale": "The unlinked logo reads \"Web Accessibility Initiative\" and the alt gives exactly that text."}
+{"id": "q251", "verdict": "pass", "confidence": 0.9, "rationale": "The image shows 0.3333 with a bar over the last 3, and the alt states the number and explains the recurrence mark."}
+{"id": "q274", "verdict": "pass", "confidence": 0.8, "rationale": "The W3C logo sits inside a link whose text \"W3C Home\" already names the destination, so empty alt avoids redundancy."}
+{"id": "q275", "verdict": "pass", "confidence": 0.9, "rationale": "Left arrow inside a pager link whose text begins \"Previous:\", so the direction is already given in text."}
+{"id": "q276", "verdict": "pass", "confidence": 0.9, "rationale": "Right arrow inside a pager link whose text begins \"Next:\", so the direction is already given in text."}
+{"id": "q277", "verdict": "pass", "confidence": 0.9, "rationale": "The W3C logo is the only content of a link to w3.org, and \"W3C home\" states the destination."}
+{"id": "q278", "verdict": "pass", "confidence": 0.85, "rationale": "The small icon shows overlapping windows after the link text, and \"new window\" conveys that the link opens a new window."}
+{"id": "q279", "verdict": "pass", "confidence": 0.9, "rationale": "A printer icon is the only content of a link calling print(), and \"Print this page\" states the action."}
+{"id": "q280", "verdict": "pass", "confidence": 0.9, "rationale": "The magnifying-glass image button submits a search form, and its alt \"Search\" states the action."}
+{"id": "q283", "verdict": "pass", "confidence": 0.9, "rationale": "The button image is only a magnifying-glass icon with no words or letters in it."}
+{"id": "q299", "verdict": "pass", "confidence": 0.9, "rationale": "Left arrow inside a pager link whose text begins \"Previous:\", so the direction is already given in text."}
+{"id": "q300", "verdict": "pass", "confidence": 0.9, "rationale": "Right arrow inside a pager link whose text begins \"Next:\", so the direction is already given in text."}
+{"id": "q301", "verdict": "pass", "confidence": 0.8, "rationale": "The alt identifies the bar chart accurately, and an \"Image Description\" link right after it gives the long description of the data."}
+{"id": "q302", "verdict": "pass", "confidence": 0.9, "rationale": "The photo shows a male peacock head, matching the alt, and aria-describedby points to a detailed description."}
+{"id": "q315", "verdict": "pass", "confidence": 0.85, "rationale": "Translation icon inside a link whose text \"All Translations\" already gives its meaning."}
+{"id": "q316", "verdict": "pass", "confidence": 0.85, "rationale": "Accessibility figure icon inside a link whose text \"User Experiences and Benefits to Organizations\" carries the meaning."}
+{"id": "q317", "verdict": "pass", "confidence": 0.85, "rationale": "Map/route icon inside a link whose text \"Planning Audio and Video Media\" carries the meaning."}
+{"id": "q318", "verdict": "pass", "confidence": 0.85, "rationale": "Microphone and camera icon inside a link whose text \"Audio Content and Video Content\" carries the meaning."}
+{"id": "q319", "verdict": "pass", "confidence": 0.85, "rationale": "AD icon inside a link whose text \"Description of Visual Information\" carries the meaning."}
+{"id": "q320", "verdict": "pass", "confidence": 0.85, "rationale": "CC icon inside a link whose text \"Captions/Subtitles\" carries the meaning."}
+{"id": "q321", "verdict": "pass", "confidence": 0.85, "rationale": "Text-lines icon inside a link whose text \"Transcripts\" carries the meaning."}
+{"id": "q322", "verdict": "pass", "confidence": 0.85, "rationale": "Signing-hands icon inside a link whose text \"Sign Languages\" carries the meaning."}
+{"id": "q323", "verdict": "pass", "confidence": 0.85, "rationale": "Play-button icon inside a link whose text \"Media Players\" carries the meaning."}
+{"id": "q324", "verdict": "pass", "confidence": 0.75, "rationale": "A still from the example video inside a link whose text \"Colors with Good Contrast page.\" names the destination; the still adds no needed information."}
+{"id": "q325", "verdict": "pass", "confidence": 0.9, "rationale": "Right arrow inside a pager link whose text begins \"Next:\", so the direction is already given in text."}

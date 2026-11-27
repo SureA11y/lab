@@ -13,11 +13,11 @@ its fails only, and on the answers it gave: few for keyboard.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `contrast-computable` | **yes** | 142 | 142 | 142 | 0 | 0 | 100% |  | measure-lane-exact |
 | `page-title-patterns` | **yes** | 96 | 95 | 95 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, uw-au, w3c-bad, wai-tutorials |
+| `img-alt-decorative` | **yes** | 82 | 81 | 81 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, survey-pictures, w3c-bad, wai-tutorials |
 | `focus-visible` | **yes** | 81 | 60 | 60 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, uw-au, w3c-bad |
 | `focus-order` | **yes** | 80 | 54 | 54 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, uw-au, w3c-bad |
 | `keyboard` | **yes** | 67 | 7 | 7 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, uw-au, w3c-bad |
-| `img-alt-decorative` | **yes** | 50 | 49 | 49 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, w3c-bad, wai-tutorials |
-| `img-alt-quality` | no | 56 | 51 | 50 | 1 | 0 | 98% | 1 wrong pass | govuk-audit, govuk-audit-more, uw-au, w3c-bad, wai-tutorials |
+| `img-alt-quality` | no | 66 | 61 | 60 | 1 | 0 | 98% | 1 wrong pass | govuk-audit, govuk-audit-more, survey-pictures, uw-au, w3c-bad, wai-tutorials |
 | `landmark-unique` | no | 14 | 14 | 14 | 0 | 0 | 100% | 14 of 30 cases | names-labels |
 | `page-zones-landmark` | no | 14 | 14 | 14 | 0 | 0 | 100% | 14 of 30 cases | structure |
 | `css-hidden-focus` | no | 12 | 12 | 12 | 0 | 0 | 100% | 12 of 30 cases | walk-lane-walk |
@@ -26,21 +26,25 @@ its fails only, and on the answers it gave: few for keyboard.
 | `keyboard-element` | no | 12 | 8 | 8 | 0 | 0 | 100% | 12 of 30 cases | govuk-audit, uw-au |
 | `mouse-only-event-handlers` | no | 11 | 10 | 10 | 0 | 0 | 100% | 11 of 30 cases | walk-lane-walk |
 | `td-has-header` | no | 11 | 11 | 11 | 0 | 0 | 100% | 11 of 30 cases | structure |
+| `svg-text-alternative-quality` | no | 10 | 10 | 10 | 0 | 0 | 100% | 10 of 30 cases | survey-pictures, svg-w3c |
 | `identical-links-same-purpose` | no | 7 | 7 | 7 | 0 | 0 | 100% | 7 of 30 cases | names-labels |
 | `p-as-heading` | no | 7 | 7 | 7 | 0 | 0 | 100% | 7 of 30 cases | apg-open, govuk-audit, govuk-audit-more, w3c-bad, wai-tutorials |
 | `link-name-quality` | no | 6 | 1 | 1 | 0 | 0 | 100% | 6 of 30 cases | govuk-audit, govuk-audit-more, uw-au, w3c-bad |
-| `svg-text-alternative-quality` | no | 5 | 5 | 5 | 0 | 0 | 100% | 5 of 30 cases | svg-w3c |
 | `form-group-name-present` | no | 4 | 4 | 4 | 0 | 0 | 100% | 4 of 30 cases | structure |
 | `heading-order` | no | 4 | 4 | 4 | 0 | 0 | 100% | 4 of 30 cases | structure |
 | `form-control-programmatic-label-quality` | no | 3 | 2 | 2 | 0 | 0 | 100% | 3 of 30 cases | govuk-audit, w3c-bad, wai-tutorials |
 | `empty-table-header` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | structure |
 | `form-control-label-quality` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | names-labels |
+| `input-image-alt-quality` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | image-buttons, survey-pictures |
 | `link-in-text-block` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | measure-lane-exact |
+| `media-alternative-transcript-evidence` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | survey-pictures |
+| `object-text-alternative-quality` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | media-alt, survey-pictures |
 | `video-poster-text-alternative-present` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | media-alt |
 | `bypass-blocks-present` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | structure |
+| `deprecated-elements-not-used` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | survey-pictures |
 | `form-control-single-label` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | structure |
+| `image-of-text` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | survey-pictures |
 | `image-redundant-alt` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | media-alt |
-| `input-image-alt-quality` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | image-buttons |
 | `link-name-quality-link-only` | no | 1 | 1 | 0 | 0 | 1 | 0% | 1 of 30 cases, agreement below 95% | names-labels |
-| `object-text-alternative-quality` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | media-alt |
 | `tabindex` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | walk-lane-walk |
+| `video-caption` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | survey-pictures |

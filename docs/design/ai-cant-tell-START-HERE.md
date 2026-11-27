@@ -42,7 +42,7 @@ it):
    144 of 144.
 3. **Labels by WCAG's reading** (decision 7): 15 GOV.UK labels re-read.
 4. **Trust per check** (decision 8): `ai:agreement`'s Trusted column and
-   `ai-cant-tell-eval/trust.md` (`trust-table.js`): 6 of 33 checks trusted
+   `ai-cant-tell-eval/trust.md` (`trust-table.js`): 6 of 37 checks trusted
    (30 labelled real cases, 95% when answered, no wrong pass).
 5. **Pictures (decision 5, `registry-18`).** `ai: { pictures: true }` per
    step, off by default; the server's `A11Y_AI_PICTURES` (`on`, or hosts)
@@ -86,7 +86,13 @@ towards nothing until a person confirms; the AI only flags, never passes).
    design-system pages showing errors (the error summary pattern; put the
    page in that state with the workflow's own steps); live regions; pages
    with audio or video, transcripts, carousels and marquees. Label first,
-   answer blind, score, record in the eval README.
+   answer blind, score, record in the eval README. **Started 2026-11-27**
+   (eval README, "The new families on real pages"): 85 pages surveyed
+   (`ai-answers-survey-pictures.spec.json`), only 5 new-family cases came up
+   (media, a marquee, an image of text) and no forms ones; with pictures 54
+   of 54 agree, without them 3 picture questions stay open. Next: sites
+   that use `aria-invalid`, live regions, autoplay and animation (ask the
+   user to allow their hosts; e.g. the GOV.UK Design System's pages).
 2. **The engine's tree lane (decision 4):** ask the user for the engine's
    GitHub repository, attach it (`add_repo`), and make the engine settle the
    23 "name present" checks from the browser's accessibility tree; then the
@@ -108,9 +114,9 @@ towards nothing until a person confirms; the AI only flags, never passes).
 | 1, "is it text" | 4 | 4 of 4 | none came up |
 | 3, walk lane | 12 | 16 of 16 | 10 of 10 read only (8 unsure), 23 of 24 with the walk |
 | 4, measure lane | 9 | 6 of 6 | 144 of 144 with the exact contrast measurement (137 before; labelled by a reference measurement) |
-| 5, pictures (`image-of-text`, and pictures for the alt questions) | 1 | 7 of 7 (2 settled only with pictures) | W3C pages: 40 of 41 with and without pictures |
-| 5, forms | 3 | 8 of 8 (2 settled only with the paste) | none yet |
-| 5, media and moving content | 5 | 16 of 16 | none yet |
+| 5, pictures (`image-of-text`, and pictures for the alt questions) | 1 | 7 of 7 (2 settled only with pictures) | W3C pages: 40 of 41 with and without; survey: 50 of 50 with, 47 of 50 without (3 open) |
+| 5, forms | 3 | 8 of 8 (2 settled only with the paste) | none came up |
+| 5, media and moving content | 5 | 16 of 16 | 4 of 4 (survey) |
 | 2, accessibility tree | 23 | | in the engine (decision 4), waiting on its repository |
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
