@@ -16,11 +16,11 @@ by what would settle it:
 
 | Lane | What settles it | Checks | Phase 1 |
 | --- | --- | --- | --- |
-| `answered` | The AI answers it today | 58 | Polish (below) |
+| `answered` | The AI answers it today | 67 | Polish (below) |
 | `read` | The AI, from the element and the text around it, as today | 0 | Step 1 (done 2026-11-27) |
 | `tree` | The browser's own accessibility tree, no model | 23 | Step 2 |
 | `walk` | The AI, from the focus or open walk, or a small extension | 0 | Step 3 (done 2026-11-27) |
-| `measure` | A measurement by the lab, then the AI or a person | 8 | Step 4 |
+| `measure` | A measurement by the lab, then the AI or a person | 0 | Step 4 (done 2026-11-27) |
 | `picture` | The AI, once it can see the picture | 1 | Step 5 |
 | `media` | Audio, video or time | 5 | Step 5 |
 | `interact` | Using the page further (errors, announcements) | 3 | Step 5 |
@@ -91,7 +91,9 @@ and `aria-checked-state-mismatch` (the open walk sees what shows),
 `skip-link` (press it, see where focus goes), `aria-hidden-focus`,
 `nested-interactive-controls-absent`, `server-side-image-map-absent`.
 
-**Step 4: `measure` (8 checks).** The lab measures, the AI or a person
+**Step 4: `measure` (8 checks; done 2026-11-27, `registry-16`: reading
+questions on what the engine measured, and contrast measured from pixels;
+the reference method of `contrast-reference.js` would make it exact).** The lab measures, the AI or a person
 judges what is left: `contrast-computable` (text over an image or gradient:
 the pixels behind it), `link-in-text-block` (hover and focus cues, as the walk
 measures focus), `text-spacing-content-loss`, `avoid-inline-spacing`,

@@ -792,3 +792,47 @@ or not, its neighbours in Tab order, hidden while focused, focus taken away.
   which is how skip links hide; it counts them now (a skip link that comes
   into view on focus is not hidden). Skip links checked by hand in a
   browser: the W3C demo's come into view on focus.
+
+## The measure lane: step 4 (2026-11-27)
+
+Nine checks (`contrast-computable`, `link-in-text-block`,
+`text-spacing-content-loss`, `avoid-inline-spacing`,
+`reflow-horizontal-scroll`, `resize-text-content-loss`,
+`target-size-minimum`, `target-size-enhanced`, `meta-viewport-zoom-enabled`;
+`registry-16`). The engine measures most of these and reports what it
+found, so they are reading questions on it; `link-in-text-block` also takes
+what focus changes (`walkStop`). Contrast the engine cannot compute (text
+over an image, a gradient, a blend, a filter) gets a measurement of its own,
+`pixels`: a picture of the element as drawn, the contrast of the text colour
+against the pixels unlike it, and `nearTextShare`, the share of the box drawn
+almost in the text's colour (which is how a background close to the text
+colour shows: the ratios cannot).
+
+- **Demo:** a page of its own, `measure.html` (AAA): white text on a
+  near-white gradient (fail) and on a dark one (pass), a teaser cut with the
+  spacing applied (fail), a one-word label with forced spacing (pass), a
+  zoom-blocking viewport tag replaced by one that allows it (pass). The
+  whole demo: **103 of 103**. Reflow, resized text and target size raised
+  nothing there.
+- **Real pages** ([measure-lane/](measure-lane/)), with the focus walk:
+  GOV.UK's colour, link, text size, zoom, layout and target pages, the W3C
+  demo (background images behind most of its text), UW, three W3C pages.
+  162 questions: 158 `contrast-computable`, 4 `link-in-text-block`; no other
+  check of the lane came up. **Labels for contrast come from a reference
+  measurement** ([contrast-reference.js](contrast-reference.js)), not by
+  eye: in a browser of its own, the element's picture with its text and
+  again with the text transparent, so the background under each glyph is
+  read directly; fail when more than a tenth of it is below the ratio. 141
+  pass, 1 fail, 16 not measurable (not scored). The links by reading: two
+  with nothing but colour and no change on focus (fail), two whose only
+  focus cue is an outline with hover unknown (unsure, not scored).
+- **Result:** 144 scored, **137 agree, none wrong** (contrast 135 of 142,
+  the one real failure among them, light text at 40px over an image; links
+  2 of 2). The 7 left open are readable text the lab's measurement put at
+  10 to 30% of the background below the ratio: telling text from background
+  by colour counts antialiased edges as background, and the model rightly
+  did not decide on it. The reference method (text made transparent for a
+  moment) reads the background exactly; using it in the lab would settle
+  these, at the cost of changing the page for a moment, which the walks'
+  fingerprint check would have to cover. One answering model applied its
+  readings with a script keyed on the measured values (it said so).

@@ -22,14 +22,15 @@ Read, in this order:
 
 ## State (end of 2026-11-27)
 
-Everything is committed and pushed. Latest: **phase 1, steps 1 and 3 are done**:
-the AI answers every check of the inventory's `read` and `walk` lanes (58
-of 132), the walk lane from what the checker reported and, with
+Everything is committed and pushed. Latest: **phase 1, steps 1, 3 and 4 are done**:
+the AI answers every check of the inventory's `read`, `walk` and `measure`
+lanes (67 of 132), contrast the engine cannot compute measured from the
+page's pixels (`pixels`); the walk lane from what the checker reported and, with
 `focus: true`, the element's own walk stop; before it, the `read` lane: the
 text alternatives, the names and labels (with what the checker reported),
 the structure checks (with the table, the heading outline and the
 landmarks) and "is it text"; best-practice findings are asked too; demo 97
-of 97, prompt version `registry-15`. Before that: the **roadmap** and the
+of 103, prompt version `registry-16`. Before that: the **roadmap** and the
 **inventory** of every engine check that can end in "can't tell" (with a
 test that keeps it in step with the engine and the registry), and the
 **open walk** (`open: true` presses what says it opens something,
@@ -38,16 +39,23 @@ shows). The full suite (4491 pass, 5 skipped) and the
 browser tests (`focus-walk` 16, `ai-answer` 10, `app-boot`) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
-AI for every "can't tell" from the rules: 58 of 132 checks are answered
-today: steps 1 and 3 are done (every `read` and `walk` check); left: step 2
-(23 "name present" checks, from the browser's accessibility tree, waiting
-on the user), step 4 (8 measurements), step 5 (9 checks needing pictures,
+AI for every "can't tell" from the rules: 67 of 132 checks are answered
+today: steps 1, 3 and 4 are done (every `read`, `walk` and `measure`
+check); left: step 2 (23 "name present" checks, from the browser's
+accessibility tree, waiting on the user), step 5 (9 checks needing pictures,
 media or further use of the page) and the 32 `code` checks (roadmap
 decision 3). Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
 
-**Where to pick up without the user:** phase 1, **step 4, the `measure`
-lane** (8 checks): `contrast-computable` (text over a background image or
+**Where to pick up without the user:** step 4 is done (2026-11-27; see the
+progress table). Next, in this order: (1) measure contrast in the lab the
+way `ai-cant-tell-eval/contrast-reference.js` does (text made transparent
+for a moment, the background under the glyphs read directly), covered by
+the walks' before-and-after check, which would settle the 7 real cases the
+current `pixels` left unsure; (2) step 5's pictures, media and further use
+of the page, after roadmap decisions 5 and 6; (3) the `code` lane after
+decision 3. What step 4 was (kept for the record): the `measure`
+lane (8 checks): `contrast-computable` (text over a background image or
 gradient: the colours behind it can only be read from pixels),
 `link-in-text-block` (a link told apart by colour alone: does hover or focus
 add a cue), `text-spacing-content-loss` and `avoid-inline-spacing` (1.4.12:
@@ -70,6 +78,7 @@ details in `ai-cant-tell-eval/README.md`):
 | 1, structure | 13 | all agree (one ambiguous case dropped) | 37 of 37 |
 | 1, "is it text" | 4 | 4 of 4 | none came up |
 | 3, walk lane | 12 | 16 of 16 | 10 of 10 read only (8 unsure), 23 of 24 with the walk |
+| 4, measure lane | 9 | 6 of 6 | 137 of 144 (contrast labelled by a reference measurement; none wrong) |
 | 2, accessibility tree | 23 | | waiting on roadmap decision 4 (item 3b) |
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
@@ -149,12 +158,12 @@ details in `ai-cant-tell-eval/README.md`):
 - **The demo:** `examples/demo-site/ai/` (`reading.html`, `focus.html`,
   `dialog.html` for the open walk),
   `examples/specs/ai-answers.spec.json`, the correct answers in
-  `expected.json`, `examples/ai-demo-score.js`. 97 questions, including a Help
+  `expected.json`, `examples/ai-demo-score.js`. 103 questions, including a Help
   link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13 pass) and a
   modal dialog a keyboard user cannot close (keyboard and focus order fail,
   found by the open walk).
   Evaluated blind, a model answering the lab's exact prompts outside the lab
-  (`ai-cant-tell-spike/answer-offline.js`): **97 of 97**
+  (`ai-cant-tell-spike/answer-offline.js`): **103 of 103**
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
 - **Real sites,** built with documented accessibility problems (the WAI
@@ -356,7 +365,8 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   reported, `occurrence.details`, bounded), `table`, `outline`, `landmarks`;
   the walk questions use `focusWalk`; a reading question can add
   `walkStop` (the element's own stop, only when the step has `focus: true`;
-  without it the question is asked as before). Adding a kind to an existing question
+  without it the question is asked as before), or `pixels` (the contrast of
+  its text against what is drawn behind it, from a picture). Adding a kind to an existing question
   changes its prompt, so its blind answers must be redone; a new question
   takes what it needs.
 - Read the test results before committing: a chained `node --test && git
@@ -372,7 +382,7 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   `<body>` or in `<head>`, which the evidence never includes.
 - The demo workflow's call budget (`budget.calls`, per run) must cover every
   question: when cases are added, a page left open with `budget-calls` means
-  the budget, not the AI (it is 120 now, for 97 questions).
+  the budget, not the AI (it is 120 now, for 103 questions).
 - Re-scoring after a change: a prompt that comes out identical can keep its
   earlier blind answer (match the runs' `questions.jsonl` by prompt text);
   only new or changed prompts need answering again.
