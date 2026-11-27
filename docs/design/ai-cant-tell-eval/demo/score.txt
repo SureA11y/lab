@@ -70,6 +70,12 @@ keyboard.html aria-expanded-state-mismatch              #returns-toggle         
 keyboard.html region                                    html > body > a                     pass     pass                    agrees
 keyboard.html skip-link                                 html > body > a                     fail     fail                    agrees
 keyboard.html tabindex                                  html > body > footer > p > a:nth-…  fail     fail                    agrees
+measure.html  contrast-computable                       #banner-light                       fail     fail                    agrees
+measure.html  contrast-computable                       #banner-dark                        pass     pass                    agrees
+measure.html  page-title-patterns                       html > head > title                 pass     pass                    agrees
+measure.html  text-spacing-content-loss                 #teaser                             fail     fail                    agrees
+measure.html  text-spacing-content-loss                 #badge                              pass     pass                    agrees
+measure.html  meta-viewport-zoom-enabled                html > head > meta:nth-of-type(2)   pass     pass                    agrees
 focus.html    page-title-patterns                       html > head > title                 pass     pass                    agrees
 focus.html    p-as-heading                              #top-bar > p                        pass     pass                    agrees
 focus.html    focus-visible                             html                                fail     fail                    agrees
@@ -97,4 +103,4 @@ dialog.html   keyboard                                  html                    
 dialog.html   focus-order                               html                                fail     fail                    agrees
 dialog.html   focus-visible                             html                                pass     pass                    agrees
 
-97 questions: 97 answered by the AI, 97 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+103 questions: 103 answered by the AI, 103 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.

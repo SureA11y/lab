@@ -53,45 +53,51 @@
 {"id":"q53","verdict":"fail","confidence":0.92,"rationale":"In portrait, main (all the page content) is set to display:none and only a \"Please turn your device to landscape\" message shows. A reviews page does not need one orientation, so this is F100."}
 {"id":"q54","verdict":"fail","confidence":0.85,"rationale":"The stars carry the rating, and the only text beside them is \"Rated\", which gives no value. At 1.43:1 they fall below the 3:1 that information-bearing graphics need."}
 {"id":"q55","verdict":"pass","confidence":0.88,"rationale":"The arrow sits inside a link whose visible text \"Next page\" already gives its meaning, so the arrow only decorates."}
+{"id":"q56","verdict":"pass","confidence":0.75,"rationale":"The alt 'Canvas garden bag' matches the heading and what the image shows (a bag), so it identifies the image accurately in context."}
 {"id":"q57","verdict":"fail","confidence":0.7,"rationale":"The image is the only content of a link to ../index.html, but its alt describes the picture ('Plan of the shop's garden') rather than the link's destination or purpose."}
 {"id":"q58","verdict":"pass","confidence":0.8,"rationale":"'Demo Shop' is the site name in the header, followed by the navigation, not a title for a section of text."}
 {"id":"q59","verdict":"pass","confidence":0.65,"rationale":"The plan shows the Greenhouse and Tool shed, and ordinary text links to index.html#greenhouse and #shed sit right below; the link itself also works with Enter to index.html."}
 {"id":"q60","verdict":"fail","confidence":0.75,"rationale":"The .terms box is 60px high and 320px wide with overflow:auto, and its six sentences need several more lines than fit, so content is hidden; it has no tabindex, so it is not keyboard-scrollable in all browsers."}
+{"id":"q61","verdict":"pass","confidence":0.9,"rationale":"The hover handlers only toggle the link's text decoration, a cosmetic effect; the link itself works with the keyboard."}
+{"id":"q62","verdict":"fail","confidence":0.85,"rationale":"Hovering the image writes product information ('Holds 20 litres, washable at 30 degrees.') into the page, and the image cannot take keyboard focus, so keyboard users cannot get that information."}
+{"id":"q63","verdict":"fail","confidence":0.9,"rationale":"The onfocus handler calls this.blur() unconditionally, so focus is removed as soon as the tabbable Cart link receives it."}
 {"id":"q64","verdict":"pass","confidence":0.95,"rationale":"The title 'Garden bag - Demo Shop' matches the page's h1 'Garden bag' and names the site."}
+{"id":"q65","verdict":"fail","confidence":0.6,"rationale":"The Back to top link is positioned off-screen by the 'offscreen' class and the checker found no focus rule bringing it into view, so focus lands on an invisible element."}
+{"id":"q66","verdict":"fail","confidence":0.75,"rationale":"A focusable button is nested inside a link, both with the name 'Buy'; the inner control is not reliably reachable or announced on its own and its activation is ambiguous."}
+{"id":"q67","verdict":"fail","confidence":0.85,"rationale":"The checkbox is checked but has aria-checked='false', so assistive technology reports unchecked; nothing in the evidence shows a script correcting it."}
+{"id":"q68","verdict":"fail","confidence":0.8,"rationale":"The #returns content is fully shown with no hidden attribute while the toggle says aria-expanded='false', so screen reader users are told it is collapsed."}
 {"id":"q69","verdict":"pass","confidence":0.9,"rationale":"The only content outside landmarks is the 'Skip to content' link, which needs no landmark."}
-{"id":"q72","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
-{"id":"q73","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
-{"id":"q74","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
-{"id":"q75","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
-{"id":"q76","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
-{"id":"q77","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
-{"id":"q82","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
-{"id":"q83","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
-{"id":"q84","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
-{"id":"q93","verdict":"pass","confidence":0.7,"rationale":"'Demo Shop' sits in the header just before the main navigation and reads as the site name, not a title for following section text."}
-{"id":"q94","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
-{"id":"q95","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
-{"id":"q96","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
-{"id":"q97","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
-{"id": "q56", "verdict": "pass", "confidence": 0.75, "rationale": "The alt 'Canvas garden bag' matches the heading and what the image shows (a bag), so it identifies the image accurately in context."}
-{"id": "q61", "verdict": "pass", "confidence": 0.9, "rationale": "The hover handlers only toggle the link's text decoration, a cosmetic effect; the link itself works with the keyboard."}
-{"id": "q62", "verdict": "fail", "confidence": 0.85, "rationale": "Hovering the image writes product information ('Holds 20 litres, washable at 30 degrees.') into the page, and the image cannot take keyboard focus, so keyboard users cannot get that information."}
-{"id": "q63", "verdict": "fail", "confidence": 0.9, "rationale": "The onfocus handler calls this.blur() unconditionally, so focus is removed as soon as the tabbable Cart link receives it."}
-{"id": "q65", "verdict": "fail", "confidence": 0.6, "rationale": "The Back to top link is positioned off-screen by the 'offscreen' class and the checker found no focus rule bringing it into view, so focus lands on an invisible element."}
-{"id": "q66", "verdict": "fail", "confidence": 0.75, "rationale": "A focusable button is nested inside a link, both with the name 'Buy'; the inner control is not reliably reachable or announced on its own and its activation is ambiguous."}
-{"id": "q67", "verdict": "fail", "confidence": 0.85, "rationale": "The checkbox is checked but has aria-checked='false', so assistive technology reports unchecked; nothing in the evidence shows a script correcting it."}
-{"id": "q68", "verdict": "fail", "confidence": 0.8, "rationale": "The #returns content is fully shown with no hidden attribute while the toggle says aria-expanded='false', so screen reader users are told it is collapsed."}
-{"id": "q70", "verdict": "fail", "confidence": 0.8, "rationale": "No element with id 'content' exists (targetExists false; main has no id), so the skip link does not move focus past the header and navigation."}
-{"id": "q71", "verdict": "fail", "confidence": 0.85, "rationale": "tabindex='1' on a footer Privacy link makes it the first Tab stop, ahead of the skip link and 10 other stops, pulling focus out of reading order."}
-{"id": "q78", "verdict": "fail", "confidence": 0.9, "rationale": "The focus walk shows the Home link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
-{"id": "q79", "verdict": "fail", "confidence": 0.9, "rationale": "The focus walk shows the Products link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
-{"id": "q80", "verdict": "fail", "confidence": 0.9, "rationale": "The focus walk shows the Cart link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
-{"id": "q81", "verdict": "pass", "confidence": 0.9, "rationale": "On focus the Help link changes background, text colour and underline (682 pixels changed), so focus remains visible without an outline."}
-{"id": "q85", "verdict": "fail", "confidence": 0.9, "rationale": "The Home link shows no focus indicator: 0 pixels changed at 3:1 against 244 needed, meets false."}
-{"id": "q86", "verdict": "fail", "confidence": 0.9, "rationale": "The Products link shows no focus indicator: 0 pixels changed at 3:1 against 336 needed, meets false."}
-{"id": "q87", "verdict": "fail", "confidence": 0.9, "rationale": "The Cart link shows no focus indicator: 0 pixels changed at 3:1 against 192 needed, meets false."}
-{"id": "q88", "verdict": "pass", "confidence": 0.85, "rationale": "The Help link's focus change covers 584 pixels at 3:1 or more, above the 204 needed, and meets is true."}
-{"id": "q89", "verdict": "fail", "confidence": 0.9, "rationale": "Nothing changes on the Home link on focus, so there is no indicator to meet 3:1."}
-{"id": "q90", "verdict": "fail", "confidence": 0.9, "rationale": "Nothing changes on the Products link on focus, so there is no indicator to meet 3:1."}
-{"id": "q91", "verdict": "fail", "confidence": 0.9, "rationale": "Nothing changes on the Cart link on focus, so there is no indicator to meet 3:1."}
-{"id": "q92", "verdict": "pass", "confidence": 0.85, "rationale": "The Help link's focus change has 584 of 682 changed pixels at 3:1 or more, far more than a one-pixel outline (106), so it is clearly visible."}
+{"id":"q70","verdict":"fail","confidence":0.8,"rationale":"No element with id 'content' exists (targetExists false; main has no id), so the skip link does not move focus past the header and navigation."}
+{"id":"q71","verdict":"fail","confidence":0.85,"rationale":"tabindex='1' on a footer Privacy link makes it the first Tab stop, ahead of the skip link and 10 other stops, pulling focus out of reading order."}
+{"id":"q78","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
+{"id":"q79","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
+{"id":"q80","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
+{"id":"q81","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
+{"id":"q82","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
+{"id":"q83","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
+{"id":"q84","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Home link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
+{"id":"q85","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Products link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
+{"id":"q86","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Cart link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
+{"id":"q87","verdict":"pass","confidence":0.9,"rationale":"On focus the Help link changes background, text colour and underline (682 pixels changed), so focus remains visible without an outline."}
+{"id":"q88","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
+{"id":"q89","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
+{"id":"q90","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
+{"id":"q91","verdict":"fail","confidence":0.9,"rationale":"The Home link shows no focus indicator: 0 pixels changed at 3:1 against 244 needed, meets false."}
+{"id":"q92","verdict":"fail","confidence":0.9,"rationale":"The Products link shows no focus indicator: 0 pixels changed at 3:1 against 336 needed, meets false."}
+{"id":"q93","verdict":"fail","confidence":0.9,"rationale":"The Cart link shows no focus indicator: 0 pixels changed at 3:1 against 192 needed, meets false."}
+{"id":"q94","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change covers 584 pixels at 3:1 or more, above the 204 needed, and meets is true."}
+{"id":"q95","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Home link on focus, so there is no indicator to meet 3:1."}
+{"id":"q96","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Products link on focus, so there is no indicator to meet 3:1."}
+{"id":"q97","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Cart link on focus, so there is no indicator to meet 3:1."}
+{"id":"q98","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change has 584 of 682 changed pixels at 3:1 or more, far more than a one-pixel outline (106), so it is clearly visible."}
+{"id":"q99","verdict":"pass","confidence":0.7,"rationale":"'Demo Shop' sits in the header just before the main navigation and reads as the site name, not a title for following section text."}
+{"id":"q100","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
+{"id":"q101","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
+{"id":"q102","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
+{"id":"q103","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
+{"id":"q72","verdict":"fail","confidence":0.9,"rationale":"The pixel measurement says nearly the whole box (nearTextShare 1) is drawn almost in the text colour. That means the near-white gradient is about the same colour as the white banner text, so contrast is far below 4.5:1."}
+{"id":"q73","verdict":"pass","confidence":0.9,"rationale":"White 18px regular text on the dark green gradient has a median ratio of 14.08 and a 10th percentile of 11.39. Only 4% of pixels fall below 4.5:1, which fits antialiased edges."}
+{"id":"q74","verdict":"pass","confidence":0.85,"rationale":"The title 'Seeds - Demo Shop' matches the page's only heading, 'Seeds', and names the site, so it says what the page is about."}
+{"id":"q75","verdict":"fail","confidence":0.7,"rationale":"The teaser has a fixed height of 2.6em with overflow hidden. With the spacing applied it shows only 1 of its 2 lines, and the context has no 'read more' link or other way to reach the full text."}
+{"id":"q76","verdict":"pass","confidence":0.6,"rationale":"The !important letter-spacing comes from a style sheet rule, not an inline style, so a user style sheet or an inline !important style can still override it. 'SALE' is one short word that reads fine either way."}
+{"id":"q77","verdict":"pass","confidence":0.6,"rationale":"A later viewport tag (width=device-width, initial-scale=1) replaces the restricting one, and current browsers apply the last viewport tag, so pinch zoom is not blocked. Browsers have not always agreed on this, so confidence is moderate."}
