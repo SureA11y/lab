@@ -29,17 +29,22 @@ are done: **exact contrast** in the lab (the background under each glyph,
 read with the text hidden for a moment; the measure lane's real cases 144 of
 144), **labels by WCAG's reading** (15 GOV.UK labels re-read), and **trust
 per check** (`ai:agreement`'s Trusted column; `ai-cant-tell-eval/trust.md`:
-6 of 33 checks trusted). Phase 1 so far: steps 1, 3 and 4 done, the AI
-answers 67 of the 132 checks that can end in "can't tell" (the `read`,
-`walk` and `measure` lanes); demo 103 of 103; prompt version `registry-17`.
-Still to ask the user: the engine's repository, for decision 4. The full suite (4492 pass, 5 skipped) and the
-browser tests (`focus-walk` 17, `ai-answer` 11, `app-boot` 17) pass.
+6 of 33 checks trusted). Then **pictures (decision 5)**: `ai: { pictures:
+true }` per step, allowed by the server's `A11Y_AI_PICTURES`, and
+`image-of-text` answered; measured on the demo (114 of 114; the two
+picture-only cases open without pictures) and the W3C pages (40 of 41 both
+ways; the news photo leans fail with its picture, pass without, open both
+times). Phase 1 so far: steps 1, 3 and 4 done and step 5's picture check,
+the AI answers 68 of the 132 checks that can end in "can't tell"; demo 114
+of 114; prompt version `registry-18`. Still to ask the user: the engine's
+repository, for decision 4. The full suite (4498 pass) and the browser
+tests (`ai-answer` 12) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
-AI for every "can't tell" from the rules: 67 of 132 checks are answered
+AI for every "can't tell" from the rules: 68 of 132 checks are answered
 today: steps 1, 3 and 4 are done (every `read`, `walk` and `measure`
 check); left: step 2 (23 "name present" checks, from the browser's
-accessibility tree, waiting on the user), step 5 (9 checks needing pictures,
+accessibility tree, waiting on the user), step 5 (8 checks needing
 media or further use of the page) and the 32 `code` checks (roadmap
 decision 3). Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
@@ -54,17 +59,19 @@ are in `ai-cant-tell-roadmap.md`, "Decisions": every recommended option.
    trust (`ai:agreement`'s Trusted column; `ai-cant-tell-eval/trust.md`
    from `trust-table.js`: 6 of 33 checks trusted). Details in the eval
    README.
-2. **Pictures (decision 5), next:** `ai: { pictures: true }` per step, off by
-   default, forbidden by the server unless `A11Y_AI_PICTURES` allows it
-   (and per allowed site); masked areas never sent; the built-in call sends
-   the element's picture as an image block, the endpoint as today
-   (`A11Y_AI_ENDPOINT_PICTURE`). Then `image-of-text` (the `picture` lane)
-   and a measurement on the alt questions and the W3C news photo. To
-   evaluate without a key: have `answer-offline.js prompts` also write each
-   question's picture to a file beside the questions, and tell the answering
-   agents they may open the picture named in their prompt (they can read
-   image files); score as before.
-3. **Forms (decision 6):** `ai: { forms: true }` per step, only on hosts in
+2. **Done 2026-11-27: pictures (decision 5).** `ai: { pictures: true }`
+   per step, off by default; the server's `A11Y_AI_PICTURES` (`on`, or
+   hosts) must allow it; only the questions marked `picture: true` in the
+   registry send one; a picture showing a value typed in a field is never
+   sent (`evidence.pictureNotSent`); the built-in call sends it as an image
+   block after the cached evidence (`contentFor` in `provider.js`), an
+   endpoint gets it in the question (`picture: true`). `image-of-text`
+   answered (`registry-18`). `answer-offline.js prompts` writes the
+   pictures beside the questions (`picture` names the file). Results and
+   how to repeat: the eval README, "Pictures to the model". Open: more
+   picture-only cases on a real site (raster image buttons, photos whose
+   alt claims more than they show) before wider use.
+3. **Forms (decision 6), next:** `ai: { forms: true }` per step, only on hosts in
    `A11Y_AI_FORM_HOSTS` (test systems); fill and submit with invalid input
    for `invalid-field-error-message`, paste for `password-paste-enabled`,
    watch `live-region-announcements`; data-changing requests stay blocked

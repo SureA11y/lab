@@ -874,3 +874,64 @@ pick up").
   (56 cases, 98%) is held back by its one wrong pass (the W3C news photo).
   The rest have fewer than 30 cases. Labels are the assistant's: trust is
   provisional until a person labels the runs.
+
+## Pictures to the model: decision 5 measured (2026-11-27)
+
+With `ai: { pictures: true }` (and `A11Y_AI_PICTURES` allowing the site), the
+image and text alternative questions and `image-of-text` also send the
+element's picture. Measured, as decision 5 asks, before wider use: each set
+answered blind twice, by one answerer with the pictures (opened from the
+files `answer-offline.js prompts` now writes beside the questions) and by
+another with the same prompts without them.
+
+**The demo** (`examples/specs/ai-answers.spec.json`, `pictures` on its
+reading step; four new `image-of-text` cases and their alt questions):
+**114 of 114 agree** with pictures ([demo/score.txt](demo/score.txt),
+pictures in [demo/pictures/](demo/pictures/)). Of the 26 picture questions,
+without the pictures 24 agree and 2 stay open
+([demo-pictures/](demo-pictures/)): the two image buttons drawn as PNGs, one
+the word "Go" (fail), one a magnifier (pass). Neither the markup nor the
+file name says what they show; the picture settles both at 0.9. The SVG
+cases (the "Check" buttons, the logo, the text banner) are read from the
+SVG's source either way.
+
+**The W3C Before and After pages** (`examples/specs/ai-answers-w3c-pictures.spec.json`,
+the eight pages, reading questions only): 200 questions, 41 with a picture
+(31 `img-alt-quality`, 10 `img-alt-decorative`), all labelled by matching
+the [w3c-bad](w3c-bad/) labels (by review key; 8 fail, 33 pass). In
+[w3c-pictures/](w3c-pictures/):
+
+| | Agree | Open | Wrong pass | Wrong fail |
+| --- | --- | --- | --- | --- |
+| With pictures | 40 | 1 | 0 | 0 |
+| Without | 40 | 1 | 0 | 0 |
+
+The one open is the **news photo** (Note 10) both times, but it moves the
+right way: without the picture the answer leaned **pass** (0.55, "the alt
+describes the story"), with it **fail** (0.55, "the photo shows a woman in
+front of a canyon; the alt asserts an activity the image does not show").
+Below the 0.6 threshold either way, so it stays a person's; the earlier runs
+passed it outright twice.
+
+**What it says.** Pictures change nothing where the text already settles the
+question (alt text read against its context, SVG sources), and settle the
+cases only a picture can: a raster image button's text, what a photo shows.
+Few cases yet (2 picture-only on the demo, 1 hard photo on the W3C pages):
+not enough to trust pictures more widely, enough to keep them opt-in as
+decided. Next measurement: a site with raster image buttons or banners, and
+photos whose alt claims more than they show.
+
+This run is a re-run of the W3C pages already counted in
+[trust.md](trust.md), so the trust table leaves it out.
+
+### Replicate
+
+```bash
+node examples/serve-demo-site.js &
+A11Y_AI_PREVIEW=on A11Y_AI_PICTURES=localhost node src/cli/run-workflow.js examples/specs/ai-answers.spec.json --out runs/ai-demo
+A11Y_AI_PREVIEW=on A11Y_AI_PICTURES=www.w3.org node src/cli/run-workflow.js examples/specs/ai-answers-w3c-pictures.spec.json --out runs/w3c-pictures
+node docs/design/ai-cant-tell-spike/answer-offline.js prompts runs/w3c-pictures/ai-sent.json runs/w3c-pictures/questions.jsonl
+```
+
+A question with a `picture` field names its file (`pictures/q7.jpg`, beside
+`questions.jsonl`); the answerer looks at it with the prompt.

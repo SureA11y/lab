@@ -1,0 +1,41 @@
+{"id": "q1", "verdict": "fail", "confidence": 0.9, "rationale": "The link's only content is the 'MORE >>' arrow image with alt=\"\", so the link to news.html has no accessible name (F89)."}
+{"id": "q2", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'W3C logo' names the organisation the link goes to (link title 'W3C Home'), so the control's destination is identifiable."}
+{"id": "q3", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'Web Accessibility Initiative (WAI) logo' names WAI, matching the link's destination (WAI Home), so the purpose is identifiable."}
+{"id": "q4", "verdict": "fail", "confidence": 0.7, "rationale": "The 343-character alt is a visual description of the logo, not the link's purpose; it never says the link goes to the home page."}
+{"id": "q5", "verdict": "fail", "confidence": 0.6, "rationale": "The image is a decorative bullet arrow; alt 'bullet' is a generic word that adds noise rather than conveying needed content."}
+{"id": "q6", "verdict": "fail", "confidence": 0.95, "rationale": "The image shows the phone number '(1) 269 C-H-O-K-E' but the alt is only '[phone]', so the number is lost."}
+{"id": "q19", "verdict": "fail", "confidence": 0.85, "rationale": "The image is a bar chart of brain donations by month with data values, yet alt=\"\" hides it and the evidence shows no text giving the data."}
+{"id": "q20", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'W3C logo' names the organisation the link goes to (link title 'W3C Home'), so the control's destination is identifiable."}
+{"id": "q21", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'Web Accessibility Initiative (WAI) logo' names WAI, matching the link's destination (WAI Home), so the purpose is identifiable."}
+{"id": "q22", "verdict": "fail", "confidence": 0.75, "rationale": "The image is the sole content of a link to an offsite page, but alt 'picture of Clara F.' describes the photo rather than the link destination."}
+{"id": "q23", "verdict": "fail", "confidence": 0.55, "rationale": "The photo shows a woman in front of a canyon; the alt asserts an activity (shipping hot air to Australia) that the image does not show."}
+{"id": "q31", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'W3C logo' names the organisation the link goes to (link title 'W3C Home'), so the control's destination is identifiable."}
+{"id": "q32", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'Web Accessibility Initiative (WAI) logo' names WAI, matching the link's destination (WAI Home), so the purpose is identifiable."}
+{"id": "q33", "verdict": "fail", "confidence": 0.9, "rationale": "The image shows the phone number '(1) 269 M-U-S-I-C' but the alt 'music line phone number' omits the number itself."}
+{"id": "q40", "verdict": "pass", "confidence": 0.95, "rationale": "The image is a fully transparent spacer GIF used for table layout; hiding it loses nothing."}
+{"id": "q41", "verdict": "pass", "confidence": 0.95, "rationale": "The image is a fully transparent spacer GIF used for table layout; hiding it loses nothing."}
+{"id": "q42", "verdict": "pass", "confidence": 0.95, "rationale": "The image is a fully transparent spacer GIF used for table layout; hiding it loses nothing."}
+{"id": "q43", "verdict": "pass", "confidence": 0.95, "rationale": "The image is a fully transparent spacer GIF used for table layout; hiding it loses nothing."}
+{"id": "q44", "verdict": "pass", "confidence": 0.95, "rationale": "The image is a fully transparent spacer GIF used for table layout; hiding it loses nothing."}
+{"id": "q45", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'W3C logo' names the organisation the link goes to (link title 'W3C Home'), so the control's destination is identifiable."}
+{"id": "q46", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'Web Accessibility Initiative (WAI) logo' names WAI, matching the link's destination (WAI Home), so the purpose is identifiable."}
+{"id": "q58", "verdict": "pass", "confidence": 0.7, "rationale": "Illustrative teaser photo (man in a cardboard sun hat) beside the linked headline 'Heat wave linked to temperatures'; the text carries the content."}
+{"id": "q59", "verdict": "pass", "confidence": 0.7, "rationale": "Illustrative photo of a violin in a case beside the linked headline 'Man Gets Nine Months in Violin Case'; the headline already gives the meaning."}
+{"id": "q60", "verdict": "pass", "confidence": 0.7, "rationale": "Illustrative photo of a brain beside the linked headline 'Lack of brains hinders research'; nothing essential is lost."}
+{"id": "q61", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'W3C logo' names the organisation the link goes to (link title 'W3C Home'), so the control's destination is identifiable."}
+{"id": "q62", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'Web Accessibility Initiative (WAI) logo' names WAI, matching the link's destination (WAI Home), so the purpose is identifiable."}
+{"id": "q63", "verdict": "pass", "confidence": 0.85, "rationale": "Alt 'Citylights: your access to the city.' reproduces the logo text exactly; the wrapping <a> has no href so no destination is needed."}
+{"id": "q64", "verdict": "pass", "confidence": 0.85, "rationale": "The image is a sun-and-cloud weather icon and alt 'Sunny Spells' conveys its meaning."}
+{"id": "q65", "verdict": "pass", "confidence": 0.75, "rationale": "The photo shows a performer on a dark stage; alt 'Free Penguins playing on stage' accurately identifies it in the concert teaser context."}
+{"id": "q66", "verdict": "pass", "confidence": 0.7, "rationale": "The photo shows a white flower blooming; alt 'Anemone-Snowdrop flower blooming' matches it."}
+{"id": "q95", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'W3C logo' names the organisation the link goes to (link title 'W3C Home'), so the control's destination is identifiable."}
+{"id": "q96", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'Web Accessibility Initiative (WAI) logo' names WAI, matching the link's destination (WAI Home), so the purpose is identifiable."}
+{"id": "q97", "verdict": "pass", "confidence": 0.65, "rationale": "Site logo linking to home.html with alt giving the site name and slogan, matching the image text; identifies the Citylights home link."}
+{"id": "q98", "verdict": "pass", "confidence": 0.85, "rationale": "Weather icon of sun and cloud; alt 'Sunny Spells' conveys its meaning."}
+{"id": "q99", "verdict": "pass", "confidence": 0.9, "rationale": "Photo of a woman in front of a canyon; alt 'Mrs B. Wahoonie in front of a canyon' accurately describes it."}
+{"id": "q100", "verdict": "pass", "confidence": 0.85, "rationale": "The image is a link to an offsite page and alt \"Clara F.'s website\" states the destination."}
+{"id": "q101", "verdict": "pass", "confidence": 0.95, "rationale": "Alt lists May 13, June 13, July 12, August 8, September 7, matching the bar chart shown."}
+{"id": "q136", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'W3C logo' names the organisation the link goes to (link title 'W3C Home'), so the control's destination is identifiable."}
+{"id": "q137", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'Web Accessibility Initiative (WAI) logo' names WAI, matching the link's destination (WAI Home), so the purpose is identifiable."}
+{"id": "q186", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'W3C logo' names the organisation the link goes to (link title 'W3C Home'), so the control's destination is identifiable."}
+{"id": "q187", "verdict": "pass", "confidence": 0.7, "rationale": "Alt 'Web Accessibility Initiative (WAI) logo' names WAI, matching the link's destination (WAI Home), so the purpose is identifiable."}

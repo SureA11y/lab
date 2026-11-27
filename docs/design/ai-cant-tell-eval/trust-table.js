@@ -28,7 +28,8 @@ const QUESTION_RUNS = ['svg-w3c', 'image-buttons', 'media-alt', 'names-labels', 
 // Left out as re-runs of pages counted above: govuk-open (the GOV.UK keyboard
 // pages again, with the open walk), walk-lane-read (the same elements as
 // walk-lane-walk, without the walk), measure-lane (the same cases as
-// measure-lane-exact, measured by colour).
+// measure-lane-exact, measured by colour), w3c-pictures (the W3C pages of
+// w3c-bad again, the picture questions with pictures).
 
 // The labels of the GOV.UK runs were re-read by WCAG's reading (decision 7)
 // after their tables were written: the changes, by check, to apply to them.

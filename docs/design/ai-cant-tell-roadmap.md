@@ -16,12 +16,12 @@ by what would settle it:
 
 | Lane | What settles it | Checks | Phase 1 |
 | --- | --- | --- | --- |
-| `answered` | The AI answers it today | 67 | Polish (below) |
+| `answered` | The AI answers it today | 68 | Polish (below) |
 | `read` | The AI, from the element and the text around it, as today | 0 | Step 1 (done 2026-11-27) |
 | `tree` | The browser's own accessibility tree, no model | 23 | Step 2, in the engine (decision 4) |
 | `walk` | The AI, from the focus or open walk, or a small extension | 0 | Step 3 (done 2026-11-27) |
 | `measure` | A measurement by the lab, then the AI or a person | 0 | Step 4 (done 2026-11-27) |
-| `picture` | The AI, once it can see the picture | 1 | Step 5 |
+| `picture` | The AI, once it can see the picture | 0 | Step 5 (`image-of-text` done 2026-11-27) |
 | `media` | Audio, video or time | 5 | Step 5 |
 | `interact` | Using the page further (errors, announcements) | 3 | Step 5 |
 | `code` | The markup states it; a person confirms | 32 | A person, no AI (decision 3) |
@@ -101,8 +101,9 @@ measures focus), `text-spacing-content-loss`, `avoid-inline-spacing`,
 `reflow-horizontal-scroll`, `resize-text-content-loss`, `target-size-minimum`,
 `target-size-enhanced`.
 
-**Step 5: `picture`, `media`, `interact` (9 checks).** `image-of-text` needs
-pictures sent to the model (Decision 5); `video-caption`,
+**Step 5: `picture`, `media`, `interact` (9 checks).** `image-of-text`
+(**done 2026-11-27**, `registry-18`: read from an SVG's source, or seen in
+the picture a step sends with `pictures: true`, Decision 5); `video-caption`,
 `media-alternative-transcript-evidence`, `no-autoplay-audio`,
 `moving-content-pausable`, `deprecated-elements-not-used` need the media or
 time (a pause control can be looked for by reading); `live-region-announcements`,
@@ -156,7 +157,8 @@ what it means for the work:
    (an `A11Y_AI_PICTURES` setting, off on customer sites unless allowed);
    masked areas are never sent. Measured first on the questions that need
    it (`image-of-text`, the alt questions, the W3C news photo the model
-   keeps getting wrong) before wider use.
+   keeps getting wrong) before wider use. **Built and measured 2026-11-27**
+   (eval README, "Pictures to the model").
 6. **Using forms further: opt-in, test hosts only.** Off by default; a step
    turns it on, and the server allows it only on hosts listed as test
    systems (an `A11Y_AI_FORM_HOSTS` setting); requests that change data stay
