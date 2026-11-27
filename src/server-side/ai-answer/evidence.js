@@ -49,7 +49,7 @@ async function collectEvidence(page, occurrence, wanted) {
     if (wanted.includes('reported') && occurrence.details && typeof occurrence.details === 'object') {
         out.reported = boundedCopy(occurrence.details, 1500);
     }
-    if (!wanted.includes('context') && !wanted.includes('pageTitle') && !wanted.includes('image')) return out;
+    if (!['context', 'pageTitle', 'image', 'table', 'outline', 'landmarks'].some((w) => wanted.includes(w))) return out;
     try {
         const read = await page.evaluate(async (sel, want, ctxChars, imgChars) => {
             const res = {};
@@ -67,6 +67,44 @@ async function collectEvidence(page, occurrence, wanted) {
                 res.context = at >= 0
                     ? html.slice(Math.max(0, at - ctxChars), at + own.length + ctxChars)
                     : html.slice(0, ctxChars * 2);
+            }
+            const clipText = (t, n) => (t || '').replace(/\s+/g, ' ').trim().slice(0, n);
+            // The table the element is in (or is): its caption and first rows,
+            // each cell marked header (th, with its scope) or data.
+            if (want.includes('table') && el) {
+                const table = el.closest('table') || el.querySelector('table');
+                if (table) {
+                    const rows = [...table.rows];
+                    res.table = {
+                        caption: table.caption ? clipText(table.caption.textContent, 120) : null,
+                        role: table.getAttribute('role'), ariaLabel: table.getAttribute('aria-label'),
+                        rowCount: rows.length, columnCount: Math.max(0, ...rows.map((r) => r.cells.length)),
+                        rows: rows.slice(0, 6).map((r) => [...r.cells].slice(0, 8).map((c) => (c.tagName === 'TH' ? 'th' + (c.getAttribute('scope') ? '[' + c.getAttribute('scope') + ']' : '') + ': ' : '') + clipText(c.textContent, 40) + (c === el || c.contains(el) ? ' ←' : ''))),
+                        nestedTables: table.querySelectorAll('table').length,
+                    };
+                }
+            }
+            // The page's headings in order, the element's marked.
+            if (want.includes('outline')) {
+                const hs = [...document.querySelectorAll('h1,h2,h3,h4,h5,h6,[role="heading"]')];
+                res.outline = hs.slice(0, 40).map((h) => {
+                    const level = Number(h.getAttribute('aria-level')) || Number(h.tagName.slice(1)) || 2;
+                    return 'h' + level + ' ' + clipText(h.textContent, 80) + (el && (h === el || h.contains(el)) ? ' ←' : '');
+                });
+            }
+            // The page's landmarks (role, name, its first text), its skip links
+            // and how much is outside every landmark.
+            if (want.includes('landmarks')) {
+                const roleOf = (e) => e.getAttribute('role') || ({ HEADER: e.closest('article,aside,main,nav,section') ? null : 'banner', FOOTER: e.closest('article,aside,main,nav,section') ? null : 'contentinfo', NAV: 'navigation', MAIN: 'main', ASIDE: 'complementary', SEARCH: 'search', FORM: (e.getAttribute('aria-label') || e.getAttribute('aria-labelledby')) ? 'form' : null, SECTION: (e.getAttribute('aria-label') || e.getAttribute('aria-labelledby')) ? 'region' : null })[e.tagName] || null;
+                const marks = [...document.querySelectorAll('header,footer,nav,main,aside,search,form,section,[role]')].filter((e) => /^(banner|contentinfo|navigation|main|complementary|search|form|region)$/.test(roleOf(e) || ''));
+                const skip = [...document.querySelectorAll('a[href^="#"]')].slice(0, 3).filter((a) => /skip|jump|main|content/i.test(a.textContent)).map((a) => ({ text: clipText(a.textContent, 60), to: a.getAttribute('href'), targetExists: !!document.getElementById(a.getAttribute('href').slice(1)) }));
+                const inLandmark = (n) => marks.some((m) => m.contains(n));
+                const outside = [...document.body.children].filter((c) => !/^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT)$/.test(c.tagName) && !inLandmark(c) && !marks.includes(c) && clipText(c.textContent, 1)).slice(0, 5).map((c) => '<' + c.tagName.toLowerCase() + (c.id ? '#' + c.id : '') + (c.className && typeof c.className === 'string' ? '.' + c.className.split(' ')[0] : '') + '> ' + clipText(c.textContent, 60));
+                res.landmarks = {
+                    list: marks.slice(0, 15).map((m) => ({ role: roleOf(m), name: m.getAttribute('aria-label') || null, firstText: clipText(m.textContent, 60), isElement: el ? (m === el || m.contains(el)) : false })),
+                    skipLinks: skip, outsideLandmarks: outside,
+                    headings: document.querySelectorAll('h1,h2,h3,h4,h5,h6').length,
+                };
             }
             if (want.includes('pageTitle')) {
                 res.pageTitle = {
@@ -185,6 +223,9 @@ async function collectEvidence(page, occurrence, wanted) {
         }, selector, wanted, CONTEXT_CHARS, IMAGE_CHARS);
         if (read.context) out.context = read.context;
         if (read.pageTitle) out.pageTitle = read.pageTitle;
+        if (read.table) out.table = read.table;
+        if (read.outline) out.outline = read.outline;
+        if (read.landmarks) out.landmarks = read.landmarks;
         if (read.image) out.image = read.image;
         if (read.imageSvgUrl) {
             // An SVG's source says what is drawn; fetched in the page, so with

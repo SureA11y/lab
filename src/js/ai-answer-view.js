@@ -592,6 +592,18 @@ export function keyFactRows(check, evidence, { escapeHtml }) {
             add('Accessible name', nameOf(f));
             if (f.nearestHeadingBefore) add('Heading before it', q(f.nearestHeadingBefore));
         }
+        // The table, the heading outline, the landmarks, as the model got them.
+        if (ev.table && Array.isArray(ev.table.rows)) {
+            const t = ev.table;
+            add('The table', escapeHtml((t.caption ? 'caption "' + t.caption + '", ' : 'no caption, ') + t.rowCount + ' rows, ' + t.columnCount + ' columns') + '<br>' + t.rows.map((r) => escapeHtml(r.join(' | '))).join('<br>'));
+        }
+        if (Array.isArray(ev.outline) && ev.outline.length) add('Headings on the page', ev.outline.map((h) => escapeHtml(h)).join('<br>'));
+        if (ev.landmarks && Array.isArray(ev.landmarks.list)) {
+            const l = ev.landmarks;
+            add('Landmarks', l.list.length ? l.list.map((m) => escapeHtml(m.role + (m.name ? ' "' + m.name + '"' : '') + ': ' + m.firstText)).join('<br>') : '<span class="air-none">(none)</span>');
+            if (l.skipLinks && l.skipLinks.length) add('Skip links', l.skipLinks.map((k) => escapeHtml(k.text + ' to ' + k.to + (k.targetExists ? '' : ' (no such target)'))).join('<br>'));
+            if (l.outsideLandmarks && l.outsideLandmarks.length) add('Outside every landmark', l.outsideLandmarks.map((x) => escapeHtml(x)).join('<br>'));
+        }
         // What the checker itself reported (`reported`), as it said it.
         if (ev.reported && typeof ev.reported === 'object') {
             const show = (v) => (Array.isArray(v) ? v.map(show).join(', ') : v && typeof v === 'object' ? JSON.stringify(v) : String(v));

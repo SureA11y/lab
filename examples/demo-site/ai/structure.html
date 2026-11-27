@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Delivery and care - Demo Shop</title><link rel="stylesheet" href="../style.css">
+<style>
+  .site-header { padding: 8px; background: #2d6a4f; color: #fff; }
+  .card { display: inline-block; padding: 10px; margin: 6px; background: #e9efe9; cursor: pointer; }
+</style></head>
+<!-- The AI answers demo, structure. Each case has a known answer, in
+     expected.json beside this page. -->
+<body>
+<div class="site-header" id="site-header">Demo Shop · <a href="../index.html" accesskey="s">Shop</a> · <a href="../products.html" accesskey="s">Search</a></div>
+<main>
+  <h1>Delivery and care</h1>
+  <h2>Order</h2>
+  <form action="#" onsubmit="return false">
+    <p>How fast should it come?</p>
+    <p><input type="radio" id="speed-standard" name="speed" value="standard"> <label for="speed-standard">Standard</label>
+       <input type="radio" id="speed-express" name="speed" value="express"> <label for="speed-express">Express</label></p>
+    <p><label for="card">Card number</label> <input id="card" type="text" autocomplete="cc-number"> <label for="card">Name on card</label></p>
+  </form>
+  <h2>Shop hours</h2>
+  <table id="hours">
+    <tr><td colspan="2">Opening hours</td></tr>
+    <tr><td>Monday to Friday</td><td>9:00 to 18:00</td></tr>
+    <tr><td>Saturday</td><td>10:00 to 16:00</td></tr>
+  </table>
+  <table id="promises"><tr><td>Free delivery over 40 €</td><td>Returns within 30 days</td></tr></table>
+  <table id="visits">
+    <tr><th scope="col">Day</th><th scope="col">Opens</th><th scope="col">Closes</th><th scope="col">Notes</th></tr>
+    <tr><td>Sunday</td><td>11:00</td><td>15:00</td></tr>
+  </table>
+  <table id="prices">
+    <tr><th></th><th scope="col">Small</th><th scope="col">Large</th></tr>
+    <tr><th scope="row">Pots</th><td>4 €</td><td>9 €</td></tr>
+    <tr><th scope="row">Soil</th><td>3 €</td><td>7 €</td></tr>
+  </table>
+  <h2>Care guides</h2>
+  <h4>Roses</h4>
+  <p>Water roses in the morning and feed them every two weeks in summer.</p>
+  <div class="card" id="card-tulips" role="article" tabindex="0" onclick="location.href='../products.html'">Tulips: plant the bulbs in autumn</div>
+  <p><img id="sale-badge" src="../images/half-price.svg" width="60" height="30" alt="" aria-label="Sale"> on pots.</p>
+</main>
+</body>
+</html>

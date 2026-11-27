@@ -268,6 +268,104 @@
       "why": "The footer's navigation, unnamed like the header's, holds different links."
     },
     {
+      "page": "ai/structure.html",
+      "check": "img-alt-decorative",
+      "target": "#sale-badge",
+      "expected": "fail",
+      "why": "The badge shows \"−50%\" next to \"on pots\": it carries the offer, so it is not decorative."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "table-th-has-data-cells",
+      "target": "#visits > tbody > tr:nth-of-type(1) > th:nth-of-type(4)",
+      "expected": "fail",
+      "why": "A \"Notes\" column header with no cell under it: the header describes nothing."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "table-fake-caption",
+      "target": "#hours",
+      "expected": "fail",
+      "why": "\"Opening hours\" is the table's title shown as its first row, not a caption."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "form-group-name-present",
+      "target": "#speed-standard",
+      "expected": "fail",
+      "why": "\"Standard\" and \"Express\" answer \"How fast should it come?\", which is only a paragraph before them, not tied to the options."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Delivery and care - Demo Shop\" says what the page is about and names the site."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "form-control-single-label",
+      "target": "#card",
+      "expected": "fail",
+      "why": "The card number field is also labelled \"Name on card\", a label for another field: its name reads \"Card number Name on card\"."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "accesskeys",
+      "target": "#site-header > a:nth-of-type(1)",
+      "expected": "fail",
+      "why": "\"Shop\" and \"Search\" both use accesskey s, for different pages: one cannot be reached by its key."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "accesskeys",
+      "target": "#site-header > a:nth-of-type(2)",
+      "expected": "fail",
+      "why": "\"Search\" shares accesskey s with \"Shop\", a different page."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "empty-table-header",
+      "target": "#prices > tbody > tr:nth-of-type(1) > th:nth-of-type(1)",
+      "expected": "pass",
+      "why": "The empty top-left corner cell over the row headers \"Pots\" and \"Soil\": nothing is lost."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "focus-order-semantics",
+      "target": "#card-tulips",
+      "expected": "fail",
+      "why": "A card that takes focus and opens a page on click, with role=\"article\": it acts as a link but says it is an article."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "heading-order",
+      "target": "html > body > main > h4",
+      "expected": "fail",
+      "why": "\"Roses\" is an h4 straight under the h2 \"Care guides\": the outline skips a level."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "page-zones-landmark",
+      "target": "#site-header",
+      "expected": "fail",
+      "why": "The site header (name and main links) is a div, not a header: no banner landmark."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "presentation-role-conflict",
+      "target": "#sale-badge",
+      "expected": "fail",
+      "why": "alt=\"\" says decorative but aria-label=\"Sale\" names it, so its role comes back: one of the two is a mistake (it carries the offer)."
+    },
+    {
+      "page": "ai/structure.html",
+      "check": "region",
+      "target": "#site-header",
+      "expected": "fail",
+      "why": "The site header with the main links sits outside every landmark: a landmark user misses it."
+    },
+    {
       "page": "ai/focus.html",
       "check": "page-title-patterns",
       "target": "html > head > title",

@@ -197,3 +197,18 @@ test('a question that asks for it gets what the checker reported, bounded', asyn
     assert.equal(alt.reported, undefined, 'only for a question that asks for it');
     await page.close();
 });
+
+test('structure questions get the table, the heading outline and the landmarks', async () => {
+    const page = await browser.newPage();
+    await page.setContent(`<title>Shop</title><div id="top">Shop · <a href="/">Home</a></div><main><h1>Care</h1><h2>Guides</h2><h4 id="h">Roses</h4>
+<table id="t"><tr><th scope="col">Day</th><th scope="col" id="n">Notes</th></tr><tr><td>Sunday</td></tr></table></main>`);
+    const occ = (check, sel) => ({ atomicCheckId: check, occurrenceOutcome: 'cantTell', target: [sel], html: '<x>' });
+    const c = { findings: [], bestPractices: [{ ruleId: 'x', outcome: 'cantTell', occurrences: [occ('table-th-has-data-cells', '#n'), occ('heading-order', '#h'), occ('region', '#top')] }] };
+    await answerCantTells({ page, canonical: c, env: {}, provider: { ask: async () => '{"verdict":"fail","confidence":0.9,"rationale":"x"}' } });
+    const [table, outline, region] = c.bestPractices[0].occurrences.map((o) => o.ai.evidence);
+    assert.deepEqual(table.table.rows, [['th[col]: Day', 'th[col]: Notes ←'], ['Sunday']]);
+    assert.deepEqual(outline.outline, ['h1 Care', 'h2 Guides', 'h4 Roses ←']);
+    assert.deepEqual(region.landmarks.list.map((m) => m.role), ['main']);
+    assert.match(region.landmarks.outsideLandmarks[0], /^<div#top> Shop/);
+    await page.close();
+});

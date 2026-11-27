@@ -24,7 +24,10 @@
 // label-in-name, control-name-title-only, link-name-quality-link-only,
 // identical-links-same-purpose, identical-iframes-same-purpose,
 // landmark-unique), with what the checker reported (`reported`).
-const PROMPT_VERSION = 'registry-11';
+// registry-12: structure (form groups, labels, tables, heading order,
+// bypass, landmarks, focusable non-controls, presentation conflicts,
+// accesskeys), with the table, the heading outline and the landmarks.
+const PROMPT_VERSION = 'registry-12';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -109,6 +112,58 @@ const ANSWERABLE = Object.freeze({
     },
     'landmark-unique': {
         question: "Two or more landmarks of the same role share one name, or are all unnamed (`reported`: the role, the name, the others). A best practice, not a WCAG failure: does a user moving by landmarks need different names to tell them apart (a main navigation and a footer navigation)? Fail when they hold different things and nothing names them apart; pass when they are the same thing repeated, or a name does tell them apart.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'form-group-name-present': {
+        question: "Radio buttons or checkboxes that share a name are not grouped with a name (no fieldset with a legend, no named group), or are split over differently named groups (`reported`: the name, how many, their type). 1.3.1: do they answer one question whose wording is needed to understand each option (\"Delivery: Standard / Express\")? Fail when the question is only shown visually and not tied to the options; pass when each option's own label is clear on its own, or the shared name is only technical.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'form-control-single-label': {
+        question: "Two or more labels name this field and browsers join them into one name, or an empty label is associated with it (`reported`: how many). 3.3.2: is the joined name still clear and right for the field (a label plus a hint read together)? Fail when it reads as nonsense, repeats itself confusingly, or one label belongs to another field.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'table-fake-caption': {
+        question: "This table has no caption or name, and its first row is one cell of text above rows of several cells (`table`). 1.3.1: is that first row the table's title, shown only by its look (then it should be a caption)? Fail when it is a title; pass when it is data or a header for the cells below.",
+        evidence: ['element', 'context', 'table'],
+    },
+    'td-has-header': {
+        question: "This table has data but no header cell at all (`table`: its first rows). 1.3.1: does it hold data whose cells need headers to be understood (then it fails), or does it only lay out content (pass, as a layout table)?",
+        evidence: ['element', 'context', 'table'],
+    },
+    'table-th-has-data-cells': {
+        question: "No data cell is assigned to this header cell (`table`, marked \u2190). 1.3.1: is the header wrongly marked up (data shown as headers, or a header with no cells under it by mistake: fail), or is it right (an empty column, a header for a later row group: pass)?",
+        evidence: ['element', 'context', 'table', 'reported'],
+    },
+    'empty-table-header': {
+        question: "A best practice, not a WCAG failure: this header cell has no visible text, or is named only by aria-label or aria-labelledby, which some screen readers do not read (`table`, marked \u2190). Does a user lose what the column or row is about? Fail when they do (a header that names data); pass when the cell is a corner cell over row headers, or its column needs no header.",
+        evidence: ['element', 'context', 'table', 'reported'],
+    },
+    'heading-order': {
+        question: "A best practice, not a WCAG failure: this heading skips a level after the previous one (`reported`: from and to). `outline` is the page's headings in order, this one marked \u2190. Does the jump break the outline a screen reader user navigates by (a subsection that looks like it belongs to the wrong section)? Fail when it does; pass when the structure is still clear (a sidebar or a card set at a fixed level).",
+        evidence: ['element', 'context', 'reported', 'outline'],
+    },
+    'bypass-blocks-present': {
+        question: "2.4.1: no main landmark, working skip link or heading was found to skip what repeats on every page. `landmarks` lists the page's landmarks, its skip links, the headings count and what lies outside every landmark. Does this page have blocks repeated across pages (a header, a navigation) before its content that a keyboard user must pass each time? Fail when it does and nothing lets them skip; pass when nothing repeats, or something else lets them skip.",
+        evidence: ['element', 'context', 'landmarks'],
+    },
+    'page-zones-landmark': {
+        question: "A best practice, not a WCAG failure: a block named or placed as the page's header, navigation, search or footer is not exposed as that landmark (`reported`: the zone and why). `landmarks` lists what is exposed. Is it really that zone of the page (then it should be marked up as one: fail), or only named alike (pass)?",
+        evidence: ['element', 'context', 'reported', 'landmarks'],
+    },
+    'region': {
+        question: "A best practice, not a WCAG failure: content is outside every landmark region. `landmarks` lists the page's landmarks and what lies outside them. Is that content something a landmark user would miss (page content: fail), or what may sit outside (a skip link, a hidden or decorative block, a cookie banner over the page: pass)?",
+        evidence: ['element', 'context', 'landmarks'],
+    },
+    'focus-order-semantics': {
+        question: "A best practice, not a WCAG failure: this element is in the Tab order but has a non-interactive role (`reported`: its tabindex and role), so a keyboard user who reaches it is not told what it does. Does it act as a control (it reacts to a click or key: fail, it needs a control's role), or is it focusable for a reason that needs no role (a scrollable region, a dialog's or a section's focus target: pass)?",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'presentation-role-conflict': {
+        question: "A best practice, not a WCAG failure: this element has role=\"presentation\" or \"none\" (or is an img with alt=\"\"), but carries a global aria-* attribute or can take focus, so browsers keep its real role (`reported`: the role, the attributes, whether focusable). Is it meant to be hidden from assistive technology (then the attribute or focus is a mistake: fail), or meant to be read or used (then the presentation role is the mistake: fail too)? Pass only when the conflict changes nothing a user meets.",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'accesskeys': {
+        question: "A best practice, not a WCAG failure: this element's accesskey is also used by other elements on the page (`reported`: the key, how many, the others), so the shortcut may not reach it. Do the elements do different things (fail: one is unreachable by its key), or the same thing (the same link twice: pass)?",
         evidence: ['element', 'context', 'reported'],
     },
     'link-name-quality': {

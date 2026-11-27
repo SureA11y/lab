@@ -151,12 +151,13 @@ them under what needs review, apart from the failures.
 
 ## The AI answers demo
 
-`demo-site/ai/` (not linked from the shop, so its tours are unchanged) has four
+`demo-site/ai/` (not linked from the shop, so its tours are unchanged) has five
 pages for [AI answers](../docs/ai-answers.md):
 
 | Page | What the scan asks, and the correct answer |
 | --- | --- |
 | `ai/reading.html` | A vague title ("Page", fail); alt text that is a file name (fail) and a good one (pass); a "−50%" badge hidden as decorative (fail) and a divider (pass); a bold "Delivery" paragraph that heads a section (fail) and the site name (pass); "Learn more" alone (fail); fields labelled only by `title` or `placeholder` (fail) |
+| `ai/structure.html` (best practices on) | Radio buttons whose question is only a paragraph (fail); a field with two labels (fail); a table whose first row is its title (fail); a header with no cells (fail); an empty corner header (pass); an h2 then an h4 (fail); a header made of a div, outside every landmark (fail); a focusable clickable card with role article (fail); an alt="" image named "Sale" (fail); two links with accesskey s (fail) |
 | `ai/labels.html` (AAA, best practices on) | A heading "Heading 2" (fail); two fields labelled "Phone" (fail); "E-mail" named "Email address" (label in name, pass); "Read more" in a sentence (2.4.9, fail); two "Download" links to different files (fail); two frames titled "Shop page" (fail); a button named only by its tooltip (fail); two unnamed navigations (fail) |
 | `ai/focus.html` | Navigation links whose focus outline is removed (focus visible, appearance and non-text contrast, fail), and one that shows focus from a script instead (all three, pass); a `tabindex="1"` link far down that comes first (focus order, fail); a clickable menu and tiles Tab never reaches (keyboard, fail); a sticky header over two links once scrolled (focus not obscured, fail) |
 | `ai/dialog.html` (with `open: true`) | A "Size guide" link that opens a modal dialog whose only close control is a span and that Escape does not close (keyboard, fail; focus stays on the link, focus order, fail), beside a working "Delivery details" disclosure |
