@@ -22,22 +22,17 @@ Read, in this order:
 
 ## State (end of 2026-11-27)
 
-Everything is committed and pushed (latest: **phase 1, step 1 under way**: the
-AI answers every text alternative check (SVG, image map areas, image
-buttons, object, embed, canvas, video posters, redundant alt), with the
-evidence they need, and the names and labels with what the checker
-reported, and the structure checks with the table, outline and landmarks;
-and "is it text"; step 1 done; demo 81 of 81, prompt version `registry-13`; best-practice
-findings are asked too; before
-that the **roadmap** and the **inventory** of every engine check that can end
-in "can't tell", with a test that keeps it in step with the engine and the
-registry; and the **open walk**, an opt-in
-`open: true` that presses what says it opens something and records what the
-keyboard can do with it, and `open: "buttons"` that presses plain buttons too;
-evaluated on the GOV.UK keyboard pages, the demo's `dialog.html` (a dialog a
-keyboard user cannot close) and the W3C ARIA Authoring Practices examples
-(working widgets: no wrong fail); the walks now judged by what the page
-shows, not its markup). The full suite (4491 pass, 5 skipped) and the
+Everything is committed and pushed. Latest: **phase 1, step 1 is done**:
+the AI answers every check of the inventory's `read` lane (46 of 132): the
+text alternatives, the names and labels (with what the checker reported),
+the structure checks (with the table, the heading outline and the
+landmarks) and "is it text"; best-practice findings are asked too; demo 81
+of 81, prompt version `registry-13`. Before that: the **roadmap** and the
+**inventory** of every engine check that can end in "can't tell" (with a
+test that keeps it in step with the engine and the registry), and the
+**open walk** (`open: true` presses what says it opens something,
+`open: "buttons"` plain buttons too; the walks judged by what the page
+shows). The full suite (4491 pass, 5 skipped) and the
 browser tests (`focus-walk` 16, `ai-answer` 10, `app-boot`) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
@@ -103,7 +98,11 @@ to 3 below need the user.
   headers), heading order, bypass blocks, page zones and region,
   focusable non-controls, presentation conflicts, shared access keys; their
   questions get the table (`table`), the page's heading outline (`outline`)
-  or its landmarks (`landmarks`), read from the page.
+  or its landmarks (`landmarks`), read from the page. "Is it text":
+  low-contrast symbols (do they carry information), orientation lock (does
+  it restrict use), and the text contrast checks for the reasons reading
+  can settle (a symbol, logo text, a contrast switch, a placeholder; the
+  reasons that need a measurement stay "unsure").
 - **The focus walk** (`ai: { focus: true }`, `focusStops` default 40, max
   200): Tab through the page in its own Tab order, then focus and scroll put
   back, checked by a fingerprint (answers dropped and a warning logged if the
@@ -182,7 +181,8 @@ to 3 below need the user.
   (`focusStops`), blank images, a video's own controls, keyboard asked where
   Tab reaches nothing, focus order judged on its own; then the open walk.
 
-**Not measured yet:** the structure checks on real pages beyond 37 cases in
+**Not measured yet:** the "is it text" checks on any real case (none came up
+on 22 evaluation pages); the structure checks on real pages beyond 37 cases in
 seven checks (`region`, 179 questions on the same few blocks, was left out: it
 needs a way to sample or group them; focus-order semantics, presentation
 conflicts, access keys and title-row tables had no real case); the names and
@@ -233,7 +233,7 @@ Chrome or Chromium.)
 
 ## Next, in order
 
-The first three need the user; the rest can be done without. Item 4 is the
+Items 1 to 3b need the user; the rest can be done without. Item 4 is the
 main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
 
 1. **A person's labels on the real-site runs** (W3C, UW, the three GOV.UK
@@ -258,24 +258,33 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    cached knowledge, structured output, the official SDK), configured on the
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
-4. **Phase 1, step 1: the `read` checks** (34; all done)
-   (`ai-cant-tell-roadmap.md`, listed under `read` in
-   `ai-cant-tell-inventory.md`). One family at a time, in this order: text
-   alternatives (all 9 done 2026-11-26), names and labels (all 8 done),
-   structure (all 13 done 2026-11-27), "is it text" (all 4 done):
-   step 1 is complete. For each check: read its reasons
-   in the engine
+3b. **Roadmap decision 4, for step 2:** the 23 "name present" checks are
+   settled by the browser's computed names (its accessibility tree), no
+   model needed. In the lab's AI pass, or in the engine (every user of it
+   would get them)? Ask the user; the other decisions are left for later.
+4. **Phase 1, step 3: the `walk` lane** (12 checks, listed under `walk` in
+   `ai-cant-tell-inventory.md` with a note each): `tabindex` (what Tab
+   reaches first), `focus-not-removed-by-script` (the walk's `lostFocus`),
+   `iframe-focusable-content`, `scrollable-region-focusable`,
+   `mouse-only-event-handlers` (as keyboard per element),
+   `css-hidden-focus` (as focus visible), `aria-expanded-state-mismatch` and
+   `aria-checked-state-mismatch` (the open walk sees what shows),
+   `skip-link` (press it, see where focus goes), `aria-hidden-focus`,
+   `nested-interactive-controls-absent`, `server-side-image-map-absent`.
+   Step 2 (the accessibility tree) waits on the user (item 3b). These
+   questions are tier 1 (`PAGE_LEVEL` or `ELEMENT_WALK` in `registry.js`,
+   asked only with `focus: true`, the facts per element from
+   `walkFactsFor`); some need a small extension of the walks (pressing a
+   skip link, scrolling a region with the keyboard). Step 1's recipe holds
+   for each: read the check's reasons in the engine
    (`node_modules/@surea11y/core/src/checks/manual/<id>-manual.js` or
-   `automatic/<id>.js`: what it reports, why it cannot tell); an entry in
-   `ANSWERABLE` (`registry.js`) with the evidence it needs (`evidence.js`
-   reads element, context, image, page title; add what is missing, such as an
-   SVG's title and desc); its facts in `keyFactRows`; a demo case with its
-   correct answer (`examples/demo-site/ai/reading.html`, `expected.json`); its
-   lane set to `answered` and the inventory regenerated; a row in the user
-   guide; bump `PROMPT_VERSION`. Then evaluate blind as before
-   (`ai-cant-tell-eval/README.md`): the W3C pages (most of the 97 SVG cases
-   came from them), the GOV.UK audit and the APG examples are on allowed
-   hosts; record the result in the eval README and this page.
+   `automatic/<id>.js`); its question and the evidence it needs; its facts
+   in `keyFactRows`; a demo case with its correct answer (a page of its own
+   under `examples/demo-site/ai/` with a step in `ai-answers.spec.json`,
+   cases in `expected.json`); its lane set to `answered` and the inventory
+   regenerated; a row in the user guide; bump `PROMPT_VERSION`; then
+   evaluate blind (`ai-cant-tell-eval/README.md`) on the allowed hosts and
+   record it here and in the eval README.
 5. **More cases per check.** There are 432 labelled cases over four sites (and
    48 from the open-walk re-run of the GOV.UK keyboard pages, 55 from the APG
    examples); page title, alt quality, decorative images, focus visible, focus
