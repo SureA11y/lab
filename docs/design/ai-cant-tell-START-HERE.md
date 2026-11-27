@@ -22,7 +22,8 @@ Read, in this order:
 
 ## State (end of 2026-11-27)
 
-Everything is committed and pushed (last code change: `279df36`). **Phase 1 of the
+Everything is committed and pushed (last code change: `279df36`; after it
+only evaluation runs and docs). **Phase 1 of the
 roadmap is complete except for the engine's part:** the AI answers **76 of
 the 132 checks** that can end in "can't tell". What is left is 23 `tree`
 checks, which belong in the engine (decision 4; **ask the user for the
@@ -70,6 +71,16 @@ it):
    with a `media` reader (`readMedia`: the media's facts and tracks, the
    links in its section with the text a same-page link leads to, the page's
    pause, stop and mute controls). Nothing is played.
+8. **The new families on real pages** (eval README, "The new families on
+   real pages"; `ai-answers-survey-pictures.spec.json`, folder
+   `ai-cant-tell-eval/survey-pictures/`): the 77 GOV.UK audit pages not
+   scanned before and 8 W3C pages (carousels, forms tutorials, image
+   tutorials, media guide), with pictures. Only 5 new-family cases came up
+   (3 media, a marquee, an image of text) and **no forms ones**. The 54
+   new-family and picture questions, labelled first: 54 of 54 with
+   pictures; without, 3 picture questions stay open (two photos, an
+   icon-only search button), none wrong. Counted in `trust.md` (6 of 37
+   checks trusted).
 
 **The plan** (`ai-cant-tell-roadmap.md`): phase 1, the AI for every "can't
 tell" from the rules, then phase 2, criteria no rule can automate (decisions
@@ -78,21 +89,22 @@ towards nothing until a person confirms; the AI only flags, never passes).
 
 **Where to pick up**, in this order:
 
-1. **Real sites for the new families** (no user needed, within the
-   environment's allowed hosts: www.w3.org, projects.accesscomputing.uw.edu,
-   alphagov.github.io; ask the user for others). Pictures, forms and media
-   have only the demo and, for pictures, the W3C pages. Look for: raster
-   image buttons and photos whose alt claims more than they show; GOV.UK
-   design-system pages showing errors (the error summary pattern; put the
-   page in that state with the workflow's own steps); live regions; pages
-   with audio or video, transcripts, carousels and marquees. Label first,
-   answer blind, score, record in the eval README. **Started 2026-11-27**
-   (eval README, "The new families on real pages"): 85 pages surveyed
-   (`ai-answers-survey-pictures.spec.json`), only 5 new-family cases came up
-   (media, a marquee, an image of text) and no forms ones; with pictures 54
-   of 54 agree, without them 3 picture questions stay open. Next: sites
-   that use `aria-invalid`, live regions, autoplay and animation (ask the
-   user to allow their hosts; e.g. the GOV.UK Design System's pages).
+1. **Real sites for the new families, on hosts the user must allow.** The
+   environment's allowed hosts (www.w3.org, projects.accesscomputing.uw.edu,
+   alphagov.github.io) are used up for these families (item 8 above): they
+   have no page with `aria-invalid`, live regions, autoplay or animation the
+   engine sees. **Ask the user** to allow hosts with such pages, for
+   instance the GOV.UK Design System (design-system.service.gov.uk: its
+   error message and error summary examples, put in their error state with
+   the workflow's own steps), and pages with real `<video>`/`<audio>`,
+   carousels and live regions. Then: survey as a preview, label the
+   new-family questions before reading any answer, answer blind (with and
+   without the paste or pictures where they apply), score, record in the
+   eval README and START-HERE, rerun `trust-table.js`. A sign-in form for
+   the paste needs a test system the user names (`A11Y_AI_FORM_HOSTS`).
+   **Found on the way, for the engine (decision 4's repository):** a
+   carousel rotated by a script timer (the APG examples) is not seen by
+   `moving-content-pausable`, which reads CSS and Web Animations only.
 2. **The engine's tree lane (decision 4):** ask the user for the engine's
    GitHub repository, attach it (`add_repo`), and make the engine settle the
    23 "name present" checks from the browser's accessibility tree; then the
@@ -101,6 +113,10 @@ towards nothing until a person confirms; the AI only flags, never passes).
    through the lab's own Claude call with a real key (item 2), more cases
    for link text, field labels and bold as heading, the open walk's open
    points (item 7).
+Without the user, what can go on: polish within the allowed hosts (item 3:
+more cases per check where the trust table says "N of 30 cases"), and
+preparing phase 2's design (item 4) for the user to agree.
+
 4. **Phase 2**, once the user agrees phase 1 is done: start with what is
    already read (roadmap, "Phase 2", group 1: language of parts, sensory
    characteristics, structure shown only visually, missing format
@@ -116,7 +132,7 @@ towards nothing until a person confirms; the AI only flags, never passes).
 | 4, measure lane | 9 | 6 of 6 | 144 of 144 with the exact contrast measurement (137 before; labelled by a reference measurement) |
 | 5, pictures (`image-of-text`, and pictures for the alt questions) | 1 | 7 of 7 (2 settled only with pictures) | W3C pages: 40 of 41 with and without; survey: 50 of 50 with, 47 of 50 without (3 open) |
 | 5, forms | 3 | 8 of 8 (2 settled only with the paste) | none came up |
-| 5, media and moving content | 5 | 16 of 16 | 4 of 4 (survey) |
+| 5, media and moving content | 5 | 16 of 16 | 4 of 4 (survey; no autoplay or animation came up) |
 | 2, accessibility tree | 23 | | in the engine (decision 4), waiting on its repository |
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
