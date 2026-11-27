@@ -22,88 +22,83 @@ Read, in this order:
 
 ## State (end of 2026-11-27)
 
-Everything is committed and pushed. Latest (2026-11-27): **the user decided
-the roadmap's eight open questions** (all the recommended options; see the
-roadmap's "Decisions"), and the first three items of the work they lead to
-are done: **exact contrast** in the lab (the background under each glyph,
-read with the text hidden for a moment; the measure lane's real cases 144 of
-144), **labels by WCAG's reading** (15 GOV.UK labels re-read), and **trust
-per check** (`ai:agreement`'s Trusted column; `ai-cant-tell-eval/trust.md`:
-6 of 33 checks trusted). Then **pictures (decision 5)**: `ai: { pictures:
-true }` per step, allowed by the server's `A11Y_AI_PICTURES`, and
-`image-of-text` answered; measured on the demo (114 of 114; the two
-picture-only cases open without pictures) and the W3C pages (40 of 41 both
-ways; the news photo leans fail with its picture, pass without, open both
-times). Then **forms (decision 6)**: `invalid-field-error-message` and
-`live-region-announcements` read, `password-paste-enabled` with a paste
-tried (`ai: { forms: true }`, only on `A11Y_AI_FORM_HOSTS`). Phase 1 so far:
-steps 1, 3 and 4 done, and step 5's picture and forms checks; the AI
-answers 71 of the 132 checks that can end in "can't tell". Then **media and
-moving content** (step 5's last five checks), by reading: **step 5 is done**;
-the AI answers **76 of 132** (left: 23 `tree`, in the engine, and 32 `code`,
-a person's); demo 148 of 148; prompt version `registry-20`. Still to ask the user: the engine's
-repository, for decision 4. The full suite and the browser
-tests (`ai-answer` 14) pass.
+Everything is committed and pushed (last code change: `279df36`). **Phase 1 of the
+roadmap is complete except for the engine's part:** the AI answers **76 of
+the 132 checks** that can end in "can't tell". What is left is 23 `tree`
+checks, which belong in the engine (decision 4; **ask the user for the
+engine's GitHub repository** before starting), and 32 `code` checks, which a
+person confirms (decision 3: nothing to build). Demo **148 of 148** (blind);
+prompt version `registry-20`. The full suite (`node --test`, 4501 pass) and
+the browser tests (`ai-answer.browserspec.js` 14, `focus-walk` 17,
+`app-boot` 17) pass.
 
-**The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
-AI for every "can't tell" from the rules: 76 of 132 checks are answered
-today: steps 1, 3, 4 and 5 are done (every `read`, `walk`, `measure`, `picture`, `interact` and `media`
-check); left: step 2 (23 "name present" checks, from the browser's
-accessibility tree, waiting on the user), and the 32 `code` checks (roadmap
-decision 3). Phase 2 (criteria no rule can automate)
-only after; its decisions are listed there and left open on purpose.
+What 2026-11-27 added, in order (each in the eval README with how to repeat
+it):
 
-**The user's decisions (2026-11-27)** on the roadmap's eight open questions
-are in `ai-cant-tell-roadmap.md`, "Decisions": every recommended option.
-**Where to pick up**, the work they and the plan leave, in this order:
+1. **The user decided the roadmap's eight open questions** (every
+   recommended option; the roadmap's "Decisions").
+2. **Exact contrast** (`registry-17`): the background under each glyph read
+   with the text hidden for a moment; the measure lane's 144 real cases,
+   144 of 144.
+3. **Labels by WCAG's reading** (decision 7): 15 GOV.UK labels re-read.
+4. **Trust per check** (decision 8): `ai:agreement`'s Trusted column and
+   `ai-cant-tell-eval/trust.md` (`trust-table.js`): 6 of 33 checks trusted
+   (30 labelled real cases, 95% when answered, no wrong pass).
+5. **Pictures (decision 5, `registry-18`).** `ai: { pictures: true }` per
+   step, off by default; the server's `A11Y_AI_PICTURES` (`on`, or hosts)
+   must allow it; only questions marked `picture: true` in the registry send
+   one; never a picture showing a value typed in a field
+   (`evidence.pictureNotSent`); the built-in call sends it as an image block
+   after the cached evidence (`contentFor` in `provider.js`), an endpoint in
+   the question (`picture: true`). `image-of-text` answered.
+   `answer-offline.js prompts` writes the pictures beside the questions.
+   Measured: the demo's two picture-only buttons are settled only with
+   pictures; on the W3C pages 40 of 41 with and without (the news photo
+   leans fail with its picture, pass without, open both times).
+6. **Forms (decision 6, `registry-19`).** `invalid-field-error-message`
+   (with the field's texts, `field`) and `live-region-announcements` are
+   answered by reading: the state they ask about is one the workflow's own
+   steps (a submission with errors) or the engine's live-region hook give.
+   `password-paste-enabled` with `ai: { forms: true }`, only on hosts in
+   `A11Y_AI_FORM_HOSTS` (no "on": hosts must be named): a paste event tried
+   (`probePaste`: cancelled, filled by the page's script, alerts dismissed),
+   the form's fields put back, after the reading questions, never a
+   submission. Without the paste the two script handlers stay open.
+7. **Media and moving content (`registry-20`):** `video-caption`,
+   `media-alternative-transcript-evidence`, `no-autoplay-audio`,
+   `moving-content-pausable`, `deprecated-elements-not-used`, by reading
+   with a `media` reader (`readMedia`: the media's facts and tracks, the
+   links in its section with the text a same-page link leads to, the page's
+   pause, stop and mute controls). Nothing is played.
 
-1. **Done 2026-11-27:** exact contrast in the lab (`registry-17`; the
-   measure lane's real cases 144 of 144), labels by WCAG's reading (15
-   GOV.UK labels re-read; the first GOV.UK run 62 of 62 answered), and
-   trust (`ai:agreement`'s Trusted column; `ai-cant-tell-eval/trust.md`
-   from `trust-table.js`: 6 of 33 checks trusted). Details in the eval
-   README.
-2. **Done 2026-11-27: pictures (decision 5).** `ai: { pictures: true }`
-   per step, off by default; the server's `A11Y_AI_PICTURES` (`on`, or
-   hosts) must allow it; only the questions marked `picture: true` in the
-   registry send one; a picture showing a value typed in a field is never
-   sent (`evidence.pictureNotSent`); the built-in call sends it as an image
-   block after the cached evidence (`contentFor` in `provider.js`), an
-   endpoint gets it in the question (`picture: true`). `image-of-text`
-   answered (`registry-18`). `answer-offline.js prompts` writes the
-   pictures beside the questions (`picture` names the file). Results and
-   how to repeat: the eval README, "Pictures to the model". Open: more
-   picture-only cases on a real site (raster image buttons, photos whose
-   alt claims more than they show) before wider use.
-3. **Done 2026-11-27: forms (decision 6).** `invalid-field-error-message`
-   (with the field's texts, `field` in `evidence.js`) and
-   `live-region-announcements` are answered by reading: the state they ask
-   about is one the workflow's own steps (a submission with errors) or the
-   engine's live-region hook already give. `password-paste-enabled` with
-   `ai: { forms: true }`, only on hosts in `A11Y_AI_FORM_HOSTS`: a paste
-   event tried (`probePaste`: cancelled, filled by the page, alerts
-   dismissed), the form's fields put back, after the reading questions,
-   never a submission. Demo 128 of 128; the paste settles the two
-   script handlers reading leaves open. Open: real sites (GOV.UK error
-   pages, a sign-in form on a test system).
-4. **Done 2026-11-27: media and moving content (step 5's last).** The five
-   checks read with a `media` reader (`readMedia`: the media's facts and
-   tracks, its section's links and where same-page ones lead, the page's
-   pause, stop and mute controls); nothing is played. Demo 148 of 148.
-   Open: real sites (players, podcasts, carousels).
+**The plan** (`ai-cant-tell-roadmap.md`): phase 1, the AI for every "can't
+tell" from the rules, then phase 2, criteria no rule can automate (decisions
+1 and 2: AI-raised items in a section of their own, unconfirmed, counting
+towards nothing until a person confirms; the AI only flags, never passes).
 
-**Phase 1 is now complete except for the engine's part (decision 4).**
-What is left without the user: polishing (real-site runs for the new
-families: pictures, forms, media; a person's labels), then phase 2.
-5. **The `tree` lane in the engine (decision 4):** in the engine's own
-   repository (`@surea11y/core`), not this one: ask the user which
-   repository and add it (`add_repo`) before starting; the lab's inventory
-   moves those checks to "the engine".
-6. **The `code` lane (decision 3):** a person confirms; nothing to build;
-   the inventory's lane note says so.
-7. **Phase 2 (decisions 1 and 2):** AI-raised items in a section of their
-   own, unconfirmed, counting towards nothing until a person confirms; the
-   AI only flags, never passes. Only after phase 1.
+**Where to pick up**, in this order:
+
+1. **Real sites for the new families** (no user needed, within the
+   environment's allowed hosts: www.w3.org, projects.accesscomputing.uw.edu,
+   alphagov.github.io; ask the user for others). Pictures, forms and media
+   have only the demo and, for pictures, the W3C pages. Look for: raster
+   image buttons and photos whose alt claims more than they show; GOV.UK
+   design-system pages showing errors (the error summary pattern; put the
+   page in that state with the workflow's own steps); live regions; pages
+   with audio or video, transcripts, carousels and marquees. Label first,
+   answer blind, score, record in the eval README.
+2. **The engine's tree lane (decision 4):** ask the user for the engine's
+   GitHub repository, attach it (`add_repo`), and make the engine settle the
+   23 "name present" checks from the browser's accessibility tree; then the
+   lab's inventory moves them to "the engine".
+3. **Polish** (the roadmap's list): a person's labels (Next, item 1), a run
+   through the lab's own Claude call with a real key (item 2), more cases
+   for link text, field labels and bold as heading, the open walk's open
+   points (item 7).
+4. **Phase 2**, once the user agrees phase 1 is done: start with what is
+   already read (roadmap, "Phase 2", group 1: language of parts, sensory
+   characteristics, structure shown only visually, missing format
+   instructions).
 
 | Step | Checks | Demo | Real cases |
 | --- | --- | --- | --- |
@@ -113,7 +108,10 @@ families: pictures, forms, media; a person's labels), then phase 2.
 | 1, "is it text" | 4 | 4 of 4 | none came up |
 | 3, walk lane | 12 | 16 of 16 | 10 of 10 read only (8 unsure), 23 of 24 with the walk |
 | 4, measure lane | 9 | 6 of 6 | 144 of 144 with the exact contrast measurement (137 before; labelled by a reference measurement) |
-| 2, accessibility tree | 23 | | waiting on roadmap decision 4 (item 3b) |
+| 5, pictures (`image-of-text`, and pictures for the alt questions) | 1 | 7 of 7 (2 settled only with pictures) | W3C pages: 40 of 41 with and without pictures |
+| 5, forms | 3 | 8 of 8 (2 settled only with the paste) | none yet |
+| 5, media and moving content | 5 | 16 of 16 | none yet |
+| 2, accessibility tree | 23 | | in the engine (decision 4), waiting on its repository |
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `open-walk.js`, `evidence.js`, `provider.js`,
@@ -181,6 +179,10 @@ families: pictures, forms, media; a person's labels), then phase 2.
     Evidence for keyboard and focus order; the review lists each control
     pressed in a sentence. User guide: "Opening menus and dialogs"; design
     note: "Opening what the page opens".
+- **Pictures, forms, media** (2026-11-27): `pictures: true` (with
+  `A11Y_AI_PICTURES`), `forms: true` (with `A11Y_AI_FORM_HOSTS`), and the
+  `field`, `paste` and `media` evidence; see State above and the user
+  guide's "Pictures" and "Forms" sections.
 - **Providers:** the built-in Claude call (key from Run settings, kept in
   memory, or `ANTHROPIC_API_KEY`; the evidence is sent compact and marked for
   prompt caching, so a page's focus questions pay for the walk once;
@@ -193,15 +195,17 @@ families: pictures, forms, media; a person's labels), then phase 2.
   remarks from confirmed fails. `npm run ai:agreement`.
 - **Docs:** `docs/ai-answers.md` (user guide), configuration reference,
   examples README, this folder.
-- **The demo:** `examples/demo-site/ai/` (`reading.html`, `focus.html`,
-  `dialog.html` for the open walk),
-  `examples/specs/ai-answers.spec.json`, the correct answers in
-  `expected.json`, `examples/ai-demo-score.js`. 103 questions, including a Help
+- **The demo:** `examples/demo-site/ai/` (`reading.html`, `labels.html`,
+  `structure.html`, `text.html`, `keyboard.html`, `measure.html`,
+  `forms.html`, `media.html`, `focus.html`, `dialog.html` for the open walk),
+  `examples/specs/ai-answers.spec.json` (run it with `A11Y_AI_PICTURES=localhost
+  A11Y_AI_FORM_HOSTS=localhost`), the correct answers in
+  `expected.json`, `examples/ai-demo-score.js`. 148 questions, including a Help
   link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13 pass) and a
   modal dialog a keyboard user cannot close (keyboard and focus order fail,
   found by the open walk).
   Evaluated blind, a model answering the lab's exact prompts outside the lab
-  (`ai-cant-tell-spike/answer-offline.js`): **103 of 103**
+  (`ai-cant-tell-spike/answer-offline.js`): **148 of 148**
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
 - **Real sites,** built with documented accessibility problems (the WAI
@@ -229,7 +233,8 @@ families: pictures, forms, media; a person's labels), then phase 2.
   (`focusStops`), blank images, a video's own controls, keyboard asked where
   Tab reaches nothing, focus order judged on its own; then the open walk.
 
-**Not measured yet:** the measure lane beyond contrast and links on real pages
+**Not measured yet:** pictures beyond the W3C pages, forms and media on
+any real site (item 1 of "Where to pick up"); the measure lane beyond contrast and links on real pages
 (text spacing, reflow, resized text, target size and viewport tags came up
 only in the demo, some not even there); the walk lane's checks beyond tab
 order, hidden focus and mouse-only handlers on real pages (frames, scrolling
@@ -283,8 +288,8 @@ Chrome or Chromium.)
 
 ## Next, in order
 
-Items 1 to 3b need the user; the rest can be done without. Item 4 is the
-main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
+Items 1 to 3b need the user; the rest can be done without. Item 4 points to
+"Where to pick up", the main line of work; 5 to 7 run beside it.
 
 1. **A person's labels on the real-site runs** (W3C, UW, the three GOV.UK
    runs, the WAI tutorials, the APG examples). Every
@@ -309,34 +314,20 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    server (`A11Y_AI_INSTRUCTIONS`, `A11Y_AI_KNOWLEDGE` were proposed).
    Waiting on the user to export them.
 3b. **Roadmap decisions:** made by the user on 2026-11-27 (all eight, see
-   the roadmap's "Decisions"); the work they lead to is listed under
-   "Where to pick up". Only the engine's repository (for decision 4) is
-   still to ask.
-4. **Next without the user: pictures (decision 5)**, as "Where to pick up"
-   says (exact contrast, WCAG's labels and trust are done). Steps 3 (the
-   `walk` lane) and 4 (the `measure` lane) are done; the recipe below,
-   written for step 3, holds for any new question. Step 3 (12 checks, listed under `walk` in `ai-cant-tell-inventory.md` with a
-   note each): `tabindex` (what Tab reaches first),
-   `focus-not-removed-by-script` (the walk's `lostFocus`),
-   `iframe-focusable-content`, `scrollable-region-focusable`,
-   `mouse-only-event-handlers` (as keyboard per element), `css-hidden-focus`
-   (as focus visible), `aria-expanded-state-mismatch` and
-   `aria-checked-state-mismatch` (the open walk sees what shows), `skip-link`
-   (press it, see where focus goes), `aria-hidden-focus`,
-   `nested-interactive-controls-absent`, `server-side-image-map-absent`. Step
-   2 (the accessibility tree) waits on the user (item 3b). These questions are
-   tier 1 (`PAGE_LEVEL` or `ELEMENT_WALK` in `registry.js`, asked only with
-   `focus: true`, the facts per element from `walkFactsFor`); some need a
-   small extension of the walks (pressing a skip link, scrolling a region with
-   the keyboard). Step 1's recipe holds for each: read the check's reasons in
-   the engine (`node_modules/@surea11y/core/src/checks/manual/<id>-manual.js`
-   or `automatic/<id>.js`); its question and the evidence it needs; its facts
-   in `keyFactRows`; a demo case with its correct answer (a page of its own
-   under `examples/demo-site/ai/` with a step in `ai-answers.spec.json`, cases
-   in `expected.json`); its lane set to `answered` and the inventory
-   regenerated; a row in the user guide; bump `PROMPT_VERSION`; then evaluate
-   blind (`ai-cant-tell-eval/README.md`) on the allowed hosts and record it
-   here and in the eval README.
+   the roadmap's "Decisions"); all built except decision 4 (the engine's
+   repository is still to ask) and phase 2 (decisions 1 and 2).
+4. **Next without the user:** see "Where to pick up" above. The recipe for
+   any new question: read the check's reasons in the engine
+   (`node_modules/@surea11y/core/src/checks/manual/<id>-manual.js` or
+   `automatic/<id>.js`; its `@reports` say what `reported` holds, though
+   many occurrences carry fewer details, the reason being in its summary);
+   its question and the evidence it needs; its facts in `keyFactRows`; a
+   demo case with its correct answer (a page of its own under
+   `examples/demo-site/ai/` with a step in `ai-answers.spec.json`, cases in
+   `expected.json`); its lane set to `answered` and the inventory
+   regenerated; a row in the user guide; bump `PROMPT_VERSION`; then
+   evaluate blind (`ai-cant-tell-eval/README.md`) and record it here and in
+   the eval README.
 5. **More cases per check.** There are 432 labelled cases over four sites (and
    48 from the open-walk re-run of the GOV.UK keyboard pages, 55 from the APG
    examples); page title, alt quality, decorative images, focus visible, focus
@@ -351,17 +342,13 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    allowed in the cloud environment (ask the user) and labels. Running each
    set two or three times and keeping the per-case spread would show which
    questions are unstable.
-6. **Optional, not built (roadmap decision 5):** pictures sent to the model
-   (only after measuring that they help: the news photo of the W3C's Note 10,
-   the one question the model keeps getting wrong, is about what the picture
-   shows); 2.4.13's and 1.4.11's measurement is lossy on animated focus styles
-   (it reads after a short wait) and covered stops measure 0 changed (right,
-   but worth saying in the review). Questions still left open that better
-   evidence might settle: GOV.UK's "Read more" links (WCAG accepts the
-   context, the audit does not), a button whose focus shows only as an outline
-   change the page-level question does not measure, UW's divider images with
-   alt "horizontal line graphic", the empty-alt BBC logo (GOV.UK, a fail
-   argued but answered unsure).
+6. **Open questions the evidence might still settle:** 2.4.13's and
+   1.4.11's measurement is lossy on animated focus styles (it reads after a
+   short wait), and covered stops measure 0 changed (right, but worth saying
+   in the review); GOV.UK's "Read more" links, a button whose focus shows
+   only as an outline change, UW's divider images with alt "horizontal line
+   graphic", the empty-alt BBC logo (GOV.UK, answered unsure); the W3C news
+   photo, which pictures move towards fail but not past the threshold.
 7. **The open walk, next steps (optional):** it gave the fail on the demo's
    dialog that cannot be closed, moved no verdict on the GOV.UK lightboxes (by
    WCAG they are keyboard-usable), and failed none of the APG's working
@@ -403,11 +390,18 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   reported, `occurrence.details`, bounded), `table`, `outline`, `landmarks`;
   the walk questions use `focusWalk`; a reading question can add
   `walkStop` (the element's own stop, only when the step has `focus: true`;
-  without it the question is asked as before), or `pixels` (measured exactly, the text hidden for a moment with the page checked
+  without it the question is asked as before), `field` (a form field's
+  label, description, error message, shown and heard, its row's text; never
+  the value), `paste` (a paste tried, only with `forms` on an allowed host;
+  such a question is asked after the reading ones), `media` (an audio or
+  video's facts and tracks, its section's links and where same-page ones
+  lead, the page's pause, stop and mute controls), or `pixels` (measured exactly, the text hidden for a moment with the page checked
   before and after, or by colour as fallback: the contrast of
   its text against what is drawn behind it, from a picture). Adding a kind to an existing question
   changes its prompt, so its blind answers must be redone; a new question
-  takes what it needs.
+  takes what it needs. A question marked `picture: true` also sends the
+  element's picture when the step has `pictures` and the server allows it;
+  answering agents then open the file the question's `picture` names.
 - Read the test results before committing: a chained `node --test && git
   commit` that ignores the result once pushed a syntax error (fixed at once).
 - A demo case must be unambiguous under its own question's pass and fail
@@ -421,12 +415,12 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   `<body>` or in `<head>`, which the evidence never includes.
 - The demo workflow's call budget (`budget.calls`, per run) must cover every
   question: when cases are added, a page left open with `budget-calls` means
-  the budget, not the AI (it is 120 now, for 103 questions).
+  the budget, not the AI (it is 200 now, for 148 questions).
 - Re-scoring after a change: a prompt that comes out identical can keep its
   earlier blind answer (match the runs' `questions.jsonl` by prompt text);
   only new or changed prompts need answering again.
 - New browser tests for the AI pass go in an existing spec that `test:dom`
-  already lists (`focus-walk.browserspec.js`), so `package.json`, which the
+  already lists (`ai-answer.browserspec.js`, `focus-walk.browserspec.js`), so `package.json`, which the
   user edits locally, is not touched. Unit tests (`*.test.js`) are found by
   `node --test` on their own.
 - `npm run ai:agreement` writes `ai-agreement/` into the current folder: run
