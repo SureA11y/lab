@@ -1,0 +1,38 @@
+{"id": "q1", "verdict": "fail", "confidence": 0.85, "rationale": "The Yes/No options only make sense with the question 'Do you already have a personal user account?', which is an h4 not tied to the radios by a fieldset/legend or named group."}
+{"id": "q3", "verdict": "fail", "confidence": 0.85, "rationale": "The h4 directly follows the h1 with no h2/h3, leaving a gap in the outline."}
+{"id": "q5", "verdict": "fail", "confidence": 0.7, "rationale": "The checkboxes answer one question ('Which types of waste do you transport regularly?') shown only as an h4, not tied to the options by a named group; the labels alone omit the 'transport regularly' context."}
+{"id": "q7", "verdict": "fail", "confidence": 0.85, "rationale": "The h4 directly follows the h1, skipping two levels and leaving a gap in the outline."}
+{"id": "q10", "verdict": "pass", "confidence": 0.75, "rationale": "The joined name 'Date of issue Day' reads naturally as a group label plus the field's own label, clearly saying what to enter."}
+{"id": "q14", "verdict": "fail", "confidence": 0.9, "rationale": "The table holds data (names, ages, birthdays) and its label row uses td instead of th, so no cell is marked as a header."}
+{"id": "q20", "verdict": "pass", "confidence": 0.85, "rationale": "The empty th is the top-left corner cell over row headers (Jackie, Beth); it heads no data cells."}
+{"id": "q28", "verdict": "fail", "confidence": 0.85, "rationale": "The h3 follows the h1 directly with no h2, leaving a gap; the outline (h1, h3, h5, h4) is clearly disordered."}
+{"id": "q29", "verdict": "fail", "confidence": 0.85, "rationale": "The h5 follows the h3 with no h4, and the following h4 makes the outline illogical."}
+{"id": "q44", "verdict": "pass", "confidence": 0.85, "rationale": "The named table is the outer 800px page frame holding border images, banner, navigation and content blocks; it only lays out content (role LayoutTable)."}
+{"id": "q76", "verdict": "pass", "confidence": 0.85, "rationale": "The named table is the outer page frame with border images and nested layout tables; it lays out the page rather than presenting data."}
+{"id": "q103", "verdict": "pass", "confidence": 0.8, "rationale": "The named table is the outer page layout frame (borders, banner, nav, content); the nested price table is a separate element, so this table is layout."}
+{"id": "q104", "verdict": "fail", "confidence": 0.85, "rationale": "The table pairs band names in the top row with concert dates below, a data table whose label row uses td, not th."}
+{"id": "q106", "verdict": "pass", "confidence": 0.6, "rationale": "The th sits alone in a one-cell table used as a section headline image and heads no data cells; its missing alt text is an image problem rather than a header problem."}
+{"id": "q119", "verdict": "fail", "confidence": 0.85, "rationale": "The radios have no accessible names at all and the question 'Which is your favorite city park?' is only shown in a nearby cell, not tied to them by a named group."}
+{"id": "q120", "verdict": "fail", "confidence": 0.7, "rationale": "The radios have empty accessible names, and the 'Name:' prompt with Mr./Mrs. is only plain text near them, not a group name or labels."}
+{"id": "q121", "verdict": "pass", "confidence": 0.85, "rationale": "The named table is the outer page layout frame (borders, banner, nav, content); the nested survey results table is a separate element."}
+{"id": "q122", "verdict": "pass", "confidence": 0.85, "rationale": "This small table only positions radio buttons next to spacer images; it holds no data needing headers."}
+{"id": "q123", "verdict": "pass", "confidence": 0.75, "rationale": "This table only lays out option labels (None, Central Park, Grand Park) beside spacer images to align with the radios; it presents no data needing headers."}
+{"id": "q124", "verdict": "pass", "confidence": 0.8, "rationale": "The table only aligns three radio buttons next to spacer images; it presents no data with labels, so it is a layout table."}
+{"id": "q125", "verdict": "pass", "confidence": 0.75, "rationale": "The table only places option labels (Jurassic Park, South Park, Other) beside spacer images to align with radio buttons; it is layout, not data needing headers."}
+{"id": "q126", "verdict": "pass", "confidence": 0.8, "rationale": "The table lays out form fields and their text labels side by side with spacer images; it is a layout table for a form, not tabular data."}
+{"id": "q171", "verdict": "fail", "confidence": 0.85, "rationale": "The block holds the site logo and a quick topic menu at the top of the page, so it is the page header, and the landmarks list is empty, so there is no banner landmark."}
+{"id": "q172", "verdict": "fail", "confidence": 0.9, "rationale": "The block is the site's main menu (Home, News, Tickets, Survey) and the page exposes no landmarks, so it is not a navigation landmark."}
+{"id": "q173", "verdict": "pass", "confidence": 0.9, "rationale": "The element is an in-content h2 'Elsewhere on the Web' with class 'header'; it is a section heading, not the page header."}
+{"id": "q174", "verdict": "fail", "confidence": 0.8, "rationale": "The block sits at the bottom of the demo page with copyright and legal links, so it is the page footer, and no contentinfo landmark exists."}
+{"id": "q210", "verdict": "fail", "confidence": 0.85, "rationale": "The block holds the site logo and quick menu at the top, so it is the page header, and the page has no banner landmark."}
+{"id": "q211", "verdict": "fail", "confidence": 0.9, "rationale": "The block is the site's main menu of page links and the page exposes no landmarks, so it is not a navigation landmark."}
+{"id": "q212", "verdict": "fail", "confidence": 0.8, "rationale": "The block at the bottom holds copyright and legal links, so it is the page footer, and the page has no contentinfo landmark."}
+{"id": "q226", "verdict": "fail", "confidence": 0.9, "rationale": "The block is the site's main menu of page links and the page has no landmarks, so it is not a navigation landmark."}
+{"id": "q227", "verdict": "fail", "confidence": 0.8, "rationale": "The block at the bottom holds copyright notice links, so it is the page footer, and no contentinfo landmark is exposed."}
+{"id": "q240", "verdict": "pass", "confidence": 0.9, "rationale": "The empty th is the top-left corner cell above the row headers 'hate it'/'love it', so it heads no data."}
+{"id": "q241", "verdict": "fail", "confidence": 0.9, "rationale": "The block is the site's main menu of page links and the page exposes no landmarks, so it is not a navigation landmark."}
+{"id": "q242", "verdict": "pass", "confidence": 0.9, "rationale": "The element is an in-content h2 titling the survey, named 'header' only by class; it is not the page header."}
+{"id": "q243", "verdict": "fail", "confidence": 0.8, "rationale": "The block at the bottom holds copyright and legal links, so it is the page footer, and no contentinfo landmark exists."}
+{"id": "q265", "verdict": "fail", "confidence": 0.8, "rationale": "A banner with logo and site menu plus a large dropdown menu repeat before the content, and there is no skip link, no main landmark and no headings to jump past them."}
+{"id": "q271", "verdict": "fail", "confidence": 0.85, "rationale": "The block holds the site logo and site menu at the top, so it is the page header, and the landmarks list has no banner."}
+{"id": "q272", "verdict": "fail", "confidence": 0.75, "rationale": "The list is the site's main menu (About, Academics, Admissions, Visitors with sub-links) and it is not inside a navigation landmark; the only navigation landmark is the separate demo site menu."}
