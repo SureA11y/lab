@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reviews - Demo Shop</title><link rel="stylesheet" href="../style.css">
+<style>
+  .stars { color: #d8d8d8; font-size: 20px; }
+  .arrow { color: #cfcfcf; }
+  #postcode::placeholder { color: #c4c4c4; }
+  .turn { display: none; }
+  @media (orientation: portrait) { main { display: none; } .turn { display: block; } }
+</style></head>
+<!-- The AI answers demo, "is it text". Each case has a known answer, in
+     expected.json beside this page. -->
+<body>
+<header><p><strong>Demo Shop</strong></p></header>
+<p class="turn">Please turn your device to landscape.</p>
+<main>
+  <h1>Reviews</h1>
+  <h2>Watering can, 5 litres</h2>
+  <p>Rated <span class="stars" id="rating">★★★☆☆</span></p>
+  <p>"Light and easy to fill." Anna, May</p>
+  <p><a href="../products.html">Next page <span class="arrow" id="next-arrow">→</span></a></p>
+  <form action="#" onsubmit="return false">
+    <p><label for="postcode">Postcode</label> <input id="postcode" type="text" placeholder="Format: two letters, then four digits"></p>
+  </form>
+</main>
+</body>
+</html>

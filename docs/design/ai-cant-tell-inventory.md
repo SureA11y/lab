@@ -8,8 +8,8 @@ page by hand.
 
 | Lane | What settles it | Checks |
 | --- | --- | --- |
-| `answered` | The AI answers it today | 42 |
-| `read` | The AI, from the element and the text around it, as today | 4 |
+| `answered` | The AI answers it today | 46 |
+| `read` | The AI, from the element and the text around it, as today | 0 |
 | `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 12 |
 | `tree` | The browser's own accessibility tree (no model needed) | 23 |
 | `measure` | A measurement by the lab, then the AI or a person for what is left | 9 |
@@ -28,8 +28,11 @@ page by hand.
 | `bypass-blocks-present` | 2.4.1 | manual | `BYPASS_MECHANISM_ABSENT` | with the landmarks (landmarks) |
 | `canvas-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what is drawn on it, read from its pixels |
 | `click-handler-keyboard-operable` | 2.1.1, 2.1.3 | automatic | `CLICK_HANDLER_NO_KEY_HANDLER`, `CLICK_HANDLER_NOT_IN_TAB_ORDER`, `CLICK_HANDLER_KEY_LISTENER_ABOVE`, `CLICK_HANDLER_FOCUS_LISTENER`, `CLICK_HANDLER_NOT_FOCUSABLE` | fail only |
+| `contrast-enhanced` | 1.4.6 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `ENGINE_EXCEPTION` | as contrast-minimum, AAA |
+| `contrast-minimum` | 1.4.3 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `LOGO_TEXT_BELOW_THRESHOLD`, `CONTRAST_SWITCH_OFFERED`, `SEMIBOLD_BELOW_THRESHOLD`, `PSEUDO_ELEMENT_COLOR`, `TEXT_STROKE`, `TEXT_SHADOW`, `ENGINE_EXCEPTION` | for the reasons reading can settle (a symbol, logo text, a contrast switch, a placeholder); the others need a measurement |
 | `control-name-title-only` | (best practice) | manual | `NAME_FROM_TITLE_ONLY` | a best practice: with includeBestPractice |
 | `css-focus-indicator-suppressed` | 1.4.11, 2.4.7, 2.4.13 | manual | `FOCUS_INDICATOR_SUPPRESSED` | per element: focus visible, its contrast (1.4.11) and appearance (2.4.13) |
+| `css-orientation-lock` | 1.3.4 | automatic | `ORIENTATION_MEDIA_ROTATES_ELEMENT`, `ORIENTATION_MEDIA_HIDES_CONTENT`, `STYLESHEETS_NOT_READABLE` | does the rotation or hiding restrict use |
 | `embed-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what it embeds and its picture |
 | `empty-table-header` | (best practice) | manual | `TABLE_HEADER_EMPTY`, `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` | a best practice, with the table |
 | `focus-not-obscured-enhanced` | 2.4.12 | manual | `FOCUS_OBSCURED_ENTIRELY`, `FOCUS_OBSCURED_PARTLY`, `FOCUS_OBSCURED_BEHIND_MODAL` |  |
@@ -60,20 +63,12 @@ page by hand.
 | `presentation-role-conflict` | (best practice) | manual | `PRESENTATION_ROLE_CONFLICT` | a best practice |
 | `region` | (best practice) | manual | `CONTENT_OUTSIDE_LANDMARK` | a best practice, with the landmarks |
 | `svg-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` | from its title, desc, the symbol it draws and its classes (image.svg) |
+| `symbol-graphic-contrast` | 1.4.11 | manual | `SYMBOLS_BELOW_GRAPHIC_THRESHOLD` | does the symbol carry information |
 | `table-fake-caption` | 1.3.1 | manual | `SINGLE_CELL_FIRST_ROW_NO_CAPTION` | with the table (table) |
 | `table-th-has-data-cells` | 1.3.1 | automatic | `TABLE_TH_NO_ASSIGNED_CELL` | with the table |
 | `td-has-header` | 1.3.1 | automatic | `TD_TABLE_NO_HEADERS` | with the table |
 | `video-poster-text-alternative-present` | 1.1.1 | automatic | `TEXT_ALTERNATIVE_MISSING`, `VIDEO_POSTER_FIGCAPTION_REVIEW` | with its poster and what is near it |
 | `widget-keyboard-focusable` | 2.1.1, 2.1.3 | manual | `WIDGET_NOT_FOCUSABLE`, `WIDGET_NOT_IN_TAB_ORDER`, `COMPOSITE_NO_TAB_STOP`, `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | fail only |
-
-## `read`: The AI, from the element and the text around it, as today
-
-| Check | SC | Kind | Can't-tell reasons | Note |
-| --- | --- | --- | --- | --- |
-| `contrast-enhanced` | 1.4.6 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `ENGINE_EXCEPTION` | is this symbol text? |
-| `contrast-minimum` | 1.4.3 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `LOGO_TEXT_BELOW_THRESHOLD`, `CONTRAST_SWITCH_OFFERED`, `SEMIBOLD_BELOW_THRESHOLD`, `PSEUDO_ELEMENT_COLOR`, `TEXT_STROKE`, `TEXT_SHADOW`, `ENGINE_EXCEPTION` | is this symbol text? (the ratio is measured) |
-| `css-orientation-lock` | 1.3.4 | automatic | `ORIENTATION_MEDIA_ROTATES_ELEMENT`, `ORIENTATION_MEDIA_HIDES_CONTENT`, `STYLESHEETS_NOT_READABLE` | does the rotated element matter? |
-| `symbol-graphic-contrast` | 1.4.11 | manual | `SYMBOLS_BELOW_GRAPHIC_THRESHOLD` | does the symbol carry information? (the ratio is measured) |
 
 ## `walk`: The AI, from the focus walk or the open walk, or a small extension of them
 

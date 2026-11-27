@@ -55,9 +55,9 @@ const LANES = {
     'td-has-header': ['answered', 'with the table'], 'table-th-has-data-cells': ['answered', 'with the table'], 'empty-table-header': ['answered', 'a best practice, with the table'],
     'heading-order': ['answered', 'a best practice, with the heading outline (outline)'], 'bypass-blocks-present': ['answered', 'with the landmarks (landmarks)'],
     'page-zones-landmark': ['answered', 'a best practice, with the landmarks'], 'region': ['answered', 'a best practice, with the landmarks'], 'focus-order-semantics': ['answered', 'a best practice'],
-    'contrast-minimum': ['read', 'is this symbol text? (the ratio is measured)'], 'contrast-enhanced': ['read', 'is this symbol text?'],
-    'symbol-graphic-contrast': ['read', 'does the symbol carry information? (the ratio is measured)'],
-    'css-orientation-lock': ['read', 'does the rotated element matter?'],
+    'contrast-minimum': ['answered', 'for the reasons reading can settle (a symbol, logo text, a contrast switch, a placeholder); the others need a measurement'], 'contrast-enhanced': ['answered', 'as contrast-minimum, AAA'],
+    'symbol-graphic-contrast': ['answered', 'does the symbol carry information'],
+    'css-orientation-lock': ['answered', 'does the rotation or hiding restrict use'],
     'presentation-role-conflict': ['answered', 'a best practice'], 'accesskeys': ['answered', 'a best practice'],
 
     // The walks' evidence settles it, or would with a small extension.

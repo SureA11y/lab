@@ -359,6 +359,34 @@
       "why": "The site header with the main links sits outside every landmark: a landmark user misses it."
     },
     {
+      "page": "ai/text.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Reviews - Demo Shop\" says what the page is about and names the site."
+    },
+    {
+      "page": "ai/text.html",
+      "check": "css-orientation-lock",
+      "target": "html > body > main",
+      "expected": "fail",
+      "why": "In portrait the page hides all its content and only asks the user to turn the device: it cannot be used in portrait, and no orientation is essential to it."
+    },
+    {
+      "page": "ai/text.html",
+      "check": "symbol-graphic-contrast",
+      "target": "#rating",
+      "expected": "fail",
+      "why": "The stars \"★★★☆☆\" are the only sign of the rating (three out of five), at 1.43:1: a person needs them."
+    },
+    {
+      "page": "ai/text.html",
+      "check": "symbol-graphic-contrast",
+      "target": "#next-arrow",
+      "expected": "pass",
+      "why": "The arrow after \"Next page\" repeats the link text: decorative."
+    },
+    {
       "page": "ai/focus.html",
       "check": "page-title-patterns",
       "target": "html > head > title",

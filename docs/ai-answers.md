@@ -96,6 +96,9 @@ By reading the page (always):
 | `table-fake-caption`, `td-has-header`, `table-th-has-data-cells` | 1.3.1 | Is a first row really a title; is a table without headers a data table; is a header with no cells wrong? (With the table's first rows, cell by cell.) |
 | `bypass-blocks-present` | 2.4.1 | Does a page with nothing to skip by need a way past repeated blocks? (With the page's landmarks and skip links.) |
 | `empty-table-header`, `heading-order`, `page-zones-landmark`, `region`, `focus-order-semantics`, `presentation-role-conflict`, `accesskeys` | best practice | Empty or hidden header cells, skipped heading levels (with the page's outline), header or footer blocks not exposed as landmarks and content outside them (with the landmarks), focusable elements with a non-interactive role, presentation roles that do not hold, shared access keys. |
+| `contrast-minimum`, `contrast-enhanced` | 1.4.3, 1.4.6 | Text below its ratio that the checker could not judge: is a symbol text that matters, is it logo text, does a contrast switch count, does a placeholder say more than its label? Reasons that need a measurement (text stroke or shadow, semibold sizes) stay open. |
+| `symbol-graphic-contrast` | 1.4.11 | Do low-contrast symbols (an arrow, stars) carry information a person needs? |
+| `css-orientation-lock` | 1.3.4 | Does a rotation or a block hidden in one orientation keep the page from being used in it? |
 | `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |

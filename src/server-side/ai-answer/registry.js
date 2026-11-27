@@ -27,7 +27,9 @@
 // registry-12: structure (form groups, labels, tables, heading order,
 // bypass, landmarks, focusable non-controls, presentation conflicts,
 // accesskeys), with the table, the heading outline and the landmarks.
-const PROMPT_VERSION = 'registry-12';
+// registry-13: "is it text" (contrast-minimum and contrast-enhanced, for the
+// reasons reading can settle; symbol-graphic-contrast; css-orientation-lock).
+const PROMPT_VERSION = 'registry-13';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -164,6 +166,22 @@ const ANSWERABLE = Object.freeze({
     },
     'accesskeys': {
         question: "A best practice, not a WCAG failure: this element's accesskey is also used by other elements on the page (`reported`: the key, how many, the others), so the shortcut may not reach it. Do the elements do different things (fail: one is unreachable by its key), or the same thing (the same link twice: pass)?",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'contrast-minimum': {
+        question: "The checker found this text below its contrast ratio (1.4.3, AA: 4.5:1, or 3:1 for large text) but could not tell whether that fails, for the reason `reported` gives (its reasonCode). Answer only what reading can settle: a symbol that is not a letter or a digit (SYMBOLIC_CHARACTER_BELOW_THRESHOLD): is it text that conveys something the criterion covers (fail), or decorative or repeated by the text next to it (pass)? Text that looks like part of a logo or brand name (LOGO_TEXT_BELOW_THRESHOLD): logo text has no contrast requirement (pass), other text fails. A control that switches to higher contrast (CONTRAST_SWITCH_OFFERED): pass only when it is easy to find and its high-contrast version meets the ratio, as far as the evidence shows; otherwise unsure. A placeholder below the ratio (PLACEHOLDER_BELOW_THRESHOLD): placeholder text is text, so fail, unless the field's visible label carries all it says. For every other reason (semibold sizes, ::first-line or ::first-letter colours, text stroke or shadow, an engine error) the answer needs a measurement: answer \"unsure\".",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'contrast-enhanced': {
+        question: "The checker found this text below its contrast ratio (1.4.6, AAA: 7:1, or 4.5:1 for large text) but could not tell whether that fails, for the reason `reported` gives (its reasonCode). Answer only what reading can settle: a symbol that is not a letter or a digit (SYMBOLIC_CHARACTER_BELOW_THRESHOLD): is it text that conveys something the criterion covers (fail), or decorative or repeated by the text next to it (pass)? Text that looks like part of a logo or brand name (LOGO_TEXT_BELOW_THRESHOLD): logo text has no contrast requirement (pass), other text fails. A control that switches to higher contrast (CONTRAST_SWITCH_OFFERED): pass only when it is easy to find and its high-contrast version meets the ratio, as far as the evidence shows; otherwise unsure. A placeholder below the ratio (PLACEHOLDER_BELOW_THRESHOLD): placeholder text is text, so fail, unless the field's visible label carries all it says. For every other reason (semibold sizes, ::first-line or ::first-letter colours, text stroke or shadow, an engine error) the answer needs a measurement: answer \"unsure\".",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'symbol-graphic-contrast': {
+        question: "Symbols drawn as text, with no letter or digit (an arrow, a star, a check mark), are under 3:1 against their background (`reported`: the symbols, the ratio, the colours). 1.4.11: does a person need them to understand something (a rating, a state, the only sign of an action): fail; or are they decorative, or repeated by text next to them: pass?",
+        evidence: ['element', 'context', 'reported'],
+    },
+    'css-orientation-lock': {
+        question: "An orientation media query rotates an element by about 90 degrees, or hides the page's content in one orientation, or some style sheets could not be read (`reported`). 1.3.4: does that keep a user from using the page in one orientation, portrait or landscape (fail), or does it only rearrange something that does not hold the content, or is one orientation essential (a piano, a cheque) (pass)? When the style sheets could not be read, answer \"unsure\".",
         evidence: ['element', 'context', 'reported'],
     },
     'link-name-quality': {
