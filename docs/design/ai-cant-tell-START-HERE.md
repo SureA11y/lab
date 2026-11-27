@@ -28,7 +28,7 @@ of 132), the walk lane from what the checker reported and, with
 `focus: true`, the element's own walk stop; before it, the `read` lane: the
 text alternatives, the names and labels (with what the checker reported),
 the structure checks (with the table, the heading outline and the
-landmarks) and "is it text"; best-practice findings are asked too; demo 81
+landmarks) and "is it text"; best-practice findings are asked too; demo 97
 of 97, prompt version `registry-15`. Before that: the **roadmap** and the
 **inventory** of every engine check that can end in "can't tell" (with a
 test that keeps it in step with the engine and the registry), and the
@@ -39,47 +39,38 @@ browser tests (`focus-walk` 16, `ai-answer` 10, `app-boot`) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
 AI for every "can't tell" from the rules: 58 of 132 checks are answered
-today: steps 1 and 3 are done (every `read` and `walk` check); next
-the browser's accessibility tree for 23 "name present" checks, the walks,
-measurements, pictures and media. Phase 2 (criteria no rule can automate)
+today: steps 1 and 3 are done (every `read` and `walk` check); left: step 2
+(23 "name present" checks, from the browser's accessibility tree, waiting
+on the user), step 4 (8 measurements), step 5 (9 checks needing pictures,
+media or further use of the page) and the 32 `code` checks (roadmap
+decision 3). Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
 
-**Where to pick up without the user:** phase 1, step 1 of the roadmap (the
-`read` checks, family by family, each with demo cases, blind evaluation and
-the user guide). Done so far (2026-11-26): `svg-text-alternative-quality`
-(demo 2 of 2, the W3C's 5 real SVGs 5 of 5), `area-alt-quality`,
-`input-image-alt-quality`, `input-image-alt-decorative` (demo 6 of 6, the one
-real case 1 of 1), `object-`, `embed-`, `canvas-text-alternative-quality`,
-`image-redundant-alt`, `video-poster-text-alternative-present` (demo 6 of 6,
-4 real cases 4 of 4): the text alternatives are done. Best-practice findings
-are now asked too (they were never read). Then the names and labels (8
-checks, with what the checker reported, `reported`; demo page `labels.html`,
-14 of 14; 24 real cases 23 of 24, the difference a reading of 2.4.9 for a
-person to settle). Then the structure checks (13, with the table, the
-heading outline and the landmarks read from the page: `table`, `outline`,
-`landmarks`; demo page `structure.html`; 37 real cases 37 of 37, 2026-11-27).
-Then "is it text" (`contrast-minimum`, `contrast-enhanced` for the reasons
-reading can settle, `symbol-graphic-contrast`, `css-orientation-lock`; demo
-page `text.html`; no real case on the evaluation sites): **step 1 is done**
-(2026-11-27). Next: step 2, the 23 "name present" checks from the browser's
-accessibility tree, waits on roadmap decision 4 (in the lab or in the
-engine: ask the user); so go on with step 3, the `walk` lane (12 checks:
-`tabindex`, `focus-not-removed-by-script`, `iframe-focusable-content`,
-`scrollable-region-focusable`, `mouse-only-event-handlers`,
-`css-hidden-focus`, `aria-expanded-state-mismatch`,
-`aria-checked-state-mismatch`, `skip-link`, `aria-hidden-focus`,
-`nested-interactive-controls-absent`, `server-side-image-map-absent`),
-whose evidence the focus and open walks mostly already collect. **Step 3
-is done** (2026-11-27): reading questions on what the checker reported,
-with the element's own walk stop (`walkStop`) when `focus: true`; demo page
-`keyboard.html`; real pages 10 of 10 answered read only, 23 of 24 with the
-walk (none wrong). Next: step 4, the `measure` lane (8 checks:
-`contrast-computable`, `link-in-text-block`, `text-spacing-content-loss`,
-`avoid-inline-spacing`, `reflow-horizontal-scroll`,
-`resize-text-content-loss`, `target-size-minimum`, `target-size-enhanced`),
-where the lab measures first (pixels behind text, hover and focus cues,
-pictures with spacing applied or at 320 px) and the AI judges what is left. Items 1
-to 3 below need the user.
+**Where to pick up without the user:** phase 1, **step 4, the `measure`
+lane** (8 checks): `contrast-computable` (text over a background image or
+gradient: the colours behind it can only be read from pixels),
+`link-in-text-block` (a link told apart by colour alone: does hover or focus
+add a cue), `text-spacing-content-loss` and `avoid-inline-spacing` (1.4.12:
+is text cut off with the spacing applied), `reflow-horizontal-scroll` (at 320
+CSS pixels, is the content that scrolls sideways a table or map, which may,
+or text, which may not), `resize-text-content-loss` (1.4.4), and
+`target-size-minimum` and `target-size-enhanced` (2.5.8, 2.5.5: inline links
+and spacing exceptions). Read each check's reasons in the engine first: the
+engine already measures much of this, and what it reports (`reported`) may
+be enough for a reading question, as the walk lane turned out to be; where
+it is not, the lab measures (pictures before and after, pixels behind text,
+as `compareAppearance` does for focus) and the question gets the
+measurement. Then the recipe of item 4. Progress so far (all 2026-11-26/27,
+details in `ai-cant-tell-eval/README.md`):
+
+| Step | Checks | Demo | Real cases |
+| --- | --- | --- | --- |
+| 1, text alternatives | 9 | all agree | about 10, all agree |
+| 1, names and labels | 8 | 14 of 14 | 23 of 24 (one reading of 2.4.9) |
+| 1, structure | 13 | all agree (one ambiguous case dropped) | 37 of 37 |
+| 1, "is it text" | 4 | 4 of 4 | none came up |
+| 3, walk lane | 12 | 16 of 16 | 10 of 10 read only (8 unsure), 23 of 24 with the walk |
+| 2, accessibility tree | 23 | | waiting on roadmap decision 4 (item 3b) |
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `open-walk.js`, `evidence.js`, `provider.js`,
@@ -191,7 +182,10 @@ to 3 below need the user.
   (`focusStops`), blank images, a video's own controls, keyboard asked where
   Tab reaches nothing, focus order judged on its own; then the open walk.
 
-**Not measured yet:** the "is it text" checks on any real case (none came up
+**Not measured yet:** the walk lane's checks beyond tab order, hidden focus
+and mouse-only handlers on real pages (frames, scrolling boxes, focus taken by
+a script, state mismatches, aria-hidden focus, nested controls and server-side
+maps had no real case); the "is it text" checks on any real case (none came up
 on 22 evaluation pages); the structure checks on real pages beyond 37 cases in
 seven checks (`region`, 179 questions on the same few blocks, was left out: it
 needs a way to sample or group them; focus-order semantics, presentation
@@ -360,9 +354,13 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   `evidence.js`: `element`, `context`, `pageTitle`, `image` (with
   `image.svg`, `image.area`, `image.embedded`), `reported` (what the checker
   reported, `occurrence.details`, bounded), `table`, `outline`, `landmarks`;
-  the walk questions use `focusWalk`. Adding a kind to an existing question
+  the walk questions use `focusWalk`; a reading question can add
+  `walkStop` (the element's own stop, only when the step has `focus: true`;
+  without it the question is asked as before). Adding a kind to an existing question
   changes its prompt, so its blind answers must be redone; a new question
   takes what it needs.
+- Read the test results before committing: a chained `node --test && git
+  commit` that ignores the result once pushed a syntax error (fixed at once).
 - A demo case must be unambiguous under its own question's pass and fail
   wording: the first `table-th-has-data-cells` case (a header over a missing
   cell) was what the question calls "an empty column", and was dropped.
