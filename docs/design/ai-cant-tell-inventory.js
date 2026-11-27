@@ -61,12 +61,12 @@ const LANES = {
     'presentation-role-conflict': ['answered', 'a best practice'], 'accesskeys': ['answered', 'a best practice'],
 
     // The walks' evidence settles it, or would with a small extension.
-    'tabindex': ['walk', 'the walk shows what Tab reaches first'], 'focus-not-removed-by-script': ['walk', 'the walk records lostFocus'],
-    'iframe-focusable-content': ['walk'], 'scrollable-region-focusable': ['walk', 'can the region be scrolled with the keyboard'],
-    'mouse-only-event-handlers': ['walk', 'as keyboard per element'], 'css-hidden-focus': ['walk', 'as focus visible'],
-    'aria-expanded-state-mismatch': ['walk', 'the open walk sees what shows'], 'aria-checked-state-mismatch': ['walk'],
-    'skip-link': ['walk', 'press it and see where focus goes'], 'server-side-image-map-absent': ['walk'],
-    'aria-hidden-focus': ['walk', 'can Tab reach it'], 'nested-interactive-controls-absent': ['walk'],
+    'tabindex': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'], 'focus-not-removed-by-script': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'],
+    'iframe-focusable-content': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'], 'scrollable-region-focusable': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'],
+    'mouse-only-event-handlers': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'], 'css-hidden-focus': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'],
+    'aria-expanded-state-mismatch': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'], 'aria-checked-state-mismatch': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'],
+    'skip-link': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'], 'server-side-image-map-absent': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'],
+    'aria-hidden-focus': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'], 'nested-interactive-controls-absent': ['answered', 'by reading what the checker reported (its own runtime probe); the walk could add more'],
 
     // The browser's accessibility tree settles a name the engine could not compute.
     'button-name-present': ['tree'], 'link-name-present': ['tree'], 'binary-control-name-present': ['tree'],

@@ -387,6 +387,118 @@
       "why": "The arrow after \"Next page\" repeats the link text: decorative."
     },
     {
+      "page": "ai/keyboard.html",
+      "check": "img-alt-quality",
+      "target": "#zoom",
+      "expected": "pass",
+      "why": "\"Canvas garden bag\" describes the picture of the bag."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "img-alt-quality",
+      "target": "html > body > main > p:nth-of-type(5) > a > img",
+      "expected": "pass",
+      "why": "\"Plan of the shop's garden\" says what the map picture is."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "p-as-heading",
+      "target": "html > body > header > p",
+      "expected": "pass",
+      "why": "\"Demo Shop\" in bold is the site name in the header."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "server-side-image-map-absent",
+      "target": "html > body > main > p:nth-of-type(5) > a > img",
+      "expected": "pass",
+      "why": "The places on the map (the greenhouse, the tool shed) are offered as ordinary links just below it."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "scrollable-region-focusable",
+      "target": "html > body > main > div:nth-of-type(2)",
+      "expected": "fail",
+      "why": "The terms box needs scrolling to read and nothing in it takes focus: in browsers that do not make scrollers focusable, the keyboard cannot scroll it."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "mouse-only-event-handlers",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(2)",
+      "expected": "pass",
+      "why": "On the Products link, the hover handlers only change its underline; the link works with Enter."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "mouse-only-event-handlers",
+      "target": "#zoom",
+      "expected": "fail",
+      "why": "The larger picture of the bag is shown only on mouse hover; a keyboard user never gets it."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "focus-not-removed-by-script",
+      "target": "nav[aria-label=\"Main\"] > a:nth-of-type(3)",
+      "expected": "fail",
+      "why": "The Cart link's onfocus calls this.blur(): focus is taken away as it arrives."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Garden bag - Demo Shop\" names the product and the site."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "css-hidden-focus",
+      "target": "html > body > footer > p > a:nth-of-type(2)",
+      "expected": "fail",
+      "why": "\"Back to top\" is off the screen and stays there when focused: focus lands on something nobody can see."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "nested-interactive-controls-absent",
+      "target": "html > body > main > p:nth-of-type(2) > a",
+      "expected": "fail",
+      "why": "A Buy button inside a link: two controls in one."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "aria-checked-state-mismatch",
+      "target": "#news",
+      "expected": "fail",
+      "why": "The newsletter box is checked but aria-checked says false: a screen reader is told the wrong state."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "aria-expanded-state-mismatch",
+      "target": "#returns-toggle",
+      "expected": "fail",
+      "why": "\"Returns\" says collapsed (aria-expanded false) while the answer it controls is shown."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "region",
+      "target": "html > body > a",
+      "expected": "pass",
+      "why": "The content outside the landmarks is the skip link at the top of the page, which may sit there."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "skip-link",
+      "target": "html > body > a",
+      "expected": "fail",
+      "why": "\"Skip to content\" points to #content, which does not exist: pressing it moves nothing."
+    },
+    {
+      "page": "ai/keyboard.html",
+      "check": "tabindex",
+      "target": "html > body > footer > p > a:nth-of-type(1)",
+      "expected": "fail",
+      "why": "The footer's Privacy link has tabindex 1, so Tab reaches it before everything else on the page."
+    },
+    {
       "page": "ai/focus.html",
       "check": "page-title-patterns",
       "target": "html > head > title",

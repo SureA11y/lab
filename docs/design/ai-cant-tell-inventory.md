@@ -8,9 +8,9 @@ page by hand.
 
 | Lane | What settles it | Checks |
 | --- | --- | --- |
-| `answered` | The AI answers it today | 46 |
+| `answered` | The AI answers it today | 58 |
 | `read` | The AI, from the element and the text around it, as today | 0 |
-| `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 12 |
+| `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 0 |
 | `tree` | The browser's own accessibility tree (no model needed) | 23 |
 | `measure` | A measurement by the lab, then the AI or a person for what is left | 9 |
 | `picture` | The AI, once it can see the picture | 1 |
@@ -25,6 +25,9 @@ page by hand.
 | --- | --- | --- | --- | --- |
 | `accesskeys` | (best practice) | manual | `ACCESSKEY_DUPLICATE` | a best practice |
 | `area-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with the map's picture, the area's place on it and the other areas (image.area) |
+| `aria-checked-state-mismatch` | 4.1.2 | manual | `ARIA_CHECKED_STATE_MISMATCH` | by reading what the checker reported (its own runtime probe); the walk could add more |
+| `aria-expanded-state-mismatch` | 4.1.2 | manual | `EXPANDED_FALSE_CONTROLLED_SHOWN`, `EXPANDED_TRUE_CONTROLLED_HIDDEN` | by reading what the checker reported (its own runtime probe); the walk could add more |
+| `aria-hidden-focus` | 4.1.2 | automatic | `ariaHiddenFocusable_modalOpen_needsReview`, `ariaHiddenFocusable_runtimeRedirect_needsReview` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `bypass-blocks-present` | 2.4.1 | manual | `BYPASS_MECHANISM_ABSENT` | with the landmarks (landmarks) |
 | `canvas-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what is drawn on it, read from its pixels |
 | `click-handler-keyboard-operable` | 2.1.1, 2.1.3 | automatic | `CLICK_HANDLER_NO_KEY_HANDLER`, `CLICK_HANDLER_NOT_IN_TAB_ORDER`, `CLICK_HANDLER_KEY_LISTENER_ABOVE`, `CLICK_HANDLER_FOCUS_LISTENER`, `CLICK_HANDLER_NOT_FOCUSABLE` | fail only |
@@ -32,11 +35,13 @@ page by hand.
 | `contrast-minimum` | 1.4.3 | automatic | `PLACEHOLDER_BELOW_THRESHOLD`, `SYMBOLIC_CHARACTER_BELOW_THRESHOLD`, `LOGO_TEXT_BELOW_THRESHOLD`, `CONTRAST_SWITCH_OFFERED`, `SEMIBOLD_BELOW_THRESHOLD`, `PSEUDO_ELEMENT_COLOR`, `TEXT_STROKE`, `TEXT_SHADOW`, `ENGINE_EXCEPTION` | for the reasons reading can settle (a symbol, logo text, a contrast switch, a placeholder); the others need a measurement |
 | `control-name-title-only` | (best practice) | manual | `NAME_FROM_TITLE_ONLY` | a best practice: with includeBestPractice |
 | `css-focus-indicator-suppressed` | 1.4.11, 2.4.7, 2.4.13 | manual | `FOCUS_INDICATOR_SUPPRESSED` | per element: focus visible, its contrast (1.4.11) and appearance (2.4.13) |
+| `css-hidden-focus` | 2.4.7 | manual | `cssHiddenTabbable_needsFocusStateVerification`, `cssHiddenTabbable_runtimeRedirect_needsReview` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `css-orientation-lock` | 1.3.4 | automatic | `ORIENTATION_MEDIA_ROTATES_ELEMENT`, `ORIENTATION_MEDIA_HIDES_CONTENT`, `STYLESHEETS_NOT_READABLE` | does the rotation or hiding restrict use |
 | `embed-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what it embeds and its picture |
 | `empty-table-header` | (best practice) | manual | `TABLE_HEADER_EMPTY`, `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` | a best practice, with the table |
 | `focus-not-obscured-enhanced` | 2.4.12 | manual | `FOCUS_OBSCURED_ENTIRELY`, `FOCUS_OBSCURED_PARTLY`, `FOCUS_OBSCURED_BEHIND_MODAL` |  |
 | `focus-not-obscured-minimum` | 2.4.11 | manual | `FOCUS_OBSCURED_ENTIRELY`, `FOCUS_OBSCURED_PARTLY`, `FOCUS_OBSCURED_BEHIND_MODAL` |  |
+| `focus-not-removed-by-script` | 2.1.1, 2.1.3, 2.4.7, 2.4.13 | automatic | `FOCUS_HANDLER_BLURS_SELF`, `FOCUS_HANDLER_CALLS_BLUR`, `FOCUS_HANDLER_MOVES_FOCUS` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `focus-order-semantics` | (best practice) | manual | `TABBABLE_WITH_NON_INTERACTIVE_ROLE` | a best practice |
 | `form-control-label-quality` | 2.4.6 | manual | `DUPLICATE_LABEL_TEXT`, `PARTIALLY_HIDDEN_LABEL`, `PLACEHOLDER_LABEL_TEXT` | with what the checker reported (reported) |
 | `form-control-programmatic-label-quality` | 3.3.2 | manual | `label_from_aria_label_only`, `label_from_hidden_labelledby`, `label_from_placeholder_primary`, `label_from_title_primary` |  |
@@ -46,6 +51,7 @@ page by hand.
 | `heading-quality` | 2.4.6 | manual | `PLACEHOLDER_HEADING_TEXT`, `FILENAME_LIKE_HEADING`, `URL_LIKE_HEADING` | with what the checker reported (reported) |
 | `identical-iframes-same-purpose` | 4.1.2 | automatic | `IFRAME_RESOURCE_DIFFERS`, `IFRAME_RESOURCE_UNRESOLVED` | with what the checker reported (reported) |
 | `identical-links-same-purpose` | 2.4.9 | manual | `SAME_NAME_DIFFERENT_DESTINATION` | AAA (2.4.9): with the AAA profile |
+| `iframe-focusable-content` | 2.1.1, 2.1.3 | automatic | `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `image-redundant-alt` | (best practice) | manual | `IMAGE_ALT_REDUNDANT` | a best practice: asked with includeBestPractice |
 | `img-alt-decorative` | 1.1.1 | manual | `EXCLUDED_ELEMENT_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |  |
 | `img-alt-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |  |
@@ -56,36 +62,25 @@ page by hand.
 | `link-name-quality` | 2.4.4, 2.4.9 | manual | `GENERIC_LINK_TEXT`, `AMBIGUOUS_FORMAT_NAME`, `GENERIC_LINK_TEXT_IN_CONTEXT` |  |
 | `link-name-quality-link-only` | 2.4.9 | manual | `GENERIC_LINK_TEXT_IN_CONTEXT` | AAA (2.4.9): with the AAA profile |
 | `manual-review` | 2.1.1, 2.4.3, 2.4.7 | manual | `KEYBOARD_REVIEW` | focus visible, focus order and keyboard, from the focus walk (and the open walk) |
+| `mouse-only-event-handlers` | 2.1.1, 2.1.3 | manual | `MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT`, `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE` | by reading what the checker reported (its own runtime probe); the walk could add more |
+| `nested-interactive-controls-absent` | 4.1.2 | automatic | `NESTED_INTERACTIVE_CONTROL` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `object-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what it embeds and its picture (image.embedded) |
 | `p-as-heading` | 1.3.1 | manual | `BOLD_LARGE_PARAGRAPH`, `BOLD_LARGE_DIV`, `HEADING_LIKE_LINK`, `HEADING_LIKE_NUMBER`, `BOLD_SHORT_PARAGRAPH` |  |
 | `page-title-patterns` | 2.4.2 | manual | `placeholderTitle`, `genericTitle`, `veryShortTitle`, `templateLikeTitle`, `duplicateTitlesAcrossPages`, `templatedTitlesAcrossPages`, `titleReview` |  |
 | `page-zones-landmark` | (best practice) | manual | `BANNER_NOT_EXPOSED`, `HEADER_NESTED`, `NAVIGATION_NOT_EXPOSED`, `SEARCH_NOT_EXPOSED`, `CONTENTINFO_NOT_EXPOSED`, `FOOTER_NESTED` | a best practice, with the landmarks |
 | `presentation-role-conflict` | (best practice) | manual | `PRESENTATION_ROLE_CONFLICT` | a best practice |
 | `region` | (best practice) | manual | `CONTENT_OUTSIDE_LANDMARK` | a best practice, with the landmarks |
+| `scrollable-region-focusable` | 2.1.1, 2.1.3 | manual | `SCROLLABLE_OVERFLOW_NOT_FOCUSABLE` | by reading what the checker reported (its own runtime probe); the walk could add more |
+| `server-side-image-map-absent` | 2.1.1, 2.1.3 | automatic | `SERVER_SIDE_IMAGE_MAP` | by reading what the checker reported (its own runtime probe); the walk could add more |
+| `skip-link` | (best practice) | manual | `SKIP_LINK_TARGET_MISSING`, `SKIP_LINK_TARGET_UNUSABLE` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `svg-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` | from its title, desc, the symbol it draws and its classes (image.svg) |
 | `symbol-graphic-contrast` | 1.4.11 | manual | `SYMBOLS_BELOW_GRAPHIC_THRESHOLD` | does the symbol carry information |
+| `tabindex` | (best practice) | manual | `TABINDEX_POSITIVE` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `table-fake-caption` | 1.3.1 | manual | `SINGLE_CELL_FIRST_ROW_NO_CAPTION` | with the table (table) |
 | `table-th-has-data-cells` | 1.3.1 | automatic | `TABLE_TH_NO_ASSIGNED_CELL` | with the table |
 | `td-has-header` | 1.3.1 | automatic | `TD_TABLE_NO_HEADERS` | with the table |
 | `video-poster-text-alternative-present` | 1.1.1 | automatic | `TEXT_ALTERNATIVE_MISSING`, `VIDEO_POSTER_FIGCAPTION_REVIEW` | with its poster and what is near it |
 | `widget-keyboard-focusable` | 2.1.1, 2.1.3 | manual | `WIDGET_NOT_FOCUSABLE`, `WIDGET_NOT_IN_TAB_ORDER`, `COMPOSITE_NO_TAB_STOP`, `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | fail only |
-
-## `walk`: The AI, from the focus walk or the open walk, or a small extension of them
-
-| Check | SC | Kind | Can't-tell reasons | Note |
-| --- | --- | --- | --- | --- |
-| `aria-checked-state-mismatch` | 4.1.2 | manual | `ARIA_CHECKED_STATE_MISMATCH` |  |
-| `aria-expanded-state-mismatch` | 4.1.2 | manual | `EXPANDED_FALSE_CONTROLLED_SHOWN`, `EXPANDED_TRUE_CONTROLLED_HIDDEN` | the open walk sees what shows |
-| `aria-hidden-focus` | 4.1.2 | automatic | `ariaHiddenFocusable_modalOpen_needsReview`, `ariaHiddenFocusable_runtimeRedirect_needsReview` | can Tab reach it |
-| `css-hidden-focus` | 2.4.7 | manual | `cssHiddenTabbable_needsFocusStateVerification`, `cssHiddenTabbable_runtimeRedirect_needsReview` | as focus visible |
-| `focus-not-removed-by-script` | 2.1.1, 2.1.3, 2.4.7, 2.4.13 | automatic | `FOCUS_HANDLER_BLURS_SELF`, `FOCUS_HANDLER_CALLS_BLUR`, `FOCUS_HANDLER_MOVES_FOCUS` | the walk records lostFocus |
-| `iframe-focusable-content` | 2.1.1, 2.1.3 | automatic | `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` |  |
-| `mouse-only-event-handlers` | 2.1.1, 2.1.3 | manual | `MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT`, `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE` | as keyboard per element |
-| `nested-interactive-controls-absent` | 4.1.2 | automatic | `NESTED_INTERACTIVE_CONTROL` |  |
-| `scrollable-region-focusable` | 2.1.1, 2.1.3 | manual | `SCROLLABLE_OVERFLOW_NOT_FOCUSABLE` | can the region be scrolled with the keyboard |
-| `server-side-image-map-absent` | 2.1.1, 2.1.3 | automatic | `SERVER_SIDE_IMAGE_MAP` |  |
-| `skip-link` | (best practice) | manual | `SKIP_LINK_TARGET_MISSING`, `SKIP_LINK_TARGET_UNUSABLE` | press it and see where focus goes |
-| `tabindex` | (best practice) | manual | `TABINDEX_POSITIVE` | the walk shows what Tab reaches first |
 
 ## `tree`: The browser's own accessibility tree (no model needed)
 

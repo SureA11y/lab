@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Garden bag - Demo Shop</title><link rel="stylesheet" href="../style.css">
+<style>
+  .offscreen { position: absolute; left: -9999px; }
+  .terms { height: 60px; overflow: auto; border: 1px solid #ccc; padding: 4px; width: 320px; }
+</style></head>
+<!-- The AI answers demo, the walk lane answered by reading. Each case has a
+     known answer, in expected.json beside this page. -->
+<body>
+<a href="#content">Skip to content</a>
+<header><p><strong>Demo Shop</strong></p><nav aria-label="Main"><a href="../index.html">Home</a> <a href="../products.html" onmouseover="this.style.textDecoration='none'" onmouseout="this.style.textDecoration=''">Products</a> <a href="../cart.html" onfocus="this.blur(); window.cartSeen = true">Cart</a></nav></header>
+<main>
+  <h1>Garden bag</h1>
+  <p><img id="zoom" src="../images/bag.svg" width="200" height="120" alt="Canvas garden bag" onmouseover="this.width = 400; this.height = 240" onmouseout="this.width = 200; this.height = 120"></p>
+  <p>Canvas, two leather handles, 32 €. <a href="../products.html"><button type="button">Buy</button></a></p>
+  <p><button type="button" id="returns-toggle" aria-expanded="false" aria-controls="returns">Returns</button></p>
+  <div id="returns"><p>You can return it within 30 days, in its box.</p></div>
+  <p><input type="checkbox" id="news" checked aria-checked="false"> <label for="news">Send me the newsletter</label></p>
+  <h2>Where to find it</h2>
+  <p><a href="../index.html"><img src="../images/garden-plan.svg" width="300" height="120" alt="Plan of the shop's garden" ismap></a></p>
+  <p>In the <a href="../index.html#greenhouse">greenhouse</a> or the <a href="../index.html#shed">tool shed</a>.</p>
+  <h2>Terms</h2>
+  <div class="terms">Prices include tax. Delivery takes two to five working days. Items can be returned within 30 days in their box, with the receipt. Refunds reach your card within five days. Gift cards cannot be exchanged for money. The shop keeps your details only to deliver your order.</div>
+</main>
+<footer><p><a href="../index.html" tabindex="1">Privacy</a> <a href="#top" class="offscreen">Back to top</a></p></footer>
+</body>
+</html>

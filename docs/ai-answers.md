@@ -99,6 +99,10 @@ By reading the page (always):
 | `contrast-minimum`, `contrast-enhanced` | 1.4.3, 1.4.6 | Text below its ratio that the checker could not judge: is a symbol text that matters, is it logo text, does a contrast switch count, does a placeholder say more than its label? Reasons that need a measurement (text stroke or shadow, semibold sizes) stay open. |
 | `symbol-graphic-contrast` | 1.4.11 | Do low-contrast symbols (an arrow, stars) carry information a person needs? |
 | `css-orientation-lock` | 1.3.4 | Does a rotation or a block hidden in one orientation keep the page from being used in it? |
+| `tabindex`, `skip-link` | best practice | Does a positive tabindex pull the keyboard away; does a skip link with a missing or hidden target still work? |
+| `focus-not-removed-by-script`, `iframe-focusable-content`, `scrollable-region-focusable`, `mouse-only-event-handlers`, `server-side-image-map-absent` | 2.1.1 | Does a focus handler take focus away; is a frame's content reachable; does a scrolling box need the keyboard; do pointer-only handlers do something a keyboard user needs; are a server-side map's places offered as links? (From what the checker reported, including its own runtime probe.) |
+| `css-hidden-focus` | 2.4.7 | Does focus land on something hidden by CSS? |
+| `aria-expanded-state-mismatch`, `aria-checked-state-mismatch`, `aria-hidden-focus`, `nested-interactive-controls-absent` | 4.1.2 | Is a screen reader told the wrong state; can focus land inside aria-hidden; is a control nested in another? |
 | `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |

@@ -12,6 +12,8 @@
     { "type": "a11yScan", "label": "Structure", "includeBestPractice": true, "ai": { "budget": { "calls": 120, "seconds": 120 } } },
     { "type": "navigate", "url": "http://localhost:8780/ai/text.html", "label": "Open the text page" },
     { "type": "a11yScan", "label": "Is it text (AAA)", "profile": "wcag22-aaa", "includeBestPractice": true, "ai": { "budget": { "calls": 120, "seconds": 120 } } },
+    { "type": "navigate", "url": "http://localhost:8780/ai/keyboard.html", "label": "Open the keyboard page" },
+    { "type": "a11yScan", "label": "Keyboard, by reading", "includeBestPractice": true, "ai": { "budget": { "calls": 120, "seconds": 120 } } },
     { "type": "navigate", "url": "http://localhost:8780/ai/focus.html", "label": "Open the focus page" },
     { "type": "a11yScan", "label": "Focus and keyboard (AAA)", "profile": "wcag22-aaa", "ai": { "focus": true, "budget": { "calls": 120, "seconds": 120 } } },
     { "type": "navigate", "url": "http://localhost:8780/ai/dialog.html", "label": "Open the dialog page" },
