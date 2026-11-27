@@ -331,6 +331,96 @@ const PROOF_MAX = { width: 1000, height: 700 };
  * tenth percentile is given, not the minimum. Null when not measurable.
  */
 async function measurePixels(page, selector) {
+    // Exact when the page allows it: the background under each glyph, read
+    // with the text made transparent for a moment; by colour otherwise.
+    const exact = await measureContrastExact(page, selector);
+    if (exact) return exact;
+    const byColour = await measurePixelsByColour(page, selector);
+    return byColour ? { method: 'colour', ...byColour } : null;
+}
+
+/**
+ * The contrast of an element's text against the background under its
+ * glyphs, read exactly: a picture with the text, then the same picture with
+ * the text made transparent (its colour, shadow and stroke, on it and in
+ * it, transitions off), so each glyph's pixels show what lies under them.
+ * The page is changed for that moment only: every touched style attribute
+ * is put back as it was, and a fingerprint before and after must show the
+ * same page, or the measurement is dropped (null, and the caller falls back
+ * to the colour method). Never throws.
+ */
+async function measureContrastExact(page, selector) {
+    if (!selector || typeof page.screenshot !== 'function') return null;
+    const before = await fingerprint(page);
+    if (!before) return null;
+    let touched = false;
+    try {
+        const box = await page.evaluate((sel) => {
+            let el = null;
+            try { el = document.querySelector(sel); } catch { return null; }
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            if (r.width < 2 || r.height < 2) return null;
+            const cs = getComputedStyle(el);
+            const m = cs.color.match(/rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?/);
+            if (!m) return null;
+            return { x: r.left + window.scrollX, y: r.top + window.scrollY, width: r.width, height: r.height, color: [Number(m[1]), Number(m[2]), Number(m[3])], alpha: m[4] === undefined ? 1 : Number(m[4]), fontSize: parseFloat(cs.fontSize), fontWeight: Number(cs.fontWeight) || 400 };
+        }, selector);
+        if (!box) return null;
+        const clip = { x: Math.max(0, box.x), y: Math.max(0, box.y), width: Math.min(box.width, 800), height: Math.min(box.height, 300) };
+        const sharp = require('sharp');
+        const raw = async () => (await sharp(await page.screenshot({ type: 'png', clip, captureBeyondViewport: true })).removeAlpha().raw().toBuffer());
+        const withText = await raw();
+        touched = true;
+        await page.evaluate((sel, key) => {
+            const el = document.querySelector(sel);
+            const all = [el, ...el.querySelectorAll('*')];
+            window[key] = all.map((e) => [e, e.getAttribute('style')]);
+            for (const e of all) {
+                for (const [k, v] of [['transition', 'none'], ['color', 'transparent'], ['-webkit-text-fill-color', 'transparent'], ['text-shadow', 'none'], ['-webkit-text-stroke-color', 'transparent'], ['caret-color', 'transparent']]) e.style.setProperty(k, v, 'important');
+            }
+        }, selector, '__a11yContrastStyles');
+        const without = await raw();
+        await page.evaluate((key) => {
+            for (const [e, style] of window[key] || []) { if (style === null) e.removeAttribute('style'); else e.setAttribute('style', style); }
+            delete window[key];
+        }, '__a11yContrastStyles');
+        touched = false;
+        const after = await fingerprint(page);
+        const changed = viewChanges(before, after);
+        if (!after || (changed && changed.length) || before.dom !== after.dom) return null;
+        if (withText.length !== without.length) return null;
+        const lum = (r, g, b) => { const c = (v) => { const x = v / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b); };
+        const text = lum(...box.color);
+        const under = [];
+        for (let i = 0; i < withText.length; i += 3) {
+            const d = Math.abs(withText[i] - without[i]) + Math.abs(withText[i + 1] - without[i + 1]) + Math.abs(withText[i + 2] - without[i + 2]);
+            if (d < 60) continue; // no glyph here
+            const l = lum(without[i], without[i + 1], without[i + 2]);
+            under.push((Math.max(l, text) + 0.05) / (Math.min(l, text) + 0.05));
+        }
+        if (under.length < 10) return null;
+        under.sort((a, b) => a - b);
+        const at = (q) => Math.round(under[Math.floor(q * (under.length - 1))] * 100) / 100;
+        const share = (t) => Math.round((under.filter((x) => x < t).length / under.length) * 100) / 100;
+        return {
+            method: 'exact', measured: true,
+            textColour: '#' + box.color.map((v) => Math.round(v).toString(16).padStart(2, '0')).join(''), textAlpha: box.alpha,
+            fontSize: box.fontSize, fontWeight: box.fontWeight,
+            ratioP10: at(0.1), ratioMedian: at(0.5), ratioMin: at(0), shareBelow4_5: share(4.5), shareBelow3: share(3), glyphPixels: under.length,
+        };
+    } catch {
+        if (touched) {
+            try {
+                await page.evaluate((key) => { for (const [e, style] of window[key] || []) { if (style === null) e.removeAttribute('style'); else e.setAttribute('style', style); } delete window[key]; }, '__a11yContrastStyles');
+            } catch { /* the fingerprint of the pass will say */ }
+        }
+        return null;
+    }
+}
+
+// By colour: pixels unlike the text's colour are taken as its background.
+async function measurePixelsByColour(page, selector) {
     if (!selector || typeof page.screenshot !== 'function') return null;
     try {
         const box = await page.evaluate((sel) => {

@@ -41,7 +41,9 @@
 // registry-16: the measure lane: contrast over what the checker cannot
 // compute (measured from pixels), links told by colour, text spacing,
 // reflow, resized text, target size, a replaced viewport tag.
-const PROMPT_VERSION = 'registry-16';
+// registry-17: contrast over what the checker cannot compute measured
+// exactly (the text made transparent for a moment), by colour as fallback.
+const PROMPT_VERSION = 'registry-17';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -245,7 +247,7 @@ const ANSWERABLE = Object.freeze({
         evidence: ['element', 'context', 'reported'],
     },
     'contrast-computable': {
-        question: "The checker could not compute this text's contrast because of what is drawn behind or over it (`reported`: the reason: a background image or gradient, an overlapping element, opacity, a blend mode, a filter, a text shadow or stroke...). `pixels` measures it from a picture of the text as drawn: the ratio of the text colour against the pixels unlike it (the 10th percentile `ratioP10`, the median, the share below 4.5:1 and 3:1), `nearTextShare`, the share of the box drawn almost in the text's own colour (glyphs cover about a fifth of a text box: far more means the background itself is close to the text colour, a fail), and the font size and weight. 1.4.3 asks 4.5:1, or 3:1 for large text (24px, or 18.66px bold). Fail when much of the background is below the ratio where the text sits (a light part of an image under light text); pass when the measured background is clearly above it. Antialiased edges pull the lowest values down, so judge by the share and the median, not one pixel. Unsure when `pixels` is missing or the reason is something a picture cannot show (an option list, an unrendered colour scheme).",
+        question: "The checker could not compute this text's contrast because of what is drawn behind or over it (`reported`: the reason: a background image or gradient, an overlapping element, opacity, a blend mode, a filter, a text shadow or stroke...). `pixels` measures it from pictures of the text as drawn. With `method: \"exact\"`, the background under each glyph was read with the text made transparent for a moment: `shareBelow4_5` and `shareBelow3` are the shares of the background under the glyphs below those ratios, with the 10th percentile, the median and the minimum. With `method: \"colour\"` (when the page could not be changed), pixels unlike the text's colour were taken as background: antialiased edges pull the lowest values down, and `nearTextShare`, the share of the box drawn almost in the text's colour, shows a background close to the text colour (far over a fifth: a fail). 1.4.3 asks 4.5:1, or 3:1 for large text (24px, or 18.66px bold; `fontSize`, `fontWeight`). Fail when a real part of the text sits on background below its ratio (with the exact method, more than about a tenth of it); pass when it does not. Unsure when `pixels` is missing or the reason is something a picture cannot show (an option list, an unrendered colour scheme).",
         evidence: ['element', 'context', 'reported', 'pixels'],
     },
     'link-in-text-block': {

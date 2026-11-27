@@ -222,9 +222,10 @@ test('contrast the checker cannot compute is measured from the picture of the te
     const c = { findings: [{ outcome: 'cantTell', occurrences: [occ('light'), occ('dark')] }] };
     await answerCantTells({ page, canonical: c, env: {}, provider: { ask: async () => '{"verdict":"fail","confidence":0.9,"rationale":"x"}' } });
     const [light, dark] = c.findings[0].occurrences.map((o) => o.ai.evidence.pixels);
-    assert.equal(light.measured, true);
-    assert.ok(light.nearTextShare > 0.5, 'white on near white: most of the box is near the text colour: ' + JSON.stringify(light));
-    assert.ok(dark.nearTextShare < 0.35, 'white on dark green: only the glyphs: ' + JSON.stringify(dark));
+    assert.deepEqual([light.method, light.measured], ['exact', true], 'read with the text made transparent for a moment');
+    assert.ok(light.shareBelow4_5 > 0.95, 'white on near white: the background under the letters is below 4.5:1: ' + JSON.stringify(light));
+    assert.ok(dark.shareBelow4_5 === 0 && dark.ratioMin > 10, 'white on dark green: above it everywhere: ' + JSON.stringify(dark));
+    assert.equal(await page.$eval('#light', (e) => e.getAttribute('style')), 'background: linear-gradient(#fafafa, #e0e0e0)', 'its style is put back as it was');
     assert.ok(dark.ratioMedian > 10 && dark.shareBelow4_5 < 0.1, 'white on dark green: ' + JSON.stringify(dark));
     assert.equal(light.textColour, '#ffffff');
     await page.close();
