@@ -12,7 +12,7 @@
 <header><p><strong>Demo Shop</strong></p><nav aria-label="Main"><a href="../index.html">Home</a> <a href="../products.html" onmouseover="this.style.textDecoration='none'" onmouseout="this.style.textDecoration=''">Products</a> <a href="../cart.html" onfocus="this.blur(); window.cartSeen = true">Cart</a></nav></header>
 <main>
   <h1>Garden bag</h1>
-  <p><img id="zoom" src="../images/bag.svg" width="200" height="120" alt="Canvas garden bag" onmouseover="this.width = 400; this.height = 240" onmouseout="this.width = 200; this.height = 120"></p>
+  <p><img id="zoom" src="../images/bag.svg" width="200" height="120" alt="Canvas garden bag" onmouseover="document.getElementById('bag-info').textContent = 'Holds 20 litres, washable at 30 degrees.'" onmouseout="document.getElementById('bag-info').textContent = ''"> <span id="bag-info"></span></p>
   <p>Canvas, two leather handles, 32 €. <a href="../products.html"><button type="button">Buy</button></a></p>
   <p><button type="button" id="returns-toggle" aria-expanded="false" aria-controls="returns">Returns</button></p>
   <div id="returns"><p>You can return it within 30 days, in its box.</p></div>

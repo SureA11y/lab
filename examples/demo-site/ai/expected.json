@@ -397,8 +397,8 @@
       "page": "ai/keyboard.html",
       "check": "img-alt-quality",
       "target": "html > body > main > p:nth-of-type(5) > a > img",
-      "expected": "pass",
-      "why": "\"Plan of the shop's garden\" says what the map picture is."
+      "expected": "fail",
+      "why": "The image is the only content of a link to the home page, so its alt is the link's name: \"Plan of the shop's garden\" does not say where the link goes (corrected after scoring: the first answer passed it as a description; the model failed it, rightly)."
     },
     {
       "page": "ai/keyboard.html",
@@ -433,7 +433,7 @@
       "check": "mouse-only-event-handlers",
       "target": "#zoom",
       "expected": "fail",
-      "why": "The larger picture of the bag is shown only on mouse hover; a keyboard user never gets it."
+      "why": "Hovering the picture shows \"Holds 20 litres, washable at 30 degrees.\", said nowhere else: a keyboard user never gets it."
     },
     {
       "page": "ai/keyboard.html",
