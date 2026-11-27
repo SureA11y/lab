@@ -137,6 +137,21 @@ test('with forms allowed, a paste is tried and the page put back; the field\'s t
     await page.close();
 });
 
+test('a media question gets the media\'s facts, its section\'s links and where they lead, and the page\'s pause controls', async () => {
+    const page = await browser.newPage();
+    await page.setContent(`<title>Radio</title><main><p><button onclick="x()">Stop the music</button> <button>Buy</button></p>
+        <section><h2>Podcast</h2><audio id="a" controls loop></audio><p><a href="#t">Episode text</a></p></section>
+        <section id="t"><p>Anna: Hello. Ben: Hi.</p></section></main>`);
+    const { collectEvidence } = require('./evidence');
+    const { media } = await collectEvidence(page, { target: ['#a'], html: '' }, ['media']);
+    assert.equal(media.tag, 'audio');
+    assert.equal(media.loop, true);
+    assert.equal(media.controls, true);
+    assert.deepEqual(media.sectionLinks, [{ name: 'Episode text', href: '#t', leadsTo: 'Anna: Hello. Ben: Hi.' }]);
+    assert.deepEqual(media.pageControls, [{ name: 'Stop the music', nearby: false, onclick: 'x()' }]);
+    await page.close();
+});
+
 test('an image question says what the picture shows: blank, one colour, or not readable', async () => {
     const SPACER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     const RED = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/></svg>');

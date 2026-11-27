@@ -127,6 +127,26 @@ forms.html    password-paste-enabled                    #new-password           
 forms.html    password-paste-enabled                    #code-1                             pass     pass                    agrees
 forms.html    live-region-announcements                 #basket-status                      fail     fail                    agrees
 forms.html    live-region-announcements                 #ticker-live                        pass     pass                    agrees
+media.html    video-poster-text-alternative-present     #interview                          pass     pass                    agrees
+media.html    media-alternative-transcript-evidence     #birdsong                           pass     pass                    agrees
+media.html    media-alternative-transcript-evidence     #welcome                            fail     fail                    agrees
+media.html    media-alternative-transcript-evidence     #meadow                             pass     pass                    agrees
+media.html    media-alternative-transcript-evidence     #interview                          fail     fail                    agrees
+media.html    media-alternative-transcript-evidence     #podcast                            pass     pass                    agrees
+media.html    media-alternative-transcript-evidence     #tips                               fail     fail                    agrees
+media.html    video-caption                             #meadow                             pass     pass                    agrees
+media.html    video-caption                             #interview                          fail     fail                    agrees
+media.html    p-as-heading                              html > body > header > p            pass     pass                    agrees
+media.html    no-autoplay-audio                         #birdsong                           pass     pass                    agrees
+media.html    no-autoplay-audio                         #welcome                            fail     fail                    agrees
+media.html    mouse-only-event-handlers                 #hours                              fail     fail                    agrees
+media.html    deprecated-elements-not-used              #news                               pass     pass                    agrees
+media.html    deprecated-elements-not-used              #hours                              fail     fail                    agrees
+media.html    moving-content-pausable                   #offers-strip                       pass     pass                    agrees
+media.html    moving-content-pausable                   #sun                                fail     fail                    agrees
+media.html    page-title-patterns                       html > head > title                 pass     pass                    agrees
+reading.html  media-alternative-transcript-evidence     #video-pruning                      fail     fail                    agrees
+reading.html  video-caption                             #video-pruning                      fail     fail                    agrees
 
-128 questions: 128 answered by the AI, 128 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+148 questions: 148 answered by the AI, 148 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
 

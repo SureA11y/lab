@@ -16,13 +16,13 @@ by what would settle it:
 
 | Lane | What settles it | Checks | Phase 1 |
 | --- | --- | --- | --- |
-| `answered` | The AI answers it today | 71 | Polish (below) |
+| `answered` | The AI answers it today | 76 | Polish (below) |
 | `read` | The AI, from the element and the text around it, as today | 0 | Step 1 (done 2026-11-27) |
 | `tree` | The browser's own accessibility tree, no model | 23 | Step 2, in the engine (decision 4) |
 | `walk` | The AI, from the focus or open walk, or a small extension | 0 | Step 3 (done 2026-11-27) |
 | `measure` | A measurement by the lab, then the AI or a person | 0 | Step 4 (done 2026-11-27) |
 | `picture` | The AI, once it can see the picture | 0 | Step 5 (`image-of-text` done 2026-11-27) |
-| `media` | Audio, video or time | 5 | Step 5 |
+| `media` | Audio, video or time | 0 | Step 5 (done 2026-11-27) |
 | `interact` | Using the page further (errors, announcements) | 0 | Step 5 (done 2026-11-27) |
 | `code` | The markup states it; a person confirms | 32 | A person, no AI (decision 3) |
 
@@ -106,7 +106,10 @@ measures focus), `text-spacing-content-loss`, `avoid-inline-spacing`,
 the picture a step sends with `pictures: true`, Decision 5); `video-caption`,
 `media-alternative-transcript-evidence`, `no-autoplay-audio`,
 `moving-content-pausable`, `deprecated-elements-not-used` need the media or
-time (a pause control can be looked for by reading); `live-region-announcements`,
+time (**done 2026-11-27**, `registry-20`, by reading: the media's facts and
+tracks, the text a same-page transcript link leads to, the page's pause,
+stop and mute controls; the sound is not heard, so what only listening can
+tell stays a person's); `live-region-announcements`,
 `invalid-field-error-message`, `password-paste-enabled` need the page used
 further (Decision 6; **done 2026-11-27**, `registry-19`: the first two by
 reading the state a workflow left, the third with a paste tried on a test

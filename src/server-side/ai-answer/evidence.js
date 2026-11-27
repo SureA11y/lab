@@ -58,6 +58,13 @@ async function collectEvidence(page, occurrence, wanted, options = {}) {
         const px = await measurePixels(page, typeof target === 'string' ? target : null);
         if (px) out.pixels = px;
     }
+    // Media and moving things: the element's media facts, a same-page
+    // transcript the checker found a link to, and the page's controls that
+    // could pause, stop, hide or mute.
+    if (wanted.includes('media')) {
+        const m = await readMedia(page, selector, occurrence.details);
+        if (m) out.media = m;
+    }
     // A form field's own texts: its label, what describes it, its error
     // message and whether each is shown (never the value typed in it).
     if (wanted.includes('field')) {
@@ -477,6 +484,80 @@ async function measurePixelsByColour(page, selector) {
             fontSize: box.fontSize, fontWeight: box.fontWeight,
             nearTextShare, ratioP10: at(0.1), ratioMedian: at(0.5), shareBelow4_5: share(4.5), shareBelow3: share(3), backgroundPixels: ratios.length,
         };
+    } catch {
+        return null;
+    }
+}
+
+// What a person checking media or moving content would look at, without
+// playing anything: for an <audio> or <video>, its duration (when the
+// browser knows it), autoplay, muted, loop, controls, whether it is shown and
+// its text tracks (kind, label, language, and the start of a track file of
+// the same site); the text a same-page transcript link leads to; and every
+// control on the page whose name says it pauses, stops, hides or mutes
+// (whether it sits in the element's own section).
+async function readMedia(page, selector, details) {
+    if (!selector) return null;
+    const href = details && details.evidence && typeof details.evidence.transcriptLinkHref === 'string' ? details.evidence.transcriptLinkHref : null;
+    try {
+        return await page.evaluate(async (sel, transcriptHref) => {
+            let el = null;
+            try { el = document.querySelector(sel); } catch { return null; }
+            if (!el) return null;
+            const clip = (t, n = 300) => String(t || '').replace(/\s+/g, ' ').trim().slice(0, n);
+            const out = { tag: el.tagName.toLowerCase() };
+            if (el instanceof HTMLMediaElement) {
+                const r = el.getBoundingClientRect();
+                Object.assign(out, {
+                    src: clip(el.currentSrc || el.getAttribute('src') || (el.querySelector('source') || {}).src, 200) || null,
+                    duration: Number.isFinite(el.duration) ? Math.round(el.duration * 10) / 10 : null,
+                    autoplay: el.autoplay, muted: el.muted, loop: el.loop, controls: el.controls, paused: el.paused,
+                    shown: r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden',
+                    tracks: [],
+                });
+                for (const t of el.querySelectorAll('track')) {
+                    const track = { kind: t.getAttribute('kind') || 'subtitles', label: t.getAttribute('label') || null, srclang: t.getAttribute('srclang') || null, src: t.getAttribute('src') || null };
+                    try {
+                        const u = new URL(t.src, location.href);
+                        if (u.origin === location.origin) {
+                            const res = await fetch(u.href, { credentials: 'same-origin' });
+                            if (res.ok) track.start = clip(await res.text(), 600);
+                        }
+                    } catch { /* not read */ }
+                    out.tracks.push(track);
+                }
+            }
+            if (transcriptHref && transcriptHref.startsWith('#')) {
+                let t = null;
+                try { t = document.getElementById(decodeURIComponent(transcriptHref.slice(1))); } catch { t = null; }
+                if (t) out.transcriptTarget = { id: t.id, text: clip(t.innerText || t.textContent, 600) };
+            }
+            // Its own part of the page: a section, article, figure or aside
+            // around it, else its parent.
+            const section = el.closest('section, article, figure, aside') || el.parentElement;
+            // The links in its own section, and for one to this page, the
+            // text it leads to: a transcript is often one link away.
+            if (section && section !== document.body && section.matches('section, article, figure, aside')) {
+                out.sectionLinks = [...section.querySelectorAll('a[href]')].slice(0, 5).map((a) => {
+                    const link = { name: clip(a.innerText || a.getAttribute('aria-label'), 80), href: clip(a.getAttribute('href'), 150) };
+                    try {
+                        const u = new URL(a.href, location.href);
+                        if (u.origin + u.pathname === location.origin + location.pathname && u.hash) {
+                            const t = document.getElementById(decodeURIComponent(u.hash.slice(1)));
+                            if (t) link.leadsTo = clip(t.innerText || t.textContent, 600);
+                        }
+                    } catch { /* left as it is */ }
+                    return link;
+                });
+            }
+            const nameOf = (c) => clip(c.getAttribute('aria-label') || c.innerText || c.value || c.title || '', 80);
+            out.pageControls = [...document.querySelectorAll('button, a[href], input[type="button"], input[type="checkbox"], [role="button"], [role="switch"]')]
+                .map((c) => ({ c, name: nameOf(c) }))
+                .filter(({ name }) => /\b(pause|stop|hide|mute|unmute|sound|play|freeze|animation|motion)\b/i.test(name))
+                .slice(0, 10)
+                .map(({ c, name }) => ({ name, nearby: !!(section && section.contains(c)), onclick: clip(c.getAttribute('onclick'), 120) || undefined }));
+            return out;
+        }, selector, href);
     } catch {
         return null;
     }

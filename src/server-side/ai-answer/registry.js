@@ -50,7 +50,11 @@
 // registry-19: forms: invalid-field-error-message (with the field's texts),
 // password-paste-enabled (with a paste tried, `forms`, on
 // A11Y_AI_FORM_HOSTS), live-region-announcements.
-const PROMPT_VERSION = 'registry-19';
+// registry-20: media and moving content (video-caption,
+// media-alternative-transcript-evidence, no-autoplay-audio,
+// moving-content-pausable, deprecated-elements-not-used), with the media's
+// facts, a same-page transcript and the page's pause controls.
+const PROMPT_VERSION = 'registry-20';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -132,6 +136,26 @@ const ANSWERABLE = Object.freeze({
     'live-region-announcements': {
         question: "This live region may not be able to announce its messages (WCAG 4.1.3), for the reason in `reported`: hidden from screen readers (aria-hidden, inert, behind a modal dialog: `hiddenBy`), busy when scanned (aria-busy), added to the page with its text already in it, or shown and filled at the same moment (`text`: what it said). Does the page rely on it for a status message a screen reader user needs (an item added to a cart, a search's results count, a form saved)? Fail when it carries such a message and the reason keeps it from being announced (hidden while it speaks, a status inserted with its text); pass when it carries no status message users need, when it is hidden only while a dialog that holds the user's attention is open and says nothing meanwhile, or when its busy state is a loading moment that ends. Unsure when its use cannot be told.",
         evidence: ['element', 'context', 'reported'],
+    },
+    'video-caption': {
+        question: "WCAG 1.2.2: does this video need captions, and if it has a captions track, does it look like captions? The checker says whether it found no captions track, a captions track to judge, or only subtitles. `media` gives its facts (autoplay, muted, loop, controls, duration when known) and its tracks (kind, label, the start of the track file when it could be read); `context` what is around it. Pass when it has no sound that carries information (a muted background loop with no controls, a silent demonstration said to be silent) or when its track is captions in the video's language that carry speech and sounds ([music], speaker names). Fail when it is speech or sound that matters (an interview, a talk, a how-to with narration) and has no captions track, or only subtitles that translate the dialogue. Unsure when whether it has sound, or what its track holds, cannot be told.",
+        evidence: ['element', 'context', 'reported', 'media'],
+    },
+    'media-alternative-transcript-evidence': {
+        question: "WCAG 1.2.1 (audio or video only) and 1.2.3: is there a text alternative for this media, a transcript or a full description, that a user can reach from it? `media.sectionLinks` are the links in its own section, with the text a link to this page leads to (`leadsTo`); `media.transcriptTarget` the text of a transcript link the checker found; `context` what is around the media. Pass when a transcript (the words spoken, who speaks, sounds that matter) is on the page or clearly linked; fail when the media carries speech or information and nothing near it offers its text. A link to another page named as the transcript passes (it cannot be followed here). A summary of a few words is not a transcript.",
+        evidence: ['element', 'context', 'reported', 'media'],
+    },
+    'no-autoplay-audio': {
+        question: "WCAG 1.4.2: this audio or video plays sound by itself when the page opens, and the checker found no reachable native controls. Can the user stop, pause or turn down that sound? `media` gives its facts (duration when known, loop, muted, controls) and `pageControls`: controls on the page named for pausing, stopping or muting, with whether they sit near it. Pass when the sound lasts 3 seconds or less, or a control at the top of the page or near the media pauses, stops or mutes it (its name and `onclick` say so); fail when it loops or plays longer than 3 seconds and no such control exists. Unsure when its length is unknown and no control is found.",
+        evidence: ['element', 'context', 'reported', 'media'],
+    },
+    'moving-content-pausable': {
+        question: "WCAG 2.2.2: this element moves by itself for more than five seconds (the checker says how: an animation that never ends, or one over five seconds). Can the user pause, stop or hide it, or is the movement essential? `media.pageControls` lists controls named for pausing, stopping or hiding, with whether they sit near it. Pass when such a control exists for it (a carousel's pause button), or when the movement is a loading indicator shown only while something loads, or is essential; fail when it loops or lasts over five seconds beside other content and nothing pauses, stops or hides it (a decorative spinning or sliding element with no control).",
+        evidence: ['element', 'context', 'reported', 'media'],
+    },
+    'deprecated-elements-not-used': {
+        question: "WCAG 2.2.2: this <marquee> scrolls its content. Can the user pause, stop or hide it, by keyboard and touch as well as mouse? The checker says when it stops only while the pointer is over it (its onmouseover, in the element). `media.pageControls` lists controls named for pausing, stopping or hiding, with their `onclick`. Pass when a control pauses, stops or hides it (a button calling its stop()), or it scrolls only once; fail when it keeps scrolling and only hovering, or nothing, stops it.",
+        evidence: ['element', 'context', 'reported', 'media'],
     },
     'heading-quality': {
         question: "Does this heading describe the topic or purpose of the content it introduces? The checker found its text looks like a placeholder, a file name or a web address (`reported`: its name and why). `context` shows what follows it. Fail when it is text a template or a tool left (\"Heading 2\", \"lorem ipsum\", a file name); pass when it names its section, even if short (\"Section 3\" in numbered terms).",

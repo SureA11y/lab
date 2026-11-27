@@ -8,13 +8,13 @@ page by hand.
 
 | Lane | What settles it | Checks |
 | --- | --- | --- |
-| `answered` | The AI answers it today | 71 |
+| `answered` | The AI answers it today | 76 |
 | `read` | The AI, from the element and the text around it, as today | 0 |
 | `walk` | The AI, from the focus walk or the open walk, or a small extension of them | 0 |
 | `tree` | The browser's own accessibility tree (no model needed) | 23 |
 | `measure` | A measurement by the lab, then the AI or a person for what is left | 0 |
 | `picture` | The AI, once it can see the picture | 0 |
-| `media` | Audio, video or time: a person, or the AI with the media | 5 |
+| `media` | Audio, video or time: a person, or the AI with the media | 0 |
 | `interact` | Using the page beyond opening things (errors, announcements): a person, later the AI | 0 |
 | `code` | The markup states it: little for the AI to add; a person confirms | 33 |
 | | **All** | **132** |
@@ -39,6 +39,7 @@ page by hand.
 | `css-focus-indicator-suppressed` | 1.4.11, 2.4.7, 2.4.13 | manual | `FOCUS_INDICATOR_SUPPRESSED` | per element: focus visible, its contrast (1.4.11) and appearance (2.4.13) |
 | `css-hidden-focus` | 2.4.7 | manual | `cssHiddenTabbable_needsFocusStateVerification`, `cssHiddenTabbable_runtimeRedirect_needsReview` | by reading what the checker reported (its own runtime probe); the walk could add more |
 | `css-orientation-lock` | 1.3.4 | automatic | `ORIENTATION_MEDIA_ROTATES_ELEMENT`, `ORIENTATION_MEDIA_HIDES_CONTENT`, `STYLESHEETS_NOT_READABLE` | does the rotation or hiding restrict use |
+| `deprecated-elements-not-used` | 2.2.2 | automatic | `MARQUEE_PAUSE_MECHANISM_UNKNOWN`, `MARQUEE_STOPS_ONLY_ON_HOVER` | a marquee: with the page's pause controls |
 | `embed-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what it embeds and its picture |
 | `empty-table-header` | (best practice) | manual | `TABLE_HEADER_EMPTY`, `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` | a best practice, with the table |
 | `focus-not-obscured-enhanced` | 2.4.12 | manual | `FOCUS_OBSCURED_ENTIRELY`, `FOCUS_OBSCURED_PARTLY`, `FOCUS_OBSCURED_BEHIND_MODAL` |  |
@@ -68,9 +69,12 @@ page by hand.
 | `link-name-quality-link-only` | 2.4.9 | manual | `GENERIC_LINK_TEXT_IN_CONTEXT` | AAA (2.4.9): with the AAA profile |
 | `live-region-announcements` | 4.1.3 | manual | `LIVE_REGION_HIDDEN`, `LIVE_REGION_BUSY`, `LIVE_REGION_INSERTED_WITH_CONTENT`, `LIVE_REGION_SHOWN_AND_FILLED` | from what the checker and its live-region hook reported |
 | `manual-review` | 2.1.1, 2.4.3, 2.4.7 | manual | `KEYBOARD_REVIEW` | focus visible, focus order and keyboard, from the focus walk (and the open walk) |
+| `media-alternative-transcript-evidence` | 1.2.1 | manual | `transcriptNotDetected`, `transcriptEvidenceUnverified` | with the text a same-page transcript link leads to |
 | `meta-viewport-zoom-enabled` | 1.4.4 | automatic | `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` | does the tag browsers apply allow zoom |
 | `mouse-only-event-handlers` | 2.1.1, 2.1.3 | manual | `MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT`, `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE` | by reading what the checker reported (its own runtime probe); the walk could add more |
+| `moving-content-pausable` | 2.2.2 | manual | `MOVING_CONTENT_LOOPS`, `MOVING_CONTENT_OVER_5S` | with the page's pause, stop or hide controls |
 | `nested-interactive-controls-absent` | 4.1.2 | automatic | `NESTED_INTERACTIVE_CONTROL` | by reading what the checker reported (its own runtime probe); the walk could add more |
+| `no-autoplay-audio` | 1.4.2 | manual | `AUTOPLAY_NO_CONTROLS_MECHANISM`, `AUTOPLAY_CONTROLS_HIDDEN`, `EMBEDDED_SOUND_SOURCE` | with its length, loop and the page's stop or mute controls |
 | `object-text-alternative-quality` | 1.1.1 | manual | `TEXT_ALTERNATIVE_REVIEW` | with what it embeds and its picture (image.embedded) |
 | `p-as-heading` | 1.3.1 | manual | `BOLD_LARGE_PARAGRAPH`, `BOLD_LARGE_DIV`, `HEADING_LIKE_LINK`, `HEADING_LIKE_NUMBER`, `BOLD_SHORT_PARAGRAPH` |  |
 | `page-title-patterns` | 2.4.2 | manual | `placeholderTitle`, `genericTitle`, `veryShortTitle`, `templateLikeTitle`, `duplicateTitlesAcrossPages`, `templatedTitlesAcrossPages`, `titleReview` |  |
@@ -92,6 +96,7 @@ page by hand.
 | `target-size-minimum` | 2.5.8 | automatic | `undersized-inline-link-run`, `undersized-pinned-over-page`, `undersized-plausibly-essential` | does an exception hold |
 | `td-has-header` | 1.3.1 | automatic | `TD_TABLE_NO_HEADERS` | with the table |
 | `text-spacing-content-loss` | 1.4.12 | automatic | `TEXT_CLIPPED_PARTLY`, `TEXT_CLIPPED_MOVING`, `TEXT_CLIPPED_SCRIPT_SIZED`, `TEXT_CLIPPED_FURTHER`, `TEXT_OVERLAPS`, `VIEWPORT_SCROLL_LOCKED`, `SPACING_NOT_APPLIED`, `STYLESHEET_IMPORTANT` | by reading what the checker measured |
+| `video-caption` | 1.2.2 | manual | `CAPTIONS_REVIEW`, `CAPTIONS_TRACK_NOT_DETECTED`, `SUBTITLES_TRACK_ONLY` | from its facts, tracks and context; the sound itself is not heard |
 | `video-poster-text-alternative-present` | 1.1.1 | automatic | `TEXT_ALTERNATIVE_MISSING`, `VIDEO_POSTER_FIGCAPTION_REVIEW` | with its poster and what is near it |
 | `widget-keyboard-focusable` | 2.1.1, 2.1.3 | manual | `WIDGET_NOT_FOCUSABLE`, `WIDGET_NOT_IN_TAB_ORDER`, `COMPOSITE_NO_TAB_STOP`, `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | fail only |
 
@@ -122,16 +127,6 @@ page by hand.
 | `textbox-name-present` | 4.1.2 | automatic | `name_internals` |  |
 | `tooltip-name-present` | 4.1.2 | automatic | `name_missing`, `name_closedContent`, `name_contentTooDeep`, `name_internals` |  |
 | `treeitem-name-present` | 4.1.2 | automatic | `name_closedContent`, `name_contentTooDeep`, `name_internals` |  |
-
-## `media`: Audio, video or time: a person, or the AI with the media
-
-| Check | SC | Kind | Can't-tell reasons | Note |
-| --- | --- | --- | --- | --- |
-| `deprecated-elements-not-used` | 2.2.2 | automatic | `MARQUEE_PAUSE_MECHANISM_UNKNOWN`, `MARQUEE_STOPS_ONLY_ON_HOVER` | a marquee: is there a pause control |
-| `media-alternative-transcript-evidence` | 1.2.1 | manual | `transcriptNotDetected`, `transcriptEvidenceUnverified` | or read: is there a transcript near it |
-| `moving-content-pausable` | 2.2.2 | manual | `MOVING_CONTENT_LOOPS`, `MOVING_CONTENT_OVER_5S` | or the walk: is there a pause control |
-| `no-autoplay-audio` | 1.4.2 | manual | `AUTOPLAY_NO_CONTROLS_MECHANISM`, `AUTOPLAY_CONTROLS_HIDDEN`, `EMBEDDED_SOUND_SOURCE` |  |
-| `video-caption` | 1.2.2 | manual | `CAPTIONS_REVIEW`, `CAPTIONS_TRACK_NOT_DETECTED`, `SUBTITLES_TRACK_ONLY` |  |
 
 ## `code`: The markup states it: little for the AI to add; a person confirms
 

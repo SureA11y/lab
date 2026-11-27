@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Garden radio - Demo Shop</title><link rel="stylesheet" href="../style.css">
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes slide { 0% { transform: translateX(0); } 50% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+  .sun { display: inline-block; font-size: 32px; animation: spin 6s linear infinite; }
+  .offers { overflow: hidden; width: 320px; border: 1px solid #ccc; }
+  .offers ul { display: flex; width: 640px; margin: 0; padding: 4px; list-style: none; animation: slide 12s ease-in-out infinite; }
+  .offers li { width: 320px; }
+  .offers.paused ul { animation-play-state: paused; }
+  .background video { width: 320px; height: 120px; background: #cfe8d5; }
+</style></head>
+<!-- The AI answers demo, media and moving content. Each case has a known
+     answer, in expected.json beside this page. -->
+<body>
+<header><p><strong>Demo Shop</strong></p><nav aria-label="Main"><a href="../index.html">Home</a> <a href="../products.html">Products</a></nav></header>
+<main>
+  <h1>Garden radio</h1>
+  <p>Birdsong recorded in our garden plays in the background. <button type="button" onclick="document.getElementById('birdsong').pause()">Stop the birdsong</button></p>
+  <audio id="birdsong" autoplay loop src="../media/birdsong.mp3"></audio>
+  <p>Our gardener Anna welcomes you with a short spoken message.</p>
+  <audio id="welcome" autoplay loop src="../media/welcome-message.mp3"></audio>
+
+  <section class="background" aria-label="Welcome">
+    <video id="meadow" autoplay muted loop playsinline poster="../images/hero.svg" aria-label="A meadow in the wind (background)"></video>
+    <p>Welcome to the shop's garden.</p>
+  </section>
+
+  <section aria-labelledby="interview-h">
+    <h2 id="interview-h">Interview with our head gardener</h2>
+    <video id="interview" controls width="320" height="180" poster="../images/hero.svg"></video>
+    <p>Anna talks about pruning roses in early spring, and answers your questions.</p>
+  </section>
+
+  <section aria-labelledby="podcast-h">
+    <h2 id="podcast-h">Podcast: sowing tomatoes</h2>
+    <audio id="podcast" controls src="../media/tomatoes.mp3"></audio>
+    <p><a href="#episode-text">Episode text</a></p>
+  </section>
+
+  <section aria-labelledby="tips-h">
+    <h2 id="tips-h">Weekly tips</h2>
+    <audio id="tips" controls src="../media/tips.mp3"></audio>
+    <p>New every Monday.</p>
+  </section>
+
+  <section aria-labelledby="offers-h">
+    <h2 id="offers-h">Offers</h2>
+    <div class="offers" id="offers"><ul id="offers-strip"><li>Seed trays, 3 for 2</li><li>Free gloves with any spade</li></ul></div>
+    <p><button type="button" onclick="document.getElementById('offers').classList.toggle('paused')">Pause the offers</button></p>
+  </section>
+
+  <p>Sunny today <span class="sun" id="sun" aria-hidden="true">&#9728;</span></p>
+
+  <p><marquee id="news" behavior="scroll">Spring sale: everything for the vegetable patch, 20% off until Sunday.</marquee></p>
+  <p><button type="button" onclick="document.getElementById('news').stop()">Stop the news ticker</button></p>
+  <p><marquee id="hours" onmouseover="this.stop()" onmouseout="this.start()">Open Monday to Saturday, 9 to 6.</marquee></p>
+
+  <section id="episode-text" aria-labelledby="episode-h">
+    <h2 id="episode-h">Sowing tomatoes: what is said</h2>
+    <p>Anna: Hello and welcome to the garden radio. Today we sow tomatoes.</p>
+    <p>Anna: Fill a tray with seed compost, water it, and press two seeds into each cell, half a centimetre deep.</p>
+    <p>Ben: How warm should they be?</p>
+    <p>Anna: About twenty degrees. Keep them on a sunny windowsill and they come up in a week. [Birds singing]</p>
+  </section>
+</main>
+<footer><p>Demo Shop is a made-up shop for surea11y-lab's examples.</p></footer>
+</body>
+</html>

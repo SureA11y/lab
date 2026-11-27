@@ -976,3 +976,32 @@ error pattern) and a real sign-in form on a test system are next.
 node examples/serve-demo-site.js &
 A11Y_AI_PREVIEW=on A11Y_AI_PICTURES=localhost A11Y_AI_FORM_HOSTS=localhost node src/cli/run-workflow.js examples/specs/ai-answers.spec.json --out runs/ai-demo
 ```
+
+## Media and moving content: step 5 done (2026-11-27)
+
+The `media` lane's five checks answered by reading (`registry-20`), with a
+`media` reader (`readMedia` in `evidence.js`): for an `<audio>` or `<video>`
+its facts (duration when known, autoplay, muted, loop, controls, shown) and
+text tracks (with the start of a track file of the same site); the links in
+its own section, with the text a same-page link leads to (a transcript one
+link away); and the page's controls named for pausing, stopping, hiding or
+muting, with their `onclick`. Nothing is played: what only listening can
+tell (do the captions match the speech) stays open or a person's.
+
+The engine reports few details for these (its reason is in its summary), and
+its transcript search missed an "Episode text" link to a transcript further
+down; the section's links found it.
+
+**The demo** gains a media page (`examples/demo-site/ai/media.html`): two
+autoplaying sounds (birdsong with a stop button at the top: pass; a spoken
+welcome looping with nothing: fail), a muted background video (pass), an
+interview video (no captions, no transcript: fail), a podcast with its
+"Episode text" (pass) and one without (fail), sliding offers with a pause
+button (pass), a spinning decorative sun (fail), two marquees (a stop button:
+pass; stops only on hover: fail), and the incidental questions they raise,
+plus the reading page's how-to video now asked about. **148 of 148 agree**
+([demo/score.txt](demo/score.txt)).
+
+Not yet on real sites: pages with real video players (YouTube or Vimeo
+frames are outside the page and not read), podcasts with transcripts, and
+carousels.

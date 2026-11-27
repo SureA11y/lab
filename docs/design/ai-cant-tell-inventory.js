@@ -91,9 +91,11 @@ const LANES = {
     'image-of-text': ['answered', 'from the SVG source, or the picture when a step sends it'],
 
     // Needs the media, or time.
-    'video-caption': ['media'], 'media-alternative-transcript-evidence': ['media', 'or read: is there a transcript near it'],
-    'no-autoplay-audio': ['media'], 'moving-content-pausable': ['media', 'or the walk: is there a pause control'],
-    'deprecated-elements-not-used': ['media', 'a marquee: is there a pause control'],
+    'video-caption': ['answered', 'from its facts, tracks and context; the sound itself is not heard'],
+    'media-alternative-transcript-evidence': ['answered', 'with the text a same-page transcript link leads to'],
+    'no-autoplay-audio': ['answered', 'with its length, loop and the page\'s stop or mute controls'],
+    'moving-content-pausable': ['answered', 'with the page\'s pause, stop or hide controls'],
+    'deprecated-elements-not-used': ['answered', 'a marquee: with the page\'s pause controls'],
 
     // Needs the page used further.
     'live-region-announcements': ['answered', 'from what the checker and its live-region hook reported'],

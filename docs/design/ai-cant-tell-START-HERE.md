@@ -38,17 +38,18 @@ times). Then **forms (decision 6)**: `invalid-field-error-message` and
 `live-region-announcements` read, `password-paste-enabled` with a paste
 tried (`ai: { forms: true }`, only on `A11Y_AI_FORM_HOSTS`). Phase 1 so far:
 steps 1, 3 and 4 done, and step 5's picture and forms checks; the AI
-answers 71 of the 132 checks that can end in "can't tell" (left: 23 `tree`,
-5 `media`, 32 `code`); demo 128 of 128; prompt version `registry-19`. Still to ask the user: the engine's
-repository, for decision 4. The full suite (4501 pass) and the browser
-tests (`ai-answer` 13) pass.
+answers 71 of the 132 checks that can end in "can't tell". Then **media and
+moving content** (step 5's last five checks), by reading: **step 5 is done**;
+the AI answers **76 of 132** (left: 23 `tree`, in the engine, and 32 `code`,
+a person's); demo 148 of 148; prompt version `registry-20`. Still to ask the user: the engine's
+repository, for decision 4. The full suite and the browser
+tests (`ai-answer` 14) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
-AI for every "can't tell" from the rules: 71 of 132 checks are answered
-today: steps 1, 3 and 4 are done (every `read`, `walk` and `measure`
+AI for every "can't tell" from the rules: 76 of 132 checks are answered
+today: steps 1, 3, 4 and 5 are done (every `read`, `walk`, `measure`, `picture`, `interact` and `media`
 check); left: step 2 (23 "name present" checks, from the browser's
-accessibility tree, waiting on the user), step 5 (5 checks needing
-media or time) and the 32 `code` checks (roadmap
+accessibility tree, waiting on the user), and the 32 `code` checks (roadmap
 decision 3). Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
 
@@ -85,12 +86,15 @@ are in `ai-cant-tell-roadmap.md`, "Decisions": every recommended option.
    never a submission. Demo 128 of 128; the paste settles the two
    script handlers reading leaves open. Open: real sites (GOV.UK error
    pages, a sign-in form on a test system).
-4. **Next: the `media` lane (5 checks)**, the last of step 5:
-   `video-caption`, `media-alternative-transcript-evidence`,
-   `no-autoplay-audio`, `moving-content-pausable`,
-   `deprecated-elements-not-used`. Some can be read (a transcript link near
-   the video, a pause control near a marquee or carousel); the rest need the
-   media played or time watched, to design first.
+4. **Done 2026-11-27: media and moving content (step 5's last).** The five
+   checks read with a `media` reader (`readMedia`: the media's facts and
+   tracks, its section's links and where same-page ones lead, the page's
+   pause, stop and mute controls); nothing is played. Demo 148 of 148.
+   Open: real sites (players, podcasts, carousels).
+
+**Phase 1 is now complete except for the engine's part (decision 4).**
+What is left without the user: polishing (real-site runs for the new
+families: pictures, forms, media; a person's labels), then phase 2.
 5. **The `tree` lane in the engine (decision 4):** in the engine's own
    repository (`@surea11y/core`), not this one: ask the user which
    repository and add it (`add_repo`) before starting; the lab's inventory

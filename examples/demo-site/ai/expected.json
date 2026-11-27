@@ -896,6 +896,146 @@
       "target": "#ticker-live",
       "expected": "pass",
       "why": "A decorative ticker of seedling emoji: no status message anyone needs."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "video-poster-text-alternative-present",
+      "target": "#interview",
+      "expected": "pass",
+      "why": "The heading right before it, \"Interview with our head gardener\", names the video."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "media-alternative-transcript-evidence",
+      "target": "#birdsong",
+      "expected": "pass",
+      "why": "Background birdsong, no words; the text beside it says what it is, which is all it carries."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "media-alternative-transcript-evidence",
+      "target": "#welcome",
+      "expected": "fail",
+      "why": "A spoken welcome message: its words are nowhere on the page."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "media-alternative-transcript-evidence",
+      "target": "#meadow",
+      "expected": "pass",
+      "why": "A muted background video of a meadow, named as such: it carries no information that needs a text version."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "media-alternative-transcript-evidence",
+      "target": "#interview",
+      "expected": "fail",
+      "why": "An interview, with nothing on the page giving what is said."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "media-alternative-transcript-evidence",
+      "target": "#podcast",
+      "expected": "pass",
+      "why": "\"Episode text\" in its section leads to what is said, speaker by speaker, with the sounds: a transcript."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "media-alternative-transcript-evidence",
+      "target": "#tips",
+      "expected": "fail",
+      "why": "A weekly spoken tip with no text anywhere (\"New every Monday\")."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "video-caption",
+      "target": "#meadow",
+      "expected": "pass",
+      "why": "Muted, autoplaying, looping, no controls: a background video without sound to caption."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "video-caption",
+      "target": "#interview",
+      "expected": "fail",
+      "why": "An interview (speech) with no captions track."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "p-as-heading",
+      "target": "html > body > header > p",
+      "expected": "pass",
+      "why": "\"Demo Shop\" in bold in the header is the shop's name, not a section title."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "no-autoplay-audio",
+      "target": "#birdsong",
+      "expected": "pass",
+      "why": "It loops, but \"Stop the birdsong\" at the top of the page pauses it."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "no-autoplay-audio",
+      "target": "#welcome",
+      "expected": "fail",
+      "why": "It plays by itself and loops, with no control anywhere to stop or mute it."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "mouse-only-event-handlers",
+      "target": "#hours",
+      "expected": "fail",
+      "why": "Hovering stops the opening-hours ticker; nothing lets a keyboard user stop it."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "deprecated-elements-not-used",
+      "target": "#news",
+      "expected": "pass",
+      "why": "\"Stop the news ticker\" calls its stop()."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "deprecated-elements-not-used",
+      "target": "#hours",
+      "expected": "fail",
+      "why": "It stops only while the pointer is over it; no control stops it."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "moving-content-pausable",
+      "target": "#offers-strip",
+      "expected": "pass",
+      "why": "The offers slide forever, and \"Pause the offers\" pauses them."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "moving-content-pausable",
+      "target": "#sun",
+      "expected": "fail",
+      "why": "A decorative sun spinning forever beside the text, with no control to stop or hide it."
+    },
+    {
+      "page": "ai/media.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Garden radio - Demo Shop\" says what the page is."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "media-alternative-transcript-evidence",
+      "target": "#video-pruning",
+      "expected": "fail",
+      "why": "A two-minute how-to video (\"How to prune roses\") with nothing on the page giving what it says or shows."
+    },
+    {
+      "page": "ai/reading.html",
+      "check": "video-caption",
+      "target": "#video-pruning",
+      "expected": "fail",
+      "why": "A how-to video, which speaks, with no captions track."
     }
   ]
 }

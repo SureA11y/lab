@@ -116,6 +116,10 @@ By reading the page (always):
 | `invalid-field-error-message` | 3.3.1 | A field marked invalid with no shown message tied to it: does text the user meets with it say what is wrong? (With its label, description and error message, each with whether it is shown and heard, and the text of its row.) |
 | `password-paste-enabled` | 3.3.8 | Does a sign-in field's paste handler stop pasting? (From the handler; with `forms`, from a paste tried.) |
 | `live-region-announcements` | 4.1.3 | A live region hidden, busy, or added with its text: does the page rely on it for a status message users need? |
+| `video-caption` | 1.2.2 | Does a video need captions (speech or sound that matters), and does its track look like captions? (From its facts, tracks and the text around it: the sound is not heard.) |
+| `media-alternative-transcript-evidence` | 1.2.1, 1.2.3 | Is there a transcript or text alternative for an audio or video, on the page or linked? (With the links in its section and the text a same-page one leads to.) |
+| `no-autoplay-audio` | 1.4.2 | Can sound that plays by itself be stopped, paused or muted? (With its length and loop when known, and the page's stop or mute controls.) |
+| `moving-content-pausable`, `deprecated-elements-not-used` | 2.2.2 | Can moving content, or a `<marquee>`, be paused, stopped or hidden, by keyboard as well? (With the page's pause, stop and hide controls.) |
 | `img-alt-decorative` | 1.1.1 | Is an image purely decorative? (The model is told what the picture shows: blank, one colour, or how many; an image from another site cannot be read and says so.) |
 | `p-as-heading` | 1.3.1 | Is a bold paragraph really a heading? |
 | `link-name-quality` | 2.4.4 | Does a link's text say where it goes? |
