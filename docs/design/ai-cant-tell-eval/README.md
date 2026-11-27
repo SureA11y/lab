@@ -755,3 +755,39 @@ inventory's `read` lane is answered: 46 of 132.
 - **Real pages:** 22 pages scanned with the AAA profile (GOV.UK's colour and
   contrast pages, the W3C demo, UW, W3C and APG pages): no question of this
   family came up. These checks have no real case yet.
+
+## The walk lane: step 3 (2026-11-27)
+
+Twelve checks (`tabindex`, `focus-not-removed-by-script`,
+`iframe-focusable-content`, `scrollable-region-focusable`,
+`mouse-only-event-handlers`, `css-hidden-focus`, the aria-expanded and
+aria-checked mismatches, `skip-link`, `aria-hidden-focus`,
+`nested-interactive-controls-absent`, `server-side-image-map-absent`). The
+engine's own report (the handler's code, its runtime probe, the real state
+against the announced one) settles most of them, so they are reading
+questions (`registry-14`). Seven of them also take the element's own stop
+from the focus walk when there is one (`walkStop`, `registry-15`): reached
+or not, its neighbours in Tab order, hidden while focused, focus taken away.
+
+- **Demo:** a page of its own, `keyboard.html` (best practices on), 16
+  questions. The whole demo: **97 of 97**. Two corrections on the way: an
+  image that is the only content of a link was labelled pass as a
+  description; its alt is the link's name, and the model failed it, rightly
+  (label corrected); a hover that only enlarged a picture was ambiguous (the
+  model said "a visual effect": unsure); it now shows text said nowhere
+  else.
+- **Real pages, read only** ([walk-lane-read/](walk-lane-read/)): 18 questions
+  (GOV.UK's tabindex page, the W3C demo, UW), labelled before any answer: 10
+  answered, all agree; 8 unsure, for what only the walk can see: six skip
+  links hidden by CSS (do they appear on focus?), what Tab passes before a
+  positive tabindex, a menu's onmouseout.
+- **Real pages, with the walk** ([walk-lane-walk/](walk-lane-walk/)):
+  `focus: true` on the same kinds of page: **23 of 24**, none wrong; the
+  skip links (12 of 12) and the tabindex link are now answered from the
+  walk's facts; the one open is the menu's onmouseout, whose code is not in
+  the evidence.
+- **Found on the way:** the walk's `hidden` flag missed elements moved off
+  the page to the left or above, clipped to nothing or fully transparent,
+  which is how skip links hide; it counts them now (a skip link that comes
+  into view on focus is not hidden). Skip links checked by hand in a
+  browser: the W3C demo's come into view on focus.

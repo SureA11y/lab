@@ -54,6 +54,22 @@ text.html     page-title-patterns                       html > head > title     
 text.html     css-orientation-lock                      html > body > main                  fail     fail                    agrees
 text.html     symbol-graphic-contrast                   #rating                             fail     fail                    agrees
 text.html     symbol-graphic-contrast                   #next-arrow                         pass     pass                    agrees
+keyboard.html img-alt-quality                           #zoom                               pass     pass                    agrees
+keyboard.html img-alt-quality                           html > body > main > p:nth-of-typ…  fail     fail                    agrees
+keyboard.html p-as-heading                              html > body > header > p            pass     pass                    agrees
+keyboard.html server-side-image-map-absent              html > body > main > p:nth-of-typ…  pass     pass                    agrees
+keyboard.html scrollable-region-focusable               html > body > main > div:nth-of-t…  fail     fail                    agrees
+keyboard.html mouse-only-event-handlers                 nav[aria-label="Main"] > a:nth-of…  pass     pass                    agrees
+keyboard.html mouse-only-event-handlers                 #zoom                               fail     fail                    agrees
+keyboard.html focus-not-removed-by-script               nav[aria-label="Main"] > a:nth-of…  fail     fail                    agrees
+keyboard.html page-title-patterns                       html > head > title                 pass     pass                    agrees
+keyboard.html css-hidden-focus                          html > body > footer > p > a:nth-…  fail     fail                    agrees
+keyboard.html nested-interactive-controls-absent        html > body > main > p:nth-of-typ…  fail     fail                    agrees
+keyboard.html aria-checked-state-mismatch               #news                               fail     fail                    agrees
+keyboard.html aria-expanded-state-mismatch              #returns-toggle                     fail     fail                    agrees
+keyboard.html region                                    html > body > a                     pass     pass                    agrees
+keyboard.html skip-link                                 html > body > a                     fail     fail                    agrees
+keyboard.html tabindex                                  html > body > footer > p > a:nth-…  fail     fail                    agrees
 focus.html    page-title-patterns                       html > head > title                 pass     pass                    agrees
 focus.html    p-as-heading                              #top-bar > p                        pass     pass                    agrees
 focus.html    focus-visible                             html                                fail     fail                    agrees
@@ -81,4 +97,4 @@ dialog.html   keyboard                                  html                    
 dialog.html   focus-order                               html                                fail     fail                    agrees
 dialog.html   focus-visible                             html                                pass     pass                    agrees
 
-81 questions: 81 answered by the AI, 81 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+97 questions: 97 answered by the AI, 97 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.

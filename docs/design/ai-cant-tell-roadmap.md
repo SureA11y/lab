@@ -16,10 +16,10 @@ by what would settle it:
 
 | Lane | What settles it | Checks | Phase 1 |
 | --- | --- | --- | --- |
-| `answered` | The AI answers it today | 46 | Polish (below) |
+| `answered` | The AI answers it today | 58 | Polish (below) |
 | `read` | The AI, from the element and the text around it, as today | 0 | Step 1 (done 2026-11-27) |
 | `tree` | The browser's own accessibility tree, no model | 23 | Step 2 |
-| `walk` | The AI, from the focus or open walk, or a small extension | 12 | Step 3 |
+| `walk` | The AI, from the focus or open walk, or a small extension | 0 | Step 3 (done 2026-11-27) |
 | `measure` | A measurement by the lab, then the AI or a person | 8 | Step 4 |
 | `picture` | The AI, once it can see the picture | 1 | Step 5 |
 | `media` | Audio, video or time | 5 | Step 5 |
@@ -81,7 +81,9 @@ internals or content nested too deep. Chrome's accessibility tree (the
 DevTools protocol) has the computed name: no model needed, and a name found
 can then go to the matching `read` question. Decision 4 is where this lives.
 
-**Step 3: `walk` (12 checks).** Evidence the walks already collect or nearly
+**Step 3: `walk` (12 checks; done 2026-11-27, `registry-15`: reading
+questions on what the checker reported, with the element's walk stop when
+`focus: true`).** Evidence the walks already collect or nearly
 do: `tabindex` (what Tab reaches first), `focus-not-removed-by-script`
 (`lostFocus`), `iframe-focusable-content`, `scrollable-region-focusable`,
 `mouse-only-event-handlers`, `css-hidden-focus`, `aria-expanded-state-mismatch`

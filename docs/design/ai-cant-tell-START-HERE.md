@@ -22,12 +22,14 @@ Read, in this order:
 
 ## State (end of 2026-11-27)
 
-Everything is committed and pushed. Latest: **phase 1, step 1 is done**:
-the AI answers every check of the inventory's `read` lane (46 of 132): the
+Everything is committed and pushed. Latest: **phase 1, steps 1 and 3 are done**:
+the AI answers every check of the inventory's `read` and `walk` lanes (58
+of 132), the walk lane from what the checker reported and, with
+`focus: true`, the element's own walk stop; before it, the `read` lane: the
 text alternatives, the names and labels (with what the checker reported),
 the structure checks (with the table, the heading outline and the
 landmarks) and "is it text"; best-practice findings are asked too; demo 81
-of 81, prompt version `registry-13`. Before that: the **roadmap** and the
+of 97, prompt version `registry-15`. Before that: the **roadmap** and the
 **inventory** of every engine check that can end in "can't tell" (with a
 test that keeps it in step with the engine and the registry), and the
 **open walk** (`open: true` presses what says it opens something,
@@ -36,9 +38,8 @@ shows). The full suite (4491 pass, 5 skipped) and the
 browser tests (`focus-walk` 16, `ai-answer` 10, `app-boot`) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
-AI for every "can't tell" from the rules: 46 of 132 checks are answered
-today: step 1, every `read` check, is done (text alternatives, names and
-labels, structure, "is it text"); next
+AI for every "can't tell" from the rules: 58 of 132 checks are answered
+today: steps 1 and 3 are done (every `read` and `walk` check); next
 the browser's accessibility tree for 23 "name present" checks, the walks,
 measurements, pictures and media. Phase 2 (criteria no rule can automate)
 only after; its decisions are listed there and left open on purpose.
@@ -68,7 +69,16 @@ engine: ask the user); so go on with step 3, the `walk` lane (12 checks:
 `css-hidden-focus`, `aria-expanded-state-mismatch`,
 `aria-checked-state-mismatch`, `skip-link`, `aria-hidden-focus`,
 `nested-interactive-controls-absent`, `server-side-image-map-absent`),
-whose evidence the focus and open walks mostly already collect. Items 1
+whose evidence the focus and open walks mostly already collect. **Step 3
+is done** (2026-11-27): reading questions on what the checker reported,
+with the element's own walk stop (`walkStop`) when `focus: true`; demo page
+`keyboard.html`; real pages 10 of 10 answered read only, 23 of 24 with the
+walk (none wrong). Next: step 4, the `measure` lane (8 checks:
+`contrast-computable`, `link-in-text-block`, `text-spacing-content-loss`,
+`avoid-inline-spacing`, `reflow-horizontal-scroll`,
+`resize-text-content-loss`, `target-size-minimum`, `target-size-enhanced`),
+where the lab measures first (pixels behind text, hover and focus cues,
+pictures with spacing applied or at 320 px) and the AI judges what is left. Items 1
 to 3 below need the user.
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
@@ -148,12 +158,12 @@ to 3 below need the user.
 - **The demo:** `examples/demo-site/ai/` (`reading.html`, `focus.html`,
   `dialog.html` for the open walk),
   `examples/specs/ai-answers.spec.json`, the correct answers in
-  `expected.json`, `examples/ai-demo-score.js`. 81 questions, including a Help
+  `expected.json`, `examples/ai-demo-score.js`. 97 questions, including a Help
   link that shows focus from a script (2.4.7, 1.4.11 and 2.4.13 pass) and a
   modal dialog a keyboard user cannot close (keyboard and focus order fail,
   found by the open walk).
   Evaluated blind, a model answering the lab's exact prompts outside the lab
-  (`ai-cant-tell-spike/answer-offline.js`): **81 of 81**
+  (`ai-cant-tell-spike/answer-offline.js`): **97 of 97**
   (`ai-cant-tell-eval/demo/`). Clear cases by design: it shows the pipeline,
   not real-site accuracy.
 - **Real sites,** built with documented accessibility problems (the WAI
@@ -262,29 +272,30 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    settled by the browser's computed names (its accessibility tree), no
    model needed. In the lab's AI pass, or in the engine (every user of it
    would get them)? Ask the user; the other decisions are left for later.
-4. **Phase 1, step 3: the `walk` lane** (12 checks, listed under `walk` in
-   `ai-cant-tell-inventory.md` with a note each): `tabindex` (what Tab
-   reaches first), `focus-not-removed-by-script` (the walk's `lostFocus`),
+4. **Phase 1, step 3: the `walk` lane** (done 2026-11-27; next is step 4, the
+   `measure` lane, as "Where to pick up" says; the recipe below holds for it
+   too) (12 checks, listed under `walk` in `ai-cant-tell-inventory.md` with a
+   note each): `tabindex` (what Tab reaches first),
+   `focus-not-removed-by-script` (the walk's `lostFocus`),
    `iframe-focusable-content`, `scrollable-region-focusable`,
-   `mouse-only-event-handlers` (as keyboard per element),
-   `css-hidden-focus` (as focus visible), `aria-expanded-state-mismatch` and
-   `aria-checked-state-mismatch` (the open walk sees what shows),
-   `skip-link` (press it, see where focus goes), `aria-hidden-focus`,
-   `nested-interactive-controls-absent`, `server-side-image-map-absent`.
-   Step 2 (the accessibility tree) waits on the user (item 3b). These
-   questions are tier 1 (`PAGE_LEVEL` or `ELEMENT_WALK` in `registry.js`,
-   asked only with `focus: true`, the facts per element from
-   `walkFactsFor`); some need a small extension of the walks (pressing a
-   skip link, scrolling a region with the keyboard). Step 1's recipe holds
-   for each: read the check's reasons in the engine
-   (`node_modules/@surea11y/core/src/checks/manual/<id>-manual.js` or
-   `automatic/<id>.js`); its question and the evidence it needs; its facts
+   `mouse-only-event-handlers` (as keyboard per element), `css-hidden-focus`
+   (as focus visible), `aria-expanded-state-mismatch` and
+   `aria-checked-state-mismatch` (the open walk sees what shows), `skip-link`
+   (press it, see where focus goes), `aria-hidden-focus`,
+   `nested-interactive-controls-absent`, `server-side-image-map-absent`. Step
+   2 (the accessibility tree) waits on the user (item 3b). These questions are
+   tier 1 (`PAGE_LEVEL` or `ELEMENT_WALK` in `registry.js`, asked only with
+   `focus: true`, the facts per element from `walkFactsFor`); some need a
+   small extension of the walks (pressing a skip link, scrolling a region with
+   the keyboard). Step 1's recipe holds for each: read the check's reasons in
+   the engine (`node_modules/@surea11y/core/src/checks/manual/<id>-manual.js`
+   or `automatic/<id>.js`); its question and the evidence it needs; its facts
    in `keyFactRows`; a demo case with its correct answer (a page of its own
-   under `examples/demo-site/ai/` with a step in `ai-answers.spec.json`,
-   cases in `expected.json`); its lane set to `answered` and the inventory
-   regenerated; a row in the user guide; bump `PROMPT_VERSION`; then
-   evaluate blind (`ai-cant-tell-eval/README.md`) on the allowed hosts and
-   record it here and in the eval README.
+   under `examples/demo-site/ai/` with a step in `ai-answers.spec.json`, cases
+   in `expected.json`); its lane set to `answered` and the inventory
+   regenerated; a row in the user guide; bump `PROMPT_VERSION`; then evaluate
+   blind (`ai-cant-tell-eval/README.md`) on the allowed hosts and record it
+   here and in the eval README.
 5. **More cases per check.** There are 432 labelled cases over four sites (and
    48 from the open-walk re-run of the GOV.UK keyboard pages, 55 from the APG
    examples); page title, alt quality, decorative images, focus visible, focus
@@ -363,7 +374,7 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   `<body>` or in `<head>`, which the evidence never includes.
 - The demo workflow's call budget (`budget.calls`, per run) must cover every
   question: when cases are added, a page left open with `budget-calls` means
-  the budget, not the AI (it is 120 now, for 81 questions).
+  the budget, not the AI (it is 120 now, for 97 questions).
 - Re-scoring after a change: a prompt that comes out identical can keep its
   earlier blind answer (match the runs' `questions.jsonl` by prompt text);
   only new or changed prompts need answering again.
