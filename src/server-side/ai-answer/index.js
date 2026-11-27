@@ -122,7 +122,10 @@ function candidatesOf(canonical, { focus = false } = {}) {
             // rule's names it then.
             const entry = entryFor(o.atomicCheckId || f.ruleId, f.ruleId);
             if (!entry) continue;
-            if (entry.tier === 1) { if (focus) walk.push({ finding: f, occurrence: o, entry }); } else read.push({ finding: f, occurrence: o, entry });
+            // A reading question that can use the walk (walkStop) waits for it
+            // when there is one; without focus it is asked as it is.
+            const usesWalk = entry.tier !== 1 && focus && (entry.evidence || []).includes('walkStop');
+            if (entry.tier === 1) { if (focus) walk.push({ finding: f, occurrence: o, entry }); } else if (usesWalk) walk.push({ finding: f, occurrence: o, entry }); else read.push({ finding: f, occurrence: o, entry });
         }
     }
     return [...read, ...walk];
@@ -235,7 +238,7 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         const canAsk = allowed && (preview || !!model);
 
         for (const { finding, occurrence, entry } of todo) {
-            if (entry.tier === 1 && !walk && canAsk) {
+            if ((entry.tier === 1 || (focus && (entry.evidence || []).includes('walkStop'))) && !walk && canAsk) {
                 beforeWalk = await fingerprint(page);
                 walk = await walkFocus(page, {
                     maxStops: Number(opt.focusStops) > 0 ? Math.min(Number(opt.focusStops), 200) : undefined,
@@ -263,6 +266,10 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
             const evidence = entry.tier === 1
                 ? (walk ? { focusWalk: walk, ...(entry.element ? { target: await walkFactsFor(page, occurrence.target && occurrence.target[0], walk) } : {}) } : {})
                 : await collectEvidence(page, occurrence, entry.evidence);
+            // The element's own stop in the walk, when the question can use it.
+            if (entry.tier !== 1 && walk && (entry.evidence || []).includes('walkStop')) {
+                evidence.walkStop = await walkFactsFor(page, occurrence.target && occurrence.target[0], walk);
+            }
             // What was read from the page (the element's HTML is the
             // occurrence's own): kept on every result, answered or not, so a
             // person settling one the AI did not answer has the facts and
@@ -274,7 +281,7 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
                 // An element question is the element's, as any other.
                 ...(entry.tier === 1 && !entry.element ? { page: pageUrl } : {}),
             };
-            const key = JSON.stringify([entry.check, evidence.element, evidence.context, evidence.pageTitle, evidence.image, evidence.focusWalk ? withoutPictures(evidence.focusWalk.stops) : null, evidence.focusWalk ? evidence.focusWalk.opened || null : null, evidence.target || null, entry.element ? occurrence.target : null]);
+            const key = JSON.stringify([entry.check, evidence.element, evidence.context, evidence.pageTitle, evidence.image, evidence.focusWalk ? withoutPictures(evidence.focusWalk.stops) : null, evidence.focusWalk ? evidence.focusWalk.opened || null : null, evidence.target || null, evidence.walkStop || null, entry.element ? occurrence.target : null]);
             let ai;
             if (shared.cache.has(key)) {
                 ai = { ...shared.cache.get(key), reused: true };

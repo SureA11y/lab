@@ -227,7 +227,15 @@ async function walkFocus(page, options = {}) {
                     covered,
                     coveredShare,
                     scroll: [Math.round(window.scrollX), Math.round(window.scrollY)],
-                    hidden: r.width < 1 || r.height < 1 || getComputedStyle(a).visibility === 'hidden',
+                    // Hidden while focused: no size, invisible, fully transparent,
+                    // clipped to nothing, or off the page to the left or above
+                    // (where nothing can scroll to it).
+                    hidden: (() => {
+                        const cs = getComputedStyle(a);
+                        if (r.width < 1 || r.height < 1 || cs.visibility === 'hidden' || Number(cs.opacity) === 0) return true;
+                        if (/rect\(\s*0(px)?[ ,]+0(px)?[ ,]+0(px)?[ ,]+0(px)?\s*\)/.test(cs.clip) || /inset\(\s*50%/.test(cs.clipPath)) return true;
+                        return r.right + window.scrollX <= 0 || r.bottom + window.scrollY <= 0;
+                    })(),
                     ...(lostFocus ? { lostFocus: true } : {}),
                 };
             }, KEY, START, i === 0);
@@ -473,7 +481,17 @@ async function walkFactsFor(page, selector, walk) {
     const unreachable = walk.unreachable && Array.isArray(walk.unreachable.items)
         ? walk.unreachable.items.find(same) || null
         : null;
-    return { found: true, element: at.describe, fixed: at.fixed, stop: stop ? stop.n : null, coveredStops, ...(unreachable ? { unreachable: unreachable.why } : {}) };
+    // The stop itself, as the walk saw it, and its neighbours in Tab order.
+    const stops = walk.stops || [];
+    const i = stop ? stops.indexOf(stop) : -1;
+    const brief = (s) => (s ? s.n + '. ' + (s.name || s.tag || '') : null);
+    const stopFacts = stop ? {
+        name: stop.name || null, hidden: !!stop.hidden, lostFocus: !!stop.lostFocus,
+        changesOnFocus: Array.isArray(stop.changesOnFocus) ? stop.changesOnFocus : null,
+        coveredShare: stop.coveredShare == null ? null : stop.coveredShare,
+        at: [stop.x, stop.y], before: brief(stops[i - 1]), after: brief(stops[i + 1]), ofStops: stops.length,
+    } : null;
+    return { found: true, element: at.describe, fixed: at.fixed, stop: stop ? stop.n : null, ...(stopFacts ? { stopFacts } : {}), coveredStops, ...(unreachable ? { unreachable: unreachable.why } : {}) };
 }
 
 module.exports = { walkFocus, walkFactsFor, unreachableControls, compareAppearance, luminance, DEFAULTS };

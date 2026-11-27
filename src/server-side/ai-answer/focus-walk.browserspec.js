@@ -382,3 +382,22 @@ document.getElementById('ping').addEventListener('click', () => { fetch('https:/
     assert.ok(sameFingerprint(before, await fingerprint(page)));
     await page.close();
 });
+
+test('with the focus walk, a reading question that asks for it gets the element\'s own stop', async () => {
+    const page = await open(`<title>Shop</title><style>.skip { position: absolute; left: -9999px; } .skip.shows:focus { left: 0; }</style>
+<a href="#main" class="skip shows" id="good">Skip to content</a><a href="#top" class="skip" id="bad">Back to top</a>
+<main id="main"><h1>Shop</h1><a href="#x" id="x">Products</a></main>`);
+    const occ = (id) => ({ atomicCheckId: 'css-hidden-focus', occurrenceOutcome: 'cantTell', target: ['#' + id], html: `<a id="${id}">` });
+    const c = { findings: [{ ruleId: 'wcag-2.4.7-focus-visible', outcome: 'cantTell', occurrences: [occ('good'), occ('bad')] }] };
+    const provider = { ask: async () => '{"verdict":"pass","confidence":0.9,"rationale":"x"}' };
+    await answerCantTells({ page, canonical: c, options: { focus: true }, provider, env: {} });
+    const [good, bad] = c.findings[0].occurrences.map((o) => o.ai.evidence.walkStop);
+    assert.deepEqual([good.stop, good.stopFacts.hidden], [1, false], 'shown on focus');
+    assert.deepEqual([bad.stop, bad.stopFacts.hidden], [2, true], 'off the page while focused');
+    assert.equal(good.stopFacts.after, '2. Back to top');
+
+    const plain = { findings: [{ ruleId: 'wcag-2.4.7-focus-visible', outcome: 'cantTell', occurrences: [occ('good')] }] };
+    await answerCantTells({ page, canonical: plain, provider, env: {} });
+    assert.equal(plain.findings[0].occurrences[0].ai.evidence.walkStop, undefined, 'without the walk, asked as before');
+    await page.close();
+});

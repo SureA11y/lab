@@ -36,7 +36,9 @@
 // aria-expanded- and aria-checked-state-mismatch, skip-link,
 // aria-hidden-focus, nested-interactive-controls-absent,
 // server-side-image-map-absent.
-const PROMPT_VERSION = 'registry-14';
+// registry-15: with the focus walk, the walk lane's reading questions also
+// get the element's own stop (walkStop).
+const PROMPT_VERSION = 'registry-15';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -192,28 +194,28 @@ const ANSWERABLE = Object.freeze({
         evidence: ['element', 'context', 'reported'],
     },
     'tabindex': {
-        question: "A best practice, not a WCAG failure: this element has a tabindex above 0, so Tab reaches it before the page's natural order (`reported`: the value, and what Tab skips to reach it). Does that order still make sense (a search field at the top, reached first anyway: pass), or does it pull a keyboard user away from where they are (a footer link reached first: fail)?",
-        evidence: ['element', 'context', 'reported'],
+        question: "A best practice, not a WCAG failure: this element has a tabindex above 0, so Tab reaches it before the page's natural order (`reported`: the value, and what Tab skips to reach it). Does that order still make sense (a search field at the top, reached first anyway: pass), or does it pull a keyboard user away from where they are (a footer link reached first: fail)? With the focus walk (`focus: true`), `walkStop` gives this element's own stop: whether Tab reached it (`stop`, its neighbours `before` and `after`), whether it was hidden or off the page while focused (`stopFacts.hidden`), whether the page took focus away at once (`lostFocus`), and what changed on it on focus.",
+        evidence: ['element', 'context', 'reported', 'walkStop'],
     },
     'focus-not-removed-by-script': {
-        question: "This element's onfocus handler calls blur() or focus() (`reported`: the handler, whether the element is in the tab order). 2.1.1, 2.4.7: does the handler take focus away as it arrives, so a keyboard user cannot rest on or use the element (fail), or does it keep focus where it is, or move it on purpose to where the user expects (pass)?",
-        evidence: ['element', 'context', 'reported'],
+        question: "This element's onfocus handler calls blur() or focus() (`reported`: the handler, whether the element is in the tab order). 2.1.1, 2.4.7: does the handler take focus away as it arrives, so a keyboard user cannot rest on or use the element (fail), or does it keep focus where it is, or move it on purpose to where the user expects (pass)? With the focus walk (`focus: true`), `walkStop` gives this element's own stop: whether Tab reached it (`stop`, its neighbours `before` and `after`), whether it was hidden or off the page while focused (`stopFacts.hidden`), whether the page took focus away at once (`lostFocus`), and what changed on it on focus.",
+        evidence: ['element', 'context', 'reported', 'walkStop'],
     },
     'iframe-focusable-content': {
-        question: "A frame with a negative tabindex holds one focusable element, and focus moved straight on from it (`reported`). 2.1.1: can a keyboard user still reach and use what is in the frame (pass), or is it out of reach (fail)? Answer \"unsure\" when the evidence does not show what the frame holds.",
-        evidence: ['element', 'context', 'reported'],
+        question: "A frame with a negative tabindex holds one focusable element, and focus moved straight on from it (`reported`). 2.1.1: can a keyboard user still reach and use what is in the frame (pass), or is it out of reach (fail)? Answer \"unsure\" when the evidence does not show what the frame holds. With the focus walk (`focus: true`), `walkStop` gives this element's own stop: whether Tab reached it (`stop`, its neighbours `before` and `after`), whether it was hidden or off the page while focused (`stopFacts.hidden`), whether the page took focus away at once (`lostFocus`), and what changed on it on focus.",
+        evidence: ['element', 'context', 'reported', 'walkStop'],
     },
     'scrollable-region-focusable': {
         question: "This box scrolls, but it has no tabindex and nothing in it takes focus. Chromium and Firefox let the keyboard scroll it anyway; other browsers do not. 2.1.1: does it hold content a user must scroll to read (fail: give it tabindex=\"0\" and a name), or is everything in it visible without scrolling, or reachable another way (pass)?",
         evidence: ['element', 'context', 'reported'],
     },
     'mouse-only-event-handlers': {
-        question: "This element has pointer-only handlers (`reported`: which ones) and no key, focus or blur handler, or none that can run. 2.1.1: does the pointer handler do something a keyboard user also needs (show information, open something, act): fail; or only something cosmetic, or something the keyboard gets another way (the link it is on works with Enter): pass?",
-        evidence: ['element', 'context', 'reported'],
+        question: "This element has pointer-only handlers (`reported`: which ones) and no key, focus or blur handler, or none that can run. 2.1.1: does the pointer handler do something a keyboard user also needs (show information, open something, act): fail; or only something cosmetic, or something the keyboard gets another way (the link it is on works with Enter): pass? With the focus walk (`focus: true`), `walkStop` gives this element's own stop: whether Tab reached it (`stop`, its neighbours `before` and `after`), whether it was hidden or off the page while focused (`stopFacts.hidden`), whether the page took focus away at once (`lostFocus`), and what changed on it on focus.",
+        evidence: ['element', 'context', 'reported', 'walkStop'],
     },
     'css-hidden-focus': {
-        question: "An element in the Tab order is hidden by CSS (off the screen, clipped, transparent) and no focus rule brings it into view, or focusing it moved focus elsewhere (`reported`). 2.4.7: when it has focus, can a keyboard user see where focus is (it shows itself on focus, as a skip link: pass), or does focus land on something they cannot see (fail)?",
-        evidence: ['element', 'context', 'reported'],
+        question: "An element in the Tab order is hidden by CSS (off the screen, clipped, transparent) and no focus rule brings it into view, or focusing it moved focus elsewhere (`reported`). 2.4.7: when it has focus, can a keyboard user see where focus is (it shows itself on focus, as a skip link: pass), or does focus land on something they cannot see (fail)? With the focus walk (`focus: true`), `walkStop` gives this element's own stop: whether Tab reached it (`stop`, its neighbours `before` and `after`), whether it was hidden or off the page while focused (`stopFacts.hidden`), whether the page took focus away at once (`lostFocus`), and what changed on it on focus.",
+        evidence: ['element', 'context', 'reported', 'walkStop'],
     },
     'aria-expanded-state-mismatch': {
         question: "This control's aria-expanded says the opposite of what is shown: \"false\" while what it controls is shown, or \"true\" while it is hidden (`reported`). 4.1.2: is a screen reader user told the wrong state (fail), or is it a moment a script corrects at once, or does the controlled content differ from what the control expands (pass)?",
@@ -224,12 +226,12 @@ const ANSWERABLE = Object.freeze({
         evidence: ['element', 'context', 'reported'],
     },
     'skip-link': {
-        question: "A best practice, not a WCAG failure: this skip link's target is missing, hidden or has no area (`reported`: its href). `landmarks` shows the page's landmarks and skip links. Does pressing it fail to move a keyboard user past the blocks (fail), or does it still land where it says (a script handles it, a legacy anchor) (pass)?",
-        evidence: ['element', 'context', 'reported', 'landmarks'],
+        question: "A best practice, not a WCAG failure: this skip link's target is missing, hidden or has no area (`reported`: its href). `landmarks` shows the page's landmarks and skip links. Does pressing it fail to move a keyboard user past the blocks (fail), or does it still land where it says (a script handles it, a legacy anchor) (pass)? With the focus walk (`focus: true`), `walkStop` gives this element's own stop: whether Tab reached it (`stop`, its neighbours `before` and `after`), whether it was hidden or off the page while focused (`stopFacts.hidden`), whether the page took focus away at once (`lostFocus`), and what changed on it on focus.",
+        evidence: ['element', 'context', 'reported', 'landmarks', 'walkStop'],
     },
     'aria-hidden-focus': {
-        question: "Focusable content sits inside aria-hidden=\"true\" (`reported`: the elements, and what happened when the one focusable element was focused). 4.1.2: can a keyboard user land on something a screen reader does not announce (fail), or does focus never reach it (it passes focus on, or a modal dialog keeps focus away from it: pass)?",
-        evidence: ['element', 'context', 'reported'],
+        question: "Focusable content sits inside aria-hidden=\"true\" (`reported`: the elements, and what happened when the one focusable element was focused). 4.1.2: can a keyboard user land on something a screen reader does not announce (fail), or does focus never reach it (it passes focus on, or a modal dialog keeps focus away from it: pass)? With the focus walk (`focus: true`), `walkStop` gives this element's own stop: whether Tab reached it (`stop`, its neighbours `before` and `after`), whether it was hidden or off the page while focused (`stopFacts.hidden`), whether the page took focus away at once (`lostFocus`), and what changed on it on focus.",
+        evidence: ['element', 'context', 'reported', 'walkStop'],
     },
     'nested-interactive-controls-absent': {
         question: "This control contains another control that can take focus, such as a button inside a link (`reported`: the nested controls). 4.1.2: a screen reader does not announce the inner one properly and its activation is unclear: fail, unless the inner control is not really focusable or is hidden from users (pass).",
