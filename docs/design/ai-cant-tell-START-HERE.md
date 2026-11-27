@@ -22,24 +22,17 @@ Read, in this order:
 
 ## State (end of 2026-11-27)
 
-Everything is committed and pushed. Latest: **the user decided the roadmap's
-eight open questions** (2026-11-27; the work they lead to is under "Where to
-pick up"; the engine's repository, for decision 4, is still to ask), after
-**phase 1, steps 1, 3 and 4 done**:
-the AI answers every check of the inventory's `read`, `walk` and `measure`
-lanes (67 of 132), contrast the engine cannot compute measured from the
-page's pixels (`pixels`); the walk lane from what the checker reported and, with
-`focus: true`, the element's own walk stop; before it, the `read` lane: the
-text alternatives, the names and labels (with what the checker reported),
-the structure checks (with the table, the heading outline and the
-landmarks) and "is it text"; best-practice findings are asked too; demo 103
-of 103, prompt version `registry-17`; 6 checks trusted by the user's rule
-(`ai-cant-tell-eval/trust.md`). Before that: the **roadmap** and the
-**inventory** of every engine check that can end in "can't tell" (with a
-test that keeps it in step with the engine and the registry), and the
-**open walk** (`open: true` presses what says it opens something,
-`open: "buttons"` plain buttons too; the walks judged by what the page
-shows). The full suite (4491 pass, 5 skipped) and the
+Everything is committed and pushed. Latest (2026-11-27): **the user decided
+the roadmap's eight open questions** (all the recommended options; see the
+roadmap's "Decisions"), and the first three items of the work they lead to
+are done: **exact contrast** in the lab (the background under each glyph,
+read with the text hidden for a moment; the measure lane's real cases 144 of
+144), **labels by WCAG's reading** (15 GOV.UK labels re-read), and **trust
+per check** (`ai:agreement`'s Trusted column; `ai-cant-tell-eval/trust.md`:
+6 of 33 checks trusted). Phase 1 so far: steps 1, 3 and 4 done, the AI
+answers 67 of the 132 checks that can end in "can't tell" (the `read`,
+`walk` and `measure` lanes); demo 103 of 103; prompt version `registry-17`.
+Still to ask the user: the engine's repository, for decision 4. The full suite (4492 pass, 5 skipped) and the
 browser tests (`focus-walk` 17, `ai-answer` 11, `app-boot` 17) pass.
 
 **The plan** (`ai-cant-tell-roadmap.md`, agreed 2026-11-26): phase 1 is the
@@ -66,7 +59,11 @@ are in `ai-cant-tell-roadmap.md`, "Decisions": every recommended option.
    (and per allowed site); masked areas never sent; the built-in call sends
    the element's picture as an image block, the endpoint as today
    (`A11Y_AI_ENDPOINT_PICTURE`). Then `image-of-text` (the `picture` lane)
-   and a measurement on the alt questions and the W3C news photo.
+   and a measurement on the alt questions and the W3C news photo. To
+   evaluate without a key: have `answer-offline.js prompts` also write each
+   question's picture to a file beside the questions, and tell the answering
+   agents they may open the picture named in their prompt (they can read
+   image files); score as before.
 3. **Forms (decision 6):** `ai: { forms: true }` per step, only on hosts in
    `A11Y_AI_FORM_HOSTS` (test systems); fill and submit with invalid input
    for `invalid-field-error-message`, paste for `password-paste-enabled`,
@@ -289,9 +286,10 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
    the roadmap's "Decisions"); the work they lead to is listed under
    "Where to pick up". Only the engine's repository (for decision 4) is
    still to ask.
-4. **Next without the user: exact contrast in the lab**, as "Where to pick
-   up" says. Steps 3 (the `walk` lane) and 4 (the `measure` lane) are done;
-   the recipe below, written for step 3, holds for any new question. Step 3 (12 checks, listed under `walk` in `ai-cant-tell-inventory.md` with a
+4. **Next without the user: pictures (decision 5)**, as "Where to pick up"
+   says (exact contrast, WCAG's labels and trust are done). Steps 3 (the
+   `walk` lane) and 4 (the `measure` lane) are done; the recipe below,
+   written for step 3, holds for any new question. Step 3 (12 checks, listed under `walk` in `ai-cant-tell-inventory.md` with a
    note each): `tabindex` (what Tab reaches first),
    `focus-not-removed-by-script` (the walk's `lostFocus`),
    `iframe-focusable-content`, `scrollable-region-focusable`,
@@ -379,7 +377,8 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   reported, `occurrence.details`, bounded), `table`, `outline`, `landmarks`;
   the walk questions use `focusWalk`; a reading question can add
   `walkStop` (the element's own stop, only when the step has `focus: true`;
-  without it the question is asked as before), or `pixels` (the contrast of
+  without it the question is asked as before), or `pixels` (measured exactly, the text hidden for a moment with the page checked
+  before and after, or by colour as fallback: the contrast of
   its text against what is drawn behind it, from a picture). Adding a kind to an existing question
   changes its prompt, so its blind answers must be redone; a new question
   takes what it needs.
