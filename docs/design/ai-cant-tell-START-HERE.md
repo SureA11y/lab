@@ -20,7 +20,7 @@ Read, in this order:
    customer's site (what leaves the lab, agents, how to set it up well).
 7. `ai-cant-tell-spike.md`: the earliest results.
 
-## State (end of 2026-11-26)
+## State (end of 2026-11-27)
 
 Everything is committed and pushed (latest: **phase 1, step 1 under way**: the
 AI answers every text alternative check (SVG, image map areas, image
@@ -91,7 +91,12 @@ to 3 below need the user.
   (2.4.9) and frames, unnamed landmarks; their questions get what the
   checker itself reported for the occurrence (`reported`: the fields sharing
   a label, where same-named links go...), shown in the review as "The
-  checker found".
+  checker found". Structure: ungrouped radios and checkboxes, fields with two
+  labels, tables (a title row, no headers, headers with no cells, empty
+  headers), heading order, bypass blocks, page zones and region,
+  focusable non-controls, presentation conflicts, shared access keys; their
+  questions get the table (`table`), the page's heading outline (`outline`)
+  or its landmarks (`landmarks`), read from the page.
 - **The focus walk** (`ai: { focus: true }`, `focusStops` default 40, max
   200): Tab through the page in its own Tab order, then focus and scroll put
   back, checked by a fingerprint (answers dropped and a warning logged if the
@@ -170,21 +175,25 @@ to 3 below need the user.
   (`focusStops`), blank images, a video's own controls, keyboard asked where
   Tab reaches nothing, focus order judged on its own; then the open walk.
 
-**Not measured yet:** the names and labels on enough real cases (24, in four
-of the eight checks; headings, label in name, frames and tooltip-only names
-had none); the text alternative checks on enough real cases: the evaluation
-sites have about ten (5 SVGs, all correct; 1 image button; no image map; 2
-objects or videos; 1 redundant alt, 1 object with a placeholder), so they need
-other sources, with failing cases among them; whether the report's Best
-practices section shows the AI's badge on its rows, as the findings do (built
-by the same function, not checked in the app); anything through the lab's own
-Claude call with a real key (so prompt caching too: the first real run should
-show cached tokens in the API's usage); agreement after the evidence was
-reordered; the open walk on a real site with a dialog that truly cannot be
-closed or traps focus (so far only the demo's). The runs before 2026-11-26
-were made before the walks were judged by what the page shows: in UW and the
-GOV.UK runs no walk was dropped for a changed page (every open case has
-another reason), so their figures stand; W3C run 5 was not re-checked.
+**Not measured yet:** the structure checks on real pages beyond 37 cases in
+seven checks (`region`, 179 questions on the same few blocks, was left out: it
+needs a way to sample or group them; focus-order semantics, presentation
+conflicts, access keys and title-row tables had no real case); the names and
+labels on enough real cases (24, in four of the eight checks; headings, label
+in name, frames and tooltip-only names had none); the text alternative checks
+on enough real cases: the evaluation sites have about ten (5 SVGs, all
+correct; 1 image button; no image map; 2 objects or videos; 1 redundant alt, 1
+object with a placeholder), so they need other sources, with failing cases
+among them; whether the report's Best practices section shows the AI's badge
+on its rows, as the findings do (built by the same function, not checked in
+the app); anything through the lab's own Claude call with a real key (so
+prompt caching too: the first real run should show cached tokens in the API's
+usage); agreement after the evidence was reordered; the open walk on a real
+site with a dialog that truly cannot be closed or traps focus (so far only the
+demo's). The runs before 2026-11-26 were made before the walks were judged by
+what the page shows: in UW and the GOV.UK runs no walk was dropped for a
+changed page (every open case has another reason), so their figures stand; W3C
+run 5 was not re-checked.
 
 **Labels that disagree with WCAG, kept on purpose:** in `label-rules.js`
 (`gov`), keyboard on the GOV.UK "lightbox close button" and "role=button"
@@ -320,8 +329,18 @@ main line of work (phase 1 of the roadmap); 5 to 7 run beside it.
   is only asked when the scan step turns it on (`"profile": "wcag22-aaa"`,
   `"includeBestPractice": true`); the demo's steps do. A family's demo cases
   can get a page of their own and a step (as `labels.html`).
-- A question that needs what the checker reported lists `reported` in its
-  `evidence` (`occurrence.details`, bounded); others are unchanged by it.
+- Evidence kinds a question can list in `evidence` (`registry.js`), read by
+  `evidence.js`: `element`, `context`, `pageTitle`, `image` (with
+  `image.svg`, `image.area`, `image.embedded`), `reported` (what the checker
+  reported, `occurrence.details`, bounded), `table`, `outline`, `landmarks`;
+  the walk questions use `focusWalk`. Adding a kind to an existing question
+  changes its prompt, so its blind answers must be redone; a new question
+  takes what it needs.
+- A demo case must be unambiguous under its own question's pass and fail
+  wording: the first `table-th-has-data-cells` case (a header over a missing
+  cell) was what the question calls "an empty column", and was dropped.
+- On real pages, a check that fires on every block (`region`) can outnumber
+  the rest: leave it out of the labelled set or sample it, and say so.
 - Demo pages: no comment or text near a case that tells its answer. The
   evidence includes the page source around an element, so the model would
   read it; explanations go in `expected.json`, or in a comment above
