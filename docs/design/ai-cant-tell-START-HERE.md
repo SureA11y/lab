@@ -20,7 +20,7 @@ Read, in this order:
    customer's site (what leaves the lab, agents, how to set it up well).
 7. `ai-cant-tell-spike.md`: the earliest results.
 
-## State (end of 2026-11-27)
+## State (2026-11-28)
 
 Everything is committed and pushed (last code change: `279df36`; after it
 only evaluation runs and docs). **Phase 1 of the
@@ -33,7 +33,12 @@ prompt version `registry-20`. The full suite (`node --test`, 4501 pass) and
 the browser tests (`ai-answer.browserspec.js` 14, `focus-walk` 17,
 `app-boot` 17) pass.
 
-What 2026-11-27 added, in order (each in the eval README with how to repeat
+**Waiting on the user** (ask at the start): the engine's GitHub repository
+(decision 4), and hosts with real form errors (`aria-invalid` without a
+shown, tied message), audio or video, carousels and live regions (the
+allowed hosts have none left). Everything else below can go on without.
+
+What 2026-11-27 and 2026-11-28 added, in order (each in the eval README with how to repeat
 it):
 
 1. **The user decided the roadmap's eight open questions** (every
@@ -122,9 +127,21 @@ towards nothing until a person confirms; the AI only flags, never passes).
    through the lab's own Claude call with a real key (item 2), more cases
    for link text, field labels and bold as heading, the open walk's open
    points (item 7).
-Without the user, what can go on: polish within the allowed hosts (item 3:
-more cases per check where the trust table says "N of 30 cases"), and
-preparing phase 2's design (item 4) for the user to agree.
+Without the user, what can go on, in this order:
+
+- **Top up the checks closest to trust** on the allowed hosts:
+  `css-hidden-focus` (29 of 30; GOV.UK Design System pages with custom
+  checkboxes and radios, e.g. `/components/checkboxes/` and
+  `/components/radios/` examples without errors), `p-as-heading` (26 of 30;
+  more Design System examples with error messages, or WAI tutorial pages
+  with bold text), then any row of `trust.md` that says "N of 30 cases".
+  Same method: preview, label every question before reading answers, blind
+  answers, score, a run folder in `ai-cant-tell-eval/`, its name added to
+  `QUESTION_RUNS` in `trust-table.js`, rerun it, record in the eval README
+  and here. Prefer cases that can fail: every label of the Design System
+  run was pass, which tests no wrong pass.
+- **Prepare phase 2's design** (item 4) as a section of the roadmap, for
+  the user to agree before building.
 
 4. **Phase 2**, once the user agrees phase 1 is done: start with what is
    already read (roadmap, "Phase 2", group 1: language of parts, sensory
