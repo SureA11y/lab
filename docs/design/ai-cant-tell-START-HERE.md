@@ -22,8 +22,9 @@ Read, in this order:
 
 ## State (2026-11-28)
 
-Everything is committed and pushed (last code change: `279df36`; after it
-only evaluation runs and docs). **Phase 1 of the
+Everything is committed and pushed (last code change: `796c112`: the focus
+walk reads a control's label, and `heading-order`'s question; the rest since
+`279df36` is evaluation runs and docs). **Phase 1 of the
 roadmap is complete except for the engine's part:** the AI answers **76 of
 the 132 checks** that can end in "can't tell". What is left is 23 `tree`
 checks, which belong in the engine (decision 4; parked: none came up on real
@@ -141,8 +142,7 @@ towards nothing until a person confirms; the AI only flags, never passes).
    field without a shown, tied message, and none has autoplay or animation
    the engine sees. **Ask the user** to allow hosts with such pages (sites
    with known form-error problems, real `<video>`/`<audio>`, carousels,
-   live regions); a check short of 30 cases (`css-hidden-focus` 29,
-   `p-as-heading` 26) can be topped up on the allowed hosts meanwhile. Then: survey as a preview, label the
+   live regions). Then: survey as a preview, label the
    new-family questions before reading any answer, answer blind (with and
    without the paste or pictures where they apply), score, record in the
    eval README and START-HERE, rerun `trust-table.js`. A sign-in form for
@@ -157,6 +157,7 @@ towards nothing until a person confirms; the AI only flags, never passes).
    through the lab's own Claude call with a real key (item 2), more cases
    for link text, field labels and bold as heading, the open walk's open
    points (item 7).
+
 Without the user, what can go on, in this order:
 
 - **Top up the checks closest to trust** on the allowed hosts: the rows of
@@ -164,9 +165,15 @@ Without the user, what can go on, in this order:
   `focus-contrast-element`, `keyboard-element` 12 each,
   `mouse-only-event-handlers` and `svg-text-alternative-quality` 13 and 11,
   `td-has-header` 12...). `p-as-heading` has its cases but needs a person
-  on the "Techniques:" judgement. Radios after the first of a group are
-  never reached by the walk (no arrow keys): a walk extension, not more
-  cases, would settle them.
+  on the "Techniques:" judgement (item 10 above).
+- **Radios the walk never reaches:** a radio group is one Tab stop and
+  arrow keys move within it, so the walk (Tab only) leaves the other radios
+  open (16 in the Design System run). Settling them means pressing arrow
+  keys, which also checks the radio: it changes the page, so it would be an
+  opt-in step like the open walk (press, read the focus change, put the
+  checked radio back, checked by the fingerprint). Design it before
+  building; the same would reach menu items and tabs (the open walk's open
+  points, Next item 7).
   Same method: preview, label every question before reading answers, blind
   answers, score, a run folder in `ai-cant-tell-eval/`, its name added to
   `QUESTION_RUNS` in `trust-table.js`, rerun it, record in the eval README
@@ -186,12 +193,12 @@ Without the user, what can go on, in this order:
 | 1, names and labels | 8 | 14 of 14 | 23 of 24 (one reading of 2.4.9) |
 | 1, structure | 13 | all agree (one ambiguous case dropped) | 37 of 37 |
 | 1, "is it text" | 4 | 4 of 4 | none came up |
-| 3, walk lane | 12 | 16 of 16 | 10 of 10 read only (8 unsure), 23 of 24 with the walk |
+| 3, walk lane | 12 | 16 of 16 | 10 of 10 read only (8 unsure), 23 of 24 with the walk; `css-hidden-focus` 53 of 53 answered with the label fix (16 radios open) |
 | 4, measure lane | 9 | 6 of 6 | 144 of 144 with the exact contrast measurement (137 before; labelled by a reference measurement) |
 | 5, pictures (`image-of-text`, and pictures for the alt questions) | 1 | 7 of 7 (2 settled only with pictures) | W3C pages: 40 of 41 with and without; survey: 50 of 50 with, 47 of 50 without (3 open) |
 | 5, forms | 3 | 8 of 8 (2 settled only with the paste) | none came up |
 | 5, media and moving content | 5 | 16 of 16 | 4 of 4 (survey; no autoplay or animation came up) |
-| 2, accessibility tree | 23 | | in the engine (decision 4), waiting on its repository |
+| 2, accessibility tree | 23 | | in the engine (decision 4): parked, none came up on 224 real pages |
 
 **Built.** Code in `src/server-side/ai-answer/` (`index.js` the pass,
 `registry.js` the questions, `focus-walk.js`, `open-walk.js`, `evidence.js`, `provider.js`,
