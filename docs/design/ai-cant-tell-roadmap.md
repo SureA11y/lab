@@ -117,7 +117,7 @@ host, `forms: true`).
 
 ## Phase 2: success criteria no rule can automate
 
-Not started. The AI would look for problems no check raises, so it raises
+Not started; a design draft for the user to agree is below. The AI would look for problems no check raises, so it raises
 its own items (Decisions 1 and 2). Candidates, by the evidence they need:
 
 1. **What is already read:** 3.1.2 language of parts (a phrase in another
@@ -136,6 +136,88 @@ its own items (Decisions 1 and 2). Candidates, by the evidence they need:
    forms).
 4. **Seeing the page:** 1.4.1 use of colour, 1.4.5 images of text, the
    visual side of reflow (Decision 5).
+
+### Phase 2 design: a draft for the user to agree (2026-11-28)
+
+Written before building, as decisions 1 and 2 ask. Nothing here is built.
+
+**The idea in one line: candidates by rule, judgement by the AI, a person
+confirms.** The AI does not read whole pages looking for anything wrong: a
+lab-side finder picks the places a criterion could be failed (cheap,
+deterministic, bounded), and the AI is asked one question about each, as in
+phase 1. An item it flags is shown apart, unconfirmed, until a person
+confirms it.
+
+Why this shape: it keeps phase 1's strengths (one bounded question per
+place, evidence the lab collected and can show, the same safeguards, the
+same blind evaluation), bounds the cost per page, and makes a raised item
+point at an element and quote the page, so it can be checked. A free scan
+of the page for "any problem" would be costlier, harder to evaluate and
+more prone to invented problems.
+
+**How a step asks for it.** `ai: { raise: ["3.1.2", "1.3.3"] }` (or
+`"raise": "reading"` for group 1), off by default; the same server settings
+as today (allowed sites, masking, preview, the call budget shared with phase
+1, which goes first).
+
+**What comes out.** `canonical.aiRaised`: one item per flagged place,
+`{ sc, finder, selector, quote, why, confidence, evidence, model,
+status: "unconfirmed" }`. Never in `findings`, scores or conformance
+(decision 1). The AI only flags (decision 2): a finder's place it answers
+"no problem" for is not reported, and no criterion is ever passed by it; a
+criterion with nothing raised stays as it was (a person's).
+
+**Guards against invented problems.**
+
+- An item must quote text that the lab then finds on the page, inside the
+  element named; an item whose quote is not there is dropped (counted, not
+  shown).
+- Confidence threshold as phase 1 (0.6), and a per-criterion cap per page
+  (e.g. 5), so one misread pattern cannot flood the review.
+- The finder's own facts are shown with the item, so a person sees why the
+  place was looked at.
+
+**Group 1, the first to build: finders and questions.**
+
+| SC | Finder (lab, no model) | The question |
+| --- | --- | --- |
+| 3.1.2 language of parts | text runs (paragraphs, list items, quotes, link text) of a few words or more, without a `lang` of their own, whose characters or common words do not fit the page's `lang` (a small word list per language, plus scripts: Cyrillic on an `en` page) | Is this phrase in another language than the page, and not a proper name, a technical term or a word taken into the page's language? |
+| 1.3.3 sensory characteristics | instructions (text near controls, in forms, help text) that use shape, colour, size, position or sound words ("round", "green", "on the right", "below", "the beep") | Does this instruction rely only on how something looks, where it is or how it sounds, with no name or text that identifies it? |
+| 1.3.1 structure shown only visually | runs of paragraphs starting with "•", "-", "1." or emoji; bold or large text runs not marked as headings (as `p-as-heading`, but for whole blocks); grids of divs aligned like a table; `<br>`-separated lines | Is this a list, a table or a heading shown only by its look, with its structure lost to a screen reader? |
+| 3.3.2 format instructions | fields whose input has a format (a `pattern`, `type` date, tel, a name or label saying date, postcode, IBAN, phone) and no hint text near them (`aria-describedby`, text in its row) | Does the user need to know a format to fill this field, and is it missing? |
+
+AAA (2.4.10 section headings; 3.1.3 to 3.1.5) only with an AAA profile, after
+these.
+
+**The review.** A section "Raised by the AI, not confirmed", by criterion:
+each item with its quote, the element's picture, why, and **Confirm** /
+**Dismiss**. A confirmed item becomes a person's finding in the report
+(where: an open question below); a dismissed one is kept as such for the
+evaluation, as phase 1's labels are.
+
+**Evaluation, before any of it is shown by default.**
+
+- Demo pages with planted problems and their clean twins (a phrase in
+  French on an English page, and a name like "Café Rouge"; "click the green
+  button", and "the green Save button"), with expected items in
+  `expected.json`: every planted problem raised, nothing raised on the twin.
+- Real sites known to be clean (the WAI tutorials) to count false raises;
+  sites with documented problems (the W3C Before and After demo, the GOV.UK
+  audit pages on language and sensory characteristics) to count found ones.
+- The measure that matters is **precision** (raised items that are real),
+  then what is found; a trust rule like decision 8 for raised items, per
+  criterion (e.g. 30 raised items labelled, 90% real), before a criterion's
+  items are shown without a "low trust" mark.
+
+**Open questions for the user.**
+
+1. The option's shape: `raise` with criteria, or one switch for group 1?
+2. Where a confirmed item goes: a finding in the report's findings with a
+   "found by a person, raised by the AI" source, or a section of its own?
+3. The trust rule for raised items: precision 90% on 30 labelled items?
+4. Order within group 1: 3.1.2 and 1.3.3 first (text only, clearest
+   evaluation), then 3.3.2, then 1.3.1 (which overlaps `p-as-heading` and may
+   want pictures)?
 
 ## Decisions (made by the user on 2026-11-27)
 

@@ -179,8 +179,11 @@ Without the user, what can go on, in this order:
   `QUESTION_RUNS` in `trust-table.js`, rerun it, record in the eval README
   and here. Prefer cases that can fail: every label of the Design System
   run was pass, which tests no wrong pass.
-- **Prepare phase 2's design** (item 4) as a section of the roadmap, for
-  the user to agree before building.
+- **Phase 2's design: drafted** (2026-11-28) in the roadmap, "Phase 2
+  design: a draft for the user to agree": candidates found by lab-side
+  finders, one AI question each, items quoted and checked against the page,
+  shown apart until a person confirms. It ends with four questions for the
+  user; ask them before building anything of phase 2.
 
 4. **Phase 2**, once the user agrees phase 1 is done: start with what is
    already read (roadmap, "Phase 2", group 1: language of parts, sensory
