@@ -29,8 +29,8 @@ the 132 checks** that can end in "can't tell". What is left is 23 `tree`
 checks, which belong in the engine (decision 4; parked: none came up on real
 pages, see below), and 32 `code` checks, which a
 person confirms (decision 3: nothing to build). Demo **148 of 148** (blind);
-prompt version `registry-20`. The full suite (`node --test`, 4501 pass) and
-the browser tests (`ai-answer.browserspec.js` 14, `focus-walk` 17,
+prompt version `registry-21`. The full suite (`node --test`, 4504 pass) and
+the browser tests (`ai-answer.browserspec.js` 14, `focus-walk` 18,
 `app-boot` 17) pass.
 
 **Parked by the user (2026-11-28): the engine's tree lane (decision 4).**
@@ -112,6 +112,20 @@ it):
    (the character count's live region, leaning pass), none wrong.
    `css-hidden-focus` now 29 and `p-as-heading` 26 real cases of the 30
    trust needs; `trust.md` 6 of 38 checks trusted.
+10. **Topping up, a walk fix, a question fixed (2026-11-28;** eval README,
+   "Topping up the checks short of trust"). The survey's other questions
+   (`survey-rest/`, 62 cases, 42 of them fail), and the Design System's
+   checkboxes and radios with `focus: true`
+   (`govuk-design-system-choices/`). **The focus walk now compares the
+   control's label and its ::before/::after** too (custom checkboxes draw
+   their focus ring there); before, a hidden input showed only an invisible
+   outline change, and the AI passed from knowing GOV.UK's pattern.
+   **`heading-order`'s question now follows the gap** (`registry-21`), as
+   the engine's own pass and fail say; its six cases answered again, all
+   fail as labelled. One label of mine corrected (an empty corner `<th>`).
+   One judgement left for a person: WAI's bold "Techniques:" paragraphs
+   (`p-as-heading` 87%). **`trust.md`: 8 of 40 checks trusted**
+   (`css-hidden-focus`, `landmark-unique` new).
 
 **The plan** (`ai-cant-tell-roadmap.md`): phase 1, the AI for every "can't
 tell" from the rules, then phase 2, criteria no rule can automate (decisions
@@ -145,12 +159,14 @@ towards nothing until a person confirms; the AI only flags, never passes).
    points (item 7).
 Without the user, what can go on, in this order:
 
-- **Top up the checks closest to trust** on the allowed hosts:
-  `css-hidden-focus` (29 of 30; GOV.UK Design System pages with custom
-  checkboxes and radios, e.g. `/components/checkboxes/` and
-  `/components/radios/` examples without errors), `p-as-heading` (26 of 30;
-  more Design System examples with error messages, or WAI tutorial pages
-  with bold text), then any row of `trust.md` that says "N of 30 cases".
+- **Top up the checks closest to trust** on the allowed hosts: the rows of
+  `trust.md` that say "N of 30 cases" (`focus-visible-element`,
+  `focus-contrast-element`, `keyboard-element` 12 each,
+  `mouse-only-event-handlers` and `svg-text-alternative-quality` 13 and 11,
+  `td-has-header` 12...). `p-as-heading` has its cases but needs a person
+  on the "Techniques:" judgement. Radios after the first of a group are
+  never reached by the walk (no arrow keys): a walk extension, not more
+  cases, would settle them.
   Same method: preview, label every question before reading answers, blind
   answers, score, a run folder in `ai-cant-tell-eval/`, its name added to
   `QUESTION_RUNS` in `trust-table.js`, rerun it, record in the eval README

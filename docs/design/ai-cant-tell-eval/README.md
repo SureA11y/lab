@@ -1088,3 +1088,56 @@ None wrong. Every label here is pass, so the run says nothing about wrong
 passes; it adds cases where the trust table was short: `css-hidden-focus` 29
 and `p-as-heading` 26 of the 30 needed, `page-title-patterns` 122. Counted
 in [trust.md](trust.md) (6 of 38 checks trusted).
+
+## Topping up the checks short of trust; a walk fix; a question fixed (2026-11-28)
+
+Three sets, each labelled before any answer was read and answered blind:
+
+**The survey's other questions** ([survey-rest/](survey-rest/)): the
+questions of the 85-page survey not evaluated before, leaving out `region`
+and page titles (already trusted). `landmark-unique` fired 77 times on the
+WAI pages' unnamed `<aside>` boxes ("Example", "Code"...): one per kind of
+box per page kept (34), all labelled fail (best practice: many unnamed
+complementary landmarks cannot be told apart). The 12 contrast cases
+labelled by `contrast-reference.js` (8 pass; 4 carousel texts not
+measurable, the slides move, left out). 62 cases in all, after one dropped
+as a repeat of an earlier run's element and one label corrected.
+
+- 34 of 34 `landmark-unique` fails agreed; contrast 8 of 8; links, tables,
+  form groups, scrolling box, mouse handlers, placeholder headings agreed.
+- **A label of mine was wrong:** GOV.UK's "table has an empty table header"
+  page's empty `<th>` is the corner cell over row headers, which the
+  question's own rule passes; labelled fail from the page's title, answered
+  pass at 0.85. Corrected to pass.
+- **A question was wrong:** `heading-order` said "fail when the jump breaks
+  the outline", softer than the engine's own pass and fail (any gap, G141),
+  sent in the same prompt; the AI passed two h1→h4 skips by the softer one.
+  The question now follows the gap (`registry-21`); the six labelled
+  heading-order cases (4 GOV.UK, the demo's, the survey's) answered again
+  with it: all fail, as labelled.
+- **A judgement:** WAI's bold "Techniques:" and "Success Criteria:"
+  paragraphs above lists in its "Related resources" boxes, labelled pass (a
+  label for a list, as WAI marks them); the AI failed four at 0.7 ("titles
+  the list that follows") and left three open. Kept as labelled, for a
+  person to settle; `p-as-heading` is now at 87% when answered.
+
+**Hidden-input checkboxes and radios** ([govuk-design-system-choices/](govuk-design-system-choices/)):
+the Design System's checkbox and radio examples
+(`ai-answers-govuk-design-system-choices.spec.json`), and the error run
+again, now with `focus: true`. Answered first without the walk, every
+`css-hidden-focus` question was passed at 0.6, and the answerer said why:
+from knowing GOV.UK's pattern, not from the evidence. With the walk the
+evidence was misleading too: it recorded only an `outline` change on the
+invisible input. **The walk now also compares the control's label and its
+`::before`/`::after`** (where a custom checkbox draws its box and focus
+ring: `input:focus + label::before`), with a browser test. Then 41 of 57
+show "outline, box shadow, border (label::before)" and are passed at 0.75
+from the evidence; the 16 radios after the first of their group are not Tab
+stops (arrow keys move between them, which the walk does not press) and are
+left open. The 17 earlier answers without the walk were taken out of
+[govuk-design-system/](govuk-design-system/).
+
+**Trust** ([trust.md](trust.md)): **8 of 40 checks trusted**, newly
+`css-hidden-focus` (69 cases, 53 answered, all agree) and `landmark-unique`
+(48; 34 of them the WAI asides, one per kind per page). `p-as-heading`
+reached 34 cases but is at 87% for the judgement above.

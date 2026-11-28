@@ -12,7 +12,8 @@
 //    up to `maxStops` times. Only Tab: never Enter, Space or an arrow key, so
 //    nothing is operated. At each stop: the element, its name and role, where it
 //    is, its landmark and the heading it comes under, what looks different on
-//    it (or its parent, or its ::before/::after) while focused, whether
+//    it (or its parent, its ::before/::after, or its label and the label's
+//    ::before/::after, where a custom checkbox draws its ring) while focused, whether
 //    something covers it, and a small picture.
 // 3. Ends when focus leaves the page, comes back to an element it already
 //    visited, or the limit is reached.
@@ -86,23 +87,35 @@ async function walkFocus(page, options = {}) {
                     shown: c.content === undefined ? '' : String(c.content),
                 };
             };
-            const read = (el) => ({
-                self: pick(getComputedStyle(el)),
-                parent: el.parentElement ? pick(getComputedStyle(el.parentElement)) : {},
-                before: pick(getComputedStyle(el, '::before')),
-                after: pick(getComputedStyle(el, '::after')),
-            });
+            // Also the control's label and its ::before/::after: a custom
+            // checkbox or radio hides its input and draws the box, and the
+            // focus ring, on its label (input:focus + label::before).
+            const labelOf = (el) => (el.labels && el.labels[0] && el.labels[0] !== el.parentElement ? el.labels[0] : null);
+            const read = (el) => {
+                const label = labelOf(el);
+                return {
+                    self: pick(getComputedStyle(el)),
+                    parent: el.parentElement ? pick(getComputedStyle(el.parentElement)) : {},
+                    before: pick(getComputedStyle(el, '::before')),
+                    after: pick(getComputedStyle(el, '::after')),
+                    label: label ? pick(getComputedStyle(label)) : {},
+                    labelBefore: label ? pick(getComputedStyle(label, '::before')) : {},
+                    labelAfter: label ? pick(getComputedStyle(label, '::after')) : {},
+                };
+            };
+            const NAMES = { parent: 'parent', before: '::before', after: '::after', label: 'label', labelBefore: 'label::before', labelAfter: 'label::after' };
+            const pseudo = (part) => ['before', 'after', 'labelBefore', 'labelAfter'].includes(part);
             const changed = (a, b) => {
                 const out = [];
-                for (const part of ['self', 'parent', 'before', 'after']) {
+                for (const part of ['self', 'parent', 'before', 'after', 'label', 'labelBefore', 'labelAfter']) {
                     const x = a[part] || {};
                     const y = b[part] || {};
-                    if ((part === 'before' || part === 'after') && (x.shown === 'none' || x.shown === 'normal') && (y.shown === 'none' || y.shown === 'normal')) continue;
+                    if (pseudo(part) && (x.shown === undefined || x.shown === 'none' || x.shown === 'normal') && (y.shown === undefined || y.shown === 'none' || y.shown === 'normal')) continue;
                     for (const name of Object.keys(x)) {
                         if (name === 'shown' || x[name] === y[name]) continue;
-                        out.push(part === 'self' ? name : `${name} (${part === 'parent' ? 'parent' : '::' + part})`);
+                        out.push(part === 'self' ? name : `${name} (${NAMES[part]})`);
                     }
-                    if ((part === 'before' || part === 'after') && x.shown !== y.shown) out.push(`content (::${part})`);
+                    if (pseudo(part) && x.shown !== y.shown) out.push(`content (${NAMES[part]})`);
                 }
                 return out;
             };

@@ -59,6 +59,20 @@ test('walks from the top, says what shows focus and what covers it, and puts foc
     await page.close();
 });
 
+test('a custom checkbox that hides its input shows focus on its label, and the walk sees it there', async () => {
+    const page = await browser.newPage();
+    await page.setContent(`<style>
+        .cb { position: relative; } .cb input { position: absolute; opacity: 0; width: 40px; height: 40px; margin: 0; }
+        .cb label { padding-left: 50px; } .cb label::before { content: ""; position: absolute; left: 0; top: 0; width: 36px; height: 36px; border: 2px solid #0b0c0c; }
+        .cb input:focus + label::before { box-shadow: 0 0 0 3px #fd0; border-width: 4px; }
+      </style><div class="cb"><input id="a" type="checkbox"><label for="a">Email</label></div>`);
+    const walk = await walkFocus(page);
+    const stop = walk.stops.find((s) => s.selector === '#a' || /Email/.test(s.name || ''));
+    assert.ok(stop, 'the hidden input is a stop');
+    assert.ok(stop.changesOnFocus.some((c) => /\(label::before\)/.test(c)), JSON.stringify(stop.changesOnFocus));
+    await page.close();
+});
+
 test('a loop that keeps focus is reported as coming back, and the limit holds', async () => {
     const trap = `<a href="#a" id="a">A</a><a href="#b" id="b">B</a>
 <script>document.getElementById('b').addEventListener('keydown', (e) => { if (e.key === 'Tab') { e.preventDefault(); document.getElementById('a').focus(); } });</script>`;

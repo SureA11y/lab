@@ -54,7 +54,9 @@
 // media-alternative-transcript-evidence, no-autoplay-audio,
 // moving-content-pausable, deprecated-elements-not-used), with the media's
 // facts, a same-page transcript and the page's pause controls.
-const PROMPT_VERSION = 'registry-20';
+// registry-21: heading-order judged by the gap, as the engine's own pass
+// and fail say (G141), not by whether the outline still reads clearly.
+const PROMPT_VERSION = 'registry-21';
 
 const ANSWERABLE = Object.freeze({
     'p-as-heading': {
@@ -215,7 +217,7 @@ const ANSWERABLE = Object.freeze({
         evidence: ['element', 'context', 'table', 'reported'],
     },
     'heading-order': {
-        question: "A best practice, not a WCAG failure: this heading skips a level after the previous one (`reported`: from and to). `outline` is the page's headings in order, this one marked \u2190. Does the jump break the outline a screen reader user navigates by (a subsection that looks like it belongs to the wrong section)? Fail when it does; pass when the structure is still clear (a sidebar or a card set at a fixed level).",
+        question: "A best practice, not a WCAG failure: this heading skips a level after the previous one (`reported`: from and to). `outline` is the page's headings in order, this one marked \u2190. A screen reader user moving by headings meets a gap in the outline. Fail when this heading is more than one level deeper than the heading before it in the same part of the page (an h1 followed by an h4, even on a short page). Pass only when the skip is not a real gap: the heading before it is in another part of the page (a sidebar, a header, a card set whose levels restart) and this heading is at most one level deeper than its own section's heading.",
         evidence: ['element', 'context', 'reported', 'outline'],
     },
     'bypass-blocks-present': {

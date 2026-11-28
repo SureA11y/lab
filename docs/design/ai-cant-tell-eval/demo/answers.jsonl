@@ -56,7 +56,7 @@
 {"id":"q58","verdict":"fail","confidence":0.85,"rationale":"The 'Search' and 'Shop' links share accesskey 's' but lead to different targets, so the shortcut may reach only one of them."}
 {"id":"q59","verdict":"pass","confidence":0.9,"rationale":"The empty th is the top-left corner cell above the row headers (Pots, Soil) and beside the column headers (Small, Large), so it heads no data cells."}
 {"id":"q60","verdict":"fail","confidence":0.9,"rationale":"The div has an onclick that navigates to products.html, so it acts as a link but is announced as an article with no name."}
-{"id":"q61","verdict":"fail","confidence":0.85,"rationale":"The h4 'Roses' comes straight after the h2 'Care guides' with no h3 between them, so the outline has a gap. It is a plain subsection, not a sidebar or a card set at a fixed level."}
+{"id":"q61","verdict":"fail","confidence":0.92,"rationale":"Within main, the h4 'Roses' directly follows the h2 'Care guides' that introduces it, with no h3, so a level is skipped in the same section."}
 {"id":"q62","verdict":"fail","confidence":0.85,"rationale":"The block at the top holds the site name 'Demo Shop' and main links, so it is the page header, yet the only landmark is main and there is no banner."}
 {"id":"q63","verdict":"fail","confidence":0.75,"rationale":"alt=\"\" says decorative but aria-label 'Sale' exposes it as an image; whichever was intended, the markup conflicts and the exposed name does not match the '−50%' content."}
 {"id":"q64","verdict":"fail","confidence":0.85,"rationale":"The site header with the site name and Shop/Search links is real page content and lies outside every landmark (only main exists)."}
@@ -125,22 +125,22 @@
 {"id":"q144","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
 {"id":"q145","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
 {"id":"q146","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
-{"id": "q22", "verdict": "fail", "confidence": 0.7, "rationale": "The rose-pruning how-to video has only a short figcaption and no transcript or text alternative nearby; a narrated how-to carries information that has no text equivalent."}
-{"id": "q23", "verdict": "fail", "confidence": 0.6, "rationale": "A 2-minute how-to video with controls and sound not muted very likely has narration, and it has no captions track or linked captioned version."}
-{"id": "q105", "verdict": "pass", "confidence": 0.85, "rationale": "The video sits right under the heading 'Interview with our head gardener' and is followed by a sentence describing it, which identifies it."}
-{"id": "q106", "verdict": "pass", "confidence": 0.65, "rationale": "The audio is ambient birdsong with no speech, and the text right before it says birdsong recorded in the garden plays in the background, which describes all it carries."}
-{"id": "q107", "verdict": "fail", "confidence": 0.85, "rationale": "The audio is a spoken welcome message and only a one-line summary is offered; no transcript of the words is on the page or linked."}
-{"id": "q108", "verdict": "pass", "confidence": 0.8, "rationale": "The video is a muted decorative background loop labelled 'A meadow in the wind (background)', carrying no speech or information needing a transcript."}
-{"id": "q109", "verdict": "fail", "confidence": 0.8, "rationale": "The interview video has only a one-sentence summary and no transcript or link to one in its section."}
-{"id": "q110", "verdict": "pass", "confidence": 0.9, "rationale": "An 'Episode text' link next to the player leads to a full transcript on the page with speaker names and sounds."}
-{"id": "q111", "verdict": "fail", "confidence": 0.85, "rationale": "The weekly tips audio has only 'New every Monday.' near it and no transcript or link to one."}
-{"id": "q112", "verdict": "pass", "confidence": 0.9, "rationale": "The video is muted, loops with no controls and is labelled as background, so it has no audio needing captions."}
-{"id": "q113", "verdict": "fail", "confidence": 0.9, "rationale": "An interview with spoken answers has no captions track and no linked captioned version."}
-{"id": "q114", "verdict": "pass", "confidence": 0.9, "rationale": "A 'Stop the birdsong' button at the top of main, right before the audio, calls pause() on it."}
-{"id": "q115", "verdict": "fail", "confidence": 0.9, "rationale": "The spoken welcome message autoplays and loops, and no page control pauses, stops or mutes this element; the only audio control targets the birdsong."}
-{"id": "q116", "verdict": "fail", "confidence": 0.7, "rationale": "The hover handlers stop and restart the scrolling marquee, a function (pausing moving text) keyboard users cannot trigger since the marquee is not focusable and has no key equivalent."}
-{"id": "q117", "verdict": "pass", "confidence": 0.9, "rationale": "A 'Stop the news ticker' button right after the marquee calls its stop() method."}
-{"id": "q118", "verdict": "fail", "confidence": 0.9, "rationale": "This marquee keeps scrolling and only stops while hovered; no page control targets it."}
-{"id": "q119", "verdict": "pass", "confidence": 0.8, "rationale": "A 'Pause the offers' button next to the strip toggles a paused class on its container, which pauses the slide animation."}
-{"id": "q120", "verdict": "fail", "confidence": 0.85, "rationale": "The decorative sun spins forever beside text and no control on the page pauses, stops or hides it; it is not essential or a loading indicator."}
-{"id": "q121", "verdict": "pass", "confidence": 0.9, "rationale": "The title 'Garden radio - Demo Shop' matches the page's main heading and content about garden audio and video."}
+{"id":"q22","verdict":"fail","confidence":0.7,"rationale":"The rose-pruning how-to video has only a short figcaption and no transcript or text alternative nearby; a narrated how-to carries information that has no text equivalent."}
+{"id":"q23","verdict":"fail","confidence":0.6,"rationale":"A 2-minute how-to video with controls and sound not muted very likely has narration, and it has no captions track or linked captioned version."}
+{"id":"q105","verdict":"pass","confidence":0.85,"rationale":"The video sits right under the heading 'Interview with our head gardener' and is followed by a sentence describing it, which identifies it."}
+{"id":"q106","verdict":"pass","confidence":0.65,"rationale":"The audio is ambient birdsong with no speech, and the text right before it says birdsong recorded in the garden plays in the background, which describes all it carries."}
+{"id":"q107","verdict":"fail","confidence":0.85,"rationale":"The audio is a spoken welcome message and only a one-line summary is offered; no transcript of the words is on the page or linked."}
+{"id":"q108","verdict":"pass","confidence":0.8,"rationale":"The video is a muted decorative background loop labelled 'A meadow in the wind (background)', carrying no speech or information needing a transcript."}
+{"id":"q109","verdict":"fail","confidence":0.8,"rationale":"The interview video has only a one-sentence summary and no transcript or link to one in its section."}
+{"id":"q110","verdict":"pass","confidence":0.9,"rationale":"An 'Episode text' link next to the player leads to a full transcript on the page with speaker names and sounds."}
+{"id":"q111","verdict":"fail","confidence":0.85,"rationale":"The weekly tips audio has only 'New every Monday.' near it and no transcript or link to one."}
+{"id":"q112","verdict":"pass","confidence":0.9,"rationale":"The video is muted, loops with no controls and is labelled as background, so it has no audio needing captions."}
+{"id":"q113","verdict":"fail","confidence":0.9,"rationale":"An interview with spoken answers has no captions track and no linked captioned version."}
+{"id":"q114","verdict":"pass","confidence":0.9,"rationale":"A 'Stop the birdsong' button at the top of main, right before the audio, calls pause() on it."}
+{"id":"q115","verdict":"fail","confidence":0.9,"rationale":"The spoken welcome message autoplays and loops, and no page control pauses, stops or mutes this element; the only audio control targets the birdsong."}
+{"id":"q116","verdict":"fail","confidence":0.7,"rationale":"The hover handlers stop and restart the scrolling marquee, a function (pausing moving text) keyboard users cannot trigger since the marquee is not focusable and has no key equivalent."}
+{"id":"q117","verdict":"pass","confidence":0.9,"rationale":"A 'Stop the news ticker' button right after the marquee calls its stop() method."}
+{"id":"q118","verdict":"fail","confidence":0.9,"rationale":"This marquee keeps scrolling and only stops while hovered; no page control targets it."}
+{"id":"q119","verdict":"pass","confidence":0.8,"rationale":"A 'Pause the offers' button next to the strip toggles a paused class on its container, which pauses the slide animation."}
+{"id":"q120","verdict":"fail","confidence":0.85,"rationale":"The decorative sun spins forever beside text and no control on the page pauses, stops or hides it; it is not essential or a loading indicator."}
+{"id":"q121","verdict":"pass","confidence":0.9,"rationale":"The title 'Garden radio - Demo Shop' matches the page's main heading and content about garden audio and video."}
