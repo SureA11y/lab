@@ -6,7 +6,7 @@
 // in the report (payload.aiReview), as everywhere.
 
 import {
-    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, buildLessons, collectAiCases, coverageHtml, keyFactRows, outboxOf, proofHtml, resolveSummary, resolvedOf,
+    agreementOf, aiAnalysisHtml, aiBadgeHtml, answerFieldsetHtml, applyAiReview, buildLessons, collectAiCases, collectRaised, coverageHtml, keyFactRows, outboxOf, proofHtml, resolveSummary, resolvedOf,
 } from './ai-answer-view.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]));
@@ -51,6 +51,29 @@ function cardHtml(c, review, revealed) {
         '<div class="air-grid">' + where + '<div class="air-side">' + answerFieldsetHtml(c.key, ai, r, helpers) + gate + '</div></div></article>';
 }
 
+// Phase 2: a place the AI raised, with the words it quoted, why, the
+// element's picture, and the person's decision: Confirm (a fail found by a
+// person, raised by the AI) or Dismiss.
+function raisedCardHtml(item, review) {
+    const r = review || {};
+    const decided = r.verdict === 'fail' ? 'confirmed' : (r.verdict === 'pass' ? 'dismissed' : '');
+    const name = 'air-raised-' + item.key.replace(/[^a-z0-9]/gi, '-');
+    return '<article class="air-card air-card--raised" id="' + idOf(item.key) + '" data-ai-key="' + esc(item.key) + '">' +
+        '<header><h3>WCAG ' + esc(item.sc) + ': ' + esc(item.check) + '</h3><p class="air-meta"><span class="air-pill air-pill--fail">raised by the AI, ' + (decided || 'not confirmed') + '</span>' +
+        '<span>' + esc(item.url) + '</span></p></header>' +
+        '<p class="air-issue"><strong>The AI quotes:</strong> “' + esc(item.quote) + '”</p>' +
+        '<p><strong>Why:</strong> ' + esc(item.why) + (item.confidence != null ? ' <span class="air-hint">(confidence ' + esc(item.confidence) + (item.model ? ', ' + esc(item.model) : '') + ')</span>' : '') + '</p>' +
+        '<div class="air-grid"><section class="air-box"><h4>Proof and where to look</h4>' + (proofHtml(item.evidence, helpers) || '') +
+        (item.url ? '<ul class="air-links"><li><a href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + esc(item.url) + '</a></li></ul>' : '') +
+        (item.selector ? '<p>Selector: <code>' + esc(item.selector) + '</code> <button type="button" class="copy-selector-btn" data-selector="' + esc(item.selector) + '">Copy selector</button></p>' : '') +
+        '<details><summary>Element HTML</summary><pre class="air-pre">' + esc(item.html) + '</pre></details></section>' +
+        '<div class="air-side"><fieldset class="ai-review"><legend>Your decision</legend>' +
+        '<label><input type="radio" class="air-raised-radio" name="' + esc(name) + '" value="fail" data-ai-key="' + esc(item.key) + '"' + (r.verdict === 'fail' ? ' checked' : '') + '> Confirm: it fails WCAG ' + esc(item.sc) + '</label>' +
+        '<label><input type="radio" class="air-raised-radio" name="' + esc(name) + '" value="pass" data-ai-key="' + esc(item.key) + '"' + (r.verdict === 'pass' ? ' checked' : '') + '> Dismiss: not a problem</label>' +
+        '<label>Why (shown in the conformance remarks when confirmed) <textarea class="ai-review-note" data-ai-key="' + esc(item.key) + '" rows="2">' + esc(r.note || '') + '</textarea></label>' +
+        '</fieldset></div></div></article>';
+}
+
 /**
  * Opens the review for `payload` (the report on screen). Every answer is
  * written to payload.aiReview at once; `onChange` is told.
@@ -58,7 +81,8 @@ function cardHtml(c, review, revealed) {
 export function openAiReview({ payload, onChange = () => {} } = {}) {
     if (!payload) return null;
     const cases = collectAiCases(payload);
-    if (!cases.length) return null;
+    const raised = collectRaised(payload);
+    if (!cases.length && !raised.length) return null;
     const reviews = () => (payload.aiReview && typeof payload.aiReview === 'object' ? payload.aiReview : {});
     const checks = [...new Set(cases.map((c) => c.check))];
 
@@ -82,7 +106,10 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
         (outboxOf(payload).length ? '<button type="button" class="secondary-button" data-air-sent title="Every question as it was sent to the AI, or as a preview would send it (ai-sent.json)">What was sent to the AI</button>' : '') +
         '</div>' +
         '<p class="air-stats" role="status" aria-live="polite" data-air-status></p>' + coverageHtml(payload, helpers) + '</div>' +
-        '<div class="air-cards" data-air-cards></div></div>';
+        '<div class="air-cards" data-air-cards></div>' +
+        (raised.length ? '<section class="air-raised" aria-labelledby="air-raised-title"><h2 id="air-raised-title">Raised by the AI, not confirmed (' + raised.length + ')</h2>' +
+            '<p class="acr-intro">Problems the AI found where no rule looks (success criteria no rule can settle). They count towards nothing until you confirm one: then it is a fail of its criterion, found by you, raised by the AI. Dismiss what is not a problem.</p>' +
+            '<div data-air-raised></div></section>' : '') + '</div>';
     document.body.appendChild(dialog);
 
     const cardsEl = dialog.querySelector('[data-air-cards]');
@@ -114,12 +141,18 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
             else if (a === 'different') { different++; if (c.ai.verdict === 'pass') aiPassYouFail++; else aiFailYouPass++; }
             else if (a === 'unsure') unsure++;
         }
+        const raisedDone = raised.filter((item) => (reviews()[item.key] || {}).verdict).length;
+        const raisedLine = raised.length ? ' <br><strong>Raised by the AI:</strong> ' + raised.length + ', ' + raised.filter((item) => (reviews()[item.key] || {}).verdict === 'fail').length + ' confirmed, ' +
+            raised.filter((item) => (reviews()[item.key] || {}).verdict === 'pass').length + ' dismissed, ' + (raised.length - raisedDone) + ' to decide.' : '';
         statusEl.innerHTML = '<strong>' + done + ' of ' + cases.length + ' answered.</strong> The same as the AI: ' + same + '. Different: ' + different +
-            ' (the AI said pass where you said fail: ' + aiPassYouFail + '; fail where you said pass: ' + aiFailYouPass + '). One of you unsure: ' + unsure + '.' + resolvedLine;
+            ' (the AI said pass where you said fail: ' + aiPassYouFail + '; fail where you said pass: ' + aiFailYouPass + '). One of you unsure: ' + unsure + '.' + resolvedLine + raisedLine;
     };
+    const raisedEl = dialog.querySelector('[data-air-raised]');
+    const drawRaised = () => { if (raisedEl) raisedEl.innerHTML = raised.map((item) => raisedCardHtml(item, reviews()[item.key])).join(''); };
     const draw = () => {
         const list = cases.filter(shown);
-        cardsEl.innerHTML = list.length ? list.map((c) => cardHtml(c, reviews()[c.key], aiFirst())).join('') : '<p>No questions match.</p>';
+        cardsEl.innerHTML = list.length ? list.map((c) => cardHtml(c, reviews()[c.key], aiFirst())).join('') : (cases.length ? '<p>No questions match.</p>' : '');
+        drawRaised();
         summary();
     };
     const redrawCard = (key, focusSelector) => {
@@ -138,7 +171,14 @@ export function openAiReview({ payload, onChange = () => {} } = {}) {
 
     dialog.addEventListener('change', (event) => {
         const t = event.target;
-        if (t.matches('.ai-review-radio')) {
+        if (t.matches('.air-raised-radio')) {
+            applyAiReview(payload, t.dataset.aiKey, { verdict: t.value });
+            onChange(payload.aiReview);
+            drawRaised();
+            const back = raisedEl && raisedEl.querySelector('.air-raised-radio[data-ai-key="' + CSS.escape(t.dataset.aiKey) + '"][value="' + t.value + '"]');
+            if (back) back.focus();
+            summary();
+        } else if (t.matches('.ai-review-radio')) {
             applyAiReview(payload, t.dataset.aiKey, { verdict: t.value });
             onChange(payload.aiReview);
             if (filter('state') === 'all') redrawCard(t.dataset.aiKey, '.ai-review-radio:checked'); else draw();

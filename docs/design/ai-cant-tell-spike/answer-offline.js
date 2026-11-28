@@ -22,6 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const { entryFor, PROMPT_VERSION } = require('../../../src/server-side/ai-answer/registry');
+const { statusOf } = require('../../../src/server-side/ai-answer/raise');
 
 const MIN_CONFIDENCE = 0.6;
 const readJsonl = (file) => fs.readFileSync(file, 'utf8').split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l));
@@ -93,6 +94,25 @@ function apply(payloadFile, questionsFile, answersFile, outFile, modelName = 'a 
                     if (o.ai.reason === undefined) delete o.ai.reason;
                     applied++;
                 }
+            }
+        }
+    }
+    // Phase 2's places (`canonical.aiRaised`): the answer, with its quote, and
+    // the place's status from it, as the lab would set them.
+    for (const a of readJsonl(answersFile)) {
+        const q = questions.get(a.id);
+        if (!q) continue;
+        for (const scan of payload.scans || []) {
+            if (scan.url !== q.page) continue;
+            for (const r of (scan.canonical && scan.canonical.aiRaised) || []) {
+                if (r.check !== q.check || r.selector !== q.selector) continue;
+                const verdict = ['pass', 'fail', 'unsure'].includes(a.verdict) ? a.verdict : null;
+                const confidence = Math.max(0, Math.min(1, Number(a.confidence) || 0));
+                const sure = verdict && verdict !== 'unsure' && confidence >= MIN_CONFIDENCE;
+                r.ai = { ...r.ai, verdict, confidence, rationale: String(a.rationale || '').slice(0, 600), ...(typeof a.quote === 'string' ? { quote: a.quote.slice(0, 300) } : {}), provenance: sure ? 'ai-supported' : 'unresolved', model: modelName };
+                if (sure) delete r.ai.reason; else r.ai.reason = verdict ? 'unsure' : 'unreadable-answer';
+                r.status = statusOf(r.ai, r.text);
+                applied++;
             }
         }
     }

@@ -438,6 +438,34 @@ export function collectAiCases(payload) {
 }
 
 /**
+ * Phase 2: the places the AI raised (`canonical.aiRaised`, status `raised`),
+ * once each, for the review's "Raised by the AI, not confirmed". A person's
+ * decision is kept with the other answers (payload.aiReview, under the item's
+ * key): "fail" confirms it (a fail found by a person, raised by the AI),
+ * "pass" dismisses it.
+ */
+export function collectRaised(payload) {
+    const byKey = new Map();
+    for (const scan of Array.isArray(payload && payload.scans) ? payload.scans : []) {
+        for (const r of (scan && scan.canonical && scan.canonical.aiRaised) || []) {
+            if (!r || r.status !== 'raised') continue;
+            const content = String(r.check || '') + '|' + String(r.html || '') + '|' + String(r.selector || '') + '|' + String((r.ai && r.ai.quote) || '');
+            let h = 5381;
+            for (let i = 0; i < content.length; i++) h = ((h << 5) + h + content.charCodeAt(i)) | 0;
+            const key = 'raised|' + r.sc + '|' + (h >>> 0).toString(36);
+            if (!byKey.has(key)) {
+                byKey.set(key, {
+                    key, sc: r.sc, check: r.check, url: scan.url || '', selector: r.selector || '', html: r.html || '',
+                    quote: (r.ai && r.ai.quote) || '', why: (r.ai && r.ai.rationale) || '', confidence: r.ai && r.ai.confidence,
+                    model: r.ai && r.ai.model, evidence: (r.ai && r.ai.evidence) || null, facts: r.facts || null,
+                });
+            }
+        }
+    }
+    return [...byKey.values()];
+}
+
+/**
  * "What to check, read from the page": the values a person judges, labelled,
  * from the evidence the AI was given. A list of { label, html } rows.
  */
@@ -748,6 +776,15 @@ export function confirmedByCriterion(payload) {
                 aiVerdict: c.ai && c.ai.provenance === 'ai-supported' ? c.ai.verdict : '',
             });
         }
+    }
+    // Phase 2: an item the AI raised and a person confirmed is a fail of its
+    // criterion, found by a person, its source marked. A dismissed one, or
+    // one not decided, adds nothing: the AI never passes a criterion.
+    for (const item of collectRaised(payload)) {
+        const r = reviews[item.key];
+        if (!r || r.verdict !== 'fail') continue;
+        const e = out[item.sc] || (out[item.sc] = { fails: [], passes: 0 });
+        e.fails.push({ check: item.check, reason: String(r.note || '').trim() || item.why, url: item.url, selector: item.selector, aiVerdict: 'raised', raised: true });
     }
     return out;
 }

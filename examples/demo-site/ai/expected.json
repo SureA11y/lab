@@ -1036,6 +1036,55 @@
       "target": "#video-pruning",
       "expected": "fail",
       "why": "A how-to video, which speaks, with no captions track."
+    },
+    {
+      "page": "ai/language.html",
+      "check": "raise-language-of-parts",
+      "target": "#lyon",
+      "expected": "fail",
+      "why": "A paragraph in French on an English page, with no lang of its own: raised (3.1.2, H58)."
+    },
+    {
+      "page": "ai/language.html",
+      "check": "raise-language-of-parts",
+      "target": "#nursery",
+      "expected": "pass",
+      "why": "\"Les Jardins de la Reine et du Roi\" is the name of a nursery, an exception (proper names): not raised."
+    },
+    {
+      "page": "ai/language.html",
+      "check": "raise-language-of-parts",
+      "target": "#bavaria-quote",
+      "expected": "fail",
+      "why": "A quotation in German, with no lang of its own: raised."
+    },
+    {
+      "page": "ai/language.html",
+      "check": "raise-language-of-parts",
+      "target": "#review > p",
+      "expected": "fail",
+      "why": "A review in Spanish inside a blockquote marked lang=\"en\": its language is given wrongly; raised."
+    },
+    {
+      "page": "ai/language.html",
+      "check": "raise-language-of-parts",
+      "target": "#lang-ru",
+      "expected": "fail",
+      "why": "\"Русский\" names the Russian version in Russian, with no lang: a screen reader reads it with English rules; raised."
+    },
+    {
+      "page": "ai/language.html",
+      "check": "p-as-heading",
+      "target": "html > body > header > p:nth-of-type(1)",
+      "expected": "pass",
+      "why": "\"Demo Shop\" in bold in the header is the shop's name, not a section title."
+    },
+    {
+      "page": "ai/language.html",
+      "check": "page-title-patterns",
+      "target": "html > head > title",
+      "expected": "pass",
+      "why": "\"Our partners - Demo Shop\" says what the page is."
     }
   ]
 }

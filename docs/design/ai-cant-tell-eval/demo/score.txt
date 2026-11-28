@@ -147,6 +147,13 @@ media.html    moving-content-pausable                   #sun                    
 media.html    page-title-patterns                       html > head > title                 pass     pass                    agrees
 reading.html  media-alternative-transcript-evidence     #video-pruning                      fail     fail                    agrees
 reading.html  video-caption                             #video-pruning                      fail     fail                    agrees
+language.html raise-language-of-parts                   #lyon                               fail     fail                    agrees
+language.html raise-language-of-parts                   #nursery                            pass     pass                    agrees
+language.html raise-language-of-parts                   #bavaria-quote                      fail     fail                    agrees
+language.html raise-language-of-parts                   #review > p                         fail     fail                    agrees
+language.html raise-language-of-parts                   #lang-ru                            fail     fail                    agrees
+language.html p-as-heading                              html > body > header > p:nth-of-t…  pass     pass                    agrees
+language.html page-title-patterns                       html > head > title                 pass     pass                    agrees
 
-148 questions: 148 answered by the AI, 148 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
+155 questions: 155 answered by the AI, 155 agree, 0 AI pass where it should fail, 0 AI fail where it should pass, 0 left open, 0 not asked.
 

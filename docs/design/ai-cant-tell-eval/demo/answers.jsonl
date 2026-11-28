@@ -19,6 +19,8 @@
 {"id":"q19","verdict":"pass","confidence":0.8,"rationale":"The chart shows three bars (Jan, Feb, Mar) with no numeric values, rising to a peak in March; the fallback 'Bar chart of seeds sold each month, highest in March' conveys that."}
 {"id":"q20","verdict":"pass","confidence":0.85,"rationale":"The magnifier icon is the only content of a link to the products page and its name 'Search products' states the control's purpose."}
 {"id":"q21","verdict":"fail","confidence":0.95,"rationale":"The share button's name comes from the SVG title 'Layer 1', a leftover from a drawing tool that does not say what the button does."}
+{"id":"q22","verdict":"fail","confidence":0.7,"rationale":"The rose-pruning how-to video has only a short figcaption and no transcript or text alternative nearby; a narrated how-to carries information that has no text equivalent."}
+{"id":"q23","verdict":"fail","confidence":0.6,"rationale":"A 2-minute how-to video with controls and sound not muted very likely has narration, and it has no captions track or linked captioned version."}
 {"id":"q24","verdict":"pass","confidence":0.8,"rationale":"The bold 'Demo Shop' in the header is the site name repeated next to the logo and followed by navigation, not a title for a following section of text."}
 {"id":"q25","verdict":"fail","confidence":0.9,"rationale":"'Delivery' in bold titles the paragraph about delivery times that follows, yet it is a plain paragraph rather than a heading (F2)."}
 {"id":"q26","verdict":"fail","confidence":0.95,"rationale":"The title 'Page' is generic and does not say the page is about garden tools (F25)."}
@@ -100,33 +102,6 @@
 {"id":"q102","verdict":"fail","confidence":0.9,"rationale":"Pasting into the current-password field was cancelled and nothing filled it (onpaste='return false'), and no alternative sign-in method appears in the evidence."}
 {"id":"q103","verdict":"pass","confidence":0.85,"rationale":"The paste test shows the paste was not cancelled, so pasting into the new-password field works."}
 {"id":"q104","verdict":"pass","confidence":0.85,"rationale":"The paste was cancelled but the page's script filled the field, spreading the code across the boxes, so pasting works."}
-{"id":"q122","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
-{"id":"q123","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
-{"id":"q124","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
-{"id":"q125","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
-{"id":"q126","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
-{"id":"q127","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
-{"id":"q128","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Home link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
-{"id":"q129","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Products link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
-{"id":"q130","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Cart link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
-{"id":"q131","verdict":"pass","confidence":0.9,"rationale":"On focus the Help link changes background, text colour and underline (682 pixels changed), so focus remains visible without an outline."}
-{"id":"q132","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
-{"id":"q133","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
-{"id":"q134","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
-{"id":"q135","verdict":"fail","confidence":0.9,"rationale":"The Home link shows no focus indicator: 0 pixels changed at 3:1 against 244 needed, meets false."}
-{"id":"q136","verdict":"fail","confidence":0.9,"rationale":"The Products link shows no focus indicator: 0 pixels changed at 3:1 against 336 needed, meets false."}
-{"id":"q137","verdict":"fail","confidence":0.9,"rationale":"The Cart link shows no focus indicator: 0 pixels changed at 3:1 against 192 needed, meets false."}
-{"id":"q138","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change covers 584 pixels at 3:1 or more, above the 204 needed, and meets is true."}
-{"id":"q139","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Home link on focus, so there is no indicator to meet 3:1."}
-{"id":"q140","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Products link on focus, so there is no indicator to meet 3:1."}
-{"id":"q141","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Cart link on focus, so there is no indicator to meet 3:1."}
-{"id":"q142","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change has 584 of 682 changed pixels at 3:1 or more, far more than a one-pixel outline (106), so it is clearly visible."}
-{"id":"q143","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
-{"id":"q144","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
-{"id":"q145","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
-{"id":"q146","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
-{"id":"q22","verdict":"fail","confidence":0.7,"rationale":"The rose-pruning how-to video has only a short figcaption and no transcript or text alternative nearby; a narrated how-to carries information that has no text equivalent."}
-{"id":"q23","verdict":"fail","confidence":0.6,"rationale":"A 2-minute how-to video with controls and sound not muted very likely has narration, and it has no captions track or linked captioned version."}
 {"id":"q105","verdict":"pass","confidence":0.85,"rationale":"The video sits right under the heading 'Interview with our head gardener' and is followed by a sentence describing it, which identifies it."}
 {"id":"q106","verdict":"pass","confidence":0.65,"rationale":"The audio is ambient birdsong with no speech, and the text right before it says birdsong recorded in the garden plays in the background, which describes all it carries."}
 {"id":"q107","verdict":"fail","confidence":0.85,"rationale":"The audio is a spoken welcome message and only a one-line summary is offered; no transcript of the words is on the page or linked."}
@@ -142,5 +117,37 @@
 {"id":"q117","verdict":"pass","confidence":0.9,"rationale":"A 'Stop the news ticker' button right after the marquee calls its stop() method."}
 {"id":"q118","verdict":"fail","confidence":0.9,"rationale":"This marquee keeps scrolling and only stops while hovered; no page control targets it."}
 {"id":"q119","verdict":"pass","confidence":0.8,"rationale":"A 'Pause the offers' button next to the strip toggles a paused class on its container, which pauses the slide animation."}
-{"id":"q120","verdict":"fail","confidence":0.85,"rationale":"The decorative sun spins forever beside text and no control on the page pauses, stops or hides it; it is not essential or a loading indicator."}
 {"id":"q121","verdict":"pass","confidence":0.9,"rationale":"The title 'Garden radio - Demo Shop' matches the page's main heading and content about garden audio and video."}
+{"id":"q129","verdict":"pass","confidence":0.85,"rationale":"'Demo Shop' is the site name in the header followed by navigation, not a section title for text."}
+{"id":"q130","verdict":"pass","confidence":0.9,"rationale":"'Offers - Demo Shop' matches the page's main heading 'Offers' and states its purpose."}
+{"id":"q131","verdict":"fail","confidence":0.92,"rationale":"Three mouse-operable controls (Account menu, Fern tile, Cactus tile) cannot take focus; also nav links show no focus indicator and order is illogical."}
+{"id":"q132","verdict":"fail","confidence":0.8,"rationale":"The Account menu span has a click handler but cannot take focus, and no stop in the focus walk offers the same account action."}
+{"id":"q133","verdict":"fail","confidence":0.9,"rationale":"#tile-cactus has role button but is listed as unreachable (cannot take focus) and is never a Tab stop; no other stop offers the same function."}
+{"id":"q134","verdict":"fail","confidence":0.8,"rationale":"Focus starts on 'Seeds and bulbs' near the bottom of main (y 850), then jumps back to the header navigation and then to links higher up in main, so the order does not follow the reading order."}
+{"id":"q135","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Home link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
+{"id":"q136","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Products link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
+{"id":"q137","verdict":"fail","confidence":0.9,"rationale":"The focus walk shows the Cart link changes nothing on focus (changesOnFocus empty, 0 pixels changed), so focus is not visible."}
+{"id":"q138","verdict":"pass","confidence":0.9,"rationale":"On focus the Help link changes background, text colour and underline (682 pixels changed), so focus remains visible without an outline."}
+{"id":"q139","verdict":"fail","confidence":0.9,"rationale":"Stops 2-4 (Home, Products, Cart) show no visible change on focus, and stops 6-7 are entirely covered by the sticky header, so focus is not always visible."}
+{"id":"q140","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 ('Roses, 20% off', 'Tulips, 3 for 2') take focus with coveredShare 1 under header#top-bar, i.e. entirely hidden."}
+{"id":"q141","verdict":"fail","confidence":0.9,"rationale":"Stops 6 and 7 are covered by header#top-bar with coveredShare 1 while focused, so they are hidden (entirely, hence also partly)."}
+{"id":"q142","verdict":"fail","confidence":0.9,"rationale":"The Home link shows no focus indicator: 0 pixels changed at 3:1 against 244 needed, meets false."}
+{"id":"q143","verdict":"fail","confidence":0.9,"rationale":"The Products link shows no focus indicator: 0 pixels changed at 3:1 against 336 needed, meets false."}
+{"id":"q144","verdict":"fail","confidence":0.9,"rationale":"The Cart link shows no focus indicator: 0 pixels changed at 3:1 against 192 needed, meets false."}
+{"id":"q145","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change covers 584 pixels at 3:1 or more, above the 204 needed, and meets is true."}
+{"id":"q146","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Home link on focus, so there is no indicator to meet 3:1."}
+{"id":"q147","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Products link on focus, so there is no indicator to meet 3:1."}
+{"id":"q148","verdict":"fail","confidence":0.9,"rationale":"Nothing changes on the Cart link on focus, so there is no indicator to meet 3:1."}
+{"id":"q149","verdict":"pass","confidence":0.85,"rationale":"The Help link's focus change has 584 of 682 changed pixels at 3:1 or more, far more than a one-pixel outline (106), so it is clearly visible."}
+{"id":"q150","verdict":"pass","confidence":0.9,"rationale":"'Garden gloves - Demo Shop' matches the main heading 'Garden gloves'."}
+{"id":"q151","verdict":"fail","confidence":0.9,"rationale":"The Size guide dialog cannot be closed with the keyboard: its close control is a non-focusable span and Escape does not close it."}
+{"id":"q152","verdict":"fail","confidence":0.7,"rationale":"The Size guide dialog does not take focus (focus stays on the link) and focus then leaves it after a few Tabs, so a modal does not keep focus."}
+{"id":"q153","verdict":"pass","confidence":0.8,"rationale":"Every Tab stop shows an outline change on focus and none is hidden or covered."}
+{"id":"q120","verdict":"fail","confidence":0.85,"rationale":"The sun spins without end, and none of the page's controls target it: they act on the birdsong, the offers strip and the news ticker. A decorative spin is not essential."}
+{"id":"q122","verdict":"pass","confidence":0.8,"rationale":"'Demo Shop' is the site name at the top of the header, followed by the main navigation. It does not title a section of text."}
+{"id":"q123","verdict":"pass","confidence":0.9,"rationale":"The title 'Our partners - Demo Shop' matches the page's h1 'Our partners' and its content about partner growers, and it names the site."}
+{"id":"q124","verdict":"fail","confidence":0.95,"rationale":"The whole paragraph is a French sentence, but it inherits lang=\"en\" and has no lang of its own.","quote":"Nous cultivons nos rosiers sans pesticides depuis trente ans, et nous les livrons dans toute la France.","why":"French"}
+{"id":"q125","verdict":"pass","confidence":0.85,"rationale":"The only French words are 'Les Jardins de la Reine et du Roi', the proper name of the nursery, and 'Versailles', a place name. Both are exceptions; the rest is English."}
+{"id":"q126","verdict":"fail","confidence":0.95,"rationale":"The quotation is a German sentence inside English content, and it has no lang of its own.","quote":"Ein Garten ist nie fertig, und das ist auch gut so.","why":"German"}
+{"id":"q127","verdict":"fail","confidence":0.9,"rationale":"The review is in Spanish, but its blockquote is marked lang=\"en\", so it is not marked with its real language and a screen reader would pronounce it as English.","quote":"Las semillas llegaron muy rápido y todas germinaron en una semana. ¡Gracias!","why":"Spanish"}
+{"id":"q128","verdict":"fail","confidence":0.75,"rationale":"The link text 'Русский' is a Russian word, the name of the language written in Russian, and it has no lang=\"ru\", so an English voice would mispronounce it. H58 calls for lang on such language-switcher links.","quote":"Русский","why":"Russian"}

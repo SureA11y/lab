@@ -1141,3 +1141,32 @@ left open. The 17 earlier answers without the walk were taken out of
 `css-hidden-focus` (69 cases, 53 answered, all agree) and `landmark-unique`
 (48; 34 of them the WAI asides, one per kind per page). `p-as-heading`
 reached 34 cases but is at 87% for the judgement above.
+
+## Phase 2 begins: 3.1.2 language of parts, raised by the AI (2026-11-28)
+
+Built as the agreed design says (roadmap, "Phase 2 design"): a lab-side
+finder (`raise.js`, `languageOfPartsInPage`) picks text whose script (three
+or more letters of a script the part's language does not use) or common
+words (at least two of another language's frequent words, half again as many
+as its own) do not fit the language of its part, keeping the smallest
+element that holds the passage; one question each through `askOne`; a
+"fail" must quote words the lab then finds in that element. Every place
+asked is kept in `canonical.aiRaised` with its status; only `raised` ones
+are shown, in the review's "Raised by the AI, not confirmed".
+
+**The demo** gains a language page (`examples/demo-site/ai/language.html`):
+a French paragraph with no `lang` (raise), the same with `lang="fr"` (not
+even picked), a nursery named in French inside an English sentence (picked,
+not to raise: a name), a German quotation (raise), a Spanish review inside
+`lang="en"` (raise: its language given wrongly), and "Русский" as a link to
+the Russian page with no `lang` (raise). **All 5 places answered as
+expected**, each raised with the exact words quoted; the demo is **155 of
+155** with them ([demo/score.txt](demo/score.txt)).
+
+Not measured yet: real pages. A run of `raise: ["3.1.2"]` over the survey's
+85 pages and the WAI tutorials (which mark their own language changes, so
+any raise there is likely false) is next, labelled first; the trust rule the
+user chose for raised items is 30 labelled items per criterion and 90% of
+them real. The review's new section is covered by unit tests of what it
+reads and writes (`collectRaised`, `confirmedByCriterion`), not yet by a
+browser test of the dialog.

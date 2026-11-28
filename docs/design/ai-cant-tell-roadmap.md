@@ -117,7 +117,8 @@ host, `forms: true`).
 
 ## Phase 2: success criteria no rule can automate
 
-Not started; a design draft for the user to agree is below. The AI would look for problems no check raises, so it raises
+**Started 2026-11-28** with 3.1.2 language of parts (`raise: ["3.1.2"]`;
+eval README, "Phase 2 begins"); the design, agreed, is below. The AI would look for problems no check raises, so it raises
 its own items (Decisions 1 and 2). Candidates, by the evidence they need:
 
 1. **What is already read:** 3.1.2 language of parts (a phrase in another

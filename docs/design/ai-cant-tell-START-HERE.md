@@ -29,9 +29,9 @@ roadmap is complete except for the engine's part:** the AI answers **76 of
 the 132 checks** that can end in "can't tell". What is left is 23 `tree`
 checks, which belong in the engine (decision 4; parked: none came up on real
 pages, see below), and 32 `code` checks, which a
-person confirms (decision 3: nothing to build). Demo **148 of 148** (blind);
-prompt version `registry-21`. The full suite (`node --test`, 4504 pass) and
-the browser tests (`ai-answer.browserspec.js` 14, `focus-walk` 18,
+person confirms (decision 3: nothing to build). Demo **155 of 155** (blind); **phase 2 started** (3.1.2, see below);
+prompt version `registry-21`. The full suite (`node --test`, 4509 pass) and
+the browser tests (`ai-answer.browserspec.js` 15, `focus-walk` 18,
 `app-boot` 17) pass.
 
 **Parked by the user (2026-11-28): the engine's tree lane (decision 4).**
@@ -185,8 +185,24 @@ Without the user, what can go on, in this order:
   shown apart until a person confirms. **The user answered its four
   questions on 2026-11-28** (all recommended: `raise: [criteria]`, a
   confirmed item becomes a finding with its source marked, trust at 30
-  items and 90% real, order 3.1.2, 1.3.3, 3.3.2, 1.3.1). Phase 2 can start,
-  with 3.1.2.
+  items and 90% real, order 3.1.2, 1.3.3, 3.3.2, 1.3.1).
+- **Phase 2 started: 3.1.2 built** (2026-11-28; eval README, "Phase 2
+  begins"). `src/server-side/ai-answer/raise.js`: the criteria
+  (`RAISE`, `raiseCriteriaOf`), the finder (`languageOfPartsInPage`, read
+  only), the status of a place (`statusOf`: raised only for a sure fail
+  whose quote is in the element). Wired at the end of `answerCantTells`
+  (after the "can't tell" questions, same budget); every place in
+  `canonical.aiRaised`, dropped if the pass changed the page. Review:
+  `collectRaised` and the "Raised by the AI, not confirmed" section in
+  `ai-review.js` (Confirm = `aiReview` verdict fail, Dismiss = pass);
+  `confirmedByCriterion` adds confirmed items as fails marked `raised`.
+  `answer-offline.js apply` and `ai-demo-score.js` read raised places.
+  Demo 155 of 155 (5 language places). **Next:** 3.1.2 on real pages
+  (survey and WAI tutorials, labelled first; then a browser test of the
+  review's new section), then 1.3.3 sensory characteristics, 3.3.2, 1.3.1,
+  each the same way: a finder in `raise.js`, an entry in `RAISE`, a demo
+  page with planted problems and clean twins, real pages, trust at 30 items
+  and 90% real.
 
 4. **Phase 2**, once the user agrees phase 1 is done: start with what is
    already read (roadmap, "Phase 2", group 1: language of parts, sensory

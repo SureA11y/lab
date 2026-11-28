@@ -152,6 +152,28 @@ test('a media question gets the media\'s facts, its section\'s links and where t
     await page.close();
 });
 
+test('the language-of-parts finder picks text in another language or script, not the page\'s own or text with its own lang', async () => {
+    const page = await browser.newPage();
+    await page.setContent(`<html lang="en"><title>Shop</title><main>
+        <p id="en">Our garden tools are made to last, and we deliver them to your door.</p>
+        <p id="fr">Nous livrons partout en France et en Belgique, avec le sourire.</p>
+        <p id="fr-marked" lang="fr">Nous livrons partout en France et en Belgique, avec le sourire.</p>
+        <p id="mix">Our motto is <i id="it">la vie est belle et la terre est douce</i> for every gardener.</p>
+        <p><a id="ru" href="/ru">Русский язык</a> <a id="name" href="/fr">Café Rouge</a></p>
+      </main></html>`);
+    const { findCandidates } = require('./raise');
+    const found = await findCandidates(page, '3.1.2');
+    const sel = found.map((f) => f.selector);
+    assert.ok(sel.includes('#fr'), sel.join(' '));
+    assert.ok(sel.includes('#it'), 'the inline passage, not its paragraph');
+    assert.ok(!sel.includes('#mix'));
+    assert.ok(sel.includes('#ru'), 'another script');
+    for (const s of ['#en', '#fr-marked', '#name']) assert.ok(!sel.includes(s), s);
+    assert.equal(found.find((f) => f.selector === '#fr').facts.guess.language, 'fr');
+    assert.equal(found.find((f) => f.selector === '#ru').facts.guess.script, 'Cyrillic');
+    await page.close();
+});
+
 test('an image question says what the picture shows: blank, one colour, or not readable', async () => {
     const SPACER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     const RED = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/></svg>');

@@ -47,6 +47,7 @@ left out.
 | `open` | `true` (with `focus`): after the walk, also **presses** each control that says it opens something on the page (a menu, a disclosure, a lightbox), to see whether the keyboard can use and close what opens. `"buttons"`: plain buttons too (most dialogs open from one), except those whose name says they act. It operates the page, within limits. See [Opening menus and dialogs](#opening-menus-and-dialogs-open-true). | off |
 | `openControls` | The most controls pressed (up to 50). | `10` |
 | `forms` | `true`: on a test system the server lists (`A11Y_AI_FORM_HOSTS`), the pass may **use the page's forms**: today, it tries a paste into a sign-in field with a paste handler, and puts the field back. Anywhere else nothing is tried and the question is answered from the handler's markup. See [Forms](#forms-forms-true). | off |
+| `raise` | Phase 2: success criteria no rule settles. `["3.1.2"]` (or `"reading"` for the first group: built so far, 3.1.2) has the lab pick the places a criterion could be failed and ask the AI about each; what it flags is shown apart, **raised by the AI, not confirmed**, and counts towards nothing until you confirm it. See [Raised by the AI](#raised-by-the-ai-raise). | off |
 | `pictures` | `true`: the questions that use one (the image and text alternative questions, `image-of-text`, a control named by its tooltip) also send the **picture of the element**, so the model sees it. Sent only where the server allows it (`A11Y_AI_PICTURES`); a picture showing a value typed in a field is never sent. See [Pictures](#pictures-pictures-true). | off |
 | `answer` | No effect: it names the kind of result answered, `"cantTell"`, the only kind there is. | |
 
@@ -64,6 +65,7 @@ Examples:
 | Menus and dialogs opened too | `{ "focus": true, "open": true }` |
 | Dialogs opened from plain buttons too | `{ "focus": true, "open": "buttons" }` |
 | Paste tried in sign-in fields, on a test system | `{ "forms": true }` (with `A11Y_AI_FORM_HOSTS` on the server) |
+| Text in another language without `lang` raised for review (3.1.2) | `{ "raise": ["3.1.2"] }` |
 | The model sees the images it is asked about | `{ "pictures": true }` (with `A11Y_AI_PICTURES` on the server) |
 | With your lessons | `{ "lessons": "C:/audits/acme/ai-lessons.json" }` |
 
@@ -294,6 +296,35 @@ The engine asks about forms in three ways; the AI answers each.
 
 Nothing is submitted: the pass never sends a form, and data a user typed is
 never sent to the model (only whether a field holds a value).
+
+## Raised by the AI (`raise`)
+
+Phase 2 of the AI support: the AI looks for problems where no rule looks,
+one success criterion at a time. Built so far: **3.1.2 language of parts**.
+
+1. **The lab picks the places** (no model): for 3.1.2, text whose script or
+   common words do not fit the language of its part of the page (its own
+   `lang`, an ancestor's, or the page's), at most 15 a page.
+2. **The AI is asked about each**, as for the "can't tell" questions (the
+   same server settings, preview, masking and call budget, after those
+   questions): is this a passage in another language, not a name, a term or
+   a borrowed word? When it says yes, it must quote the words.
+3. **The lab checks the quote** is in that element; one that is not is
+   dropped (counted in the step's summary as `quoteNotFound`).
+4. **What it flags is shown apart:** **Review AI answers** has a section
+   "Raised by the AI, not confirmed", each item with the words, why, the
+   element's picture and where it is. **Confirm** makes it a fail of its
+   criterion, found by you and marked as raised by the AI (it then shows in
+   the Conformance view with your reason, as other confirmed fails);
+   **Dismiss** drops it.
+
+The AI only flags: "no problem" from it raises nothing and passes no
+criterion; a criterion stays yours to pass. Every place asked is kept in the
+report (`canonical.aiRaised`, with its status: `raised`, `not-raised`,
+`unresolved`, `quote-not-found`), so the evaluation can count what was
+missed. The next criteria, in the order agreed: 1.3.3 sensory
+characteristics, 3.3.2 format instructions, 1.3.1 structure shown only
+visually.
 
 ## Preview: see what would leave
 

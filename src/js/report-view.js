@@ -10,7 +10,7 @@ import {scanToAllScansCardProps} from './all-scans-data.js';
 import {enginesHTML} from './engine-brand.js';
 import {openConformanceReview} from './conformance-review.js';
 import {openAiReview} from './ai-review.js';
-import {collectAiCases} from './ai-answer-view.js';
+import {collectAiCases, collectRaised} from './ai-answer-view.js';
 import {collectScanTags, isTagFilterActive, makeTagFilter} from './scan-tag-filter.js';
 import {collectScanProfiles, isProfileFilterActive, makeProfileFilter} from './scan-profile-filter.js';
 import {canCompareReport} from './report-comparison-controller.js';
@@ -899,11 +899,12 @@ export function createReportView(app) {
         // The review of the AI's answers on can't-tell questions: the
         // person's answers first, then the AI's (ai-review.js).
         const aiCases = collectAiCases(app.getActiveBucket()?.payload || data);
-        if (aiCases.length) {
+        const aiRaised = collectRaised(app.getActiveBucket()?.payload || data);
+        if (aiCases.length || aiRaised.length) {
             const aiBtn = document.createElement('button');
             aiBtn.type = 'button';
             aiBtn.className = 'secondary-button';
-            aiBtn.textContent = 'Review AI answers (' + aiCases.length + ')';
+            aiBtn.textContent = 'Review AI answers (' + (aiCases.length + aiRaised.length) + ')';
             aiBtn.addEventListener('click', () => {
                 const dialog = openAiReview({payload: app.getActiveBucket()?.payload || data});
                 // Back to the button that opened it.

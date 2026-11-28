@@ -18,6 +18,7 @@ const { loadLessons, lessonsFor, lessonsPrompt } = require('./lessons');
 const { allowedSitesOf, siteAllowed, picturesAllowed, formHostAllowed, maskingOn, previewForced, maskDeep, withoutPictures } = require('./outgoing');
 const { walkFocus, walkFactsFor } = require('./focus-walk');
 const { openWalk } = require('./open-walk');
+const { RAISE, raiseCriteriaOf, entryOf: raiseEntryOf, findCandidates, statusOf: raiseStatusOf } = require('./raise');
 const { withRuntimeKey } = require('./runtime-key');
 
 const DEFAULTS = { maxCalls: 10, seconds: 60, minConfidence: 0.6 };
@@ -46,7 +47,9 @@ function buildPrompt(entry, occurrence, evidence, lessons = null, withPicture = 
         lessons ? lessonsPrompt(lessons) : '',
         '',
         'Decide from the evidence only. Answer "unsure" whenever it is not enough; do not guess.',
-        'Reply with JSON only: {"verdict":"pass"|"fail"|"unsure","confidence":0..1,"rationale":"one or two sentences"}',
+        entry.raise
+            ? 'Reply with JSON only: {"verdict":"pass"|"fail"|"unsure","confidence":0..1,"rationale":"one or two sentences","quote":"with fail: the exact words, as on the page"}'
+            : 'Reply with JSON only: {"verdict":"pass"|"fail"|"unsure","confidence":0..1,"rationale":"one or two sentences"}',
     ].filter(Boolean).join('\n');
 }
 
@@ -72,7 +75,7 @@ function buildQuestion(entry, finding, occurrence, evidence, lessons = null, pag
         ...(withPicture ? { picture: true } : {}),
         lessons: lessons && (lessons.rules.length || lessons.examples.length) ? lessons : null,
         prompt: buildPrompt(entry, occurrence, evidence, lessons, withPicture),
-        reply: { verdict: ['pass', 'fail', 'unsure'], confidence: '0 to 1', rationale: 'one or two sentences', answeredBy: '{ name, version }, optional' },
+        reply: { verdict: ['pass', 'fail', 'unsure'], confidence: '0 to 1', rationale: 'one or two sentences', ...(entry.raise ? { quote: 'with fail: the exact words, as on the page' } : {}), answeredBy: '{ name, version }, optional' },
     };
 }
 
@@ -104,7 +107,8 @@ function normalise(a) {
     const verdict = ['pass', 'fail', 'unsure'].includes(a.verdict) ? a.verdict : null;
     if (!verdict) return null;
     const confidence = Math.min(1, Math.max(0, Number(a.confidence)));
-    return { verdict, confidence: Number.isFinite(confidence) ? confidence : 0, rationale: String(a.rationale || '').slice(0, 600) };
+    // `quote`: the words a raise question's "fail" names (phase 2).
+    return { verdict, confidence: Number.isFinite(confidence) ? confidence : 0, rationale: String(a.rationale || '').slice(0, 600), ...(typeof a.quote === 'string' && a.quote.trim() ? { quote: a.quote.trim().slice(0, 300) } : {}) };
 }
 
 /**
@@ -244,7 +248,10 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
         }
         const todo = candidatesOf(canonical, { focus, forms });
         summary.candidates = todo.length;
-        if (!todo.length) return summary;
+        // Phase 2 (`raise`): criteria no rule settles, asked after the "can't
+        // tell" questions, from the same call budget.
+        const raiseList = raiseCriteriaOf(opt.raise);
+        if (!todo.length && !raiseList.length) return summary;
         const model = resolveProvider(provider || opt.provider, env);
         shared.cache = shared.cache || new Map();
         shared.calls = shared.calls || 0;
@@ -362,6 +369,40 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
             results.push({ occurrence, ai, tier: entry.tier });
         }
 
+        // Phase 2: each criterion's places, found in the page (read only),
+        // one question each; every place asked is kept with its status.
+        if (raiseList.length) {
+            const raised = [];
+            summary.raised = { criteria: raiseList, places: 0, asked: 0, raised: 0, quoteNotFound: 0 };
+            for (const sc of raiseList) {
+                const entry = raiseEntryOf(sc);
+                const places = await findCandidates(page, sc);
+                summary.raised.places += places.length;
+                for (const place of places) {
+                    const occurrence = { target: [place.selector], html: place.html, failureSummary: `The lab's finder picked this text for ${sc} ${RAISE[sc].title}.`, howToCheck: RAISE[sc].howToCheck, details: place.facts };
+                    const evidence = await collectEvidence(page, occurrence, entry.evidence);
+                    const base = { promptVersion: PROMPT_VERSION, check: entry.check, tier: 0, evidence: (({ element, ...rest }) => rest)(evidence) };
+                    let ai;
+                    if (!allowed) ai = { ...base, provenance: 'unresolved', reason: 'site-not-allowed' };
+                    else if (!preview && !model) ai = { ...base, provenance: 'unresolved', reason: 'no-model' };
+                    else if (shared.calls >= maxCalls) ai = { ...base, provenance: 'unresolved', reason: 'budget-calls' };
+                    else if (!preview && Date.now() >= deadline) ai = { ...base, provenance: 'unresolved', reason: 'budget-time' };
+                    else {
+                        shared.calls++;
+                        const asked = await askOne({ model, entry, finding: { wcag: { sc: [sc] } }, occurrence, evidence, pageInfo, mask, preview, minConfidence: opt.minConfidence, deadline, base, outbox });
+                        if (asked.previewed) summary.previewed++; else summary.calls++;
+                        summary.raised.asked++;
+                        ai = asked.ai;
+                    }
+                    const status = raiseStatusOf(ai, place.text);
+                    if (status === 'raised') summary.raised.raised++;
+                    if (status === 'quote-not-found') summary.raised.quoteNotFound++;
+                    raised.push({ sc, check: entry.check, selector: place.selector, html: place.html, text: place.text, facts: place.facts, ai, status, confirmed: null });
+                }
+            }
+            canonical.aiRaised = raised;
+        }
+
         // The focus walk must have put the page back. If not, its answers are
         // dropped, what it saw kept, and the workflow is told: its next steps
         // may meet a different page.
@@ -394,6 +435,7 @@ async function answerCantTells({ page, canonical, options = {}, shared = {}, pro
             summary.stateDrift = 'detected';
             summary.reason = 'state-drift';
             log('warning', 'The AI pass changed the page; its answers for this scan were dropped');
+            delete canonical.aiRaised;
             return summary;
         }
         for (const { occurrence, ai } of results) {

@@ -40,6 +40,17 @@ for (const scan of payload.scans || []) {
     }
 }
 
+// Phase 2's places (`canonical.aiRaised`): raised reads as "fail" (the AI
+// flagged a problem), not raised as "pass"; any other status is left open.
+for (const scan of payload.scans || []) {
+    const page = String(scan.url || '').replace(/^https?:\/\/[^/]+\//, '');
+    for (const r of (scan.canonical && scan.canonical.aiRaised) || []) {
+        const key = [page, r.check, r.selector].join('|');
+        const sure = r.status === 'raised' || r.status === 'not-raised';
+        if (!found.has(key)) found.set(key, { ...r.ai, provenance: sure ? 'ai-supported' : 'unresolved', verdict: r.status === 'raised' ? 'fail' : (sure ? 'pass' : r.ai && r.ai.verdict), reason: sure ? undefined : r.status });
+    }
+}
+
 const word = (ai) => {
     if (!ai) return 'not asked';
     if (ai.provenance === 'ai-supported') return ai.verdict;

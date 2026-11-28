@@ -511,3 +511,40 @@ describe('what an image shows', () => {
         assert.match(await rows({ readable: false, why: 'from another site: the browser does not let the page read its pixels' }), /could not be read \(from another site/);
     });
 });
+
+describe('phase 2: places the AI raised', () => {
+    const payload = () => ({
+        scans: [{
+            url: 'https://shop.example/partners',
+            canonical: {
+                findings: [],
+                aiRaised: [
+                    { sc: '3.1.2', check: 'raise-language-of-parts', selector: '#lyon', html: '<p id="lyon">Nous cultivons</p>', text: 'Nous cultivons', status: 'raised', ai: { verdict: 'fail', confidence: 0.9, quote: 'Nous cultivons', rationale: 'French', provenance: 'ai-supported' } },
+                    { sc: '3.1.2', check: 'raise-language-of-parts', selector: '#name', html: '<p id="name">Les Jardins</p>', text: 'Les Jardins', status: 'not-raised', ai: { verdict: 'pass', confidence: 0.9, provenance: 'ai-supported' } },
+                    { sc: '3.1.2', check: 'raise-language-of-parts', selector: '#x', html: '<p id="x">x</p>', text: 'x', status: 'quote-not-found', ai: { verdict: 'fail', confidence: 0.9, quote: 'y', provenance: 'ai-supported' } },
+                ],
+            },
+        }],
+    });
+
+    test('only raised places are collected, with their quote and why', async () => {
+        const { collectRaised } = await load();
+        const items = collectRaised(payload());
+        assert.equal(items.length, 1);
+        assert.deepEqual([items[0].sc, items[0].selector, items[0].quote, items[0].why], ['3.1.2', '#lyon', 'Nous cultivons', 'French']);
+        assert.match(items[0].key, /^raised\|3\.1\.2\|/);
+    });
+
+    test('a confirmed item is a fail of its criterion, its source marked; a dismissed one adds nothing', async () => {
+        const { collectRaised, confirmedByCriterion, applyAiReview } = await load();
+        const p = payload();
+        const [item] = collectRaised(p);
+        assert.deepEqual(confirmedByCriterion(p), {});
+        applyAiReview(p, item.key, { verdict: 'pass' });
+        assert.deepEqual(confirmedByCriterion(p), {}, 'dismissed: the AI never passes a criterion');
+        applyAiReview(p, item.key, { verdict: 'fail', note: 'French paragraph, no lang' });
+        const e = confirmedByCriterion(p)['3.1.2'];
+        assert.equal(e.passes, 0);
+        assert.deepEqual([e.fails[0].raised, e.fails[0].reason, e.fails[0].aiVerdict], [true, 'French paragraph, no lang', 'raised']);
+    });
+});
