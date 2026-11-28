@@ -1050,3 +1050,41 @@ trusted with 82 cases).
 Still needed for the new families: pages that use `aria-invalid` with their
 errors (a design system's error pattern), live regions, autoplaying media
 and animated content, on hosts the environment allows.
+
+## The GOV.UK Design System's error examples (2026-11-28)
+
+`examples/specs/ai-answers-govuk-design-system.spec.json`: the 26 example
+pages of the Design System with errors (text input, date input, radios,
+checkboxes, select, textarea, file upload, password input, error message,
+error summary) and the character count's examples, with pictures; host
+`design-system.service.gov.uk`, added to the environment for this. 118
+questions.
+
+**No `invalid-field-error-message` question:** every GOV.UK error message
+is tied to its field (`aria-describedby`) and shown, so the engine passes
+them itself. The forms lane still has no real case; it needs a site whose
+errors are marked `aria-invalid` and not tied, or tied to a hidden message.
+
+What it gives instead, all labelled **pass** before any answer was read
+(`region`, 45 questions on the example pages' bare layout, left out as
+before): 26 page titles, 19 error messages asked as "bold paragraph as
+heading" (they are not headings), 17 custom checkboxes and radios whose
+native input is hidden (focus shows on the drawn box), 6 one-component
+pages with nothing to bypass, 1 live region (the character count's screen
+reader status, `aria-hidden` until the threshold), and 4 logos and links.
+In [govuk-design-system/](govuk-design-system/):
+
+| Check | Labelled | Agree | Open |
+| --- | --- | --- | --- |
+| `page-title-patterns` | 26 | 26 | 0 |
+| `p-as-heading` | 19 | 19 | 0 |
+| `css-hidden-focus` | 17 | 17 | 0 |
+| `bypass-blocks-present` | 6 | 6 | 0 |
+| `live-region-announcements` | 1 | 0 | 1 (pass at 0.55: "kept aria-hidden while the count is below the threshold, so it carries no message users need until then") |
+| logos, back link | 4 | 4 | 0 |
+| **Total** | **73** | **72** | **1** |
+
+None wrong. Every label here is pass, so the run says nothing about wrong
+passes; it adds cases where the trust table was short: `css-hidden-focus` 29
+and `p-as-heading` 26 of the 30 needed, `page-title-patterns` 122. Counted
+in [trust.md](trust.md) (6 of 38 checks trusted).

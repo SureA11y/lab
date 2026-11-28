@@ -24,7 +24,7 @@ const MIN_CONFIDENCE = 0.6;
 // From ai:agreement's tables (the first, "as recorded").
 const TABLE_RUNS = ['w3c-bad', 'uw-au', 'govuk-audit', 'govuk-audit-more', 'wai-tutorials', 'apg-open'];
 // Labelled by question id.
-const QUESTION_RUNS = ['svg-w3c', 'image-buttons', 'media-alt', 'names-labels', 'structure', 'walk-lane-walk', 'measure-lane-exact', 'survey-pictures'];
+const QUESTION_RUNS = ['svg-w3c', 'image-buttons', 'media-alt', 'names-labels', 'structure', 'walk-lane-walk', 'measure-lane-exact', 'survey-pictures', 'govuk-design-system'];
 // Left out as re-runs of pages counted above: govuk-open (the GOV.UK keyboard
 // pages again, with the open walk), walk-lane-read (the same elements as
 // walk-lane-walk, without the walk), measure-lane (the same cases as

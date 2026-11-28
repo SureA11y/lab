@@ -11,24 +11,25 @@ its fails only, and on the answers it gave: few for keyboard.
 
 | Check | Trusted | Labelled | Answered | Agree | Wrong pass | Wrong fail | Agreement when answered | Why not | Runs |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `contrast-computable` | **yes** | 142 | 142 | 142 | 0 | 0 | 100% |  | measure-lane-exact |
-| `page-title-patterns` | **yes** | 96 | 95 | 95 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, uw-au, w3c-bad, wai-tutorials |
-| `img-alt-decorative` | **yes** | 82 | 81 | 81 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, survey-pictures, w3c-bad, wai-tutorials |
+| `contrast-computable` | **yes** | 143 | 143 | 143 | 0 | 0 | 100% |  | govuk-design-system, measure-lane-exact |
+| `page-title-patterns` | **yes** | 122 | 121 | 121 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, govuk-design-system, uw-au, w3c-bad, wai-tutorials |
+| `img-alt-decorative` | **yes** | 84 | 83 | 83 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, govuk-design-system, survey-pictures, w3c-bad, wai-tutorials |
 | `focus-visible` | **yes** | 81 | 60 | 60 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, uw-au, w3c-bad |
 | `focus-order` | **yes** | 80 | 54 | 54 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, uw-au, w3c-bad |
 | `keyboard` | **yes** | 67 | 7 | 7 | 0 | 0 | 100% |  | apg-open, govuk-audit, govuk-audit-more, uw-au, w3c-bad |
 | `img-alt-quality` | no | 66 | 61 | 60 | 1 | 0 | 98% | 1 wrong pass | govuk-audit, govuk-audit-more, survey-pictures, uw-au, w3c-bad, wai-tutorials |
+| `css-hidden-focus` | no | 29 | 29 | 29 | 0 | 0 | 100% | 29 of 30 cases | govuk-design-system, walk-lane-walk |
+| `p-as-heading` | no | 26 | 26 | 26 | 0 | 0 | 100% | 26 of 30 cases | apg-open, govuk-audit, govuk-audit-more, govuk-design-system, w3c-bad, wai-tutorials |
 | `landmark-unique` | no | 14 | 14 | 14 | 0 | 0 | 100% | 14 of 30 cases | names-labels |
 | `page-zones-landmark` | no | 14 | 14 | 14 | 0 | 0 | 100% | 14 of 30 cases | structure |
-| `css-hidden-focus` | no | 12 | 12 | 12 | 0 | 0 | 100% | 12 of 30 cases | walk-lane-walk |
 | `focus-contrast-element` | no | 12 | 12 | 12 | 0 | 0 | 100% | 12 of 30 cases | govuk-audit, uw-au |
 | `focus-visible-element` | no | 12 | 12 | 12 | 0 | 0 | 100% | 12 of 30 cases | govuk-audit, uw-au |
 | `keyboard-element` | no | 12 | 8 | 8 | 0 | 0 | 100% | 12 of 30 cases | govuk-audit, uw-au |
 | `mouse-only-event-handlers` | no | 11 | 10 | 10 | 0 | 0 | 100% | 11 of 30 cases | walk-lane-walk |
+| `svg-text-alternative-quality` | no | 11 | 11 | 11 | 0 | 0 | 100% | 11 of 30 cases | govuk-design-system, survey-pictures, svg-w3c |
 | `td-has-header` | no | 11 | 11 | 11 | 0 | 0 | 100% | 11 of 30 cases | structure |
-| `svg-text-alternative-quality` | no | 10 | 10 | 10 | 0 | 0 | 100% | 10 of 30 cases | survey-pictures, svg-w3c |
+| `bypass-blocks-present` | no | 7 | 7 | 7 | 0 | 0 | 100% | 7 of 30 cases | govuk-design-system, structure |
 | `identical-links-same-purpose` | no | 7 | 7 | 7 | 0 | 0 | 100% | 7 of 30 cases | names-labels |
-| `p-as-heading` | no | 7 | 7 | 7 | 0 | 0 | 100% | 7 of 30 cases | apg-open, govuk-audit, govuk-audit-more, w3c-bad, wai-tutorials |
 | `link-name-quality` | no | 6 | 1 | 1 | 0 | 0 | 100% | 6 of 30 cases | govuk-audit, govuk-audit-more, uw-au, w3c-bad |
 | `form-group-name-present` | no | 4 | 4 | 4 | 0 | 0 | 100% | 4 of 30 cases | structure |
 | `heading-order` | no | 4 | 4 | 4 | 0 | 0 | 100% | 4 of 30 cases | structure |
@@ -40,11 +41,11 @@ its fails only, and on the answers it gave: few for keyboard.
 | `media-alternative-transcript-evidence` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | survey-pictures |
 | `object-text-alternative-quality` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | media-alt, survey-pictures |
 | `video-poster-text-alternative-present` | no | 2 | 2 | 2 | 0 | 0 | 100% | 2 of 30 cases | media-alt |
-| `bypass-blocks-present` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | structure |
 | `deprecated-elements-not-used` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | survey-pictures |
 | `form-control-single-label` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | structure |
 | `image-of-text` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | survey-pictures |
 | `image-redundant-alt` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | media-alt |
 | `link-name-quality-link-only` | no | 1 | 1 | 0 | 0 | 1 | 0% | 1 of 30 cases, agreement below 95% | names-labels |
+| `live-region-announcements` | no | 1 | 0 | 0 | 0 | 0 | - | 1 of 30 cases, never answered | govuk-design-system |
 | `tabindex` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | walk-lane-walk |
 | `video-caption` | no | 1 | 1 | 1 | 0 | 0 | 100% | 1 of 30 cases | survey-pictures |

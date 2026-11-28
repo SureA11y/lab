@@ -81,6 +81,15 @@ it):
    pictures; without, 3 picture questions stay open (two photos, an
    icon-only search button), none wrong. Counted in `trust.md` (6 of 37
    checks trusted).
+9. **The GOV.UK Design System's error examples (2026-11-28;**
+   `ai-answers-govuk-design-system.spec.json`, folder
+   `ai-cant-tell-eval/govuk-design-system/`; the user approved adding
+   design-system.service.gov.uk to the environment). No forms question
+   came up: GOV.UK ties and shows every error message, so the engine
+   passes them. 73 other questions, all labelled pass: 72 agree, 1 open
+   (the character count's live region, leaning pass), none wrong.
+   `css-hidden-focus` now 29 and `p-as-heading` 26 real cases of the 30
+   trust needs; `trust.md` 6 of 38 checks trusted.
 
 **The plan** (`ai-cant-tell-roadmap.md`): phase 1, the AI for every "can't
 tell" from the rules, then phase 2, criteria no rule can automate (decisions
@@ -91,13 +100,13 @@ towards nothing until a person confirms; the AI only flags, never passes).
 
 1. **Real sites for the new families, on hosts the user must allow.** The
    environment's allowed hosts (www.w3.org, projects.accesscomputing.uw.edu,
-   alphagov.github.io) are used up for these families (item 8 above): they
-   have no page with `aria-invalid`, live regions, autoplay or animation the
-   engine sees. **Ask the user** to allow hosts with such pages, for
-   instance the GOV.UK Design System (design-system.service.gov.uk: its
-   error message and error summary examples, put in their error state with
-   the workflow's own steps), and pages with real `<video>`/`<audio>`,
-   carousels and live regions. Then: survey as a preview, label the
+   alphagov.github.io, design-system.service.gov.uk) are used up for these
+   families (items 8 and 9 above): no page there leaves an `aria-invalid`
+   field without a shown, tied message, and none has autoplay or animation
+   the engine sees. **Ask the user** to allow hosts with such pages (sites
+   with known form-error problems, real `<video>`/`<audio>`, carousels,
+   live regions); a check short of 30 cases (`css-hidden-focus` 29,
+   `p-as-heading` 26) can be topped up on the allowed hosts meanwhile. Then: survey as a preview, label the
    new-family questions before reading any answer, answer blind (with and
    without the paste or pictures where they apply), score, record in the
    eval README and START-HERE, rerun `trust-table.js`. A sign-in form for
@@ -452,8 +461,11 @@ Items 1 to 3b need the user; the rest can be done without. Item 4 points to
 - The background servers of a cloud session (demo site on 8780, lab on 3000)
   may be stopped between turns: start them in the same command that uses them.
 - In a cloud session, the user's "lab" environment allows www.w3.org,
-  projects.accesscomputing.uw.edu and alphagov.github.io (the evaluation
-  sites) and api.anthropic.com; other sites are blocked.
+  projects.accesscomputing.uw.edu, alphagov.github.io and
+  design-system.service.gov.uk (the evaluation sites) and
+  api.anthropic.com; other sites are blocked. A new host is proposed with
+  the environment tools (the user approves it) after a request to it was
+  blocked; the user must also say to go ahead before fetching from it.
 
 Not in the repo: the Avaloq sample report and evaluation files (a customer's
 site; the author's copies are in the temp folder `spike/avaloq/` and the config
