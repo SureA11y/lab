@@ -156,7 +156,10 @@ what it means for the work:
    engine (`@surea11y/core`) reads the browser's accessibility tree and
    settles these itself, so every user of it gets pass or fail instead of
    can't tell. The work is in the engine's repository, not this one; the
-   lab then has nothing to ask for them. Their lane becomes "the engine".
+   lab then has nothing to ask for them. Their lane becomes "the engine". **Parked
+   2026-11-28:** on the 224 real pages scanned none of them ended in "can't
+   tell" (the lab's internals hook settles `name_internals`; the other
+   reasons need web components). The shape is in START-HERE.
 5. **Pictures to the model: opt-in per step.** Off by default; a scan step
    turns it on (`ai: { pictures: true }`), and the server can forbid it
    (an `A11Y_AI_PICTURES` setting, off on customer sites unless allowed);

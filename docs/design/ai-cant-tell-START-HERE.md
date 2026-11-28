@@ -26,15 +26,32 @@ Everything is committed and pushed (last code change: `279df36`; after it
 only evaluation runs and docs). **Phase 1 of the
 roadmap is complete except for the engine's part:** the AI answers **76 of
 the 132 checks** that can end in "can't tell". What is left is 23 `tree`
-checks, which belong in the engine (decision 4; **ask the user for the
-engine's GitHub repository** before starting), and 32 `code` checks, which a
+checks, which belong in the engine (decision 4; parked: none came up on real
+pages, see below), and 32 `code` checks, which a
 person confirms (decision 3: nothing to build). Demo **148 of 148** (blind);
 prompt version `registry-20`. The full suite (`node --test`, 4501 pass) and
 the browser tests (`ai-answer.browserspec.js` 14, `focus-walk` 17,
 `app-boot` 17) pass.
 
-**Waiting on the user** (ask at the start): the engine's GitHub repository
-(decision 4), and hosts with real form errors (`aria-invalid` without a
+**Parked by the user (2026-11-28): the engine's tree lane (decision 4).**
+The engine's repository is `SureA11y/core` (attach it with `add_repo` when
+needed). Counted first: on the 224 real pages scanned (437 scans), the 23
+name checks never ended in "can't tell": no `name_closedContent`,
+`name_contentTooDeep`, `name_internals`, `default_name` or
+`LANDMARK_ROLE_NAME_MISSING` in any payload; the lab installs the engine's
+internals hook early on every scan, which settles `name_internals` already.
+The rest needs web components (closed shadow roots, deep nesting), which the
+evaluation sites do not use. Pick it up when a component-heavy site comes
+up. The agreed shape: an engine function `settleNamesFromBrowser(result,
+lookup)` run by the binding after the scan (a page script cannot read the
+accessibility tree), a lookup supplied by the binding (a Puppeteer one from
+Chrome's computed name and role), pass for a name, fail for an empty name on
+an element the browser exposes, "can't tell" kept otherwise, the source
+recorded (`engine.environment.browserNames`), and a table of what it
+decides like the hooks' `HOOK_REASON_CODES`; the lab calls it after each
+scan, before the AI pass.
+
+**Waiting on the user** (ask at the start): hosts with real form errors (`aria-invalid` without a
 shown, tied message), audio or video, carousels and live regions (the
 allowed hosts have none left). Everything else below can go on without.
 
@@ -119,10 +136,9 @@ towards nothing until a person confirms; the AI only flags, never passes).
    **Found on the way, for the engine (decision 4's repository):** a
    carousel rotated by a script timer (the APG examples) is not seen by
    `moving-content-pausable`, which reads CSS and Web Animations only.
-2. **The engine's tree lane (decision 4):** ask the user for the engine's
-   GitHub repository, attach it (`add_repo`), and make the engine settle the
-   23 "name present" checks from the browser's accessibility tree; then the
-   lab's inventory moves them to "the engine".
+2. **The engine's tree lane (decision 4): parked** (see the top of State):
+   nothing to settle on the sites we reach; build it when a site with web
+   components comes up, in `SureA11y/core`.
 3. **Polish** (the roadmap's list): a person's labels (Next, item 1), a run
    through the lab's own Claude call with a real key (item 2), more cases
    for link text, field labels and bold as heading, the open walk's open
