@@ -182,8 +182,11 @@ Without the user, what can go on, in this order:
 - **Phase 2's design: drafted** (2026-11-28) in the roadmap, "Phase 2
   design: a draft for the user to agree": candidates found by lab-side
   finders, one AI question each, items quoted and checked against the page,
-  shown apart until a person confirms. It ends with four questions for the
-  user; ask them before building anything of phase 2.
+  shown apart until a person confirms. **The user answered its four
+  questions on 2026-11-28** (all recommended: `raise: [criteria]`, a
+  confirmed item becomes a finding with its source marked, trust at 30
+  items and 90% real, order 3.1.2, 1.3.3, 3.3.2, 1.3.1). Phase 2 can start,
+  with 3.1.2.
 
 4. **Phase 2**, once the user agrees phase 1 is done: start with what is
    already read (roadmap, "Phase 2", group 1: language of parts, sensory

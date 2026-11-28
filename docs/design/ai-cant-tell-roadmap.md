@@ -209,15 +209,17 @@ evaluation, as phase 1's labels are.
   criterion (e.g. 30 raised items labelled, 90% real), before a criterion's
   items are shown without a "low trust" mark.
 
-**Open questions for the user.**
+**The user's answers (2026-11-28)**, all the recommended options:
 
-1. The option's shape: `raise` with criteria, or one switch for group 1?
-2. Where a confirmed item goes: a finding in the report's findings with a
-   "found by a person, raised by the AI" source, or a section of its own?
-3. The trust rule for raised items: precision 90% on 30 labelled items?
-4. Order within group 1: 3.1.2 and 1.3.3 first (text only, clearest
-   evaluation), then 3.3.2, then 1.3.1 (which overlaps `p-as-heading` and may
-   want pictures)?
+1. **Option shape:** `ai: { raise: ["3.1.2", "1.3.3"] }` names the
+   criteria; `"raise": "reading"` turns on the whole first group.
+2. **A confirmed item becomes a finding** of its criterion: a fail found by
+   a person, its source marked as raised by the AI; it then counts as any
+   manual fail.
+3. **Trust for raised items:** at least 30 raised items labelled on real
+   pages and at least 90% of them real, per criterion, before its items are
+   shown without a "low trust" mark.
+4. **Order:** 3.1.2, then 1.3.3, then 3.3.2, then 1.3.1.
 
 ## Decisions (made by the user on 2026-11-27)
 
